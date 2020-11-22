@@ -1,0 +1,20 @@
+<idea-plugin>
+    <name>Kotlin for Jupyter</name>
+    <id>org.jetbrains.plugins.kotlin.jupyter</id>
+    <category>Template Languages</category>
+    <vendor>JetBrains</vendor>
+    <description>Kotlin support for Jupyter notebooks. Code insight, highlighting and so on.</description>
+
+
+
+    <depends>org.jetbrains.kotlin</depends>
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <multiHostInjector implementation="org.jetbrains.kotlin.jupyter.plugin.JupyterKotlinInjector"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <scriptDefinitionsProvider implementation="org.jetbrains.kotlin.jupyter.plugin.JupyterDefProvider"/>
+    </extensions>
+</idea-plugin>
