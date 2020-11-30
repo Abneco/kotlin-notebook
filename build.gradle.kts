@@ -7,7 +7,7 @@ plugins {
     // Java support
     id("java")
     // Kotlin support
-    id("org.jetbrains.kotlin.jvm") version "1.4.10"
+    id("org.jetbrains.kotlin.jvm") version "1.4.20"
     // gradle-intellij-plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
     id("org.jetbrains.intellij") version "0.5.0"
     // gradle-changelog-plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
@@ -42,22 +42,36 @@ version = pluginVersion
 // Configure project's dependencies
 repositories {
     mavenCentral()
+    mavenLocal()
     jcenter()
 
-    val teamcityUrl = "https://teamcity.jetbrains.com"
-    val teamcityProjectId = "Kotlin_KotlinPublic_Aggregate"
-    maven("$teamcityUrl/guestAuth/app/rest/builds/buildType:(id:$teamcityProjectId),number:$kotlinVersion,branch:default:any/artifacts/content/maven")
+    class TeamcitySettings(
+        val url: String,
+        val projectId: String
+    )
+    val teamcityRepos = listOf(
+        TeamcitySettings("https://teamcity.jetbrains.com", "Kotlin_KotlinPublic_Aggregate"),
+        TeamcitySettings("https://buildserver.labs.intellij.net", "Kotlin_KotlinDev_Aggregate")
+    )
+    for (teamcity in teamcityRepos) {
+        maven("${teamcity.url}/guestAuth/app/rest/builds/buildType:(id:${teamcity.projectId}),number:$kotlinVersion,branch:default:any/artifacts/content/maven")
+    }
 
     maven("https://dl.bintray.com/ileasile/kotlin-datascience-ileasile")
 }
 dependencies {
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.14.1")
 
-    implementation("org.jetbrains.kotlinx.jupyter:notebook-api:$notebookApiVersion") {
+    implementation("org.jetbrains.kotlinx.jupyter:compiler:$notebookApiVersion") {
         exclude("org.jetbrains.kotlin", "kotlin-scripting-common")
-        exclude("org.jetbrains.kotlin", "kotlin-scripting-jvm")
+        //exclude("org.jetbrains.kotlin", "kotlin-scripting-jvm")
     }
-    //implementation(kotlin("scripting-intellij", kotlinVersion))
+
+    compileOnly(kotlin("scripting-jvm", kotlinVersion))
+    compileOnly(kotlin("scripting-compiler", kotlinVersion))
+    compileOnly(kotlin("scripting-compiler-impl", kotlinVersion))
+    compileOnly(kotlin("scripting-intellij", kotlinVersion))
+    //compileOnly(kotlin("scripting-idea", kotlinVersion))
 }
 
 // Configure gradle-intellij-plugin plugin.
@@ -65,12 +79,19 @@ dependencies {
 intellij {
     pluginName = pluginName_
     //localPath = platformLocalPath
+    version = platformVersion
     type = platformType
     downloadSources = platformDownloadSources.toBoolean()
     updateSinceUntilBuild = true
 
+    pluginsRepo {
+        custom("https://teamcity.jetbrains.com/guestAuth/app/rest/builds/buildType:(id:Kotlin_KotlinPublic_Aggregate),number:$kotlinVersion,branch:default:any/artifacts/content/updatePlugins-IJ2020.1-Community.xml")
+    }
+
     // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.
     setPlugins(*platformPlugins.split(',').map(String::trim).filter(String::isNotEmpty).toTypedArray())
+
+
 }
 
 // Configure detekt plugin.

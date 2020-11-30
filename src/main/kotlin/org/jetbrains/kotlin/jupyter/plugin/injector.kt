@@ -11,7 +11,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiLanguageInjectionHost
-import org.jetbrains.kotlin.jupyter.config.getCompilationConfiguration
+import kotlin.concurrent.withLock
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.fileExtension
 
@@ -27,15 +27,32 @@ class JupyterKotlinInjector(val project: Project): MultiHostInjector, Disposable
         if (element !is JsonArray) return
 
         val values = element.valueList
-        val configuration = getCompilationConfiguration { }
-        val fileExtension = configuration[ScriptCompilationConfiguration.fileExtension] ?: "jupyter.kts"
+        val configuration = jupyterCompileConfiguration
+        val fileExtension = configuration[ScriptCompilationConfiguration.fileExtension] ?: "jupyter-kts"
 
         for (value in values) {
             if (value !is JsonStringLiteral) continue
             registrar.startInjecting(Language.findLanguageByID("kotlin")!!, fileExtension)
             //registrar.startInjecting(Language.findLanguageByID("kotlin")!!)
 
+            rwLock.withLock {
+                if (jupyterCompiler.numberOfSnippets < 10) {
+                    val sourceCode = jupyterCompiler.nextSourceCode("""
+                        val xyz${jupyterCompiler.numberOfSnippets} = 42
+                    """.trimIndent())
+                    jupyterCompiler.compileSync(sourceCode)
+
+                    jupyterCompiler.compiler.lastCompiledSnippet?.get()?.let {
+                        classWriter.writeCompiledSnippet(it)
+                    }
+                }
+            }
+
+
             val textRange = (value as JsonStringLiteral).textRange
+
+            val code = value.value
+
             val valueTextRange = TextRange(textRange.startOffset + 1, textRange.endOffset - 1)
             val shiftedRange = valueTextRange.shiftLeft(textRange.startOffset)
             registrar.addPlace(null, null, value as PsiLanguageInjectionHost, shiftedRange)

@@ -1,0 +1,12 @@
+@file:org.jetbrains.kotlin.jupyter.config.DependsOn
+val x = 42
+
+notebook.cells
+
+val y = 89
+
+val z = 353
+
+x.and(43)
+
+x.and(890)
