@@ -6,8 +6,6 @@ import com.intellij.lang.injection.MultiHostRegistrar
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiLanguageInjectionHost
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterNotebookImpl
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.fileExtension
@@ -23,9 +21,10 @@ class JupyterKotlinIntoNotebookInjector(val project: Project): MultiHostInjector
 
         for (cell in element.cellList) {
             registrar.startInjecting(Language.findLanguageByID("kotlin")!!, fileExtension)
-            val textRange = (cell as JupyterCell).textRange
+            val host = NotebookCellInjectionHost(cell)
+            val textRange = host.textRange
             val shiftedRange = textRange.shiftLeft(textRange.startOffset)
-            registrar.addPlace(null, null, cell as PsiLanguageInjectionHost, shiftedRange)
+            registrar.addPlace(null, null, host, shiftedRange)
             registrar.doneInjecting()
         }
     }
