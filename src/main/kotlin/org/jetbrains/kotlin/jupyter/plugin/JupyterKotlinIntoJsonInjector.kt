@@ -6,6 +6,7 @@ import com.intellij.lang.Language
 import com.intellij.lang.injection.MultiHostInjector
 import com.intellij.lang.injection.MultiHostRegistrar
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
@@ -16,8 +17,9 @@ import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.fileExtension
 
 
-class JupyterKotlinInjector(val project: Project): MultiHostInjector, Disposable {
+class JupyterKotlinIntoJsonInjector(val project: Project): MultiHostInjector, Disposable {
     private val disposable = Disposer.newDisposable()
+    private val compilerService = project.service<JupyterCompilerService>()
 
     init {
         //Disposer.register(project, this)
@@ -27,7 +29,7 @@ class JupyterKotlinInjector(val project: Project): MultiHostInjector, Disposable
         if (element !is JsonArray) return
 
         val values = element.valueList
-        val configuration = jupyterCompileConfiguration
+        val configuration = compilerService.jupyterCompileConfiguration
         val fileExtension = configuration[ScriptCompilationConfiguration.fileExtension] ?: "jupyter-kts"
 
         for (value in values) {
@@ -35,15 +37,16 @@ class JupyterKotlinInjector(val project: Project): MultiHostInjector, Disposable
             registrar.startInjecting(Language.findLanguageByID("kotlin")!!, fileExtension)
             //registrar.startInjecting(Language.findLanguageByID("kotlin")!!)
 
-            rwLock.withLock {
-                if (jupyterCompiler.numberOfSnippets < 10) {
-                    val sourceCode = jupyterCompiler.nextSourceCode("""
-                        val xyz${jupyterCompiler.numberOfSnippets} = 42
+            val compiler = compilerService.jupyterCompiler
+            compilerService.rwLock.withLock {
+                if (compiler.numberOfSnippets < 10) {
+                    val sourceCode = compiler.nextSourceCode("""
+                        val xyz${compiler.numberOfSnippets} = 42
                     """.trimIndent())
-                    jupyterCompiler.compileSync(sourceCode)
+                    compiler.compileSync(sourceCode)
 
-                    jupyterCompiler.compiler.lastCompiledSnippet?.get()?.let {
-                        classWriter.writeCompiledSnippet(it)
+                    compiler.compiler.lastCompiledSnippet?.get()?.let {
+                        compilerService.classWriter.writeCompiledSnippet(it)
                     }
                 }
             }

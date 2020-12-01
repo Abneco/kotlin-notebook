@@ -64,7 +64,11 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx.jupyter:compiler:$notebookApiVersion") {
         exclude("org.jetbrains.kotlin", "kotlin-scripting-common")
-        //exclude("org.jetbrains.kotlin", "kotlin-scripting-jvm")
+        exclude("org.jetbrains.kotlin", "kotlin-scripting-jvm")
+
+        exclude("org.jetbrains.kotlin", "kotlin-stdlib")
+        exclude("org.jetbrains.kotlin", "kotlin-stdlib-common")
+        exclude("org.jetbrains.kotlin", "kotlin-reflect")
     }
 
     compileOnly(kotlin("scripting-jvm", kotlinVersion))
@@ -85,7 +89,8 @@ intellij {
     updateSinceUntilBuild = true
 
     pluginsRepo {
-        custom("https://teamcity.jetbrains.com/guestAuth/app/rest/builds/buildType:(id:Kotlin_KotlinPublic_Aggregate),number:$kotlinVersion,branch:default:any/artifacts/content/updatePlugins-IJ2020.1-Community.xml")
+        marketplace()
+        custom("https://buildserver.labs.intellij.net/guestAuth/app/rest/builds/buildType:(id:Kotlin_KotlinDev_Aggregate),number:$kotlinVersion,branch:default:any/artifacts/content/updatePlugins-IJ2020.2.xml")
     }
 
     // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.

@@ -8,10 +8,12 @@
 
 
     <depends>org.jetbrains.kotlin</depends>
+    <depends>Pythonid</depends>
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <multiHostInjector implementation="org.jetbrains.kotlin.jupyter.plugin.JupyterKotlinInjector"/>
+        <multiHostInjector implementation="org.jetbrains.kotlin.jupyter.plugin.JupyterKotlinIntoJsonInjector"/>
+        <multiHostInjector implementation="org.jetbrains.kotlin.jupyter.plugin.JupyterKotlinIntoNotebookInjector"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
