@@ -5,18 +5,26 @@
     <vendor>JetBrains</vendor>
     <description>Kotlin support for Jupyter notebooks. Code insight, highlighting and so on.</description>
 
-
-
     <depends>org.jetbrains.kotlin</depends>
     <depends>Pythonid</depends>
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <multiHostInjector implementation="org.jetbrains.kotlin.jupyter.plugin.JupyterKotlinIntoJsonInjector"/>
+        <!-- Uncomment if you want to test something more easy than injecting into notebooks -->
+        <!--<multiHostInjector implementation="org.jetbrains.kotlin.jupyter.plugin.JupyterKotlinIntoJsonInjector"/>-->
         <multiHostInjector implementation="org.jetbrains.kotlin.jupyter.plugin.JupyterKotlinIntoNotebookInjector"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <scriptDefinitionsProvider implementation="org.jetbrains.kotlin.jupyter.plugin.JupyterDefProvider"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter.actions">
+        <jupyterAdditionalRunActionsHandler implementation="org.jetbrains.kotlin.jupyter.plugin.JupyterKotlinRunActionsHandler"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
+        <jupyterAdditionalCellExecutionCallback implementation="org.jetbrains.kotlin.jupyter.plugin.JupyterKotlinCellExecutionCallback"/>
     </extensions>
 </idea-plugin>

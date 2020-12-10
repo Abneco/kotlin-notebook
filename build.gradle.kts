@@ -7,7 +7,7 @@ plugins {
     // Java support
     id("java")
     // Kotlin support
-    id("org.jetbrains.kotlin.jvm") version "1.4.20"
+    kotlin("jvm") version "1.4.20"
     // gradle-intellij-plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
     id("org.jetbrains.intellij") version "0.5.0"
     // gradle-changelog-plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
@@ -15,7 +15,9 @@ plugins {
     // detekt linter - read more: https://detekt.github.io/detekt/gradle.html
     id("io.gitlab.arturbosch.detekt") version "1.14.1"
     // ktlint linter - read more: https://github.com/JLLeitschuh/ktlint-gradle
-    id("org.jlleitschuh.gradle.ktlint") version "9.4.1"
+    id("org.jlleitschuh.gradle.ktlint")
+
+    // id("org.anarres.jarjar")
 }
 
 // Import variables from gradle.properties file
@@ -29,12 +31,13 @@ val pluginUntilBuild: String by project
 
 val platformType: String by project
 val platformVersion: String by project
-//val platformLocalPath: String by project
-val platformPlugins: String by project
+val platformLocalPath: String by project
+// val platformPlugins: String by project
 val platformDownloadSources: String by project
 
 val notebookApiVersion: String by project
 val kotlinVersion: String by project
+val intellijBuildNumber: String by project
 
 group = pluginGroup
 version = pluginVersion
@@ -49,54 +52,69 @@ repositories {
         val url: String,
         val projectId: String
     )
+
+    val apiPrefix = "guestAuth/app/rest/builds"
     val teamcityRepos = listOf(
         TeamcitySettings("https://teamcity.jetbrains.com", "Kotlin_KotlinPublic_Aggregate"),
         TeamcitySettings("https://buildserver.labs.intellij.net", "Kotlin_KotlinDev_Aggregate")
     )
     for (teamcity in teamcityRepos) {
-        maven("${teamcity.url}/guestAuth/app/rest/builds/buildType:(id:${teamcity.projectId}),number:$kotlinVersion,branch:default:any/artifacts/content/maven")
+        maven("${teamcity.url}/$apiPrefix/buildType:(id:${teamcity.projectId}),number:$kotlinVersion,branch:default:any/artifacts/content/maven")
     }
+
+    val teamcityUrl = "https://buildserver.labs.intellij.net"
+    val buildId = "ijplatform_IjPlatform202_Idea_Installers"
+    maven("$teamcityUrl/$apiPrefix/buildType:(id:$buildId),number:$intellijBuildNumber,branch:default:any/artifacts/content/maven-artifacts")
 
     maven("https://dl.bintray.com/ileasile/kotlin-datascience-ileasile")
 }
 dependencies {
+    fun ExternalModuleDependency.excludeKotlin(dependency: String) {
+        exclude("org.jetbrains.kotlin", "kotlin-$dependency")
+    }
+
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.14.1")
 
     implementation("org.jetbrains.kotlinx.jupyter:compiler:$notebookApiVersion") {
-        exclude("org.jetbrains.kotlin", "kotlin-scripting-common")
-        exclude("org.jetbrains.kotlin", "kotlin-scripting-jvm")
-
-        exclude("org.jetbrains.kotlin", "kotlin-stdlib")
-        exclude("org.jetbrains.kotlin", "kotlin-stdlib-common")
-        exclude("org.jetbrains.kotlin", "kotlin-reflect")
+        excludeKotlin("stdlib")
+        excludeKotlin("reflect")
+        excludeKotlin("stdlib-common")
     }
 
     compileOnly(kotlin("scripting-jvm", kotlinVersion))
     compileOnly(kotlin("scripting-compiler", kotlinVersion))
     compileOnly(kotlin("scripting-compiler-impl", kotlinVersion))
     compileOnly(kotlin("scripting-intellij", kotlinVersion))
-    //compileOnly(kotlin("scripting-idea", kotlinVersion))
 }
 
 // Configure gradle-intellij-plugin plugin.
 // Read more: https://github.com/JetBrains/gradle-intellij-plugin
 intellij {
     pluginName = pluginName_
-    //localPath = platformLocalPath
-    version = platformVersion
+    localPath = platformLocalPath
+    // version = platformVersion
     type = platformType
     downloadSources = platformDownloadSources.toBoolean()
     updateSinceUntilBuild = true
 
     pluginsRepo {
         marketplace()
-        custom("https://buildserver.labs.intellij.net/guestAuth/app/rest/builds/buildType:(id:Kotlin_KotlinDev_Aggregate),number:$kotlinVersion,branch:default:any/artifacts/content/updatePlugins-IJ2020.2.xml")
+        val teamcityUrl = "https://buildserver.labs.intellij.net"
+        val apiPrefix = "guestAuth/app/rest/builds"
+
+        custom("$teamcityUrl/$apiPrefix/buildType:(id:Kotlin_KotlinDev_Aggregate),number:$kotlinVersion,branch:default:any/artifacts/content/updatePlugins-IJ2020.2.xml")
+
+        val buildId = "ijplatform_IjPlatform202_PyCharm_InstallersBuild" // "ijplatform_IjPlatform202_IdeaInstallersBuild"
+        val pathToPluginsRepo = "PY-plugins/plugins.xml"
+        custom("$teamcityUrl/$apiPrefix/buildType:(id:$buildId),number:$intellijBuildNumber,branch:default:any/artifacts/content/$pathToPluginsRepo")
     }
 
-    // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.
-    setPlugins(*platformPlugins.split(',').map(String::trim).filter(String::isNotEmpty).toTypedArray())
-
-
+    // Plugin Dependencies
+    setPlugins(
+        "org.jetbrains.kotlin:$kotlinVersion-IJ2020.2-1",
+        "Pythonid:$intellijBuildNumber",
+        "java"
+    )
 }
 
 // Configure detekt plugin.

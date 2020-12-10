@@ -9,8 +9,7 @@ import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.host.ScriptingHostConfiguration
 import kotlin.script.experimental.intellij.ScriptDefinitionsProvider
 
-
-class JupyterDefProvider(private val project: Project): ScriptDefinitionsProvider, Disposable {
+class JupyterDefProvider(project: Project) : ScriptDefinitionsProvider, Disposable {
     private val disposable = Disposer.newDisposable()
     private val compilerService = project.service<JupyterCompilerService>()
 
@@ -23,10 +22,12 @@ class JupyterDefProvider(private val project: Project): ScriptDefinitionsProvide
     override fun useDiscovery(): Boolean = false
 
     override fun provideDefinitions(baseHostConfiguration: ScriptingHostConfiguration, loadedScriptDefinitions: List<ScriptDefinition>): Iterable<ScriptDefinition> {
-        return loadedScriptDefinitions + listOf(ScriptDefinition(
-            compilerService.jupyterCompileConfiguration,
-            compilerService.jupyterEvaluationConfiguration
-        ))
+        return loadedScriptDefinitions + listOf(
+            ScriptDefinition(
+                compilerService.jupyterCompileConfiguration,
+                compilerService.jupyterEvaluationConfiguration
+            )
+        )
     }
 
     override fun dispose() {

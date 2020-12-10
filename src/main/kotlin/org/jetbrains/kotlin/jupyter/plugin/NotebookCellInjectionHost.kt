@@ -5,7 +5,7 @@ import com.intellij.psi.LiteralTextEscaper
 import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterCell
 
-class NotebookCellInjectionHost(cell: JupyterCell): JupyterCell by cell, PsiLanguageInjectionHost {
+class NotebookCellInjectionHost(cell: JupyterCell) : JupyterCell by cell, PsiLanguageInjectionHost {
     override fun isValidHost(): Boolean {
         return true
     }
@@ -17,5 +17,4 @@ class NotebookCellInjectionHost(cell: JupyterCell): JupyterCell by cell, PsiLang
     override fun createLiteralTextEscaper(): LiteralTextEscaper<NotebookCellInjectionHost> {
         return LiteralTextEscaper.createSimple(this)
     }
-
 }
