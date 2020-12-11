@@ -104,7 +104,7 @@ intellij {
 
         custom("$teamcityUrl/$apiPrefix/buildType:(id:Kotlin_KotlinDev_Aggregate),number:$kotlinVersion,branch:default:any/artifacts/content/updatePlugins-IJ2020.2.xml")
 
-        val buildId = "ijplatform_IjPlatform202_PyCharm_InstallersBuild" // "ijplatform_IjPlatform202_IdeaInstallersBuild"
+        val buildId = "ijplatform_IjPlatform202_PyCharm_InstallersBuild"
         val pathToPluginsRepo = "PY-plugins/plugins.xml"
         custom("$teamcityUrl/$apiPrefix/buildType:(id:$buildId),number:$intellijBuildNumber,branch:default:any/artifacts/content/$pathToPluginsRepo")
     }

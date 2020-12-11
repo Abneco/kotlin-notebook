@@ -30,6 +30,7 @@ import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
@@ -39,6 +40,7 @@ import kotlin.script.experimental.api.implicitReceivers
 import kotlin.script.experimental.api.refineConfiguration
 import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
+import kotlin.script.experimental.jvm.withUpdatedClasspath
 import kotlin.streams.toList
 
 typealias InjectedElementsList = List<Pair<PsiElement, TextRange>>
@@ -47,31 +49,9 @@ typealias InjectedElementsList = List<Pair<PsiElement, TextRange>>
 class JupyterCompilerService(private val project: Project) {
     private val logger = getLogger("Jupyter Compiler Service")
     val compileLock = ReentrantReadWriteLock()
+    private val directoryCounter = AtomicInteger(1)
     private val scriptingSettings = KotlinScriptingSettings.getInstance(project)
     val nbInjectionHosts = mutableListOf<NotebookCellInjectionHost>()
-
-    init {
-        System.setProperty(
-            "script.compilation.disable.plugins",
-            listOf(
-                "org.jetbrains.kotlin.samWithReceiver.SamWithReceiverComponentRegistrar",
-                "org.jetbrains.kotlin.noarg.NoArgComponentRegistrar",
-                "org.jetbrains.kotlin.android.synthetic.AndroidComponentRegistrar",
-                "org.jetbrains.kotlin.allopen.AllOpenComponentRegistrar",
-                "org.jetbrains.kotlin.parcelize.ParcelizeComponentRegistrar",
-            ).joinToString(";")
-        )
-        System.setProperty(
-            "script.compilation.disable.commandline.processors",
-            listOf(
-                "org.jetbrains.kotlin.noarg.NoArgCommandLineProcessor",
-                "org.jetbrains.kotlin.allopen.AllOpenCommandLineProcessor",
-                "org.jetbrains.kotlin.samWithReceiver.SamWithReceiverCommandLineProcessor",
-                "org.jetbrains.kotlin.android.synthetic.AndroidCommandLineProcessor",
-                // "org.jetbrains.kotlin.scripting.compiler.plugin.ScriptingCommandLineProcessor",
-            ).joinToString(";")
-        )
-    }
 
     private val classesDir: Path by lazy {
         val tempDir = Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -90,13 +70,13 @@ class JupyterCompilerService(private val project: Project) {
         parseOutCellMarker = true
     )
 
-    private val currentClasspath: List<File> by lazy {
+    private val currentClasspath: MutableList<File> by lazy {
         val pathToJars = Paths.get("C:/Users/Ilya.Muradyan/AppData/Roaming/jupyter/kernels/kotlin/jars")
         val files = Files.walk(pathToJars).filter { path ->
             path.isFile() && !path.fileName.toString().contains("kotlin-jupyter-kernel")
         }.map {
             it.toFile()
-        }.toList()
+        }.toList().toMutableList()
 
         files
         /*
@@ -114,7 +94,7 @@ class JupyterCompilerService(private val project: Project) {
 
     val jupyterCompileConfiguration by lazy {
         getCompilationConfiguration(
-            scriptClasspath = currentClasspath + listOf(classesDir.toFile()),
+            scriptClasspath = currentClasspath,
             scriptingClassGetter = JupyterScriptClassGetter {
                 compileLock.read {
                     implicitsList
@@ -124,13 +104,12 @@ class JupyterCompilerService(private val project: Project) {
             implicitReceivers(implicitsList)
             refineConfiguration {
                 beforeCompiling { (_, config, _) ->
-                    println("Compilation of Jupyter.kts snippet")
-
-                    // val previousScriptClasses: Array<KClass<*>> = jupyterCompiler.previousScriptsClasses.toTypedArray()
-                    // config.with {
-                    //     implicitReceivers(*previousScriptClasses)
-                    // }.asSuccess()
-                    config.asSuccess()
+                    compileLock.read {
+                        println("Compilation of Jupyter.kts snippet")
+                        config
+                            .withUpdatedClasspath(currentClasspath)
+                            .asSuccess()
+                    }
                 }
             }
         }
@@ -147,9 +126,15 @@ class JupyterCompilerService(private val project: Project) {
     fun addCompiledSnippet(compiledData: SerializedCompiledScriptsData) {
         compileLock.write {
             try {
-                val kClassNames = deserializer.deserializeAndSave(compiledData, classesDir)
+                val lineClassesDir = classesDir.resolve("line_$directoryCounter")
+                directoryCounter.incrementAndGet()
+                val lineClassesDirAsFile = lineClassesDir.toFile()
+                lineClassesDirAsFile.mkdirs()
+                currentClasspath.add(lineClassesDirAsFile)
+
+                val kClassNames = deserializer.deserializeAndSave(compiledData, lineClassesDir)
                 val classLoader = URLClassLoader(
-                    arrayOf(classesDir.toUri().toURL()),
+                    arrayOf(lineClassesDir.toUri().toURL()),
                     (implicitsList.lastOrNull()?.fromClass ?: this::class).java.classLoader
                 )
                 kClassNames.forEach {
