@@ -1,6 +1,7 @@
 workspace.xml
 libraries/
 jsLinters/
+shelf/
 uiDesigner.xml
 compiler.xml
 gradle.xml

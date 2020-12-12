@@ -79,8 +79,10 @@ dependencies {
         excludeKotlin("stdlib")
         excludeKotlin("reflect")
         excludeKotlin("stdlib-common")
+        excludeKotlin("scripting-dependencies")
     }
 
+    implementation(kotlin("scripting-dependencies", kotlinVersion) as String) { isTransitive = false }
     compileOnly(kotlin("scripting-jvm", kotlinVersion))
     compileOnly(kotlin("scripting-compiler", kotlinVersion))
     compileOnly(kotlin("scripting-compiler-impl", kotlinVersion))
