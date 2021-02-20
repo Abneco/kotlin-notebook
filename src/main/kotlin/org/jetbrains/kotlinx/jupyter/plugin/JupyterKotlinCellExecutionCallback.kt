@@ -1,17 +1,17 @@
-package org.jetbrains.kotlin.jupyter.plugin
+package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.jupyter.compiler.util.SerializedCompiledScript
-import org.jetbrains.kotlin.jupyter.compiler.util.SerializedCompiledScriptsData
+import org.jetbrains.kotlinx.jupyter.compiler.util.SerializedCompiledScript
+import org.jetbrains.kotlinx.jupyter.compiler.util.SerializedCompiledScriptsData
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterAdditionalCellExecutionCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInputRequestMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
+import java.io.File
 
 class JupyterKotlinCellExecutionCallback : JupyterAdditionalCellExecutionCallback {
     override fun onClearOutput(message: JupyterMessage, project: Project, virtualFile: NotebookVirtualFile) {
@@ -37,11 +37,19 @@ class JupyterKotlinCellExecutionCallback : JupyterAdditionalCellExecutionCallbac
             val compiledScript = SerializedCompiledScript(fileName.textValue(), base64Data.textValue())
             compiledDataList.add(compiledScript)
         }
-
         val compiledData = SerializedCompiledScriptsData(compiledDataList)
 
-        val compilerService = project.service<JupyterCompilerService>()
-        compilerService.addCompiledSnippet(compiledData)
+        val newClasspath: List<File> = (message.getMetadata("new_classpath") as? ArrayNode)?.let { classpathArray ->
+            val result = mutableListOf<File>()
+            classpathArray.forEach { node ->
+                if (node !is TextNode) return
+                result.add(File(node.textValue()))
+            }
+            result
+        }.orEmpty()
+
+        val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
+        compilerService.addCompiledSnippet(compiledData, newClasspath)
     }
 
     override fun onInputRequest(message: JupyterInputRequestMessage, project: Project, virtualFile: NotebookVirtualFile) {

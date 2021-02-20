@@ -1,4 +1,4 @@
-@file:org.jetbrains.kotlin.jupyter.config.DependsOn
+@file:org.jetbrains.kotlinx.jupyter.config.DependsOn
 val x = 42
 
 notebook.cells

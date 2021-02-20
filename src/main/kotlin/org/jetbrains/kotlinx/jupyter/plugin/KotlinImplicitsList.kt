@@ -1,4 +1,4 @@
-package org.jetbrains.kotlin.jupyter.plugin
+package org.jetbrains.kotlinx.jupyter.plugin
 
 import kotlin.reflect.KClass
 import kotlin.script.experimental.api.KotlinType

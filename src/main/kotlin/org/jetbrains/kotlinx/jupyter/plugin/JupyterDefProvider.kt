@@ -1,7 +1,6 @@
-package org.jetbrains.kotlin.jupyter.plugin
+package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import java.io.File
@@ -11,7 +10,7 @@ import kotlin.script.experimental.intellij.ScriptDefinitionsProvider
 
 class JupyterDefProvider(project: Project) : ScriptDefinitionsProvider, Disposable {
     private val disposable = Disposer.newDisposable()
-    private val compilerService = project.service<JupyterCompilerService>()
+    private val projectCompilerService = JupyterCompilerService.getInstance(project)
 
     override val id: String = "Jupyter Definition provider"
 
@@ -24,8 +23,8 @@ class JupyterDefProvider(project: Project) : ScriptDefinitionsProvider, Disposab
     override fun provideDefinitions(baseHostConfiguration: ScriptingHostConfiguration, loadedScriptDefinitions: List<ScriptDefinition>): Iterable<ScriptDefinition> {
         return loadedScriptDefinitions + listOf(
             ScriptDefinition(
-                compilerService.jupyterCompileConfiguration,
-                compilerService.jupyterEvaluationConfiguration
+                projectCompilerService.initialCompileConfiguration,
+                projectCompilerService.evaluationConfiguration
             )
         )
     }

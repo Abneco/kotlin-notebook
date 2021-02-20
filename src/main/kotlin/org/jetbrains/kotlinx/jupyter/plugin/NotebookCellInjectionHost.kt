@@ -1,4 +1,4 @@
-package org.jetbrains.kotlin.jupyter.plugin
+package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.psi.ElementManipulators
 import com.intellij.psi.LiteralTextEscaper

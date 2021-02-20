@@ -2,7 +2,7 @@
   "some": [
     "val x = 33",
     "x = 33",
-    "@file:org.jetbrains.kotlin.jupyter.config.DependsOn",
+    "@file:org.jetbrains.kotlinx.jupyter.config.DependsOn",
     "notebook.cells",
     "val c = 66",
     "val f = 54343"

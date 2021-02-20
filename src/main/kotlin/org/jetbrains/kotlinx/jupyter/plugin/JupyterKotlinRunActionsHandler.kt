@@ -1,4 +1,4 @@
-package org.jetbrains.kotlin.jupyter.plugin
+package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys

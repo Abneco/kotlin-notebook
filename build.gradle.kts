@@ -75,7 +75,7 @@ dependencies {
 
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.14.1")
 
-    implementation("org.jetbrains.kotlinx.jupyter:compiler:$notebookApiVersion") {
+    implementation("org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler:$notebookApiVersion") {
         excludeKotlin("stdlib")
         excludeKotlin("reflect")
         excludeKotlin("stdlib-common")
@@ -104,7 +104,7 @@ intellij {
         val teamcityUrl = "https://buildserver.labs.intellij.net"
         val apiPrefix = "guestAuth/app/rest/builds"
 
-        custom("$teamcityUrl/$apiPrefix/buildType:(id:Kotlin_KotlinDev_Aggregate),number:$kotlinVersion,branch:default:any/artifacts/content/updatePlugins-IJ2020.2.xml")
+        //custom("$teamcityUrl/$apiPrefix/buildType:(id:Kotlin_KotlinDev_Aggregate),number:$kotlinVersion,branch:default:any/artifacts/content/updatePlugins-IJ2020.2.xml")
 
         val buildId = "ijplatform_IjPlatform202_PyCharm_InstallersBuild"
         val pathToPluginsRepo = "PY-plugins/plugins.xml"
@@ -113,7 +113,8 @@ intellij {
 
     // Plugin Dependencies
     setPlugins(
-        "org.jetbrains.kotlin:$kotlinVersion-IJ2020.2-1",
+        //"org.jetbrains.kotlin:$kotlinVersion-IJ2020.2-1",
+        "org.jetbrains.kotlin:202-1.4.30-release-IJ8194.7",
         "Pythonid:$intellijBuildNumber",
         "java"
     )
