@@ -22,7 +22,7 @@ class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
 
         compilerService.compileLock.write {
             compilerService.nbInjectionHosts.clear()
-            for (cell in element.cellList) {
+            for (cell in element.psiCellList) {
                 registrar.startInjecting(Language.findLanguageByID("kotlin")!!, projectCompilerService.fileExtension)
                 val host = NotebookCellInjectionHost(cell)
                 compilerService.nbInjectionHosts.add(host)

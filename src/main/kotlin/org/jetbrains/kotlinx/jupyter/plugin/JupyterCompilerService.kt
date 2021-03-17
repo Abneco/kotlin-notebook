@@ -6,9 +6,9 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.io.isFile
-import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
+import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import java.io.File
 import java.nio.file.Files
@@ -22,14 +22,17 @@ import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
 import kotlin.streams.toList
 
-
 @Service
 class JupyterCompilerService(private val project: Project) {
     private val mapping: MutableMap<VirtualFile, JupyterCompilerPerFileService> = mutableMapOf()
 
-    private val initialClasspath: List<File> = run {
-        val pathToJars = Paths.get("C:/Users/Ilya.Muradyan/AppData/Roaming/jupyter/kernels/kotlin/jars")
-        Files.walk(pathToJars).filter { path ->
+    private val kotlinKernelPath = run {
+        // resolve paths correctly: https://jupyter-client.readthedocs.io/en/stable/kernels.html#kernel-specs
+        Paths.get("C:/Users/Ilya.Muradyan/AppData/Roaming/jupyter/kernels/kotlin/jars")
+    }
+
+    val initialClasspath: List<File> = run {
+        Files.walk(kotlinKernelPath).filter { path ->
             path.isFile() && !path.fileName.toString().contains("kotlin-jupyter-kernel")
         }.map {
             it.toFile()

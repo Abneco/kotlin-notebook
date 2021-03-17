@@ -7,26 +7,37 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.compiler.util.SerializedCompiledScript
 import org.jetbrains.kotlinx.jupyter.compiler.util.SerializedCompiledScriptsData
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterAdditionalCellExecutionCallback
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInputRequestMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
 import java.io.File
 
-class JupyterKotlinCellExecutionCallback : JupyterAdditionalCellExecutionCallback {
-    override fun onClearOutput(message: JupyterMessage, project: Project, virtualFile: NotebookVirtualFile) {
+class JupyterKotlinCellExecutionCallback(
+    private val project: Project,
+    private val virtualFile: NotebookVirtualFile
+) : JupyterExecutionCallback {
+    override val channel: JupyterMessageChannel
+        get() = JupyterMessageChannel.ANY
+    override var finalizeCallback = {}
+
+    override fun expire() {
     }
 
-    override fun onCompleteReply(message: JupyterMessage, project: Project, virtualFile: NotebookVirtualFile) {
+    override fun onClearOutput(message: JupyterMessage) {
     }
 
-    override fun onDisplayData(message: JupyterMessage, project: Project, virtualFile: NotebookVirtualFile) {
+    override fun onCompleteReply(message: JupyterMessage) {
     }
 
-    override fun onExecuteInput(message: JupyterMessage, project: Project, virtualFile: NotebookVirtualFile) {
+    override fun onDisplayData(message: JupyterMessage) {
     }
 
-    override fun onExecuteReply(message: JupyterMessage, project: Project, virtualFile: NotebookVirtualFile) {
+    override fun onExecuteInput(message: JupyterMessage) {
+    }
+
+    override fun onExecuteReply(message: JupyterMessage) {
         val compiledDataJson = message.getMetadata("compiled_data") as? ObjectNode ?: return
         val scriptsArray = compiledDataJson[SerializedCompiledScriptsData::scripts.name] as? ArrayNode ?: return
         val compiledDataList = mutableListOf<SerializedCompiledScript>()
@@ -52,15 +63,15 @@ class JupyterKotlinCellExecutionCallback : JupyterAdditionalCellExecutionCallbac
         compilerService.addCompiledSnippet(compiledData, newClasspath)
     }
 
-    override fun onInputRequest(message: JupyterInputRequestMessage, project: Project, virtualFile: NotebookVirtualFile) {
+    override fun onInputRequest(message: JupyterInputRequestMessage) {
     }
 
-    override fun onInspectReply(message: JupyterMessage, project: Project, virtualFile: NotebookVirtualFile) {
+    override fun onInspectReply(message: JupyterMessage) {
     }
 
-    override fun onStatus(message: JupyterStatusMessage, project: Project, virtualFile: NotebookVirtualFile) {
+    override fun onStatus(message: JupyterStatusMessage) {
     }
 
-    override fun onUpdateOutput(message: JupyterMessage, project: Project, virtualFile: NotebookVirtualFile) {
+    override fun onUpdateOutput(message: JupyterMessage) {
     }
 }

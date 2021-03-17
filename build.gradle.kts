@@ -9,11 +9,11 @@ plugins {
     // Kotlin support
     kotlin("jvm") version "1.4.20"
     // gradle-intellij-plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
-    id("org.jetbrains.intellij") version "0.5.0"
+    id("org.jetbrains.intellij") version "0.7.2"
     // gradle-changelog-plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
     id("org.jetbrains.changelog") version "0.6.2"
     // detekt linter - read more: https://detekt.github.io/detekt/gradle.html
-    id("io.gitlab.arturbosch.detekt") version "1.14.1"
+    id("io.gitlab.arturbosch.detekt") version "1.16.0-RC2"
     // ktlint linter - read more: https://github.com/JLLeitschuh/ktlint-gradle
     id("org.jlleitschuh.gradle.ktlint")
 
@@ -38,6 +38,7 @@ val platformDownloadSources: String by project
 val notebookApiVersion: String by project
 val kotlinVersion: String by project
 val intellijBuildNumber: String by project
+val kotlinPluginBuildNumber: String by project
 
 group = pluginGroup
 version = pluginVersion
@@ -63,7 +64,7 @@ repositories {
     }
 
     val teamcityUrl = "https://buildserver.labs.intellij.net"
-    val buildId = "ijplatform_IjPlatform202_Idea_Installers"
+    val buildId = "ijplatform_master_Idea_Installers"
     maven("$teamcityUrl/$apiPrefix/buildType:(id:$buildId),number:$intellijBuildNumber,branch:default:any/artifacts/content/maven-artifacts")
 
     maven("https://dl.bintray.com/ileasile/kotlin-datascience-ileasile")
@@ -89,6 +90,16 @@ dependencies {
     compileOnly(kotlin("scripting-intellij", kotlinVersion))
 }
 
+fun org.jetbrains.intellij.IntelliJPluginExtension.PluginsRepoConfiguration.teamcity(
+    buildId: String,
+    buildNumber: String,
+    pathToPluginsRepo: String
+) {
+    val teamcityUrl = "https://buildserver.labs.intellij.net"
+    val apiPrefix = "guestAuth/app/rest/builds"
+    custom("$teamcityUrl/$apiPrefix/buildType:(id:$buildId),number:$buildNumber,branch:default:any/artifacts/content/$pathToPluginsRepo")
+}
+
 // Configure gradle-intellij-plugin plugin.
 // Read more: https://github.com/JetBrains/gradle-intellij-plugin
 intellij {
@@ -101,20 +112,23 @@ intellij {
 
     pluginsRepo {
         marketplace()
-        val teamcityUrl = "https://buildserver.labs.intellij.net"
-        val apiPrefix = "guestAuth/app/rest/builds"
 
-        //custom("$teamcityUrl/$apiPrefix/buildType:(id:Kotlin_KotlinDev_Aggregate),number:$kotlinVersion,branch:default:any/artifacts/content/updatePlugins-IJ2020.2.xml")
+        teamcity(
+            "ijplatform_master_PyCharm_InstallersBuild",
+            intellijBuildNumber,
+            "PY-plugins/plugins.xml"
+        )
 
-        val buildId = "ijplatform_IjPlatform202_PyCharm_InstallersBuild"
-        val pathToPluginsRepo = "PY-plugins/plugins.xml"
-        custom("$teamcityUrl/$apiPrefix/buildType:(id:$buildId),number:$intellijBuildNumber,branch:default:any/artifacts/content/$pathToPluginsRepo")
+        teamcity(
+            "ijplatform_master_KotlinIdeArtifact",
+            kotlinPluginBuildNumber,
+            "plugin.xml"
+        )
     }
 
     // Plugin Dependencies
     setPlugins(
-        //"org.jetbrains.kotlin:$kotlinVersion-IJ2020.2-1",
-        "org.jetbrains.kotlin:202-1.4.30-release-IJ8194.7",
+        "org.jetbrains.kotlin:$kotlinPluginBuildNumber",
         "Pythonid:$intellijBuildNumber",
         "java"
     )
@@ -181,7 +195,7 @@ tasks {
 
     publishPlugin {
         dependsOn("patchChangelog")
-        token(System.getenv("PUBLISH_TOKEN"))
+        token(project.findProperty("intellij.marketplace.publish.token"))
         // pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
         // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
         // https://jetbrains.org/intellij/sdk/docs/tutorials/build_system/deployment.html#specifying-a-release-channel

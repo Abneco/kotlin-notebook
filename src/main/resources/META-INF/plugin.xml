@@ -20,11 +20,19 @@
         <scriptDefinitionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterDefProvider"/>
     </extensions>
 
-    <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter.actions">
+    <!--<extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter.actions">
         <jupyterAdditionalRunActionsHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinRunActionsHandler"/>
+    </extensions>-->
+
+    <!--<extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
+        <jupyterAdditionalCellExecutionCallback implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallback"/>
+    </extensions>-->
+
+    <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">
+        <jupyterSupportedLanguageProvider id="kotlin"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
-        <jupyterAdditionalCellExecutionCallback implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallback"/>
+        <jupyterCellExecutionCallbackFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory"/>
     </extensions>
 </idea-plugin>

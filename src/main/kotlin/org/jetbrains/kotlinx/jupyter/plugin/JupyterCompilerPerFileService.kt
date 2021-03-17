@@ -8,30 +8,27 @@ import com.intellij.openapi.util.Pair
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
-import com.intellij.util.io.isFile
 import com.jetbrains.rd.util.string.printToString
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.settings.KotlinScriptingSettings
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.JupyterScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.compiler.util.SerializedCompiledScriptsData
-import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlinx.jupyter.libraries.EmptyResolutionInfoProvider
 import org.jetbrains.kotlinx.jupyter.libraries.FallbackLibraryResolver
 import org.jetbrains.kotlinx.jupyter.libraries.LibrariesProcessorImpl
 import org.jetbrains.kotlinx.jupyter.libraries.ResolutionInfoSwitcher
+import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.SharedMagicsHandler
 import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.concurrent.read
 import kotlin.concurrent.write
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
@@ -40,13 +37,12 @@ import kotlin.script.experimental.api.implicitReceivers
 import kotlin.script.experimental.host.getScriptingClass
 import kotlin.script.experimental.host.with
 import kotlin.script.experimental.jvm.withUpdatedClasspath
-import kotlin.streams.toList
 
 typealias InjectedElementsList = List<Pair<PsiElement, TextRange>>
 
 class JupyterCompilerPerFileService(
     private val project: Project,
-    private val virtualFile: VirtualFile,
+    @Suppress("unused") private val virtualFile: VirtualFile,
     private val projectService: JupyterCompilerService,
 ) {
     private val logger = Logger.getInstance(JupyterCompilerPerFileService::class.java)
@@ -72,23 +68,7 @@ class JupyterCompilerPerFileService(
     )
 
     private val currentClasspath: MutableList<File> by lazy {
-        val pathToJars = Paths.get("C:/Users/Ilya.Muradyan/AppData/Roaming/jupyter/kernels/kotlin/jars")
-        val files = Files.walk(pathToJars).filter { path ->
-            path.isFile() && !path.fileName.toString().contains("kotlin-jupyter-kernel")
-        }.map {
-            it.toFile()
-        }.toList().toMutableList()
-
-        files
-        /*
-        scriptCompilationClasspathFromContext(
-            "notebook-api",
-            "notebook-lib",
-            "kotlin-stdlib",
-            "kotlin-reflect",
-            "kotlin-script-runtime",
-            classLoader = ScriptTemplateWithDisplayHelpers::class.java.classLoader
-        )*/
+        projectService.initialClasspath.toMutableList()
     }
 
     private val implicitsList = KotlinImplicitsList()
@@ -99,7 +79,10 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    fun handleBeforeCompiling(sourceCode: SourceCode, config: ScriptCompilationConfiguration): ScriptCompilationConfiguration {
+    fun handleBeforeCompiling(
+        sourceCode: SourceCode,
+        config: ScriptCompilationConfiguration
+    ): ScriptCompilationConfiguration {
         logger.warn("Before-compiling callback for script: ${sourceCode.text}")
         val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
         return ScriptCompilationConfiguration(withNewClasspath) {
@@ -141,7 +124,7 @@ class JupyterCompilerPerFileService(
 
                 val injectedManager = InjectedLanguageManager.getInstance(project)
                 val scriptManager = ScriptConfigurationManager.getInstance(project)
-                        as? CompositeScriptConfigurationManager ?: return@write
+                    as? CompositeScriptConfigurationManager ?: return@write
 
                 nbInjectionHosts.forEach { host ->
                     val injectedFiles = ReadAction.compute<InjectedElementsList?, Error> {

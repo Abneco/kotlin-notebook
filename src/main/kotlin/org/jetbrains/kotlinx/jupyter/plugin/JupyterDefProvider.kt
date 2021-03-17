@@ -20,7 +20,10 @@ class JupyterDefProvider(project: Project) : ScriptDefinitionsProvider, Disposab
 
     override fun useDiscovery(): Boolean = false
 
-    override fun provideDefinitions(baseHostConfiguration: ScriptingHostConfiguration, loadedScriptDefinitions: List<ScriptDefinition>): Iterable<ScriptDefinition> {
+    override fun provideDefinitions(
+        baseHostConfiguration: ScriptingHostConfiguration,
+        loadedScriptDefinitions: List<ScriptDefinition>
+    ): Iterable<ScriptDefinition> {
         return loadedScriptDefinitions + listOf(
             ScriptDefinition(
                 projectCompilerService.initialCompileConfiguration,
