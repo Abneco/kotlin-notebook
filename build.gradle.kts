@@ -1,13 +1,16 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.changelog.closure
 import org.jetbrains.changelog.markdownToHTML
+import org.jetbrains.intellij.IntelliJPluginExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlinx.jupyter.plugin.build.detectDepVersions
+import org.jetbrains.kotlinx.jupyter.plugin.build.detectVersion
 
 plugins {
     // Java support
     id("java")
     // Kotlin support
-    kotlin("jvm") version "1.4.20"
+    kotlin("jvm")
     // gradle-intellij-plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
     id("org.jetbrains.intellij") version "0.7.2"
     // gradle-changelog-plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
@@ -16,29 +19,25 @@ plugins {
     id("io.gitlab.arturbosch.detekt") version "1.16.0-RC2"
     // ktlint linter - read more: https://github.com/JLLeitschuh/ktlint-gradle
     id("org.jlleitschuh.gradle.ktlint")
-
-    // id("org.anarres.jarjar")
 }
 
-// Import variables from gradle.properties file
 val pluginGroup: String by project
-// `pluginName_` variable ends with `_` because of the collision with Kotlin magic getter in the `intellij` closure.
-// Read more about the issue: https://github.com/JetBrains/intellij-platform-plugin-template/issues/29
 val pluginName_: String by project
-val pluginVersion: String by project
-val pluginSinceBuild: String by project
-val pluginUntilBuild: String by project
 
 val platformType: String by project
-val platformVersion: String by project
-val platformLocalPath: String by project
-// val platformPlugins: String by project
 val platformDownloadSources: String by project
-
 val notebookApiVersion: String by project
 val kotlinVersion: String by project
-val intellijBuildNumber: String by project
-val kotlinPluginBuildNumber: String by project
+
+val pluginVersion = detectVersion()
+val depVersions = detectDepVersions()
+
+val pluginSinceBuild = depVersions.pluginSinceBuild
+val pluginUntilBuild = depVersions.pluginUntilBuild
+val platformVersion = depVersions.platformVersion
+val platformLocalPath = depVersions.platformLocalPath
+val intellijBuildNumber = depVersions.intellijBuildNumber
+val kotlinPluginBuildNumber = depVersions.kotlinPluginBuildNumber
 
 group = pluginGroup
 version = pluginVersion
@@ -90,7 +89,7 @@ dependencies {
     compileOnly(kotlin("scripting-intellij", kotlinVersion))
 }
 
-fun org.jetbrains.intellij.IntelliJPluginExtension.PluginsRepoConfiguration.teamcity(
+fun IntelliJPluginExtension.PluginsRepoConfiguration.teamcity(
     buildId: String,
     buildNumber: String,
     pathToPluginsRepo: String

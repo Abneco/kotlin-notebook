@@ -3,7 +3,6 @@ rootProject.name = "kotlin-jupyter-plugin-extension"
 pluginManagement {
     val kotlinVersion: String by settings
     val ktlintVersion: String by settings
-    val jarjarVersion: String by settings
 
     repositories {
         jcenter()
@@ -27,7 +26,6 @@ pluginManagement {
     resolutionStrategy {
         eachPlugin {
             when (requested.id.id) {
-                "org.anarres.jarjar" -> useModule("org.anarres.jarjar:jarjar-gradle:$jarjarVersion")
                 "org.jlleitschuh.gradle.ktlint" -> useModule("org.jlleitschuh.gradle:ktlint-gradle:$ktlintVersion")
             }
         }
@@ -36,6 +34,6 @@ pluginManagement {
     plugins {
         // kotlin("jvm") version kotlinVersion
         id("org.jlleitschuh.gradle.ktlint") version ktlintVersion
-        id("org.anarres.jarjar") version jarjarVersion
+        kotlin("jvm") version kotlinVersion
     }
 }
