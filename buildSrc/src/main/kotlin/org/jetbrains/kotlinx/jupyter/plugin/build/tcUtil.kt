@@ -8,6 +8,8 @@ fun printTcParam(name: String, value: String) {
 
 fun Project.registerDetectVersionsTask() {
     tasks.register("detectVersionsForTC") {
+        it.outputs.upToDateWhen { false }
+
         it.doLast {
             val pluginVersion = detectVersion()
             val depVersions = detectDepVersions()
