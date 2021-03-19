@@ -35,7 +35,7 @@ data class PluginVersion(
             return fromStub(
                 group("stub")!!,
                 group("counter"),
-                group("channel")
+                group("channel") ?: channel
             )
         }
     }
