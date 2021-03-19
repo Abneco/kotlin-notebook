@@ -9,7 +9,7 @@ data class DependenciesVersions(
     val platformVersion: String,
     val platformLocalPath: String,
     val intellijBuildNumber: String,
-    val kotlinPluginBuildNumber: String,
+    val kotlinPluginBuildNumber: String
 )
 
 private fun Project.prop(name: String, default: () -> String): String {
@@ -24,13 +24,13 @@ fun String.substitute(replaceMap: Map<String, String>): String {
 
 fun Project.detectLocalPath(replaceMap: Map<String, String>): String {
     return prop("intellij.platform.local.path") {
-        if (findProperty("intellij.platform.local.prefer.archive").toString() == "true") {
+        if (findProperty("intellij.platform.local.prefer.archive").isTrue()) {
             val archivePathStub = findProperty("intellij.platform.local.archive") as String
             val archivePath = File(archivePathStub.substitute(replaceMap))
             val destPath = archivePath.parentFile.resolve(archivePath.nameWithoutExtension)
             copy {
-                it.from(zipTree(archivePath))
-                it.into(destPath)
+                from(zipTree(archivePath))
+                into(destPath)
             }
             projectDir.resolve(destPath).absolutePath
         } else {

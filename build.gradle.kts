@@ -5,6 +5,7 @@ import org.jetbrains.intellij.IntelliJPluginExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlinx.jupyter.plugin.build.detectDepVersions
 import org.jetbrains.kotlinx.jupyter.plugin.build.detectVersion
+import org.jetbrains.kotlinx.jupyter.plugin.build.printTcBuildNumber
 
 plugins {
     // Java support
@@ -40,7 +41,9 @@ val intellijBuildNumber = depVersions.intellijBuildNumber
 val kotlinPluginBuildNumber = depVersions.kotlinPluginBuildNumber
 
 group = pluginGroup
-version = pluginVersion
+version = pluginVersion.version
+
+printTcBuildNumber(pluginVersion.version)
 
 // Configure project's dependencies
 repositories {
@@ -165,7 +168,7 @@ tasks {
     }
 
     patchPluginXml {
-        version(pluginVersion)
+        version(pluginVersion.version)
         sinceBuild(pluginSinceBuild)
         untilBuild(pluginUntilBuild)
 
@@ -198,6 +201,6 @@ tasks {
         // pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
         // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
         // https://jetbrains.org/intellij/sdk/docs/tutorials/build_system/deployment.html#specifying-a-release-channel
-        channels(pluginVersion.split('-').getOrElse(1) { "default" }.split('.').first())
+        channels(pluginVersion.channel)
     }
 }

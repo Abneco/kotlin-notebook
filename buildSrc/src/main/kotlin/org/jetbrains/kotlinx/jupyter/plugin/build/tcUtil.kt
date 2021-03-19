@@ -2,19 +2,23 @@ package org.jetbrains.kotlinx.jupyter.plugin.build
 
 import org.gradle.api.Project
 
+fun printTcBuildNumber(buildNumber: String) {
+    println("##teamcity[buildNumber '$buildNumber']")
+}
+
 fun printTcParam(name: String, value: String) {
     println("##teamcity[setParameter name='$name' value='$value']")
 }
 
 fun Project.registerDetectVersionsTask() {
     tasks.register("detectVersionsForTC") {
-        it.outputs.upToDateWhen { false }
+        outputs.upToDateWhen { false }
 
-        it.doLast {
+        doLast {
             val pluginVersion = detectVersion()
             val depVersions = detectDepVersions()
 
-            println("##teamcity[buildNumber '$pluginVersion']")
+            printTcBuildNumber(pluginVersion.version)
             printTcParam("gen.intellij.build.number", depVersions.intellijBuildNumber)
         }
     }
