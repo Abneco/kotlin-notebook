@@ -1,7 +1,9 @@
-# Kotlin Jupyter IDEA plugin
+# Changelog
 
 ## [Unreleased]
 ### Added
+- Kotlin support in Jupyter Notebooks: inspections and code completion
+- Kotlin code cells execution
 
 ### Changed
 
@@ -10,3 +12,5 @@
 ### Removed
 
 ### Fixed
+
+### Security
