@@ -11,22 +11,12 @@
     <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Uncomment if you want to test something more easy than injecting into notebooks -->
-        <!--<multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinIntoJsonInjector"/>-->
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinIntoNotebookInjector"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <scriptDefinitionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterDefProvider"/>
     </extensions>
-
-    <!--<extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter.actions">
-        <jupyterAdditionalRunActionsHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinRunActionsHandler"/>
-    </extensions>-->
-
-    <!--<extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
-        <jupyterAdditionalCellExecutionCallback implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallback"/>
-    </extensions>-->
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">
         <jupyterSupportedLanguageProvider id="kotlin"/>
