@@ -45,7 +45,7 @@ class JupyterCompilerPerFileService(
     @Suppress("unused") private val virtualFile: VirtualFile,
     private val projectService: JupyterCompilerService,
 ) {
-    private val logger = Logger.getInstance(JupyterCompilerPerFileService::class.java)
+    private val log = Logger.getInstance(this::class.java)
     val compileLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(1)
     private val scriptingSettings = KotlinScriptingSettings.getInstance(project)
@@ -74,7 +74,7 @@ class JupyterCompilerPerFileService(
     private val implicitsList = KotlinImplicitsList()
     private val classGetter = JupyterScriptClassGetter {
         compileLock.write {
-            logger.warn("Getting implicits list")
+            log.warn("Getting implicits list")
             implicitsList
         }
     }
@@ -83,7 +83,7 @@ class JupyterCompilerPerFileService(
         sourceCode: SourceCode,
         config: ScriptCompilationConfiguration
     ): ScriptCompilationConfiguration {
-        logger.warn("Before-compiling callback for script: ${sourceCode.text}")
+        log.warn("Before-compiling callback for script: ${sourceCode.text}")
         val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
         return ScriptCompilationConfiguration(withNewClasspath) {
             hostConfiguration.update {
@@ -109,7 +109,7 @@ class JupyterCompilerPerFileService(
 
                 val newClasspathStr = if (newClasspath.isEmpty()) "> No new classpath added."
                 else "> New classpath added:\n" + newClasspath.joinToString("\n", "  ")
-                logger.warn(newClasspathStr)
+                log.warn(newClasspathStr)
                 currentClasspath.addAll(newClasspath)
 
                 val kClassNames = deserializer.deserializeAndSave(compiledData, lineClassesDir)
@@ -147,7 +147,7 @@ class JupyterCompilerPerFileService(
                     }
                 }
             } catch (e: Exception) {
-                logger.error(e.printToString())
+                log.error(e.printToString())
             }
         }
     }

@@ -12,7 +12,6 @@ import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import java.io.File
 import java.nio.file.Files
-import java.nio.file.Paths
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
 import kotlin.script.experimental.api.asSuccess
@@ -25,14 +24,13 @@ import kotlin.streams.toList
 @Service
 class JupyterCompilerService(private val project: Project) {
     private val mapping: MutableMap<VirtualFile, JupyterCompilerPerFileService> = mutableMapOf()
-
-    private val kotlinKernelPath = run {
-        // resolve paths correctly: https://jupyter-client.readthedocs.io/en/stable/kernels.html#kernel-specs
-        Paths.get("C:/Users/Ilya.Muradyan/AppData/Roaming/jupyter/kernels/kotlin/jars")
-    }
+    private val kotlinKernelDir = KernelSpecDetector.getKernelsDir()?.resolve("kotlin")
 
     val initialClasspath: List<File> = run {
-        Files.walk(kotlinKernelPath).filter { path ->
+        if (kotlinKernelDir == null) return@run emptyList()
+
+        val jarsPath = kotlinKernelDir.resolve("jars").toPath()
+        Files.walk(jarsPath).filter { path ->
             path.isFile() && !path.fileName.toString().contains("kotlin-jupyter-kernel")
         }.map {
             it.toFile()
