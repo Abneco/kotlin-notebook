@@ -29,6 +29,8 @@ val platformType: String by project
 val platformDownloadSources: String by project
 val notebookApiVersion: String by project
 val kotlinVersion: String by project
+val junitVersion: String by project
+val kotlinTestVersion: String by project
 
 val pluginVersion = detectVersion()
 val depVersions = detectDepVersions()
@@ -71,6 +73,7 @@ repositories {
 
     maven("https://dl.bintray.com/ileasile/kotlin-datascience-ileasile")
 }
+
 dependencies {
     fun ExternalModuleDependency.excludeKotlin(dependency: String) {
         exclude("org.jetbrains.kotlin", "kotlin-$dependency")
@@ -90,6 +93,11 @@ dependencies {
     compileOnly(kotlin("scripting-compiler", kotlinVersion))
     compileOnly(kotlin("scripting-compiler-impl", kotlinVersion))
     compileOnly(kotlin("scripting-intellij", kotlinVersion))
+
+    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
+    testImplementation(kotlin("test"))
+    testImplementation("io.kotlintest:kotlintest-assertions:$kotlinTestVersion")
 }
 
 fun IntelliJPluginExtension.PluginsRepoConfiguration.teamcity(
@@ -160,6 +168,13 @@ tasks {
         getByName<KotlinCompile>(it) {
             kotlinOptions.jvmTarget = "1.8"
             kotlinOptions.freeCompilerArgs = listOf("-Xjvm-default=compatibility")
+        }
+    }
+
+    test {
+        useJUnitPlatform()
+        testLogging {
+            events("passed", "skipped", "failed")
         }
     }
 
