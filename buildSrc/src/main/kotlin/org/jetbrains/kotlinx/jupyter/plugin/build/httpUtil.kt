@@ -10,8 +10,8 @@ import org.http4k.core.Response
 import java.io.IOException
 import java.util.Base64
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
+import java.text.DecimalFormat
+import kotlin.math.ceil
 
 class ResponseWrapper(
     response: Response,
@@ -54,9 +54,40 @@ fun downloadUrl(url: String, file: File) {
     download(Request(Method.GET, url), file)
 }
 
+const val BUFFER_SIZE = 256 * 1024
+
 fun download(request: Request, file: File) {
     val response = httpRequest(request, ApacheClient(responseBodyMode = BodyMode.Stream))
+    val fileSize = response.header("Content-Length")!!.toDouble()
+
+    val format = DecimalFormat("####0.00")
+    val mbFileSize = fileSize / 1024 /1024
+    fun Number.fmt() = format.format(this)
+    println("Total size: ${mbFileSize.fmt()} MB")
+
     val stream = response.body.stream
     file.parentFile.mkdirs()
-    Files.copy(stream, file.toPath(), StandardCopyOption.REPLACE_EXISTING)
+    val sink = file.outputStream()
+
+    var nread = 0L
+    val buf = ByteArray(BUFFER_SIZE)
+    var n: Int
+    val nMarks = 500
+    var currentMark = 0
+    while (stream.read(buf).also { n = it } > 0) {
+        sink.write(buf, 0, n)
+        nread += n.toLong()
+
+        // Logging part
+        val part = nread / fileSize
+        val mb = mbFileSize * part
+        val newMark = ceil(nMarks * part).toInt()
+        if (currentMark < newMark) {
+            currentMark = newMark
+            println("Downloaded ${(part * 100).fmt()}% (${mb.fmt()} / ${mbFileSize.fmt()} MB)")
+        }
+    }
+    println()
+
+    sink.close()
 }

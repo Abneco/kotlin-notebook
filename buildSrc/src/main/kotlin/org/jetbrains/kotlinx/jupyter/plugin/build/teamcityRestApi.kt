@@ -82,24 +82,67 @@ fun IntelliJPluginExtension.PluginsRepoConfiguration.teamcity(
     custom(artifact.url)
 }
 
-fun Project.useIdeaArchive(archivePath: File, intellijBuildNumber: String): String {
-    val doDownload = findProperty("intellij.platform.local.archive.download").isTrue()
-    if (!archivePath.exists() && doDownload) {
+fun Project.downloadTeamcityArtifact(
+    localPath: File,
+    buildLocator: BuildLocator,
+    remotePath: String,
+    artifactDebugName: String,
+    withAuth: Boolean
+): Boolean {
+    if (localPath.exists()) return false
+
+    val artifact = if (withAuth) {
         val username = findProperty("teamcity.auth.userId") as String
         val password = findProperty("teamcity.auth.password") as String
-        val artifact = TeamcityArtifact(
+        TeamcityArtifact(
             INTERNAL_TEAMCITY,
             HttpAuth(username, password),
-            BuildLocator("ijplatform_master_Idea_Installers", intellijBuildNumber),
-            archivePath.name
+            buildLocator,
+            remotePath
         )
-        println("Downloading IDEA artifact: ${artifact.url}")
-        download(artifact.request, archivePath)
+    } else {
+        TeamcityArtifact(
+            INTERNAL_TEAMCITY,
+            GuestAuth,
+            buildLocator,
+            remotePath
+        )
     }
-    val destPath = archivePath.parentFile.resolve(archivePath.nameWithoutExtension)
+
+    return downloadTeamcityArtifact(localPath, artifact, artifactDebugName)
+}
+
+fun downloadTeamcityArtifact(
+    localPath: File,
+    artifact: TeamcityArtifact,
+    artifactDebugName: String
+): Boolean {
+    if (localPath.exists()) return false
+    println("Downloading $artifactDebugName artifact: ${artifact.url}")
+    download(artifact.request, localPath)
+    return true
+}
+
+fun Project.unzipArchive(archivePath: File, destPath: File) {
     copy {
         from(zipTree(archivePath))
         into(destPath)
     }
-    return projectDir.resolve(destPath).absolutePath
+}
+
+fun Project.unzipArchiveHere(archivePath: File): File {
+    val destPath = archivePath.parentFile.resolve(archivePath.nameWithoutExtension)
+    unzipArchive(archivePath, destPath)
+    return destPath
+}
+
+fun Project.useIdeaArchive(archivePath: File, intellijBuildNumber: String): String {
+    val doDownload = findProperty("intellij.platform.local.archive.download").isTrue()
+    if (doDownload) {
+        val buildLocator = BuildLocator("ijplatform_master_Idea_Installers", intellijBuildNumber)
+        val withAuth = hasProperty("teamcity.auth.userId")
+        downloadTeamcityArtifact(archivePath, buildLocator, archivePath.name, "IDEA", withAuth)
+    }
+    val destFolder = unzipArchiveHere(archivePath)
+    return destFolder.absolutePath
 }
