@@ -22,17 +22,12 @@ fun String.substitute(replaceMap: Map<String, String>): String {
     }
 }
 
-fun Project.detectLocalPath(replaceMap: Map<String, String>): String {
+fun Project.detectLocalPath(replaceMap: Map<String, String>, platformVersion: String): String {
     return prop("intellij.platform.local.path") {
         if (findProperty("intellij.platform.local.prefer.archive").isTrue()) {
             val archivePathStub = findProperty("intellij.platform.local.archive") as String
-            val archivePath = File(archivePathStub.substitute(replaceMap))
-            val destPath = archivePath.parentFile.resolve(archivePath.nameWithoutExtension)
-            copy {
-                from(zipTree(archivePath))
-                into(destPath)
-            }
-            projectDir.resolve(destPath).absolutePath
+            val archivePath = projectDir.resolve(archivePathStub.substitute(replaceMap))
+            useIdeaArchive(archivePath, platformVersion)
         } else {
             val localPathStub = findProperty("intellij.platform.local.path.stub") as String
             localPathStub.substitute(replaceMap)
@@ -49,7 +44,7 @@ fun Project.detectDepVersions(): DependenciesVersions {
     val localPath = detectLocalPath(mapOf(
         "{ijVer}" to ijVer,
         "{ijBuild}" to ijBuild
-    ))
+    ), platformVersion)
 
     return DependenciesVersions(
         pluginSinceBuild = prop("final.plugin.since.build") { platformVersion },

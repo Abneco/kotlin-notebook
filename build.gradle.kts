@@ -1,11 +1,16 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.changelog.closure
 import org.jetbrains.changelog.markdownToHTML
-import org.jetbrains.intellij.IntelliJPluginExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlinx.jupyter.plugin.build.BuildLocator
+import org.jetbrains.kotlinx.jupyter.plugin.build.GuestAuth
+import org.jetbrains.kotlinx.jupyter.plugin.build.INTERNAL_TEAMCITY
+import org.jetbrains.kotlinx.jupyter.plugin.build.PUBLIC_TEAMCITY
 import org.jetbrains.kotlinx.jupyter.plugin.build.detectDepVersions
 import org.jetbrains.kotlinx.jupyter.plugin.build.detectVersion
 import org.jetbrains.kotlinx.jupyter.plugin.build.printTcBuildNumber
+import org.jetbrains.kotlinx.jupyter.plugin.build.tcMaven
+import org.jetbrains.kotlinx.jupyter.plugin.build.teamcity
 
 plugins {
     // Java support
@@ -13,7 +18,7 @@ plugins {
     // Kotlin support
     kotlin("jvm")
     // gradle-intellij-plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
-    id("org.jetbrains.intellij") version "0.7.2"
+    id("org.jetbrains.intellij")
     // gradle-changelog-plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
     id("org.jetbrains.changelog") version "0.6.2"
     // detekt linter - read more: https://detekt.github.io/detekt/gradle.html
@@ -58,20 +63,16 @@ repositories {
         val projectId: String
     )
 
-    val apiPrefix = "guestAuth/app/rest/builds"
     val teamcityRepos = listOf(
-        TeamcitySettings("https://teamcity.jetbrains.com", "Kotlin_KotlinPublic_Aggregate"),
-        TeamcitySettings("https://buildserver.labs.intellij.net", "Kotlin_KotlinDev_Aggregate")
+        TeamcitySettings(PUBLIC_TEAMCITY, "Kotlin_KotlinPublic_Aggregate"),
+        TeamcitySettings(INTERNAL_TEAMCITY, "Kotlin_KotlinDev_Aggregate")
     )
     for (teamcity in teamcityRepos) {
-        maven("${teamcity.url}/$apiPrefix/buildType:(id:${teamcity.projectId}),number:$kotlinVersion,branch:default:any/artifacts/content/maven")
+        tcMaven(teamcity.url, GuestAuth, BuildLocator(teamcity.projectId, kotlinVersion), "maven")
     }
 
-    val teamcityUrl = "https://buildserver.labs.intellij.net"
     val buildId = "ijplatform_master_Idea_Installers"
-    maven("$teamcityUrl/$apiPrefix/buildType:(id:$buildId),number:$intellijBuildNumber,branch:default:any/artifacts/content/maven-artifacts")
-
-    maven("https://dl.bintray.com/ileasile/kotlin-datascience-ileasile")
+    tcMaven(INTERNAL_TEAMCITY, GuestAuth, BuildLocator(buildId, intellijBuildNumber), "maven-artifacts")
 }
 
 dependencies {
@@ -98,16 +99,6 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
     testImplementation(kotlin("test"))
     testImplementation("io.kotlintest:kotlintest-assertions:$kotlinTestVersion")
-}
-
-fun IntelliJPluginExtension.PluginsRepoConfiguration.teamcity(
-    buildId: String,
-    buildNumber: String,
-    pathToPluginsRepo: String
-) {
-    val teamcityUrl = "https://buildserver.labs.intellij.net"
-    val apiPrefix = "guestAuth/app/rest/builds"
-    custom("$teamcityUrl/$apiPrefix/buildType:(id:$buildId),number:$buildNumber,branch:default:any/artifacts/content/$pathToPluginsRepo")
 }
 
 // Configure gradle-intellij-plugin plugin.
@@ -190,7 +181,7 @@ tasks {
         // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's manifest
         pluginDescription(
             closure {
-                File("./README.md").readText().lines().run {
+                File(projectDir, "README.md").readText().lines().run {
                     val start = "<!-- Plugin description -->"
                     val end = "<!-- Plugin description end -->"
 
