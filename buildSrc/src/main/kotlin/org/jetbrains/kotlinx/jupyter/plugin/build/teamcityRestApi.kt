@@ -32,7 +32,7 @@ object GuestAuth: TeamcityAuth {
 
 class HttpAuth(private val username: String, private val password: String): TeamcityAuth {
     override val urlPart: String
-        get() = "guestAuth"
+        get() = "httpAuth"
 
     override val header: Pair<String, String>
         get() = basicAuthHeader(username, password)
