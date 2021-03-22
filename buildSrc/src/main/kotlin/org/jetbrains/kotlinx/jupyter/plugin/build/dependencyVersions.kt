@@ -1,7 +1,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.build
 
 import org.gradle.api.Project
-import java.io.File
 
 data class DependenciesVersions(
     val pluginSinceBuild: String,

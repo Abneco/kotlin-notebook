@@ -24,8 +24,6 @@ fun httpRequest(request: Request, client: HttpHandler): ResponseWrapper {
     return ResponseWrapper(response, request.uri.toString())
 }
 
-fun getHttp(url: String) = httpRequest(Request(Method.GET, url), ApacheClient())
-
 fun basicAuthHeader(username: String, password: String): Pair<String, String> {
     val b64 = Base64.getEncoder().encode("$username:$password".toByteArray()).toString(Charsets.UTF_8)
     return "Authorization" to "Basic $b64"
@@ -34,10 +32,6 @@ fun basicAuthHeader(username: String, password: String): Pair<String, String> {
 fun Request.withHeader(header: Pair<String, String>?): Request {
     if (header == null) return this
     return this.header(header.first, header.second)
-}
-
-fun Request.withBasicAuth(username: String, password: String): Request {
-    return withHeader(basicAuthHeader(username, password))
 }
 
 val Response.text: String get() {
@@ -50,14 +44,12 @@ fun ResponseWrapper.assertSuccessful() {
     }
 }
 
-fun downloadUrl(url: String, file: File) {
-    download(Request(Method.GET, url), file)
-}
-
 const val BUFFER_SIZE = 256 * 1024
 
 fun download(request: Request, file: File) {
     val response = httpRequest(request, ApacheClient(responseBodyMode = BodyMode.Stream))
+    response.assertSuccessful()
+
     val fileSize = response.header("Content-Length")!!.toDouble()
 
     val format = DecimalFormat("####0.00")
