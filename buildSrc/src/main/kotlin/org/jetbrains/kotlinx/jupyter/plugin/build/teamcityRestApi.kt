@@ -93,6 +93,7 @@ fun Project.useIdeaArchive(archivePath: File, intellijBuildNumber: String): Stri
             BuildLocator("ijplatform_master_Idea_Installers", intellijBuildNumber),
             archivePath.name
         )
+        println("Downloading IDEA artifact: ${artifact.url}")
         download(artifact.request, archivePath)
     }
     val destPath = archivePath.parentFile.resolve(archivePath.nameWithoutExtension)
