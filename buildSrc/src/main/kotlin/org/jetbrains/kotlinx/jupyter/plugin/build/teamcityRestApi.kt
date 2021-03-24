@@ -124,6 +124,7 @@ fun downloadTeamcityArtifact(
 }
 
 fun Project.unzipArchive(archivePath: File, destPath: File) {
+    if (destPath.exists()) return
     copy {
         from(zipTree(archivePath))
         into(destPath)
