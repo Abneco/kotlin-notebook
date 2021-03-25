@@ -1,4 +1,5 @@
-[![JetBrains Plugins](https://img.shields.io/jetbrains/plugin/v/16340-kotlin-for-jupyter?color=green&label=JetBrains%20Plugin)][Marketplace]
+[![Marketplace version](https://img.shields.io/jetbrains/plugin/v/16340-kotlin-for-jupyter?color=green&label=Latest%20version)][Marketplace]
+[![Marketplace downloads](https://img.shields.io/jetbrains/plugin/d/16340?label=Downloads)][Marketplace]
 # Jupyter plugin extension for Kotlin language support
 
 <!-- Plugin description -->
