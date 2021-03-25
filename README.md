@@ -3,7 +3,7 @@
 # Jupyter plugin extension for Kotlin language support
 
 <!-- Plugin description -->
-This plugin provides Kotlin support fot Jupyter notebooks
+Kotlin support for running and editing Jupyter notebooks in IntelliJ IDEA
 <!-- Plugin description end -->
 
 ## Features
