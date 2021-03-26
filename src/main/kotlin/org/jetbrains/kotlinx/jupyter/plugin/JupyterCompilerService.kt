@@ -24,7 +24,7 @@ import kotlin.streams.toList
 @Service
 class JupyterCompilerService(private val project: Project) {
     private val mapping: MutableMap<VirtualFile, JupyterCompilerPerFileService> = mutableMapOf()
-    private val kotlinKernelDir = KernelSpecDetector.getKernelsDir()?.resolve("kotlin")
+    private val kotlinKernelDir = KernelSpecDetector.getKernelDir("kotlin")
 
     val initialClasspath: List<File> = run {
         if (kotlinKernelDir == null) return@run emptyList()

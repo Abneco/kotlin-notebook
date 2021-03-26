@@ -20,9 +20,16 @@ object KernelSpecDetector {
         return System.getenv(name).orEmpty()
     }
 
-    fun getKernelsDir(): File? {
+    fun getKernelDir(kernelName: String): File? {
+        val kernelsDir = getKernelsDir {
+            it.isDirectory && it.resolve(kernelName).isDirectory
+        }
+        return kernelsDir?.resolve(kernelName)
+    }
+
+    fun getKernelsDir(filter: (File) -> Boolean = { it.exists() && it.isNotEmptyDirectory }): File? {
         val dirs = getPossibleDirs()
-        val kernelsDir = dirs.firstOrNull { it.exists() && it.isNotEmptyDirectory }
+        val kernelsDir = dirs.firstOrNull(filter)
 
         if (kernelsDir == null) {
             log.warn("Jupyter kernel specs were not found on your computer.")
