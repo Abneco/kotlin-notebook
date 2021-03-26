@@ -4,13 +4,12 @@ import org.http4k.asString
 import org.http4k.client.ApacheClient
 import org.http4k.core.BodyMode
 import org.http4k.core.HttpHandler
-import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
-import java.io.IOException
-import java.util.Base64
 import java.io.File
+import java.io.IOException
 import java.text.DecimalFormat
+import java.util.Base64
 import kotlin.math.ceil
 
 class ResponseWrapper(
@@ -61,17 +60,17 @@ fun download(request: Request, file: File) {
     file.parentFile.mkdirs()
     val sink = file.outputStream()
 
-    var nread = 0L
+    var nRead = 0L
     val buf = ByteArray(BUFFER_SIZE)
     var n: Int
     val nMarks = 500
     var currentMark = 0
     while (stream.read(buf).also { n = it } > 0) {
         sink.write(buf, 0, n)
-        nread += n.toLong()
+        nRead += n.toLong()
 
         // Logging part
-        val part = nread / fileSize
+        val part = nRead / fileSize
         val mb = mbFileSize * part
         val newMark = ceil(nMarks * part).toInt()
         if (currentMark < newMark) {
