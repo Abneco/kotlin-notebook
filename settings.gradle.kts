@@ -5,6 +5,8 @@ rootProject.name = "kotlin-jupyter-plugin-extension"
 pluginManagement {
     val kotlinVersion: String by settings
     val ktlintVersion: String by settings
+    val detektVersion: String by settings
+    val changelogVersion: String by settings
 
     repositories {
         jcenter()
@@ -35,6 +37,8 @@ pluginManagement {
 
     plugins {
         id("org.jlleitschuh.gradle.ktlint") version ktlintVersion
+        id("io.gitlab.arturbosch.detekt") version detektVersion
+        id("org.jetbrains.changelog") version changelogVersion
         kotlin("jvm") version kotlinVersion
     }
 }

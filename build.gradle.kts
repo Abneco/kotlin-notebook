@@ -20,9 +20,9 @@ plugins {
     // gradle-intellij-plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
     id("org.jetbrains.intellij")
     // gradle-changelog-plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
-    id("org.jetbrains.changelog") version "0.6.2"
+    id("org.jetbrains.changelog")
     // detekt linter - read more: https://detekt.github.io/detekt/gradle.html
-    id("io.gitlab.arturbosch.detekt") version "1.16.0-RC2"
+    id("io.gitlab.arturbosch.detekt")
     // ktlint linter - read more: https://github.com/JLLeitschuh/ktlint-gradle
     id("org.jlleitschuh.gradle.ktlint")
 }
@@ -41,6 +41,7 @@ val notebookApiVersion: String by project
 val kotlinVersion: String by project
 val junitVersion: String by project
 val kotlinTestVersion: String by project
+val detektVersion: String by project
 
 val pluginVersion = detectVersion()
 val depVersions = detectDepVersions()
@@ -85,7 +86,7 @@ dependencies {
         exclude("org.jetbrains.kotlin", "kotlin-$dependency")
     }
 
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.14.1")
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion")
 
     implementation("org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler:$notebookApiVersion") {
         excludeKotlin("stdlib")
