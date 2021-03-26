@@ -9,3 +9,4 @@ gradle.xml
 jarRepositories.xml
 misc.xml
 modules.xml
+libraries-with-intellij-classes.xml

@@ -14,7 +14,7 @@ Code completion and errors highlighting are supported
 ![Code completion](docs/img/completion1.png)
 
 ### Code navigation
-You may also navigate to symbols.
+You may also navigate to the symbols.
 Symbols defined inside the notebook are supported.
 ![Code navigation 1](docs/img/nav1.png)
 ![Code navigation 2](docs/img/nav2.png)
@@ -29,13 +29,13 @@ code insight.
 ![Execution](docs/img/exec1.png)
 
 ## Requirements and dependencies
-This plugin currently requires [IntelliJ IDEA Ultimate][IDEA Ultimate] 
-with [Python plugin][Python Ultimate plugin] and [Kotlin plugin][Kotlin Ultimate plugin]
-installed. Actual dependencies versions are specified in the `plugin.xml`
+This plugin requires that you have [IntelliJ IDEA Ultimate][IDEA Ultimate] 
+with the [Python plugin][Python Ultimate plugin] and [Kotlin plugin][Kotlin Ultimate plugin]
+installed. The actual dependency versions are specified in the `plugin.xml`
 
-To run Kotlin notebooks you also need Kotlin Jupyter kernel installed.
+To run Kotlin notebooks you will also need to have Kotlin Jupyter kernel installed.
 
-To install nightly versions of IDEA you may use [Toolbox app][Toolbox].
+To install nightly versions of IntelliJ IDEA you may use the [Toolbox app][Toolbox].
 
 ## Running from sources
 To run plugin from sources do the following:
