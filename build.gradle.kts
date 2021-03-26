@@ -28,7 +28,12 @@ plugins {
 }
 
 val pluginGroup: String by project
+
+@Suppress("PropertyName")
 val pluginName_: String by project
+
+@Suppress("PropertyName")
+val jvmTarget_: String by project
 
 val platformType: String by project
 val platformDownloadSources: String by project
@@ -64,8 +69,8 @@ repositories {
     )
 
     val teamcityRepos = listOf(
-        TeamcitySettings(PUBLIC_TEAMCITY, "Kotlin_KotlinPublic_Aggregate"),
-        TeamcitySettings(INTERNAL_TEAMCITY, "Kotlin_KotlinDev_Aggregate")
+        TeamcitySettings(PUBLIC_TEAMCITY, "Kotlin_KotlinPublic_Artifacts"),
+        TeamcitySettings(INTERNAL_TEAMCITY, "Kotlin_KotlinDev_Artifacts")
     )
     for (teamcity in teamcityRepos) {
         tcMaven(teamcity.url, GuestAuth, BuildLocator(teamcity.projectId, kotlinVersion), "maven")
@@ -151,13 +156,13 @@ detekt {
 tasks {
     // Set the compatibility versions to 1.8
     withType<JavaCompile> {
-        sourceCompatibility = "1.8"
-        targetCompatibility = "1.8"
+        sourceCompatibility = jvmTarget_
+        targetCompatibility = jvmTarget_
     }
 
     listOf("compileKotlin", "compileTestKotlin").forEach {
         getByName<KotlinCompile>(it) {
-            kotlinOptions.jvmTarget = "1.8"
+            kotlinOptions.jvmTarget = jvmTarget_
             kotlinOptions.freeCompilerArgs = listOf("-Xjvm-default=compatibility")
         }
     }
@@ -170,7 +175,7 @@ tasks {
     }
 
     withType<Detekt> {
-        jvmTarget = "1.8"
+        jvmTarget = jvmTarget_
     }
 
     patchPluginXml {
