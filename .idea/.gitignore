@@ -5,6 +5,7 @@ jsLinters/
 shelf/
 uiDesigner.xml
 compiler.xml
+csv-plugin.xml
 gradle.xml
 jarRepositories.xml
 misc.xml
