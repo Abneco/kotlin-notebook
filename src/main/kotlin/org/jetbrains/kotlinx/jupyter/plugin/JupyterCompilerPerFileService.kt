@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfig
 import org.jetbrains.kotlin.idea.core.script.settings.KotlinScriptingSettings
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
+import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.JupyterScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.compiler.util.SerializedCompiledScriptsData
@@ -153,6 +154,7 @@ class JupyterCompilerPerFileService(
     }
 
     fun codeRanges(text: String): List<TextRange> {
+        if (looksLikeReplCommand(text)) return emptyList()
         return magicsProcessor.codeIntervals(text).mapTo(mutableListOf()) {
             TextRange(it.from, it.to)
         }
