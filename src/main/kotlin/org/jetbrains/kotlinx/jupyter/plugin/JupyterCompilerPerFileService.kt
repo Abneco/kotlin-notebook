@@ -8,6 +8,7 @@ import com.intellij.openapi.util.Pair
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
+import com.intellij.psi.util.PsiTreeUtil
 import com.jetbrains.rd.util.string.printToString
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
@@ -24,6 +25,8 @@ import org.jetbrains.kotlinx.jupyter.libraries.LibrariesProcessorImpl
 import org.jetbrains.kotlinx.jupyter.libraries.ResolutionInfoSwitcher
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.SharedMagicsHandler
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterSource
 import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
@@ -153,8 +156,17 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    fun codeRanges(text: String): List<TextRange> {
-        if (looksLikeReplCommand(text)) return emptyList()
+    private fun getCellCode(cell: PsiElement): String {
+        val sourceElement = PsiTreeUtil.getChildOfType(cell, JupyterSource::class.java)
+        val source = sourceElement?.text.orEmpty()
+        return source.trimStart()
+    }
+
+    fun codeRanges(cell: JupyterPsiCell): List<TextRange> {
+        val code = getCellCode(cell)
+        if (looksLikeReplCommand(code)) return emptyList()
+
+        val text = cell.text
         return magicsProcessor.codeIntervals(text).mapTo(mutableListOf()) {
             TextRange(it.from, it.to)
         }
