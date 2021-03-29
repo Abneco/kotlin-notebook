@@ -1,5 +1,5 @@
 <idea-plugin>
-    <name>Kotlin for Jupyter</name>
+    <name>Kotlin Notebook</name>
     <id>org.jetbrains.plugins.kotlin.jupyter</id>
     <category>Template Languages</category>
     <vendor>JetBrains</vendor>
