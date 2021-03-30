@@ -5,6 +5,11 @@ import com.intellij.openapi.util.SystemInfo
 import com.jetbrains.python.sdk.isNotEmptyDirectory
 import java.io.File
 
+/**
+ * This utility object detects installed Jupyter kernels.
+ * In case of Kotlin kernel we need JAR files distributed with kernel
+ * to add them to the script classpath.
+ */
 object KernelSpecDetector {
     private val log = Logger.getInstance(this::class.java)
 
@@ -20,6 +25,16 @@ object KernelSpecDetector {
         return System.getenv(name).orEmpty()
     }
 
+    /**
+     * Find the kernel directory by kernel name
+     *
+     * @param kernelName Name of the kernel how it is returned
+     * by `kernel_info_reply` in `language_info.name`
+     * field ([documentation](https://jupyter-client.readthedocs.io/en/stable/messaging.html#kernel-info)).
+     * Should be `kotlin` for Kotlin kernel.
+     *
+     * @return Found directory or `null` if it was not found.
+     */
     fun getKernelDir(kernelName: String): File? {
         val kernelsDir = getKernelsDir {
             it.isDirectory && it.resolve(kernelName).isDirectory
@@ -27,6 +42,11 @@ object KernelSpecDetector {
         return kernelsDir?.resolve(kernelName)
     }
 
+    /**
+     * Returns first found directory with kernels which satisfies the given [filter].
+     *
+     * Respects [kernel detection order](https://jupyter-client.readthedocs.io/en/stable/kernels.html#kernel-specs).
+     */
     fun getKernelsDir(filter: (File) -> Boolean = { it.exists() && it.isNotEmptyDirectory }): File? {
         val dirs = getPossibleDirs()
         val kernelsDir = dirs.firstOrNull(filter)

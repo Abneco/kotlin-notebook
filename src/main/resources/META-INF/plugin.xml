@@ -15,7 +15,7 @@
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
-        <scriptDefinitionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterDefProvider"/>
+        <scriptDefinitionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterScriptDefinitionProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">

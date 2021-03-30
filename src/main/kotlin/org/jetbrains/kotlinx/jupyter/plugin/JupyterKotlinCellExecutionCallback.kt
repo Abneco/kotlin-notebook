@@ -14,6 +14,16 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
 import java.io.File
 
+/**
+ * Methods of [JupyterKotlinCellExecutionCallback] are triggered on
+ * corresponding actions performed with the cells in Jupyter notebook.
+ *
+ * Note that this is not the only callback triggered for cell actions.
+ * Jupyter plugin has its own callback which is responsible for rendering,
+ * outputs updating and so on. This callback should be used only for
+ * language-specific features. If you want to change rendering or other
+ * language-agnostic features, contribute to the Jupyter plugin directly.
+ */
 class JupyterKotlinCellExecutionCallback(
     private val project: Project,
     private val virtualFile: NotebookVirtualFile
@@ -38,6 +48,10 @@ class JupyterKotlinCellExecutionCallback(
     }
 
     override fun onExecuteReply(message: JupyterMessage) {
+        /**
+         * All scripts compiled are contained in the form of base64-encoded strings
+         * in the reply metadata. We need to turn them into [SerializedCompiledScriptsData] first
+         */
         val compiledDataJson = message.getMetadata("compiled_data") as? ObjectNode ?: return
         val scriptsArray = compiledDataJson[SerializedCompiledScriptsData::scripts.name] as? ArrayNode ?: return
         val compiledDataList = mutableListOf<SerializedCompiledScript>()
@@ -50,6 +64,10 @@ class JupyterKotlinCellExecutionCallback(
         }
         val compiledData = SerializedCompiledScriptsData(compiledDataList)
 
+        /**
+         * New classpath resolved from [jupyter.kotlin.DependsOn] annotation and from
+         * %use magic is also contained in the metadata. Extract it too
+         */
         val newClasspath: List<File> = (message.getMetadata("new_classpath") as? ArrayNode)?.let { classpathArray ->
             val result = mutableListOf<File>()
             classpathArray.forEach { node ->
@@ -59,6 +77,10 @@ class JupyterKotlinCellExecutionCallback(
             result
         }.orEmpty()
 
+        /**
+         * Acquire an instance of [JupyterCompilerPerFileService] for this notebook
+         * and pass the metadata we received to it.
+         */
         val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
         compilerService.addCompiledSnippet(compiledData, newClasspath)
     }

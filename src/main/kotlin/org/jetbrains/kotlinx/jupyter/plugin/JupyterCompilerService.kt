@@ -21,8 +21,15 @@ import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
 import kotlin.streams.toList
 
+/**
+ * [JupyterCompilerService] stores all compiling-related things across the project:
+ * mapping from notebooks to file services and "constant" things equal for all
+ * the files.
+ *
+ * @property project This service project
+ */
 @Service
-class JupyterCompilerService(private val project: Project) {
+class JupyterCompilerService(val project: Project) {
     private val mapping: MutableMap<VirtualFile, JupyterCompilerPerFileService> = mutableMapOf()
     private val kotlinKernelDir = KernelSpecDetector.getKernelDir("kotlin")
 
@@ -65,7 +72,7 @@ class JupyterCompilerService(private val project: Project) {
     }
 
     fun get(virtualFile: NotebookVirtualFile): JupyterCompilerPerFileService {
-        return mapping.getOrPut(virtualFile, { JupyterCompilerPerFileService(project, virtualFile, this) })
+        return mapping.getOrPut(virtualFile) { JupyterCompilerPerFileService(virtualFile, this) }
     }
 
     companion object {

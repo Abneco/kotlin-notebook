@@ -8,6 +8,10 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.Jupyte
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 
+/**
+ * This factory [create] method is called on each cell execution
+ * and should return the callback for the actions related to this cell.
+ */
 class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFactory {
     private var instance: JupyterExecutionCallback? = null
 

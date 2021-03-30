@@ -3,8 +3,6 @@ package org.jetbrains.kotlinx.jupyter.plugin
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Pair
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
@@ -42,14 +40,22 @@ import kotlin.script.experimental.host.getScriptingClass
 import kotlin.script.experimental.host.with
 import kotlin.script.experimental.jvm.withUpdatedClasspath
 
-typealias InjectedElementsList = List<Pair<PsiElement, TextRange>>
-
+/**
+ * This service is created for every Kotlin notebook file
+ * and provides a scripting support for injected Kotlin snippets
+ * including magics handling, storing dependencies and a list
+ * of compiled scripts.
+ *
+ * @property virtualFile File with Kotlin notebook
+ * @property projectService Project service that owns this sub-service
+ */
 class JupyterCompilerPerFileService(
-    private val project: Project,
     @Suppress("unused") private val virtualFile: VirtualFile,
     private val projectService: JupyterCompilerService,
 ) {
     private val log = Logger.getInstance(this::class.java)
+
+    private val project = projectService.project
     val compileLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(1)
     private val scriptingSettings = KotlinScriptingSettings.getInstance(project)
@@ -75,7 +81,7 @@ class JupyterCompilerPerFileService(
         projectService.initialClasspath.toMutableList()
     }
 
-    private val implicitsList = KotlinImplicitsList()
+    private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterScriptClassGetter {
         compileLock.write {
             log.warn("Getting implicits list")
