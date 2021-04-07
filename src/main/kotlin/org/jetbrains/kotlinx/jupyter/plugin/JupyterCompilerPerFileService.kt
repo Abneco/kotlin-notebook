@@ -16,13 +16,14 @@ import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.JupyterScriptClassGetter
-import org.jetbrains.kotlinx.jupyter.compiler.util.SerializedCompiledScriptsData
+import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.libraries.EmptyResolutionInfoProvider
 import org.jetbrains.kotlinx.jupyter.libraries.FallbackLibraryResolver
 import org.jetbrains.kotlinx.jupyter.libraries.LibrariesProcessorImpl
 import org.jetbrains.kotlinx.jupyter.libraries.ResolutionInfoSwitcher
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.SharedMagicsHandler
+import org.jetbrains.kotlinx.jupyter.plugin.util.logList
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterSource
 import java.io.File
@@ -34,6 +35,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.write
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
+import kotlin.script.experimental.api.defaultImports
 import kotlin.script.experimental.api.hostConfiguration
 import kotlin.script.experimental.api.implicitReceivers
 import kotlin.script.experimental.host.getScriptingClass
@@ -81,6 +83,8 @@ class JupyterCompilerPerFileService(
         projectService.initialClasspath.toMutableList()
     }
 
+    private val additionalDefaultImports: MutableList<String> = mutableListOf()
+
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterScriptClassGetter {
         compileLock.write {
@@ -102,27 +106,24 @@ class JupyterCompilerPerFileService(
                 }
             }
             implicitReceivers(implicitsList)
+            defaultImports(additionalDefaultImports)
         }
     }
 
     fun addCompiledSnippet(
-        compiledData: SerializedCompiledScriptsData,
-        newClasspath: List<File>,
+        snippetMetadata: EvaluatedSnippetMetadata
     ) {
         compileLock.write {
             try {
-                val lineClassesDir = classesDir.resolve("line_$directoryCounter")
-                directoryCounter.incrementAndGet()
+                val lineClassesDir = classesDir.resolve("line_${directoryCounter.incrementAndGet()}")
                 val lineClassesDirAsFile = lineClassesDir.toFile()
                 lineClassesDirAsFile.mkdirs()
                 currentClasspath.add(lineClassesDirAsFile)
 
-                val newClasspathStr = if (newClasspath.isEmpty()) "> No new classpath added."
-                else "> New classpath added:\n" + newClasspath.joinToString("\n", "  ")
-                log.warn(newClasspathStr)
-                currentClasspath.addAll(newClasspath)
+                currentClasspath.addAll(snippetMetadata.newClasspath.map(::File))
+                additionalDefaultImports.addAll(snippetMetadata.newImports)
 
-                val kClassNames = deserializer.deserializeAndSave(compiledData, lineClassesDir)
+                val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir)
                 val classLoader = URLClassLoader(
                     arrayOf(lineClassesDir.toUri().toURL()),
                     (implicitsList.lastOrNull()?.fromClass ?: this::class).java.classLoader
@@ -145,6 +146,8 @@ class JupyterCompilerPerFileService(
                         it.first as? KtFile
                     }
 
+                    log.logList("KT files injected", injectedKtScripts)
+
                     for (psi in injectedKtScripts) {
                         val definition = psi.findScriptDefinition() ?: continue
                         scriptingSettings.setAutoReloadConfigurations(definition, true)
@@ -152,6 +155,7 @@ class JupyterCompilerPerFileService(
 
                     ReadAction.run<Error> {
                         for (psi in injectedKtScripts) {
+                            log.warn("Updating configuration for script ${psi.name}")
                             scriptManager.default.ensureUpToDatedConfigurationSuggested(psi)
                         }
                     }
