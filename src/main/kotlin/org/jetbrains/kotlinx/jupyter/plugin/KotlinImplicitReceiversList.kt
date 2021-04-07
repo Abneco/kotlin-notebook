@@ -17,8 +17,12 @@ class KotlinImplicitReceiversList(
         types.add(KotlinType(kClass))
     }
 
+    /**
+     * We return a reversed iterator here because implicits that were added last have
+     * bigger resolution priority. Iterator is used only to acquire implicit receivers.
+     */
     override fun iterator(): Iterator<KotlinType> {
-        return types.iterator()
+        return types.reversed().iterator()
     }
 
     override fun get(index: Int): KotlinType {
