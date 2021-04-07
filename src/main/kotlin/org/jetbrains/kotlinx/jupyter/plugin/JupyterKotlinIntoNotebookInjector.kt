@@ -1,12 +1,12 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
-import com.intellij.lang.Language
 import com.intellij.lang.injection.MultiHostInjector
 import com.intellij.lang.injection.MultiHostRegistrar
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterNotebookImpl
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.write
 
 /**
@@ -19,6 +19,7 @@ import kotlin.concurrent.write
  * only for injecting the code.
  */
 class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
+    private val injectedCounter = AtomicInteger()
     private val projectCompilerService = JupyterCompilerService.getInstance(project)
 
     override fun getLanguagesToInject(registrar: MultiHostRegistrar, element: PsiElement) {
@@ -28,12 +29,16 @@ class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
         val virtualFile = containingFile.originalFile.virtualFile as? NotebookVirtualFile ?: return
 
         val compilerService = projectCompilerService.get(virtualFile)
+        val language = projectCompilerService.language
 
         // This usage of the service lock should be rewritten
         compilerService.compileLock.write {
             compilerService.nbInjectionHosts.clear()
             for (cell in element.psiCellList) {
-                registrar.startInjecting(Language.findLanguageByID("kotlin")!!, projectCompilerService.fileExtension)
+                registrar.startInjecting(
+                    language,
+                    "${injectedCounter.incrementAndGet()}.${projectCompilerService.fileExtension}"
+                )
                 val host = NotebookCellInjectionHost(cell)
                 compilerService.nbInjectionHosts.add(host)
                 compilerService.codeRanges(cell).forEach {

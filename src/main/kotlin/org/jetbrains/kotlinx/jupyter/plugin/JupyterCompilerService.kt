@@ -1,6 +1,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.injected.editor.VirtualFileWindow
+import com.intellij.lang.Language
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -70,6 +71,8 @@ class JupyterCompilerService(val project: Project) {
     val fileExtension = run {
         initialCompileConfiguration[ScriptCompilationConfiguration.fileExtension] ?: "jupyter-kts"
     }
+
+    val language = Language.findLanguageByID("kotlin")!!
 
     fun get(virtualFile: NotebookVirtualFile): JupyterCompilerPerFileService {
         return mapping.getOrPut(virtualFile) { JupyterCompilerPerFileService(virtualFile, this) }
