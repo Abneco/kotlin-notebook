@@ -35,6 +35,8 @@ val pluginName_: String by project
 @Suppress("PropertyName")
 val jvmTarget_: String by project
 
+val runIdeMaxMemory: String by project
+
 val platformType: String by project
 val platformDownloadSources: String by project
 val notebookApiVersion: String by project
@@ -182,6 +184,10 @@ tasks {
 
     withType<Detekt> {
         jvmTarget = jvmTarget_
+    }
+
+    runIde {
+        jvmArgs = listOf("-Xmx$runIdeMaxMemory")
     }
 
     patchPluginXml {
