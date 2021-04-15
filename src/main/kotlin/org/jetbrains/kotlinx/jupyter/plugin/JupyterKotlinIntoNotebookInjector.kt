@@ -7,7 +7,6 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterNotebookImpl
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.concurrent.write
 
 /**
  * [JupyterKotlinIntoNotebookInjector] injects Kotlin code into notebook which
@@ -32,15 +31,15 @@ class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
         val language = projectCompilerService.language
 
         // This usage of the service lock should be rewritten
-        compilerService.compileLock.write {
-            compilerService.nbInjectionHosts.clear()
+        compilerService.updateInjectionHosts { hosts ->
+            hosts.clear()
             for (cell in element.psiCellList) {
                 registrar.startInjecting(
                     language,
                     "${injectedCounter.incrementAndGet()}.${projectCompilerService.fileExtension}"
                 )
                 val host = NotebookCellInjectionHost(cell)
-                compilerService.nbInjectionHosts.add(host)
+                hosts.add(host)
                 compilerService.codeRanges(cell).forEach {
                     registrar.addPlace(null, null, host, it)
                 }

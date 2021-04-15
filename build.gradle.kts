@@ -98,10 +98,6 @@ dependencies {
     }
 
     implementation(kotlin("scripting-dependencies", kotlinVersion) as String) { isTransitive = false }
-    compileOnly(kotlin("scripting-jvm", kotlinVersion))
-    compileOnly(kotlin("scripting-compiler", kotlinVersion))
-    compileOnly(kotlin("scripting-compiler-impl", kotlinVersion))
-    compileOnly(kotlin("scripting-intellij", kotlinVersion))
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")

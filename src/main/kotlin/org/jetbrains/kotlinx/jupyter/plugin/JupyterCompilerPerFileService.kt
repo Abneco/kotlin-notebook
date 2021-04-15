@@ -32,6 +32,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
 import kotlin.concurrent.write
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
@@ -58,10 +59,10 @@ class JupyterCompilerPerFileService(
     private val log = Logger.getInstance(this::class.java)
 
     private val project = projectService.project
-    val compileLock = ReentrantReadWriteLock()
+    private val compileLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(1)
     private val scriptingSettings = KotlinScriptingSettings.getInstance(project)
-    val nbInjectionHosts = mutableListOf<NotebookCellInjectionHost>()
+    private val nbInjectionHosts = mutableListOf<NotebookCellInjectionHost>()
 
     private val classesDir: Path by lazy {
         val tempDir = Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -110,6 +111,18 @@ class JupyterCompilerPerFileService(
         }
     }
 
+    fun updateInjectionHosts(updateAction: (MutableList<NotebookCellInjectionHost>) -> Unit) {
+        compileLock.write {
+            updateAction(nbInjectionHosts)
+        }
+    }
+
+    fun <T> withInjectionHosts(action: (List<NotebookCellInjectionHost>) -> T): T {
+        return compileLock.read {
+            action(nbInjectionHosts)
+        }
+    }
+
     fun addCompiledSnippet(
         snippetMetadata: EvaluatedSnippetMetadata
     ) {
@@ -136,6 +149,7 @@ class JupyterCompilerPerFileService(
                 val injectedManager = InjectedLanguageManager.getInstance(project)
                 val scriptManager = ScriptConfigurationManager.getInstance(project)
                     as? CompositeScriptConfigurationManager ?: return@write
+                val scriptingSupport = scriptManager.default
 
                 nbInjectionHosts.forEach { host ->
                     val injectedFiles = ReadAction.compute<InjectedElementsList?, Error> {
@@ -153,12 +167,15 @@ class JupyterCompilerPerFileService(
                         scriptingSettings.setAutoReloadConfigurations(definition, true)
                     }
 
+                    scriptingSupport.updateScriptDefinitionsReferences()
+                    /*
                     ReadAction.run<Error> {
                         for (psi in injectedKtScripts) {
-                            log.warn("Updating configuration for script ${psi.name}")
-                            scriptManager.default.ensureUpToDatedConfigurationSuggested(psi)
+                            log.debug("Updating configuration for script ${psi.name}")
+                            //scriptingSupport.ensureUpToDatedConfigurationSuggested(psi)
                         }
                     }
+                    */
                 }
             } catch (e: Exception) {
                 log.error(e.printToString())
