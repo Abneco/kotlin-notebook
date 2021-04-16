@@ -12,6 +12,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinIntoNotebookInjector"/>
+        <fileIconPatcher implementation="org.jetbrains.kotlinx.jupyter.plugin.file.JupyterKotlinIconPatcher"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
