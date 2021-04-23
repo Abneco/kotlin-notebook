@@ -17,7 +17,7 @@ class KernelSpecPathsTests : BaseTest() {
             log.warn("Kernels dir is empty")
             return
         } else {
-            log.info("Kernels dir: ${kernelsDir.absolutePath}")
+            log.warn("Kernels dir: ${kernelsDir.absolutePath}")
         }
     }
 }
