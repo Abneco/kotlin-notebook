@@ -9,8 +9,6 @@ pluginManagement {
     val changelogVersion: String by settings
 
     repositories {
-        jcenter()
-        mavenLocal()
         mavenCentral()
         gradlePluginPortal()
 

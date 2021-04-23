@@ -63,8 +63,6 @@ printTcBuildNumber(pluginVersion.version)
 // Configure project's dependencies
 repositories {
     mavenCentral()
-    mavenLocal()
-    jcenter()
 
     class TeamcitySettings(
         val url: String,
