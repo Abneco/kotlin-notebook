@@ -105,6 +105,14 @@ dependencies {
     testImplementation("io.kotlintest:kotlintest-assertions:$kotlinTestVersion")
 }
 
+sourceSets {
+    main {
+        java {
+            srcDirs("src/main/gen")
+        }
+    }
+}
+
 // Configure gradle-intellij-plugin plugin.
 // Read more: https://github.com/JetBrains/gradle-intellij-plugin
 intellij {

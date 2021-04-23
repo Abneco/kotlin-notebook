@@ -1,9 +1,13 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
+import com.intellij.lang.Language
 import com.intellij.lang.injection.MultiHostInjector
 import com.intellij.lang.injection.MultiHostRegistrar
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
+import org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaFileType
+import org.jetbrains.kotlinx.jupyter.plugin.lang.JupyterKtMetaLanguage
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterNotebookImpl
 import java.util.concurrent.atomic.AtomicInteger
@@ -28,22 +32,30 @@ class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
         val virtualFile = containingFile.originalFile.virtualFile as? NotebookVirtualFile ?: return
 
         val compilerService = projectCompilerService.get(virtualFile)
-        val language = projectCompilerService.language
+        val kotlinLanguage = projectCompilerService.language
+        val metaLanguage = JupyterKtMetaLanguage
 
-        // This usage of the service lock should be rewritten
         compilerService.updateInjectionHosts { hosts ->
             hosts.clear()
             for (cell in element.psiCellList) {
-                registrar.startInjecting(
-                    language,
-                    "${injectedCounter.incrementAndGet()}.${projectCompilerService.fileExtension}"
-                )
                 val host = NotebookCellInjectionHost(cell)
                 hosts.add(host)
-                compilerService.codeRanges(cell).forEach {
-                    registrar.addPlace(null, null, host, it)
+
+                val ranges = compilerService.codeRanges(cell) ?: continue
+
+                fun List<TextRange>.inject(language: Language, extension: String) {
+                    registrar.startInjecting(
+                        language,
+                        "${injectedCounter.incrementAndGet()}.$extension"
+                    )
+                    forEach {
+                        registrar.addPlace(null, null, host, it)
+                    }
+                    registrar.doneInjecting()
                 }
-                registrar.doneInjecting()
+
+                ranges.codeRanges?.inject(kotlinLanguage, projectCompilerService.fileExtension)
+                ranges.magicRanges?.inject(metaLanguage, JKTMetaFileType.EXTENSION)
             }
         }
     }

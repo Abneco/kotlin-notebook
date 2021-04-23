@@ -7,6 +7,7 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.util.containers.nullize
 import com.jetbrains.rd.util.string.printToString
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
@@ -16,6 +17,7 @@ import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.JupyterScriptClassGetter
+import org.jetbrains.kotlinx.jupyter.compiler.util.CodeInterval
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.libraries.EmptyResolutionInfoProvider
 import org.jetbrains.kotlinx.jupyter.libraries.FallbackLibraryResolver
@@ -32,7 +34,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.concurrent.read
 import kotlin.concurrent.write
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
@@ -117,12 +118,6 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    fun <T> withInjectionHosts(action: (List<NotebookCellInjectionHost>) -> T): T {
-        return compileLock.read {
-            action(nbInjectionHosts)
-        }
-    }
-
     fun addCompiledSnippet(
         snippetMetadata: EvaluatedSnippetMetadata
     ) {
@@ -189,13 +184,22 @@ class JupyterCompilerPerFileService(
         return source.trimStart()
     }
 
-    fun codeRanges(cell: JupyterPsiCell): List<TextRange> {
+    fun codeRanges(cell: JupyterPsiCell): CellRanges? {
         val code = getCellCode(cell)
-        if (looksLikeReplCommand(code)) return emptyList()
+        if (looksLikeReplCommand(code)) return null
 
         val text = cell.text
-        return magicsProcessor.codeIntervals(text).mapTo(mutableListOf()) {
+        val magicIntervals = magicsProcessor.magicsIntervals(text)
+
+        fun Sequence<CodeInterval>.toRanges() = mapTo(mutableListOf()) {
             TextRange(it.from, it.to)
-        }
+        }.nullize()
+
+        val codeRanges = magicsProcessor.codeIntervals(text, magicIntervals).toRanges()
+        val magicRanges = magicIntervals.toRanges()
+
+        return CellRanges(codeRanges, magicRanges)
     }
+
+    data class CellRanges(val codeRanges: List<TextRange>?, val magicRanges: List<TextRange>?)
 }

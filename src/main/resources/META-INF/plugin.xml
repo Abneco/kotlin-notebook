@@ -13,6 +13,16 @@
     <extensions defaultExtensionNs="com.intellij">
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinIntoNotebookInjector"/>
         <fileIconPatcher implementation="org.jetbrains.kotlinx.jupyter.plugin.file.JupyterKotlinIconPatcher"/>
+
+        <fileType name="Jupyter Kotlin meta language"
+                  language="JKTMeta"
+                  extensions="juktm"
+                  implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaFileType"
+                  fieldName="INSTANCE"/>
+
+        <lang.parserDefinition language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaParserDefinition"/>
+
+        <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaCompletionContributor"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
