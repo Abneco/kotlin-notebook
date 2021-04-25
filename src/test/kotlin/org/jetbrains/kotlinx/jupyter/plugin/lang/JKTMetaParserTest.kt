@@ -28,7 +28,7 @@ class JKTMetaParserTest : ParsingTestCase("", JKTMetaFileType.EXTENSION, JKTMeta
      * @return path to test data file directory relative to root of this module.
      */
     override fun getTestDataPath(): String {
-        return "src/test/testData"
+        return "src/test/testData/parsing"
     }
 
     override fun skipSpaces() = false
