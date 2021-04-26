@@ -8,13 +8,13 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.elementType
 import org.jetbrains.kotlinx.jupyter.common.ReplCommand
+import org.jetbrains.kotlinx.jupyter.common.ReplEnum
 import org.jetbrains.kotlinx.jupyter.common.ReplLineMagic
-import org.jetbrains.kotlinx.jupyter.common.getNameForUser
 import org.jetbrains.kotlinx.jupyter.plugin.psi.meta.JKTMetaTypes
 
 class JKTMetaCompletionContributor : CompletionContributor() {
-    private val magicLookups by lazy { ReplLineMagic.values().toList().toLookupElements("magic") }
-    private val commandLookups by lazy { ReplCommand.values().toList().toLookupElements("command") }
+    private val magicLookups by lazy { ReplLineMagic.toLookupElements() }
+    private val commandLookups by lazy { ReplCommand.toLookupElements() }
 
     override fun fillCompletionVariants(parameters: CompletionParameters, result: CompletionResultSet) {
         super.fillCompletionVariants(parameters, result)
@@ -36,9 +36,9 @@ class JKTMetaCompletionContributor : CompletionContributor() {
     }
 
     companion object {
-        private fun Iterable<Enum<*>>.toLookupElements(typeText: String): List<LookupElement> {
-            return map {
-                LookupElementBuilder.create(getNameForUser(it.name)).withTypeText(typeText)
+        private fun ReplEnum<*>.toLookupElements(): List<LookupElement> {
+            return this.codeInsightValues.map {
+                LookupElementBuilder.create(it.name).withTypeText(it.type.name)
             }
         }
     }
