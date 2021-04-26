@@ -1,7 +1,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
-import io.kotlintest.matchers.collections.shouldHaveAtLeastSize
-import org.junit.jupiter.api.Test
+import io.kotest.matchers.collections.shouldHaveAtLeastSize
+import org.junit.Test
 
 class KernelSpecPathsTests : BaseTest() {
     @Test

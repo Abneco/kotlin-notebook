@@ -42,7 +42,7 @@ val platformDownloadSources: String by project
 val notebookApiVersion: String by project
 val kotlinVersion: String by project
 val junitVersion: String by project
-val kotlinTestVersion: String by project
+val kotestVersion: String by project
 val detektVersion: String by project
 
 val pluginVersion = detectVersion()
@@ -63,6 +63,7 @@ printTcBuildNumber(pluginVersion.version)
 // Configure project's dependencies
 repositories {
     mavenCentral()
+    maven("https://maven.pkg.jetbrains.space/public/p/kotlinx-html/maven")
 
     class TeamcitySettings(
         val url: String,
@@ -97,10 +98,10 @@ dependencies {
 
     implementation(kotlin("scripting-dependencies", kotlinVersion) as String) { isTransitive = false }
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
-    testImplementation(kotlin("test"))
-    testImplementation("io.kotlintest:kotlintest-assertions:$kotlinTestVersion")
+    testImplementation("junit:junit:$junitVersion")
+    testImplementation("io.kotest:kotest-runner-junit4:$kotestVersion")
+    testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
+    testImplementation("io.kotest:kotest-property:$kotestVersion")
 }
 
 sourceSets {
@@ -177,8 +178,7 @@ tasks {
         }
     }
 
-    test {
-        useJUnitPlatform()
+    withType<Test> {
         testLogging {
             events("passed", "skipped", "failed")
         }
