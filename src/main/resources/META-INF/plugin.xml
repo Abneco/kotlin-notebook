@@ -20,10 +20,10 @@
                   implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaFileType"
                   fieldName="INSTANCE"/>
 
-        <lang.parserDefinition language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaParserDefinition"/>
+        <lang.parserDefinition language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.grammar.JKTMetaParserDefinition"/>
 
-        <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaCompletionContributor"/>
-        <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaAnnotator"/>
+        <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaCompletionContributor"/>
+        <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaAnnotator"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">

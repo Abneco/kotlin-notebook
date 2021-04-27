@@ -1,6 +1,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.lang
 
 import com.intellij.testFramework.ParsingTestCase
+import org.jetbrains.kotlinx.jupyter.plugin.lang.grammar.JKTMetaParserDefinition
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4

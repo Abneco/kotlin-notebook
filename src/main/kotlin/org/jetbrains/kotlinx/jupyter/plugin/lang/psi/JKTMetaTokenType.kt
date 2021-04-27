@@ -1,4 +1,4 @@
-package org.jetbrains.kotlinx.jupyter.plugin.lang
+package org.jetbrains.kotlinx.jupyter.plugin.lang.psi
 
 import com.intellij.psi.tree.IElementType
 import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage

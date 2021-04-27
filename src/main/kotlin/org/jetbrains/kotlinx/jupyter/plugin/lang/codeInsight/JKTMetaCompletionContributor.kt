@@ -1,4 +1,4 @@
-package org.jetbrains.kotlinx.jupyter.plugin.lang
+package org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight
 
 import com.intellij.codeInsight.completion.CompletionContributor
 import com.intellij.codeInsight.completion.CompletionParameters

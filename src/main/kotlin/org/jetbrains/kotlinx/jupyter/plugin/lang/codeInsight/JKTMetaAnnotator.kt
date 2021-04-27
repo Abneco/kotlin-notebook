@@ -1,4 +1,4 @@
-package org.jetbrains.kotlinx.jupyter.plugin.lang
+package org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight
 
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.Annotator

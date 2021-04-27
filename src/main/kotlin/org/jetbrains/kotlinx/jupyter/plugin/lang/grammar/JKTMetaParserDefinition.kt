@@ -1,4 +1,4 @@
-package org.jetbrains.kotlinx.jupyter.plugin.lang
+package org.jetbrains.kotlinx.jupyter.plugin.lang.grammar
 
 import com.intellij.lang.ASTNode
 import com.intellij.lang.ParserDefinition
@@ -10,6 +10,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.tree.IFileElementType
 import com.intellij.psi.tree.TokenSet
+import org.jetbrains.kotlinx.jupyter.plugin.lang.JupyterKtMetaLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.lang.psi.JKTMetaPSIFile
 import org.jetbrains.kotlinx.jupyter.plugin.psi.meta.JKTMetaParser
 import org.jetbrains.kotlinx.jupyter.plugin.psi.meta.JKTMetaTypes

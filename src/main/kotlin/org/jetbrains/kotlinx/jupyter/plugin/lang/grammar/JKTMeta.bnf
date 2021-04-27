@@ -8,8 +8,8 @@
   psiImplPackage="org.jetbrains.kotlinx.jupyter.plugin.psi.meta.impl"
 
   elementTypeHolderClass="org.jetbrains.kotlinx.jupyter.plugin.psi.meta.JKTMetaTypes"
-  elementTypeClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaElementType"
-  tokenTypeClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaTokenType"
+  elementTypeClass="org.jetbrains.kotlinx.jupyter.plugin.lang.psi.JKTMetaElementType"
+  tokenTypeClass="org.jetbrains.kotlinx.jupyter.plugin.lang.psi.JKTMetaTokenType"
 
   tokens = [
     ANY="regexp:.*"
