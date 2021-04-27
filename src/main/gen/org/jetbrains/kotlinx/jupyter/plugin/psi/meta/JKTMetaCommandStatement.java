@@ -5,9 +5,12 @@ import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElement;
 
-public interface JKTMetaCommandStatement extends PsiElement {
+public interface JKTMetaCommandStatement extends org.jetbrains.kotlinx.jupyter.plugin.lang.psi.JKTMetaCommandStatement {
 
   @NotNull
   JKTMetaNewlineOrEof getNewlineOrEof();
+
+  @NotNull
+  JKTMetaStatementId getStatementId();
 
 }

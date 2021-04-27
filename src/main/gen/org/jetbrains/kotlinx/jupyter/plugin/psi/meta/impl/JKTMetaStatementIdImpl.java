@@ -11,38 +11,20 @@ import static org.jetbrains.kotlinx.jupyter.plugin.psi.meta.JKTMetaTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import org.jetbrains.kotlinx.jupyter.plugin.psi.meta.*;
 
-public class JKTMetaMagicStatementImpl extends ASTWrapperPsiElement implements JKTMetaMagicStatement {
+public class JKTMetaStatementIdImpl extends ASTWrapperPsiElement implements JKTMetaStatementId {
 
-  public JKTMetaMagicStatementImpl(@NotNull ASTNode node) {
+  public JKTMetaStatementIdImpl(@NotNull ASTNode node) {
     super(node);
   }
 
   public void accept(@NotNull JKTMetaVisitor visitor) {
-    visitor.visitMagicStatement(this);
+    visitor.visitStatementId(this);
   }
 
   @Override
   public void accept(@NotNull PsiElementVisitor visitor) {
     if (visitor instanceof JKTMetaVisitor) accept((JKTMetaVisitor)visitor);
     else super.accept(visitor);
-  }
-
-  @Override
-  @NotNull
-  public JKTMetaArgs getArgs() {
-    return findNotNullChildByClass(JKTMetaArgs.class);
-  }
-
-  @Override
-  @NotNull
-  public JKTMetaNewlineOrEof getNewlineOrEof() {
-    return findNotNullChildByClass(JKTMetaNewlineOrEof.class);
-  }
-
-  @Override
-  @NotNull
-  public JKTMetaStatementId getStatementId() {
-    return findNotNullChildByClass(JKTMetaStatementId.class);
   }
 
 }

@@ -23,6 +23,7 @@
         <lang.parserDefinition language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaParserDefinition"/>
 
         <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaCompletionContributor"/>
+        <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaAnnotator"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">

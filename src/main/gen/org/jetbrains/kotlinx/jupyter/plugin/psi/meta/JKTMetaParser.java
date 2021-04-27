@@ -62,13 +62,14 @@ public class JKTMetaParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // COMMAND_SIGN ID newline_or_eof
+  // COMMAND_SIGN statement_id newline_or_eof
   public static boolean command_statement(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "command_statement")) return false;
     if (!nextTokenIs(b, COMMAND_SIGN)) return false;
     boolean r;
     Marker m = enter_section_(b);
-    r = consumeTokens(b, 0, COMMAND_SIGN, ID);
+    r = consumeToken(b, COMMAND_SIGN);
+    r = r && statement_id(b, l + 1);
     r = r && newline_or_eof(b, l + 1);
     exit_section_(b, m, COMMAND_STATEMENT, r);
     return r;
@@ -136,13 +137,14 @@ public class JKTMetaParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // MAGIC_SIGN ID args newline_or_eof
+  // MAGIC_SIGN statement_id args newline_or_eof
   public static boolean magic_statement(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "magic_statement")) return false;
     if (!nextTokenIs(b, MAGIC_SIGN)) return false;
     boolean r;
     Marker m = enter_section_(b);
-    r = consumeTokens(b, 0, MAGIC_SIGN, ID);
+    r = consumeToken(b, MAGIC_SIGN);
+    r = r && statement_id(b, l + 1);
     r = r && args(b, l + 1);
     r = r && newline_or_eof(b, l + 1);
     exit_section_(b, m, MAGIC_STATEMENT, r);
@@ -216,6 +218,18 @@ public class JKTMetaParser implements PsiParser, LightPsiParser {
   // file
   static boolean root(PsiBuilder b, int l) {
     return file(b, l + 1);
+  }
+
+  /* ********************************************************** */
+  // ID
+  public static boolean statement_id(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "statement_id")) return false;
+    if (!nextTokenIs(b, ID)) return false;
+    boolean r;
+    Marker m = enter_section_(b);
+    r = consumeToken(b, ID);
+    exit_section_(b, m, STATEMENT_ID, r);
+    return r;
   }
 
   /* ********************************************************** */

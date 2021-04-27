@@ -20,6 +20,7 @@ public interface JKTMetaTypes {
   IElementType NEWLINE_OR_EOF = new JKTMetaElementType("NEWLINE_OR_EOF");
   IElementType REPEATABLE_STATEMENTS = new JKTMetaElementType("REPEATABLE_STATEMENTS");
   IElementType STATEMENTS = new JKTMetaElementType("STATEMENTS");
+  IElementType STATEMENT_ID = new JKTMetaElementType("STATEMENT_ID");
 
   IElementType ANY = new JKTMetaTokenType("ANY");
   IElementType CODE_MARKER = new JKTMetaTokenType("CODE_MARKER");
@@ -61,6 +62,9 @@ public interface JKTMetaTypes {
       }
       else if (type == STATEMENTS) {
         return new JKTMetaStatementsImpl(node);
+      }
+      else if (type == STATEMENT_ID) {
+        return new JKTMetaStatementIdImpl(node);
       }
       throw new AssertionError("Unknown element type: " + type);
     }

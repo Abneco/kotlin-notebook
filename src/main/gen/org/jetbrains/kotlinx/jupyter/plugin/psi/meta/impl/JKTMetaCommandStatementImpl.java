@@ -33,4 +33,10 @@ public class JKTMetaCommandStatementImpl extends ASTWrapperPsiElement implements
     return findNotNullChildByClass(JKTMetaNewlineOrEof.class);
   }
 
+  @Override
+  @NotNull
+  public JKTMetaStatementId getStatementId() {
+    return findNotNullChildByClass(JKTMetaStatementId.class);
+  }
+
 }

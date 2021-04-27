@@ -26,8 +26,14 @@ statements ::= (empty_statements? command_statement) | repeatable_statements?
 
 repeatable_statements ::= (empty_statements | magic_statement)+
 
-command_statement ::= COMMAND_SIGN ID newline_or_eof
-magic_statement ::= MAGIC_SIGN ID args newline_or_eof
+command_statement ::= COMMAND_SIGN statement_id newline_or_eof {
+    implements="org.jetbrains.kotlinx.jupyter.plugin.lang.psi.JKTMetaCommandStatement"
+}
+magic_statement ::= MAGIC_SIGN statement_id args newline_or_eof {
+    implements="org.jetbrains.kotlinx.jupyter.plugin.lang.psi.JKTMetaMagicStatement"
+}
+
+statement_id ::= ID
 
 empty_statements ::= NEWLINE+ <<eof>>?
 

@@ -16,7 +16,7 @@ public class JKTMetaVisitor extends PsiElementVisitor {
   }
 
   public void visitCommandStatement(@NotNull JKTMetaCommandStatement o) {
-    visitPsiElement(o);
+    visitCommandStatement(o);
   }
 
   public void visitEmptyStatements(@NotNull JKTMetaEmptyStatements o) {
@@ -28,7 +28,7 @@ public class JKTMetaVisitor extends PsiElementVisitor {
   }
 
   public void visitMagicStatement(@NotNull JKTMetaMagicStatement o) {
-    visitPsiElement(o);
+    visitMagicStatement(o);
   }
 
   public void visitMarkerLine(@NotNull JKTMetaMarkerLine o) {
@@ -40,6 +40,10 @@ public class JKTMetaVisitor extends PsiElementVisitor {
   }
 
   public void visitRepeatableStatements(@NotNull JKTMetaRepeatableStatements o) {
+    visitPsiElement(o);
+  }
+
+  public void visitStatementId(@NotNull JKTMetaStatementId o) {
     visitPsiElement(o);
   }
 

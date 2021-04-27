@@ -7,14 +7,14 @@ import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.elementType
-import org.jetbrains.kotlinx.jupyter.common.ReplCommand
 import org.jetbrains.kotlinx.jupyter.common.ReplEnum
-import org.jetbrains.kotlinx.jupyter.common.ReplLineMagic
+import org.jetbrains.kotlinx.jupyter.plugin.lang.psi.JKTMetaStatement
+import org.jetbrains.kotlinx.jupyter.plugin.lang.util.replEnum
+import org.jetbrains.kotlinx.jupyter.plugin.psi.meta.JKTMetaStatementId
 import org.jetbrains.kotlinx.jupyter.plugin.psi.meta.JKTMetaTypes
 
 class JKTMetaCompletionContributor : CompletionContributor() {
-    private val magicLookups by lazy { ReplLineMagic.toLookupElements() }
-    private val commandLookups by lazy { ReplCommand.toLookupElements() }
+    private val cache: HashMap<ReplEnum<*>, List<LookupElement>> = hashMapOf()
 
     override fun fillCompletionVariants(parameters: CompletionParameters, result: CompletionResultSet) {
         super.fillCompletionVariants(parameters, result)
@@ -25,17 +25,18 @@ class JKTMetaCompletionContributor : CompletionContributor() {
     }
 
     private fun fillIdVariants(element: PsiElement, result: CompletionResultSet) {
-        val statementElement = element.parent
-        val lookupElements = when (statementElement.elementType) {
-            JKTMetaTypes.MAGIC_STATEMENT -> magicLookups
-            JKTMetaTypes.COMMAND_STATEMENT -> commandLookups
-            else -> emptyList()
-        }
-
+        val enum = element.findMetaStatement()?.replEnum ?: return
+        val lookupElements = cache.getOrPut(enum) { enum.toLookupElements() }
         result.addAllElements(lookupElements)
     }
 
     companion object {
+        fun PsiElement.findMetaStatement(): JKTMetaStatement? {
+            if (this is JKTMetaStatement) return this
+            if (this is JKTMetaStatementId || this.parent is JKTMetaStatementId) return this.parent.findMetaStatement()
+            return null
+        }
+
         private fun ReplEnum<*>.toLookupElements(): List<LookupElement> {
             return this.codeInsightValues.map {
                 LookupElementBuilder.create(it.name).withTypeText(it.type.name)
