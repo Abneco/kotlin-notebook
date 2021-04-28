@@ -24,6 +24,7 @@
 
         <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaCompletionContributor"/>
         <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaAnnotator"/>
+        <typedHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaTypedHandlerDelegate"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
