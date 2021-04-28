@@ -28,6 +28,7 @@ class JKTMetaCompletionContributor : CompletionContributor() {
         val enum = element.findMetaStatement()?.replEnum ?: return
         val lookupElements = cache.getOrPut(enum) { enum.toLookupElements() }
         result.addAllElements(lookupElements)
+        result.restartCompletionOnAnyPrefixChange()
     }
 
     companion object {
