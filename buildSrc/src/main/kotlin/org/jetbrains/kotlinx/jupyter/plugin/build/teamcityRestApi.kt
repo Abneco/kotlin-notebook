@@ -4,7 +4,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.kotlin.dsl.maven
 import org.http4k.core.Method
-import org.jetbrains.intellij.IntelliJPluginExtension
+import org.jetbrains.intellij.dependency.PluginsRepositoryConfiguration
 import org.http4k.core.Request
 import java.io.File
 
@@ -68,7 +68,7 @@ fun RepositoryHandler.tcMaven(
     artifactPath: String
 ) = maven(TeamcityArtifact(teamcityUrl, auth, buildLocator, artifactPath).url)
 
-fun IntelliJPluginExtension.PluginsRepoConfiguration.teamcity(
+fun PluginsRepositoryConfiguration.teamcity(
     buildId: String,
     buildNumber: String,
     pathToPluginsRepo: String

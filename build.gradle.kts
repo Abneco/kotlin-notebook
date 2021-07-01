@@ -1,5 +1,4 @@
 import io.gitlab.arturbosch.detekt.Detekt
-import org.jetbrains.changelog.closure
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlinx.jupyter.plugin.build.BuildLocator
@@ -116,14 +115,14 @@ sourceSets {
 // Configure gradle-intellij-plugin plugin.
 // Read more: https://github.com/JetBrains/gradle-intellij-plugin
 intellij {
-    pluginName = pluginName_
-    localPath = platformLocalPath
+    pluginName.set(pluginName_)
+    localPath.set(platformLocalPath)
     // version = platformVersion
-    type = platformType
-    downloadSources = platformDownloadSources.toBoolean()
-    updateSinceUntilBuild = true
+    type.set(platformType)
+    downloadSources.set(platformDownloadSources.toBoolean())
+    updateSinceUntilBuild.set(true)
 
-    pluginsRepo {
+    pluginsRepositories {
         marketplace()
 
         teamcity(
@@ -140,10 +139,12 @@ intellij {
     }
 
     // Plugin Dependencies
-    setPlugins(
-        "org.jetbrains.kotlin:$kotlinPluginBuildNumber",
-        "Pythonid:$intellijBuildNumber",
-        "java"
+    plugins.set(
+        listOf(
+            "org.jetbrains.kotlin:$kotlinPluginBuildNumber",
+            "Pythonid:$intellijBuildNumber",
+            "java"
+        )
     )
 }
 
@@ -194,13 +195,12 @@ tasks {
     }
 
     patchPluginXml {
-        version(pluginVersion.version)
-        sinceBuild(pluginSinceBuild)
-        untilBuild(pluginUntilBuild)
+        version.set(pluginVersion.version)
+        sinceBuild.set(pluginSinceBuild)
+        untilBuild.set(pluginUntilBuild)
 
         // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's manifest
-        pluginDescription(
-            closure {
+        pluginDescription.set(
                 File(projectDir, "README.md").readText().lines().run {
                     val start = "<!-- Plugin description -->"
                     val end = "<!-- Plugin description end -->"
@@ -210,12 +210,11 @@ tasks {
                     }
                     subList(indexOf(start) + 1, indexOf(end))
                 }.joinToString("\n").run { markdownToHTML(this) }
-            }
         )
 
         // Get the latest available change notes from the changelog file
-        changeNotes(
-            closure {
+        changeNotes.set(
+            provider {
                 changelog.getLatest().toHTML()
             }
         )
@@ -223,10 +222,10 @@ tasks {
 
     publishPlugin {
         dependsOn("patchChangelog")
-        token(project.findProperty("intellij.marketplace.publish.token"))
+        token.set(project.findProperty("intellij.marketplace.publish.token") as String?)
         // pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
         // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
         // https://jetbrains.org/intellij/sdk/docs/tutorials/build_system/deployment.html#specifying-a-release-channel
-        channels(pluginVersion.channel)
+        channels.set(listOf(pluginVersion.channel))
     }
 }
