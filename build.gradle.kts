@@ -94,6 +94,8 @@ dependencies {
         excludeKotlin("reflect")
         excludeKotlin("stdlib-common")
         excludeKotlin("scripting-dependencies")
+        excludeKotlin("stdlib-jdk7")
+        excludeKotlin("stdlib-jdk8")
     }
 
     implementation(kotlin("scripting-dependencies", kotlinVersion) as String) { isTransitive = false }
