@@ -12,6 +12,7 @@ import com.jetbrains.rd.util.string.printToString
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.settings.KotlinScriptingSettings
+import org.jetbrains.kotlin.idea.debugger.readAction
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
@@ -34,6 +35,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
 import kotlin.concurrent.write
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
@@ -99,7 +101,8 @@ class JupyterCompilerPerFileService(
         sourceCode: SourceCode,
         config: ScriptCompilationConfiguration
     ): ScriptCompilationConfiguration {
-        log.warn("Before-compiling callback for script: ${sourceCode.text}")
+        val sourceText = readAction { sourceCode.text }
+        log.warn("Before-compiling callback for script: $sourceText")
         val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
         return ScriptCompilationConfiguration(withNewClasspath) {
             hostConfiguration.update {
@@ -109,6 +112,12 @@ class JupyterCompilerPerFileService(
             }
             implicitReceivers(implicitsList)
             defaultImports(additionalDefaultImports)
+        }
+    }
+
+    fun <T> withInjectionHosts(action: (MutableList<NotebookCellInjectionHost>) -> T): T {
+        return compileLock.read {
+            action(nbInjectionHosts)
         }
     }
 
