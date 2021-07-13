@@ -7,7 +7,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.build.INTERNAL_TEAMCITY
 import org.jetbrains.kotlinx.jupyter.plugin.build.PUBLIC_TEAMCITY
 import org.jetbrains.kotlinx.jupyter.plugin.build.detectDepVersions
 import org.jetbrains.kotlinx.jupyter.plugin.build.detectVersion
+import org.jetbrains.kotlinx.jupyter.plugin.build.local
+import org.jetbrains.kotlinx.jupyter.plugin.build.onNonEmpty
 import org.jetbrains.kotlinx.jupyter.plugin.build.printTcBuildNumber
+import org.jetbrains.kotlinx.jupyter.plugin.build.prop
 import org.jetbrains.kotlinx.jupyter.plugin.build.tcMaven
 import org.jetbrains.kotlinx.jupyter.plugin.build.teamcity
 
@@ -127,13 +130,21 @@ intellij {
     pluginsRepositories {
         marketplace()
 
-        teamcity(
+        fun tcAndLocal(buildId: String, buildNumber: String, pathToPluginsRepo: String) {
+            project.prop<String>("intellij.plugins.local.path").onNonEmpty { localRepoPath ->
+                val repo = File(localRepoPath).resolve(intellijBuildNumber)
+                local(repo, buildNumber, pathToPluginsRepo)
+            }
+            teamcity(buildId, buildNumber, pathToPluginsRepo)
+        }
+
+        tcAndLocal(
             "ijplatform_master_PyCharm_InstallersBuild",
             intellijBuildNumber,
             "PY-plugins/plugins.xml"
         )
 
-        teamcity(
+        tcAndLocal(
             "ijplatform_master_KotlinIdeArtifact",
             kotlinPluginBuildNumber,
             "plugin.xml"

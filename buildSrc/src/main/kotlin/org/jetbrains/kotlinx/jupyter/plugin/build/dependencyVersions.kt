@@ -11,8 +11,18 @@ data class DependenciesVersions(
     val kotlinPluginBuildNumber: String
 )
 
-private fun Project.prop(name: String, default: () -> String): String {
-    return findProperty(name) as? String ?: default()
+private fun <T> Project.prop(name: String, default: () -> T): T {
+    @Suppress("UNCHECKED_CAST")
+    return findProperty(name) as? T ?: default()
+}
+
+fun <T> Project.prop(name: String): T {
+    @Suppress("UNCHECKED_CAST")
+    return findProperty(name) as T
+}
+
+fun String.onNonEmpty(action: (String) -> Unit) {
+    if (isNotEmpty()) action(this)
 }
 
 fun String.substitute(replaceMap: Map<String, String>): String {

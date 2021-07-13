@@ -82,6 +82,17 @@ fun PluginsRepositoryConfiguration.teamcity(
     custom(artifact.url)
 }
 
+fun PluginsRepositoryConfiguration.local(
+    localRepoPath: File,
+    buildNumber: String,
+    pathToPluginsRepo: String,
+) {
+    val file = localRepoPath
+        .resolve(buildNumber)
+        .resolve(pathToPluginsRepo)
+    custom(file.toURI().toURL().toString())
+}
+
 fun Project.downloadTeamcityArtifact(
     localPath: File,
     buildLocator: BuildLocator,
