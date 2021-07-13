@@ -9,8 +9,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.containers.nullize
 import com.jetbrains.rd.util.string.printToString
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.settings.KotlinScriptingSettings
 import org.jetbrains.kotlin.idea.debugger.readAction
 import org.jetbrains.kotlin.psi.KtFile
@@ -20,6 +18,7 @@ import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.JupyterScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.compiler.util.CodeInterval
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
+import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.libraries.EmptyResolutionInfoProvider
 import org.jetbrains.kotlinx.jupyter.libraries.FallbackLibraryResolver
 import org.jetbrains.kotlinx.jupyter.libraries.LibrariesProcessorImpl
@@ -87,7 +86,9 @@ class JupyterCompilerPerFileService(
         projectService.initialClasspath.toMutableList()
     }
 
-    private val additionalDefaultImports: MutableList<String> = mutableListOf()
+    private val additionalDefaultImports: MutableList<String> = mutableListOf<String>().apply {
+        addAll(defaultGlobalImports)
+    }
 
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterScriptClassGetter {
@@ -115,7 +116,7 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    fun <T> withInjectionHosts(action: (MutableList<NotebookCellInjectionHost>) -> T): T {
+    fun <T> withInjectionHosts(action: (List<NotebookCellInjectionHost>) -> T): T {
         return compileLock.read {
             action(nbInjectionHosts)
         }
@@ -151,9 +152,6 @@ class JupyterCompilerPerFileService(
                 }
 
                 val injectedManager = InjectedLanguageManager.getInstance(project)
-                val scriptManager = ScriptConfigurationManager.getInstance(project)
-                    as? CompositeScriptConfigurationManager ?: return@write
-                val scriptingSupport = scriptManager.default
 
                 nbInjectionHosts.forEach { host ->
                     val injectedFiles = ReadAction.compute<InjectedElementsList?, Error> {
@@ -170,16 +168,6 @@ class JupyterCompilerPerFileService(
                         val definition = psi.findScriptDefinition() ?: continue
                         scriptingSettings.setAutoReloadConfigurations(definition, true)
                     }
-
-                    scriptingSupport.updateScriptDefinitionsReferences()
-                    /*
-                    ReadAction.run<Error> {
-                        for (psi in injectedKtScripts) {
-                            log.debug("Updating configuration for script ${psi.name}")
-                            //scriptingSupport.ensureUpToDatedConfigurationSuggested(psi)
-                        }
-                    }
-                    */
                 }
             } catch (e: Exception) {
                 log.error(e.printToString())
