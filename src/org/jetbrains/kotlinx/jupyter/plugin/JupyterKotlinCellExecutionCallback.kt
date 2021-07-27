@@ -33,6 +33,9 @@ class JupyterKotlinCellExecutionCallback(
     override fun expire() {
     }
 
+    override fun onCommInfoReply(message: JupyterMessage) {
+    }
+
     override fun onClearOutput(message: JupyterMessage) {
     }
 
