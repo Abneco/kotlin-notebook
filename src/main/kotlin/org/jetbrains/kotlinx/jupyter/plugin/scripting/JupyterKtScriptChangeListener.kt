@@ -5,7 +5,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.idea.core.script.configuration.listener.ScriptChangeListener
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 
-class JupyterKtScriptChangeListener(project: Project): ScriptChangeListener(project) {
+class JupyterKtScriptChangeListener(project: Project) : ScriptChangeListener(project) {
     private val scriptingSupport = JupyterKtScriptingSupport.getInstance(project)
 
     override fun documentChanged(vFile: VirtualFile) {
@@ -19,5 +19,4 @@ class JupyterKtScriptChangeListener(project: Project): ScriptChangeListener(proj
     override fun isApplicable(vFile: VirtualFile): Boolean {
         return vFile.fileType is JupyterFileType
     }
-
 }

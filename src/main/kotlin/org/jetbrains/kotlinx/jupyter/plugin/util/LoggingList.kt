@@ -3,7 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.util
 /**
  * This list implementation may be used for debugging [ConcurrentModificationException] and for other purposes
  */
-class LoggingList<T>(private val delegate: MutableList<T> = mutableListOf()): MutableList<T> by delegate {
+class LoggingList<T>(private val delegate: MutableList<T> = mutableListOf()) : MutableList<T> by delegate {
     private val log = LogSaver()
 
     override fun add(element: T): Boolean {
@@ -23,7 +23,7 @@ class LoggingList<T>(private val delegate: MutableList<T> = mutableListOf()): Mu
         return LoggingIterator(delegate.iterator())
     }
 
-    private inner class LoggingIterator<T>(private val delegate: MutableIterator<T>): MutableIterator<T> by delegate {
+    private inner class LoggingIterator<T>(private val delegate: MutableIterator<T>) : MutableIterator<T> by delegate {
         override fun next(): T {
             log("Calling next() on iterator")
             return delegate.next()

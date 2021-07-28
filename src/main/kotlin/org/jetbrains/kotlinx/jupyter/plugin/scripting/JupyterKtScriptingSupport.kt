@@ -30,13 +30,13 @@ import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage
 import kotlin.script.experimental.api.valueOrNull
 
 @Service
-class JupyterKtScriptingSupport(private val project: Project): ScriptingSupport {
+class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport {
     private val compilerService = JupyterCompilerService.getInstance(project)
     private val editorManager: FileEditorManager? get() = FileEditorManager.getInstance(project)
     private val injectedManager = InjectedLanguageManager.getInstance(project)
     private val fileExtension = compilerService.fileExtension
 
-    //private val cache = ConfigurationsCache()
+    // private val cache = ConfigurationsCache()
 
     private val configurationManager: CompositeScriptConfigurationManager
         get() = ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager
@@ -45,7 +45,7 @@ class JupyterKtScriptingSupport(private val project: Project): ScriptingSupport 
         get() = configurationManager.updater
 
     fun update() {
-        //cache.clear()
+        // cache.clear()
         updater.invalidateAndCommit()
     }
 

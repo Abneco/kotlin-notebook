@@ -54,4 +54,3 @@ class LogSaver {
         entries.add(entry)
     }
 }
-
