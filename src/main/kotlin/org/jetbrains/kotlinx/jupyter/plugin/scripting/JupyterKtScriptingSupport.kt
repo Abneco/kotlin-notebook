@@ -32,7 +32,7 @@ import kotlin.script.experimental.api.valueOrNull
 @Service
 class JupyterKtScriptingSupport(private val project: Project): ScriptingSupport {
     private val compilerService = JupyterCompilerService.getInstance(project)
-    private val editorManager = FileEditorManager.getInstance(project)
+    private val editorManager: FileEditorManager? get() = FileEditorManager.getInstance(project)
     private val injectedManager = InjectedLanguageManager.getInstance(project)
     private val fileExtension = compilerService.fileExtension
 
@@ -53,7 +53,7 @@ class JupyterKtScriptingSupport(private val project: Project): ScriptingSupport 
     }
 
     override fun collectConfigurations(builder: ScriptClassRootsBuilder) {
-        val editors = editorManager.allEditors
+        val editors = editorManager?.allEditors ?: return
 
         // Collect all notebook files, get injections from them
         val openFiles = editors.mapNotNull { it.file as? NotebookVirtualFile }
