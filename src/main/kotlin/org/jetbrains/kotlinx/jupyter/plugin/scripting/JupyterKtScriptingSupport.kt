@@ -2,7 +2,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.scripting
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -14,7 +14,6 @@ import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport
 import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsBuilder
-import org.jetbrains.kotlin.idea.debugger.readAction
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
@@ -65,8 +64,9 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         }
         for (virtualFile in notebookFiles) {
             val psiManager = PsiManager.getInstance(project)
-            val viewProvider = psiManager.findViewProvider(virtualFile)
-            val psiFile = viewProvider?.getPsi(JupyterLanguage) ?: continue
+            val psiFile = runReadAction {
+                psiManager.findViewProvider(virtualFile)?.getPsi(JupyterLanguage)
+            } ?: continue
 
             val notebookFile = psiFile.containingFile.originalFile.virtualFile
             val injectedFilesPairs = getInjectedFiles(notebookFile)
@@ -88,7 +88,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         if (virtualFile !is NotebookVirtualFile) return emptyList()
         val fileService = compilerService.get(virtualFile)
 
-        return ReadAction.compute<InjectedElementsList?, Error> {
+        return runReadAction {
             fileService.withInjectionHosts { hosts ->
                 hosts.flatMap { host -> injectedManager.getInjectedPsiFiles(host).orEmpty() }
             }
@@ -97,9 +97,9 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
     private fun collectConfigurations(psiFile: PsiElement, collector: ConfigurationsCollector) {
         if (psiFile !is KtFile) return
-        val scriptCompilationConfigurationResult = readAction {
-            if (!psiFile.isScript()) return@readAction null
-            val scriptDef = psiFile.findScriptDefinition() ?: return@readAction null
+        val scriptCompilationConfigurationResult = runReadAction {
+            if (!psiFile.isScript()) return@runReadAction null
+            val scriptDef = psiFile.findScriptDefinition() ?: return@runReadAction null
 
             refineScriptCompilationConfiguration(
                 KtFileScriptSource(psiFile),

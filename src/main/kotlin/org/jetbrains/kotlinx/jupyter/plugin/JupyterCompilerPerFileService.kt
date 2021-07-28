@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
@@ -8,7 +9,6 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.containers.nullize
 import com.jetbrains.rd.util.string.printToString
-import org.jetbrains.kotlin.idea.debugger.readAction
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.JupyterScriptClassGetter
@@ -92,7 +92,7 @@ class JupyterCompilerPerFileService(
         sourceCode: SourceCode,
         config: ScriptCompilationConfiguration
     ): ScriptCompilationConfiguration {
-        val sourceText = readAction { sourceCode.text }
+        val sourceText = runReadAction { sourceCode.text }
         log.warn("Before-compiling callback for script: $sourceText")
         val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
         return ScriptCompilationConfiguration(withNewClasspath) {

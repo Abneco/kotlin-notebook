@@ -1,7 +1,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
