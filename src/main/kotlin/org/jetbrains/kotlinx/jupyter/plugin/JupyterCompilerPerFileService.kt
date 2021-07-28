@@ -1,18 +1,14 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
-import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.containers.nullize
 import com.jetbrains.rd.util.string.printToString
-import org.jetbrains.kotlin.idea.core.script.settings.KotlinScriptingSettings
 import org.jetbrains.kotlin.idea.debugger.readAction
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.JupyterScriptClassGetter
@@ -25,7 +21,6 @@ import org.jetbrains.kotlinx.jupyter.libraries.LibrariesProcessorImpl
 import org.jetbrains.kotlinx.jupyter.libraries.ResolutionInfoSwitcher
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.SharedMagicsHandler
-import org.jetbrains.kotlinx.jupyter.plugin.util.logList
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterSource
 import java.io.File
@@ -34,8 +29,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.concurrent.read
-import kotlin.concurrent.write
+import kotlin.concurrent.withLock
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.api.defaultImports
@@ -60,11 +54,9 @@ class JupyterCompilerPerFileService(
 ) {
     private val log = Logger.getInstance(this::class.java)
 
-    private val project = projectService.project
     private val compileLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(1)
-    private val scriptingSettings = KotlinScriptingSettings.getInstance(project)
-    private val nbInjectionHosts = mutableListOf<NotebookCellInjectionHost>()
+    private val nbInjectionHosts: MutableList<NotebookCellInjectionHost> = ContainerUtil.createConcurrentList() // LoggingList()
 
     private val classesDir: Path by lazy {
         val tempDir = Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -92,10 +84,8 @@ class JupyterCompilerPerFileService(
 
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterScriptClassGetter {
-        compileLock.write {
-            log.warn("Getting implicits list")
-            implicitsList
-        }
+        log.warn("Getting implicits list")
+        implicitsList
     }
 
     fun handleBeforeCompiling(
@@ -117,21 +107,17 @@ class JupyterCompilerPerFileService(
     }
 
     fun <T> withInjectionHosts(action: (List<NotebookCellInjectionHost>) -> T): T {
-        return compileLock.read {
-            action(nbInjectionHosts)
-        }
+        return action(nbInjectionHosts)
     }
 
     fun updateInjectionHosts(updateAction: (MutableList<NotebookCellInjectionHost>) -> Unit) {
-        compileLock.write {
-            updateAction(nbInjectionHosts)
-        }
+        updateAction(nbInjectionHosts)
     }
 
     fun addCompiledSnippet(
         snippetMetadata: EvaluatedSnippetMetadata
     ) {
-        compileLock.write {
+        compileLock.writeLock().withLock {
             try {
                 val lineClassesDir = classesDir.resolve("line_${directoryCounter.incrementAndGet()}")
                 val lineClassesDirAsFile = lineClassesDir.toFile()
@@ -149,25 +135,6 @@ class JupyterCompilerPerFileService(
                 kClassNames.forEach {
                     val kClass = classLoader.loadClass(it).kotlin
                     implicitsList.addClass(kClass)
-                }
-
-                val injectedManager = InjectedLanguageManager.getInstance(project)
-
-                nbInjectionHosts.forEach { host ->
-                    val injectedFiles = ReadAction.compute<InjectedElementsList?, Error> {
-                        injectedManager.getInjectedPsiFiles(host)
-                    } ?: return@forEach
-
-                    val injectedKtScripts = injectedFiles.mapNotNull {
-                        it.first as? KtFile
-                    }
-
-                    log.logList("KT files injected", injectedKtScripts)
-
-                    for (psi in injectedKtScripts) {
-                        val definition = psi.findScriptDefinition() ?: continue
-                        scriptingSettings.setAutoReloadConfigurations(definition, true)
-                    }
                 }
             } catch (e: Exception) {
                 log.error(e.printToString())

@@ -9,6 +9,7 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaFileType
 import org.jetbrains.kotlinx.jupyter.plugin.lang.JupyterKtMetaLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
+import org.jetbrains.kotlinx.jupyter.plugin.util.LogSaver
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterNotebookImpl
 import java.util.concurrent.atomic.AtomicInteger
@@ -27,8 +28,12 @@ class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
     private val projectCompilerService = JupyterCompilerService.getInstance(project)
     private val scriptingSupport = JupyterKtScriptingSupport.getInstance(project)
 
+    private val logger = LogSaver()
+
     override fun getLanguagesToInject(registrar: MultiHostRegistrar, element: PsiElement) {
         if (element !is JupyterNotebookImpl) return
+
+        logger("registering")
 
         val containingFile = element.originalElement.containingFile
         val virtualFile = containingFile.originalFile.virtualFile as? NotebookVirtualFile ?: return

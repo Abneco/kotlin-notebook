@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
+import com.intellij.util.containers.ContainerUtil
 import kotlin.reflect.KClass
 import kotlin.script.experimental.api.KotlinType
 
@@ -11,7 +12,7 @@ import kotlin.script.experimental.api.KotlinType
  * @property types Implicit receivers types backing this list
  */
 class KotlinImplicitReceiversList(
-    private val types: MutableList<KotlinType> = mutableListOf()
+    private val types: MutableList<KotlinType> = ContainerUtil.createConcurrentList()
 ) : List<KotlinType> by types {
     fun addClass(kClass: KClass<*>) {
         types.add(KotlinType(kClass))
