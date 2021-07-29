@@ -6,6 +6,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.ultimate.PluginVerifier
 import com.intellij.util.io.isFile
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
@@ -33,6 +34,10 @@ import kotlin.streams.toList
 class JupyterCompilerService(val project: Project) {
     private val mapping: MutableMap<VirtualFile, JupyterCompilerPerFileService> = mutableMapOf()
     private val kotlinKernelDir = KernelSpecDetector.getKernelDir("kotlin")
+
+    init {
+        PluginVerifier.verifyUltimatePlugin()
+    }
 
     val initialClasspath: List<File> = run {
         if (kotlinKernelDir == null) return@run emptyList()

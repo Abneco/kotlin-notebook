@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.ide.FileIconPatcher
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlinx.jupyter.plugin.icons.JupyterKotlinIcons
+import icons.KotlinJupyterIcons
 import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookSchemaFactory
 import javax.swing.Icon
@@ -17,7 +17,7 @@ class JupyterKotlinIconPatcher : FileIconPatcher {
         val json = jackson.readTree(reader) as? ObjectNode ?: return baseIcon
         val schema = JupyterNotebookSchemaFactory.createSchema(json)
         val language = schema.getLanguage(json)
-        if (language == "kotlin") return JupyterKotlinIcons.FileType
+        if (language == "kotlin") return KotlinJupyterIcons.FileIcon
         return baseIcon
     }
 }
