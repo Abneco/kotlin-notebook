@@ -1,4 +1,0 @@
-/artifacts/**
-/build/**
-/buildSrc/build/**
-.gradle/
