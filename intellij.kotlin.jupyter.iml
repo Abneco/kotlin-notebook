@@ -27,19 +27,19 @@
     <orderEntry type="library" name="kotlinx-serialization-core" level="project" />
     <orderEntry type="module-library">
       <library name="jetbrains.kotlin-jupyter-shared-compiler" type="repository">
-        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler:0.10.0-175" />
+        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler:0.10.0-176" />
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.10.0-175/kotlin-jupyter-shared-compiler-0.10.0-175.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.10.0-175/kotlin-jupyter-api-0.10.0-175.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.10.0-175/kotlin-jupyter-lib-0.10.0-175.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.10.0-175/kotlin-jupyter-common-dependencies-0.10.0-175.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.10.0-176/kotlin-jupyter-shared-compiler-0.10.0-176.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.10.0-176/kotlin-jupyter-api-0.10.0-176.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.10.0-176/kotlin-jupyter-lib-0.10.0-176.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.10.0-176/kotlin-jupyter-common-dependencies-0.10.0-176.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.10.0-175/kotlin-jupyter-shared-compiler-0.10.0-175-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.10.0-175/kotlin-jupyter-api-0.10.0-175-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.10.0-175/kotlin-jupyter-lib-0.10.0-175-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.10.0-175/kotlin-jupyter-common-dependencies-0.10.0-175-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.10.0-176/kotlin-jupyter-shared-compiler-0.10.0-176-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.10.0-176/kotlin-jupyter-api-0.10.0-176-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.10.0-176/kotlin-jupyter-lib-0.10.0-176-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.10.0-176/kotlin-jupyter-common-dependencies-0.10.0-176-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
@@ -48,9 +48,8 @@
     <orderEntry type="module" module-name="kotlin.scripting" scope="PROVIDED" />
     <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-scripting-compiler" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-compiler" level="project" />
-    <orderEntry type="module" module-name="kotlin.idea.tests" scope="TEST" />
     <orderEntry type="module" module-name="intellij.platform.testFramework" scope="TEST" />
     <orderEntry type="module" module-name="intellij.java.testFramework" scope="TEST" />
-    <orderEntry type="module" module-name="intellij.idea.ultimate.main" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.python.plugin.main" scope="TEST" />
   </component>
 </module>
