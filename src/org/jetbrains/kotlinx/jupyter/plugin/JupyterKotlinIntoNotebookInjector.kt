@@ -6,6 +6,7 @@ import com.intellij.lang.injection.MultiHostRegistrar
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
+import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaFileType
 import org.jetbrains.kotlinx.jupyter.plugin.lang.JupyterKtMetaLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
@@ -33,10 +34,10 @@ class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
     override fun getLanguagesToInject(registrar: MultiHostRegistrar, element: PsiElement) {
         if (element !is JupyterNotebookImpl) return
 
-        logger("registering")
-
         val containingFile = element.originalElement.containingFile
         val virtualFile = containingFile.originalFile.virtualFile as? NotebookVirtualFile ?: return
+
+        if (!virtualFile.isKotlinNotebook) return
 
         val compilerService = projectCompilerService.get(virtualFile)
         val kotlinLanguage = projectCompilerService.language
