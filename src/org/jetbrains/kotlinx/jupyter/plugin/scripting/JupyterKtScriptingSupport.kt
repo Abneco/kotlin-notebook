@@ -7,6 +7,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.RecursionManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
@@ -45,7 +46,9 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
     fun update() {
         // cache.clear()
-        updater.invalidateAndCommit()
+        RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
+            updater.invalidateAndCommit()
+        }
     }
 
     override fun afterUpdate() {
