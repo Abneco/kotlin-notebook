@@ -14,12 +14,8 @@ import org.jetbrains.kotlinx.jupyter.compiler.JupyterScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.compiler.util.CodeInterval
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
-import org.jetbrains.kotlinx.jupyter.libraries.EmptyResolutionInfoProvider
-import org.jetbrains.kotlinx.jupyter.libraries.FallbackLibraryResolver
-import org.jetbrains.kotlinx.jupyter.libraries.LibrariesProcessorImpl
-import org.jetbrains.kotlinx.jupyter.libraries.ResolutionInfoSwitcher
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
-import org.jetbrains.kotlinx.jupyter.magics.SharedMagicsHandler
+import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterSource
 import java.io.File
@@ -29,11 +25,7 @@ import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.withLock
-import kotlin.script.experimental.api.ScriptCompilationConfiguration
-import kotlin.script.experimental.api.SourceCode
-import kotlin.script.experimental.api.defaultImports
-import kotlin.script.experimental.api.hostConfiguration
-import kotlin.script.experimental.api.implicitReceivers
+import kotlin.script.experimental.api.*
 import kotlin.script.experimental.host.getScriptingClass
 import kotlin.script.experimental.host.with
 import kotlin.script.experimental.jvm.withUpdatedClasspath
@@ -65,11 +57,8 @@ class JupyterCompilerPerFileService(
 
     private val deserializer = CompiledScriptsSerializer()
 
-    private val librariesProcessor = LibrariesProcessorImpl(FallbackLibraryResolver, null)
-    private val infoSwitcher = ResolutionInfoSwitcher.noop(EmptyResolutionInfoProvider)
-
     private val magicsProcessor = MagicsProcessor(
-        handler = SharedMagicsHandler(librariesProcessor, infoSwitcher),
+        handler = NoopMagicsHandler,
         parseOutCellMarker = true
     )
 
