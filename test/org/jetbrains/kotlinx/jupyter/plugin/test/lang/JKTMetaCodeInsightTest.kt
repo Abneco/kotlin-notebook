@@ -1,24 +1,20 @@
-package org.jetbrains.kotlinx.jupyter.plugin.lang
+package org.jetbrains.kotlinx.jupyter.plugin.test.lang
 
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 
-@RunWith(JUnit4::class)
 class JKTMetaCodeInsightTest : LightJavaCodeInsightFixtureTestCase() {
     /**
      * @return path to test data file directory relative to root of this module.
      */
-    override fun getTestDataPath() = "testData/codeInsight"
+    override fun getTestDataPath() = "$baseTestDataPath/codeInsight"
 
-    @Test
-    fun completion1() {
+    fun testSimpleCompletion() {
         myFixture.testCompletionVariants("completion1.juktm", "use", "useLatestDescriptors")
     }
 
-    @Test
-    fun annotator1() {
+
+    fun testSimpleAnnotator() {
         myFixture.configureByFile("annotator1.juktm")
         myFixture.checkHighlighting(false, true, false)
     }

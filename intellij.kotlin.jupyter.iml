@@ -10,15 +10,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="intellij.platform.core" />
-    <orderEntry type="module" module-name="intellij.platform.util.ex" />
-    <orderEntry type="module" module-name="intellij.platform.util.ui" />
-    <orderEntry type="module" module-name="intellij.platform.analysis" />
-    <orderEntry type="module" module-name="intellij.platform.lang" />
-    <orderEntry type="module" module-name="intellij.platform.analysis.impl" />
-    <orderEntry type="module" module-name="intellij.java.psi" />
-    <orderEntry type="module" module-name="intellij.python.jupyter" />
-    <orderEntry type="module" module-name="intellij.python.jupyter.psi" />
     <orderEntry type="module" module-name="intellij.platform.commercial" />
     <orderEntry type="module" module-name="intellij.platform.commercial.verifier" />
     <orderEntry type="library" name="jackson" level="project" />
@@ -46,10 +37,20 @@
     <orderEntry type="module" module-name="kotlin.core" scope="PROVIDED" />
     <orderEntry type="module" module-name="kotlin.common" scope="PROVIDED" />
     <orderEntry type="module" module-name="kotlin.scripting" scope="PROVIDED" />
+    <orderEntry type="module" module-name="intellij.java.psi" scope="PROVIDED" />
     <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-scripting-compiler" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-compiler" level="project" />
+    <orderEntry type="module" module-name="intellij.python.jupyter" scope="PROVIDED" />
+    <orderEntry type="module" module-name="intellij.python.jupyter.psi" scope="PROVIDED" />
+    <orderEntry type="module" module-name="intellij.python.plugin.main" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.platform.core" scope="PROVIDED" />
+    <orderEntry type="module" module-name="intellij.platform.util.ex" scope="PROVIDED" />
+    <orderEntry type="module" module-name="intellij.platform.util.ui" scope="PROVIDED" />
+    <orderEntry type="module" module-name="intellij.platform.analysis" scope="PROVIDED" />
+    <orderEntry type="module" module-name="intellij.platform.lang" scope="PROVIDED" />
+    <orderEntry type="module" module-name="intellij.platform.analysis.impl" scope="PROVIDED" />
     <orderEntry type="module" module-name="intellij.platform.testFramework" scope="TEST" />
     <orderEntry type="module" module-name="intellij.java.testFramework" scope="TEST" />
-    <orderEntry type="module" module-name="intellij.python.plugin.main" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.clouds.docker.java" scope="TEST" />
   </component>
 </module>
