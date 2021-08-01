@@ -6,12 +6,12 @@ import org.jetbrains.kotlinx.jupyter.plugin.KernelSpecDetector
 import org.junit.Assert
 
 class KernelSpecPathsTest : UsefulTestCase() {
-    fun testPossibleKernelDirsShouldBeNonEmpty() {
+    fun `test possible kernel dirs should be non-empty`() {
         val dirs = KernelSpecDetector.getPossibleDirs()
         Assert.assertTrue(dirs.size >= 2)
     }
 
-    fun testKernelsShouldBeResolvedIfInstalled() {
+    fun `test kernels should be resolved if installed`() {
         val kernelsDir = KernelSpecDetector.getKernelsDir()
         if (kernelsDir == null) {
             LOG.warn("Kernels dir is empty")

@@ -9,12 +9,12 @@ class JKTMetaCodeInsightTest : LightJavaCodeInsightFixtureTestCase() {
      */
     override fun getTestDataPath() = "$baseTestDataPath/codeInsight"
 
-    fun testSimpleCompletion() {
+    fun `test simple completion`() {
         myFixture.testCompletionVariants("completion1.juktm", "use", "useLatestDescriptors")
     }
 
 
-    fun testSimpleAnnotator() {
+    fun `test simple annotator`() {
         myFixture.configureByFile("annotator1.juktm")
         myFixture.checkHighlighting(false, true, false)
     }
