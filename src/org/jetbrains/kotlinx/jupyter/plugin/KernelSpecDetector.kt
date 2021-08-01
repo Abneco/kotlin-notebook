@@ -11,7 +11,7 @@ import java.io.File
  * to add them to the script classpath.
  */
 object KernelSpecDetector {
-    private val log = Logger.getInstance(this::class.java)
+    private val LOG = Logger.getInstance(KernelSpecDetector::class.java)
 
     private const val JUPYTER_KERNELS_PATH = "jupyter/kernels"
 
@@ -52,10 +52,10 @@ object KernelSpecDetector {
         val kernelsDir = dirs.firstOrNull(filter)
 
         if (kernelsDir == null) {
-            log.warn("Jupyter kernel specs were not found on your computer.")
-            log.warn("Searched in:")
+            LOG.warn("Jupyter kernel specs were not found on your computer.")
+            LOG.warn("Searched in:")
             dirs.forEach { file ->
-                log.warn("> ${file.absolutePath}")
+                LOG.warn("> ${file.absolutePath}")
             }
         }
 

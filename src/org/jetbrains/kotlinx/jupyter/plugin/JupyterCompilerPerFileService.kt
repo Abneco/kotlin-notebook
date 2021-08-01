@@ -72,7 +72,7 @@ class JupyterCompilerPerFileService(
 
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterScriptClassGetter {
-        log.warn("Getting implicits list")
+        LOG.warn("Getting implicits list")
         implicitsList
     }
 
@@ -81,7 +81,7 @@ class JupyterCompilerPerFileService(
         config: ScriptCompilationConfiguration
     ): ScriptCompilationConfiguration {
         val sourceText = runReadAction { sourceCode.text }
-        log.warn("Before-compiling callback for script: $sourceText")
+        LOG.warn("Before-compiling callback for script: $sourceText")
         val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
         return ScriptCompilationConfiguration(withNewClasspath) {
             hostConfiguration.update {
@@ -125,7 +125,7 @@ class JupyterCompilerPerFileService(
                     implicitsList.addClass(kClass)
                 }
             } catch (e: Exception) {
-                log.error(e)
+                LOG.error(e)
             }
         }
     }
@@ -154,4 +154,8 @@ class JupyterCompilerPerFileService(
     }
 
     data class CellRanges(val codeRanges: List<TextRange>?, val magicRanges: List<TextRange>?)
+
+    companion object {
+        private val LOG = Logger.getInstance(JupyterCompilerPerFileService::class.java)
+    }
 }

@@ -26,8 +26,6 @@ class JupyterKotlinCellExecutionCallback(
     private val project: Project,
     private val virtualFile: NotebookVirtualFile
 ) : JupyterExecutionCallback {
-    private val log = Logger.getInstance(this::class.java)
-
     override val channel: JupyterMessageChannel
         get() = JupyterMessageChannel.ANY
     override var finalizeCallback = {}
@@ -51,7 +49,7 @@ class JupyterKotlinCellExecutionCallback(
         val snippetMetadataObject = message.getMetadata("eval_metadata") ?: return
         val snippetMetadata = snippetMetadataObject.deserialize<EvaluatedSnippetMetadata>()
 
-        log.logList("Cell executed. New classpath received", snippetMetadata.newClasspath)
+        LOG.logList("Cell executed. New classpath received", snippetMetadata.newClasspath)
 
         /**
          * Acquire an instance of [JupyterCompilerPerFileService] for this notebook
@@ -71,5 +69,9 @@ class JupyterKotlinCellExecutionCallback(
     }
 
     override fun onUpdateOutput(message: JupyterMessage) {
+    }
+
+    companion object {
+        private val LOG = Logger.getInstance(this::class.java)
     }
 }
