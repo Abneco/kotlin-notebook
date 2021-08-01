@@ -14,8 +14,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.psi.meta.JKTMetaStatementId
 import org.jetbrains.kotlinx.jupyter.plugin.psi.meta.JKTMetaTypes
 
 class JKTMetaCompletionContributor : CompletionContributor() {
-    private val cache: HashMap<ReplEnum<*>, List<LookupElement>> = hashMapOf()
-
     override fun fillCompletionVariants(parameters: CompletionParameters, result: CompletionResultSet) {
         super.fillCompletionVariants(parameters, result)
 
@@ -26,7 +24,7 @@ class JKTMetaCompletionContributor : CompletionContributor() {
 
     private fun fillIdVariants(element: PsiElement, result: CompletionResultSet) {
         val enum = element.findMetaStatement()?.replEnum ?: return
-        val lookupElements = cache.getOrPut(enum) { enum.toLookupElements() }
+        val lookupElements = enum.toLookupElements()
         result.addAllElements(lookupElements)
         result.restartCompletionOnAnyPrefixChange()
     }
