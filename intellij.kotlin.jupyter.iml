@@ -6,7 +6,6 @@
       <sourceFolder url="file://$MODULE_DIR$/generated" isTestSource="false" generated="true" />
       <sourceFolder url="file://$MODULE_DIR$/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -42,15 +41,11 @@
     <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-compiler" level="project" />
     <orderEntry type="module" module-name="intellij.python.jupyter" scope="PROVIDED" />
     <orderEntry type="module" module-name="intellij.python.jupyter.psi" scope="PROVIDED" />
-    <orderEntry type="module" module-name="intellij.python.plugin.main" scope="TEST" />
     <orderEntry type="module" module-name="intellij.platform.core" scope="PROVIDED" />
     <orderEntry type="module" module-name="intellij.platform.util.ex" scope="PROVIDED" />
     <orderEntry type="module" module-name="intellij.platform.util.ui" scope="PROVIDED" />
     <orderEntry type="module" module-name="intellij.platform.analysis" scope="PROVIDED" />
     <orderEntry type="module" module-name="intellij.platform.lang" scope="PROVIDED" />
     <orderEntry type="module" module-name="intellij.platform.analysis.impl" scope="PROVIDED" />
-    <orderEntry type="module" module-name="intellij.platform.testFramework" scope="TEST" />
-    <orderEntry type="module" module-name="intellij.java.testFramework" scope="TEST" />
-    <orderEntry type="module" module-name="intellij.clouds.docker.java" scope="TEST" />
   </component>
 </module>

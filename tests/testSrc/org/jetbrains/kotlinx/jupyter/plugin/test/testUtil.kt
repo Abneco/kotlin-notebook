@@ -3,4 +3,4 @@ package org.jetbrains.kotlinx.jupyter.plugin.test
 
 import com.intellij.openapi.application.PathManager
 
-val baseTestDataPath = PathManager.getHomePath() + "/plugins/kotlin/jupyter/testData"
+val baseTestDataPath = PathManager.getHomePath() + "/plugins/kotlin/jupyter/tests/testData"
