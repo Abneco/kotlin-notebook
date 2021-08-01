@@ -1,13 +1,16 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.containers.nullize
+import com.intellij.util.io.delete
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.JupyterScriptClassGetter
@@ -42,17 +45,13 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
 class JupyterCompilerPerFileService(
     @Suppress("unused") private val virtualFile: VirtualFile,
     private val projectService: JupyterCompilerService,
-) {
-    private val log = Logger.getInstance(this::class.java)
-
+) : Disposable {
     private val compileLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(1)
     private val nbInjectionHosts: MutableList<NotebookCellInjectionHost> = ContainerUtil.createConcurrentList() // LoggingList()
 
     private val classesDir: Path by lazy {
-        val tempDir = Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
-        tempDir.toFile().deleteOnExit()
-        tempDir
+        Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
     }
 
     private val deserializer = CompiledScriptsSerializer()
@@ -74,6 +73,10 @@ class JupyterCompilerPerFileService(
     private val classGetter = JupyterScriptClassGetter {
         LOG.warn("Getting implicits list")
         implicitsList
+    }
+
+    init {
+        Disposer.register(projectService, this)
     }
 
     fun handleBeforeCompiling(
@@ -151,6 +154,11 @@ class JupyterCompilerPerFileService(
         val magicRanges = magicIntervals.toRanges()
 
         return CellRanges(codeRanges, magicRanges)
+    }
+
+    override fun dispose() {
+        nbInjectionHosts.clear()
+        classesDir.delete(true)
     }
 
     data class CellRanges(val codeRanges: List<TextRange>?, val magicRanges: List<TextRange>?)

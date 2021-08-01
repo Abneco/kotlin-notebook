@@ -2,6 +2,7 @@ package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -31,7 +32,7 @@ import kotlin.streams.toList
  * @property project This service project
  */
 @Service
-class JupyterCompilerService(val project: Project) {
+class JupyterCompilerService(val project: Project) : Disposable {
     private val mapping: MutableMap<VirtualFile, JupyterCompilerPerFileService> = mutableMapOf()
     private val kotlinKernelDir = KernelSpecDetector.getKernelDir("kotlin")
 
@@ -81,6 +82,9 @@ class JupyterCompilerService(val project: Project) {
 
     fun get(virtualFile: NotebookVirtualFile): JupyterCompilerPerFileService {
         return mapping.getOrPut(virtualFile) { JupyterCompilerPerFileService(virtualFile, this) }
+    }
+
+    override fun dispose() {
     }
 
     companion object {
