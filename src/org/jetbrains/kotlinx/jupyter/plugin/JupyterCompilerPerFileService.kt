@@ -139,9 +139,9 @@ class JupyterCompilerPerFileService(
         return source.trimStart()
     }
 
-    fun codeRanges(cell: JupyterPsiCell): CellRanges? {
+    fun codeRanges(cell: JupyterPsiCell): CellRanges {
         val code = getCellCode(cell)
-        if (looksLikeReplCommand(code)) return null
+        if (looksLikeReplCommand(code)) return CellRanges(null, listOf(TextRange(0, cell.textLength)))
 
         val text = cell.text
         val magicIntervals = magicsProcessor.magicsIntervals(text)

@@ -49,7 +49,7 @@ class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
                 val host = NotebookCellInjectionHost(cell)
                 hosts.add(host)
 
-                val ranges = compilerService.codeRanges(cell) ?: continue
+                val ranges = compilerService.codeRanges(cell)
 
                 fun List<TextRange>.inject(language: Language, extension: String) {
                     registrar.startInjecting(
