@@ -22,7 +22,7 @@ file ::= marker_line? statements?
 
 marker_line ::= CODE_MARKER ANY* newline_or_eof
 
-statements ::= (empty_statements? command_statement) | repeatable_statements?
+statements ::= (empty_statements? command_statement empty_statements?) | repeatable_statements?
 
 repeatable_statements ::= (empty_statements | magic_statement)+
 

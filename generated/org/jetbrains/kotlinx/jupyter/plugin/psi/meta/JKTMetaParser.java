@@ -233,7 +233,7 @@ public class JKTMetaParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // (empty_statements? command_statement) | repeatable_statements?
+  // (empty_statements? command_statement empty_statements?) | repeatable_statements?
   public static boolean statements(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "statements")) return false;
     boolean r;
@@ -244,13 +244,14 @@ public class JKTMetaParser implements PsiParser, LightPsiParser {
     return r;
   }
 
-  // empty_statements? command_statement
+  // empty_statements? command_statement empty_statements?
   private static boolean statements_0(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "statements_0")) return false;
     boolean r;
     Marker m = enter_section_(b);
     r = statements_0_0(b, l + 1);
     r = r && command_statement(b, l + 1);
+    r = r && statements_0_2(b, l + 1);
     exit_section_(b, m, null, r);
     return r;
   }
@@ -258,6 +259,13 @@ public class JKTMetaParser implements PsiParser, LightPsiParser {
   // empty_statements?
   private static boolean statements_0_0(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "statements_0_0")) return false;
+    empty_statements(b, l + 1);
+    return true;
+  }
+
+  // empty_statements?
+  private static boolean statements_0_2(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "statements_0_2")) return false;
     empty_statements(b, l + 1);
     return true;
   }

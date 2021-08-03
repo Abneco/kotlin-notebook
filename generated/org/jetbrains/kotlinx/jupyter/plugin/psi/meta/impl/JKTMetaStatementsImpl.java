@@ -34,9 +34,9 @@ public class JKTMetaStatementsImpl extends ASTWrapperPsiElement implements JKTMe
   }
 
   @Override
-  @Nullable
-  public JKTMetaEmptyStatements getEmptyStatements() {
-    return findChildByClass(JKTMetaEmptyStatements.class);
+  @NotNull
+  public List<JKTMetaEmptyStatements> getEmptyStatementsList() {
+    return PsiTreeUtil.getChildrenOfTypeAsList(this, JKTMetaEmptyStatements.class);
   }
 
   @Override

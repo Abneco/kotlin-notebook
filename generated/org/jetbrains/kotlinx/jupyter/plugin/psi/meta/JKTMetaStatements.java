@@ -10,8 +10,8 @@ public interface JKTMetaStatements extends PsiElement {
   @Nullable
   JKTMetaCommandStatement getCommandStatement();
 
-  @Nullable
-  JKTMetaEmptyStatements getEmptyStatements();
+  @NotNull
+  List<JKTMetaEmptyStatements> getEmptyStatementsList();
 
   @Nullable
   JKTMetaRepeatableStatements getRepeatableStatements();
