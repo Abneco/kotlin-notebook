@@ -11,14 +11,15 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.containers.nullize
 import com.intellij.util.io.delete
+import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
-import org.jetbrains.kotlinx.jupyter.compiler.JupyterScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.compiler.util.CodeInterval
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
+import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterSource
 import java.io.File
@@ -70,7 +71,7 @@ class JupyterCompilerPerFileService(
     }
 
     private val implicitsList = KotlinImplicitReceiversList()
-    private val classGetter = JupyterScriptClassGetter {
+    private val classGetter = JupyterKotlinPluginScriptClassGetter(ScriptTemplateWithDisplayHelpers::class) {
         LOG.warn("Getting implicits list")
         implicitsList
     }
