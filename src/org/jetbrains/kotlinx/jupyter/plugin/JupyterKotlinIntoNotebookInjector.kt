@@ -12,6 +12,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.lang.JupyterKtMetaLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.util.LogSaver
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.RAW_CELL_SUFFIX
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterNotebookImpl
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -46,6 +49,7 @@ class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
         compilerService.updateInjectionHosts { hosts ->
             hosts.clear()
             for (cell in element.psiCellList) {
+                if (cell.cellMarker.text.matches(NON_CODE_CELL_REGEX)) continue
                 val host = NotebookCellInjectionHost(cell)
                 hosts.add(host)
 
@@ -72,5 +76,9 @@ class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
 
     override fun elementsToInjectIn(): MutableList<out Class<out PsiElement>> {
         return mutableListOf(JupyterNotebookImpl::class.java)
+    }
+
+    companion object {
+        private val NON_CODE_CELL_REGEX = Regex("""$CELL_MARKER($MARKDOWN_CELL_SUFFIX|$RAW_CELL_SUFFIX)\n?""")
     }
 }
