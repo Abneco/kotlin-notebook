@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
+import com.intellij.BundleBase
 import com.intellij.DynamicBundle
 import org.jetbrains.annotations.Nls
 import org.jetbrains.annotations.NonNls
@@ -15,4 +16,12 @@ object JupyterKotlinBundle : DynamicBundle(BUNDLE) {
         @PropertyKey(resourceBundle = BUNDLE) key: String,
         vararg params: Any
     ): String = getMessage(key, *params)
+
+    @JvmStatic
+    @Nls
+    fun messageWithDefaultValue(
+        @PropertyKey(resourceBundle = BUNDLE) key: String,
+        defaultValue: String,
+        vararg params: Any
+    ): String = BundleBase.messageOrDefault(getResourceBundle(javaClass.classLoader), key, defaultValue, *params)
 }
