@@ -39,6 +39,7 @@
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">
         <jupyterSupportedLanguageProvider id="kotlin"/>
+        <jupyterLanguageBasedFileViewProviderChooser implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinFileViewProviderChooser"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
