@@ -21,7 +21,7 @@ object JupyterKotlinBundle : DynamicBundle(BUNDLE) {
     @Nls
     fun messageWithDefaultValue(
         @PropertyKey(resourceBundle = BUNDLE) key: String,
-        defaultValue: String,
+        @Nls defaultValue: String,
         vararg params: Any
     ): String = BundleBase.messageOrDefault(getResourceBundle(javaClass.classLoader), key, defaultValue, *params)
 }
