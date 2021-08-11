@@ -16,6 +16,7 @@ class JKTMetaAnnotator : Annotator {
         val enum = statement.replEnum ?: return
         val insightValue = enum.valueOfOrNull(statement.getStatementId().text) ?: return
         // TODO: to be addressed with i18n of ReplLineMagic / ReplCommand
+        @Suppress("HardCodedStringLiteral")
         val description =
             JupyterKotlinBundle.messageWithDefaultValue("jkt.meta.description.${insightValue.name.toLowerCase()}", insightValue.description)
         holder
