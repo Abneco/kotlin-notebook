@@ -24,4 +24,8 @@ object JupyterKotlinBundle : DynamicBundle(BUNDLE) {
         @Nls defaultValue: String,
         vararg params: Any
     ): String = BundleBase.messageOrDefault(getResourceBundle(javaClass.classLoader), key, defaultValue, *params)
+
+    @JvmStatic
+    fun messagePointer(@PropertyKey(resourceBundle = BUNDLE) key: String,
+                       vararg params: Any): java.util.function.Supplier<@Nls String> = getLazyMessage(key, *params)
 }

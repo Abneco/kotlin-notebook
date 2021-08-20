@@ -44,4 +44,10 @@
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
         <jupyterCellExecutionCallbackFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory"/>
     </extensions>
+
+    <actions resource-bundle="messages/JupyterKotlinBundle">
+        <action id="CreateNewKotlinNotebook" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterNotebookCreateAction">
+            <add-to-group group-id="NewGroup" anchor="after" relative-to-action="JupyterCreateFileAction"/>
+        </action>
+    </actions>
 </idea-plugin>
