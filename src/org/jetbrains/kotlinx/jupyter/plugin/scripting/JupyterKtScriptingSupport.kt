@@ -36,7 +36,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     private val injectedManager = InjectedLanguageManager.getInstance(project)
     private val fileExtension = compilerService.fileExtension
 
-    // private val cache = ConfigurationsCache()
+    private val cache = ConfigurationsCache()
 
     private val configurationManager: CompositeScriptConfigurationManager
         get() = ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager
@@ -57,14 +57,15 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     override fun collectConfigurations(builder: ScriptClassRootsBuilder) {
         val editors = editorManager?.allEditors ?: return
 
+        builder.addInitialRoots()
+
         // Collect all notebook files, get injections from them
         val openFiles = editors.mapNotNull { it.file as? NotebookVirtualFile }
         val notebookFiles = openFiles.filter { it.fileType is JupyterFileType }
-        val collector = object : ConfigurationsCollector {
-            override fun add(virtualFile: VirtualFile, configuration: ScriptCompilationConfigurationWrapper) {
-                builder.add(virtualFile, configuration)
-            }
-        }
+        val collector = CompositeConfigurationsCollector(
+            BuilderConfigurationsCollector(builder),
+            cache,
+        )
         for (virtualFile in notebookFiles) {
             val psiManager = PsiManager.getInstance(project)
             val psiFile = runReadAction {
@@ -85,6 +86,11 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
     override fun isConfigurationLoadingInProgress(file: KtFile): Boolean {
         return false
+    }
+
+    private fun ScriptClassRootsBuilder.addInitialRoots() {
+        val compilerService = JupyterCompilerService.getInstance(project)
+        addTemplateClassesRoots(compilerService.initialClasspath.map { it.absolutePath })
     }
 
     private fun getInjectedFiles(virtualFile: VirtualFile): InjectedElementsList {
@@ -110,7 +116,10 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
                 project
             )
         } ?: return
-        val scriptCompilationConfiguration = scriptCompilationConfigurationResult.valueOrNull() ?: return
+        val scriptCompilationConfiguration =
+            scriptCompilationConfigurationResult.valueOrNull()
+                ?: cache[psiFile.virtualFile.path]
+                ?: return
         collector.add(psiFile.virtualFile, scriptCompilationConfiguration)
     }
 
@@ -123,6 +132,20 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     ) : MutableMap<String, ScriptCompilationConfigurationWrapper> by cache, ConfigurationsCollector {
         override fun add(virtualFile: VirtualFile, configuration: ScriptCompilationConfigurationWrapper) {
             cache[virtualFile.path] = configuration
+        }
+    }
+
+    private class BuilderConfigurationsCollector(private val builder: ScriptClassRootsBuilder): ConfigurationsCollector {
+        override fun add(virtualFile: VirtualFile, configuration: ScriptCompilationConfigurationWrapper) {
+            builder.add(virtualFile, configuration)
+        }
+    }
+
+    private class CompositeConfigurationsCollector(private vararg val collectors: ConfigurationsCollector): ConfigurationsCollector {
+        override fun add(virtualFile: VirtualFile, configuration: ScriptCompilationConfigurationWrapper) {
+            collectors.forEach {
+                it.add(virtualFile, configuration)
+            }
         }
     }
 
