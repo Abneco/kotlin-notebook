@@ -57,7 +57,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     override fun collectConfigurations(builder: ScriptClassRootsBuilder) {
         val editors = editorManager?.allEditors ?: return
 
-        builder.addInitialRoots()
+        // builder.addInitialRoots()
 
         // Collect all notebook files, get injections from them
         val openFiles = editors.mapNotNull { it.file as? NotebookVirtualFile }
@@ -118,7 +118,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         } ?: return
         val scriptCompilationConfiguration =
             scriptCompilationConfigurationResult.valueOrNull()
-                ?: cache[psiFile.virtualFile.path]
+                // ?: cache[psiFile.virtualFile.path]
                 ?: return
         collector.add(psiFile.virtualFile, scriptCompilationConfiguration)
     }
