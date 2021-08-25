@@ -4,6 +4,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
+import org.jetbrains.plugins.notebooks.editor.actions.command.mode.NotebookEditorMode
+import org.jetbrains.plugins.notebooks.editor.actions.command.mode.setMode
 import org.jetbrains.plugins.notebooks.jupyter.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 
@@ -36,6 +38,7 @@ class KotlinNotebookAutoCompletionTest : JupyterBaseTestCase() {
 
     private fun doTest(action: (CompletionAutoPopupTester) -> Unit) {
         myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
+        setMode(NotebookEditorMode.EDIT)
         originalVirtualFile = myFixture.file.virtualFile
         val completionTester = CompletionAutoPopupTester(myFixture)
         completionTester.runWithAutoPopupEnabled {
