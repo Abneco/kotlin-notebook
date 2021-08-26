@@ -10,6 +10,8 @@ class KotlinNotebookInspectionsTest : JupyterBaseTestCase() {
 
     fun ignore_testUnresolvedVarInAnotherCell() = doTest()
 
+    fun testStub() {}
+
     private fun doTest() {
         myFixture.setCaresAboutInjection(true)
         myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)

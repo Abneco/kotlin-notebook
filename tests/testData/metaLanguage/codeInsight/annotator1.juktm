@@ -1,3 +1,3 @@
 #%% some
-<info descr="injects code for supported libraries: artifact resolution, default imports, initialization code, type renderers">%use xyz</info>
-<info descr="logs any changes of current classpath. Useful for debugging artifact resolution failures">%trackClasspath</info>
+<info descr="Inject code for supported libraries: artifact resolution, default imports, initialization code, type renderers">%use xyz</info>
+<info descr="Log classpath changes. Useful for debugging artifact resolution failures">%trackClasspath</info>

@@ -18,7 +18,7 @@ class JKTMetaAnnotator : Annotator {
         // TODO: to be addressed with i18n of ReplLineMagic / ReplCommand
         @Suppress("HardCodedStringLiteral")
         val description =
-            JupyterKotlinBundle.messageWithDefaultValue("jkt.meta.description.${insightValue.name.toLowerCase()}", insightValue.description)
+            JupyterKotlinBundle.messageWithDefaultValue("jkt.meta.description.${insightValue.name}", insightValue.description)
         holder
             .newAnnotation(HighlightSeverity.INFORMATION, description)
             .tooltip(description)
