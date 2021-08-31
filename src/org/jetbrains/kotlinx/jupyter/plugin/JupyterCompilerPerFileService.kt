@@ -1,11 +1,11 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
+import com.fasterxml.jackson.databind.node.ArrayNode
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.containers.ContainerUtil
@@ -20,15 +20,21 @@ import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
+import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
+import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterSource
 import java.io.File
 import java.net.URLClassLoader
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.withLock
+import kotlin.concurrent.write
 import kotlin.script.experimental.api.*
 import kotlin.script.experimental.host.getScriptingClass
 import kotlin.script.experimental.host.with
@@ -44,7 +50,7 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
  * @property projectService Project service that owns this sub-service
  */
 class JupyterCompilerPerFileService(
-    @Suppress("unused") private val virtualFile: VirtualFile,
+    @Suppress("unused") private val virtualFile: NotebookVirtualFile,
     private val projectService: JupyterCompilerService,
 ) : Disposable {
     private val compileLock = ReentrantReadWriteLock()
@@ -70,6 +76,8 @@ class JupyterCompilerPerFileService(
         addAll(defaultGlobalImports)
     }
 
+    private var kernelJarsAdded: Boolean = false
+
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterKotlinPluginScriptClassGetter(ScriptTemplateWithDisplayHelpers::class) {
         LOG.warn("Getting implicits list")
@@ -77,7 +85,25 @@ class JupyterCompilerPerFileService(
     }
 
     init {
+        updateClasspathWithKernelJars()
         Disposer.register(projectService, this)
+    }
+
+    private fun updateClasspathWithKernelJars() {
+        compileLock.write {
+            if (kernelJarsAdded) return
+            val session = try {
+                JupyterRuntimeService.getInstance(projectService.project).getOrCreateSession(virtualFile)
+            } catch (e: Throwable) {
+                // TODO: show error for user with asking for configuring Python interpreter for the module
+                LOG.warn("Cannot create Jupyter session for Kotlin notebook", e)
+                return
+            }
+            session.detectKotlinKernelJarsDir()?.let { jarsDir ->
+                currentClasspath.addAll(jarsDir.allJarsFromDir())
+                kernelJarsAdded = true
+            }
+        }
     }
 
     fun handleBeforeCompiling(
@@ -86,6 +112,7 @@ class JupyterCompilerPerFileService(
     ): ScriptCompilationConfiguration {
         val sourceText = runReadAction { sourceCode.text }
         LOG.warn("Before-compiling callback for script: $sourceText")
+        updateClasspathWithKernelJars()
         val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
         return ScriptCompilationConfiguration(withNewClasspath) {
             hostConfiguration.update {
@@ -166,5 +193,29 @@ class JupyterCompilerPerFileService(
 
     companion object {
         private val LOG = Logger.getInstance(JupyterCompilerPerFileService::class.java)
+
+        private fun JupyterNotebookSession.detectKotlinKernelJarsDir(): File? {
+            val specs = jupyterServer.client.getKernelSpecs()
+            val kotlinSpec = specs.firstOrNull { it.displayName == "Kotlin" } ?: return null
+            val command = kotlinSpec.metadata?.get("jar_path_detect_command") as? ArrayNode ?: return null
+            val commandArgs: List<String> = mutableListOf<String>().apply {
+                command.elements().forEachRemaining {
+                    add(it.asText())
+                }
+            }
+
+            val p: Process = Runtime.getRuntime().exec(commandArgs.toTypedArray())
+            val exitCode = p.waitFor()
+            if (exitCode != 0) {
+                val errorOutput = String(p.errorStream.readAllBytes(), StandardCharsets.UTF_8)
+                LOG.error("Unable to detect kernel JARs location")
+                LOG.error(errorOutput)
+                return null
+            }
+
+            val processOutput = p.inputStream.readAllBytes()
+            val filePath = String(processOutput, StandardCharsets.UTF_8).trim()
+            return File(filePath)
+        }
     }
 }

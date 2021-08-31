@@ -43,12 +43,8 @@ class JupyterCompilerService(val project: Project) : Disposable {
     val initialClasspath: List<File> = run {
         if (kotlinKernelDir == null) return@run emptyList()
 
-        val jarsPath = kotlinKernelDir.resolve("jars").toPath()
-        Files.walk(jarsPath).filter { path ->
-            path.isFile() && !path.fileName.toString().contains("kotlin-jupyter-kernel")
-        }.map {
-            it.toFile()
-        }.toList()
+        emptyList()
+        // kotlinKernelDir.resolve("run_kotlin_kernel/jars").allJarsFromDir()
     }
 
     val initialCompileConfiguration = run {
