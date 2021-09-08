@@ -12,6 +12,10 @@ import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.containers.nullize
 import com.intellij.util.io.delete
 import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.util.CodeInterval
@@ -21,6 +25,7 @@ import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
+import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
@@ -35,9 +40,16 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.withLock
 import kotlin.concurrent.write
-import kotlin.script.experimental.api.*
+import kotlin.script.experimental.api.ScriptCompilationConfiguration
+import kotlin.script.experimental.api.SourceCode
+import kotlin.script.experimental.api.defaultImports
+import kotlin.script.experimental.api.dependenciesSources
+import kotlin.script.experimental.api.hostConfiguration
+import kotlin.script.experimental.api.ide
+import kotlin.script.experimental.api.implicitReceivers
 import kotlin.script.experimental.host.getScriptingClass
 import kotlin.script.experimental.host.with
+import kotlin.script.experimental.jvm.JvmDependency
 import kotlin.script.experimental.jvm.withUpdatedClasspath
 
 /**
@@ -68,6 +80,7 @@ class JupyterCompilerPerFileService(
         parseOutCellMarker = true
     )
 
+    private val classpathLock = ReentrantReadWriteLock()
     private val currentClasspath: MutableList<File> by lazy {
         projectService.initialClasspath.toMutableList()
     }
@@ -84,9 +97,19 @@ class JupyterCompilerPerFileService(
         implicitsList
     }
 
+    private val coroutineScope = CoroutineScope(Job())
+
     init {
-        updateClasspathWithKernelJars()
+        updateClasspathWithExternalDependencies()
         Disposer.register(projectService, this)
+    }
+
+    private fun updateClasspathWithExternalDependencies() {
+        updateClasspathWithKernelJars()
+
+        coroutineScope.async {
+            updateClasspathWithProjectArtifacts()
+        }
     }
 
     private fun updateClasspathWithKernelJars() {
@@ -100,10 +123,18 @@ class JupyterCompilerPerFileService(
                 return
             }
             session.detectKotlinKernelJarsDir()?.let { jarsDir ->
-                currentClasspath.addAll(jarsDir.allJarsFromDir())
+                addToClasspath(jarsDir.allJarsFromDir())
                 kernelJarsAdded = true
             }
         }
+    }
+
+    private suspend fun updateClasspathWithProjectArtifacts() {
+        val buildService = JupyterKotlinProjectArtifactsService.getInstance(projectService.project)
+        val artifacts =
+            buildService.getProjectBuildResult()
+                ?: buildService.buildProject()
+        addToClasspath(artifacts.map { File(it) })
     }
 
     fun handleBeforeCompiling(
@@ -112,8 +143,10 @@ class JupyterCompilerPerFileService(
     ): ScriptCompilationConfiguration {
         val sourceText = runReadAction { sourceCode.text }
         LOG.warn("Before-compiling callback for script: $sourceText")
-        updateClasspathWithKernelJars()
-        val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
+        updateClasspathWithExternalDependencies()
+        val withNewClasspath = classpathLock.readLock().withLock {
+            config.withUpdatedClasspath(currentClasspath)
+        }
         return ScriptCompilationConfiguration(withNewClasspath) {
             hostConfiguration.update {
                 it.with {
@@ -122,6 +155,7 @@ class JupyterCompilerPerFileService(
             }
             implicitReceivers(implicitsList)
             defaultImports(additionalDefaultImports)
+            ide.dependenciesSources(JvmDependency(projectService.project.allSourceRoots()))
         }
     }
 
@@ -141,9 +175,8 @@ class JupyterCompilerPerFileService(
                 val lineClassesDir = classesDir.resolve("line_${directoryCounter.incrementAndGet()}")
                 val lineClassesDirAsFile = lineClassesDir.toFile()
                 lineClassesDirAsFile.mkdirs()
-                currentClasspath.add(lineClassesDirAsFile)
-
-                currentClasspath.addAll(snippetMetadata.newClasspath.map(::File))
+                addToClasspath(lineClassesDirAsFile)
+                addToClasspath(snippetMetadata.newClasspath.map(::File))
                 additionalDefaultImports.addAll(snippetMetadata.newImports)
 
                 val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir)
@@ -167,6 +200,18 @@ class JupyterCompilerPerFileService(
         return source.trimStart()
     }
 
+    private fun addToClasspath(file: File) {
+        classpathLock.writeLock().withLock {
+            currentClasspath.add(file)
+        }
+    }
+
+    private fun addToClasspath(files: Collection<File>) {
+        classpathLock.writeLock().withLock {
+            currentClasspath.addAll(files)
+        }
+    }
+
     fun codeRanges(cell: JupyterPsiCell): CellRanges {
         val code = getCellCode(cell)
         if (looksLikeReplCommand(code)) return CellRanges(null, listOf(TextRange(0, cell.textLength)))
@@ -187,6 +232,7 @@ class JupyterCompilerPerFileService(
     override fun dispose() {
         nbInjectionHosts.clear()
         classesDir.delete(true)
+        coroutineScope.cancel()
     }
 
     data class CellRanges(val codeRanges: List<TextRange>?, val magicRanges: List<TextRange>?)
