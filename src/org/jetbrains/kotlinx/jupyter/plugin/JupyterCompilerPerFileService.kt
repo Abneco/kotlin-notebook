@@ -25,8 +25,10 @@ import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
+import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsDirProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
+import org.jetbrains.kotlinx.jupyter.plugin.util.unpackKernelJars
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
@@ -91,6 +93,23 @@ class JupyterCompilerPerFileService(
     }
 
     private var kernelJarsAdded: Boolean = false
+    private val kernelJarsProviders: Collection<KernelJarsDirProvider> = listOf(
+        KernelJarsDirProvider {
+            unpackKernelJars()
+        },
+        KernelJarsDirProvider {
+            val session = try {
+                if(!ApplicationManager.getApplication().isUnitTestMode) {
+                    JupyterRuntimeService.getInstance(projectService.project).getOrCreateSession(virtualFile)
+                } else null
+            } catch (e: Throwable) {
+                // TODO: show error for user with asking for configuring Python interpreter for the module
+                LOG.warn("Cannot create Jupyter session for Kotlin notebook", e)
+                null
+            }
+            session?.detectKotlinKernelJarsDir()
+        },
+    )
 
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterKotlinPluginScriptClassGetter(ScriptTemplateWithDisplayHelpers::class) {
@@ -116,14 +135,10 @@ class JupyterCompilerPerFileService(
     private fun updateClasspathWithKernelJars() {
         compileLock.write {
             if (kernelJarsAdded) return
-            val session = try {
-                JupyterRuntimeService.getInstance(projectService.project).getOrCreateSession(virtualFile)
-            } catch (e: Throwable) {
-                // TODO: show error for user with asking for configuring Python interpreter for the module
-                LOG.warn("Cannot create Jupyter session for Kotlin notebook", e)
-                return
-            }
-            session.detectKotlinKernelJarsDir()?.let { jarsDir ->
+
+            kernelJarsProviders.firstNotNullOfOrNull { provider ->
+                provider.getKernelJars()
+            }?.let { jarsDir ->
                 addToClasspath(jarsDir.allJarsFromDir())
                 kernelJarsAdded = true
             }
