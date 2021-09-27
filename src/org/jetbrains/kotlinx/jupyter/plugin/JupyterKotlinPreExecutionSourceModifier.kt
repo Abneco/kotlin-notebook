@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.util.text.StringUtil
 import org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterDataKeys
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.PreExecutionSourceModifier
 
@@ -11,7 +12,7 @@ class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier {
         val amendedSource = buildString {
             for (artifact in artifacts) {
                 append("@file:DependsOn(\"")
-                append(artifact.replace("\\", "\\\\"))
+                append(StringUtil.escapeStringCharacters(artifact))
                 append("\")\n")
             }
             append(source)

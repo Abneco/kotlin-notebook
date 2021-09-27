@@ -2,6 +2,7 @@ package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.Disposer
@@ -98,7 +99,9 @@ class JupyterCompilerPerFileService(
         },
         KernelJarsDirProvider {
             val session = try {
-                JupyterRuntimeService.getInstance(projectService.project).getOrCreateSession(virtualFile)
+                if(!ApplicationManager.getApplication().isUnitTestMode) {
+                    JupyterRuntimeService.getInstance(projectService.project).getOrCreateSession(virtualFile)
+                } else null
             } catch (e: Throwable) {
                 // TODO: show error for user with asking for configuring Python interpreter for the module
                 LOG.warn("Cannot create Jupyter session for Kotlin notebook", e)
