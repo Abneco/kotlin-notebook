@@ -73,7 +73,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
         }
 
         return coroutineScope.async {
-            val res = resultPromise.blockingGet(1, TimeUnit.DAYS).orEmpty()
+            val res = resultPromise.blockingGet(100, TimeUnit.MINUTES).orEmpty()
             buildResult = res
             res
         }
