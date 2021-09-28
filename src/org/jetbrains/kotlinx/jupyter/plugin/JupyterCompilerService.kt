@@ -8,11 +8,13 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ultimate.PluginVerifier
+import com.intellij.util.io.isFile
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import java.io.File
+import java.nio.file.Files
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
 import kotlin.script.experimental.api.asSuccess
@@ -20,6 +22,7 @@ import kotlin.script.experimental.api.fileExtension
 import kotlin.script.experimental.api.refineConfiguration
 import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
+import kotlin.streams.toList
 
 /**
  * [JupyterCompilerService] stores all compiling-related things across the project:

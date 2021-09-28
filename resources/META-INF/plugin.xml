@@ -43,8 +43,6 @@
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
         <jupyterCellExecutionCallbackFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory"/>
-        <actions.beforeRunHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBeforeRunActionsHandler"/>
-        <connections.execution.preExecutionSourceModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinPreExecutionSourceModifier"/>
     </extensions>
 
     <actions resource-bundle="messages/JupyterKotlinBundle">
