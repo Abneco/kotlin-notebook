@@ -28,7 +28,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptC
 import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsDirProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
-import org.jetbrains.kotlinx.jupyter.plugin.util.unpackKernelJars
+import org.jetbrains.kotlinx.jupyter.plugin.util.getKernelJarsFromResources
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
@@ -95,7 +95,7 @@ class JupyterCompilerPerFileService(
     private var kernelJarsAdded: Boolean = false
     private val kernelJarsProviders: Collection<KernelJarsDirProvider> = listOf(
         KernelJarsDirProvider {
-            unpackKernelJars()
+            getKernelJarsFromResources()
         },
         KernelJarsDirProvider {
             val session = try {
@@ -270,8 +270,8 @@ class JupyterCompilerPerFileService(
             val exitCode = p.waitFor()
             if (exitCode != 0) {
                 val errorOutput = String(p.errorStream.readAllBytes(), StandardCharsets.UTF_8)
-                LOG.error("Unable to detect kernel JARs location")
-                LOG.error(errorOutput)
+                LOG.warn("Unable to detect kernel JARs location")
+                LOG.warn(errorOutput)
                 return null
             }
 
