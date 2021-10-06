@@ -50,8 +50,7 @@ class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
             hosts.clear()
             for (cell in element.psiCellList) {
                 if (cell.cellMarker.text.matches(NON_CODE_CELL_REGEX)) continue
-                val host = NotebookCellInjectionHost(cell)
-                hosts.add(host)
+                hosts.add(cell)
 
                 val ranges = compilerService.codeRanges(cell)
 
@@ -61,7 +60,7 @@ class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
                         "${injectedCounter.incrementAndGet()}.$extension"
                     )
                     forEach {
-                        registrar.addPlace(null, null, host, it)
+                        registrar.addPlace(null, null, cell, it)
                     }
                     registrar.doneInjecting()
                 }

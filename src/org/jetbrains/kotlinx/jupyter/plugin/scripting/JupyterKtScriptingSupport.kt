@@ -5,6 +5,7 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.RecursionManager
@@ -46,6 +47,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
     fun update() {
         // cache.clear()
+        logger<JupyterKtScriptingSupport>().warn("Running scripting support update")
         RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
             updater.invalidateAndCommit()
         }
