@@ -44,7 +44,7 @@
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
         <jupyterCellExecutionCallbackFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory"/>
         <connections.execution.preExecutionSourceModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinPreExecutionSourceModifier"/>
-        <editorAction implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterEditorAction"/>
+        <editorCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterEditorCustomizer"/>
     </extensions>
 
     <actions resource-bundle="messages/JupyterKotlinBundle">

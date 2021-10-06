@@ -6,9 +6,9 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterEditorAction
+import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterEditorCustomizer
 
-object KotlinJupyterEditorAction : JupyterEditorAction {
+object KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
     override fun onEditorCreated(project: Project, editor: Editor, virtualFile: NotebookVirtualFile) {
         if (!virtualFile.isKotlinNotebook) return
 
