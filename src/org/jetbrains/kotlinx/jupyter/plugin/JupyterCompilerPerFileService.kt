@@ -8,7 +8,6 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.containers.nullize
@@ -71,7 +70,7 @@ class JupyterCompilerPerFileService(
 ) : Disposable {
     private val compileLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(1)
-    private val nbInjectionHosts: MutableList<PsiLanguageInjectionHost> = ContainerUtil.createConcurrentList() // LoggingList()
+    private val nbInjectionHosts: MutableList<NotebookCellInjectionHost> = ContainerUtil.createConcurrentList() // LoggingList()
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -176,11 +175,11 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    fun <T> withInjectionHosts(action: (List<PsiLanguageInjectionHost>) -> T): T {
+    fun <T> withInjectionHosts(action: (List<NotebookCellInjectionHost>) -> T): T {
         return action(nbInjectionHosts)
     }
 
-    fun updateInjectionHosts(updateAction: (MutableList<PsiLanguageInjectionHost>) -> Unit) {
+    fun updateInjectionHosts(updateAction: (MutableList<NotebookCellInjectionHost>) -> Unit) {
         updateAction(nbInjectionHosts)
     }
 
