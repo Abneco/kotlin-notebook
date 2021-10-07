@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.compiler.CompilerPaths
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
@@ -45,20 +46,48 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
         return buildResult
     }
 
+    private fun mainModules(project: Project): List<Module> {
+        fun Module.isProbablyBuildSrc() = name.split(".").any { it == "buildSrc" }
+
+        val graph = ModuleManager.getInstance(project).moduleGraph(false)
+        return mutableListOf<Module>().also { result ->
+            for (node in graph.nodes) {
+                if (!graph.getIn(node).hasNext() && !node.isProbablyBuildSrc()) result.add(node)
+            }
+        }
+    }
+
     @Synchronized
     private fun buildProjectAsync(): Deferred<ProjectArtifacts> {
         if (buildAsyncResult != null) return buildAsyncResult!!
 
         val taskManager = ProjectTaskManager.getInstance(project)
 
-        val buildTask = taskManager.createAllModulesBuildTask(true, project)
+        val modulesToBuild = mainModules(project)
+        val buildTask = taskManager.createModulesBuildTask(
+            modulesToBuild.toTypedArray(),
+            true,
+            true,
+            false
+        )
+
         val buildTaskContext = ProjectTaskContext().apply {
             enableCollectionOfGeneratedFiles()
         }
 
         val resultPromise  = taskManager.run(buildTaskContext, buildTask).then {
             val allModules = ModuleManager.getInstance(project).modules
-            val projectJarPaths = CompilerPaths.getOutputPaths(allModules).filter { File(it).exists() }
+
+            val projectJarPaths = mutableListOf<String>().also { paths ->
+                CompilerPaths.getOutputPaths(allModules).forEach { path ->
+                    paths.add(path)
+                    val javaOutput = "classes${File.separatorChar}java"
+                    val kotlinOutput = "classes${File.separatorChar}kotlin"
+                    if (path.contains(javaOutput)) {
+                        paths.add(path.replace(javaOutput, kotlinOutput))
+                    }
+                }
+            }.filter { File(it).exists() }
 
             val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
             val librariesClassesPaths = libraryTable.libraries.flatMap { library ->
@@ -76,11 +105,19 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
             val res = resultPromise.blockingGet(1, TimeUnit.DAYS).orEmpty()
             buildResult = res
             res
+        }.also {
+            buildAsyncResult = it
         }
     }
 
     suspend fun buildProject(): ProjectArtifacts {
-        return buildProjectAsync().await()
+        val deferred = buildAsyncResult
+        return if (deferred?.isCompleted == false) {
+            deferred.await()
+        } else {
+            buildAsyncResult = null
+            buildProjectAsync().await()
+        }
     }
 
     override fun dispose() {

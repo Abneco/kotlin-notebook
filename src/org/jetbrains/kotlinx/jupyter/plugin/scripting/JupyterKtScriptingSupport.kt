@@ -47,6 +47,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
     fun update() {
         // cache.clear()
+        if (updater.isInTransaction()) return
         logger<JupyterKtScriptingSupport>().warn("Running scripting support update")
         RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
             updater.invalidateAndCommit()

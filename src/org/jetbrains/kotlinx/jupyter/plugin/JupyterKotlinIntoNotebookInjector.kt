@@ -6,6 +6,9 @@ import com.intellij.lang.injection.MultiHostRegistrar
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaFileType
 import org.jetbrains.kotlinx.jupyter.plugin.lang.JupyterKtMetaLanguage
@@ -30,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
     private val injectedCounter = AtomicInteger()
     private val projectCompilerService = JupyterCompilerService.getInstance(project)
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private val scriptingSupport = JupyterKtScriptingSupport.getInstance(project)
 
     private val logger = LogSaver()
@@ -70,7 +74,9 @@ class JupyterKotlinIntoNotebookInjector(project: Project) : MultiHostInjector {
             }
         }
 
-        scriptingSupport.update()
+        coroutineScope.async {
+            scriptingSupport.update()
+        }
     }
 
     override fun elementsToInjectIn(): MutableList<out Class<out PsiElement>> {

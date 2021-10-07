@@ -9,11 +9,11 @@ class JupyterKtScriptChangeListener(project: Project) : ScriptChangeListener(pro
     private val scriptingSupport = JupyterKtScriptingSupport.getInstance(project)
 
     override fun documentChanged(vFile: VirtualFile) {
-        scriptingSupport.update()
+        //scriptingSupport.update()
     }
 
     override fun editorActivated(vFile: VirtualFile) {
-        scriptingSupport.update()
+        //scriptingSupport.update()
     }
 
     override fun isApplicable(vFile: VirtualFile): Boolean {
