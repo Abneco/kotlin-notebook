@@ -26,6 +26,7 @@ import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
+import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsDirProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
@@ -41,6 +42,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.withLock
 import kotlin.concurrent.write
@@ -70,6 +72,7 @@ class JupyterCompilerPerFileService(
     private val projectService: JupyterCompilerService,
 ) : Disposable {
     private val compileLock = ReentrantReadWriteLock()
+    private val listLock = ReentrantLock()
     private val directoryCounter = AtomicInteger(1)
     private val nbInjectionHosts: MutableList<PsiLanguageInjectionHost> = ContainerUtil.createConcurrentList() // LoggingList()
 
@@ -85,9 +88,10 @@ class JupyterCompilerPerFileService(
     )
 
     private val classpathLock = ReentrantReadWriteLock()
-    private val currentClasspath: MutableList<File> by lazy {
+    private val _currentClasspath: MutableList<File> by lazy {
         projectService.initialClasspath.toMutableList()
     }
+    val currentClasspath: List<File> get() = _currentClasspath
 
     private val additionalDefaultImports: MutableList<String> = mutableListOf<String>().apply {
         addAll(defaultGlobalImports)
@@ -162,7 +166,7 @@ class JupyterCompilerPerFileService(
         LOG.warn("Before-compiling callback for script: $sourceText")
         updateClasspathWithExternalDependencies()
         val withNewClasspath = classpathLock.readLock().withLock {
-            config.withUpdatedClasspath(currentClasspath)
+            config.withUpdatedClasspath(_currentClasspath)
         }
         return ScriptCompilationConfiguration(withNewClasspath) {
             hostConfiguration.update {
@@ -177,11 +181,18 @@ class JupyterCompilerPerFileService(
     }
 
     fun <T> withInjectionHosts(action: (List<PsiLanguageInjectionHost>) -> T): T {
-        return action(nbInjectionHosts)
+        return listLock.withLock {
+            val filteredHosts = nbInjectionHosts.filter { it.isValidHost }
+            nbInjectionHosts.clear()
+            nbInjectionHosts.addAll(filteredHosts)
+            action(nbInjectionHosts)
+        }
     }
 
     fun updateInjectionHosts(updateAction: (MutableList<PsiLanguageInjectionHost>) -> Unit) {
-        updateAction(nbInjectionHosts)
+        listLock.withLock {
+            updateAction(nbInjectionHosts)
+        }
     }
 
     fun addCompiledSnippet(
@@ -205,6 +216,8 @@ class JupyterCompilerPerFileService(
                     val kClass = classLoader.loadClass(it).kotlin
                     implicitsList.addClass(kClass)
                 }
+
+                JupyterKtScriptingSupport.getInstance(projectService.project).update()
             } catch (e: Exception) {
                 LOG.error(e)
             }
@@ -219,13 +232,13 @@ class JupyterCompilerPerFileService(
 
     private fun addToClasspath(file: File) {
         classpathLock.writeLock().withLock {
-            currentClasspath.add(file)
+            _currentClasspath.add(file)
         }
     }
 
     private fun addToClasspath(files: Collection<File>) {
         classpathLock.writeLock().withLock {
-            currentClasspath.addAll(files)
+            _currentClasspath.addAll(files)
         }
     }
 

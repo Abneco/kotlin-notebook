@@ -19,15 +19,13 @@ import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsBuilder
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
+import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.InjectedElementsList
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
-import org.jetbrains.kotlinx.jupyter.plugin.util.component1
-import org.jetbrains.kotlinx.jupyter.plugin.util.component2
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
-import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage
 import kotlin.script.experimental.api.valueOrNull
 
 @Service
@@ -62,25 +60,16 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
         // builder.addInitialRoots()
 
-        // Collect all notebook files, get injections from them
         val openFiles = editors.mapNotNull { it.file as? NotebookVirtualFile }
         val notebookFiles = openFiles.filter { it.fileType is JupyterFileType }
-        val collector = CompositeConfigurationsCollector(
-            BuilderConfigurationsCollector(builder),
-            cache,
-        )
-        for (virtualFile in notebookFiles) {
-            val psiManager = PsiManager.getInstance(project)
-            val psiFile = runReadAction {
-                psiManager.findViewProvider(virtualFile)?.getPsi(JupyterLanguage)
-            } ?: continue
+        builder.addRootsFromNotebooks(notebookFiles)
+    }
 
-            val notebookFile = psiFile.containingFile.originalFile.virtualFile
-            val injectedFilesPairs = getInjectedFiles(notebookFile)
-            for ((psi, _) in injectedFilesPairs) {
-                collectConfigurations(psi, collector)
-            }
-        }
+    override fun getConfigurationImmediately(file: VirtualFile): ScriptCompilationConfigurationWrapper? {
+        if (file !is VirtualFileWindow) return null
+        val psiFile = PsiManager.getInstance(project).findFile(file) ?: return null
+        if (psiFile !is KtFile) return null
+        return getConfiguration(psiFile)?.valueOrNull()
     }
 
     override fun isApplicable(file: VirtualFile): Boolean {
@@ -88,12 +77,19 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     }
 
     override fun isConfigurationLoadingInProgress(file: KtFile): Boolean {
-        return false
+        return updater.isInTransaction()
     }
 
     private fun ScriptClassRootsBuilder.addInitialRoots() {
         val compilerService = JupyterCompilerService.getInstance(project)
         addTemplateClassesRoots(compilerService.initialClasspath.map { it.absolutePath })
+    }
+
+    private fun ScriptClassRootsBuilder.addRootsFromNotebooks(notebooks: Collection<NotebookVirtualFile>) {
+        for (notebook in notebooks) {
+            val notebookService = JupyterCompilerService.getForFile(project, notebook)
+            addTemplateClassesRoots(notebookService.currentClasspath.map { it.absolutePath })
+        }
     }
 
     private fun getInjectedFiles(virtualFile: VirtualFile): InjectedElementsList {
@@ -107,9 +103,8 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         }
     }
 
-    private fun collectConfigurations(psiFile: PsiElement, collector: ConfigurationsCollector) {
-        if (psiFile !is KtFile) return
-        val scriptCompilationConfigurationResult = runReadAction {
+    private fun getConfiguration(psiFile: KtFile): ScriptCompilationConfigurationResult? {
+        return runReadAction {
             if (!psiFile.isScript()) return@runReadAction null
             val scriptDef = psiFile.findScriptDefinition() ?: return@runReadAction null
 
@@ -118,11 +113,12 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
                 scriptDef,
                 project
             )
-        } ?: return
-        val scriptCompilationConfiguration =
-            scriptCompilationConfigurationResult.valueOrNull()
-                // ?: cache[psiFile.virtualFile.path]
-                ?: return
+        }
+    }
+
+    private fun collectConfigurations(psiFile: PsiElement, collector: ConfigurationsCollector) {
+        if (psiFile !is KtFile) return
+        val scriptCompilationConfiguration = getConfiguration(psiFile)?.valueOrNull() ?: return
         collector.add(psiFile.virtualFile, scriptCompilationConfiguration)
     }
 

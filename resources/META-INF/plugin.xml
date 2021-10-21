@@ -12,7 +12,7 @@
     <depends>com.intellij.modules.ultimate</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinIntoNotebookInjector"/>
+        <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinIntoCellsInjector"/>
         <fileIconPatcher implementation="org.jetbrains.kotlinx.jupyter.plugin.file.JupyterKotlinIconPatcher"/>
 
         <fileType name="Jupyter Kotlin meta language"
