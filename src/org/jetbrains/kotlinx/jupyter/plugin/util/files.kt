@@ -9,7 +9,7 @@ import java.nio.file.Files
 import kotlin.streams.toList
 
 val File.isNotEmptyDirectory: Boolean
-  get() = exists() && isDirectory && list()?.isEmpty()?.not() ?: false
+  get() = exists() && isDirectory && (list()?.isNotEmpty() ?: false)
 
 fun File.allJarsFromDir(): List<File> {
     return Files.walk(this.toPath()).filter { path ->
