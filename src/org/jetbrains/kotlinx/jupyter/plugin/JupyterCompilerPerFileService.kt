@@ -28,9 +28,9 @@ import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsDirProvider
+import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinJupyterResourcesUtil.getKernelJarsFromResources
 import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
-import org.jetbrains.kotlinx.jupyter.plugin.util.getKernelJarsFromResources
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
@@ -104,7 +104,7 @@ class JupyterCompilerPerFileService(
         },
         KernelJarsDirProvider {
             val session = try {
-                if(!ApplicationManager.getApplication().isUnitTestMode) {
+                if (!ApplicationManager.getApplication().isUnitTestMode) {
                     JupyterRuntimeService.getInstance(projectService.project).getOrCreateSession(virtualFile)
                 } else null
             } catch (e: Throwable) {
@@ -280,8 +280,20 @@ class JupyterCompilerPerFileService(
                 }
             }
 
-            val p: Process = Runtime.getRuntime().exec(commandArgs.toTypedArray())
-            val exitCode = p.waitFor()
+            val p: Process = try {
+                Runtime.getRuntime().exec(commandArgs.toTypedArray())
+            } catch (e: Exception) {
+                LOG.warn(e)
+                return null
+            }
+
+            val exitCode = try {
+                p.waitFor()
+            } catch (e: InterruptedException) {
+                LOG.warn(e)
+                return null
+            }
+
             if (exitCode != 0) {
                 val errorOutput = String(p.errorStream.readAllBytes(), StandardCharsets.UTF_8)
                 LOG.warn("Unable to detect kernel JARs location")
