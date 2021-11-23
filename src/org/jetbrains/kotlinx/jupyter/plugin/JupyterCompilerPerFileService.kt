@@ -212,8 +212,9 @@ class JupyterCompilerPerFileService(
                     arrayOf(lineClassesDir.toUri().toURL()),
                     (implicitsList.lastOrNull()?.fromClass ?: this::class).java.classLoader
                 )
-                kClassNames.forEach {
-                    val kClass = classLoader.loadClass(it).kotlin
+                kClassNames.forEach { className ->
+                    LOG.debug("Adding class: $className")
+                    val kClass = classLoader.loadClass(className).kotlin
                     implicitsList.addClass(kClass)
                 }
 
