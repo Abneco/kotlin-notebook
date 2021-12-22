@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
@@ -11,6 +12,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
+import kotlin.system.measureTimeMillis
 
 /**
  * Methods of [JupyterKotlinCellExecutionCallback] are triggered on
@@ -48,18 +50,27 @@ class JupyterKotlinCellExecutionCallback(
     override fun onExecuteInput(message: JupyterMessage) {
     }
 
-    override fun onExecuteReply(message: JupyterMessage) {
-        val snippetMetadataObject = message.getMetadata("eval_metadata") ?: return
-        val snippetMetadata = snippetMetadataObject.deserialize<EvaluatedSnippetMetadata>()
+    override fun onExecuteReply(message: JupyterMessage) = invokeLater {
+        try {
+            val snippetMetadataObject = message.getMetadata("eval_metadata") ?: return@invokeLater
+            val snippetMetadata: EvaluatedSnippetMetadata
+            val deserializationTime = measureTimeMillis {
+                snippetMetadata = snippetMetadataObject.deserialize()
+            }
 
-        LOG.logList("Cell executed. New classpath received", snippetMetadata.newClasspath)
+            LOG.logList("Cell executed. Deserialization took $deserializationTime ms. New classpath received", snippetMetadata.newClasspath)
 
-        /**
-         * Acquire an instance of [JupyterCompilerPerFileService] for this notebook
-         * and pass the metadata we received to it.
-         */
-        val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-        compilerService.addCompiledSnippet(snippetMetadata)
+            /**
+             * Acquire an instance of [JupyterCompilerPerFileService] for this notebook
+             * and pass the metadata we received to it.
+             */
+            val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
+            compilerService.addCompiledSnippet(snippetMetadata)
+        } catch (exception: Throwable) {
+            LOG.warn("Kotlin execution callback failed", exception)
+        } finally {
+          finalizeCallback()
+        }
     }
 
     override fun onInputRequest(message: JupyterInputRequestMessage) {
