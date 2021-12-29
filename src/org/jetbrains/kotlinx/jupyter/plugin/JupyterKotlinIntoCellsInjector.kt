@@ -52,8 +52,9 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
                     language,
                     "${getId(element)}.$extension"
                 )
-                forEach {
-                    registrar.addPlace(null, null, element, it)
+                for (range in this) {
+                    if (range.isEmpty) continue
+                    registrar.addPlace(null, null, element, range)
                 }
                 registrar.doneInjecting()
             }
