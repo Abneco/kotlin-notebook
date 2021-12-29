@@ -1,7 +1,7 @@
 <idea-plugin>
     <name>Kotlin Notebook</name>
     <id>org.jetbrains.plugins.kotlin.jupyter</id>
-    <category>Template Languages</category>
+    <category>Tools Integration</category>
     <vendor>JetBrains</vendor>
     <description>Kotlin support for Jupyter notebooks. Code insight, highlighting and so on.</description>
 
