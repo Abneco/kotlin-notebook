@@ -19,7 +19,7 @@ object KernelSpecDetector {
         File(System.getProperty("user.home").orEmpty())
     }
 
-    private const val sysPrefix = "usr/local"
+    private const val sysPrefix = "/usr/local"
 
     private fun env(name: String): String {
         return System.getenv(name).orEmpty()
@@ -52,10 +52,10 @@ object KernelSpecDetector {
         val kernelsDir = dirs.firstOrNull(filter)
 
         if (kernelsDir == null) {
-            LOG.warn("Jupyter kernel specs were not found on your computer.")
-            LOG.warn("Searched in:")
+            LOG.info("Jupyter kernel specs were not found on your computer.")
+            LOG.info("Searched in:")
             dirs.forEach { file ->
-                LOG.warn("> ${file.absolutePath}")
+                LOG.info("> ${file.absolutePath}")
             }
         }
 
