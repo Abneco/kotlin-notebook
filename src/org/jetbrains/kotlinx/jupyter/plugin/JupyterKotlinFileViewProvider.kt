@@ -14,11 +14,11 @@ import org.jetbrains.plugins.notebooks.jupyter.getMarkdownLanguage
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterTemplateTypes
 
 class JupyterKotlinFileViewProvider(
-  manager: PsiManager,
-  file: VirtualFile,
-  eventSystemEnabled: Boolean
+    manager: PsiManager,
+    file: VirtualFile,
+    eventSystemEnabled: Boolean
 ) :
-  MultiplePsiFilesPerDocumentFileViewProvider(
+    MultiplePsiFilesPerDocumentFileViewProvider(
         manager,
         file,
         eventSystemEnabled

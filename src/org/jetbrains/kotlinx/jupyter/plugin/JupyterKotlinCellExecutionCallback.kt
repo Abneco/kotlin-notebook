@@ -69,7 +69,7 @@ class JupyterKotlinCellExecutionCallback(
         } catch (exception: Throwable) {
             LOG.warn("Kotlin execution callback failed", exception)
         } finally {
-          finalizeCallback()
+            finalizeCallback()
         }
     }
 

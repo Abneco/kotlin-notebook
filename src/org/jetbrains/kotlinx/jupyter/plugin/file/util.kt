@@ -38,8 +38,7 @@ private val VirtualFile.notebookLanguage: Language? get(){
 private fun getLanguageFromOriginalFile(file: VirtualFile): Language? {
     return try {
         JupyterNotebookBase(file.inputStream.reader()).language
-    }
-    catch (e: Exception) {
+    } catch (e: Exception) {
         null
     }
 }

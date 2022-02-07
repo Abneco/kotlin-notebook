@@ -106,7 +106,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
             enableCollectionOfGeneratedFiles()
         }
 
-        val resultPromise  = taskManager.run(buildTaskContext, buildTask).then {
+        val resultPromise = taskManager.run(buildTaskContext, buildTask).then {
             val allModules = ModuleManager.getInstance(project).modules
 
             val projectJarPaths = mutableListOf<String>().also { paths ->

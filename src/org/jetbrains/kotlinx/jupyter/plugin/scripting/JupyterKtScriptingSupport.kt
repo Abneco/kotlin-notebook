@@ -134,13 +134,13 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         }
     }
 
-    private class BuilderConfigurationsCollector(private val builder: ScriptClassRootsBuilder): ConfigurationsCollector {
+    private class BuilderConfigurationsCollector(private val builder: ScriptClassRootsBuilder) : ConfigurationsCollector {
         override fun add(virtualFile: VirtualFile, configuration: ScriptCompilationConfigurationWrapper) {
             builder.add(virtualFile, configuration)
         }
     }
 
-    private class CompositeConfigurationsCollector(private vararg val collectors: ConfigurationsCollector): ConfigurationsCollector {
+    private class CompositeConfigurationsCollector(private vararg val collectors: ConfigurationsCollector) : ConfigurationsCollector {
         override fun add(virtualFile: VirtualFile, configuration: ScriptCompilationConfigurationWrapper) {
             collectors.forEach {
                 it.add(virtualFile, configuration)
