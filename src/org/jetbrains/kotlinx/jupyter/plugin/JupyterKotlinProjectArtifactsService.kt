@@ -10,8 +10,12 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectLocator
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
+import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.vfs.newvfs.BulkFileListener
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.task.ProjectTaskContext
 import com.intellij.task.ProjectTaskManager
 import kotlinx.coroutines.CoroutineScope
@@ -20,17 +24,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
+import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import java.io.File
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+
 
 @Service
 class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private var buildAsyncResult: Deferred<ProjectArtifacts>? = null
     private var buildResult: ProjectArtifacts? = null
+    private val isBuildUpToDate: AtomicBoolean = AtomicBoolean(false)
 
     init {
         addBuildListener()
+        addVFSChangesListener()
     }
 
     private fun addBuildListener() {
@@ -40,6 +49,27 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
             },
             this@JupyterKotlinProjectArtifactsService
         )
+    }
+
+    private fun addVFSChangesListener() {
+        project.messageBus.connect().subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
+            private fun isChangingEvent(event: VFileEvent): Boolean {
+                val vFile = event.file ?: return false
+
+                val fileProjects = ProjectLocator.getInstance().getProjectsForFile(vFile)
+                if (project !in fileProjects) return false
+
+                if (vFile.fileType == JupyterFileType) return false
+
+                return true
+            }
+
+            override fun after(events: MutableList<out VFileEvent>) {
+                if (events.any { isChangingEvent(it) }) {
+                    isBuildUpToDate.set(false)
+                }
+            }
+        })
     }
 
     fun getProjectBuildResult(): ProjectArtifacts? {
@@ -60,6 +90,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
     @Synchronized
     private fun buildProjectAsync(): Deferred<ProjectArtifacts> {
         if (buildAsyncResult != null) return buildAsyncResult!!
+        isBuildUpToDate.set(true)
 
         val taskManager = ProjectTaskManager.getInstance(project)
 
@@ -112,7 +143,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
 
     suspend fun buildProject(): ProjectArtifacts {
         val deferred = buildAsyncResult
-        return if (deferred?.isCompleted == false) {
+        return if (deferred != null && (deferred.isCompleted && isBuildUpToDate.get() || !deferred.isCompleted)) {
             deferred.await()
         } else {
             buildAsyncResult = null
