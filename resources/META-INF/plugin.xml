@@ -24,6 +24,7 @@
         <lang.parserDefinition language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.grammar.JKTMetaParserDefinition"/>
 
         <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaCompletionContributor"/>
+        <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.KotlinMagicsRuntimeCompletionContributor"/>
         <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaAnnotator"/>
         <typedHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaTypedHandlerDelegate"/>
     </extensions>
