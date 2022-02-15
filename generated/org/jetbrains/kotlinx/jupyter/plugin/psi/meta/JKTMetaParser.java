@@ -36,14 +36,32 @@ public class JKTMetaParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // NONSPACE_VAL
+  // arg_token+
   public static boolean arg(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "arg")) return false;
-    if (!nextTokenIs(b, NONSPACE_VAL)) return false;
+    if (!nextTokenIs(b, "<arg>", ARG_SEP_TOKEN, ARG_VAL_TOKEN)) return false;
     boolean r;
-    Marker m = enter_section_(b);
-    r = consumeToken(b, NONSPACE_VAL);
-    exit_section_(b, m, ARG, r);
+    Marker m = enter_section_(b, l, _NONE_, ARG, "<arg>");
+    r = arg_token(b, l + 1);
+    while (r) {
+      int c = current_position_(b);
+      if (!arg_token(b, l + 1)) break;
+      if (!empty_element_parsed_guard_(b, "arg", c)) break;
+    }
+    exit_section_(b, l, m, r, false, null);
+    return r;
+  }
+
+  /* ********************************************************** */
+  // ARG_SEP_TOKEN | ARG_VAL_TOKEN
+  public static boolean arg_token(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "arg_token")) return false;
+    if (!nextTokenIs(b, "<arg token>", ARG_SEP_TOKEN, ARG_VAL_TOKEN)) return false;
+    boolean r;
+    Marker m = enter_section_(b, l, _NONE_, ARG_TOKEN, "<arg token>");
+    r = consumeToken(b, ARG_SEP_TOKEN);
+    if (!r) r = consumeToken(b, ARG_VAL_TOKEN);
+    exit_section_(b, l, m, r, false, null);
     return r;
   }
 

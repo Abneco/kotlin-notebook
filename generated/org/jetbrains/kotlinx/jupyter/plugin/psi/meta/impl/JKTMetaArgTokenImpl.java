@@ -11,26 +11,20 @@ import static org.jetbrains.kotlinx.jupyter.plugin.psi.meta.JKTMetaTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import org.jetbrains.kotlinx.jupyter.plugin.psi.meta.*;
 
-public class JKTMetaArgImpl extends ASTWrapperPsiElement implements JKTMetaArg {
+public class JKTMetaArgTokenImpl extends ASTWrapperPsiElement implements JKTMetaArgToken {
 
-  public JKTMetaArgImpl(@NotNull ASTNode node) {
+  public JKTMetaArgTokenImpl(@NotNull ASTNode node) {
     super(node);
   }
 
   public void accept(@NotNull JKTMetaVisitor visitor) {
-    visitor.visitArg(this);
+    visitor.visitArgToken(this);
   }
 
   @Override
   public void accept(@NotNull PsiElementVisitor visitor) {
     if (visitor instanceof JKTMetaVisitor) accept((JKTMetaVisitor)visitor);
     else super.accept(visitor);
-  }
-
-  @Override
-  @NotNull
-  public List<JKTMetaArgToken> getArgTokenList() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(this, JKTMetaArgToken.class);
   }
 
 }

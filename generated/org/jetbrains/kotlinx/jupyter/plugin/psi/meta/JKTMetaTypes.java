@@ -12,6 +12,7 @@ public interface JKTMetaTypes {
 
   IElementType ARG = new JKTMetaElementType("ARG");
   IElementType ARGS = new JKTMetaElementType("ARGS");
+  IElementType ARG_TOKEN = new JKTMetaElementType("ARG_TOKEN");
   IElementType COMMAND_STATEMENT = new JKTMetaElementType("COMMAND_STATEMENT");
   IElementType EMPTY_STATEMENTS = new JKTMetaElementType("EMPTY_STATEMENTS");
   IElementType FILE = new JKTMetaElementType("FILE");
@@ -23,12 +24,13 @@ public interface JKTMetaTypes {
   IElementType STATEMENT_ID = new JKTMetaElementType("STATEMENT_ID");
 
   IElementType ANY = new JKTMetaTokenType("ANY");
+  IElementType ARG_SEP_TOKEN = new JKTMetaTokenType("ARG_SEP_TOKEN");
+  IElementType ARG_VAL_TOKEN = new JKTMetaTokenType("ARG_VAL_TOKEN");
   IElementType CODE_MARKER = new JKTMetaTokenType("CODE_MARKER");
   IElementType COMMAND_SIGN = new JKTMetaTokenType("COMMAND_SIGN");
   IElementType ID = new JKTMetaTokenType("ID");
   IElementType MAGIC_SIGN = new JKTMetaTokenType("MAGIC_SIGN");
   IElementType NEWLINE = new JKTMetaTokenType("NEWLINE");
-  IElementType NONSPACE_VAL = new JKTMetaTokenType("NONSPACE_VAL");
 
   class Factory {
     public static PsiElement createElement(ASTNode node) {
@@ -38,6 +40,9 @@ public interface JKTMetaTypes {
       }
       else if (type == ARGS) {
         return new JKTMetaArgsImpl(node);
+      }
+      else if (type == ARG_TOKEN) {
+        return new JKTMetaArgTokenImpl(node);
       }
       else if (type == COMMAND_STATEMENT) {
         return new JKTMetaCommandStatementImpl(node);

@@ -14,6 +14,7 @@ Jupyter Kotlin meta file(0,17)
           PsiWhiteSpace(' ')(13,14)
           JKTMetaArgsImpl(ARGS)(14,17)
             JKTMetaArgImpl(ARG)(14,17)
-              PsiElement(JKTMetaTokenType.NONSPACE_VAL)('xyz')(14,17)
+              JKTMetaArgTokenImpl(ARG_TOKEN)(14,17)
+                PsiElement(JKTMetaTokenType.ARG_VAL_TOKEN)('xyz')(14,17)
           JKTMetaNewlineOrEofImpl(NEWLINE_OR_EOF)(17,17)
             <empty list>

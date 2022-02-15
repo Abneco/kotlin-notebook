@@ -11,6 +11,10 @@ public class JKTMetaVisitor extends PsiElementVisitor {
     visitPsiElement(o);
   }
 
+  public void visitArgToken(@NotNull JKTMetaArgToken o) {
+    visitPsiElement(o);
+  }
+
   public void visitArgs(@NotNull JKTMetaArgs o) {
     visitPsiElement(o);
   }

@@ -40,4 +40,5 @@ empty_statements ::= NEWLINE+ <<eof>>?
 newline_or_eof ::= NEWLINE | <<eof>>
 
 args ::= arg*
-arg ::= NONSPACE_VAL
+arg ::= arg_token+
+arg_token ::= ARG_SEP_TOKEN | ARG_VAL_TOKEN

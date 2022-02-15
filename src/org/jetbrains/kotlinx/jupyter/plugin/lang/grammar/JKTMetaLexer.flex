@@ -25,7 +25,8 @@ CODE_MARKER=#%%
 MAGIC_SIGN=%
 COMMAND_SIGN=:
 ID=[a-zA-Z\_][a-zA-Z0-9\_]*
-NONSPACE_VAL=[^ \t\n\r]+
+ARG_VAL_TOKEN=[^ \t\n\r\(\)\[\]@=]+
+ARG_SEP_TOKEN=[\(\)\[\]@=]
 SPACE=[ \t]
 NEWLINE=(\n)|(\r\n)
 ANY=[^\n\r]+
@@ -62,7 +63,8 @@ ANY=[^\n\r]+
 }
 
 <EXPECT_ARGS> {
-   {NONSPACE_VAL} { return NONSPACE_VAL; }
+   {ARG_VAL_TOKEN} { return ARG_VAL_TOKEN; }
+   {ARG_SEP_TOKEN} { return ARG_SEP_TOKEN; }
    {SPACE} { return WHITE_SPACE; }
    {NEWLINE} { yybegin(EXPECT_DIRECTIVE); return NEWLINE; }
 }

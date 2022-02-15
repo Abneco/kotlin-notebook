@@ -58,8 +58,8 @@ public class _JKTMetaLexer implements FlexLexer {
 
   /* The ZZ_CMAP_A table has 256 entries */
   static final char ZZ_CMAP_A[] = zzUnpackCMap(
-    "\11\0\1\7\1\10\2\0\1\6\22\0\1\7\2\0\1\1\1\0\1\2\12\0\12\5\1\3\6\0\32\4\4\0"+
-    "\1\4\1\0\32\4\205\0");
+    "\11\0\1\10\1\11\2\0\1\6\22\0\1\10\2\0\1\1\1\0\1\2\2\0\2\7\6\0\12\5\1\3\2\0"+
+    "\1\7\2\0\1\7\32\4\1\7\1\0\1\7\1\0\1\4\1\0\32\4\205\0");
 
   /** 
    * Translates DFA states to action switch labels.
@@ -68,10 +68,10 @@ public class _JKTMetaLexer implements FlexLexer {
 
   private static final String ZZ_ACTION_PACKED_0 =
     "\5\0\3\1\1\2\1\3\1\4\1\5\1\6\1\7"+
-    "\1\1\1\10\1\11\1\12\1\0\1\13";
+    "\1\1\1\10\1\11\1\12\1\13\1\0\1\14";
 
   private static int [] zzUnpackAction() {
-    int [] result = new int[20];
+    int [] result = new int[21];
     int offset = 0;
     offset = zzUnpackAction(ZZ_ACTION_PACKED_0, offset, result);
     return result;
@@ -96,12 +96,12 @@ public class _JKTMetaLexer implements FlexLexer {
   private static final int [] ZZ_ROWMAP = zzUnpackRowMap();
 
   private static final String ZZ_ROWMAP_PACKED_0 =
-    "\0\0\0\11\0\22\0\33\0\44\0\55\0\66\0\77"+
-    "\0\55\0\55\0\110\0\121\0\55\0\55\0\132\0\55"+
-    "\0\55\0\143\0\154\0\55";
+    "\0\0\0\12\0\24\0\36\0\50\0\62\0\74\0\106"+
+    "\0\62\0\62\0\120\0\132\0\62\0\62\0\144\0\62"+
+    "\0\62\0\156\0\62\0\170\0\62";
 
   private static int [] zzUnpackRowMap() {
-    int [] result = new int[20];
+    int [] result = new int[21];
     int offset = 0;
     offset = zzUnpackRowMap(ZZ_ROWMAP_PACKED_0, offset, result);
     return result;
@@ -124,14 +124,15 @@ public class _JKTMetaLexer implements FlexLexer {
   private static final int [] ZZ_TRANS = zzUnpackTrans();
 
   private static final String ZZ_TRANS_PACKED_0 =
-    "\1\6\1\7\4\6\1\10\1\11\1\12\6\13\1\10"+
-    "\1\13\1\12\4\6\1\14\6\6\1\15\1\16\2\6"+
-    "\1\17\1\20\1\21\6\22\1\10\1\20\1\12\13\0"+
-    "\1\23\16\0\1\12\6\13\1\0\1\13\5\0\2\14"+
-    "\13\0\1\21\6\22\5\0\1\24\6\0";
+    "\1\6\1\7\4\6\1\10\1\6\1\11\1\12\6\13"+
+    "\1\10\2\13\1\12\4\6\1\14\7\6\1\15\1\16"+
+    "\2\6\1\17\1\6\1\20\1\21\6\22\1\10\1\23"+
+    "\1\20\1\12\14\0\1\24\20\0\1\12\6\13\1\0"+
+    "\2\13\5\0\2\14\15\0\1\21\6\22\6\0\1\25"+
+    "\7\0";
 
   private static int [] zzUnpackTrans() {
-    int [] result = new int[117];
+    int [] result = new int[130];
     int offset = 0;
     offset = zzUnpackTrans(ZZ_TRANS_PACKED_0, offset, result);
     return result;
@@ -170,10 +171,10 @@ public class _JKTMetaLexer implements FlexLexer {
 
   private static final String ZZ_ATTRIBUTE_PACKED_0 =
     "\5\0\1\11\2\1\2\11\2\1\2\11\1\1\2\11"+
-    "\1\1\1\0\1\11";
+    "\1\1\1\11\1\0\1\11";
 
   private static int [] zzUnpackAttribute() {
-    int [] result = new int[20];
+    int [] result = new int[21];
     int offset = 0;
     offset = zzUnpackAttribute(ZZ_ATTRIBUTE_PACKED_0, offset, result);
     return result;
@@ -482,57 +483,62 @@ public class _JKTMetaLexer implements FlexLexer {
             { return BAD_CHARACTER;
             } 
             // fall through
-          case 12: break;
+          case 13: break;
           case 2: 
             { yybegin(EXPECT_DIRECTIVE); return WHITE_SPACE;
             } 
             // fall through
-          case 13: break;
+          case 14: break;
           case 3: 
             { yybegin(EXPECT_DIRECTIVE); return NEWLINE;
             } 
             // fall through
-          case 14: break;
+          case 15: break;
           case 4: 
             { return ANY;
             } 
             // fall through
-          case 15: break;
+          case 16: break;
           case 5: 
             { yybegin(EXPECT_ARGS); return ID;
             } 
             // fall through
-          case 16: break;
+          case 17: break;
           case 6: 
             { yybegin(EXPECT_ID_STATE); return MAGIC_SIGN;
             } 
             // fall through
-          case 17: break;
+          case 18: break;
           case 7: 
             { yybegin(EXPECT_ID_STATE); return COMMAND_SIGN;
             } 
             // fall through
-          case 18: break;
+          case 19: break;
           case 8: 
             { return WHITE_SPACE;
             } 
             // fall through
-          case 19: break;
+          case 20: break;
           case 9: 
             { return NEWLINE;
             } 
             // fall through
-          case 20: break;
-          case 10: 
-            { return NONSPACE_VAL;
-            } 
-            // fall through
           case 21: break;
-          case 11: 
-            { yybegin(CODE_MARKER_STATE); return CODE_MARKER;
+          case 10: 
+            { return ARG_VAL_TOKEN;
             } 
             // fall through
           case 22: break;
+          case 11: 
+            { return ARG_SEP_TOKEN;
+            } 
+            // fall through
+          case 23: break;
+          case 12: 
+            { yybegin(CODE_MARKER_STATE); return CODE_MARKER;
+            } 
+            // fall through
+          case 24: break;
           default:
             zzScanError(ZZ_NO_MATCH);
           }
