@@ -87,14 +87,17 @@ class JupyterCompilerPerFileService(
         parseOutCellMarker = true
     )
 
-    private val classpathLock = ReentrantReadWriteLock()
-    private val _currentClasspath: MutableList<File> by lazy {
-        projectService.initialClasspath.toMutableList()
+    private val _currentClasspath: TwoPartsList<File> by lazy {
+        TwoPartsList<File>().apply {
+            addInitial(projectService.initialClasspath)
+        }
     }
-    val currentClasspath: List<File> get() = _currentClasspath
+    val currentClasspath: List<File> get() = _currentClasspath.getList()
 
-    private val additionalDefaultImports: MutableList<String> = mutableListOf<String>().apply {
-        addAll(defaultGlobalImports)
+    private val additionalDefaultImports: TwoPartsList<String> by lazy {
+        TwoPartsList<String>().apply {
+            addInitial(defaultGlobalImports)
+        }
     }
 
     private var kernelJarsAdded: Boolean = false
@@ -103,16 +106,7 @@ class JupyterCompilerPerFileService(
             getKernelJarsFromResources()
         },
         KernelJarsDirProvider {
-            val session = try {
-                if (!ApplicationManager.getApplication().isUnitTestMode) {
-                    JupyterRuntimeService.getInstance(projectService.project).getOrCreateSession(virtualFile)
-                } else null
-            } catch (e: Throwable) {
-                // TODO: show error for user with asking for configuring Python interpreter for the module
-                LOG.warn("Cannot create Jupyter session for Kotlin notebook", e)
-                null
-            }
-            session?.detectKotlinKernelJarsDir()
+            getSession()?.detectKotlinKernelJarsDir()
         },
     )
 
@@ -123,10 +117,23 @@ class JupyterCompilerPerFileService(
     }
 
     private val coroutineScope = CoroutineScope(Job())
+    private var previousSessionId: String? = null
 
     init {
         updateClasspathWithExternalDependencies()
         Disposer.register(projectService, this)
+    }
+
+    private fun getSession(): JupyterNotebookSession? {
+        return try {
+            if (!ApplicationManager.getApplication().isUnitTestMode) {
+                JupyterRuntimeService.getInstance(projectService.project).getOrCreateSession(virtualFile)
+            } else null
+        } catch (e: Throwable) {
+            // TODO: show error for user with asking for configuring Python interpreter for the module
+            LOG.warn("Cannot create Jupyter session for Kotlin notebook", e)
+            null
+        }
     }
 
     private fun updateClasspathWithExternalDependencies() {
@@ -138,13 +145,13 @@ class JupyterCompilerPerFileService(
     }
 
     private fun updateClasspathWithKernelJars() {
-        compileLock.write {
-            if (kernelJarsAdded) return
+        if (kernelJarsAdded) return
 
+        compileLock.write {
             kernelJarsProviders.firstNotNullOfOrNull { provider ->
                 provider.getKernelJars()
             }?.let { jarsDir ->
-                addToClasspath(jarsDir.allJarsFromDir())
+                _currentClasspath.addInitial(jarsDir.allJarsFromDir())
                 kernelJarsAdded = true
             }
         }
@@ -155,7 +162,7 @@ class JupyterCompilerPerFileService(
         val artifacts =
             buildService.getProjectBuildResult()
                 ?: buildService.buildProject()
-        addToClasspath(artifacts.map { File(it) })
+        _currentClasspath.addInitial(artifacts.map { File(it) })
     }
 
     fun handleBeforeCompiling(
@@ -165,9 +172,7 @@ class JupyterCompilerPerFileService(
         val sourceText = runReadAction { sourceCode.text }
         LOG.warn("Before-compiling callback for script: $sourceText")
         updateClasspathWithExternalDependencies()
-        val withNewClasspath = classpathLock.readLock().withLock {
-            config.withUpdatedClasspath(_currentClasspath)
-        }
+        val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
         return ScriptCompilationConfiguration(withNewClasspath) {
             hostConfiguration.update {
                 it.with {
@@ -175,7 +180,7 @@ class JupyterCompilerPerFileService(
                 }
             }
             implicitReceivers(implicitsList)
-            defaultImports(additionalDefaultImports)
+            defaultImports(additionalDefaultImports.getList())
             ide.dependenciesSources(JvmDependency(projectService.project.allSourceRoots()))
         }
     }
@@ -200,12 +205,24 @@ class JupyterCompilerPerFileService(
     ) {
         compileLock.writeLock().withLock {
             try {
+                val sessionId = getSession()?.sessionId
+                if (sessionId != previousSessionId) {
+                    LOG.warn("Clearing Kotlin snippets. Previous session ID: $previousSessionId")
+                    clearPreviousSnippets()
+                    previousSessionId = sessionId
+                }
+
                 val lineClassesDir = classesDir.resolve("line_${directoryCounter.incrementAndGet()}")
                 val lineClassesDirAsFile = lineClassesDir.toFile()
                 lineClassesDirAsFile.mkdirs()
-                addToClasspath(lineClassesDirAsFile)
-                addToClasspath(snippetMetadata.newClasspath.map(::File))
-                additionalDefaultImports.addAll(snippetMetadata.newImports)
+
+                _currentClasspath.addSnippet(ArrayList<File>(snippetMetadata.newClasspath.size + 1).apply {
+                    add(lineClassesDirAsFile)
+                    snippetMetadata.newClasspath.forEach {
+                        add(File(it))
+                    }
+                })
+                additionalDefaultImports.addSnippet(snippetMetadata.newImports)
 
                 val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir)
                 val classLoader = URLClassLoader(
@@ -225,22 +242,16 @@ class JupyterCompilerPerFileService(
         }
     }
 
+    private fun clearPreviousSnippets() {
+        _currentClasspath.clear()
+        additionalDefaultImports.clear()
+        implicitsList.clear()
+    }
+
     private fun getCellCode(cell: PsiElement): String {
         val sourceElement = PsiTreeUtil.getChildOfType(cell, JupyterSource::class.java)
         val source = sourceElement?.text.orEmpty()
         return source.trimStart()
-    }
-
-    private fun addToClasspath(file: File) {
-        classpathLock.writeLock().withLock {
-            _currentClasspath.add(file)
-        }
-    }
-
-    private fun addToClasspath(files: Collection<File>) {
-        classpathLock.writeLock().withLock {
-            _currentClasspath.addAll(files)
-        }
     }
 
     fun codeRanges(cell: JupyterPsiCell): CellRanges {
@@ -267,6 +278,41 @@ class JupyterCompilerPerFileService(
     }
 
     data class CellRanges(val codeRanges: List<TextRange>?, val magicRanges: List<TextRange>?)
+
+    class TwoPartsList<T>(
+        private val initialPart: MutableList<T> = mutableListOf(),
+        private val snippetsPart: MutableList<T> = mutableListOf(),
+    ) {
+        private val lock = ReentrantReadWriteLock()
+
+        private fun <R> withWriteLock(action: () -> R): R {
+            return lock.writeLock().withLock {
+                action()
+            }
+        }
+
+        private fun <R> withReadLock(action: () -> R): R {
+            return lock.readLock().withLock {
+                action()
+            }
+        }
+
+        fun clear() {
+            withWriteLock { snippetsPart.clear() }
+        }
+
+        fun addInitial(items: Collection<T>) {
+            withWriteLock { initialPart.addAll(items) }
+        }
+
+        fun addSnippet(items: Collection<T>) {
+            withWriteLock { snippetsPart.addAll(items) }
+        }
+
+        fun getList(): List<T> {
+            return withReadLock { initialPart + snippetsPart }
+        }
+    }
 
     companion object {
         private val LOG = Logger.getInstance(JupyterCompilerPerFileService::class.java)

@@ -18,6 +18,10 @@ class KotlinImplicitReceiversList(
         types.add(KotlinType(kClass))
     }
 
+    fun clear() {
+        types.clear()
+    }
+
     /**
      * We return a reversed iterator here because implicits that were added last have
      * bigger resolution priority. Iterator is used only to acquire implicit receivers.
