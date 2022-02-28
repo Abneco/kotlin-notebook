@@ -205,7 +205,10 @@ class JupyterCompilerPerFileService(
     ) {
         compileLock.writeLock().withLock {
             try {
-                val sessionId = getSession()?.sessionId
+                val sessionId = ApplicationManager.getApplication().executeOnPooledThread<String?> {
+                    getSession()?.sessionId
+                }.get()
+
                 if (sessionId != previousSessionId) {
                     LOG.warn("Clearing Kotlin snippets. Previous session ID: $previousSessionId")
                     clearPreviousSnippets()
