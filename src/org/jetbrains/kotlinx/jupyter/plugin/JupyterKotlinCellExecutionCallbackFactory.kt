@@ -14,11 +14,7 @@ import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
  * and should return the callback for the actions related to this cell.
  */
 class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFactory {
-    private var instance: JupyterExecutionCallback? = null
-
     override fun create(psiCell: JupyterPsiCell): JupyterExecutionCallback? {
-        instance?.let { return it }
-
         lateinit var notebookFile: NotebookVirtualFile
         lateinit var cellProject: Project
         runReadAction {
@@ -28,11 +24,9 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
 
         if (!notebookFile.isKotlinNotebook) return null
 
-        val callback = JupyterKotlinCellExecutionCallback(
+        return JupyterKotlinCellExecutionCallback(
             cellProject,
             notebookFile
         )
-        instance = callback
-        return callback
     }
 }

@@ -112,7 +112,7 @@ class JupyterCompilerPerFileService(
 
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterKotlinPluginScriptClassGetter(ScriptTemplateWithDisplayHelpers::class) {
-        LOG.warn("Getting implicits list")
+        // LOG.warn("Getting implicits list")
         implicitsList
     }
 
