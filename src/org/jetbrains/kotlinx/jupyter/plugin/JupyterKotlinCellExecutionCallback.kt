@@ -5,7 +5,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
-import org.jetbrains.kotlinx.jupyter.plugin.util.logList
+import org.jetbrains.kotlinx.jupyter.plugin.util.logListWarn
 import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInputRequestMessage
@@ -58,7 +58,10 @@ class JupyterKotlinCellExecutionCallback(
                 snippetMetadata = snippetMetadataObject.deserialize()
             }
 
-            LOG.logList("Cell executed. Deserialization took $deserializationTime ms. New classpath received", snippetMetadata.newClasspath)
+            LOG.logListWarn(
+                "Cell executed. Deserialization took $deserializationTime ms. New classpath received",
+                snippetMetadata.newClasspath
+            )
 
             /**
              * Acquire an instance of [JupyterCompilerPerFileService] for this notebook
