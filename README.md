@@ -28,6 +28,15 @@ has been resolved, and now you may refer it in any cell with relevant
 code insight.
 ![Execution](docs/img/exec1.png)
 
+## Troubleshooting
+There could be some problems during Kotlin notebooks evaluation. In some cases they could be solved by a user.
+
+### Cannot access script base class
+This problem usually appears when the user places notebooks inside the source root.
+In this case dependencies of the notebook are the same as the dependencies for this source root
+(so, it doesn't include scripting dependencies).
+Please, move the notebook files out of source roots and place them i.e. in project root.
+
 ## Requirements and dependencies
 This plugin requires that you have [IntelliJ IDEA Ultimate][IDEA Ultimate] 
 with the [Python plugin][Python Ultimate plugin] and [Kotlin plugin][Kotlin Ultimate plugin]
