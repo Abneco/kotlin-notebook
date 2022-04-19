@@ -10,7 +10,8 @@ import org.jetbrains.plugins.notebooks.jupyter.NOTEBOOK_LANGUAGE
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
 
 val VirtualFile?.isKotlinNotebook: Boolean get() {
-    return this?.notebookLanguage === KotlinLanguage.INSTANCE
+    if (this == null || extension != "ipynb") return false
+    return notebookLanguage === KotlinLanguage.INSTANCE
 }
 
 private val VirtualFile.notebookLanguage: Language? get(){
