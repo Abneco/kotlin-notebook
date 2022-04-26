@@ -14,6 +14,8 @@ import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.RAW_CELL_SUFFIX
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -41,8 +43,11 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
         if (element.cellMarker.text.matches(NON_CODE_CELL_REGEX)) return
 
         val compilerService = projectCompilerService.get(virtualFile)
+        val actualNotebookCells = (containingFile as? JupyterFile)?.children?.firstOrNull { it is JupyterNotebook }
+                            ?.children?.toSet() ?: emptySet()
 
         compilerService.updateInjectionHosts { hosts ->
+            hosts.removeIf { it !in actualNotebookCells }
             hosts.add(element)
 
             val ranges = compilerService.codeRanges(element)

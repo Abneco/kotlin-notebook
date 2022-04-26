@@ -74,7 +74,7 @@ class JupyterCompilerPerFileService(
     private val compileLock = ReentrantReadWriteLock()
     private val listLock = ReentrantLock()
     private val directoryCounter = AtomicInteger(1)
-    private val nbInjectionHosts: MutableList<PsiLanguageInjectionHost> = ContainerUtil.createConcurrentList() // LoggingList()
+    private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ContainerUtil.newConcurrentSet() // LoggingList()
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -185,7 +185,7 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    fun <T> withInjectionHosts(action: (List<PsiLanguageInjectionHost>) -> T): T {
+    fun <T> withInjectionHosts(action: (Collection<PsiLanguageInjectionHost>) -> T): T {
         return listLock.withLock {
             val filteredHosts = nbInjectionHosts.filter { it.isValidHost }
             nbInjectionHosts.clear()
@@ -194,7 +194,7 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    fun updateInjectionHosts(updateAction: (MutableList<PsiLanguageInjectionHost>) -> Unit) {
+    fun updateInjectionHosts(updateAction: (MutableCollection<PsiLanguageInjectionHost>) -> Unit) {
         listLock.withLock {
             updateAction(nbInjectionHosts)
         }
