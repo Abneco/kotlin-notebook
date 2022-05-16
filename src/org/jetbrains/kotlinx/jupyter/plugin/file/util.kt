@@ -5,7 +5,9 @@ import com.intellij.lang.Language
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.LightVirtualFile
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.notebook
+import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.NOTEBOOK_LANGUAGE
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
 
@@ -15,14 +17,14 @@ val VirtualFile?.isKotlinNotebook: Boolean get() {
 }
 
 private val VirtualFile.notebookLanguage: Language? get(){
-    if (this is NotebookVirtualFile) {
+    if (isBackedNotebook(this)) {
         return notebook.language
     }
 
     return if (this is LightVirtualFile) {
         // It's copy of either notebook or origin file being modified
-        val notebookFile = originalFile as? NotebookVirtualFile
-            ?: (originalFile as? LightVirtualFile)?.originalFile as? NotebookVirtualFile
+        val notebookFile = takeIfBackedNotebook(originalFile)
+            ?: takeIfBackedNotebook((originalFile as? LightVirtualFile)?.originalFile)
         notebookFile?.notebook?.language
             ?: originalFile?.getUserData(NOTEBOOK_LANGUAGE)
             ?: getLanguageFromOriginalFile(this)

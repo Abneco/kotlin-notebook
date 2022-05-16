@@ -11,7 +11,8 @@ import com.intellij.ultimate.PluginVerifier
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
-import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
 import java.io.File
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
@@ -53,7 +54,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
                 beforeCompiling { (sourceCode, config, _) ->
                     val virtualFile = (sourceCode as? KtFileScriptSource)?.virtualFile
                     val fileDelegate = (virtualFile as? VirtualFileWindow)?.delegate
-                    val notebookFile = fileDelegate as? NotebookVirtualFile ?: return@beforeCompiling config.asSuccess()
+                    val notebookFile = takeIfBackedNotebook(fileDelegate) ?: return@beforeCompiling config.asSuccess()
                     get(notebookFile).handleBeforeCompiling(sourceCode, config).asSuccess()
                 }
             }
@@ -73,7 +74,8 @@ class JupyterCompilerService(val project: Project) : Disposable {
 
     val language = Language.findLanguageByID("kotlin")!!
 
-    fun get(virtualFile: NotebookVirtualFile): JupyterCompilerPerFileService {
+    fun get(virtualFile: VirtualFile): JupyterCompilerPerFileService {
+        assertBackedNotebook(virtualFile)
         return mapping.getOrPut(virtualFile) { JupyterCompilerPerFileService(virtualFile, this) }
     }
 
@@ -83,7 +85,8 @@ class JupyterCompilerService(val project: Project) : Disposable {
     companion object {
         fun getInstance(project: Project) = project.service<JupyterCompilerService>()
 
-        fun getForFile(project: Project, virtualFile: NotebookVirtualFile): JupyterCompilerPerFileService {
+        fun getForFile(project: Project, virtualFile: VirtualFile): JupyterCompilerPerFileService {
+            assertBackedNotebook(virtualFile)
             return getInstance(project).get(virtualFile)
         }
     }

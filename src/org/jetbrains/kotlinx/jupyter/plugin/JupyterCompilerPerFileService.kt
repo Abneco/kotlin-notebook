@@ -7,6 +7,7 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.util.PsiTreeUtil
@@ -31,7 +32,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsDirProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinJupyterResourcesUtil.getKernelJarsFromResources
 import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
-import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
@@ -68,7 +69,7 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
  * @property projectService Project service that owns this sub-service
  */
 class JupyterCompilerPerFileService(
-    @Suppress("unused") private val virtualFile: NotebookVirtualFile,
+    private val virtualFile: VirtualFile,
     private val projectService: JupyterCompilerService,
 ) : Disposable {
     private val compileLock = ReentrantReadWriteLock()
@@ -120,6 +121,7 @@ class JupyterCompilerPerFileService(
     private var previousSessionId: String? = null
 
     init {
+        assertBackedNotebook(virtualFile)
         updateClasspathWithExternalDependencies()
         Disposer.register(projectService, this)
     }

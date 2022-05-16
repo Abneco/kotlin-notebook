@@ -2,8 +2,8 @@ package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
@@ -15,7 +15,7 @@ import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
  */
 class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFactory {
     override fun create(psiCell: JupyterPsiCell): JupyterExecutionCallback? {
-        lateinit var notebookFile: NotebookVirtualFile
+        lateinit var notebookFile: VirtualFile // backed
         lateinit var cellProject: Project
         runReadAction {
             notebookFile = psiCell.getJupyterVirtualFile()!!

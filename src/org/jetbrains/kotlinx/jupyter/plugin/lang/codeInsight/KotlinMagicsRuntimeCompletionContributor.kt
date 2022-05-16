@@ -15,12 +15,13 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.util.Key
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiFile
 import com.intellij.util.ProcessingContext
 import org.jetbrains.kotlinx.jupyter.messaging.CompleteReply
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
-import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterWebSocketClientClosedException
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
@@ -77,10 +78,10 @@ class KotlinMagicsRuntimeCompletionContributor: CompletionContributor(), DumbAwa
         })
     }
 
-    fun getVirtualFile(psiFile: PsiFile) : NotebookVirtualFile? {
+    fun getVirtualFile(psiFile: PsiFile) : VirtualFile? {
         val vFile = psiFile.virtualFile
         val originalFile = if (vFile is VirtualFileWindow) vFile.delegate else vFile
-        return originalFile as? NotebookVirtualFile
+        return takeIfBackedNotebook(originalFile)
     }
 
     fun sendCompleteRequestMessage(session: JupyterNotebookSession, result: CompletionResultSet, otherResults: Set<CompletionResult>,

@@ -24,7 +24,8 @@ import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrap
 import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.InjectedElementsList
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
-import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import kotlin.script.experimental.api.valueOrNull
 
@@ -60,7 +61,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
         // builder.addInitialRoots()
 
-        val openFiles = editors.mapNotNull { it.file as? NotebookVirtualFile }
+        val openFiles = editors.mapNotNull { takeIfBackedNotebook(it.file) }
         val notebookFiles = openFiles.filter { it.fileType is JupyterFileType }
         builder.addRootsFromNotebooks(notebookFiles)
     }
@@ -85,7 +86,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         addTemplateClassesRoots(compilerService.initialClasspath.map { it.absolutePath })
     }
 
-    private fun ScriptClassRootsBuilder.addRootsFromNotebooks(notebooks: Collection<NotebookVirtualFile>) {
+    private fun ScriptClassRootsBuilder.addRootsFromNotebooks(notebooks: Collection<VirtualFile>) {
         for (notebook in notebooks) {
             val notebookService = JupyterCompilerService.getForFile(project, notebook)
             addTemplateClassesRoots(notebookService.currentClasspath.map { it.absolutePath })
@@ -93,7 +94,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     }
 
     private fun getInjectedFiles(virtualFile: VirtualFile): InjectedElementsList {
-        if (virtualFile !is NotebookVirtualFile) return emptyList()
+        if (!isBackedNotebook(virtualFile)) return emptyList()
         val fileService = compilerService.get(virtualFile)
 
         return runReadAction {

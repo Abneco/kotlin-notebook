@@ -3,10 +3,11 @@ package org.jetbrains.kotlinx.jupyter.plugin
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListWarn
-import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInputRequestMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
@@ -26,8 +27,13 @@ import kotlin.system.measureTimeMillis
  */
 class JupyterKotlinCellExecutionCallback(
     private val project: Project,
-    private val virtualFile: NotebookVirtualFile
+    private val virtualFile: VirtualFile // backed
 ) : JupyterExecutionCallback {
+
+    init {
+      assertBackedNotebook(virtualFile)
+    }
+
     override val channel: JupyterMessageChannel
         get() = JupyterMessageChannel.ANY
     override var finalizeCallback = {}
