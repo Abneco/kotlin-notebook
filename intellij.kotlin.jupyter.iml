@@ -45,6 +45,7 @@
     <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-scripting-jvm" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-scripting-common" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-compiler-common" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-scripting-compiler-impl" level="project" />
     <orderEntry type="module" module-name="intellij.python.jupyter" />
     <orderEntry type="module" module-name="intellij.python.jupyter.psi" />
     <orderEntry type="module" module-name="intellij.platform.core" />
