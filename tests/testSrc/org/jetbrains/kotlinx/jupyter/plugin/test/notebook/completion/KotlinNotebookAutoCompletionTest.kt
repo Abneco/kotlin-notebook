@@ -1,9 +1,10 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion
 
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
+import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.plugins.notebooks.editor.actions.command.mode.NotebookEditorMode
 import org.jetbrains.plugins.notebooks.editor.actions.command.mode.setMode
 import org.jetbrains.plugins.notebooks.jupyter.JupyterBaseTestCase
@@ -38,7 +39,9 @@ class KotlinNotebookAutoCompletionTest : JupyterBaseTestCase() {
 
     private fun doTest(action: (CompletionAutoPopupTester) -> Unit) {
         myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
-        setMode(NotebookEditorMode.EDIT)
+        invokeAndWaitIfNeeded {
+            setMode(NotebookEditorMode.EDIT)
+        }
         originalVirtualFile = myFixture.file.virtualFile
         val completionTester = CompletionAutoPopupTester(myFixture)
         completionTester.runWithAutoPopupEnabled {
