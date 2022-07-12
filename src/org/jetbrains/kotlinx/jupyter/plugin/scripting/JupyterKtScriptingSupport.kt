@@ -27,6 +27,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
+import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import kotlin.script.experimental.api.valueOrNull
 
 @Service
@@ -61,7 +62,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
         // builder.addInitialRoots()
 
-        val openFiles = editors.mapNotNull { takeIfBackedNotebook(it.file) }
+        val openFiles = editors.mapNotNull { (it as? JupyterFileEditor)?.getNotebookFile() }
         val notebookFiles = openFiles.filter { it.fileType is JupyterFileType }
         builder.addRootsFromNotebooks(notebookFiles)
     }
