@@ -27,7 +27,8 @@ import kotlin.system.measureTimeMillis
  */
 class JupyterKotlinCellExecutionCallback(
     private val project: Project,
-    private val virtualFile: VirtualFile // backed
+    private val virtualFile: VirtualFile, // backed
+    private val cellSource: String,
 ) : JupyterExecutionCallback {
 
     init {
@@ -74,7 +75,7 @@ class JupyterKotlinCellExecutionCallback(
              * and pass the metadata we received to it.
              */
             val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-            compilerService.addCompiledSnippet(snippetMetadata)
+            compilerService.addCompiledSnippet(snippetMetadata, cellSource)
         } catch (exception: Throwable) {
             LOG.warn("Kotlin execution callback failed", exception)
         } finally {

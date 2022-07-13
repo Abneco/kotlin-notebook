@@ -1,7 +1,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scripting
 
 import com.intellij.injected.editor.VirtualFileWindow
-import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -10,7 +9,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.RecursionManager
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
@@ -22,10 +20,7 @@ import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfiguration
-import org.jetbrains.kotlinx.jupyter.plugin.InjectedElementsList
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
-import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
-import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import kotlin.script.experimental.api.valueOrNull
@@ -34,10 +29,7 @@ import kotlin.script.experimental.api.valueOrNull
 class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport {
     private val compilerService = JupyterCompilerService.getInstance(project)
     private val editorManager: FileEditorManager? get() = FileEditorManager.getInstance(project)
-    private val injectedManager = InjectedLanguageManager.getInstance(project)
     private val fileExtension = compilerService.fileExtension
-
-    private val cache = ConfigurationsCache()
 
     private val configurationManager: CompositeScriptConfigurationManager
         get() = ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager
@@ -82,26 +74,11 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         return updater.isInTransaction()
     }
 
-    private fun ScriptClassRootsBuilder.addInitialRoots() {
-        val compilerService = JupyterCompilerService.getInstance(project)
-        addTemplateClassesRoots(compilerService.initialClasspath.map { it.absolutePath })
-    }
-
     private fun ScriptClassRootsBuilder.addRootsFromNotebooks(notebooks: Collection<VirtualFile>) {
         for (notebook in notebooks) {
             val notebookService = JupyterCompilerService.getForFile(project, notebook)
             addTemplateClassesRoots(notebookService.currentClasspath.map { it.absolutePath })
-        }
-    }
-
-    private fun getInjectedFiles(virtualFile: VirtualFile): InjectedElementsList {
-        if (!isBackedNotebook(virtualFile)) return emptyList()
-        val fileService = compilerService.get(virtualFile)
-
-        return runReadAction {
-            fileService.withInjectionHosts { hosts ->
-                hosts.flatMap { host -> injectedManager.getInjectedPsiFiles(host).orEmpty() }
-            }
+            addSources(notebookService.currentSourceRoots.map { it.absolutePath })
         }
     }
 
@@ -115,38 +92,6 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
                 scriptDef,
                 project
             )
-        }
-    }
-
-    private fun collectConfigurations(psiFile: PsiElement, collector: ConfigurationsCollector) {
-        if (psiFile !is KtFile) return
-        val scriptCompilationConfiguration = getConfiguration(psiFile)?.valueOrNull() ?: return
-        collector.add(psiFile.virtualFile, scriptCompilationConfiguration)
-    }
-
-    private interface ConfigurationsCollector {
-        fun add(virtualFile: VirtualFile, configuration: ScriptCompilationConfigurationWrapper)
-    }
-
-    private class ConfigurationsCache(
-        private val cache: MutableMap<String, ScriptCompilationConfigurationWrapper> = hashMapOf(),
-    ) : MutableMap<String, ScriptCompilationConfigurationWrapper> by cache, ConfigurationsCollector {
-        override fun add(virtualFile: VirtualFile, configuration: ScriptCompilationConfigurationWrapper) {
-            cache[virtualFile.path] = configuration
-        }
-    }
-
-    private class BuilderConfigurationsCollector(private val builder: ScriptClassRootsBuilder) : ConfigurationsCollector {
-        override fun add(virtualFile: VirtualFile, configuration: ScriptCompilationConfigurationWrapper) {
-            builder.add(virtualFile, configuration)
-        }
-    }
-
-    private class CompositeConfigurationsCollector(private vararg val collectors: ConfigurationsCollector) : ConfigurationsCollector {
-        override fun add(virtualFile: VirtualFile, configuration: ScriptCompilationConfigurationWrapper) {
-            collectors.forEach {
-                it.add(virtualFile, configuration)
-            }
         }
     }
 

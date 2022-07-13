@@ -41,6 +41,7 @@
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">
         <jupyterLanguageBasedFileViewProviderChooser implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinFileViewProviderChooser"/>
+        <editor.notebookEditorCreatedCallback implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinNotebookEditorFactoryListener"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">

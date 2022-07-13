@@ -17,16 +17,19 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
     override fun create(psiCell: JupyterPsiCell): JupyterExecutionCallback? {
         lateinit var notebookFile: VirtualFile // backed
         lateinit var cellProject: Project
+        lateinit var cellSource: String
         runReadAction {
             notebookFile = psiCell.getJupyterVirtualFile()!!
             cellProject = psiCell.project
+            cellSource = psiCell.text
         }
 
         if (!notebookFile.isKotlinNotebook) return null
 
         return JupyterKotlinCellExecutionCallback(
             cellProject,
-            notebookFile
+            notebookFile,
+            cellSource
         )
     }
 }

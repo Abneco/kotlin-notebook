@@ -6,6 +6,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
@@ -96,6 +97,9 @@ class JupyterCompilerPerFileService(
     }
     val currentClasspath: List<File> get() = _currentClasspath.getList()
 
+    private val _sourceRoots = TwoPartsList<File>()
+    val currentSourceRoots: List<File> get() = _sourceRoots.getList()
+
     private val additionalDefaultImports: TwoPartsList<String> by lazy {
         TwoPartsList<String>().apply {
             addInitial(defaultGlobalImports)
@@ -134,6 +138,7 @@ class JupyterCompilerPerFileService(
             } else null
         } catch (e: Throwable) {
             // TODO: show error for user with asking for configuring Python interpreter for the module
+            if (e is ProcessCanceledException) return null
             LOG.warn("Cannot create Jupyter session for Kotlin notebook", e)
             null
         }
@@ -184,16 +189,9 @@ class JupyterCompilerPerFileService(
             }
             implicitReceivers(implicitsList)
             defaultImports(additionalDefaultImports.getList())
-            ide.dependenciesSources(JvmDependency(projectService.project.allSourceRoots()))
-        }
-    }
-
-    fun <T> withInjectionHosts(action: (Collection<PsiLanguageInjectionHost>) -> T): T {
-        return listLock.withLock {
-            val filteredHosts = nbInjectionHosts.filter { it.isValidHost }
-            nbInjectionHosts.clear()
-            nbInjectionHosts.addAll(filteredHosts)
-            action(nbInjectionHosts)
+            ide.dependenciesSources(JvmDependency(
+                projectService.project.allSourceRoots() + _sourceRoots.getList()
+            ))
         }
     }
 
@@ -204,7 +202,8 @@ class JupyterCompilerPerFileService(
     }
 
     fun addCompiledSnippet(
-        snippetMetadata: EvaluatedSnippetMetadata
+        snippetMetadata: EvaluatedSnippetMetadata,
+        cellSource: String,
     ) {
         compileLock.writeLock().withLock {
             try {
@@ -218,9 +217,14 @@ class JupyterCompilerPerFileService(
                     previousSessionId = sessionId
                 }
 
-                val lineClassesDir = classesDir.resolve("line_${directoryCounter.incrementAndGet()}")
+                val nextCounter = directoryCounter.incrementAndGet()
+
+                val lineClassesDir = classesDir.resolve("line_$nextCounter")
                 val lineClassesDirAsFile = lineClassesDir.toFile()
                 lineClassesDirAsFile.mkdirs()
+
+                val lineSourcesDir = classesDir.resolve("sources_$nextCounter")
+                // TODO: compare text in snippet metadata with cell source and add a source file to directory and to the container
 
                 _currentClasspath.addSnippet(ArrayList<File>(snippetMetadata.newClasspath.size + 1).apply {
                     add(lineClassesDirAsFile)
@@ -228,9 +232,10 @@ class JupyterCompilerPerFileService(
                         add(File(it))
                     }
                 })
+                _sourceRoots.addSnippet(listOf(lineSourcesDir.toFile()) + snippetMetadata.newSources.map { File(it) })
                 additionalDefaultImports.addSnippet(snippetMetadata.newImports)
 
-                val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir)
+                val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
                 val classLoader = URLClassLoader(
                     arrayOf(lineClassesDir.toUri().toURL()),
                     (implicitsList.lastOrNull()?.fromClass ?: this::class).java.classLoader
