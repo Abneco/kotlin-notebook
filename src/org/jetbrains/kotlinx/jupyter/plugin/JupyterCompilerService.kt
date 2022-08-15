@@ -3,6 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -11,6 +12,7 @@ import com.intellij.ultimate.PluginVerifier
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
+import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
 import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
 import java.io.File
@@ -39,10 +41,9 @@ class JupyterCompilerService(val project: Project) : Disposable {
     }
 
     val initialClasspath: List<File> = run {
-        if (kotlinKernelDir == null) return@run emptyList()
-
-        emptyList()
-        // kotlinKernelDir.resolve("run_kotlin_kernel/jars").allJarsFromDir()
+        if (ApplicationManager.getApplication().isUnitTestMode) {
+            KotlinKernelProcessService.getInstance().ideJars
+        } else emptyList()
     }
 
     val initialCompileConfiguration = run {

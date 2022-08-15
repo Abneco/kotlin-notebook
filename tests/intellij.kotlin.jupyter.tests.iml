@@ -9,10 +9,16 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="intellij.kotlin.jupyter" />
     <orderEntry type="module" module-name="kotlin.core" scope="PROVIDED" />
-    <orderEntry type="module" module-name="intellij.platform.lang.impl" scope="PROVIDED" />
+    <orderEntry type="module" module-name="kotlin.scripting" />
     <orderEntry type="module" module-name="intellij.platform.testFramework" scope="TEST" />
     <orderEntry type="module" module-name="intellij.java.testFramework" scope="TEST" />
     <orderEntry type="module" module-name="intellij.idea.ultimate.main" scope="RUNTIME" />
     <orderEntry type="module" module-name="intellij.python.jupyter" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.python.jupyter.psi" scope="TEST" />
+    <orderEntry type="library" name="jackson-databind" level="project" />
+    <orderEntry type="library" name="jackson" level="project" />
+    <orderEntry type="module" module-name="intellij.platform.lang.impl" scope="PROVIDED" />
+    <orderEntry type="module" module-name="kotlin.base.scripting" />
+    <orderEntry type="module" module-name="intellij.platform.lang" />
   </component>
 </module>

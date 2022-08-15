@@ -11,18 +11,24 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectLocator
+import com.intellij.openapi.projectRoots.JavaSdkType
+import com.intellij.openapi.projectRoots.Sdk
+import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.task.ProjectTaskContext
 import com.intellij.task.ProjectTaskManager
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import java.io.File
@@ -52,7 +58,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
     }
 
     private fun addVFSChangesListener() {
-        project.messageBus.connect().subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
+        val listener = object : BulkFileListener, Disposable {
             private fun isChangingEvent(event: VFileEvent): Boolean {
                 val vFile = event.file ?: return false
 
@@ -69,7 +75,13 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
                     isBuildUpToDate.set(false)
                 }
             }
-        })
+
+            override fun dispose() {
+            }
+        }
+        Disposer.register(this, listener)
+
+        project.messageBus.connect().subscribe(VirtualFileManager.VFS_CHANGES, listener)
     }
 
     fun getProjectBuildResult(): ProjectArtifacts? {
@@ -82,7 +94,12 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
         val graph = ModuleManager.getInstance(project).moduleGraph(false)
         return mutableListOf<Module>().also { result ->
             for (node in graph.nodes) {
-                if (!graph.getIn(node).hasNext() && !node.isProbablyBuildSrc()) result.add(node)
+                if (graph.getIn(node).hasNext() || node.isProbablyBuildSrc()) continue
+
+                val moduleRootManager = ModuleRootManager.getInstance(node)
+                val sdk: Sdk? = moduleRootManager.sdk
+                if (sdk == null) continue
+                if (sdk.sdkType == KotlinSdkType.INSTANCE || sdk.sdkType is JavaSdkType) result.add(node)
             }
         }
     }
@@ -95,6 +112,8 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
         val taskManager = ProjectTaskManager.getInstance(project)
 
         val modulesToBuild = mainModules(project)
+        if (modulesToBuild.isEmpty()) return CompletableDeferred(emptyList())
+
         val buildTask = taskManager.createModulesBuildTask(
             modulesToBuild.toTypedArray(),
             true,

@@ -30,8 +30,8 @@ import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
+import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
 import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsDirProvider
-import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinJupyterResourcesUtil.getKernelJarsFromResources
 import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
 import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
@@ -109,9 +109,11 @@ class JupyterCompilerPerFileService(
     private var kernelJarsAdded: Boolean = false
     private val kernelJarsProviders: Collection<KernelJarsDirProvider> = listOf(
         KernelJarsDirProvider {
-            getKernelJarsFromResources()
+            // return getPluginResource("kernelJars")
+            KotlinKernelProcessService.getInstance().scriptClassPathDir
         },
         KernelJarsDirProvider {
+            LOG.warn("Bad way only worked...")
             getSession()?.detectKotlinKernelJarsDir()
         },
     )
@@ -291,8 +293,8 @@ class JupyterCompilerPerFileService(
     data class CellRanges(val codeRanges: List<TextRange>?, val magicRanges: List<TextRange>?)
 
     class TwoPartsList<T>(
-        private val initialPart: MutableList<T> = mutableListOf(),
-        private val snippetsPart: MutableList<T> = mutableListOf(),
+        private val initialPart: MutableSet<T> = mutableSetOf(),
+        private val snippetsPart: MutableSet<T> = mutableSetOf(),
     ) {
         private val lock = ReentrantReadWriteLock()
 
@@ -321,7 +323,7 @@ class JupyterCompilerPerFileService(
         }
 
         fun getList(): List<T> {
-            return withReadLock { initialPart + snippetsPart }
+            return withReadLock { (initialPart + snippetsPart).distinct() }
         }
     }
 

@@ -4,13 +4,20 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.common
 import com.intellij.testFramework.UsefulTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.KernelSpecDetector
 import org.junit.Assert
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class KernelSpecPathsTest : UsefulTestCase() {
+
+    @Test
     fun `test possible kernel dirs should be non-empty`() {
         val dirs = KernelSpecDetector.getPossibleDirs()
         Assert.assertTrue(dirs.size >= 2)
     }
 
+    @Test
     fun `test kernels should be resolved if installed`() {
         val kernelsDir = KernelSpecDetector.getKernelsDir()
         if (kernelsDir == null) {

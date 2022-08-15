@@ -55,6 +55,12 @@
         <connections.execution.preExecutionSourceModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinPreExecutionSourceModifier"/>
         <editorCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterEditorCustomizer"/>
         <jupyterActionPresentationModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterActionPresentationModifier"/>
+        <connections.execution.core.jupyterServersFactory
+                order="before default"
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.session.KotlinServersFactory"/>
+        <connections.execution.core.managedJupyterServerRunner
+                order="before default"
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.session.ManagedKotlinNotebookServerRunner"/>
     </extensions>
 
     <actions resource-bundle="messages/JupyterKotlinBundle">

@@ -8,3 +8,10 @@
  */
 
 rootProject.name = "prepare-kotlin-jupyter-resources"
+
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}

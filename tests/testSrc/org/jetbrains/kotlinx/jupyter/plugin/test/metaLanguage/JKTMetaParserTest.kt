@@ -5,7 +5,11 @@ import com.intellij.testFramework.ParsingTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaFileType
 import org.jetbrains.kotlinx.jupyter.plugin.lang.grammar.JKTMetaParserDefinition
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class JKTMetaParserTest : ParsingTestCase("", JKTMetaFileType.EXTENSION, JKTMetaParserDefinition()) {
     /**
      * @return path to test data file directory relative to root of this module.
@@ -15,6 +19,7 @@ class JKTMetaParserTest : ParsingTestCase("", JKTMetaFileType.EXTENSION, JKTMeta
     override fun skipSpaces() = false
     override fun includeRanges() = true
 
+    @Test
     fun testSimpleParsing() {
         doTest(true)
     }

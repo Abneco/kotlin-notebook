@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.util.SKIP_PROJECT_BUILD_COMMENT
 import org.jetbrains.plugins.notebooks.editor.NotebookEditorCreatedCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
@@ -28,6 +29,8 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
 
     private fun installSessionOptionsInitializer(editor: EditorImpl) {
         val project = editor.project ?: return
+        JupyterKtScriptingSupport.getInstance(project).update()
+
         project.messageBus.connect(editor.disposable).subscribe(JupyterRuntimeService.Listener.TOPIC, object : JupyterRuntimeService.Listener {
             override fun sessionCreated(session: JupyterNotebookSession) {
                 if (session.kernelName.toLowerCaseAsciiOnly() == "kotlin") {
@@ -44,6 +47,7 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
                                     logger<KotlinNotebookEditorFactoryListener>().debug(
                                         "Kotlin session has been initialized with response: ${message.json}"
                                     )
+                                    EditorSessionInitializationService.getInstance().notifySessionInitialized(editor)
                                 }
                             }
                         ),
