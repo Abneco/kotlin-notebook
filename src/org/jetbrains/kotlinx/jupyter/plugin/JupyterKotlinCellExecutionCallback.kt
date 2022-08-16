@@ -1,10 +1,15 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
+import com.intellij.configurationStore.runAsWriteActionIfNeeded
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiManager
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_WAS_COMPILED
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListWarn
 import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
@@ -76,6 +81,8 @@ class JupyterKotlinCellExecutionCallback(
              */
             val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
             compilerService.addCompiledSnippet(snippetMetadata, cellSource)
+
+            updateInjectedCellInfo(snippetMetadata)
         } catch (exception: Throwable) {
             LOG.warn("Kotlin execution callback failed", exception)
         } finally {
@@ -93,6 +100,19 @@ class JupyterKotlinCellExecutionCallback(
     }
 
     override fun onUpdateOutput(message: JupyterMessage) {
+    }
+
+    private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata) {
+        val injectManager = InjectedLanguageManager.getInstance(project)
+        val jupyterNotebookPsiFile = PsiManager.getInstance(project).findViewProvider(virtualFile)!!.allFiles[0].children[0]
+        val properCell = jupyterNotebookPsiFile.children.first {
+            cellSource == it.text
+        }
+        runAsWriteActionIfNeeded {
+            val properCompiledClass = snippetMetadata.compiledData.sources.last().fileName.substringBefore(".kts")
+            (injectManager.getInjectedPsiFiles(properCell)!!.first().first as PsiFile)
+                .putUserData(CELL_WAS_COMPILED, properCompiledClass)
+        }
     }
 
     companion object {

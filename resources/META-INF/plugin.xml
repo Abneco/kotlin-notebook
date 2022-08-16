@@ -28,6 +28,12 @@
         <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.KotlinMagicsRuntimeCompletionContributor"/>
         <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaAnnotator"/>
         <typedHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaTypedHandlerDelegate"/>
+        <gotoDeclarationHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookGotoDeclarationProvider"/>
+        <!--<searcher forClass="com.intellij.psi.search.searches.ReferencesSearch$SearchParameters"-->
+        <!--          implementationClass="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferencesProvider"/>-->
+
+        <findUsagesHandlerFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookFindUsagesHandlerFactory" order="first" />
+        <!--<lang.elementManipulator forClass="com.intellij.lang.elementManipulator" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementManipulator"/>-->
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">

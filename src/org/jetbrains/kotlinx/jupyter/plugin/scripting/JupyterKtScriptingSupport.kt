@@ -1,6 +1,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scripting
 
 import com.intellij.injected.editor.VirtualFileWindow
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -9,18 +10,23 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.RecursionManager
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport
 import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsBuilder
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.traverseChildrenAndSearch
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.SearchStrategy
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import kotlin.script.experimental.api.valueOrNull
@@ -94,6 +100,33 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             )
         }
     }
+
+    fun searchForElementDeclarationOrUsages(target: PsiElement, virtualFile: VirtualFile, searchStrategy: SearchStrategy): Array<PsiElement>? {
+        if (!virtualFile.isKotlinNotebook) return null
+        val fileService = compilerService.get(virtualFile)
+        val injectedManager = InjectedLanguageManager.getInstance(project)
+        val foundData = mutableSetOf<PsiElement>()
+
+        return runReadAction {
+            fileService.updateInjectionHosts { hosts ->
+                for (host in hosts) {
+                    val psiFile = injectedManager.getInjectedPsiFiles(host)?.firstOrNull()?.first ?: continue
+                    if (psiFile !is KtFile || (psiFile == target.containingFile && searchStrategy == SearchStrategy.DECLARATION)) continue
+                    val blockExpression = psiFile.findChildrenByClass(KtScript::class.java).firstOrNull()?.blockExpression ?: continue
+                    val foundDeclarationOrUsages = traverseChildrenAndSearch(blockExpression, target, searchStrategy) ?: continue
+
+                    if (searchStrategy == SearchStrategy.DECLARATION) {
+                        foundData.add(foundDeclarationOrUsages.first())
+                        break
+                    } else foundData += foundDeclarationOrUsages
+                }
+            }
+
+            return@runReadAction foundData.toTypedArray()
+        }
+
+    }
+
 
     companion object {
         fun getInstance(project: Project) = project.service<JupyterKtScriptingSupport>()
