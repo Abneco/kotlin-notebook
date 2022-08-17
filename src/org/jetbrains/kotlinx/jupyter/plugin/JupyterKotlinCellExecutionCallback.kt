@@ -104,14 +104,14 @@ class JupyterKotlinCellExecutionCallback(
 
     private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata) {
         val injectManager = InjectedLanguageManager.getInstance(project)
-        val jupyterNotebookPsiFile = PsiManager.getInstance(project).findViewProvider(virtualFile)!!.allFiles[0].children[0]
-        val properCell = jupyterNotebookPsiFile.children.first {
+        val jupyterNotebookPsiFile = PsiManager.getInstance(project).findViewProvider(virtualFile)?.allFiles?.get(0)?.children?.get(0) ?: return
+        val properCell = jupyterNotebookPsiFile.children.firstOrNull {
             cellSource == it.text
-        }
+        } ?: return
         runAsWriteActionIfNeeded {
-            val properCompiledClass = snippetMetadata.compiledData.sources.last().fileName.substringBefore(".kts")
-            (injectManager.getInjectedPsiFiles(properCell)!!.first().first as PsiFile)
-                .putUserData(CELL_WAS_COMPILED, properCompiledClass)
+            val properCompiledClass = snippetMetadata.compiledData.sources.lastOrNull()?.fileName?.substringBefore(".kts")
+            (injectManager.getInjectedPsiFiles(properCell)?.firstOrNull()?.first as? PsiFile)
+                ?.putUserData(CELL_WAS_COMPILED, properCompiledClass)
         }
     }
 
