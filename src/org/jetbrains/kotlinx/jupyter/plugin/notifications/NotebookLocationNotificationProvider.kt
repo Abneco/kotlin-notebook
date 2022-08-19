@@ -20,7 +20,7 @@ class NotebookLocationNotificationProvider : EditorNotificationProvider, DumbAwa
         if (!file.isKotlinNotebook || !project.isInsideSourceRoot(file)) return CONST_NULL
 
         return Function { editor ->
-            EditorNotificationPanel(editor).apply {
+            EditorNotificationPanel(editor, EditorNotificationPanel.Status.Warning).apply {
                 text(JupyterKotlinBundle.message("kotlin.jupyter.text.move.notebook.out.of.source.root"))
                 icon(AllIcons.General.Warning)
             }
