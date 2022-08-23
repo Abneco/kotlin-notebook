@@ -8,16 +8,15 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.EditorNotificationProvider
-import com.intellij.ui.EditorNotificationProvider.CONST_NULL
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.isInsideSourceRoot
 import java.util.function.Function
 import javax.swing.JComponent
 
-class NotebookLocationNotificationProvider : EditorNotificationProvider, DumbAware {
-    override fun collectNotificationData(project: Project, file: VirtualFile): Function<in FileEditor, out JComponent?> {
-        if (!file.isKotlinNotebook || !project.isInsideSourceRoot(file)) return CONST_NULL
+private class NotebookLocationNotificationProvider : EditorNotificationProvider, DumbAware {
+    override fun collectNotificationData(project: Project, file: VirtualFile): Function<in FileEditor, out JComponent?>? {
+        if (!file.isKotlinNotebook || !project.isInsideSourceRoot(file)) return null
 
         return Function { editor ->
             EditorNotificationPanel(editor, EditorNotificationPanel.Status.Warning).apply {
