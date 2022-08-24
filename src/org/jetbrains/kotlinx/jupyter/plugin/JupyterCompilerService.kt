@@ -34,19 +34,18 @@ import kotlin.script.experimental.jvm.jvm
 @Service
 class JupyterCompilerService(val project: Project) : Disposable {
     private val mapping: MutableMap<VirtualFile, JupyterCompilerPerFileService> = mutableMapOf()
-    private val kotlinKernelDir = KernelSpecDetector.getKernelDir("kotlin")
 
     init {
         PluginVerifier.verifyUltimatePlugin()
     }
 
-    val initialClasspath: List<File> = run {
+    val initialClasspath: List<File> by lazy {
         if (ApplicationManager.getApplication().isUnitTestMode) {
             KotlinKernelProcessService.getInstance().ideJars
         } else emptyList()
     }
 
-    val initialCompileConfiguration = run {
+    val initialCompileConfiguration by lazy {
         getCompilationConfiguration(
             scriptClasspath = initialClasspath,
             compilerArgsConfigurator = DefaultCompilerArgsConfigurator(),
@@ -62,14 +61,15 @@ class JupyterCompilerService(val project: Project) : Disposable {
         }
     }
 
-    val evaluationConfiguration =
+    val evaluationConfiguration by lazy {
         ScriptEvaluationConfiguration {
             jvm {
                 baseClassLoader(this@JupyterCompilerService::class.java.classLoader)
             }
         }
+    }
 
-    val fileExtension = run {
+    val fileExtension: String by lazy {
         initialCompileConfiguration[ScriptCompilationConfiguration.fileExtension] ?: "jupyter-kts"
     }
 

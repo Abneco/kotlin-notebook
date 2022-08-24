@@ -20,15 +20,25 @@ class KotlinKernelProcessService {
     }
 
     private val portsGenerator = KernelPortsGenerator(32768, 65536)
-    private val homeDirectory = Files.createTempDirectory("kernelProcess").toFile()
+    private val homeDirectory by lazy {
+        Files.createTempDirectory("kernelProcess").toFile()
+    }
 
-    private val kernelJarsDir = homeDirectory.resolve("kernel")
-    private val scriptJarsDir = homeDirectory.resolve("lib")
-    private val ideScriptJarsDir = homeDirectory.resolve("ideLib")
+    private val ideScriptJarsDir by lazy {
+        homeDirectory.resolve("ideLib")
+    }
 
-    private val kernelJars = unzipResource("kernel.zip", kernelJarsDir)
-    private val scriptJars = unzipResource("lib.zip", scriptJarsDir)
-    val ideJars = unzipResource("ideLib.zip", ideScriptJarsDir)
+    private val kernelJars by lazy {
+        val kernelJarsDir = homeDirectory.resolve("kernel")
+        unzipResource("kernel.zip", kernelJarsDir)
+    }
+    private val scriptJars by lazy {
+        val scriptJarsDir = homeDirectory.resolve("lib")
+        unzipResource("lib.zip", scriptJarsDir)
+    }
+    val ideJars by lazy {
+        unzipResource("ideLib.zip", ideScriptJarsDir)
+    }
 
     private fun unzipResource(resourceZipPath: String, dir: File): List<File> {
         // There are two places where ZIP with JARs may be:
