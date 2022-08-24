@@ -36,7 +36,7 @@ import kotlin.script.experimental.api.valueOrNull
 class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport {
     private val compilerService = JupyterCompilerService.getInstance(project)
     private val editorManager: FileEditorManager? get() = FileEditorManager.getInstance(project)
-    private val fileExtension = compilerService.fileExtension
+    private val fileExtension get() = compilerService.fileExtension
 
     private val configurationManager: CompositeScriptConfigurationManager
         get() = ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager

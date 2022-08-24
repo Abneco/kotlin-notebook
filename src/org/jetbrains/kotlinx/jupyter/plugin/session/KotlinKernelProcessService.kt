@@ -4,12 +4,14 @@ package org.jetbrains.kotlinx.jupyter.plugin.session
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.util.io.ZipUtil
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinJupyterResourcesUtil
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
 import java.io.File
+import java.io.IOException
 import java.nio.file.Files
 
 @Service(Service.Level.APP)
@@ -17,6 +19,9 @@ class KotlinKernelProcessService {
     companion object {
         @JvmStatic
         fun getInstance(): KotlinKernelProcessService = service()
+
+        @JvmStatic
+        private val LOG = logger<KotlinKernelProcessService>()
     }
 
     private val portsGenerator = KernelPortsGenerator(32768, 65536)
@@ -30,14 +35,29 @@ class KotlinKernelProcessService {
 
     private val kernelJars by lazy {
         val kernelJarsDir = homeDirectory.resolve("kernel")
-        unzipResource("kernel.zip", kernelJarsDir)
+        unzipResourceSafe("kernel.zip", kernelJarsDir)
     }
     private val scriptJars by lazy {
         val scriptJarsDir = homeDirectory.resolve("lib")
-        unzipResource("lib.zip", scriptJarsDir)
+        unzipResourceSafe("lib.zip", scriptJarsDir)
     }
     val ideJars by lazy {
-        unzipResource("ideLib.zip", ideScriptJarsDir)
+        unzipResourceSafe("ideLib.zip", ideScriptJarsDir)
+    }
+
+    private fun unzipResourceSafe(resourceZipPath: String, dir: File): List<File> {
+        fun handle(e: Exception): List<File> {
+            LOG.warn("Unable to load resource $resourceZipPath", e)
+            return emptyList()
+        }
+
+        return try {
+            unzipResource(resourceZipPath, dir)
+        } catch (e: RuntimeException) {
+            handle(e)
+        } catch (e: IOException) {
+            handle(e)
+        }
     }
 
     private fun unzipResource(resourceZipPath: String, dir: File): List<File> {
