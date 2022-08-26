@@ -85,7 +85,10 @@ class KotlinKernelProcessService {
         return dir.walkTopDown().filter { it.isFile }.toList()
     }
 
-    val scriptClassPathDir: File get() = ideScriptJarsDir
+    val scriptClassPathDir: File get() {
+        ideJars
+        return ideScriptJarsDir
+    }
 
     fun create(): KotlinKernelProcessHandler {
         val kernelConfig = KernelConfig(
