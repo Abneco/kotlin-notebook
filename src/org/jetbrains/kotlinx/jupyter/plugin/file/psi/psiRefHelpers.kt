@@ -13,7 +13,12 @@ import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 
 
-internal class NotebookReferenceWrapper(private val resolvedTo: PsiElement, element: PsiElement, range: TextRange, soft: Boolean): PsiReferenceBase<PsiElement>(element) {
+internal class NotebookReferenceWrapper(
+    private val resolvedTo: PsiElement,
+    element: PsiElement,
+    private val range: TextRange,
+    private val soft: Boolean
+): PsiReferenceBase<PsiElement>(element) {
     override fun resolve(): PsiElement? {
         return resolvedTo
     }
@@ -23,11 +28,17 @@ internal class NotebookReferenceWrapper(private val resolvedTo: PsiElement, elem
     }
 
     override fun calculateDefaultRangeInElement(): TextRange {
-        return element.textRangeInParent
+        return range
     }
+
+    override fun getRangeInElement(): TextRange {
+        return range
+    }
+
+    override fun isSoft(): Boolean = soft
 }
 
-internal class NotebookReferenceExpressionResolver {
+internal object NotebookReferenceExpressionResolver {
     fun tryResolveQualifier(element: PsiElement): PsiElement? {
         val referenceExpression = element.getParentOfType<KtNameReferenceExpression>(false) ?: return null
         val adjusted = retrieveNameReference(referenceExpression)
@@ -45,7 +56,10 @@ internal class NotebookReferenceExpressionResolver {
         var foundElement: PsiElement? = null
         element.acceptChildren(object : PsiRecursiveElementVisitor() {
             override fun visitElement(element: PsiElement) {
-                if (element is KtSimpleNameExpression) foundElement = element
+                if (element is KtSimpleNameExpression) {
+                    foundElement = element
+                    return
+                }
                 super.visitElement(element)
             }
         })

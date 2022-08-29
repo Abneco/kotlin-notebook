@@ -23,20 +23,19 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
         sourceElement ?: return null
 
         val project = sourceElement.project
-        val file = sourceElement.containingFile
-        if (file.virtualFile !is VirtualFileWindow) return emptyArray()
-        val notebookFile = (file.virtualFile as VirtualFileWindow).delegate
+        val psiFile = sourceElement.containingFile
+        val virtualFile = psiFile.virtualFile as? VirtualFileWindow ?: return emptyArray()
+        val notebookFile = virtualFile.delegate
         if (!isBackedNotebook(notebookFile)) return emptyArray()
         sourceElement.reference?.resolve()?.let { return arrayOf(it) }
         val scriptingSupport = JupyterKtScriptingSupport.getInstance(project)
 
 
-        val searchStrategy = if (PsiTreeUtil.getParentOfType(sourceElement, KtReferenceExpression::class.java) != null) {
-            SearchStrategy.DECLARATION
-        } else SearchStrategy.REFERENCES
-        if (searchStrategy == SearchStrategy.REFERENCES) return null
+        if (PsiTreeUtil.getParentOfType(sourceElement, KtReferenceExpression::class.java) == null) {
+            return null
+        }
 
-        return scriptingSupport.searchForElementDeclarationOrUsages(sourceElement, notebookFile, SearchStrategy.DECLARATION)
+        return scriptingSupport.searchForElementDeclarationOrUsages(sourceElement, notebookFile, ReferenceSearchStrategy.DECLARATION)
             ?.firstOrNull()?.let {
                 sourceElement.reference?.bindToElement(it)
                 arrayOf(it)
@@ -50,7 +49,6 @@ internal class NotebookReferencesProvider: ReferenceSearcher {
     override fun collectSearchRequests(parameters: ReferencesSearch.SearchParameters): Collection<Query<out PsiReference>> {
         val virtualFile = parameters.elementToSearch.containingFile?.virtualFile ?: return emptyList()
         if (virtualFile !is VirtualFileWindow) return emptyList()
-        val notebookFile = (virtualFile as VirtualFileWindow).delegate
         if (!isBackedNotebook(virtualFile) || !virtualFile.isKotlinNotebook) return emptyList()
 
         if (!parameters.scopeDeterminedByUser.contains(virtualFile.originFile)) return emptyList()

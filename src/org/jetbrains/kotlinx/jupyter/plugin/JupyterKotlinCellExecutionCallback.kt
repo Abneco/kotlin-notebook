@@ -7,9 +7,8 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiManager
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
-import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_WAS_COMPILED
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListWarn
 import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
@@ -18,6 +17,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import kotlin.system.measureTimeMillis
 
 /**
@@ -33,6 +33,7 @@ import kotlin.system.measureTimeMillis
 class JupyterKotlinCellExecutionCallback(
     private val project: Project,
     private val virtualFile: VirtualFile, // backed
+    private val psiCell: JupyterPsiCell,
     private val cellSource: String,
 ) : JupyterExecutionCallback {
 
@@ -104,14 +105,11 @@ class JupyterKotlinCellExecutionCallback(
 
     private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata) {
         val injectManager = InjectedLanguageManager.getInstance(project)
-        val jupyterNotebookPsiFile = PsiManager.getInstance(project).findViewProvider(virtualFile)?.allFiles?.get(0)?.children?.get(0) ?: return
-        val properCell = jupyterNotebookPsiFile.children.firstOrNull {
-            cellSource == it.text
-        } ?: return
+
         runAsWriteActionIfNeeded {
             val properCompiledClass = snippetMetadata.compiledData.sources.lastOrNull()?.fileName?.substringBefore(".kts")
-            (injectManager.getInjectedPsiFiles(properCell)?.firstOrNull()?.first as? PsiFile)
-                ?.putUserData(CELL_WAS_COMPILED, properCompiledClass)
+            (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
+                ?.putUserData(CELL_CLASS_NAME, properCompiledClass)
         }
     }
 

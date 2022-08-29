@@ -11,6 +11,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.RecursionManager
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
@@ -27,7 +28,7 @@ import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfigurati
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.traverseChildrenAndSearch
-import org.jetbrains.kotlinx.jupyter.plugin.file.psi.SearchStrategy
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.ReferenceSearchStrategy
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import kotlin.script.experimental.api.valueOrNull
@@ -104,24 +105,29 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         }
     }
 
-    fun searchForElementDeclarationOrUsages(target: PsiElement, virtualFile: VirtualFile, searchStrategy: SearchStrategy): Array<PsiElement>? {
+    fun searchForElementDeclarationOrUsages(target: PsiElement, virtualFile: VirtualFile, searchStrategy: ReferenceSearchStrategy): Array<PsiElement>? {
         if (!virtualFile.isKotlinNotebook) return null
         val fileService = compilerService.get(virtualFile)
         val injectedManager = InjectedLanguageManager.getInstance(project)
         val foundData = mutableSetOf<PsiElement>()
 
         return runReadAction {
-            fileService.updateInjectionHosts { hosts ->
+            fileService.readInjectionHosts { hosts ->
                 for (host in hosts) {
-                    val psiFile = injectedManager.getInjectedPsiFiles(host)?.firstOrNull()?.first ?: continue
-                    if (psiFile !is KtFile || (psiFile == target.containingFile && searchStrategy == SearchStrategy.DECLARATION)) continue
-                    val blockExpression = psiFile.findChildrenByClass(KtScript::class.java).firstOrNull()?.blockExpression ?: continue
-                    val foundDeclarationOrUsages = traverseChildrenAndSearch(blockExpression, target, searchStrategy) ?: continue
+                    val firstInjectedFileInfo = injectedManager.getInjectedPsiFiles(host)?.firstOrNull() ?: continue
+                    val psiFile = firstInjectedFileInfo.first ?: continue
+                    if (psiFile !is KtFile || (psiFile == target.containingFile && searchStrategy == ReferenceSearchStrategy.DECLARATION)) continue
+                    val scriptBlock = psiFile.findChildrenByClass(KtScript::class.java).firstOrNull()?.blockExpression ?: continue
+                    val elements = mutableListOf<NavigatablePsiElement>()
+                    traverseChildrenAndSearch(scriptBlock, target, searchStrategy, elements)
 
-                    if (searchStrategy == SearchStrategy.DECLARATION) {
-                        foundData.add(foundDeclarationOrUsages.first())
-                        break
-                    } else foundData += foundDeclarationOrUsages
+                    if (searchStrategy == ReferenceSearchStrategy.DECLARATION) {
+                        val first = elements.firstOrNull()
+                        if (first != null) {
+                            foundData.add(first)
+                            break
+                        }
+                    } else foundData += elements
                 }
             }
 

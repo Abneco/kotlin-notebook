@@ -26,9 +26,12 @@ import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
 
 internal class NotebookFindUsagesHandlerFactory : FindUsagesHandlerFactory() {
-    override fun canFindUsages(element: PsiElement): Boolean
-        = isBackedNotebook((element.containingFile?.virtualFile as? VirtualFileWindow)?.delegate) && (element.containingFile?.virtualFile as? VirtualFileWindow)?.delegate.isKotlinNotebook
-            && PsiTreeUtil.getParentOfType(element, KtReferenceExpression::class.java) == null
+    override fun canFindUsages(element: PsiElement): Boolean {
+        val fileWindow = element.containingFile?.virtualFile as? VirtualFileWindow ?: return false
+        val notebookFile = fileWindow.delegate
+        val isProperNotebook = isBackedNotebook(notebookFile) && notebookFile.isKotlinNotebook
+        return isProperNotebook && PsiTreeUtil.getParentOfType(element, KtReferenceExpression::class.java) == null
+    }
 
     override fun createFindUsagesHandler(element: PsiElement, forHighlightUsages: Boolean): FindUsagesHandler? {
         return KotlinNotebookElementFindUsagesHandler(element)
@@ -49,9 +52,9 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement) : Fin
         if (virtualFile !is BackedVirtualFile || !virtualFile.isKotlinNotebook) return mutableSetOf()
 
         return findUsageForElement(target)?.map {
-            val fileRange = it.containingFile.textRange
-            val properRange = if (it.textRangeInParent.containsRange(fileRange.startOffset, fileRange.endOffset)) it.textRangeInParent.shiftLeft(1) else it.textRangeInParent
-            NotebookReferenceWrapper(target, it, it.textRangeInParent, false)
+            val properFileRange = ensureProperTextRangeShiftInFile(it)
+            //val properRange = if (!it.textRangeInParent.containsRange(fileRange.startOffset, fileRange.endOffset)) it.textRangeInParent.shiftLeft(1) else it.textRangeInParent
+            NotebookReferenceWrapper(target, it, properFileRange, true)
         }?.toMutableSet() ?: mutableSetOf()
     }
 
@@ -67,20 +70,32 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement) : Fin
             if (foundUsages.isNullOrEmpty()) result = false
 
             foundUsages?.iterator()?.forEach {
-                val fileRange = it.containingFile.textRange
-                val properRange = if (fileRange.equalsToRange(it.textRangeInParent.startOffset, it.textRangeInParent.endOffset)) it.textRangeInParent.shiftLeft(1)
-                                else it.textRangeInParent
-                refProcessor.processInReadAction(NotebookReferenceWrapper(super.myPsiElement, it, it.textRangeInParent, true))
+                val properFileRange = ensureProperTextRangeShiftInFile(it)
+                refProcessor.processInReadAction(NotebookReferenceWrapper(super.myPsiElement, it, properFileRange, false))
             }
         }
 
         return result
     }
 
+    private fun ensureProperTextRangeShiftInFile(usage: PsiElement): TextRange {
+        val fileRange = usage.containingFile.textRange
+        val rangeToStore = TextRange.create(usage.textRangeInParent.startOffset, usage.textRangeInParent.endOffset).shiftRight(usage.textRange.startOffset)
+
+        val lDiff = if (rangeToStore.startOffset > fileRange.endOffset) rangeToStore.startOffset - fileRange.endOffset else 0
+        val rDiff = if (rangeToStore.endOffset > fileRange.endOffset) rangeToStore.endOffset - fileRange.endOffset else 0
+        val maxDiff = maxOf(lDiff, rDiff)
+
+        if (maxDiff != 0) {
+            return usage.textRangeInParent.shiftLeft(usage.textRangeInParent.startOffset)
+        }
+        return usage.textRangeInParent
+    }
+
     private fun findUsageForElement(targetElement: PsiElement): Array<PsiElement>? {
         val scriptingSupport = JupyterKtScriptingSupport.getInstance(targetElement.project)
         notebookFile ?: return null
-        return scriptingSupport.searchForElementDeclarationOrUsages(adjustElement(targetElement), notebookFile, searchStrategy = SearchStrategy.REFERENCES)
+        return scriptingSupport.searchForElementDeclarationOrUsages(adjustElement(targetElement), notebookFile, searchStrategy = ReferenceSearchStrategy.REFERENCES)
     }
 
     private fun adjustElement(psiElement: PsiElement): PsiElement {

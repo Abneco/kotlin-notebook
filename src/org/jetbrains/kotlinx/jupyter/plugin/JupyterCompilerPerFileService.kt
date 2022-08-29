@@ -45,8 +45,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
 import kotlin.concurrent.withLock
 import kotlin.concurrent.write
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
@@ -75,7 +75,7 @@ class JupyterCompilerPerFileService(
     private val projectService: JupyterCompilerService,
 ) : Disposable {
     private val compileLock = ReentrantReadWriteLock()
-    private val listLock = ReentrantLock()
+    private val listLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(1)
     private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ContainerUtil.newConcurrentSet() // LoggingList()
 
@@ -197,8 +197,14 @@ class JupyterCompilerPerFileService(
         }
     }
 
+    fun readInjectionHosts(readAction: (Collection<PsiLanguageInjectionHost>) -> Unit) {
+        listLock.read {
+            readAction(nbInjectionHosts)
+        }
+    }
+
     fun updateInjectionHosts(updateAction: (MutableCollection<PsiLanguageInjectionHost>) -> Unit) {
-        listLock.withLock {
+        listLock.write {
             updateAction(nbInjectionHosts)
         }
     }
