@@ -6,6 +6,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.ZipUtil
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinJupyterResourcesUtil
@@ -106,7 +107,12 @@ class KotlinKernelProcessService {
         val classpathSeparator = System.getProperty("path.separator")
 
         val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
-        val javaExecutable = options.state.jdkPath ?: "java"
+        val javaExecutable = options.state.jdkPath?.let { javaHome ->
+            val binDir = File(javaHome).absoluteFile.resolve("bin")
+            val javaExec = if (SystemInfo.isWindows) binDir.resolve("java.exe")
+            else binDir.resolve("java")
+            javaExec.absolutePath
+        } ?: "java"
 
         val cmdArgs = kernelConfig.javaCmdLine(
             javaExecutable,
