@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.session
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
@@ -51,10 +52,10 @@ class KotlinInProcessJupyterClient(
     override val fileContentsApi: CachingFileContentsApi
         get() = TreeCachingFileContentsApi(JavaIoFileContentsApi(rootDir))
 
-    override fun startKernel(kernelName: KernelName): KernelId? {
+    override fun startKernel(project: Project, kernelName: KernelName): KernelId? {
         if (kernelName !in kernelSpecs) return null
         val id = idGen.generate()
-        val kernel = processService.create()
+        val kernel = processService.create(project)
         Disposer.register(this, kernel)
         kernels[id] = kernel
         return id
@@ -78,8 +79,8 @@ class KotlinInProcessJupyterClient(
         return sessions.values.toList()
     }
 
-    override fun createSession(kernelName: KernelName, notebookPath: String): JupyterSessionData {
-        val kernelId = startKernel(kernelName) ?: throw RuntimeException("Unknown kernel: $kernelName")
+    override fun createSession(project: Project, kernelName: KernelName, notebookPath: String): JupyterSessionData {
+        val kernelId = startKernel(project, kernelName) ?: throw RuntimeException("Unknown kernel: $kernelName")
         val notebookFile = rootDir.resolve(notebookPath)
 
         val sessionId = idGen.generate()

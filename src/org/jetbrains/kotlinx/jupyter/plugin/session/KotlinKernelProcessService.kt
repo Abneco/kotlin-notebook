@@ -5,7 +5,9 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.project.Project
 import com.intellij.util.io.ZipUtil
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinJupyterResourcesUtil
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
@@ -90,7 +92,7 @@ class KotlinKernelProcessService {
         return ideScriptJarsDir
     }
 
-    fun create(): KotlinKernelProcessHandler {
+    fun create(project: Project): KotlinKernelProcessHandler {
         val kernelConfig = KernelConfig(
             createKernelPorts { portsGenerator.randomPort() },
             "tcp",
@@ -103,8 +105,11 @@ class KotlinKernelProcessService {
 
         val classpathSeparator = System.getProperty("path.separator")
 
+        val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
+        val javaExecutable = options.state.jdkPath ?: "java"
+
         val cmdArgs = kernelConfig.javaCmdLine(
-            "java",
+            javaExecutable,
             "kernelProcessConnection",
             kernelJars.joinToString(classpathSeparator) { it.absolutePath }
         )
