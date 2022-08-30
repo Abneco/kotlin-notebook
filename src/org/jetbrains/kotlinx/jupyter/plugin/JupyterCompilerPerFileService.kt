@@ -180,7 +180,7 @@ class JupyterCompilerPerFileService(
         config: ScriptCompilationConfiguration
     ): ScriptCompilationConfiguration {
         val sourceText = runReadAction { sourceCode.text }
-        LOG.warn("Before-compiling callback for script: $sourceText")
+        LOG.debug("Before-compiling callback for script: $sourceText")
         updateClasspathWithExternalDependencies()
         val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
         return ScriptCompilationConfiguration(withNewClasspath) {
