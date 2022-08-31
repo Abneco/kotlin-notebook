@@ -14,7 +14,9 @@ import org.jetbrains.kotlin.psi.KtClassBody
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtScript
+import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.psi.psiUtil.getChildrenOfType
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlin.psi.psiUtil.isPublic
@@ -40,15 +42,18 @@ object NotebookReferenceFinder {
         val dotExpression = targetElement.getParentOfType<KtDotQualifiedExpression>(false)
 
         val referenceInfo: ProvidedReferenceInfo? = if (dotExpression != null) { // perhaps without this cond
-            val resolvedDotCall = referenceResolver.tryResolveQualifier(targetElement)
+            val asArgument = targetElement.getParentOfType<KtValueArgumentList>(false)
+            val resolvedDotCall = tryResolveQualifierInDotExpression(dotExpression)
             //println("$resolvedDotCall, name:  ${resolvedDotCall?.text}, fileName: ${resolvedDotCall?.containingFile?.text}")
-            resolvedDotCall ?: return
-            ProvidedReferenceInfo(resolvedDotCall)
-        } else null
+            if (resolvedDotCall == null && asArgument == null) return
+            targetElement.tryResolveQualifierToReferenceInfo()
+        } else {
+            targetElement.tryResolveQualifierToReferenceInfo()
+        }
 
         when (searchStrategy) {
             ReferenceSearchStrategy.DECLARATION ->
-                getProperDeclarationsForScriptOrClass(element).firstOrNull {
+                getProperDeclarationsForScriptOrClass(element, dotExpression != null).firstOrNull {
                     val declarationMatchResult = if (referenceInfo != null)
                                                     tryMatchWithDeclaration(targetElement, it, referenceInfo)
                                                  else true
@@ -78,7 +83,7 @@ object NotebookReferenceFinder {
         val ans = mutableListOf<NavigatablePsiElement>()
         val targetName = targetElement.text
         val targetDeclaration = targetElement.parentOfType<KtDeclaration>(true)!!
-        element.containingFile.acceptChildren(object : PsiRecursiveElementVisitor(){
+        element.containingFile.acceptChildren(object : PsiRecursiveElementVisitor() {
             override fun visitElement(element: PsiElement) {
                 if ((element.elementType is KtNameReferenceExpressionElementType || element is KtCallExpression)
                     // collect all similar expressions and then decide do they correspond to a one ktFile
@@ -86,7 +91,7 @@ object NotebookReferenceFinder {
                     val resolvedRefInfo = referenceResolver.tryResolveQualifier(element)
                     if (targetDeclaration.containingFile == resolvedRefInfo?.containingFile) {
                         ans.add(element as KtElement)
-                        // if not then tryMatch class with class present is compiled sources
+                        // if not then tryMatch class with class present in compiled sources
                     } else if (resolvedRefInfo != null && tryMatchWithDeclaration(targetElement, targetDeclaration, ProvidedReferenceInfo(resolvedRefInfo))) {
                         ans.add(element as KtElement)
                     }
@@ -107,13 +112,50 @@ object NotebookReferenceFinder {
         return compiledClassName == referenceInfo.enclosingClass?.name
     }
 
-    private fun getProperDeclarationsForScriptOrClass(element: PsiElement): Array<KtDeclaration> {
+    private fun getProperDeclarationsForScriptOrClass(element: PsiElement, isPartOfDotCall: Boolean = false): Array<KtDeclaration> {
         return when (element) {
             is KtScript -> element.blockExpression.getChildrenOfType<KtDeclaration>()
-            is KtBlockExpression -> element.getChildrenOfType<KtDeclaration>()
+            is KtBlockExpression -> {
+                var children = element.getChildrenOfType<KtDeclaration>()
+                if (isPartOfDotCall) {
+                    children += children.foldDeclarationChildren()
+                }
+                children
+            }
             is KtClass -> element.body?.let { getProperDeclarationsForScriptOrClass(it) } ?: emptyArray()
+            is KtObjectDeclaration -> element.declarations.let {
+                if (isPartOfDotCall) (it.foldDeclarationChildren() + element).toTypedArray()
+                else (it + element).toTypedArray()
+            }
             is KtClassBody -> element.getChildrenOfType<KtDeclaration>()
+            is KtDeclaration -> arrayOf(element)
             else -> element.getChildrenOfType<KtDeclaration>()
+        }
+    }
+
+    private fun Collection<KtDeclaration>.foldDeclarationChildren(): Collection<KtDeclaration>
+        = toTypedArray().foldDeclarationChildren().toList()
+
+    private fun Array<KtDeclaration>.foldDeclarationChildren(): Array<KtDeclaration> {
+        return this.map {
+            getProperDeclarationsForScriptOrClass(it, true)
+        }.fold(mutableListOf<KtDeclaration>()) { acc, ktDeclarations ->
+            acc += ktDeclarations
+            acc
+        }.toTypedArray()
+    }
+
+    private fun tryResolveQualifierInDotExpression(element: KtDotQualifiedExpression): PsiElement? {
+        var currentReceiver = element.receiverExpression
+        while (currentReceiver is KtDotQualifiedExpression) {
+            currentReceiver = currentReceiver.receiverExpression
+        }
+        return referenceResolver.tryResolveQualifier(currentReceiver.navigationElement)
+    }
+
+    private fun PsiElement.tryResolveQualifierToReferenceInfo(): ProvidedReferenceInfo? {
+        return referenceResolver.tryResolveQualifier(this)?.let {
+            ProvidedReferenceInfo(it)
         }
     }
 
