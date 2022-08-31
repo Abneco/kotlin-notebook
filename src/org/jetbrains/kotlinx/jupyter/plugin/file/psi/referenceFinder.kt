@@ -33,6 +33,8 @@ object NotebookReferenceFinder {
 
     private val referenceResolver = NotebookReferenceExpressionResolver
 
+    private val declarationsCollectingVisitor = ScriptDeclarationsCollectingVisitor()
+
     fun traverseChildrenAndSearch(element: PsiElement, targetElement: PsiElement,
                                   searchStrategy: ReferenceSearchStrategy = ReferenceSearchStrategy.DECLARATION,
                                   foundData: MutableList<NavigatablePsiElement>?): Unit {
@@ -116,33 +118,22 @@ object NotebookReferenceFinder {
         return when (element) {
             is KtScript -> element.blockExpression.getChildrenOfType<KtDeclaration>()
             is KtBlockExpression -> {
-                var children = element.getChildrenOfType<KtDeclaration>()
+                val children = element.getChildrenOfType<KtDeclaration>()
                 if (isPartOfDotCall) {
-                    children += children.foldDeclarationChildren()
+                   return declarationsCollectingVisitor.collectAllNestedDeclarationsPresent(children).toTypedArray()
                 }
                 children
             }
             is KtClass -> element.body?.let { getProperDeclarationsForScriptOrClass(it) } ?: emptyArray()
             is KtObjectDeclaration -> element.declarations.let {
-                if (isPartOfDotCall) (it.foldDeclarationChildren() + element).toTypedArray()
+                if (isPartOfDotCall)
+                    declarationsCollectingVisitor.collectAllNestedDeclarationsPresent(it).toTypedArray()
                 else (it + element).toTypedArray()
             }
             is KtClassBody -> element.getChildrenOfType<KtDeclaration>()
             is KtDeclaration -> arrayOf(element)
             else -> element.getChildrenOfType<KtDeclaration>()
         }
-    }
-
-    private fun Collection<KtDeclaration>.foldDeclarationChildren(): Collection<KtDeclaration>
-        = toTypedArray().foldDeclarationChildren().toList()
-
-    private fun Array<KtDeclaration>.foldDeclarationChildren(): Array<KtDeclaration> {
-        return this.map {
-            getProperDeclarationsForScriptOrClass(it, true)
-        }.fold(mutableListOf<KtDeclaration>()) { acc, ktDeclarations ->
-            acc += ktDeclarations
-            acc
-        }.toTypedArray()
     }
 
     private fun tryResolveQualifierInDotExpression(element: KtDotQualifiedExpression): PsiElement? {
@@ -158,6 +149,5 @@ object NotebookReferenceFinder {
             ProvidedReferenceInfo(it)
         }
     }
-
 
 }

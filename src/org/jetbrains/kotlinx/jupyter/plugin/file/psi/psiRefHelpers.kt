@@ -8,6 +8,7 @@ import com.intellij.psi.PsiReferenceBase
 import com.intellij.psi.util.elementType
 import com.intellij.psi.util.parentOfType
 import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
@@ -36,6 +37,32 @@ internal class NotebookReferenceWrapper(
     }
 
     override fun isSoft(): Boolean = soft
+}
+
+internal class ScriptDeclarationsCollectingVisitor : PsiRecursiveElementVisitor() {
+    private val seenDeclarations = mutableSetOf<KtDeclaration>()
+
+    fun collectAllNestedDeclarationsPresent(elements: Array<KtDeclaration>): Collection<KtDeclaration>
+        = collectAllNestedDeclarationsPresent(elements.toList())
+
+    fun collectAllNestedDeclarationsPresent(elements: List<PsiElement>): Collection<KtDeclaration> {
+        seenDeclarations.clear()
+        elements.forEach {
+            it.accept(this)
+        }
+        return seenDeclarations
+    }
+
+    fun collectAllNestedDeclarationsPresent(element: PsiElement): Collection<KtDeclaration> {
+        seenDeclarations.clear()
+        element.acceptChildren(this)
+        return seenDeclarations
+    }
+
+    override fun visitElement(element: PsiElement) {
+        if (element is KtDeclaration) seenDeclarations.add(element)
+        super.visitElement(element)
+    }
 }
 
 internal object NotebookReferenceExpressionResolver {
