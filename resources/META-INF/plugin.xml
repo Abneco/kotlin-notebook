@@ -67,6 +67,7 @@
         <connections.execution.core.managedJupyterServerRunner
                 order="before default"
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.session.ManagedKotlinNotebookServerRunner"/>
+        <connections.execution.notebookPathProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.session.KotlinNotebookPathProvider"/>
     </extensions>
 
     <actions resource-bundle="messages/JupyterKotlinBundle">

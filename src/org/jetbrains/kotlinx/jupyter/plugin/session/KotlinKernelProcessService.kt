@@ -8,6 +8,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.ZipUtil
+import com.intellij.util.io.systemIndependentPath
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinJupyterResourcesUtil
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
@@ -16,6 +17,7 @@ import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
+import java.nio.file.Path
 
 @Service(Service.Level.APP)
 class KotlinKernelProcessService {
@@ -93,7 +95,10 @@ class KotlinKernelProcessService {
         return ideScriptJarsDir
     }
 
-    fun create(project: Project): KotlinKernelProcessHandler {
+    fun create(
+        project: Project,
+        workingDir: Path,
+        ): KotlinKernelProcessHandler {
         val kernelConfig = KernelConfig(
             createKernelPorts { portsGenerator.randomPort() },
             "tcp",
@@ -114,10 +119,15 @@ class KotlinKernelProcessService {
             javaExec.absolutePath
         } ?: "java"
 
+        val extraJavaArgs = buildList {
+            add("-Duser.dir=${workingDir.systemIndependentPath}")
+        }
+
         val cmdArgs = kernelConfig.javaCmdLine(
             javaExecutable,
             "kernelProcessConnection",
-            kernelJars.joinToString(classpathSeparator) { it.absolutePath }
+            kernelJars.joinToString(classpathSeparator) { it.absolutePath },
+            extraJavaArgs
         )
 
         val cmd = GeneralCommandLine(cmdArgs)

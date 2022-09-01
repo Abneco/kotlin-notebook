@@ -18,6 +18,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.http.HttpSession
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpec
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpecBase
 import java.io.File
+import java.nio.file.Path
 
 typealias KernelId = String
 typealias KernelName = String
@@ -52,10 +53,10 @@ class KotlinInProcessJupyterClient(
     override val fileContentsApi: CachingFileContentsApi
         get() = TreeCachingFileContentsApi(JavaIoFileContentsApi(rootDir))
 
-    override fun startKernel(project: Project, kernelName: KernelName): KernelId? {
+    override fun startKernel(project: Project, kernelName: String, workingDir: Path): String? {
         if (kernelName !in kernelSpecs) return null
         val id = idGen.generate()
-        val kernel = processService.create(project)
+        val kernel = processService.create(project, workingDir)
         Disposer.register(this, kernel)
         kernels[id] = kernel
         return id
@@ -80,8 +81,9 @@ class KotlinInProcessJupyterClient(
     }
 
     override fun createSession(project: Project, kernelName: KernelName, notebookPath: String): JupyterSessionData {
-        val kernelId = startKernel(project, kernelName) ?: throw RuntimeException("Unknown kernel: $kernelName")
-        val notebookFile = rootDir.resolve(notebookPath)
+        val notebookFile = File(notebookPath).absoluteFile
+        val workingDir = notebookFile.parentFile
+        val kernelId = startKernel(project, kernelName, workingDir.toPath()) ?: throw RuntimeException("Unknown kernel: $kernelName")
 
         val sessionId = idGen.generate()
         val data = JupyterSessionData(
