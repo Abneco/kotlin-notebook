@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.getVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterOpenNotebookInBrowserAction
 import org.jetbrains.plugins.notebooks.jupyter.debugger.JupyterDebugAction
 import org.jetbrains.plugins.notebooks.jupyter.editor.actions.JupyterActionPresentationModifier
 
@@ -22,5 +23,6 @@ class KotlinJupyterActionPresentationModifier : JupyterActionPresentationModifie
 
     private fun AnAction.isActionToHide(): Boolean {
         return this is JupyterDebugAction
+                || this is JupyterOpenNotebookInBrowserAction
     }
 }
