@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.session
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
@@ -97,8 +98,9 @@ class KotlinKernelProcessService {
 
     fun create(
         project: Project,
-        workingDir: Path,
-        ): KotlinKernelProcessHandler {
+        notebookPath: Path,
+        onBeforeStartNotify: (KotlinKernelProcessHandler) -> Unit
+    ): KotlinKernelProcessHandler {
         val kernelConfig = KernelConfig(
             createKernelPorts { portsGenerator.randomPort() },
             "tcp",
@@ -120,7 +122,7 @@ class KotlinKernelProcessService {
         } ?: "java"
 
         val extraJavaArgs = buildList {
-            add("-Duser.dir=${workingDir.systemIndependentPath}")
+            add("-Duser.dir=${notebookPath.parent.systemIndependentPath}")
         }
 
         val cmdArgs = kernelConfig.javaCmdLine(
@@ -132,8 +134,12 @@ class KotlinKernelProcessService {
 
         val cmd = GeneralCommandLine(cmdArgs)
 
-        return KotlinKernelProcessHandler(cmd, kernelConfig).apply {
-            startNotify()
+        return KotlinKernelProcessHandler(cmd, kernelConfig, notebookPath).also { processHandler ->
+            ApplicationManager.getApplication().invokeLater {
+                onBeforeStartNotify(processHandler)
+
+                processHandler.startNotify()
+            }
         }
     }
 }

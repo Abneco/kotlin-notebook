@@ -9,10 +9,12 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.Key
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
+import java.nio.file.Path
 
 class KotlinKernelProcessHandler(
     commandLine: GeneralCommandLine,
-    val kernelConfig: KernelConfig
+    val kernelConfig: KernelConfig,
+    val notebookPath: Path,
 ): KillableColoredProcessHandler(commandLine), Disposable {
 
     init {

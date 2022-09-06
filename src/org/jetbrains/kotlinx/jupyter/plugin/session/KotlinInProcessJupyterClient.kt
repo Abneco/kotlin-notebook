@@ -53,10 +53,14 @@ class KotlinInProcessJupyterClient(
     override val fileContentsApi: CachingFileContentsApi
         get() = TreeCachingFileContentsApi(JavaIoFileContentsApi(rootDir))
 
-    override fun startKernel(project: Project, kernelName: String, workingDir: Path): String? {
+    override fun startKernel(project: Project, kernelName: String, notebookPath: Path): String? {
         if (kernelName !in kernelSpecs) return null
         val id = idGen.generate()
-        val kernel = processService.create(project, workingDir)
+        val kernel = processService.create(
+            project,
+            notebookPath,
+            onBeforeStartNotify = { showKotlinNotebookServerManagementToolWindow(project, it) }
+        )
         Disposer.register(this, kernel)
         kernels[id] = kernel
         return id
@@ -82,8 +86,7 @@ class KotlinInProcessJupyterClient(
 
     override fun createSession(project: Project, kernelName: KernelName, notebookPath: String): JupyterSessionData {
         val notebookFile = File(notebookPath).absoluteFile
-        val workingDir = notebookFile.parentFile
-        val kernelId = startKernel(project, kernelName, workingDir.toPath()) ?: throw RuntimeException("Unknown kernel: $kernelName")
+        val kernelId = startKernel(project, kernelName, notebookFile.toPath()) ?: throw RuntimeException("Unknown kernel: $kernelName")
 
         val sessionId = idGen.generate()
         val data = JupyterSessionData(
