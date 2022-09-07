@@ -135,10 +135,15 @@ class KotlinKernelProcessService {
         val cmd = GeneralCommandLine(cmdArgs)
 
         return KotlinKernelProcessHandler(cmd, kernelConfig, notebookPath).also { processHandler ->
-            ApplicationManager.getApplication().invokeLater {
-                onBeforeStartNotify(processHandler)
-
+            val application = ApplicationManager.getApplication()
+            if (application.isUnitTestMode) {
                 processHandler.startNotify()
+            } else {
+                ApplicationManager.getApplication().invokeLater {
+                    onBeforeStartNotify(processHandler)
+
+                    processHandler.startNotify()
+                }
             }
         }
     }
