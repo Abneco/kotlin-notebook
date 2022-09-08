@@ -54,6 +54,6 @@ fun getOrCreateKotlinNotebookToolWindow(project: Project): ToolWindow {
         ?: toolWindowManager.registerToolWindow(
             RegisterToolWindowTask(KOTLIN_NOTEBOOK_TOOL_WINDOW_ID, canCloseContent = true, anchor = ToolWindowAnchor.BOTTOM)
         )
-    toolWindow.setIcon(KotlinJupyterIcons.FileIcon)
+    toolWindow.setIcon(KotlinJupyterIcons.FileIconGrey)
     return toolWindow
 }
