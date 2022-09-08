@@ -1,18 +1,37 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
+import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.extensions.PluginId
 import java.io.File
+import java.nio.file.Path
 
 object KotlinJupyterResourcesUtil {
     private const val KOTLIN_JUPYTER_PLUGIN_ID = "org.jetbrains.plugins.kotlin.jupyter"
 
     private val LOG = logger<KotlinJupyterResourcesUtil>()
 
-    private fun pluginDescriptor() = PluginManagerCore.getPlugin(PluginId.getId(KOTLIN_JUPYTER_PLUGIN_ID))
+    private fun pluginDescriptor(): IdeaPluginDescriptor {
+        return PluginManagerCore.getPlugin(PluginId.getId(KOTLIN_JUPYTER_PLUGIN_ID))
+            ?: error("Kotlin Notebook plugin not found: " + PluginManagerCore.getPlugins().contentToString())
+    }
+
+    private class PluginInfo(
+        val version: String,
+        val pluginPath: Path?,
+    )
+
+    private val pluginInfo = run {
+        val descriptor = pluginDescriptor()
+
+        PluginInfo(
+            descriptor.version,
+            descriptor.pluginPath,
+        )
+    }
 
     // Returns file located in plugin resources at the given path, null if the resource cannot be found
     fun getPluginResource(path: String): File? {
@@ -22,9 +41,14 @@ object KotlinJupyterResourcesUtil {
         return getPluginResourceProd(path)
     }
 
+    val pluginId: String get() = KOTLIN_JUPYTER_PLUGIN_ID
+    val pluginVersion: String get() = pluginInfo.version
+
+    val isDevVersion: Boolean get() = pluginVersion.endsWith("-SNAPSHOT")
+
     private fun getPluginResourceProd(path: String): File? {
         LOG.info("Getting plugin directory: $path")
-        val pluginDir = pluginDescriptor()?.pluginPath ?: return null
+        val pluginDir = pluginInfo.pluginPath ?: return null
         LOG.info("Resolved plugin path: $pluginDir")
         return getResource(pluginDir.toFile(), path)
     }

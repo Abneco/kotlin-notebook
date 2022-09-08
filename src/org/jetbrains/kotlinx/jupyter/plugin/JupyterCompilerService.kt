@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
+import org.jetbrains.kotlinx.jupyter.plugin.stats.UsageRegistrar
 import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
 import java.io.File
@@ -37,6 +38,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
 
     init {
         PluginVerifier.verifyUltimatePlugin()
+        UsageRegistrar.pluginWasUsed()
     }
 
     val initialClasspath: List<File> by lazy {
