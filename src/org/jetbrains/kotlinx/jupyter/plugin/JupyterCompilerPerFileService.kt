@@ -2,10 +2,15 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility.ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
@@ -28,6 +33,8 @@ import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
+import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.scripting.ImpatientNotebookChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
@@ -127,10 +134,38 @@ class JupyterCompilerPerFileService(
     private val coroutineScope = CoroutineScope(Job())
     private var previousSessionId: String? = null
 
+    private fun syncWithSyntaxDaemonAnalyzer() {
+        val project = projectService.project
+        project.messageBus.connect(this).subscribe(DaemonCodeAnalyzer.DAEMON_EVENT_TOPIC, object : DaemonCodeAnalyzer.DaemonListener {
+            override fun daemonCancelEventOccurred(reason: String) {
+                //println("Daemon canceled: $reason")
+            }
+
+            override fun daemonFinished() { // done analysing?
+                //updateCellsAnalysis(false, false) // maybe needed
+            }
+
+            override fun daemonStarting(fileEditors: MutableCollection<out FileEditor>) {
+                //updateCellsAnalysis(true) // always triggers
+            }
+        })
+    }
+
     init {
         assertBackedNotebook(virtualFile)
         updateClasspathWithExternalDependencies()
         Disposer.register(projectService, this)
+        //syncWithSyntaxDaemonAnalyzer()
+
+        val doc = runReadAction {
+            FileDocumentManager.getInstance().getDocument(virtualFile)!!
+        }
+        if (virtualFile.isKotlinNotebook) {
+            doc.addDocumentListener(
+                ImpatientNotebookChangeListener(projectService.project, virtualFile),
+                projectService
+            )
+        }
     }
 
     private fun getSession(): JupyterNotebookSession? {
@@ -254,6 +289,7 @@ class JupyterCompilerPerFileService(
                     implicitsList.addClass(kClass)
                 }
 
+                updateCellsAnalysis()
                 JupyterKtScriptingSupport.getInstance(projectService.project).update()
             } catch (e: Exception) {
                 LOG.error(e)
@@ -271,6 +307,18 @@ class JupyterCompilerPerFileService(
         val sourceElement = PsiTreeUtil.getChildOfType(cell, JupyterSource::class.java)
         val source = sourceElement?.text.orEmpty()
         return source.trimStart()
+    }
+
+    private fun updateCellsAnalysis() {
+        val injectedManager = InjectedLanguageManager.getInstance(projectService.project)
+        // update all after exec
+        readInjectionHosts {
+            it.forEach { host ->
+                val properFile = injectedManager.getInjectedPsiFiles(host)
+                    ?.firstOrNull()?.first
+                properFile?.putUserData(ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY, null)
+            }
+        }
     }
 
     fun codeRanges(cell: JupyterPsiCell): CellRanges {
