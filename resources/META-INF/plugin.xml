@@ -11,6 +11,12 @@
     <depends>com.intellij.modules.java</depends>
     <depends>com.intellij.modules.ultimate</depends>
 
+    <extensionPoints>
+        <extensionPoint qualifiedName="org.jetbrains.kotlinx.jupyter.plugin.session.extensions.kernelVmCommandCustomizer"
+                        interface="org.jetbrains.kotlinx.jupyter.plugin.session.extensions.KernelVmCommandCustomizer"
+                        dynamic="true"/>
+    </extensionPoints>
+
     <extensions defaultExtensionNs="com.intellij">
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinIntoCellsInjector"/>
         <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.notifications.NotebookLocationNotificationProvider"/>
@@ -69,6 +75,10 @@
                 order="before default"
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.session.ManagedKotlinNotebookServerRunner"/>
         <connections.execution.notebookPathProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.session.KotlinNotebookPathProvider"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlinx.jupyter.plugin">
+        <session.extensions.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.extensions.spark.SparkKernelVmCommandCustomizer"/>
     </extensions>
 
     <actions resource-bundle="messages/JupyterKotlinBundle">

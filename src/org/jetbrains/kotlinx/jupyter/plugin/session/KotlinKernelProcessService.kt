@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.io.ZipUtil
 import com.intellij.util.io.systemIndependentPath
+import org.jetbrains.kotlinx.jupyter.plugin.session.extensions.KernelVmCommandCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinJupyterResourcesUtil
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
@@ -123,6 +124,7 @@ class KotlinKernelProcessService {
 
         val extraJavaArgs = buildList {
             add("-Duser.dir=${notebookPath.parent.systemIndependentPath}")
+            KernelVmCommandCustomizer.addVmArguments(this)
         }
 
         val cmdArgs = kernelConfig.javaCmdLine(
