@@ -25,10 +25,7 @@ fun kotlinJupyter(name: String) = "org.jetbrains.kotlinx:kotlin-jupyter-$name:$k
 
 val kernel: Configuration by configurations.creating
 val lib: Configuration by configurations.creating
-val ideLib: Configuration by configurations.creating {
-    exclude("org.jetbrains.kotlin", "kotlin-stdlib")
-    exclude("org.jetbrains.kotlin", "kotlin-stdlib-common")
-}
+val ideLib: Configuration by configurations.creating
 
 fun ModuleDependency.excludeKotlinDependencies(vararg dependencyNames: String) {
     dependencyNames.forEach {
@@ -44,9 +41,13 @@ dependencies {
     ideLib(kotlinJupyter("common-dependencies")) {
         excludeKotlinDependencies(
             "stdlib",
-            "stdlib-common"
+            "stdlib-common",
+            "kotlin-stdlib-jdk7",
+            "kotlin-stdlib-jdk8"
         )
     }
+    ideLib(kotlin("stdlib"))
+    ideLib(kotlin("stdlib-common"))
 
     lib(kotlinJupyter("lib"))
     lib(kotlinJupyter("api"))
