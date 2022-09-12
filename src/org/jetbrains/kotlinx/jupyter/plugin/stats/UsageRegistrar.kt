@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.stats
 
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.internal.statistic.utils.StatisticsUploadAssistant
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PermanentInstallationID
@@ -43,9 +44,10 @@ object UsageRegistrar {
             val currentTime = System.currentTimeMillis()
             val period = currentTime - lastRequestTime
             val isDevelopment = KotlinJupyterResourcesUtil.isDevVersion
+            val isTeamcity = StatisticsUploadAssistant.isTeamcityDetected()
 
-            LOG.debug("Kotlin Notebook was used: period=$period isDevelopment=$isDevelopment inProgress=$inProgress")
-            if (!isDevelopment && !inProgress && period > UPDATE_PERIOD_MS) {
+            LOG.debug("Kotlin Notebook was used: period=$period isDevelopment=$isDevelopment inProgress=$inProgress teamcity=$isTeamcity")
+            if (!isDevelopment && !isTeamcity && !inProgress && period > UPDATE_PERIOD_MS) {
                 try {
                     inProgress = true
                     LOG.debug("Usage request: run")
