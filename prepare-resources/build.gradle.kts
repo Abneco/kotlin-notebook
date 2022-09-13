@@ -72,6 +72,10 @@ listOf(kernel, ideLib, lib).forEach { conf ->
     val copyTask = tasks.create<Copy>("copy$capName") {
         from(conf)
         into(dirName)
+
+        doFirst {
+            project.delete(files(dirName))
+        }
     }
 
     val zipTask = tasks.create<Zip>("zip$capName") {
