@@ -12,10 +12,10 @@ fun Logger.logListWarn(message: String, list: List<Any>) {
 }
 
 class LogEntry(
-    val message: String,
-    val time: LocalTime,
-    val threadName: String,
-    val stackTrace: Array<StackTraceElement>,
+  val message: String,
+  private val time: LocalTime,
+  private val threadName: String,
+  val stackTrace: Array<StackTraceElement>,
 ) {
     override fun toString(): String {
         val formattedDate = "[${time.format(dateFormatter)}]"

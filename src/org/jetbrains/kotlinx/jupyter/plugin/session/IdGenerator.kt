@@ -5,8 +5,8 @@ import java.util.UUID
 import java.util.concurrent.locks.ReentrantLock
 
 class IdGenerator {
-    val ids: Set<UUID> = mutableSetOf()
-    val lock = ReentrantLock()
+    private val ids: Set<UUID> = mutableSetOf()
+    private val lock = ReentrantLock()
 
     fun generate(): String {
         lock.lock()

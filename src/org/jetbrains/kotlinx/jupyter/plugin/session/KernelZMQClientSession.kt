@@ -92,7 +92,7 @@ class KernelZMQClientSession(
         ))
     }
 
-    fun initSockets() {
+    private fun initSockets() {
         fun socketLoop(
             interruptedMessage: String,
             vararg threadsToInterrupt: Thread,
