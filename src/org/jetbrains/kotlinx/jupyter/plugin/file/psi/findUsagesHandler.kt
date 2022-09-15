@@ -9,11 +9,12 @@ import com.intellij.notebook.editor.BackedVirtualFile
 import com.intellij.openapi.application.ReadActionProcessor
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.util.TextRange
-import com.intellij.psi.ElementManipulator
+import com.intellij.psi.AbstractElementManipulator
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiIdentifier
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.PsiReference
+import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.elementType
@@ -26,7 +27,15 @@ import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
 
 internal class NotebookFindUsagesHandlerFactory : FindUsagesHandlerFactory() {
+    private fun isCompiledCellClassDeclaration(element: PsiElement): Boolean {
+        val file = element.containingFile?.virtualFile
+        if (file == null) return false
+
+        return file.name.matches(Regex("Line_.+\\.class"))
+    }
+
     override fun canFindUsages(element: PsiElement): Boolean {
+        //val fileWindow = element.containingFile?.virtualFile as? VirtualFileWindow ?: return isCompiledCellClassDeclaration(element)
         val fileWindow = element.containingFile?.virtualFile as? VirtualFileWindow ?: return false
         val notebookFile = fileWindow.delegate
         val isProperNotebook = isBackedNotebook(notebookFile) && notebookFile.isKotlinNotebook
@@ -34,12 +43,12 @@ internal class NotebookFindUsagesHandlerFactory : FindUsagesHandlerFactory() {
     }
 
     override fun createFindUsagesHandler(element: PsiElement, forHighlightUsages: Boolean): FindUsagesHandler? {
-        return KotlinNotebookElementFindUsagesHandler(element)
+        return KotlinNotebookElementFindUsagesHandler(element, isCompiledCellClassDeclaration(element))
     }
 
 }
 
-internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement) : FindUsagesHandler(element) {
+internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, searchWithAdditionalDeclarationResolve: Boolean = false) : FindUsagesHandler(element) {
     private val notebookFile = (element.containingFile?.virtualFile as? VirtualFileWindow)?.delegate
 
     override fun getPrimaryElements(): Array<PsiElement> {
@@ -52,7 +61,7 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement) : Fin
         if (virtualFile !is BackedVirtualFile || !virtualFile.isKotlinNotebook) return mutableSetOf()
 
         return findUsageForElement(target)?.map {
-            val properFileRange = ensureProperTextRangeShiftInFile(it)
+            val properFileRange = ensureProperTextRangeShiftInFile(target, it)
             //val properRange = if (!it.textRangeInParent.containsRange(fileRange.startOffset, fileRange.endOffset)) it.textRangeInParent.shiftLeft(1) else it.textRangeInParent
             NotebookReferenceWrapper(target, it, properFileRange, true)
         }?.toMutableSet() ?: mutableSetOf()
@@ -70,7 +79,7 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement) : Fin
             if (foundUsages.isNullOrEmpty()) result = false
 
             foundUsages?.iterator()?.forEach {
-                val properFileRange = ensureProperTextRangeShiftInFile(it)
+                val properFileRange = ensureProperTextRangeShiftInFile(element, it)
                 refProcessor.processInReadAction(NotebookReferenceWrapper(super.myPsiElement, it, properFileRange, true))
             }
         }
@@ -78,7 +87,8 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement) : Fin
         return result
     }
 
-    private fun ensureProperTextRangeShiftInFile(usage: PsiElement): TextRange {
+    private fun ensureProperTextRangeShiftInFile(target: PsiElement, usage: PsiElement): TextRange {
+        //if (target.containingFile == usage.containingFile) return usage.textRange
         val fileRange = usage.containingFile.textRange
         val rangeToStore = TextRange.create(usage.textRangeInParent.startOffset, usage.textRangeInParent.endOffset).shiftRight(usage.textRange.startOffset)
 
@@ -116,16 +126,21 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement) : Fin
 }
 
 // maybe would be needed
-internal class KotlinNotebookElementManipulator: ElementManipulator<KtReferenceExpression> {
-    override fun handleContentChange(element: KtReferenceExpression, range: TextRange, newContent: String?): KtReferenceExpression? {
-        return element
-    }
-
-    override fun handleContentChange(element: KtReferenceExpression, newContent: String?): KtReferenceExpression? {
-        return element
-    }
-
-    override fun getRangeInElement(element: KtReferenceExpression): TextRange {
-        return element.textRange
+internal class KotlinNotebookElementManipulator: AbstractElementManipulator<KtReferenceExpression?>() {
+    override fun handleContentChange(element: KtReferenceExpression, range: TextRange, newContent: String): KtReferenceExpression? {
+        val text = element.text
+        val content = text.replaceRange(range.startOffset, range.endOffset, newContent)
+        return (element.firstChild as? LeafPsiElement)?.replaceWithText(content) as? KtReferenceExpression
     }
 }
+
+
+internal class LeafElementManipulator : AbstractElementManipulator<LeafPsiElement>() {
+    override fun handleContentChange(element: LeafPsiElement, range: TextRange, newContent: String): LeafPsiElement? {
+        val text = element.text
+        val content = text.replaceRange(range.startOffset, range.endOffset, newContent)
+        return element.replaceWithText(content) as? LeafPsiElement
+    }
+}
+
+internal fun PsiElement?.isIdentifier(): Boolean = elementType?.debugName?.equals("IDENTIFIER") == true

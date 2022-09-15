@@ -64,8 +64,10 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
                 registrar.doneInjecting()
             }
 
-            ranges.codeRanges?.inject(kotlinLanguage, projectCompilerService.fileExtension)
-            ranges.magicRanges?.inject(metaLanguage, JKTMetaFileType.EXTENSION)
+            try {
+                ranges.codeRanges?.inject(kotlinLanguage, projectCompilerService.fileExtension)
+                ranges.magicRanges?.inject(metaLanguage, JKTMetaFileType.EXTENSION)
+            } catch (_: RuntimeException) {} // ignore concurrent change in NotebookVirtualFileSystem
         }
     }
 

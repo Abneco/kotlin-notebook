@@ -5,13 +5,17 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.PsiReferenceBase
+import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.util.elementType
 import com.intellij.psi.util.parentOfType
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
+import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceExpressionResolver.leafPsiManipulator
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceExpressionResolver.referenceExpressionManipulator
 
 
 internal class NotebookReferenceWrapper(
@@ -37,6 +41,15 @@ internal class NotebookReferenceWrapper(
     }
 
     override fun isSoft(): Boolean = soft
+
+    override fun handleElementRename(newElementName: String): PsiElement? {
+        return when (val el = element) {
+            is KtReferenceExpression -> referenceExpressionManipulator.handleContentChange(el, newElementName)
+            is LeafPsiElement -> leafPsiManipulator.handleContentChange(el, newElementName)
+            else -> error("Can't handle rename for $element")
+        }
+    }
+
 }
 
 internal class ScriptDeclarationsCollectingVisitor : PsiRecursiveElementVisitor() {
@@ -66,6 +79,9 @@ internal class ScriptDeclarationsCollectingVisitor : PsiRecursiveElementVisitor(
 }
 
 internal object NotebookReferenceExpressionResolver {
+    val leafPsiManipulator = LeafElementManipulator()
+    val referenceExpressionManipulator = KotlinNotebookElementManipulator()
+
     fun tryResolveQualifier(element: PsiElement): PsiElement? {
         val referenceExpression = element.getParentOfType<KtNameReferenceExpression>(false) ?: return null
         val adjusted = retrieveNameReference(referenceExpression)

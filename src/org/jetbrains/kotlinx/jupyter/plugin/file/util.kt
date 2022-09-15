@@ -3,8 +3,10 @@ package org.jetbrains.kotlinx.jupyter.plugin.file
 
 import com.intellij.lang.Language
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
 import com.intellij.testFramework.LightVirtualFile
 import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlin.scripting.definitions.isScript
 import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
@@ -15,6 +17,9 @@ val VirtualFile?.isKotlinNotebook: Boolean get() {
     if (this == null || extension != "ipynb") return false
     return notebookLanguage === KotlinLanguage.INSTANCE
 }
+
+fun isKotlinNotebookInjectedFile(file: PsiFile?): Boolean = file?.isScript() == true && file.name.endsWith("jupyter-kts")
+
 
 private val VirtualFile.notebookLanguage: Language? get(){
     if (isBackedNotebook(this)) {
