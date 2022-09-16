@@ -61,8 +61,7 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, searc
         if (virtualFile !is BackedVirtualFile || !virtualFile.isKotlinNotebook) return mutableSetOf()
 
         return findUsageForElement(target)?.map {
-            val properFileRange = ensureProperTextRangeShiftInFile(target, it)
-            //val properRange = if (!it.textRangeInParent.containsRange(fileRange.startOffset, fileRange.endOffset)) it.textRangeInParent.shiftLeft(1) else it.textRangeInParent
+            val properFileRange = ensureProperTextRangeShiftInFile(it)
             NotebookReferenceWrapper(target, it, properFileRange, true)
         }?.toMutableSet() ?: mutableSetOf()
     }
@@ -70,7 +69,7 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, searc
     override fun processElementUsages(element: PsiElement, processor: Processor<in UsageInfo>, options: FindUsagesOptions): Boolean {
         val refProcessor: ReadActionProcessor<PsiReference> = object : ReadActionProcessor<PsiReference>() {
             override fun processInReadAction(ref: PsiReference): Boolean {
-                return processor.process(UsageInfo(ref))
+                return processor.process(UsageInfo(ref.element, ref.rangeInElement, false))
             }
         }
         var result = true
@@ -79,7 +78,7 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, searc
             if (foundUsages.isNullOrEmpty()) result = false
 
             foundUsages?.iterator()?.forEach {
-                val properFileRange = ensureProperTextRangeShiftInFile(element, it)
+                val properFileRange = ensureProperTextRangeShiftInFile(it)
                 refProcessor.processInReadAction(NotebookReferenceWrapper(super.myPsiElement, it, properFileRange, true))
             }
         }
@@ -87,7 +86,7 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, searc
         return result
     }
 
-    private fun ensureProperTextRangeShiftInFile(target: PsiElement, usage: PsiElement): TextRange {
+    private fun ensureProperTextRangeShiftInFile(usage: PsiElement): TextRange {
         //if (target.containingFile == usage.containingFile) return usage.textRange
         val fileRange = usage.containingFile.textRange
         val rangeToStore = TextRange.create(usage.textRangeInParent.startOffset, usage.textRangeInParent.endOffset).shiftRight(usage.textRange.startOffset)
@@ -95,11 +94,12 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, searc
         val lDiff = if (rangeToStore.startOffset > fileRange.endOffset) rangeToStore.startOffset - fileRange.endOffset else 0
         val rDiff = if (rangeToStore.endOffset > fileRange.endOffset) rangeToStore.endOffset - fileRange.endOffset else 0
         val maxDiff = maxOf(lDiff, rDiff)
+        val firstChild = usage.firstChild
 
         if (maxDiff != 0) {
             return usage.textRangeInParent.shiftLeft(usage.textRangeInParent.startOffset)
         }
-        return usage.textRangeInParent
+        return if (firstChild?.isIdentifier() == true) firstChild.textRangeInParent else usage.textRangeInParent
     }
 
     private fun findUsageForElement(targetElement: PsiElement): Array<PsiElement>? {
@@ -116,7 +116,7 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, searc
         if (psiElement !is PsiIdentifier) {
             psiElement.accept(object: PsiRecursiveElementVisitor() {
                 override fun visitElement(element: PsiElement) {
-                    if (curElement == null && element.elementType?.debugName == "IDENTIFIER") curElement = element
+                    if (curElement == null && element.isIdentifier()) curElement = element
                     super.visitElement(element)
                 }
             })

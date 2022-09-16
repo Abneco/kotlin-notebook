@@ -106,10 +106,11 @@ class JupyterKotlinCellExecutionCallback(
     private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata) {
         val injectManager = InjectedLanguageManager.getInstance(project)
 
-        runAsWriteActionIfNeeded {
+        runAsWriteActionIfNeeded { // maybe synchronized
             val properCompiledClass = snippetMetadata.compiledData.sources.lastOrNull()?.fileName?.substringBefore(".kts")
             (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
                 ?.putUserData(CELL_CLASS_NAME, properCompiledClass)
+            psiCell.putUserData(CELL_CLASS_NAME, properCompiledClass)
         }
     }
 
