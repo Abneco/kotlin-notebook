@@ -119,7 +119,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
                     if (psiFile !is KtFile || (psiFile == target.containingFile && searchStrategy == ReferenceSearchStrategy.DECLARATION)) continue
                     val scriptBlock = psiFile.findChildrenByClass(KtScript::class.java).firstOrNull()?.blockExpression ?: continue
                     val elements = mutableListOf<NavigatablePsiElement>()
-                    traverseChildrenAndSearch(scriptBlock, target, searchStrategy, elements)
+                    traverseChildrenAndSearch(host, scriptBlock, target, searchStrategy, elements)
 
                     if (searchStrategy == ReferenceSearchStrategy.DECLARATION) {
                         val first = elements.firstOrNull()

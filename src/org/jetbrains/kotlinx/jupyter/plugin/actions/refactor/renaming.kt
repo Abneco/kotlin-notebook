@@ -168,12 +168,14 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
         val psiElement = CommonDataKeys.PSI_ELEMENT.getData(dataContext) ?: return false
         val containingFile = psiElement.containingFile
         val isCompiledElem = containingFile is KtClsFile
+        //val manager = InjectedLanguageManager.getInstance(psiFile.project)
         if (isCompiledElem) {
             if (!containingFile.name.startsWith("Line_")) return false
         }
 
         return isKotlinNotebookInjectedFile(psiFile)
-                && psiElement is KtProperty && (isCompiledElem || containingFile.getUserData(CELL_CLASS_NAME) != null)
+                && psiElement is KtProperty
+                && (isCompiledElem || containingFile.getUserData(CELL_CLASS_NAME) != null) // todo: maybe consider in PSI_CELL as well
     }
 
     override fun doRename(elementToRename: PsiElement, editor: Editor, dataContext: DataContext?): InplaceRefactoring? {
