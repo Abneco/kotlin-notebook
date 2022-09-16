@@ -22,9 +22,9 @@ import com.intellij.refactoring.util.CommonRefactoringUtil
 import com.intellij.refactoring.util.MoveRenameUsageInfo
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.containers.NotNullList
-import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier
 
@@ -35,6 +35,7 @@ class NotebookMemberInplaceRenamer(
     editor: Editor
 ) : MemberInplaceRenamer(elementToRename, elementToRename, editor) {
     private val originalElement: PsiElement = substituted
+    private val isSameScope = originalElement.containingFile == elementToRename.containingFile
 
     override fun performRenameInner(element: PsiElement?, newName: String?) {
         super.performRenameInner(element, newName)
@@ -67,12 +68,13 @@ class NotebookMemberInplaceRenamer(
         offset: Int
     ): PsiElement {
         // todo: look in MemberInPlaceRenamer
-        return originalElement.getParentOfType<KtReferenceExpression>(false) ?: originalElement
+        return if (nameIdentifier == myElementToRename && isSameScope) myElementToRename
+                else originalElement.getParentOfType<KtReferenceExpression>(false) ?: originalElement
     }
 
     override fun getRangeToRename(element: PsiElement): TextRange {
-        return when (element) {
-            is KtProperty -> {
+        return when (isNotebookRefactoringSupported(element)) {
+            true -> {
                 val name = originalElement.text
                 var idRange: TextRange? = null
                 element.accept(object : PsiRecursiveElementVisitor() {

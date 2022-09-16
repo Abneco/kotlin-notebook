@@ -34,10 +34,14 @@ import com.intellij.util.ObjectUtils
 import org.jetbrains.kotlin.analysis.decompiler.psi.file.KtClsFile
 import org.jetbrains.kotlin.asJava.namedUnwrappedElement
 import org.jetbrains.kotlin.idea.refactoring.rename.RenameKotlinPropertyProcessor
+import org.jetbrains.kotlin.psi.KtFunction
+import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.tryCastParentToSuitableTarget
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebookInjectedFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler
@@ -46,8 +50,25 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CEL
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier
 import java.awt.Component
 
+internal object NotebookRefactoringSupport {
+    private val refactorSupportedClasses = setOf(
+        KtProperty::class.java,
+        KtFunction::class.java,
+        KtNamedFunction::class.java
+    )
+
+    fun isNotebookRefactoringSupported(element: PsiElement?): Boolean = element != null && element::class.java in refactorSupportedClasses
+
+    fun tryCastParentToSuitableTarget(element: PsiElement?): PsiElement? {
+        val parentClass = element?.parent?.javaClass ?: return null
+        refactorSupportedClasses.forEach {
+            if (parentClass == it) return it.cast(element.parent)
+        }
+        return null
+    }
+}
+
 // MemberInplaceRenameHandler
-// RenamePsiElementProcessorBase
 class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
     private val goToDeclarationProvider = NotebookGotoDeclarationProvider()
 
@@ -57,7 +78,6 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
         } ?: return null
     }
 
-    // store data here ? perhaps, not
     override fun prepareRenaming(element: PsiElement, newName: String, allRenames: MutableMap<PsiElement, String>) {
         //findReferences(element, element.resolveScope, false).forEach {
         //    allRenames.putIfAbsent(it.element, newName)
@@ -95,10 +115,11 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
     override fun substituteElementToRename(element: PsiElement, editor: Editor, renameCallback: Pass<PsiElement>) {
         if (!isKotlinNotebookInjectedFile(element.containingFile)) return
         val adjustedElement = tryResolveToDeclaration(element, editor) ?: element.parent.reference?.resolve()
-        if ((adjustedElement == null && element.parent !is KtProperty) || adjustedElement?.containingFile is KtClsFile) {
+        if ((adjustedElement == null && !isNotebookRefactoringSupported(element.parent)) || adjustedElement?.containingFile is KtClsFile) {
             showBytecodeRefactoringWarning(editor.project)
         } else {
-            val properElem = adjustedElement ?: element.parent as? KtProperty ?: return
+            val parent = tryCastParentToSuitableTarget(element)
+            val properElem = adjustedElement ?: parent ?: return
             renameCallback.pass(properElem)
         }
     }
@@ -174,7 +195,7 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
         }
 
         return isKotlinNotebookInjectedFile(psiFile)
-                && psiElement is KtProperty
+                && isNotebookRefactoringSupported(psiElement)
                 && (isCompiledElem || containingFile.getUserData(CELL_CLASS_NAME) != null) // todo: maybe consider in PSI_CELL as well
     }
 
@@ -229,7 +250,7 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
     }
 
     override fun isAvailable(element: PsiElement?, editor: Editor, file: PsiFile): Boolean {
-        return isKotlinNotebookInjectedFile(file) && element is KtProperty
+        return isKotlinNotebookInjectedFile(file) && isNotebookRefactoringSupported(element)
     }
 
 }
