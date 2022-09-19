@@ -1,9 +1,12 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.command.impl.FinishMarkAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.ImaginaryEditor
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Pair
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
@@ -23,6 +26,7 @@ import com.intellij.usageView.UsageInfo
 import com.intellij.util.containers.NotNullList
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
+import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier
@@ -59,7 +63,10 @@ class NotebookMemberInplaceRenamer(
                    val ans = findUsagesNotebookHandler.findReferencesToHighlight(myElementToRename, element.resolveScope).map {
                         it.toMoveUsageInfo()
                     }
-                    if (ans.isEmpty()) return ans.toTypedArray()
+                    if (ans.isEmpty()) {
+                        showExistingUsagesMessage(myProject, foundRefs.size)
+                        return ans.toTypedArray()
+                    }
                     if (size == ans.size) return ans.toTypedArray()
                 } while (true)
             }
@@ -158,6 +165,15 @@ class NotebookMemberInplaceRenamer(
             }
         }
         return myElementToRename
+    }
+
+    private fun showExistingUsagesMessage(project: Project?, usagesCount: Int) {
+        if (usagesCount == 0) return
+        val manager = NotificationGroupManager.getInstance()
+        manager.getNotificationGroup("Find Problems")
+            .createNotification(JupyterKotlinBundle.message("kotlin.jupyter.refactor.changed.definition", usagesCount), NotificationType.INFORMATION)
+            .setTitle(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"))
+            .notify(project)
     }
 
     override fun isReferenceAtCaret(selectedElement: PsiElement?, ref: PsiReference?, offset: Int): Boolean {
