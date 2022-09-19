@@ -49,7 +49,7 @@ class ImpatientNotebookChangeListener(
 
         runReadAction {
             val injectedPsi = injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first
-            val prevPsi = psiCells.getOrNull(neededCellIndex - 2)?.let {
+            val prevPsi = psiCells.getOrNull(0)?.let {
                 injectedManager.getInjectedPsiFiles(it)?.firstOrNull()?.first
             }
 
