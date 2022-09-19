@@ -130,7 +130,7 @@ internal class KotlinNotebookElementManipulator: AbstractElementManipulator<KtRe
     override fun handleContentChange(element: KtReferenceExpression, range: TextRange, newContent: String): KtReferenceExpression? {
         val text = element.text
         val content = text.replaceRange(range.startOffset, range.endOffset, newContent)
-        return (element.firstChild as? LeafPsiElement)?.replaceWithText(content) as? KtReferenceExpression
+        return ((element.firstChild as? LeafPsiElement)?.replaceWithText(content) as? LeafPsiElement)?.parent as? KtReferenceExpression
     }
 }
 

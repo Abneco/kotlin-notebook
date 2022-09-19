@@ -19,7 +19,6 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.refactoring.rename.RenameProcessor
 import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer
 import com.intellij.refactoring.util.CommonRefactoringUtil
-import com.intellij.refactoring.util.MoveRenameUsageInfo
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.containers.NotNullList
 import org.jetbrains.kotlin.psi.KtReferenceExpression
@@ -36,6 +35,7 @@ class NotebookMemberInplaceRenamer(
 ) : MemberInplaceRenamer(elementToRename, elementToRename, editor) {
     private val originalElement: PsiElement = substituted
     private val isSameScope = originalElement.containingFile == elementToRename.containingFile
+    private var foundRefs: MutableCollection<PsiReference> = mutableSetOf()
 
     override fun performRenameInner(element: PsiElement?, newName: String?) {
         super.performRenameInner(element, newName)
@@ -54,9 +54,14 @@ class NotebookMemberInplaceRenamer(
             private val findUsagesNotebookHandler = KotlinNotebookElementFindUsagesHandler(element)
 
             override fun findUsages(): Array<UsageInfo> {
-                return findUsagesNotebookHandler.findReferencesToHighlight(element, element.resolveScope).map {
-                    MoveRenameUsageInfo(it.element, it, it.rangeInElement.startOffset, it.rangeInElement.endOffset, it.resolve(), false)
-                }.toTypedArray()
+                val size = foundRefs.size
+                do { // todo: might be slow (?)
+                   val ans = findUsagesNotebookHandler.findReferencesToHighlight(myElementToRename, element.resolveScope).map {
+                        it.toMoveUsageInfo()
+                    }
+                    if (ans.isEmpty()) return ans.toTypedArray()
+                    if (size == ans.size) return ans.toTypedArray()
+                } while (true)
             }
         }
     }
@@ -104,10 +109,9 @@ class NotebookMemberInplaceRenamer(
 
         val references =
             KotlinNotebookElementFindUsagesHandler(myElementToRename).findReferencesToHighlight(myElementToRename, myElementToRename.useScope)
-                .filter {// todo: investigate shifts
-                    it.element.containingFile == originalElement.containingFile
-                }
-
+                //.filter {
+                //    it.element.containingFile == originalElement.containingFile
+                //}
         val scope = checkLocalScope() ?: return false
 
         val containingFile = scope.containingFile
@@ -116,6 +120,7 @@ class NotebookMemberInplaceRenamer(
         if (!CommonRefactoringUtil.checkReadOnlyStatus(myProject, containingFile)) return true
 
         myEditor.putUserData(INPLACE_RENAMER, this)
+        foundRefs = references
 
         val stringUsages: List<Pair<PsiElement, TextRange>> = NotNullList()
         collectAdditionalElementsToRename(stringUsages)
@@ -125,6 +130,7 @@ class NotebookMemberInplaceRenamer(
         } catch (e: Throwable) {
             myEditor.putUserData(INPLACE_RENAMER, null)
             FinishMarkAction.finish(myProject, myEditor, myMarkAction)
+            foundRefs.clear()
             throw e
         }
     }

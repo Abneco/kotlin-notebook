@@ -30,6 +30,7 @@ import com.intellij.refactoring.rename.RenamePsiElementProcessor
 import com.intellij.refactoring.rename.inplace.InplaceRefactoring
 import com.intellij.refactoring.rename.inplace.MemberInplaceRenameHandler
 import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer
+import com.intellij.refactoring.util.MoveRenameUsageInfo
 import com.intellij.util.ObjectUtils
 import org.jetbrains.kotlin.analysis.decompiler.psi.file.KtClsFile
 import org.jetbrains.kotlin.asJava.namedUnwrappedElement
@@ -254,3 +255,6 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
     }
 
 }
+
+internal fun PsiReference.toMoveUsageInfo() =
+    MoveRenameUsageInfo(element, this, rangeInElement.startOffset, rangeInElement.endOffset, resolve(), false)
