@@ -88,9 +88,9 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
     override fun canProcessElement(element: PsiElement): Boolean {
         if (!element.containingFile.virtualFile.isKotlinNotebook && !isKotlinNotebookInjectedFile(element.containingFile)) return false
         val namedUnwrappedElement = element.namedUnwrappedElement
-        return namedUnwrappedElement is KtProperty || namedUnwrappedElement is RenameKotlinPropertyProcessor.PropertyMethodWrapper
-                || (element is LeafPsiElement && namedUnwrappedElement is KtScript)
-                || (namedUnwrappedElement is KtParameter && namedUnwrappedElement.hasValOrVar())
+        return (namedUnwrappedElement is KtProperty || namedUnwrappedElement is RenameKotlinPropertyProcessor.PropertyMethodWrapper
+                || (element is LeafPsiElement && namedUnwrappedElement is KtScript))
+                || (namedUnwrappedElement != null && namedUnwrappedElement is KtParameter && namedUnwrappedElement.hasValOrVar())
     }
 
 
