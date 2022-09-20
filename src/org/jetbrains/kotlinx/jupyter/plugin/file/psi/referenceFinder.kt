@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
+import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.psi.psiUtil.getChildrenOfType
@@ -46,7 +47,7 @@ object NotebookReferenceFinder {
 
         val referenceInfo: ProvidedReferenceInfo? = if (dotExpression != null) { // perhaps without this cond
             val asArgument = targetElement.getParentOfType<KtValueArgumentList>(false)
-            val resolvedDotCall = tryResolveQualifierInDotExpression(dotExpression)
+            val resolvedDotCall = tryResolveQualifierInDotExpression(dotExpression, targetElement)
             //println("$resolvedDotCall, name:  ${resolvedDotCall?.text}, fileName: ${resolvedDotCall?.containingFile?.text}")
             if (resolvedDotCall == null && asArgument == null) return
             targetElement.tryResolveQualifierToReferenceInfo()
@@ -90,8 +91,9 @@ object NotebookReferenceFinder {
         element.containingFile.acceptChildren(object : PsiRecursiveElementVisitor() {
             override fun visitElement(element: PsiElement) {
                 if ((element.elementType is KtNameReferenceExpressionElementType || element is KtCallExpression)
-                    // collect all similar expressions and then decide do they correspond to a one ktFile
+                    // collect all similar expressions and then decide do they correspond to a one KtFile
                     && element.textMatches(targetName)) {
+                    //val properNameElement = if (element is KtCallExpression) element.calleeExpression else element
                     val resolvedRefInfo = referenceResolver.tryResolveQualifier(element)
                     if (targetDeclaration.containingFile == resolvedRefInfo?.containingFile) {
                         ans.add(element as KtElement)
@@ -139,12 +141,15 @@ object NotebookReferenceFinder {
         }
     }
 
-    private fun tryResolveQualifierInDotExpression(element: KtDotQualifiedExpression): PsiElement? {
+    private fun tryResolveQualifierInDotExpression(element: KtDotQualifiedExpression, targetElement: PsiElement): PsiElement? {
         var currentReceiver = element.receiverExpression
         while (currentReceiver is KtDotQualifiedExpression) {
             currentReceiver = currentReceiver.receiverExpression
         }
-        return referenceResolver.tryResolveQualifier(currentReceiver.navigationElement)
+        return referenceResolver.tryResolveQualifier(currentReceiver.navigationElement) 
+            ?: (targetElement.parent as? KtReferenceExpression)?.let { ref ->
+                referenceResolver.tryResolveQualifier(ref)
+            }
     }
 
     private fun PsiElement.tryResolveQualifierToReferenceInfo(): ProvidedReferenceInfo? {
