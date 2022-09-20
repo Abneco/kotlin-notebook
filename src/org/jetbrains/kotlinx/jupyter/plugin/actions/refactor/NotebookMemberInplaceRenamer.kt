@@ -22,6 +22,8 @@ import com.intellij.refactoring.util.CommonRefactoringUtil
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.containers.NotNullList
 import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
@@ -45,8 +47,13 @@ class NotebookMemberInplaceRenamer(
     }
 
     override fun getNameIdentifier(): PsiElement? {
-        val elem = myElementToRename
-        return if (elem is KtClass) elem.nameIdentifier else elem
+        return when (val elem = myElementToRename) {
+            is KtClass -> elem.nameIdentifier
+            is KtProperty -> elem.nameIdentifier
+            is KtNamedFunction -> elem.nameIdentifier
+            is PsiNameIdentifierOwner -> elem.nameIdentifier
+            else -> elem
+        }
     }
 
     override fun collectRefs(referencesSearchScope: SearchScope?): MutableCollection<PsiReference> {
