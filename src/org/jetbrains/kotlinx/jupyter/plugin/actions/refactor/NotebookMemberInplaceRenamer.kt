@@ -1,12 +1,9 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
 import com.intellij.openapi.command.impl.FinishMarkAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.ImaginaryEditor
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Pair
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
@@ -24,10 +21,12 @@ import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer
 import com.intellij.refactoring.util.CommonRefactoringUtil
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.containers.NotNullList
+import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.RefactoringNotificationUtility.showExistingUsagesMessage
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.RefactoringNotificationUtility.showRerunActionNeeded
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier
 
@@ -39,14 +38,15 @@ class NotebookMemberInplaceRenamer(
 ) : MemberInplaceRenamer(elementToRename, elementToRename, editor) {
     private val originalElement: PsiElement = substituted
     private val isSameScope = originalElement.containingFile == elementToRename.containingFile
-    private var foundRefs: MutableCollection<PsiReference> = mutableSetOf()
+    private var foundRefsSize: Int = 0
 
     override fun performRenameInner(element: PsiElement?, newName: String?) {
         super.performRenameInner(element, newName)
     }
 
     override fun getNameIdentifier(): PsiElement? {
-        return myElementToRename
+        val elem = myElementToRename
+        return if (elem is KtClass) elem.nameIdentifier else elem
     }
 
     override fun collectRefs(referencesSearchScope: SearchScope?): MutableCollection<PsiReference> {
@@ -56,18 +56,27 @@ class NotebookMemberInplaceRenamer(
     override fun createRenameProcessor(element: PsiElement, newName: String): RenameProcessor {
         return object : MyRenameProcessor(element, newName) {
             private val findUsagesNotebookHandler = KotlinNotebookElementFindUsagesHandler(element)
+            override fun performRefactoring(usages: Array<out UsageInfo>) {
+                if (foundRefsSize > 0) {
+                    showRerunActionNeeded(myProject)
+                }
+                super.performRefactoring(usages)
+            }
 
             override fun findUsages(): Array<UsageInfo> {
-                val size = foundRefs.size
+                val size = foundRefsSize
                 do { // todo: might be slow (?)
                    val ans = findUsagesNotebookHandler.findReferencesToHighlight(myElementToRename, element.resolveScope).map {
                         it.toMoveUsageInfo()
                     }
                     if (ans.isEmpty()) {
-                        showExistingUsagesMessage(myProject, foundRefs.size)
+                        showExistingUsagesMessage(myProject, size)
                         return ans.toTypedArray()
                     }
-                    if (size == ans.size) return ans.toTypedArray()
+                    if (size == ans.size) {
+                        showRerunActionNeeded(myProject)
+                        return ans.toTypedArray()
+                    }
                 } while (true)
             }
         }
@@ -127,7 +136,7 @@ class NotebookMemberInplaceRenamer(
         if (!CommonRefactoringUtil.checkReadOnlyStatus(myProject, containingFile)) return true
 
         myEditor.putUserData(INPLACE_RENAMER, this)
-        foundRefs = references
+        foundRefsSize = references.size
 
         val stringUsages: List<Pair<PsiElement, TextRange>> = NotNullList()
         collectAdditionalElementsToRename(stringUsages)
@@ -137,7 +146,7 @@ class NotebookMemberInplaceRenamer(
         } catch (e: Throwable) {
             myEditor.putUserData(INPLACE_RENAMER, null)
             FinishMarkAction.finish(myProject, myEditor, myMarkAction)
-            foundRefs.clear()
+            foundRefsSize = 0
             throw e
         }
     }
@@ -167,14 +176,6 @@ class NotebookMemberInplaceRenamer(
         return myElementToRename
     }
 
-    private fun showExistingUsagesMessage(project: Project?, usagesCount: Int) {
-        if (usagesCount == 0) return
-        val manager = NotificationGroupManager.getInstance()
-        manager.getNotificationGroup("Find Problems")
-            .createNotification(JupyterKotlinBundle.message("kotlin.jupyter.refactor.changed.definition", usagesCount), NotificationType.INFORMATION)
-            .setTitle(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"))
-            .notify(project)
-    }
 
     override fun isReferenceAtCaret(selectedElement: PsiElement?, ref: PsiReference?, offset: Int): Boolean {
         return if (selectedElement?.containingFile?.name?.endsWith("jupyter-kts") == true)

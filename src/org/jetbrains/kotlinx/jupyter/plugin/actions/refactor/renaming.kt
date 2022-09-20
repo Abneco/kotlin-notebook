@@ -3,8 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.template.impl.TemplateManagerImpl
 import com.intellij.ide.DataManager
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.LangDataKeys
@@ -35,27 +34,32 @@ import com.intellij.util.ObjectUtils
 import org.jetbrains.kotlin.analysis.decompiler.psi.file.KtClsFile
 import org.jetbrains.kotlin.asJava.namedUnwrappedElement
 import org.jetbrains.kotlin.idea.refactoring.rename.RenameKotlinPropertyProcessor
+import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtParameter
+import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtScript
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.tryCastParentToSuitableTarget
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.RefactoringNotificationUtility.showBytecodeRefactoringWarning
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebookInjectedFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookGotoDeclarationProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier
+import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 import java.awt.Component
 
 internal object NotebookRefactoringSupport {
     private val refactorSupportedClasses = setOf(
         KtProperty::class.java,
         KtFunction::class.java,
-        KtNamedFunction::class.java
+        KtNamedFunction::class.java,
+        KtClass::class.java,
+        KtPrimaryConstructor::class.java
     )
 
     fun isNotebookRefactoringSupported(element: PsiElement?): Boolean = element != null && element::class.java in refactorSupportedClasses
@@ -95,7 +99,6 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
     }
 
 
-
     override fun findReferences(
         element: PsiElement,
         searchScope: SearchScope,
@@ -125,13 +128,6 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
         }
     }
 
-    private fun showBytecodeRefactoringWarning(project: Project?) {
-        val manager = NotificationGroupManager.getInstance()
-        manager.getNotificationGroup("Find Problems")
-            .createNotification(JupyterKotlinBundle.message("kotlin.jupyter.refactor.compiled.script"), NotificationType.WARNING)
-            .setTitle(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"))
-            .notify(project)
-    }
 }
 
 
@@ -190,14 +186,17 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
         val psiElement = CommonDataKeys.PSI_ELEMENT.getData(dataContext) ?: return false
         val containingFile = psiElement.containingFile
         val isCompiledElem = containingFile is KtClsFile
-        //val manager = InjectedLanguageManager.getInstance(psiFile.project)
+        val manager = InjectedLanguageManager.getInstance(psiFile.project)
         if (isCompiledElem) {
             if (!containingFile.name.startsWith("Line_")) return false
         }
+        val cell = (manager.getInjectionHost(containingFile) as? JupyterPsiCellImpl)
 
         return isKotlinNotebookInjectedFile(psiFile)
                 && isNotebookRefactoringSupported(psiElement)
-                && (isCompiledElem || containingFile.getUserData(CELL_CLASS_NAME) != null) // todo: maybe consider in PSI_CELL as well
+                && (isCompiledElem
+                || containingFile.getUserData(CELL_CLASS_NAME) != null
+                || cell?.getUserData(CELL_CLASS_NAME) != null) // todo: maybe consider in PSI_CELL as well
     }
 
     override fun doRename(elementToRename: PsiElement, editor: Editor, dataContext: DataContext?): InplaceRefactoring? {
@@ -247,6 +246,11 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
 
 
     override fun createMemberRenamer(element: PsiElement, elementToRename: PsiNameIdentifierOwner, editor: Editor): MemberInplaceRenamer {
+        //val offset = editor.caretModel.offset
+        //val editorPsiFile = PsiDocumentManager.getInstance(element.project).getPsiFile(editor.document)
+        //if (nameIdentifier != null && editorPsiFile == elementToRename.containingFile && elementToRename is KtPrimaryConstructor && offset !in nameIdentifier.textRange && offset in elementToRename.textRange) {
+        //    editor.caretModel.moveToOffset(nameIdentifier.textOffset)
+        //}
         return NotebookMemberInplaceRenamer(element, elementToRename, editor)
     }
 
