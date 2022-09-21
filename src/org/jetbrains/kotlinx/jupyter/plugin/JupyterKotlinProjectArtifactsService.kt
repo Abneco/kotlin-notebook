@@ -28,6 +28,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
@@ -42,6 +43,10 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
     private var buildAsyncResult: Deferred<ProjectArtifacts>? = null
     private var buildResult: ProjectArtifacts? = null
     private val isBuildUpToDate: AtomicBoolean = AtomicBoolean(false)
+    private val fileExtensionsOfInterest = setOf(
+        KotlinFileType.INSTANCE.defaultExtension,
+        "java"
+    )
 
     init {
         addBuildListener()
@@ -65,7 +70,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
                 val fileProjects = ProjectLocator.getInstance().getProjectsForFile(vFile)
                 if (project !in fileProjects) return false
 
-                if (vFile.fileType == JupyterFileType) return false
+                if (vFile.fileType == JupyterFileType || vFile.fileType.defaultExtension !in fileExtensionsOfInterest) return false
 
                 return true
             }
