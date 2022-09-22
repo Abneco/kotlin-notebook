@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.session
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -100,7 +101,8 @@ class KotlinKernelProcessService {
     fun create(
         project: Project,
         notebookPath: Path,
-        onBeforeStartNotify: (KotlinKernelProcessHandler) -> Unit
+        onBeforeStartNotify: (KotlinKernelProcessHandler) -> Unit,
+        onKernelTerminated: (ProcessEvent, KotlinKernelProcessHandler) -> Unit
     ): KotlinKernelProcessHandler {
         val kernelConfig = KernelConfig(
             createKernelPorts { portsGenerator.randomPort() },
@@ -136,7 +138,10 @@ class KotlinKernelProcessService {
 
         val cmd = GeneralCommandLine(cmdArgs)
 
-        return KotlinKernelProcessHandler(cmd, kernelConfig, notebookPath).also { processHandler ->
+        return KotlinKernelProcessHandler(
+            cmd, kernelConfig, notebookPath,
+            onKernelTerminated
+        ).also { processHandler ->
             val application = ApplicationManager.getApplication()
             if (application.isUnitTestMode) {
                 processHandler.startNotify()

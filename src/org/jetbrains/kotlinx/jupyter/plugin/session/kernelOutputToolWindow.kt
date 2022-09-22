@@ -15,6 +15,7 @@ import com.intellij.ui.content.ContentFactory
 import icons.KotlinJupyterIcons
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 import org.jetbrains.kotlinx.jupyter.plugin.actions.StopKotlinKernelAction
+import org.jetbrains.plugins.notebooks.jupyter.server.ui.attachJupyterServerContentCloseListener
 
 private const val KOTLIN_NOTEBOOK_TOOL_WINDOW_ID = "Kotlin Notebook"
 private const val KOTLIN_NOTEBOOK_RUNNER_ID = "Kotlin Notebook Runner"
@@ -43,9 +44,22 @@ fun showKotlinNotebookServerManagementToolWindow(
 
     val manager = toolWindow.contentManager
     val contentFactory = ContentFactory.getInstance()
+
+    val oldContent = manager.findContent(kernelContentTitle)
+    if (oldContent != null) {
+        manager.removeContent(oldContent, true)
+    }
+
     val newContent = contentFactory.createContent(ui.component, kernelContentTitle, true)
     newContent.isCloseable = false
-    manager.addContent(newContent, 0)
+    manager.addContent(newContent, -1)
+
+    attachJupyterServerContentCloseListener(
+        newContent,
+        project,
+        JupyterKotlinBundle.message("kotlin.jupyter.toolbar.session.name"),
+        handler
+    )
 }
 
 fun getOrCreateKotlinNotebookToolWindow(project: Project): ToolWindow {

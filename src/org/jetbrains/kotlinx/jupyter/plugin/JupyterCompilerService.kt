@@ -57,7 +57,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
                     val virtualFile = (sourceCode as? KtFileScriptSource)?.virtualFile
                     val fileDelegate = (virtualFile as? VirtualFileWindow)?.delegate
                     val notebookFile = takeIfBackedNotebook(fileDelegate) ?: return@beforeCompiling config.asSuccess()
-                    get(notebookFile).handleBeforeCompiling(sourceCode, config).asSuccess()
+                    getOrCreate(notebookFile).handleBeforeCompiling(sourceCode, config).asSuccess()
                 }
             }
         }
@@ -77,9 +77,14 @@ class JupyterCompilerService(val project: Project) : Disposable {
 
     val language = Language.findLanguageByID("kotlin")!!
 
-    fun get(virtualFile: VirtualFile): JupyterCompilerPerFileService {
+    fun getOrCreate(virtualFile: VirtualFile): JupyterCompilerPerFileService {
         assertBackedNotebook(virtualFile)
         return mapping.getOrPut(virtualFile) { JupyterCompilerPerFileService(virtualFile, this) }
+    }
+
+    fun get(virtualFile: VirtualFile): JupyterCompilerPerFileService? {
+        assertBackedNotebook(virtualFile)
+        return mapping[virtualFile]
     }
 
     override fun dispose() {
@@ -90,7 +95,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
 
         fun getForFile(project: Project, virtualFile: VirtualFile): JupyterCompilerPerFileService {
             assertBackedNotebook(virtualFile)
-            return getInstance(project).get(virtualFile)
+            return getInstance(project).getOrCreate(virtualFile)
         }
     }
 }

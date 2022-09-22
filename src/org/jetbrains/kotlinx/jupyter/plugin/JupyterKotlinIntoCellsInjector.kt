@@ -42,7 +42,7 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
         if (!virtualFile.isKotlinNotebook) return
         if (element.cellMarker.text.matches(NON_CODE_CELL_REGEX)) return
 
-        val compilerService = projectCompilerService.get(virtualFile)
+        val compilerService = projectCompilerService.getOrCreate(virtualFile)
         val actualNotebookCells = (containingFile as? JupyterFile)?.children?.firstOrNull { it is JupyterNotebook }
                             ?.children?.toSet() ?: emptySet()
 

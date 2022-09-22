@@ -297,12 +297,6 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private fun clearPreviousSnippets() {
-        _currentClasspath.clear()
-        additionalDefaultImports.clear()
-        implicitsList.clear()
-    }
-
     private fun getCellCode(cell: PsiElement): String {
         val sourceElement = PsiTreeUtil.getChildOfType(cell, JupyterSource::class.java)
         val source = sourceElement?.text.orEmpty()
@@ -338,10 +332,22 @@ class JupyterCompilerPerFileService(
         return CellRanges(codeRanges, magicRanges)
     }
 
-    override fun dispose() {
+    private fun clearPreviousSnippets() {
+        _currentClasspath.clear()
+        additionalDefaultImports.clear()
+        implicitsList.clear()
+    }
+
+    fun clear() {
+        clearPreviousSnippets()
+
         nbInjectionHosts.clear()
         classesDir.delete(true)
         coroutineScope.cancel()
+    }
+
+    override fun dispose() {
+        clear()
     }
 
     data class CellRanges(val codeRanges: List<TextRange>?, val magicRanges: List<TextRange>?)

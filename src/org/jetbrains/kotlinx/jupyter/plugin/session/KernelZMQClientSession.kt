@@ -25,6 +25,8 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterProtocolSchemaFactory
 import org.zeromq.SocketType
 import org.zeromq.ZMQ
+import org.zeromq.ZMQException
+import java.nio.channels.ClosedSelectorException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
@@ -69,7 +71,7 @@ class KernelZMQClientSession(
     private val sockets = JupyterSocketInfo.values().associate { it.type to openSocket(it).apply { connect() } }
     private val messageBytePrefix = listOf(byteArrayOf(1))
 
-    private var clientThread: Thread? = null
+    private val clientThreads: MutableList<Thread> = mutableListOf()
 
     init {
         initSockets()
@@ -109,7 +111,7 @@ class KernelZMQClientSession(
             }
         }
 
-        clientThread = thread(name = "Main Kernel ZMQ client thread") {
+        val mainClientThread = thread(name = "Main Kernel ZMQ client thread") {
             val childThreads = buildList {
                 JupyterSocketType.values().forEach { socketType ->
                     val socket = fromSocketType(socketType)
@@ -125,7 +127,20 @@ class KernelZMQClientSession(
                     add(
                         thread(name = "$socketType's socket thread") {
                             socketLoop("Socket $socketType: Interrupted") {
-                                socket.runCallbacksOnMessage()
+                                fun rethrowAsInterrupted(e: Throwable) {
+                                    log.warn("Kernel interrupted", e)
+                                    throw InterruptedException("Kernel interrupted with exception: $e")
+                                }
+
+                                try {
+                                    socket.runCallbacksOnMessage()
+                                } catch (e: ClosedSelectorException) {
+                                    rethrowAsInterrupted(e)
+                                } catch (e: ZMQException) {
+                                    rethrowAsInterrupted(e)
+                                } catch (e: AssertionError) {
+                                    rethrowAsInterrupted(e)
+                                }
                             }
                         }
                     )
@@ -133,7 +148,9 @@ class KernelZMQClientSession(
             }
 
             childThreads.forEach { it.join() }
+            clientThreads.addAll(childThreads)
         }
+        clientThreads.add(mainClientThread)
     }
 
     private fun processMessage(socketType: JupyterSocketType, rawMessage: RawMessage) {
@@ -144,7 +161,8 @@ class KernelZMQClientSession(
 
     override fun close() {
         @Suppress("DEPRECATION")
-        clientThread?.stop()
+        clientThreads.forEach { it.stop() }
+        clientThreads.clear()
         sockets.values.forEach { it.close() }
     }
 

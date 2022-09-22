@@ -15,12 +15,20 @@ class KotlinKernelProcessHandler(
     commandLine: GeneralCommandLine,
     val kernelConfig: KernelConfig,
     val notebookPath: Path,
+
+    val onKernelTerminated: (ProcessEvent, KotlinKernelProcessHandler) -> Unit,
 ): KillableColoredProcessHandler(commandLine), Disposable {
 
     init {
+        val handler = this
+
         addProcessListener(object : ProcessAdapter() {
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                 LOG.debug (event.text.trimEnd().trimStart('\r', '\n'))
+            }
+
+            override fun processTerminated(event: ProcessEvent) {
+                onKernelTerminated(event, handler)
             }
         })
     }

@@ -4,7 +4,10 @@ package org.jetbrains.kotlinx.jupyter.plugin.session
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.VirtualFileManager
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
+import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
+import org.jetbrains.plugins.notebooks.core.impl.file.findBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelDoesNotExistsException
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
@@ -59,7 +62,13 @@ class KotlinInProcessJupyterClient(
         val kernel = processService.create(
             project,
             notebookPath,
-            onBeforeStartNotify = { showKotlinNotebookServerManagementToolWindow(project, it) }
+            onBeforeStartNotify = { showKotlinNotebookServerManagementToolWindow(project, it) },
+            onKernelTerminated = { _, _ ->
+                val file = VirtualFileManager.getInstance().findFileByNioPath(notebookPath) ?: return@create
+                val notebookFile = findBackedNotebook(file) ?: return@create
+                val service = JupyterCompilerService.getInstance(project).get(notebookFile) ?: return@create
+                service.clear()
+            }
         )
         Disposer.register(this, kernel)
         kernels[id] = kernel
