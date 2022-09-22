@@ -110,7 +110,7 @@ class JupyterKotlinCellExecutionCallback(
             val properCompiledClass = snippetMetadata.compiledData.sources.lastOrNull()?.fileName?.substringBefore(".kts")
             (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
                 ?.putUserData(CELL_CLASS_NAME, properCompiledClass)
-            psiCell.putUserData(CELL_CLASS_NAME, properCompiledClass)
+            psiCell.putCopyableUserData(CELL_CLASS_NAME, properCompiledClass)
         }
     }
 

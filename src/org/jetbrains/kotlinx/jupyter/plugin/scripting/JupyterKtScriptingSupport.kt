@@ -112,6 +112,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         val foundData = mutableSetOf<PsiElement>()
         val asPsiFile = PsiManager.getInstance(project).findFile(virtualFile)
         val notebookCells = (asPsiFile?.children?.first() as? JupyterNotebook)?.psiCellList ?: return null
+        val injectionManager = InjectedLanguageManager.getInstance(project)
 
         return runReadAction {
             for (host in notebookCells) {
@@ -120,7 +121,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
                 if (psiFile !is KtFile || (psiFile == target.containingFile && searchStrategy == ReferenceSearchStrategy.DECLARATION)) continue
                 val scriptBlock = psiFile.findChildrenByClass(KtScript::class.java).firstOrNull()?.blockExpression ?: continue
                 val elements = mutableListOf<NavigatablePsiElement>()
-                traverseChildrenAndSearch(host, scriptBlock, target, searchStrategy, elements)
+                traverseChildrenAndSearch(injectionManager, host, scriptBlock, target, searchStrategy, elements)
 
                 if (searchStrategy == ReferenceSearchStrategy.DECLARATION) {
                     val first = elements.firstOrNull()

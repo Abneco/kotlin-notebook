@@ -1,6 +1,7 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 
+import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility.ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY
 import com.intellij.openapi.command.impl.FinishMarkAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.ImaginaryEditor
@@ -8,6 +9,7 @@ import com.intellij.openapi.util.Pair
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiRecursiveElementVisitor
@@ -30,6 +32,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoring
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.RefactoringNotificationUtility.showExistingUsagesMessage
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.RefactoringNotificationUtility.showRerunActionNeeded
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier
 
 
@@ -41,9 +44,14 @@ class NotebookMemberInplaceRenamer(
     private val originalElement: PsiElement = substituted
     private val isSameScope = originalElement.containingFile == elementToRename.containingFile
     private var foundRefsSize: Int = 0
+    private val prevClassData = myElementToRename.containingFile.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)
 
     override fun performRenameInner(element: PsiElement?, newName: String?) {
         super.performRenameInner(element, newName)
+        if (element != null && newName?.isNotEmpty() == true && prevClassData != null) {
+            //invalidateStoredUserData(element.containingFile, null)
+            element.containingFile.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, prevClassData)
+        }
     }
 
     override fun getNameIdentifier(): PsiElement? {
@@ -82,6 +90,12 @@ class NotebookMemberInplaceRenamer(
                     }
                     if (size == ans.size) {
                         showRerunActionNeeded(myProject)
+                        ans.forEach {
+                            val el = it.element?.containingFile
+                            if (el != null) {
+                                invalidateStoredUserData(el, null)
+                            }
+                        }
                         return ans.toTypedArray()
                     }
                 } while (true)
@@ -156,6 +170,10 @@ class NotebookMemberInplaceRenamer(
             foundRefsSize = 0
             throw e
         }
+    }
+
+    private fun invalidateStoredUserData(containingFile: PsiFile, references: Collection<out PsiReference>?) {
+        containingFile.putUserData(ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY, null)
     }
 
     override fun getVariable(): PsiNamedElement? {

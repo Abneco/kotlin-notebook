@@ -1,6 +1,7 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.file.psi
 
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.util.Key
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
@@ -37,7 +38,7 @@ object NotebookReferenceFinder {
 
     private val declarationsCollectingVisitor = ScriptDeclarationsCollectingVisitor()
 
-    fun traverseChildrenAndSearch(injectionHost: PsiLanguageInjectionHost, element: PsiElement, targetElement: PsiElement,
+    fun traverseChildrenAndSearch(injectionManager: InjectedLanguageManager, injectionHost: PsiLanguageInjectionHost, element: PsiElement, targetElement: PsiElement,
                                   searchStrategy: ReferenceSearchStrategy = ReferenceSearchStrategy.DECLARATION,
                                   foundData: MutableList<NavigatablePsiElement>?): Unit {
         val resolvedNullableRef = targetElement.reference?.resolve()
@@ -59,6 +60,7 @@ object NotebookReferenceFinder {
         when (searchStrategy) {
             ReferenceSearchStrategy.DECLARATION ->
                 getProperDeclarationsForScriptOrClass(element, dotExpression != null).firstOrNull {
+                    it ?: return@firstOrNull false
                     val declarationMatchResult = if (referenceInfo != null)
                                                     tryMatchWithDeclaration(injectionHost, targetElement, it, referenceInfo)
                                                  else isSameFile
@@ -66,7 +68,10 @@ object NotebookReferenceFinder {
                             //&& it.containingKtFile.getUserData(CELL_CLASS_NAME) != null
                             && declarationMatchResult
                 }?.let { listOf(it) }
-            ReferenceSearchStrategy.REFERENCES -> getProperUsagesForTargetElement(injectionHost, element, targetElement)
+            ReferenceSearchStrategy.REFERENCES -> {
+                val candidateHost = injectionManager.getInjectionHost(element.containingFile)
+                getProperUsagesForTargetElement(candidateHost ?: injectionHost, element, targetElement)
+            }
         }?.let {
             foundData?.addAll(it)
             return
@@ -80,7 +85,7 @@ object NotebookReferenceFinder {
 
         for (declaredPublicClass in declaredPublicClasses) {
             //if (foundData != null) continue
-            traverseChildrenAndSearch(injectionHost, declaredPublicClass, targetElement, searchStrategy, foundData)
+            traverseChildrenAndSearch(injectionManager, injectionHost, declaredPublicClass, targetElement, searchStrategy, foundData)
         }
     }
 
@@ -115,7 +120,7 @@ object NotebookReferenceFinder {
         }
 
         val compiledClassName = candidateDeclaration.containingKtFile.getUserData(CELL_CLASS_NAME)
-                                ?: host.getUserData(CELL_CLASS_NAME) ?: ""
+                                ?: host.getCopyableUserData(CELL_CLASS_NAME) ?: ""
         return compiledClassName == referenceInfo.enclosingClass?.name
     }
 

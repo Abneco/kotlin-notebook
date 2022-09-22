@@ -196,7 +196,7 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
                 && isNotebookRefactoringSupported(psiElement)
                 && (isCompiledElem
                 || containingFile.getUserData(CELL_CLASS_NAME) != null
-                || cell?.getUserData(CELL_CLASS_NAME) != null) // todo: maybe consider in PSI_CELL as well
+                || cell?.getCopyableUserData(CELL_CLASS_NAME) != null) // todo: maybe consider in PSI_CELL as well
     }
 
     override fun doRename(elementToRename: PsiElement, editor: Editor, dataContext: DataContext?): InplaceRefactoring? {
