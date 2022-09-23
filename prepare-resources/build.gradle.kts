@@ -33,6 +33,14 @@ fun ModuleDependency.excludeKotlinDependencies(vararg dependencyNames: String) {
     }
 }
 
+fun detectIntellijRoot(): File {
+    val pathString = projectDir.absoluteFile.invariantSeparatorsPath
+    val intellijPathString = pathString.substringBefore("plugins/")
+    val intellijPath = file(intellijPathString)
+    println("Detected IntelliJ path: $intellijPath")
+    return intellijPath
+}
+
 dependencies {
     kernel(kotlinJupyter("kernel"))
 
@@ -55,7 +63,7 @@ dependencies {
     lib(kotlin("script-runtime:1.7.10"))
 }
 
-val intellijRoot = projectDir.parentFile.parentFile.parentFile.parentFile.apply { println(this) }
+val intellijRoot = detectIntellijRoot()
 val outDir = intellijRoot.resolve("out")
 val classesDir = outDir.resolve("classes")
 val productionOutDir = classesDir.resolve("production/intellij.kotlin.jupyter").apply { mkdirs() }

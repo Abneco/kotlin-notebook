@@ -11,6 +11,12 @@ class KernelPortsGenerator(
     private val portRangeStart: Int,
     private val portRangeEnd: Int,
 ) {
+    init {
+      assert(portRangeStart <= portRangeEnd) {
+          "Wrong range limits were passed. Start: $portRangeStart, end $portRangeEnd"
+      }
+    }
+
     private val maxTrials = portRangeEnd - portRangeStart
     private val rng = Random()
     private val usedPorts: MutableSet<Int> = ConcurrentHashMap.newKeySet()

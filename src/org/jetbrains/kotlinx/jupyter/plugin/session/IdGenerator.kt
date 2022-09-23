@@ -3,18 +3,19 @@ package org.jetbrains.kotlinx.jupyter.plugin.session
 
 import java.util.UUID
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 class IdGenerator {
     private val ids: Set<UUID> = mutableSetOf()
     private val lock = ReentrantLock()
 
     fun generate(): String {
-        lock.lock()
-        var uid: UUID
-        do {
-          uid = UUID.randomUUID()
-        } while(uid in ids)
-        lock.unlock()
-        return uid.toString()
+        return lock.withLock {
+            var uid: UUID
+            do {
+                uid = UUID.randomUUID()
+            } while(uid in ids)
+            uid
+        }.toString()
     }
 }

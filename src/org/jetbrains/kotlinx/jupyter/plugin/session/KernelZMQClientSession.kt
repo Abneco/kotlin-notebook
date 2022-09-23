@@ -78,7 +78,7 @@ class KernelZMQClientSession(
     }
 
     override fun fromSocketType(type: JupyterSocketType): JupyterSocket {
-        return sockets[type]!!
+        return sockets[type] ?: throw IllegalArgumentException("Unsupported socket type: $type")
     }
 
     override fun send(content: JupyterMessage) {

@@ -8,6 +8,7 @@ import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.Key
+import com.intellij.util.io.BaseOutputReader
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import java.nio.file.Path
 
@@ -35,6 +36,10 @@ class KotlinKernelProcessHandler(
 
     override fun dispose() {
         killProcess()
+    }
+
+    override fun readerOptions(): BaseOutputReader.Options {
+        return BaseOutputReader.Options.forMostlySilentProcess()
     }
 
     companion object {
