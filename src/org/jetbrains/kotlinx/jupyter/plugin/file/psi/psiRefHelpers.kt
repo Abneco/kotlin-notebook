@@ -1,6 +1,7 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.file.psi
 
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiRecursiveElementVisitor
@@ -118,3 +119,5 @@ internal data class ProvidedReferenceInfo(val resolvedTo: PsiElement) {
 
     val type = resolvedTo.elementType
 }
+
+internal val IN_EDITOR_ELEM_REF_KEY: Key<PsiElement> = Key.create<PsiElement>("notebook.psi.resolved.ref")

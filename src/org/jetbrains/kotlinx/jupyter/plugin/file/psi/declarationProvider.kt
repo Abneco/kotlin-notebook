@@ -13,6 +13,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.Query
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.originFile
@@ -28,6 +29,7 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
         val notebookFile = virtualFile.delegate
         if (!isBackedNotebook(notebookFile)) return emptyArray()
         sourceElement.reference?.resolve()?.let { return arrayOf(it) }
+        tryGetPreviousValidResolvedResult(sourceElement)?.let { return arrayOf(it) }
         val scriptingSupport = JupyterKtScriptingSupport.getInstance(project)
 
 
@@ -37,9 +39,22 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
 
         return scriptingSupport.searchForElementDeclarationOrUsages(sourceElement, notebookFile, ReferenceSearchStrategy.DECLARATION)
             ?.firstOrNull()?.let {
-                sourceElement.reference?.bindToElement(it)
+                sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, it)
                 arrayOf(it)
             } ?: emptyArray()
+    }
+
+    private fun tryGetPreviousValidResolvedResult(sourceElement: PsiElement): PsiElement? {
+        sourceElement.getUserData(IN_EDITOR_ELEM_REF_KEY)?.let {
+            val knownRef = sourceElement.parent?.reference?.resolve()
+            if (knownRef != null && it.isValid && (it.containingFile.getUserData(CELL_CLASS_NAME) + ".class") == knownRef.containingFile.name) {
+                if (it.containingFile.isValid) {
+                    return it
+                }
+            }
+            sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, null)
+        }
+        return null
     }
 
 }
