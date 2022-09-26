@@ -10,12 +10,12 @@ import java.io.File
 import java.nio.file.Path
 
 object KotlinJupyterResourcesUtil {
-    private const val KOTLIN_JUPYTER_PLUGIN_ID = "org.jetbrains.plugins.kotlin.jupyter"
+    private val KOTLIN_JUPYTER_PLUGIN_ID = PluginId.getId("org.jetbrains.plugins.kotlin.jupyter")
 
     private val LOG = logger<KotlinJupyterResourcesUtil>()
 
     private fun pluginDescriptor(): IdeaPluginDescriptor {
-        return PluginManagerCore.getPlugin(PluginId.getId(KOTLIN_JUPYTER_PLUGIN_ID))
+        return PluginManagerCore.getPlugin(KOTLIN_JUPYTER_PLUGIN_ID)
             ?: error("Kotlin Notebook plugin not found: " + PluginManagerCore.getPlugins().contentToString())
     }
 
@@ -41,7 +41,7 @@ object KotlinJupyterResourcesUtil {
         return getPluginResourceProd(path)
     }
 
-    val pluginId: String get() = KOTLIN_JUPYTER_PLUGIN_ID
+    val pluginId: PluginId get() = KOTLIN_JUPYTER_PLUGIN_ID
     val pluginVersion: String get() = pluginInfo.version
 
     val isDevVersion: Boolean get() = pluginVersion.endsWith("-SNAPSHOT")

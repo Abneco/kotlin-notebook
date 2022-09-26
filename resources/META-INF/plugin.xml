@@ -54,6 +54,13 @@
                              key="kotlin.jupyter.settings.title"
                              id="kotlinNotebook"
                              instance="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookConfigurable"/>
+
+        <notificationGroup
+                id="Kotlin Notebook plugin updates"
+                displayType="STICKY_BALLOON"
+                bundle="messages.JupyterKotlinBundle"
+                key="plugin.updater.notification.group"
+        />
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">

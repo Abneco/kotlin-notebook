@@ -38,6 +38,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.scripting.ImpatientNotebookChangeLis
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
+import org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookPluginUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsDirProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
@@ -154,6 +155,10 @@ class JupyterCompilerPerFileService(
 
     init {
         assertBackedNotebook(virtualFile)
+
+        // We consider plugin was used when at least one notebook was opened
+        KotlinNotebookPluginUpdater.pluginUsed()
+
         updateClasspathWithExternalDependencies()
         Disposer.register(projectService, this)
         //syncWithSyntaxDaemonAnalyzer()
