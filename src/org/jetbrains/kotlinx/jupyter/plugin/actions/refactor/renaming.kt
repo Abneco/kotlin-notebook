@@ -41,6 +41,7 @@ import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtScript
+import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.tryCastParentToSuitableTarget
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.RefactoringNotificationUtility.showBytecodeRefactoringWarning
@@ -50,6 +51,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUs
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookGotoDeclarationProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 import java.awt.Component
 
@@ -184,6 +186,7 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
     override fun isRenaming(dataContext: DataContext): Boolean {
         val psiFile = CommonDataKeys.PSI_FILE.getData(dataContext) ?: return false
         val psiElement = CommonDataKeys.PSI_ELEMENT.getData(dataContext) ?: return false
+        val virtualFile = CommonDataKeys.VIRTUAL_FILE.getData(dataContext) ?: return false
         val containingFile = psiElement.containingFile
         val isCompiledElem = containingFile is KtClsFile
         val manager = InjectedLanguageManager.getInstance(psiFile.project)
@@ -191,12 +194,14 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
             if (!containingFile.name.startsWith("Line_")) return false
         }
         val cell = (manager.getInjectionHost(containingFile) as? JupyterPsiCellImpl)
+        val ind = (cell?.parent as? JupyterNotebook)?.psiCellList?.indexOf(cell) // todo: might be costy
 
         return isKotlinNotebookInjectedFile(psiFile)
                 && isNotebookRefactoringSupported(psiElement)
                 && (isCompiledElem
-                || containingFile.getUserData(CELL_CLASS_NAME) != null
-                || cell?.getCopyableUserData(CELL_CLASS_NAME) != null) // todo: maybe consider in PSI_CELL as well
+                || cell?.getUserData(CELL_CLASS_NAME) != null
+                || JupyterCompilerService.getForFile(psiFile.project, virtualFile).cellOrdinalToClassName[ind] != null)
+                //|| cell?.getUserData(CELL_CLASS_NAME) != null)
     }
 
     override fun doRename(elementToRename: PsiElement, editor: Editor, dataContext: DataContext?): InplaceRefactoring? {

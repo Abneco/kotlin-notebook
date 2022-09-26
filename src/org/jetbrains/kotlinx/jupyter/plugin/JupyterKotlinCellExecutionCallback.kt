@@ -17,6 +17,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import kotlin.system.measureTimeMillis
 
@@ -105,12 +106,18 @@ class JupyterKotlinCellExecutionCallback(
 
     private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata) {
         val injectManager = InjectedLanguageManager.getInstance(project)
+        val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
 
         runAsWriteActionIfNeeded { // maybe synchronized
             val properCompiledClass = snippetMetadata.compiledData.sources.lastOrNull()?.fileName?.substringBefore(".kts")
             (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
                 ?.putUserData(CELL_CLASS_NAME, properCompiledClass)
-            psiCell.putCopyableUserData(CELL_CLASS_NAME, properCompiledClass)
+            (psiCell.parent as? JupyterNotebook)?.psiCellList?.indexOf(psiCell)?.let {
+                if (properCompiledClass != null) {
+                    compilerService.cellOrdinalToClassName[it] = properCompiledClass
+                }
+            }
+            psiCell.putUserData(CELL_CLASS_NAME, properCompiledClass)
         }
     }
 

@@ -38,10 +38,12 @@ object NotebookReferenceFinder {
 
     private val declarationsCollectingVisitor = ScriptDeclarationsCollectingVisitor()
 
-    fun traverseChildrenAndSearch(injectionManager: InjectedLanguageManager, injectionHost: PsiLanguageInjectionHost, element: PsiElement, targetElement: PsiElement,
+    fun traverseChildrenAndSearch(injectionManager: InjectedLanguageManager, injectionHost: PsiLanguageInjectionHost,
+                                  possibleClassName: String?, element: PsiElement, targetElement: PsiElement,
                                   searchStrategy: ReferenceSearchStrategy = ReferenceSearchStrategy.DECLARATION,
                                   foundData: MutableList<NavigatablePsiElement>?): Unit {
         val resolvedNullableRef = targetElement.reference?.resolve()
+        //    ?: (targetElement.parent as? KtReferenceExpression)?.mainReference?.resolve()
         if (resolvedNullableRef?.containingFile?.fileType?.defaultExtension == "kt") return
 
         val dotExpression = targetElement.getParentOfType<KtDotQualifiedExpression>(false)
@@ -61,17 +63,15 @@ object NotebookReferenceFinder {
             ReferenceSearchStrategy.DECLARATION ->
                 getProperDeclarationsForScriptOrClass(element, dotExpression != null).firstOrNull {
                     it ?: return@firstOrNull false
+                    //val candidateHost = injectionManager.getInjectionHost(element.containingFile)
                     val declarationMatchResult = if (referenceInfo != null)
-                                                    tryMatchWithDeclaration(injectionHost, targetElement, it, referenceInfo)
+                                                    tryMatchWithDeclaration(injectionHost, possibleClassName, targetElement, it, referenceInfo)
                                                  else isSameFile
                     it.name == targetElement.text && it.isPublic
                             //&& it.containingKtFile.getUserData(CELL_CLASS_NAME) != null
                             && declarationMatchResult
                 }?.let { listOf(it) }
-            ReferenceSearchStrategy.REFERENCES -> {
-                val candidateHost = injectionManager.getInjectionHost(element.containingFile)
-                getProperUsagesForTargetElement(candidateHost ?: injectionHost, element, targetElement)
-            }
+            ReferenceSearchStrategy.REFERENCES -> getProperUsagesForTargetElement(injectionHost, possibleClassName, element, targetElement)
         }?.let {
             foundData?.addAll(it)
             return
@@ -85,11 +85,11 @@ object NotebookReferenceFinder {
 
         for (declaredPublicClass in declaredPublicClasses) {
             //if (foundData != null) continue
-            traverseChildrenAndSearch(injectionManager, injectionHost, declaredPublicClass, targetElement, searchStrategy, foundData)
+            traverseChildrenAndSearch(injectionManager, injectionHost, possibleClassName, declaredPublicClass, targetElement, searchStrategy, foundData)
         }
     }
 
-    private fun getProperUsagesForTargetElement(injectionHost: PsiLanguageInjectionHost, element: PsiElement, targetElement: PsiElement): List<NavigatablePsiElement> {
+    private fun getProperUsagesForTargetElement(injectionHost: PsiLanguageInjectionHost, possibleClassName: String?, element: PsiElement, targetElement: PsiElement): List<NavigatablePsiElement> {
         val ans = mutableListOf<NavigatablePsiElement>()
         val targetName = targetElement.text
         val targetDeclaration = targetElement.parentOfType<KtDeclaration>(true)!!
@@ -103,7 +103,7 @@ object NotebookReferenceFinder {
                     if (targetDeclaration.containingFile == resolvedRefInfo?.containingFile) {
                         ans.add(element as KtElement)
                         // if not then tryMatch class with class present in compiled sources
-                    } else if (resolvedRefInfo != null && tryMatchWithDeclaration(injectionHost, targetElement, targetDeclaration, ProvidedReferenceInfo(resolvedRefInfo))) {
+                    } else if (resolvedRefInfo != null && tryMatchWithDeclaration(injectionHost, possibleClassName, targetElement, targetDeclaration, ProvidedReferenceInfo(resolvedRefInfo))) {
                         ans.add(element as KtElement)
                     }
                 }
@@ -114,13 +114,15 @@ object NotebookReferenceFinder {
         return ans
     }
 
-    private fun tryMatchWithDeclaration(host: PsiLanguageInjectionHost, targetElement: PsiElement, candidateDeclaration: KtDeclaration, referenceInfo: ProvidedReferenceInfo): Boolean {
+    private fun tryMatchWithDeclaration(host: PsiLanguageInjectionHost, possibleClassName: String?, targetElement: PsiElement, candidateDeclaration: KtDeclaration, referenceInfo: ProvidedReferenceInfo): Boolean {
         candidateDeclaration.parentOfType<KtClass>(withSelf = true)?.let {
             return it.name == referenceInfo.enclosingClass?.name
         }
 
-        val compiledClassName = candidateDeclaration.containingKtFile.getUserData(CELL_CLASS_NAME)
-                                ?: host.getCopyableUserData(CELL_CLASS_NAME) ?: ""
+        val compiledClassName = possibleClassName
+                                ?: host.getUserData(CELL_CLASS_NAME)
+                                ?: candidateDeclaration.containingKtFile.getUserData(CELL_CLASS_NAME)
+                                ?: ""
         return compiledClassName == referenceInfo.enclosingClass?.name
     }
 

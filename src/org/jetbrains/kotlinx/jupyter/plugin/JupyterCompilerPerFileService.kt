@@ -85,6 +85,7 @@ class JupyterCompilerPerFileService(
     private val listLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(1)
     private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ContainerUtil.newConcurrentSet() // LoggingList()
+    val cellOrdinalToClassName = mutableMapOf<Int, String>()
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")

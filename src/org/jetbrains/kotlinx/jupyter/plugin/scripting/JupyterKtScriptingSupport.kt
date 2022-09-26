@@ -14,6 +14,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
+import com.intellij.util.runIf
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport
@@ -27,6 +28,7 @@ import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrap
 import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.traverseChildrenAndSearch
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.ReferenceSearchStrategy
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
@@ -112,16 +114,26 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         val foundData = mutableSetOf<PsiElement>()
         val asPsiFile = PsiManager.getInstance(project).findFile(virtualFile)
         val notebookCells = (asPsiFile?.children?.first() as? JupyterNotebook)?.psiCellList ?: return null
+        val ordinalMap = JupyterCompilerService.getForFile(project, virtualFile).cellOrdinalToClassName
         val injectionManager = InjectedLanguageManager.getInstance(project)
+        val targetClassName = runIf(searchStrategy == ReferenceSearchStrategy.REFERENCES) {
+            injectionManager.getInjectionHost(target.containingFile)?.let {
+                val name = ordinalMap[notebookCells.indexOf(it)]
+                if (it.getUserData(CELL_CLASS_NAME) == null && name != null) it.putUserData(CELL_CLASS_NAME, name)
+                name
+            }
+        }
 
         return runReadAction {
-            for (host in notebookCells) {
+            for (ind in notebookCells.indices) {
+                val host = notebookCells[ind]
                 val firstInjectedFileInfo = injectedManager.getInjectedPsiFiles(host)?.firstOrNull() ?: continue
                 val psiFile = firstInjectedFileInfo.first ?: continue
                 if (psiFile !is KtFile || (psiFile == target.containingFile && searchStrategy == ReferenceSearchStrategy.DECLARATION)) continue
                 val scriptBlock = psiFile.findChildrenByClass(KtScript::class.java).firstOrNull()?.blockExpression ?: continue
                 val elements = mutableListOf<NavigatablePsiElement>()
-                traverseChildrenAndSearch(injectionManager, host, scriptBlock, target, searchStrategy, elements)
+                val possibleClassName = ordinalMap[ind]
+                traverseChildrenAndSearch(injectionManager, host, targetClassName ?: possibleClassName, scriptBlock, target, searchStrategy, elements)
 
                 if (searchStrategy == ReferenceSearchStrategy.DECLARATION) {
                     val first = elements.firstOrNull()
