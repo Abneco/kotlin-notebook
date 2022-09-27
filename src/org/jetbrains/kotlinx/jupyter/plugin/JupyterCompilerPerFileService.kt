@@ -157,7 +157,9 @@ class JupyterCompilerPerFileService(
         assertBackedNotebook(virtualFile)
 
         // We consider plugin was used when at least one notebook was opened
-        KotlinNotebookPluginUpdater.pluginUsed()
+        ApplicationManager.getApplication().invokeLater {
+            KotlinNotebookPluginUpdater.pluginUsed()
+        }
 
         updateClasspathWithExternalDependencies()
         Disposer.register(projectService, this)
