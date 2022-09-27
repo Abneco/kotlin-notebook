@@ -116,7 +116,7 @@ class KotlinInProcessJupyterClient(
 
     private fun killKernel(kernelId: KernelId) {
         // Maybe we should send shutdown request here
-        kernels[kernelId]?.killProcess()
+        kernels[kernelId]?.destroyProcess()
     }
 
     override fun interrupt(kernelId: KernelId) {

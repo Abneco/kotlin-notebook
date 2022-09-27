@@ -16,7 +16,7 @@ abstract class StopKotlinKernelActionBase : DumbAwareAction(
 
 class StopKotlinKernelAction(private val handler: KotlinKernelProcessHandler): StopKotlinKernelActionBase() {
     override fun actionPerformed(e: AnActionEvent) {
-        handler.killProcess()
+        handler.destroyProcess()
     }
 
     override fun update(e: AnActionEvent) {

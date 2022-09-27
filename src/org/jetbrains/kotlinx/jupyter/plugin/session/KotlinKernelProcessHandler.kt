@@ -35,7 +35,7 @@ class KotlinKernelProcessHandler(
     }
 
     override fun dispose() {
-        killProcess()
+        destroyProcess()
     }
 
     override fun readerOptions(): BaseOutputReader.Options {
