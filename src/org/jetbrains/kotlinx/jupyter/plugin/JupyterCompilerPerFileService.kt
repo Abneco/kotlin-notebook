@@ -26,6 +26,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import org.jetbrains.kotlin.idea.core.script.ClasspathToVfsConverter
+import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.util.CodeInterval
@@ -156,11 +159,6 @@ class JupyterCompilerPerFileService(
     init {
         assertBackedNotebook(virtualFile)
 
-        // We consider plugin was used when at least one notebook was opened
-        ApplicationManager.getApplication().invokeLater {
-            KotlinNotebookPluginUpdater.pluginUsed()
-        }
-
         updateClasspathWithExternalDependencies()
         Disposer.register(projectService, this)
         //syncWithSyntaxDaemonAnalyzer()
@@ -258,6 +256,8 @@ class JupyterCompilerPerFileService(
     ) {
         compileLock.writeLock().withLock {
             try {
+                KotlinNotebookPluginUpdater.pluginUsed()
+
                 val sessionId = ApplicationManager.getApplication().executeOnPooledThread<String?> {
                     getSession()?.sessionId
                 }.get()
@@ -352,6 +352,11 @@ class JupyterCompilerPerFileService(
         nbInjectionHosts.clear()
         classesDir.delete(true)
         coroutineScope.cancel()
+
+        ClasspathToVfsConverter.clearCaches()
+
+        val manager = ScriptConfigurationManager.getInstance(projectService.project) as? CompositeScriptConfigurationManager
+        manager?.updater?.invalidateAndCommit()
     }
 
     override fun dispose() {
