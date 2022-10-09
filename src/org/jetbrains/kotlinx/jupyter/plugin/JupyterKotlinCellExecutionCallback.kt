@@ -58,6 +58,12 @@ class JupyterKotlinCellExecutionCallback(
     override fun onCompleteReply(message: JupyterMessage) {
     }
 
+    override fun onDebugReply(message: JupyterMessage) {
+    }
+
+    override fun onDebugEvent(message: JupyterMessage) {
+    }
+
     override fun onDisplayData(message: JupyterMessage) {
     }
 
