@@ -5,6 +5,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.util.ui.UIUtil
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
@@ -39,6 +40,7 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
                             $SKIP_PROJECT_BUILD_COMMENT
                             SessionOptions.resolveSources = true
                             SessionOptions.serializeScriptData = true
+                            ${ if (UIUtil.isUnderDarcula()) "notebook.changeColorScheme(ColorScheme.DARK)" else "" }
                         """.trimIndent(),
                         onMessageCreated = {},
                         callbacks = listOf(

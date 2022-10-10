@@ -18,22 +18,22 @@
     <orderEntry type="library" name="kotlinx-serialization-core" level="project" />
     <orderEntry type="module-library">
       <library name="jetbrains.kotlin-jupyter-shared-compiler" type="repository">
-        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler:0.11.0-164" />
+        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler:0.11.0-170" />
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.11.0-164/kotlin-jupyter-shared-compiler-0.11.0-164.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.11.0-164/kotlin-jupyter-api-0.11.0-164.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.11.0-164/kotlin-jupyter-lib-0.11.0-164.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.11.0-164/kotlin-jupyter-common-dependencies-0.11.0-164.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.11.0-170/kotlin-jupyter-shared-compiler-0.11.0-170.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.11.0-170/kotlin-jupyter-api-0.11.0-170.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.11.0-170/kotlin-jupyter-lib-0.11.0-170.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.11.0-170/kotlin-jupyter-common-dependencies-0.11.0-170.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/org/zeromq/jeromq/0.5.2/jeromq-0.5.2.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.11.0-164/kotlin-jupyter-shared-compiler-0.11.0-164-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.11.0-164/kotlin-jupyter-api-0.11.0-164-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.11.0-164/kotlin-jupyter-lib-0.11.0-164-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.11.0-164/kotlin-jupyter-common-dependencies-0.11.0-164-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.11.0-170/kotlin-jupyter-shared-compiler-0.11.0-170-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.11.0-170/kotlin-jupyter-api-0.11.0-170-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.11.0-170/kotlin-jupyter-lib-0.11.0-170-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.11.0-170/kotlin-jupyter-common-dependencies-0.11.0-170-sources.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/org/zeromq/jeromq/0.5.2/jeromq-0.5.2-sources.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0-sources.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0-sources.jar!/" />
