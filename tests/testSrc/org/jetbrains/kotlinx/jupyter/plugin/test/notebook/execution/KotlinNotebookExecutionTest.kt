@@ -15,8 +15,8 @@ import junit.framework.TestCase
 import org.jetbrains.kotlinx.jupyter.plugin.editor.EditorSessionInitializationService
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
-import org.jetbrains.plugins.notebooks.editor.actions.command.mode.NotebookEditorMode
-import org.jetbrains.plugins.notebooks.editor.actions.command.mode.setMode
+import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
+import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
