@@ -42,9 +42,9 @@ import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showBytecodeRefactoringWarning
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.tryCastParentToSuitableTarget
-import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.RefactoringNotificationUtility.showBytecodeRefactoringWarning
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebookInjectedFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler

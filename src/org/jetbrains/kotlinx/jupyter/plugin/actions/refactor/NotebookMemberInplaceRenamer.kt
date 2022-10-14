@@ -28,9 +28,9 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showExistingUsagesMessage
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showRerunActionNeeded
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
-import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.RefactoringNotificationUtility.showExistingUsagesMessage
-import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.RefactoringNotificationUtility.showRerunActionNeeded
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier

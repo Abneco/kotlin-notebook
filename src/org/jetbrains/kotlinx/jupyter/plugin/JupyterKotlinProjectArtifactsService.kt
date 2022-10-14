@@ -31,11 +31,18 @@ import kotlinx.coroutines.cancel
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
+import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
+
+enum class DependenciesState {
+    PROVIDED,
+    OUTDATED,
+    ABSENT
+}
 
 @Service
 class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
@@ -47,6 +54,10 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
         KotlinFileType.INSTANCE.defaultExtension,
         "java"
     )
+    @Volatile
+    private var currDependenciesState = DependenciesState.PROVIDED
+
+    fun checkProjectDependenciesStatus(): DependenciesState = currDependenciesState
 
     init {
         addBuildListener()
@@ -132,6 +143,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
 
         val resultPromise = taskManager.run(buildTaskContext, buildTask).then {
             val allModules = ModuleManager.getInstance(project).modules
+            val hasErrors = it.hasErrors()
 
             val projectJarPaths = mutableListOf<String>().also { paths ->
                 CompilerPaths.getOutputPaths(allModules).forEach { path ->
@@ -143,6 +155,13 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
                     }
                 }
             }.filter { File(it).exists() }
+
+            if (hasErrors) {
+                val isEmpty = projectJarPaths.none { File(it).isNotEmptyDirectory }
+                if (!isEmpty) {
+                    currDependenciesState = DependenciesState.OUTDATED
+                } else currDependenciesState = DependenciesState.ABSENT
+            } else currDependenciesState = DependenciesState.PROVIDED
 
             val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
             val librariesClassesPaths = libraryTable.libraries.flatMap { library ->

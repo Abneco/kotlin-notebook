@@ -9,11 +9,12 @@ import com.intellij.notification.SingletonNotificationManager
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 
-internal object RefactoringNotificationUtility {
+internal object NotebookNotificationUtility {
     private fun prepareNotificationGroupTemplate() =
         NotificationGroupManager.getInstance().getNotificationGroup("Find Problems")
 
     private val informSingletonManager = SingletonNotificationManager("Find Problems", NotificationType.INFORMATION)
+    private val informSingletonManagerWarning = SingletonNotificationManager("Find Problems", NotificationType.WARNING)
 
     private inline fun NotificationGroup.wrapActionInNotify(project: Project?, crossinline action: NotificationGroup.() -> Notification) =
         this.action().notify(project)
@@ -40,6 +41,22 @@ internal object RefactoringNotificationUtility {
             .notify(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"),
                     JupyterKotlinBundle.message("kotlin.jupyter.refactor.changed.definition.rerun"),
                     project)
+    }
+
+    fun showOutdatedDependencies(project: Project?) {
+        if (project == null) return
+        informSingletonManagerWarning
+            .notify(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"),
+                    JupyterKotlinBundle.message("kotlin.jupyter.dependencies.build.error.outdated"),
+                    project)
+    }
+
+    fun showAbsentDependencies(project: Project?) {
+        if (project == null) return
+        prepareNotificationGroupTemplate().wrapActionInNotify(project) {
+            createNotification(JupyterKotlinBundle.message("kotlin.jupyter.dependencies.build.error.severe"), NotificationType.WARNING)
+                .setTitle(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"))
+        }
     }
 
     //fun showErrorHint(project: Project, editor: Editor, @NlsContexts.DialogMessage message: String, @NlsContexts.DialogTitle title: String) {
