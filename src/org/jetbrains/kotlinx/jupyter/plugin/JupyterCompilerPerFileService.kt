@@ -256,7 +256,7 @@ class JupyterCompilerPerFileService(
     ) {
         compileLock.writeLock().withLock {
             try {
-                KotlinNotebookPluginUpdater.pluginUsed()
+                KotlinNotebookPluginUpdater.getInstance().pluginUsed()
 
                 val sessionId = ApplicationManager.getApplication().executeOnPooledThread<String?> {
                     getSession()?.sessionId

@@ -3,10 +3,13 @@ package org.jetbrains.kotlinx.jupyter.plugin.stats
 
 import com.intellij.ide.plugins.StandalonePluginUpdateChecker
 import com.intellij.notification.NotificationGroupManager
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import icons.KotlinJupyterIcons
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinJupyterResourcesUtil
 
-object KotlinNotebookPluginUpdater : StandalonePluginUpdateChecker(
+@Service(Service.Level.APP)
+class KotlinNotebookPluginUpdater : StandalonePluginUpdateChecker(
     KotlinJupyterResourcesUtil.pluginId,
     "kotlin.notebook.lastRequestTime",
     NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook plugin updates"),
@@ -17,5 +20,9 @@ object KotlinNotebookPluginUpdater : StandalonePluginUpdateChecker(
 
     override fun skipUpdateCheck(): Boolean {
         return KotlinJupyterResourcesUtil.isDevVersion
+    }
+
+    companion object {
+        fun getInstance(): KotlinNotebookPluginUpdater = service()
     }
 }
