@@ -15,8 +15,6 @@ import junit.framework.TestCase
 import org.jetbrains.kotlinx.jupyter.plugin.editor.EditorSessionInitializationService
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
@@ -25,6 +23,8 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.Jupyte
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
+import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.jupiter.api.Assertions
@@ -117,7 +117,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookBaseTestCase() {
     })
 
     private fun doTest(tester: ReceivedMessagesTester) {
-        TestLoggerFactory.enableDebugLogging(myFixture.projectDisposable, this::class.qualifiedName)
+        TestLoggerFactory.enableDebugLogging(myFixture.projectDisposable, javaClass)
         myFixture.setCaresAboutInjection(true)
         myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
         invokeAndWaitIfNeeded {
