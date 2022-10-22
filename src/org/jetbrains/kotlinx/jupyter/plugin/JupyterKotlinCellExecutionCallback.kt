@@ -1,9 +1,12 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
+import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE
+import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility.NOTEBOOK_FILE_ANALYSIS_DONE_KEY
 import com.intellij.configurationStore.runAsWriteActionIfNeeded
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
@@ -125,6 +128,10 @@ class JupyterKotlinCellExecutionCallback(
                 if (properCompiledClass != null) {
                     compilerService.cellOrdinalToClassName[it] = properCompiledClass
                 }
+            }
+            FileDocumentManager.getInstance().getDocument(virtualFile)?.let {
+                it.putUserData(NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE, null)
+                it.putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)
             }
             psiCell.putUserData(CELL_CLASS_NAME, properCompiledClass)
         }

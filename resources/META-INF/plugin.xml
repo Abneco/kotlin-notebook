@@ -21,6 +21,10 @@
         <renameHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.KotlinNotebookPropertiesRenameHandler" />
     </extensions>
 
+    <extensions defaultExtensionNs="com.intellij.codeInsight.daemon.impl">
+        <injectedLanguageHighlightingRangeReducer implementation="org.jetbrains.kotlinx.jupyter.plugin.file.KotlinNotebookInjectedRangeReducer" order="first"/>
+    </extensions>
+
     <extensions defaultExtensionNs="com.intellij">
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinIntoCellsInjector"/>
         <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.notifications.NotebookLocationNotificationProvider"/>
