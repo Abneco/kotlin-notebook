@@ -44,7 +44,7 @@ class ImpatientNotebookChangeListener(
             val psiCells = psiFile?.getNotebookCellList()
             Triple(d, psiFile, psiCells)
         }
-        if (document == null || psiFile == null) return
+        if (document == null || psiFile == null || document.textLength == event.offset) return
 
         val lineOfChange = document.getLineNumber(event.offset)
         val allLines = document.text.lines()

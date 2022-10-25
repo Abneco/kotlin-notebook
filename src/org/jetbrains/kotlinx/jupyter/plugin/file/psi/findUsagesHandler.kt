@@ -5,7 +5,6 @@ import com.intellij.find.findUsages.FindUsagesHandler
 import com.intellij.find.findUsages.FindUsagesHandlerFactory
 import com.intellij.find.findUsages.FindUsagesOptions
 import com.intellij.injected.editor.VirtualFileWindow
-import com.intellij.notebook.editor.BackedVirtualFile
 import com.intellij.openapi.application.ReadActionProcessor
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.util.TextRange
@@ -52,13 +51,13 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, searc
     private val notebookFile = (element.containingFile?.virtualFile as? VirtualFileWindow)?.delegate
 
     override fun getPrimaryElements(): Array<PsiElement> {
-        if (notebookFile !is BackedVirtualFile || !notebookFile.isKotlinNotebook) return emptyArray()
+        if (!isBackedNotebook(notebookFile) || !notebookFile.isKotlinNotebook) return emptyArray()
         return arrayOf(super.myPsiElement.navigationElement)
     }
 
     override fun findReferencesToHighlight(target: PsiElement, searchScope: SearchScope): MutableCollection<PsiReference> {
         val virtualFile = (target.containingFile?.virtualFile as? VirtualFileWindow)?.delegate ?: return mutableSetOf()
-        if (virtualFile !is BackedVirtualFile || !virtualFile.isKotlinNotebook) return mutableSetOf()
+        if (!isBackedNotebook(notebookFile) || !virtualFile.isKotlinNotebook) return mutableSetOf()
 
         return findUsageForElement(target)?.map {
             val properFileRange = ensureProperTextRangeShiftInFile(it)
