@@ -1,9 +1,13 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.kotlinx.jupyter.plugin.file
 
+import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiManager
 import com.intellij.testFramework.LightVirtualFile
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.scripting.definitions.isScript
@@ -12,6 +16,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.NOTEBOOK_LANGUAGE
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 
 val VirtualFile?.isKotlinNotebook: Boolean get() {
     if (this == null || extension != "ipynb") return false
@@ -49,4 +54,15 @@ private fun getLanguageFromOriginalFile(file: VirtualFile): Language? {
     } catch (e: Exception) {
         null
     }
+}
+
+internal fun PsiFile?.getNotebookCellList() =
+    (this?.children?.first() as? JupyterNotebook)?.psiCellList
+
+internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
+    PsiManager.getInstance(project).findFile(this)
+
+internal fun PsiElement?.isInsideKotlinNotebookFile(): Boolean {
+    val virtualFile = (this?.containingFile?.virtualFile as? VirtualFileWindow)?.delegate ?: return false
+    return (isBackedNotebook(virtualFile) && virtualFile.isKotlinNotebook)
 }

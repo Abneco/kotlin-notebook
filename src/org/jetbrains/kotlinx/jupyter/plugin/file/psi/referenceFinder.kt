@@ -16,6 +16,7 @@ import org.jetbrains.kotlin.psi.KtClassBody
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.KtScript
@@ -37,6 +38,24 @@ object NotebookReferenceFinder {
     private val referenceResolver = NotebookReferenceExpressionResolver
 
     private val declarationsCollectingVisitor = ScriptDeclarationsCollectingVisitor()
+
+    fun tryResolveCompiledDeclaration(psiElement: PsiElement, searchTargets: Collection<PsiLanguageInjectionHost>): PsiElement? {
+        val project = psiElement.project
+        val injectionManager = InjectedLanguageManager.getInstance(project)
+        val targetName = psiElement.containingFile.name.removeSuffix(".class")
+
+        searchTargets.firstOrNull { host ->
+            val compiledName = host.getUserData(CELL_CLASS_NAME) ?: return@firstOrNull false
+            compiledName == targetName
+        }?.let {
+            val asPsiFile = injectionManager.getInjectedPsiFiles(it)?.firstOrNull()?.first as? KtFile ?: return null
+            val ans = mutableListOf<NavigatablePsiElement>()
+            traverseChildrenAndSearch(injectionManager, it, targetName, asPsiFile, psiElement, foundData = ans)
+            return ans.firstOrNull()
+        }
+
+        return null
+    }
 
     fun traverseChildrenAndSearch(injectionManager: InjectedLanguageManager, injectionHost: PsiLanguageInjectionHost,
                                   possibleClassName: String?, element: PsiElement, targetElement: PsiElement,
@@ -66,8 +85,9 @@ object NotebookReferenceFinder {
                     //val candidateHost = injectionManager.getInjectionHost(element.containingFile)
                     val declarationMatchResult = if (referenceInfo != null)
                                                     tryMatchWithDeclaration(injectionHost, possibleClassName, targetElement, it, referenceInfo)
-                                                 else isSameFile
-                    it.name == targetElement.text && it.isPublic
+                                                 else true
+                    val nameToCompare = if (targetElement is KtDeclaration) targetElement.name else targetElement.text
+                    it.name == nameToCompare && it.isPublic
                             //&& it.containingKtFile.getUserData(CELL_CLASS_NAME) != null
                             && declarationMatchResult
                 }?.let { listOf(it) }
@@ -128,6 +148,7 @@ object NotebookReferenceFinder {
 
     private fun getProperDeclarationsForScriptOrClass(element: PsiElement, isPartOfDotCall: Boolean = false): Array<KtDeclaration> {
         return when (element) {
+            is KtFile -> element.getChildrenOfType<KtScript>().firstOrNull()?.let { getProperDeclarationsForScriptOrClass(it) } ?: emptyArray()
             is KtScript -> element.blockExpression.getChildrenOfType<KtDeclaration>()
             is KtBlockExpression -> {
                 val children = element.getChildrenOfType<KtDeclaration>()

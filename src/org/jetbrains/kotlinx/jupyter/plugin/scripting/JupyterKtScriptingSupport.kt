@@ -31,6 +31,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.traverseChildrenAndSearch
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.ReferenceSearchStrategy
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isCompiledCellClassDeclaration
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
@@ -116,19 +117,26 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         val notebookCells = (asPsiFile?.children?.first() as? JupyterNotebook)?.psiCellList ?: return null
         val ordinalMap = JupyterCompilerService.getForFile(project, virtualFile).cellOrdinalToClassName
         val injectionManager = InjectedLanguageManager.getInstance(project)
+        val targetHost = injectionManager.getInjectionHost(target.containingFile)
         val targetClassName = runIf(searchStrategy == ReferenceSearchStrategy.REFERENCES) {
-            injectionManager.getInjectionHost(target.containingFile)?.let {
+            targetHost?.let {
                 val name = ordinalMap[notebookCells.indexOf(it)]
                 if (it.getUserData(CELL_CLASS_NAME) == null && name != null) it.putUserData(CELL_CLASS_NAME, name)
                 name
             }
         }
 
+        val isLocalSearch = if (searchStrategy == ReferenceSearchStrategy.REFERENCES) targetHost?.getUserData(CELL_CLASS_NAME) == null && !isCompiledCellClassDeclaration(target) else false
+        //println("isLocalSearch: $isLocalSearch for ${target.text}")
+        val properContainer = if (isLocalSearch) listOf(injectionManager.getInjectionHost(target.containingFile)) else notebookCells
+
         return runReadAction {
-            for (ind in notebookCells.indices) {
-                val host = notebookCells[ind]
+            for (ind in properContainer.indices) {
+                val gotHost = properContainer[ind] ?: continue
+                val host = if (isLocalSearch) gotHost else notebookCells[ind]
                 val firstInjectedFileInfo = injectedManager.getInjectedPsiFiles(host)?.firstOrNull() ?: continue
                 val psiFile = firstInjectedFileInfo.first ?: continue
+                // should second part still be there?
                 if (psiFile !is KtFile || (psiFile == target.containingFile && searchStrategy == ReferenceSearchStrategy.DECLARATION)) continue
                 val scriptBlock = psiFile.findChildrenByClass(KtScript::class.java).firstOrNull()?.blockExpression ?: continue
                 val elements = mutableListOf<NavigatablePsiElement>()

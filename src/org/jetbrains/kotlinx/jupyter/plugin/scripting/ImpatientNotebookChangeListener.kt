@@ -9,20 +9,12 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiManager
+import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 
-
-internal fun PsiFile?.getNotebookCellList() =
-    (this?.children?.first() as? JupyterNotebook)?.psiCellList
-
-internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
-    PsiManager.getInstance(project).findFile(this)
 
 class ImpatientNotebookChangeListener(
     private val project: Project,
@@ -35,7 +27,6 @@ class ImpatientNotebookChangeListener(
 
     private fun handleNotebookChangeEvent(event: DocumentEvent) {
         val file = FileDocumentManager.getInstance().getFile(event.document) ?: return
-        val editorManager = FileEditorManager.getInstance(project) ?: return
 
         assertBackedNotebook(file)
         val (document, psiFile, psiCells) = runReadAction {
@@ -45,13 +36,13 @@ class ImpatientNotebookChangeListener(
             Triple(d, psiFile, psiCells)
         }
         if (document == null || psiFile == null || document.textLength == event.offset) return
-
+        //println("Inside exec before doc changed")
         val lineOfChange = document.getLineNumber(event.offset)
         val allLines = document.text.lines()
         val neededCellIndex = allLines.take(lineOfChange).count {
             it.contains("#%%")
         }
-        val cellOfChange = psiCells?.get(neededCellIndex - 1)
+        val cellOfChange = psiCells?.get(if (neededCellIndex > 0) neededCellIndex - 1 else 0)
 
         if (lineOfChange > allLines.size - 1 || cellOfChange == null) return // ignore change of whole document
 

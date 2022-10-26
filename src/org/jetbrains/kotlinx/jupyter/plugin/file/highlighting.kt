@@ -10,6 +10,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
+import com.intellij.psi.impl.source.tree.injected.changesHandler.range
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import java.util.function.Predicate
