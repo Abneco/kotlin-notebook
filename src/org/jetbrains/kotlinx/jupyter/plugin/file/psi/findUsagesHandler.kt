@@ -36,6 +36,7 @@ internal fun isCompiledCellClassDeclaration(element: PsiElement?): Boolean {
     val file = element?.containingFile?.virtualFile
     if (file == null) return false
     if (!file.name.matches(Regex("Line_.+\\.class"))) return false
+    //return true
     return if (element is KtProperty) element.childrenOfType<KtTypeReference>().size < 2
             else true
 }

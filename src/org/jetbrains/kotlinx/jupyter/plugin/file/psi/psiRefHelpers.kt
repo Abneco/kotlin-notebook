@@ -91,7 +91,7 @@ internal object NotebookReferenceExpressionResolver {
         }
         adjusted?.references?.firstOrNull {
             it.resolve() != null
-        }?.let { return it.resolve() }
+        }?.let { return it.resolve() } // optimise?
 
         return null
     }
