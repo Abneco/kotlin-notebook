@@ -14,23 +14,20 @@ import com.intellij.psi.PsiIdentifier
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.PsiReference
 import com.intellij.psi.impl.source.tree.LeafPsiElement
-import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.childrenOfType
 import com.intellij.psi.util.elementType
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.Processor
-import org.jetbrains.kotlin.psi.KtFunction
+import org.jetbrains.kotlin.psi.KtNamedDeclaration
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.KtTypeReference
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
-import org.jetbrains.kotlinx.jupyter.plugin.file.isInsideKotlinNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookGotoDeclarationProvider.Companion.tryGetPreviousValidResolvedResult
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.tryResolveCompiledDeclaration
-import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
@@ -78,30 +75,16 @@ internal fun tryResolveCompiledDeclarationInNotebook(element: PsiElement, scope:
 internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, private val searchWithAdditionalDeclarationResolve: Boolean = false) : FindUsagesHandler(element) {
     private var notebookFile = (element.containingFile?.virtualFile as? VirtualFileWindow)?.delegate
 
-    private fun tryGetJupyterFileFromSearchScope(scope: SearchScope): JupyterFile? {
-        val targetPsiFile = (scope as? LocalSearchScope)?.virtualFiles?.firstOrNull() ?: return null
-        notebookFile = targetPsiFile
-        return targetPsiFile.toPsiFile(project) as? JupyterFile
-    }
-
     override fun getPrimaryElements(): Array<PsiElement> {
-        if (!isBackedNotebook(notebookFile) || !notebookFile.isKotlinNotebook) return emptyArray()
+        //if (!isBackedNotebook(notebookFile) || !notebookFile.isKotlinNotebook) return emptyArray()
         return arrayOf(super.myPsiElement.navigationElement)
     }
 
     override fun findReferencesToHighlight(target: PsiElement, searchScope: SearchScope): MutableCollection<PsiReference> {
         val time = System.currentTimeMillis()
-        var adjustedElement = target
-        if (!searchWithAdditionalDeclarationResolve) {
-            if (!target.isInsideKotlinNotebookFile()) return mutableSetOf()
-        } else { // tryResolve compiled declaration
-            val file = tryGetJupyterFileFromSearchScope(searchScope) ?: return mutableSetOf()
-            tryResolveCompiledDeclarationInNotebook(target, file)?.let {
-                adjustedElement = it
-            }
-        }
+        val foundRefs = NotebookUsagesContributorFactory
+            .invokeElementUsagesContributor(target, searchScope, searchWithAdditionalDeclarationResolve)
 
-        val foundRefs = findUsageForElement(adjustedElement)
         //println("Found refs of size: ${foundRefs?.size} in ${System.currentTimeMillis() - time} ms")
 
         return foundRefs?.map {
@@ -152,21 +135,22 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, priva
         return scriptingSupport.searchForElementDeclarationOrUsages(adjustElement(targetElement), notebookFileState, searchStrategy = ReferenceSearchStrategy.REFERENCES)
     }
 
-    private fun adjustElement(psiElement: PsiElement): PsiElement {
-        var curElement: PsiElement? = null
-        if (psiElement is KtFunction) {
-            return psiElement.nameIdentifier ?: psiElement
-        }
-        if (psiElement !is PsiIdentifier) {
-            psiElement.accept(object: PsiRecursiveElementVisitor() {
-                override fun visitElement(element: PsiElement) {
-                    if (curElement == null && element.isIdentifier()) curElement = element
-                    super.visitElement(element)
-                }
-            })
-        }
-        return curElement ?: psiElement
+}
+
+internal fun adjustElement(psiElement: PsiElement): PsiElement {
+    var curElement: PsiElement? = null
+    if (psiElement is KtNamedDeclaration) {
+        return psiElement.nameIdentifier ?: psiElement
     }
+    if (psiElement !is PsiIdentifier) {
+        psiElement.accept(object: PsiRecursiveElementVisitor() {
+            override fun visitElement(element: PsiElement) {
+                if (curElement == null && element.isIdentifier()) curElement = element
+                super.visitElement(element)
+            }
+        })
+    }
+    return curElement ?: psiElement
 }
 
 // maybe would be needed
