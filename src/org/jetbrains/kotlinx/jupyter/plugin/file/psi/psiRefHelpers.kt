@@ -11,7 +11,9 @@ import com.intellij.psi.util.elementType
 import com.intellij.psi.util.parentOfType
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtDeclaration
+import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
@@ -121,3 +123,13 @@ internal data class ProvidedReferenceInfo(val resolvedTo: PsiElement) {
 }
 
 internal val IN_EDITOR_ELEM_REF_KEY: Key<PsiElement> = Key.create<PsiElement>("notebook.psi.resolved.ref")
+
+internal fun isItGeneratedNameInsideLambdaCall(targetElement: PsiElement, underCaret: PsiElement?): Boolean {
+    if (targetElement !is KtProperty) return false
+    underCaret ?: return false
+
+    val typeRef = targetElement.typeReference ?: return false
+    if (!typeRef.text.contains(NotebookUsagesContributorFactory.dfPrefix)) return false
+
+    return underCaret.parentOfType<KtLambdaExpression>() != null
+}

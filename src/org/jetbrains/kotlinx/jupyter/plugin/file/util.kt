@@ -3,11 +3,16 @@ package org.jetbrains.kotlinx.jupyter.plugin.file
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
+import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.PsiManager
+import com.intellij.psi.util.parentOfType
 import com.intellij.testFramework.LightVirtualFile
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.scripting.definitions.isScript
@@ -17,6 +22,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.NOTEBOOK_LANGUAGE
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 
 val VirtualFile?.isKotlinNotebook: Boolean get() {
     if (this == null || extension != "ipynb") return false
@@ -65,4 +71,15 @@ internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
 internal fun PsiElement?.isInsideKotlinNotebookFile(): Boolean {
     val virtualFile = (this?.containingFile?.virtualFile as? VirtualFileWindow)?.delegate ?: return false
     return (isBackedNotebook(virtualFile) && virtualFile.isKotlinNotebook)
+}
+
+internal fun retrieveElementUnderCaret(element: PsiElement, scope: PsiFile): PsiElement? {
+    val manager = FileEditorManager.getInstance(element.project)
+    val editor = manager.selectedEditor as? TextEditor ?: return null
+    val caretOffSet = editor.editor.caretModel.offset
+    val injectedManager = InjectedLanguageManager.getInstance(element.project)
+    val host = scope.findElementAt(caretOffSet)?.parentOfType<JupyterPsiCell>() as? PsiLanguageInjectionHost ?: return null
+    val injectInfo = injectedManager.getInjectedPsiFiles(host)?.firstOrNull()?.first ?: return null
+
+    return (injectInfo as? PsiFile)?.findElementAt(caretOffSet - host.startOffsetInParent - 5)
 }

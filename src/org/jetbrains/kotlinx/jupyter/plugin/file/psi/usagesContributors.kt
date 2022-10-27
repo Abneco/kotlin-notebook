@@ -12,16 +12,22 @@ import com.intellij.psi.search.SearchScope
 import com.intellij.psi.search.SingleTargetRequestResultProcessor
 import com.intellij.psi.search.TextOccurenceProcessor
 import com.intellij.psi.search.UsageSearchContext
+import com.intellij.psi.util.parentOfType
 import com.intellij.util.Processor
 import org.jetbrains.annotations.ApiStatus
+import org.jetbrains.kotlin.psi.KtLambdaExpression
+import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.isInsideKotlinNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookUsagesContributorFactory.dfPrefix
+import org.jetbrains.kotlinx.jupyter.plugin.file.retrieveElementUnderCaret
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
-
+// todo: convert to lambda
 internal class ProvidedLibrariesReferencesProducer: Processor<PsiReference> {
     val foundRefs = mutableSetOf<PsiReference>()
 
@@ -56,25 +62,31 @@ sealed class NotebookUsagesContributor {
 
     // maybe don't needed
     protected fun searchProvidedLibrariesUsagesInNotebook(scope: VirtualFile, targetElement: PsiElement): Array<PsiElement>? {
-        val asPsiFile = scope.toPsiFile(targetElement.project) as? JupyterFile ?: return null
+        val project = targetElement.project
+        val asPsiFile = scope.toPsiFile(project) as? JupyterFile ?: return null
         val singleTargetRequestResultProcessor = SingleTargetRequestResultProcessor(targetElement)
         val refsProcessor = ProvidedLibrariesReferencesProducer()
         val processor = TextOccurenceProcessor { element: PsiElement?, offsetInElement: Int ->
                 singleTargetRequestResultProcessor.processTextOccurrence(element!!, offsetInElement, refsProcessor)
             }
-        val project = targetElement.project
 
         val helper = PsiSearchHelper.getInstance(project)
         val goalText = adjustElement(targetElement).text
         val injectedManager = InjectedLanguageManager.getInstance(project)
-        val files = injectedManager.getInjectedPsiFiles(asPsiFile)?.filter { !it.first.containingFile.name.endsWith("jkmt") }?.map { it.first }
+        val cellList = asPsiFile.getNotebookCellList()
+        val elemUnderCaret = retrieveElementUnderCaret(targetElement, asPsiFile)
+        val isInsideLambda = isItGeneratedNameInsideLambdaCall(targetElement, elemUnderCaret)
+        //println("Search for Libs! isInLambda: $isInsideLambda, elem: ${elemUnderCaret?.text}")
+
+        val files = if (isInsideLambda) listOfNotNull(elemUnderCaret?.containingFile)
+                    else cellList?.mapNotNull { injectedManager.getInjectedPsiFiles(it)?.firstOrNull()?.first }
         if (files.isNullOrEmpty()) return null
 
         val currentLocalSearchScope = LocalSearchScope(files.toTypedArray())
-
         helper.processElementsWithWord(processor, currentLocalSearchScope, goalText, UsageSearchContext.ANY,  true, false)
-        return refsProcessor.foundRefs.mapNotNull { it.resolve() }.toTypedArray()
+        return refsProcessor.foundRefs.map { it.element }.toTypedArray()
     }
+
 }
 
 typealias UsageSearchSupplier = (VirtualFile, PsiElement) -> Array<PsiElement>?
@@ -85,15 +97,17 @@ internal object NotebookUsagesContributorFactory : NotebookUsagesContributor() {
     enum class SearchPattern {
         Sources, CompiledCellClass, ProvidedLibraries
     }
-
+    // todo: add for arbitrary calls, still would be faster
     private val searchPatternSolutions = mapOf<SearchPattern, UsageSearchSupplier>(
         SearchPattern.Sources to ::searchInSourcesScope,
         SearchPattern.CompiledCellClass to ::searchWithCompiledCellScope,
         SearchPattern.ProvidedLibraries to ::searchProvidedLibrariesUsagesInNotebook
     )
 
-    const val dfPrefix = ".kotlinx.dataframe."
-    private fun isDataFrameLib(element: PsiElement): Boolean = element.text.contains(dfPrefix) //&& element.ownDeclarations.isEmpty()
+    const val dfPrefix = ".kotlinx.dataframe." // dataFrame
+    private val dfLibCallsRegex = Regex(".+$dfPrefix^(DataFrame).+")
+    // search through ".kotlinx.dataframe.^DataFrame" package
+    private fun isFromDataFrameLibInternals(element: PsiElement): Boolean = element.text.contains(dfPrefix) && !element.text.contains("${dfPrefix}DataFrame")
 
     private fun extractNotebookFileFromScope(element: PsiElement, scope: SearchScope): VirtualFile? {
         return when (val scopeFile = (scope as? LocalSearchScope)?.virtualFiles?.firstOrNull()) {
@@ -106,13 +120,11 @@ internal object NotebookUsagesContributorFactory : NotebookUsagesContributor() {
         val notebookFile = extractNotebookFileFromScope(element, scope) ?: return null
         if (!isBackedNotebook(notebookFile) || !notebookFile.isKotlinNotebook) return null
 
-
-        //// order is important
-        //val properKey = if (isDataFrameLib(element)) SearchPattern.ProvidedLibraries
-        //else if (isFromCompiledCellClass) SearchPattern.CompiledCellClass
-        //else SearchPattern.Sources
-        val properKey = if (isFromCompiledCellClass) SearchPattern.CompiledCellClass
-                        else if (isDataFrameLib(element)) SearchPattern.ProvidedLibraries else SearchPattern.Sources
+        val properKey = if (isFromDataFrameLibInternals(element)) SearchPattern.ProvidedLibraries
+                        else if (isFromCompiledCellClass) SearchPattern.CompiledCellClass
+                        else SearchPattern.Sources
+        //val properKey = if (isFromCompiledCellClass) SearchPattern.CompiledCellClass
+        //                else if (isDataFrameLib(element)) SearchPattern.ProvidedLibraries else SearchPattern.Sources
         return searchPatternSolutions[properKey]?.invoke(notebookFile, element)
     }
 }

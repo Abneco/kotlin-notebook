@@ -16,14 +16,11 @@ import com.intellij.psi.PsiReference
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.psi.util.childrenOfType
 import com.intellij.psi.util.elementType
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.Processor
 import org.jetbrains.kotlin.psi.KtNamedDeclaration
-import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtReferenceExpression
-import org.jetbrains.kotlin.psi.KtTypeReference
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookGotoDeclarationProvider.Companion.tryGetPreviousValidResolvedResult
@@ -36,9 +33,9 @@ internal fun isCompiledCellClassDeclaration(element: PsiElement?): Boolean {
     val file = element?.containingFile?.virtualFile
     if (file == null) return false
     if (!file.name.matches(Regex("Line_.+\\.class"))) return false
-    //return true
-    return if (element is KtProperty) element.childrenOfType<KtTypeReference>().size < 2
-            else true
+    return true
+    //return if (element is KtProperty) element.childrenOfType<KtTypeReference>().size < 2
+    //        else true
 }
 
 internal class NotebookFindUsagesHandlerFactory : FindUsagesHandlerFactory() {
@@ -86,8 +83,8 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, priva
         val foundRefs = NotebookUsagesContributorFactory
             .invokeElementUsagesContributor(target, searchScope, searchWithAdditionalDeclarationResolve)
 
-        //println("Found refs of size: ${foundRefs?.size} in ${System.currentTimeMillis() - time} ms")
-
+        println("Found refs of size: ${foundRefs?.size} in ${System.currentTimeMillis() - time} ms")
+        // move to elementUsagesContributor ?
         return foundRefs?.map {
             val properFileRange = ensureProperTextRangeShiftInFile(it)
             NotebookReferenceWrapper(target, it, properFileRange, true)

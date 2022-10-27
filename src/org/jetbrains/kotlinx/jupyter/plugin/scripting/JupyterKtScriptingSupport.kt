@@ -30,8 +30,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.traverseChildrenAndSearch
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookUsagesContributorFactory.dfPrefix
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.ReferenceSearchStrategy
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isCompiledCellClassDeclaration
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isItGeneratedNameInsideLambdaCall
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
@@ -126,8 +128,11 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             }
         }
 
-        val isLocalSearch = if (searchStrategy == ReferenceSearchStrategy.REFERENCES) targetHost?.getUserData(CELL_CLASS_NAME) == null && !isCompiledCellClassDeclaration(target) else false
-        //println("isLocalSearch: $isLocalSearch for ${target.text}")
+        var isLocalSearch = if (searchStrategy == ReferenceSearchStrategy.REFERENCES) targetHost?.getUserData(CELL_CLASS_NAME) == null && !isCompiledCellClassDeclaration(target) else false
+        if (!isLocalSearch && target.containingFile.name.contains(dfPrefix)) {
+            isLocalSearch = isItGeneratedNameInsideLambdaCall(target, target)
+        }
+        println("isLocalSearch: $isLocalSearch for ${target.text}")
         val properContainer = if (isLocalSearch) listOf(injectionManager.getInjectionHost(target.containingFile)) else notebookCells
 
         return runReadAction {
