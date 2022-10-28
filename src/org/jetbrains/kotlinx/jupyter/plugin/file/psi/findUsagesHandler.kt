@@ -11,15 +11,19 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.AbstractElementManipulator
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiIdentifier
+import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.PsiReference
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.elementType
+import com.intellij.psi.util.parentOfType
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.Processor
-import org.jetbrains.kotlin.psi.KtNamedDeclaration
+import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtObjectDeclaration
+import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
@@ -29,26 +33,24 @@ import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
-internal fun isCompiledCellClassDeclaration(element: PsiElement?): Boolean {
-    val file = element?.containingFile?.virtualFile
-    if (file == null) return false
-    if (!file.name.matches(Regex("Line_.+\\.class"))) return false
-    return true
-    //return if (element is KtProperty) element.childrenOfType<KtTypeReference>().size < 2
-    //        else true
-}
+internal fun isCompiledCellClassDeclaration(element: PsiElement?): Boolean =
+    element?.containingFile?.virtualFile?.name?.matches(Regex("Line_.+\\.class")) == true
+
+internal fun isFromJVMDeclaration(element: PsiElement?): Boolean = element?.containingFile?.virtualFile?.name?.endsWith(".class") == true
+
 
 internal class NotebookFindUsagesHandlerFactory : FindUsagesHandlerFactory() {
     override fun canFindUsages(element: PsiElement): Boolean {
-        val fileWindow = element.containingFile?.virtualFile as? VirtualFileWindow ?: return isCompiledCellClassDeclaration(element)
-        //val fileWindow = element.containingFile?.virtualFile as? VirtualFileWindow ?: return false
+        val fileWindow = element.containingFile?.virtualFile as? VirtualFileWindow ?:
+                        return isCompiledCellClassDeclaration(element) || isFromJVMDeclaration(element)
+
         val notebookFile = fileWindow.delegate
         val isProperNotebook = isBackedNotebook(notebookFile) && notebookFile.isKotlinNotebook
         return isProperNotebook && PsiTreeUtil.getParentOfType(element, KtReferenceExpression::class.java) == null
     }
 
     override fun createFindUsagesHandler(element: PsiElement, forHighlightUsages: Boolean): FindUsagesHandler? {
-        return KotlinNotebookElementFindUsagesHandler(element, isCompiledCellClassDeclaration(element))
+        return KotlinNotebookElementFindUsagesHandler(element, isCompiledCellClassDeclaration(element), isFromJVMDeclaration(element))
     }
 
 }
@@ -70,8 +72,13 @@ internal fun tryResolveCompiledDeclarationInNotebook(element: PsiElement, scope:
 }
 
 
-internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, private val searchWithAdditionalDeclarationResolve: Boolean = false) : FindUsagesHandler(element) {
+internal class KotlinNotebookElementFindUsagesHandler(
+    element: PsiElement,
+    searchWithAdditionalDeclarationResolve: Boolean = false,
+    isJVMCompliedDeclaration: Boolean = false
+) : FindUsagesHandler(element) {
     private var notebookFile = (element.containingFile?.virtualFile as? VirtualFileWindow)?.delegate
+    private val targetElementInfo = TargetElementInfo(element, searchWithAdditionalDeclarationResolve, isJVMCompliedDeclaration)
 
     override fun getPrimaryElements(): Array<PsiElement> {
         //if (!isBackedNotebook(notebookFile) || !notebookFile.isKotlinNotebook) return emptyArray()
@@ -81,9 +88,9 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, priva
     override fun findReferencesToHighlight(target: PsiElement, searchScope: SearchScope): MutableCollection<PsiReference> {
         val time = System.currentTimeMillis()
         val foundRefs = NotebookUsagesContributorFactory
-            .invokeElementUsagesContributor(target, searchScope, searchWithAdditionalDeclarationResolve)
+            .invokeElementUsagesContributor(targetElementInfo, searchScope)
 
-        println("Found refs of size: ${foundRefs?.size} in ${System.currentTimeMillis() - time} ms")
+        //println("Found refs of size: ${foundRefs?.size} in ${System.currentTimeMillis() - time} ms")
         // move to elementUsagesContributor ?
         return foundRefs?.map {
             val properFileRange = ensureProperTextRangeShiftInFile(it)
@@ -137,7 +144,10 @@ internal class KotlinNotebookElementFindUsagesHandler(element: PsiElement, priva
 
 internal fun adjustElement(psiElement: PsiElement): PsiElement {
     var curElement: PsiElement? = null
-    if (psiElement is KtNamedDeclaration) {
+    if (psiElement is KtPrimaryConstructor || psiElement is KtObjectDeclaration) {
+        return psiElement.parentOfType<KtClass>()?.nameIdentifier ?: psiElement
+    }
+    if (psiElement is PsiNameIdentifierOwner) {
         return psiElement.nameIdentifier ?: psiElement
     }
     if (psiElement !is PsiIdentifier) {
@@ -161,7 +171,7 @@ internal class KotlinNotebookElementManipulator: AbstractElementManipulator<KtRe
 }
 
 
-internal class LeafElementManipulator : AbstractElementManipulator<LeafPsiElement>() {
+internal class LeafElementManipulator: AbstractElementManipulator<LeafPsiElement>() {
     override fun handleContentChange(element: LeafPsiElement, range: TextRange, newContent: String): LeafPsiElement? {
         val text = element.text
         val content = text.replaceRange(range.startOffset, range.endOffset, newContent)
