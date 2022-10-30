@@ -10,7 +10,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
-import com.intellij.psi.impl.source.tree.injected.changesHandler.range
+import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import java.util.function.Predicate
@@ -51,7 +51,12 @@ internal class KotlinNotebookInjectedFilesFilterProvider: InjectedLanguageHighli
 
     companion object {
         private val notebookInjectedKotlinFileFilter = Predicate<PsiFile> { file ->
-            file is KtFile
+            if (file is KtFile) {
+                val manager = ScriptConfigurationManager.getInstance(file.project)
+                manager.getConfiguration(file)
+                //println("For ${file.name} conf is $conf")
+                true
+            } else false
         }
     }
 }

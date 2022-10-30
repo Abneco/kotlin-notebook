@@ -17,6 +17,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.util.runIf
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport
 import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsBuilder
@@ -62,6 +63,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     }
 
     override fun afterUpdate() {
+        ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()
     }
 
     override fun collectConfigurations(builder: ScriptClassRootsBuilder) {
