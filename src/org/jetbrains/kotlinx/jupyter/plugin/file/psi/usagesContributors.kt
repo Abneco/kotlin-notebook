@@ -76,7 +76,7 @@ sealed class NotebookUsagesContributor {
         val helper = PsiSearchHelper.getInstance(project)
         val goalText = adjustElement(targetElement).text
         val injectedManager = InjectedLanguageManager.getInstance(project)
-        val elemUnderCaret = retrieveElementUnderCaret(targetElement, asPsiFile)
+        val elemUnderCaret = retrieveElementUnderCaret(asPsiFile)
         //val isInsideLambda = isItGeneratedNameInsideLambdaCall(targetElement, elemUnderCaret)
         //println("Search for Libs! isInLambda: $isInsideLambda, elem: ${elemUnderCaret?.text}")
 

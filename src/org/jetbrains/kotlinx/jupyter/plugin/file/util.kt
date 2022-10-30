@@ -73,11 +73,11 @@ internal fun PsiElement?.isInsideKotlinNotebookFile(): Boolean {
     return (isBackedNotebook(virtualFile) && virtualFile.isKotlinNotebook)
 }
 
-internal fun retrieveElementUnderCaret(element: PsiElement, scope: PsiFile): PsiElement? {
-    val manager = FileEditorManager.getInstance(element.project)
+internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
+    val manager = FileEditorManager.getInstance(scope.project)
     val editor = manager.selectedEditor as? TextEditor ?: return null
     val caretOffSet = editor.editor.caretModel.offset
-    val injectedManager = InjectedLanguageManager.getInstance(element.project)
+    val injectedManager = InjectedLanguageManager.getInstance(scope.project)
     val host = scope.findElementAt(caretOffSet)?.parentOfType<JupyterPsiCell>() as? PsiLanguageInjectionHost ?: return null
     val injectInfo = injectedManager.getInjectedPsiFiles(host)?.firstOrNull()?.first ?: return null
 
