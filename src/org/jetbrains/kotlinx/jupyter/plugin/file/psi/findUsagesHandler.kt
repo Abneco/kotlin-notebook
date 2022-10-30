@@ -74,11 +74,12 @@ internal fun tryResolveCompiledDeclarationInNotebook(element: PsiElement, scope:
 
 internal class KotlinNotebookElementFindUsagesHandler(
     element: PsiElement,
-    searchWithAdditionalDeclarationResolve: Boolean = false,
+    searchWithAdditionalCellDeclarationResolve: Boolean = false,
     isJVMCompliedDeclaration: Boolean = false
 ) : FindUsagesHandler(element) {
     private var notebookFile = (element.containingFile?.virtualFile as? VirtualFileWindow)?.delegate
-    private val targetElementInfo = TargetElementInfo(element, searchWithAdditionalDeclarationResolve, isJVMCompliedDeclaration)
+    private val targetElementInfo = TargetElementInfo(element, searchWithAdditionalCellDeclarationResolve,
+                                                      !searchWithAdditionalCellDeclarationResolve && isJVMCompliedDeclaration)
 
     override fun getPrimaryElements(): Array<PsiElement> {
         //if (!isBackedNotebook(notebookFile) || !notebookFile.isKotlinNotebook) return emptyArray()
@@ -91,8 +92,7 @@ internal class KotlinNotebookElementFindUsagesHandler(
             .invokeElementUsagesContributor(targetElementInfo, searchScope)
 
         //println("Found refs of size: ${foundRefs?.size} in ${System.currentTimeMillis() - time} ms")
-        // move to elementUsagesContributor ?
-        return foundRefs?.map {
+        return foundRefs?.map {// mapTo ?
             val properFileRange = ensureProperTextRangeShiftInFile(it)
             NotebookReferenceWrapper(target, it, properFileRange, true)
         }?.toMutableSet() ?: mutableSetOf()
@@ -134,7 +134,7 @@ internal class KotlinNotebookElementFindUsagesHandler(
         return if (firstChild?.isIdentifier() == true) firstChild.textRangeInParent else usage.textRangeInParent
     }
 
-    private fun findUsageForElement(targetElement: PsiElement): Array<PsiElement>? {
+    private fun findUsageForElement(targetElement: PsiElement): Set<PsiElement>? {
         val scriptingSupport = JupyterKtScriptingSupport.getInstance(targetElement.project)
         val notebookFileState = notebookFile ?: return null
         return scriptingSupport.searchForElementDeclarationOrUsages(adjustElement(targetElement), notebookFileState, searchStrategy = ReferenceSearchStrategy.REFERENCES)

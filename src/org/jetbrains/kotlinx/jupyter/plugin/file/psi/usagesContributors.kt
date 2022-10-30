@@ -12,8 +12,10 @@ import com.intellij.psi.search.SearchScope
 import com.intellij.psi.search.SingleTargetRequestResultProcessor
 import com.intellij.psi.search.TextOccurenceProcessor
 import com.intellij.psi.search.UsageSearchContext
+import com.intellij.psi.util.parentOfType
 import com.intellij.util.Processor
 import org.jetbrains.annotations.ApiStatus
+import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.isInsideKotlinNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
@@ -38,14 +40,14 @@ internal class ProvidedLibrariesReferencesProducer: Processor<PsiReference> {
 internal typealias TargetElementInfo = Triple<PsiElement, Boolean, Boolean>
 
 sealed class NotebookUsagesContributor {
-    protected fun findUsageForElement(scope: VirtualFile, targetElement: PsiElement): Array<PsiElement>? {
+    protected fun findUsageForElement(scope: VirtualFile, targetElement: PsiElement): MutableSet<PsiElement>? {
         val scriptingSupport = JupyterKtScriptingSupport.getInstance(targetElement.project)
         return scriptingSupport.searchForElementDeclarationOrUsages(adjustElement(targetElement), scope, searchStrategy = ReferenceSearchStrategy.REFERENCES)
     }
 
-    protected fun searchInSourcesScope(scope: VirtualFile, targetElement: PsiElement, isFromDSLibs: Boolean): Array<PsiElement>?  {
+    protected fun searchInSourcesScope(scope: VirtualFile, targetElement: PsiElement, isFromDSLibs: Boolean): Array<PsiElement>? {
         if (!targetElement.isInsideKotlinNotebookFile()) return null
-        return findUsageForElement(scope, targetElement)
+        return findUsageForElement(scope, targetElement)?.toTypedArray()
     }
 
     protected fun searchWithCompiledCellScope(scope: VirtualFile, targetElement: PsiElement, isFromDSLibs: Boolean): Array<PsiElement>? {
@@ -54,8 +56,11 @@ sealed class NotebookUsagesContributor {
         tryResolveCompiledDeclarationInNotebook(targetElement, asPsiFile)?.let {
             adjustedElement = it
         }
-
-        return findUsageForElement(scope, adjustedElement)
+        // add target here as well
+        return findUsageForElement(scope, adjustedElement)?.let {
+            it.add(adjustedElement.parentOfType<KtDeclaration>(withSelf = true) ?: adjustedElement)
+            it.toTypedArray()
+        }
     }
 
     // maybe don't needed

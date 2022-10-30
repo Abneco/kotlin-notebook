@@ -13,6 +13,7 @@ import com.intellij.openapi.util.RecursionManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.util.runIf
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
@@ -111,7 +112,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         }
     }
 
-    fun searchForElementDeclarationOrUsages(target: PsiElement, virtualFile: VirtualFile, searchStrategy: ReferenceSearchStrategy): Array<PsiElement>? {
+    fun searchForElementDeclarationOrUsages(target: PsiElement, virtualFile: VirtualFile, searchStrategy: ReferenceSearchStrategy): MutableSet<PsiElement>? {
         if (!virtualFile.isKotlinNotebook) return null
         val injectedManager = InjectedLanguageManager.getInstance(project)
         val foundData = mutableSetOf<PsiElement>()
@@ -132,7 +133,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         if (!isLocalSearch && target.containingFile.name.contains(dfPrefix)) {
             isLocalSearch = isItGeneratedNameInsideLambdaCall(target, target)
         }
-        println("isLocalSearch: $isLocalSearch for ${target.text}")
+        //println("isLocalSearch: $isLocalSearch for ${target.text}")
         val properContainer = if (isLocalSearch) listOf(injectionManager.getInjectionHost(target.containingFile)) else notebookCells
 
         return runReadAction {
@@ -157,7 +158,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
                 } else foundData += elements
             }
 
-            return@runReadAction foundData.toTypedArray()
+            return@runReadAction foundData
         }
     }
 
