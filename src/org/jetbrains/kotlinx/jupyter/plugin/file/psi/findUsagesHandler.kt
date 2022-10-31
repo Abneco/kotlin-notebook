@@ -127,7 +127,9 @@ internal class KotlinNotebookElementFindUsagesHandler(
         val rDiff = if (rangeToStore.endOffset > fileRange.endOffset) rangeToStore.endOffset - fileRange.endOffset else 0
         val maxDiff = maxOf(lDiff, rDiff)
         val firstChild = usage.firstChild
-
+        if (usage is PsiNameIdentifierOwner) {
+            return usage.nameIdentifier?.textRangeInParent ?: usage.textRangeInParent
+        }
         if (maxDiff != 0) {
             return usage.textRangeInParent.shiftLeft(usage.textRangeInParent.startOffset)
         }

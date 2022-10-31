@@ -58,7 +58,10 @@ sealed class NotebookUsagesContributor {
         }
         // add target here as well
         return findUsageForElement(scope, adjustedElement)?.let {
-            it.add(adjustedElement.parentOfType<KtDeclaration>(withSelf = true) ?: adjustedElement)
+            val enclosingDeclaration = adjustedElement.parentOfType<KtDeclaration>(withSelf = true) ?: adjustedElement
+            if (enclosingDeclaration.containingFile?.name?.endsWith("class") == false) {
+                it.add(enclosingDeclaration)
+            }
             it.toTypedArray()
         }
     }
