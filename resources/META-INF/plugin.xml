@@ -19,6 +19,8 @@
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <renameHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.KotlinNotebookPropertiesRenameHandler" />
+        <scriptDefinitionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterScriptDefinitionProvider"/>
+        <idea.caches.resolve.resolveOptimizingOptionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.resolve.KotlinNotebookOptimizingOptionsProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.codeInsight.daemon.impl">
@@ -66,10 +68,6 @@
                 bundle="messages.JupyterKotlinBundle"
                 key="plugin.updater.notification.group"
         />
-    </extensions>
-
-    <extensions defaultExtensionNs="org.jetbrains.kotlin">
-        <scriptDefinitionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterScriptDefinitionProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">
