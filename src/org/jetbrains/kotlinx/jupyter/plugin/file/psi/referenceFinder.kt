@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.psi.psiUtil.getChildrenOfType
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
+import org.jetbrains.kotlin.psi.psiUtil.isPropertyParameter
 import org.jetbrains.kotlin.psi.psiUtil.isPublic
 import org.jetbrains.kotlin.psi.stubs.elements.KtNameReferenceExpressionElementType
 
@@ -92,7 +93,6 @@ object NotebookReferenceFinder {
                 } else declarations.firstOrNull {
                     it as KtDeclaration
                     it ?: return@firstOrNull false
-                    //val candidateHost = injectionManager.getInjectionHost(element.containingFile)
                     val declarationMatchResult = if (referenceInfo != null)
                             tryMatchWithDeclaration(injectionHost, possibleClassName, targetElement, it, referenceInfo)
                         else true
@@ -169,7 +169,11 @@ object NotebookReferenceFinder {
                 }
                 children
             }
-            is KtClass -> element.body?.let { getProperDeclarationsForScriptOrClass(it) } ?: emptyArray()
+            is KtClass -> element.body?.let {
+                val inConstructorElems = element.primaryConstructor?.valueParameters?.filter { p -> p.isPropertyParameter() }?.toTypedArray()
+                val classElems = getProperDeclarationsForScriptOrClass(it)
+                if (inConstructorElems.isNullOrEmpty()) classElems else classElems + inConstructorElems
+            } ?: emptyArray()
             is KtObjectDeclaration -> element.declarations.let {
                 if (isPartOfDotCall)
                     declarationsCollectingVisitor.collectAllNestedDeclarationsPresent(it).toTypedArray()
