@@ -3,6 +3,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.file.psi
 
 import com.intellij.codeInsight.navigation.actions.GotoDeclarationHandler
 import com.intellij.injected.editor.VirtualFileWindow
+import com.intellij.model.psi.PsiSymbolService
+import com.intellij.model.psi.impl.targetSymbols
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
@@ -15,9 +17,11 @@ import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
+import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.originFile
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 
 class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
@@ -39,7 +43,17 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
         if (PsiTreeUtil.getParentOfType(sourceElement, KtReferenceExpression::class.java) == null) {
             return null
         }
+        // try fast
+        val targetSymbol = targetSymbols(psiFile, offset).firstOrNull()
+        val adjustedElement = if (targetSymbol != null) PsiSymbolService.getInstance().extractElementFromSymbol(targetSymbol) ?: sourceElement else sourceElement
+        (notebookFile.toPsiFile(project) as? JupyterFile)?.let {
+            tryResolveCompiledDeclarationInNotebook(adjustedElement, it)?.let { foundDeclaration ->
+                sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, foundDeclaration)
+                return arrayOf(foundDeclaration)
+            }
+        }
 
+        // try exhaustive search
         return scriptingSupport.searchForElementDeclarationOrUsages(sourceElement, notebookFile, ReferenceSearchStrategy.DECLARATION)
             ?.firstOrNull()?.let {
                 sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, it)

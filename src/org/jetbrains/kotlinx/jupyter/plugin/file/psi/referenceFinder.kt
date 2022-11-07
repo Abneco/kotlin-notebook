@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtClassBody
+import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtElement
@@ -84,11 +85,11 @@ object NotebookReferenceFinder {
 
         when (searchStrategy) {
             ReferenceSearchStrategy.DECLARATION -> {
-                if (targetElement is KtPrimaryConstructor && referenceInfo?.enclosingClass != null && (element as? KtClass)?.name == referenceInfo.enclosingClass?.name) {
+                if (targetElement is KtPrimaryConstructor && referenceInfo?.enclosingClass != null && (element as? KtClassOrObject)?.name == referenceInfo.enclosingClass?.name) {
                     foundData?.add(element as NavigatablePsiElement)
                     return
                 }
-                if (referenceInfo?.enclosingClass != null && declarations.any { referenceInfo.enclosingClass?.name == (it as? KtClass)?.name }) {
+                if (referenceInfo?.enclosingClass != null && declarations.any { referenceInfo.enclosingClass?.name == (it as? KtClassOrObject)?.name }) {
                     null
                 } else declarations.firstOrNull {
                     it as KtDeclaration
@@ -122,7 +123,7 @@ object NotebookReferenceFinder {
 
     private fun getProperUsagesForTargetElement(injectionHost: PsiLanguageInjectionHost, possibleClassName: String?, element: PsiElement, targetElement: PsiElement): List<NavigatablePsiElement> {
         val ans = mutableListOf<NavigatablePsiElement>()
-        val targetName = targetElement.text
+        val targetName = if (targetElement is KtObjectDeclaration) targetElement.nameAsSafeName.asString() else targetElement.text
         val targetDeclaration = targetElement.parentOfType<KtDeclaration>(true)!!
         element.containingFile.acceptChildren(object : PsiRecursiveElementVisitor() {
             override fun visitElement(element: PsiElement) {
