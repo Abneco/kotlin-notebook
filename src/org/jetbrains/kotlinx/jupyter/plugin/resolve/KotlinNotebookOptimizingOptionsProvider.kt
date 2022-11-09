@@ -29,7 +29,7 @@ class KotlinNotebookOptimizingOptionsProvider: ResolveOptimizingOptionsProvider 
 
     private object KotlinNotebookOptimizingOptions: OptimizingOptions {
         override fun shouldCalculateAllNamesForLazyImportScopeOptimizing(moduleDescriptor: ModuleDescriptor?): Boolean {
-            return true
+            return false
         }
     }
 }
