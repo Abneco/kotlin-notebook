@@ -6,10 +6,11 @@ import org.jetbrains.plugins.notebooks.jupyter.server.JupyterServerExecution
 import org.jetbrains.plugins.notebooks.jupyter.server.JupyterServerStarted
 import org.jetbrains.plugins.notebooks.jupyter.server.JupyterServerState
 import org.jetbrains.plugins.notebooks.jupyter.server.JupyterServerStateListener
+import java.net.URI
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 
-private val emptyKotlinConnectionParameters = JupyterConnectionParameters(kernelName = "kotlin")
+private val emptyKotlinConnectionParameters = JupyterConnectionParameters(uri = URI.create(""), kernelName = "kotlin")
 
 class KotlinNotebookServerExecution: JupyterServerExecution {
     override val connectionFuture: Future<JupyterConnectionParameters>
