@@ -43,6 +43,12 @@
 
         <lang.parserDefinition language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.grammar.JKTMetaParserDefinition"/>
 
+        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookReferencesTypeHintsProvider" language="Jupyter"/>
+        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.NotebookLambdaTypeHintsProvider" language="Jupyter"/>
+        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.NotebookValuesHintProvider" language="Jupyter"/>
+        <!--<codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.NotebookChainCallHintProvider" language="Jupyter"/>-->
+
+
         <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaCompletionContributor"/>
         <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.KotlinMagicsRuntimeCompletionContributor"/>
         <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaAnnotator"/>
