@@ -2,13 +2,16 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion
 
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
+import com.intellij.testFramework.runInEdtAndWait
+import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
+import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
-import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.junit.Test
 
 class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
@@ -48,6 +51,14 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
             setMode(NotebookEditorMode.EDIT)
         }
         originalVirtualFile = myFixture.file.virtualFile
+
+        runInEdtAndWait {
+            runReadAction {
+                // To make completion work in `kotlin.scripts.as.entities=true` mode it's crucial to load dependencies in advance
+                ScriptConfigurationManager.updateScriptDependenciesSynchronously(myFixture.file)
+            }
+        }
+
         val completionTester = CompletionAutoPopupTester(myFixture)
         completionTester.runWithAutoPopupEnabled {
             action(completionTester)
