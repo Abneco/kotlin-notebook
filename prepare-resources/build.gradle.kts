@@ -7,6 +7,7 @@ plugins {
 repositories {
     maven("https://cache-redirector.jetbrains.com/maven-central")
     maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
+    // mavenLocal()
 }
 
 val kernelVersion = defineLibVersion()
