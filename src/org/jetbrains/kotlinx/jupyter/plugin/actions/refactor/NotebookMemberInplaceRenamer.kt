@@ -159,7 +159,7 @@ class NotebookMemberInplaceRenamer(
         myEditor.putUserData(INPLACE_RENAMER, this)
         foundRefsSize = references.size
 
-        val stringUsages: List<Pair<PsiElement, TextRange>> = NotNullList()
+        val stringUsages: MutableList<Pair<PsiElement, TextRange>> = NotNullList()
         collectAdditionalElementsToRename(stringUsages)
 
         return try {

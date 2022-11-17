@@ -120,7 +120,7 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
         return tryResolveToDeclaration(element, editor) ?: element
     }
 
-    override fun substituteElementToRename(element: PsiElement, editor: Editor, renameCallback: Pass<PsiElement>) {
+    override fun substituteElementToRename(element: PsiElement, editor: Editor, renameCallback: Pass<in PsiElement>) {
         if (!isKotlinNotebookInjectedFile(element.containingFile)) return
         val adjustedElement = tryResolveToDeclaration(element, editor) ?: element.parent.reference?.resolve()
         if ((adjustedElement == null && !isNotebookRefactoringSupported(element.parent)) || adjustedElement?.containingFile is KtClsFile) {
