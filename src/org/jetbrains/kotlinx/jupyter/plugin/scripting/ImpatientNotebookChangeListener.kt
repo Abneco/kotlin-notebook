@@ -10,6 +10,7 @@ import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
@@ -45,13 +46,15 @@ class ImpatientNotebookChangeListener(
         val cellOfChange = psiCells?.get(if (neededCellIndex > 0) neededCellIndex - 1 else 0)
 
         if (lineOfChange > allLines.size - 1 || cellOfChange == null) return // ignore change of whole document
+        val delta = if (event.newLength > event.oldLength) event.newLength else -event.oldLength
 
         runReadAction {
             val injectedPsi = injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first
 
             injectedPsi?.putUserData(ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY, null)
             //psiCells[0]?.putCopyableUserData(ANALYZER_PASS_INJECTION_IGNORED_HOST_KEY, true)
-            document.putUserData(NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE, cellOfChange.textRange)
+            document.putUserData(NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE,
+                                 TextRange(cellOfChange.textRange.startOffset, cellOfChange.textRange.endOffset + delta))
             document.putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)
             //println("Inside before change for ${injectedPsi?.containingFile?.name}, hostsSize: $hostSize, injected: ${injectedPsi?.text}")
         }

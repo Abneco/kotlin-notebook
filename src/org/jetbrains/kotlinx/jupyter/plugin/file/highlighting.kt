@@ -18,7 +18,6 @@ import java.util.function.Predicate
 
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
     private val notebookCodeUtility = NotebookInjectedCodeUtility
-    private val rangeMargin = 12
     private val dummyTextChangeRange = TextRange(0, 0)
 
     override fun reduceRange(file: PsiFile, editor: Editor): TextRange? {
@@ -33,7 +32,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             }
             document.getUserData(NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE)
         }?.let {
-            TextRange(it.startOffset, it.endOffset + rangeMargin)
+            TextRange(it.startOffset, it.endOffset + 1)
         }
         //val cellList = (jupyterFile.children.first() as? JupyterNotebook)?.psiCellList
     }
