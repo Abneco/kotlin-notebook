@@ -71,7 +71,7 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
         }
     }
 
-    override fun elementsToInjectIn(): MutableList<out Class<out PsiElement>> {
+    override fun elementsToInjectIn(): List<Class<out PsiElement>> {
         return ELEMENTS_TO_INJECT
     }
 

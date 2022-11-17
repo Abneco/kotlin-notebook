@@ -86,7 +86,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
                 return true
             }
 
-            override fun after(events: MutableList<out VFileEvent>) {
+            override fun after(events: List<VFileEvent>) {
                 if (events.any { isChangingEvent(it) }) {
                     isBuildUpToDate.set(false)
                 }
