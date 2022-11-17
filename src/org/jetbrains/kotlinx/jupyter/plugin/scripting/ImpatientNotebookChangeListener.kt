@@ -12,6 +12,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
@@ -56,6 +57,7 @@ class ImpatientNotebookChangeListener(
             document.putUserData(NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE,
                                  TextRange(cellOfChange.textRange.startOffset, cellOfChange.textRange.endOffset + delta))
             document.putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)
+            cellOfChange.putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostHintsRegistry, mutableMapOf())
             //println("Inside before change for ${injectedPsi?.containingFile?.name}, hostsSize: $hostSize, injected: ${injectedPsi?.text}")
         }
     }

@@ -1,25 +1,34 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.codeinsight
 
+import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility
 import com.intellij.codeInsight.hints.FactoryInlayHintsCollector
 import com.intellij.codeInsight.hints.ImmediateConfigurable
 import com.intellij.codeInsight.hints.InlayGroup
 import com.intellij.codeInsight.hints.InlayHintsCollector
 import com.intellij.codeInsight.hints.InlayHintsSink
 import com.intellij.codeInsight.hints.SettingsKey
+import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.lang.Language
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.util.runIf
 import org.jetbrains.kotlin.idea.codeInsight.hints.HintType
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinCallChainHintsProvider
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinLambdasHintsProvider
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinReferencesTypeHintsProvider
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinValuesHintsProvider
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtQualifiedExpression
+import org.jetbrains.kotlin.resolve.BindingContext
+import org.jetbrains.kotlin.types.KotlinType
+import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.psiHostHintsRegistry
+import org.jetbrains.kotlinx.jupyter.plugin.file.isEitherSymmetricallyContainedRange
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 
 
@@ -118,6 +127,22 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 if (element !is JupyterPsiCellImpl) return true
                 val ktFile = tryGetInjectedKtFileIfPossibleOrProvided(element, project) as? PsiFile ?: return true
 
+                val modificationArea = if (document?.getUserData(NotebookInjectedCodeUtility.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE) != null) {
+                    synchronized(document) { document.getUserData(NotebookInjectedCodeUtility.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE) }
+                } else null
+
+                val registry = KotlinNotebookAbstractInlayTypeHintsProvider.getOrCreateTypeHintsRegistry(element)
+                                                // lhs.contains(rhs) || rhs.contains(rhs)
+                if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
+                    registry.entries.forEach { (el, data) ->
+                        if (el !is KtQualifiedExpression) return@forEach
+                        val c = getTypeComputationContext(el)
+                        val withTypes = data.mapNotNull { it.first.getType(c)?.let { t -> ExpressionWithType(it.first, t)} }
+                        addInlayElementsToSink(c, withTypes, sink, factory, offset = element.textOffset + shiftMargin)
+                    }
+                    return true
+                }
+
                 return KotlinNotebookAbstractInlayTypeHintsProvider.traverseElementsAndApplyAction(ktFile) { elem ->
                     processInlayElements(elem, settings, sink, factory,
                                          offset = element.textOffset + shiftMargin)
@@ -127,4 +152,24 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
         }
     }
 
+    override fun addInlayElementsAdapter(
+        context: BindingContext,
+        elements: List<ExpressionWithType<KotlinType>>,
+        sink: InlayHintsSink,
+        factory: PresentationFactory,
+        offset: Int
+    ) {
+        val host = elements.firstOrNull()?.expression?.let {
+            val manager = InjectedLanguageManager.getInstance(it.project)
+            manager.getInjectionHost(it.containingFile)
+        }
+        val registry = runIf(host != null) {
+            host!!.getUserData(psiHostHintsRegistry)
+        }
+        if (host != null) {
+            registry?.put(elements.first().expression, elements.map { Pair(it.expression, it.type.getInlayPresentation(it.expression, factory, host.project, context)) })
+        }
+
+        super.addInlayElementsAdapter(context, elements, sink, factory, offset)
+    }
 }

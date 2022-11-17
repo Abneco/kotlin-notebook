@@ -54,6 +54,8 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
 }
 
+internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(rhs)
+
 
 internal class KotlinNotebookInjectedFilesFilterProvider: InjectedLanguageHighlightingFilesFilterProvider {
     private val notebookCodeUtility = NotebookInjectedCodeUtility

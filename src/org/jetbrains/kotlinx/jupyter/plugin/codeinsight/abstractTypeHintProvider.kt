@@ -6,6 +6,7 @@ import com.intellij.codeInsight.hints.FactoryInlayHintsCollector
 import com.intellij.codeInsight.hints.HorizontalConstraints
 import com.intellij.codeInsight.hints.InlayHintsCollector
 import com.intellij.codeInsight.hints.InlayHintsSink
+import com.intellij.codeInsight.hints.presentation.InlayPresentation
 import com.intellij.codeInsight.hints.presentation.RecursivelyUpdatingRootPresentation
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
@@ -13,6 +14,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
@@ -25,6 +27,7 @@ import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 
+typealias PsiHostTypeHintsRegistry = MutableMap<PsiElement, List<Pair<PsiElement, InlayPresentation>>>
 
 abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbstractHintsProvider<T>() {
     override fun isLanguageSupported(language: Language): Boolean {
@@ -75,6 +78,16 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
         get() = JupyterKotlinBundle.message("inlay.hint.description.prefix", properTarget)
 
     companion object {
+        internal val psiHostHintsRegistry = Key.create<PsiHostTypeHintsRegistry>("jupyter.kotlin.inlay.hints.registry")
+
+        internal fun getOrCreateTypeHintsRegistry(host: PsiLanguageInjectionHost): PsiHostTypeHintsRegistry = synchronized(host) {
+            val stored = host.getUserData(psiHostHintsRegistry)
+            if (stored == null) {
+                host.putUserData(psiHostHintsRegistry, mutableMapOf())
+                host.getUserData(psiHostHintsRegistry)!!
+            } else stored
+        }
+
         const val markerShift = CELL_MARKER.length + 1
         fun isLanguageSupported(language: Language): Boolean = language == JupyterLanguage
 
