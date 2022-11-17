@@ -10,6 +10,7 @@ import com.intellij.codeInsight.hints.SettingsKey
 import com.intellij.lang.Language
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -19,7 +20,6 @@ import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinLambdasHintsProvider
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinReferencesTypeHintsProvider
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinValuesHintsProvider
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtSafeQualifiedExpression
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 
 
@@ -103,10 +103,6 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
 
     override val description: String = "${super.description} in Kotlin Notebook"
 
-    override fun preparePreview(editor: Editor, file: PsiFile, settings: Settings) {
-        super.preparePreview(editor, file, settings)
-    }
-
     override fun isLanguageSupported(language: Language): Boolean = KotlinNotebookAbstractInlayTypeHintsProvider.isLanguageSupported(language)
 
     override fun getCollectorFor(file: PsiFile, editor: Editor, settings: Settings, sink: InlayHintsSink): InlayHintsCollector? {
@@ -114,6 +110,8 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
         val defaultCollector = super.getCollectorFor(file, editor, settings, sink)
 
         return object : FactoryInlayHintsCollector(editor) {
+            private val document = FileDocumentManager.getInstance().getDocument(file.virtualFile)
+
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
                 if (file.project.service<DumbService>().isDumb) return true
                 if (element is KtFile) return defaultCollector?.collect(element, editor, sink) ?: true
@@ -121,25 +119,8 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 val ktFile = tryGetInjectedKtFileIfPossibleOrProvided(element, project) as? PsiFile ?: return true
 
                 return KotlinNotebookAbstractInlayTypeHintsProvider.traverseElementsAndApplyAction(ktFile) { elem ->
-                    val topmostDotQualifiedExpression =
-                        (elem.safeCastUsing(dotQualifiedClass) ?: elem.safeCastUsing(KtSafeQualifiedExpression::class.java))
-                        ?.takeIf { it.getParentDotQualifiedExpression() == null }
-                        ?: return@traverseElementsAndApplyAction true
-                    val context = getTypeComputationContext(topmostDotQualifiedExpression)
-
-                    val reversedChain = topmostDotQualifiedExpression.assembleChainCall(context)
-                    if (reversedChain == null) return@traverseElementsAndApplyAction true
-
-                    if (checkIfShouldSkip(reversedChain, settings)) return@traverseElementsAndApplyAction true
-
-                    for ((expression, type) in reversedChain) {
-                        sink.addInlineElement(
-                            expression.textRange.endOffset + element.textOffset + shiftMargin,
-                            true,
-                            type.getInlayPresentation(expression, factory, file.project, context),
-                            false
-                        )
-                    }
+                    processInlayElements(elem, settings, sink, factory,
+                                         offset = element.textOffset + shiftMargin)
                     return@traverseElementsAndApplyAction true
                 }
             }
