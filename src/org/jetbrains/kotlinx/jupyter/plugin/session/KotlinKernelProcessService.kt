@@ -111,7 +111,8 @@ class KotlinKernelProcessService {
             "x-x-x",
             scriptJars,
             homeDirectory,
-            null
+            null,
+            "kotlin_notebook"
         )
 
         val classpathSeparator = System.getProperty("path.separator")
