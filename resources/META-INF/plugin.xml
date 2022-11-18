@@ -25,7 +25,6 @@
 
     <extensions defaultExtensionNs="com.intellij.codeInsight.daemon.impl">
         <injectedLanguageHighlightingRangeReducer implementation="org.jetbrains.kotlinx.jupyter.plugin.file.KotlinNotebookInjectedRangeReducer" order="first"/>
-        <injectedLanguageHighlightingFilesFilterProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.file.KotlinNotebookInjectedFilesFilterProvider" order="first"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

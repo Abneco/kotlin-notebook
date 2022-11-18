@@ -1,7 +1,6 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.file
 
-import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingFilesFilterProvider
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
 import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility
 import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE
@@ -15,7 +14,6 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
-import java.util.function.Predicate
 
 
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
@@ -55,24 +53,3 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 }
 
 internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(rhs)
-
-
-internal class KotlinNotebookInjectedFilesFilterProvider: InjectedLanguageHighlightingFilesFilterProvider {
-    private val notebookCodeUtility = NotebookInjectedCodeUtility
-
-    override fun provideFilterForInjectedFiles(file: PsiFile, editor: Editor): Predicate<PsiFile>? {
-        if (!notebookCodeUtility.isLooksLikeNotebookFile(file)) return null
-        return notebookInjectedKotlinFileFilter
-    }
-
-    companion object {
-        private val notebookInjectedKotlinFileFilter = Predicate<PsiFile> { file ->
-            if (file is KtFile) {
-                val manager = ScriptConfigurationManager.getInstance(file.project)
-                manager.getConfiguration(file)
-                //println("For ${file.name} conf is $conf")
-                true
-            } else false
-        }
-    }
-}
