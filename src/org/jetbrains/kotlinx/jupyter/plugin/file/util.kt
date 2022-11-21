@@ -16,6 +16,7 @@ import com.intellij.psi.util.parentOfType
 import com.intellij.testFramework.LightVirtualFile
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.scripting.definitions.isScript
+import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
@@ -29,7 +30,13 @@ val VirtualFile?.isKotlinNotebook: Boolean get() {
     return notebookLanguage === KotlinLanguage.INSTANCE
 }
 
-fun isKotlinNotebookInjectedFile(file: PsiFile?): Boolean = file?.isScript() == true && file.name.endsWith("jupyter-kts")
+fun isKotlinNotebookInjectedFile(file: PsiFile?): Boolean {
+    if (file == null) return false
+    if (!file.isScript()) return false
+
+    val service = JupyterCompilerService.getInstance(file.project)
+    return file.name.endsWith(service.fileSuffix)
+}
 
 
 private val VirtualFile.notebookLanguage: Language? get(){

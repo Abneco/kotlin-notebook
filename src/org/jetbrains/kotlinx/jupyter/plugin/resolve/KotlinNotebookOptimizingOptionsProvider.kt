@@ -22,7 +22,7 @@ class KotlinNotebookOptimizingOptionsProvider: ResolveOptimizingOptionsProvider 
         if (scriptFile !is VirtualFileWindow) return null
 
         val service = JupyterCompilerService.getInstance(project)
-        if (scriptFile.extension != service.fileExtension) return null
+        if (!scriptFile.name.endsWith(service.fileSuffix)) return null
 
         return KotlinNotebookOptimizingOptions
     }

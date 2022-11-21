@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
+import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showExistingUsagesMessage
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showRerunActionNeeded
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
@@ -45,6 +46,7 @@ class NotebookMemberInplaceRenamer(
     private val isSameScope = originalElement.containingFile == elementToRename.containingFile
     private var foundRefsSize: Int = 0
     private val prevClassData = myElementToRename.containingFile.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)
+    private val fileSuffix: String get() = JupyterCompilerService.getInstance(originalElement.project).fileSuffix
 
     override fun performRenameInner(element: PsiElement?, newName: String?) {
         super.performRenameInner(element, newName)
@@ -203,7 +205,7 @@ class NotebookMemberInplaceRenamer(
 
 
     override fun isReferenceAtCaret(selectedElement: PsiElement?, ref: PsiReference?, offset: Int): Boolean {
-        return if (selectedElement?.containingFile?.name?.endsWith("jupyter-kts") == true)
+        return if (selectedElement?.containingFile?.name?.endsWith(fileSuffix) == true)
             super.isReferenceAtCaret(selectedElement, ref)
         else super.isReferenceAtCaret(selectedElement, ref, offset)
     }

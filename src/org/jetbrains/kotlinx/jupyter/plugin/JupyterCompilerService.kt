@@ -70,7 +70,11 @@ class JupyterCompilerService(val project: Project) : Disposable {
     }
 
     val fileExtension: String by lazy {
-        initialCompileConfiguration[ScriptCompilationConfiguration.fileExtension] ?: "jupyter-kts"
+        initialCompileConfiguration[ScriptCompilationConfiguration.fileExtension] ?: "jupyter.kts"
+    }
+
+    val fileSuffix: String by lazy {
+        ".$fileExtension"
     }
 
     val language = Language.findLanguageByID("kotlin")!!

@@ -13,7 +13,6 @@ import com.intellij.openapi.util.RecursionManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.util.runIf
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
@@ -45,7 +44,6 @@ import kotlin.script.experimental.api.valueOrNull
 class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport {
     private val compilerService = JupyterCompilerService.getInstance(project)
     private val editorManager: FileEditorManager? get() = FileEditorManager.getInstance(project)
-    private val fileExtension get() = compilerService.fileExtension
 
     private val configurationManager: CompositeScriptConfigurationManager
         get() = ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager
@@ -86,7 +84,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     }
 
     override fun isApplicable(file: VirtualFile): Boolean {
-        return file.extension == fileExtension && file is VirtualFileWindow
+        return file.name.endsWith(compilerService.fileSuffix) && file is VirtualFileWindow
     }
 
     override fun isConfigurationLoadingInProgress(file: KtFile): Boolean {
