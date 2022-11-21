@@ -48,8 +48,9 @@
         <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.NotebookChainCallHintProvider" language="Jupyter"/>
 
 
-        <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaCompletionContributor"/>
-        <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.KotlinMagicsRuntimeCompletionContributor"/>
+        <completion.contributor language="JKTMeta" id="JKTMetaBasic" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaCompletionContributor" />
+        <completion.contributor language="Jupyter" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaCompletionContributor"/>
+        <completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.KotlinMagicsRuntimeCompletionContributor" order="first"/>
         <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaAnnotator"/>
         <typedHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaTypedHandlerDelegate"/>
         <gotoDeclarationHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookGotoDeclarationProvider"/>
