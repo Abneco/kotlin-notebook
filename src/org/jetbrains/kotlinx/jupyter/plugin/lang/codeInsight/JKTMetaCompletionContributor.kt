@@ -24,25 +24,22 @@ class JKTMetaCompletionContributor : CompletionContributor() {
 
         val position = parameters.position
         if (position.elementType == JKTMetaTypes.ID) {
-            fillIdVariants(position, result, true)
+            fillIdVariants(result, position.findMetaStatement()?.replEnum)
         } else {
             val original = parameters.originalPosition ?: return
             if (original.containingFile?.virtualFile?.isKotlinNotebook != true) return
 
-            fillIdVariants(original, result, false)
+            fillIdVariants(result, original.findMetaStatementEnumInJupyter())
             result.stopHere()
         }
     }
 
-    private fun fillIdVariants(element: PsiElement, result: CompletionResultSet, isFromJKTMeta: Boolean, stopAfter: Boolean = true) {
-        val enum = (if (!isFromJKTMeta) element.findMetaStatementEnumInJupyter()
-            else element.findMetaStatement()?.replEnum) ?: return
+    private fun fillIdVariants(result: CompletionResultSet, enum: ReplEnum<*>?) {
+        enum ?: return
         val lookupElements = enum.toLookupElements()
         result.addAllElements(lookupElements)
         result.restartCompletionOnAnyPrefixChange()
-        if (stopAfter) {
-            result.stopHere()
-        }
+        result.stopHere()
     }
 
     companion object {
