@@ -44,7 +44,11 @@ class ImpatientNotebookChangeListener(
         val neededCellIndex = allLines.take(lineOfChange).count {
             it.contains("#%%")
         }
-        val cellOfChange = psiCells?.get(if (neededCellIndex > 0) neededCellIndex - 1 else 0)
+
+        val isMdEvent = (event.oldFragment.contains(" md") || event.newFragment.contains(" md"))
+                && (event.newFragment.isEmpty() || event.oldFragment.isEmpty())
+        val cellOfChange = if (isMdEvent) psiCells?.get(neededCellIndex)
+                            else psiCells?.get(if (neededCellIndex > 0) neededCellIndex - 1 else 0)
 
         if (lineOfChange > allLines.size - 1 || cellOfChange == null) return // ignore change of whole document
         val delta = if (event.newLength > event.oldLength) event.newLength else -event.oldLength
