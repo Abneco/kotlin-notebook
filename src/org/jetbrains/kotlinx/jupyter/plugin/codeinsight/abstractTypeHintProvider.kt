@@ -93,8 +93,12 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
 
         inline fun traverseElementsAndApplyAction(rootElement: PsiElement, crossinline action: (PsiElement) -> Boolean): Boolean {
             val traverser = SyntaxTraverser.psiTraverser(rootElement)
-            for (element in traverser.preOrderDfsTraversal()) {
-                if (!action(element)) return false
+            try {
+                for (element in traverser.preOrderDfsTraversal()) {
+                    if (!action(element)) return false
+                }
+            } catch (_: Exception) {
+                return false
             }
             return true
         }
