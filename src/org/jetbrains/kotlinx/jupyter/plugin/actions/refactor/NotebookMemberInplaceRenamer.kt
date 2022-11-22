@@ -1,7 +1,6 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 
-import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility.ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY
 import com.intellij.openapi.command.impl.FinishMarkAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.ImaginaryEditor
@@ -32,6 +31,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showExistingUsagesMessage
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showRerunActionNeeded
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier

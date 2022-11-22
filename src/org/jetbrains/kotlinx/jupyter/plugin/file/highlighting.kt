@@ -2,22 +2,24 @@
 package org.jetbrains.kotlinx.jupyter.plugin.file
 
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
-import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility
-import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE
-import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility.NOTEBOOK_FILE_ANALYSIS_DONE_KEY
+import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_FILE_ANALYSIS_DONE_KEY
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
-    private val notebookCodeUtility = NotebookInjectedCodeUtility
+    private val notebookCodeUtility = NotebookHighlightingUtilityObject
     private val dummyTextChangeRange = TextRange(0, 0)
 
     override fun reduceRange(file: PsiFile, editor: Editor): TextRange? {
@@ -53,3 +55,23 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 }
 
 internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(rhs)
+
+
+internal object NotebookHighlightingUtilityObject {
+    private const val notebookInjectedFileExtension: String = "jupyter.kts"
+    private const val notebookInjectedMetaFileExtension: String = "juktm"
+    private const val notebookDocumentFileExtension: String = "ipynb"
+
+    @JvmField
+    val NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE = Key.create<TextRange>("notebook.document.ignored.range")
+    @JvmField
+    val ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY: Key<HighlightInfoHolder> = Key.create("injected.element.pass.info.holder")
+    @JvmField
+    val NOTEBOOK_FILE_ANALYSIS_DONE_KEY = Key.create<Boolean>("notebook.file.analysis.done")
+
+    fun isLooksLikeNotebookDocument(document: Document): Boolean =
+        FileDocumentManager.getInstance().getFile(document)?.extension == notebookDocumentFileExtension
+
+    fun isLooksLikeNotebookFile(file: PsiFile): Boolean =
+        file.fileType.defaultExtension == notebookDocumentFileExtension
+}

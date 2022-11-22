@@ -1,7 +1,5 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
-import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE
-import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility.NOTEBOOK_FILE_ANALYSIS_DONE_KEY
 import com.intellij.configurationStore.runAsWriteActionIfNeeded
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.invokeLater
@@ -11,6 +9,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_FILE_ANALYSIS_DONE_KEY
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListWarn

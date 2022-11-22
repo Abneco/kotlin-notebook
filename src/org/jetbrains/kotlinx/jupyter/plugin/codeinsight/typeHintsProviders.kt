@@ -1,7 +1,6 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.codeinsight
 
-import com.intellij.codeInsight.daemon.impl.NotebookInjectedCodeUtility
 import com.intellij.codeInsight.hints.FactoryInlayHintsCollector
 import com.intellij.codeInsight.hints.ImmediateConfigurable
 import com.intellij.codeInsight.hints.InlayGroup
@@ -28,6 +27,7 @@ import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.psiHostHintsRegistry
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.isEitherSymmetricallyContainedRange
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 
@@ -127,8 +127,8 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 if (element !is JupyterPsiCellImpl) return true
                 val ktFile = tryGetInjectedKtFileIfPossibleOrProvided(element, project) as? PsiFile ?: return true
 
-                val modificationArea = if (document?.getUserData(NotebookInjectedCodeUtility.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE) != null) {
-                    synchronized(document) { document.getUserData(NotebookInjectedCodeUtility.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE) }
+                val modificationArea = if (document?.getUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE) != null) {
+                    synchronized(document) { document.getUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE) }
                 } else null
 
                 val registry = KotlinNotebookAbstractInlayTypeHintsProvider.getOrCreateTypeHintsRegistry(element)
