@@ -30,6 +30,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
@@ -185,6 +186,9 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
     }
 
     suspend fun buildProject(): ProjectArtifacts {
+        val options = KotlinNotebookProjectOptionsProvider.getInstance(project).state
+        if (!options.shouldBuildProject) return emptyList()
+
         val deferred = buildAsyncResult
         return if (deferred != null && (deferred.isCompleted && isBuildUpToDate.get() || !deferred.isCompleted)) {
             deferred.await()

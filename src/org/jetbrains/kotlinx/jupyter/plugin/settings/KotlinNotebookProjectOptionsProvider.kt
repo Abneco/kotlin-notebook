@@ -34,7 +34,8 @@ class KotlinNotebookProjectOptionsProvider(
 
 
     data class State(
-        var jdkPath: String? = null
+        var jdkPath: String? = null,
+        var shouldBuildProject: Boolean = true,
     )
 
     class PresentableNameGetter: com.intellij.openapi.components.State.NameGetter() {

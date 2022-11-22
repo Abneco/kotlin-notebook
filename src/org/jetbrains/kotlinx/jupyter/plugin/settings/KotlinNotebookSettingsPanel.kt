@@ -7,6 +7,7 @@ import com.intellij.openapi.roots.ui.configuration.SdkComboBoxModel
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.panel
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
+import javax.swing.JCheckBox
 import javax.swing.JPanel
 
 class KotlinNotebookSettingsPanel(
@@ -15,21 +16,34 @@ class KotlinNotebookSettingsPanel(
 ) {
     private lateinit var panel: DialogPanel
     private lateinit var jdkPath: SdkComboBox
+    private lateinit var shouldBuildProject: JCheckBox
 
     private fun collectState(): KotlinNotebookProjectOptionsProvider.State {
         return KotlinNotebookProjectOptionsProvider.State(
-            jdkPath = jdkPath.getSelectedSdk()?.homePath
+            jdkPath = jdkPath.getSelectedSdk()?.homePath,
+            shouldBuildProject = shouldBuildProject.isSelected,
         )
     }
 
     fun createPanel(): JPanel {
         initJdkComboBox()
+        initShouldBuildCheckBox()
 
         return panel {
             row(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.path")) {
                 cell(jdkPath)
             }
+            row(null) {
+                cell(shouldBuildProject)
+            }
         }.also { panel = it }
+    }
+
+    private fun initShouldBuildCheckBox() {
+        shouldBuildProject = JCheckBox(
+            JupyterKotlinBundle.message("checkbox.should.build.project"),
+            optionsProvider.state.shouldBuildProject
+        )
     }
 
     private fun initJdkComboBox() {
