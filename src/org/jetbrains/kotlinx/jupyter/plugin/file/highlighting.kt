@@ -1,21 +1,27 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.file
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showKernelRestart
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_FILE_ANALYSIS_DONE_KEY
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 
@@ -61,7 +67,6 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
 internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(rhs)
 
-
 internal object NotebookHighlightingUtilityObject {
     private const val notebookInjectedFileExtension: String = "jupyter.kts"
     private const val notebookInjectedMetaFileExtension: String = "juktm"
@@ -81,4 +86,29 @@ internal object NotebookHighlightingUtilityObject {
 
     fun isLooksLikeNotebookFile(file: PsiFile): Boolean =
         file.fileType.defaultExtension == notebookDocumentFileExtension
+
+    fun Document.invalidateStateAfterCellExecution() {
+        putUserData(RenamingEnclosedRange, null)
+        putUserData(NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE, null)
+        putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)
+    }
+
+
+    /**
+     * [require] ReadAction
+     */
+    fun resetSessionMetaInformation(document: Document, vFile: VirtualFile, project: Project, wouldShowNotification: Boolean = true) {
+        document.invalidateStateAfterCellExecution()
+        val psiFile = vFile.toPsiFile(project)
+        psiFile?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
+        psiFile?.getNotebookCellList()?.forEach {
+            it.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
+        }
+        if (wouldShowNotification) {
+            showKernelRestart(project)
+        }
+        invokeLater {
+            psiFile?.let { DaemonCodeAnalyzer.getInstance(project).restart(it) }
+        }
+    }
 }

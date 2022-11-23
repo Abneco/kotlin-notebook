@@ -2,11 +2,14 @@
 package org.jetbrains.kotlinx.jupyter.plugin.session
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFileManager
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.resetSessionMetaInformation
 import org.jetbrains.plugins.notebooks.core.impl.file.findBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelDoesNotExistsException
@@ -68,6 +71,11 @@ class KotlinInProcessJupyterClient(
                 val notebookFile = findBackedNotebook(file) ?: return@create
                 val service = JupyterCompilerService.getInstance(project).get(notebookFile) ?: return@create
                 service.clear()
+                runReadAction {
+                    FileDocumentManager.getInstance().getDocument(notebookFile)?.let {
+                        resetSessionMetaInformation(it, notebookFile, project)
+                    }
+                }
             }
         )
         Disposer.register(this, kernel)

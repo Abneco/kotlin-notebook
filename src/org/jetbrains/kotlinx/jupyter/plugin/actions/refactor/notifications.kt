@@ -13,6 +13,7 @@ internal object NotebookNotificationUtility {
     private fun prepareNotificationGroupTemplate() =
         NotificationGroupManager.getInstance().getNotificationGroup("Find Problems")
 
+    private val informSessionSingletonManager = SingletonNotificationManager("Kotlin Notebook plugin updates", NotificationType.INFORMATION)
     private val informSingletonManager = SingletonNotificationManager("Find Problems", NotificationType.INFORMATION)
     private val informSingletonManagerWarning = SingletonNotificationManager("Find Problems", NotificationType.WARNING)
 
@@ -57,6 +58,14 @@ internal object NotebookNotificationUtility {
             createNotification(JupyterKotlinBundle.message("kotlin.jupyter.dependencies.build.error.severe"), NotificationType.WARNING)
                 .setTitle(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"))
         }
+    }
+
+    fun showKernelRestart(project: Project?) {
+        if (project == null) return
+        informSessionSingletonManager
+            .notify(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"),
+                    JupyterKotlinBundle.message("kotlin.jupyter.session.restart"),
+                    project)
     }
 
     //fun showErrorHint(project: Project, editor: Editor, @NlsContexts.DialogMessage message: String, @NlsContexts.DialogTitle title: String) {
