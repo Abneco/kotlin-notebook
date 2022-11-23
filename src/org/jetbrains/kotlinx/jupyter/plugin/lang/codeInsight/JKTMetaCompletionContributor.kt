@@ -30,7 +30,6 @@ class JKTMetaCompletionContributor : CompletionContributor() {
             if (original.containingFile?.virtualFile?.isKotlinNotebook != true) return
 
             fillIdVariants(result, original.findMetaStatementEnumInJupyter())
-            result.stopHere()
         }
     }
 
@@ -43,6 +42,7 @@ class JKTMetaCompletionContributor : CompletionContributor() {
     }
 
     companion object {
+        private const val oneLongCommand = "%useLatestDescriptors"
         private const val metaIDCommand = ':'
         private const val metaMagicCommand = '%'
 
@@ -50,8 +50,9 @@ class JKTMetaCompletionContributor : CompletionContributor() {
             if (language != JupyterLanguage) return null
             // consider only leaf nodes to get text from
             if (this !is LeafPsiElement) return null
-            if (text.length > 20) return null
-            return when (text[0]) {
+            val elemText = text
+            if (elemText.length > oneLongCommand.length) return null
+            return when (elemText[0]) {
               metaIDCommand -> {
                   ReplCommand
               }
