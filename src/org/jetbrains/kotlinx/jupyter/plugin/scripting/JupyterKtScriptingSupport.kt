@@ -128,13 +128,15 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
                 name
             }
         }
+        if (target.parent == null) return null // means we have inconsistent notebook state
+        val targetContainingFile = target.containingFile
 
         var isLocalSearch = if (searchStrategy == ReferenceSearchStrategy.REFERENCES) targetHost?.getUserData(CELL_CLASS_NAME) == null && !isCompiledCellClassDeclaration(target) else false
-        if (!isLocalSearch && target.containingFile.name.contains(dfPrefix)) {
+        if (!isLocalSearch && targetContainingFile.name.contains(dfPrefix)) {
             isLocalSearch = isItGeneratedNameInsideLambdaCall(target, target)
         }
         //println("isLocalSearch: $isLocalSearch for ${target.text}")
-        val properContainer = if (isLocalSearch) listOf(injectionManager.getInjectionHost(target.containingFile)) else notebookCells
+        val properContainer = if (isLocalSearch) listOf(injectionManager.getInjectionHost(targetContainingFile)) else notebookCells
 
         return runReadAction {
             for (ind in properContainer.indices) {
@@ -143,7 +145,10 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
                 val firstInjectedFileInfo = injectedManager.getInjectedPsiFiles(host)?.firstOrNull() ?: continue
                 val psiFile = firstInjectedFileInfo.first ?: continue
                 // should second part still be there?
-                if (psiFile !is KtFile || (psiFile == target.containingFile && searchStrategy == ReferenceSearchStrategy.DECLARATION)) continue
+                if (target.parent == null) { // means we have inconsistent notebook state
+                    break
+                }
+                if (psiFile !is KtFile || (psiFile == targetContainingFile && searchStrategy == ReferenceSearchStrategy.DECLARATION)) continue
                 val scriptBlock = psiFile.findChildrenByClass(KtScript::class.java).firstOrNull()?.blockExpression ?: continue
                 val elements = mutableListOf<NavigatablePsiElement>()
                 val possibleClassName = ordinalMap[ind]

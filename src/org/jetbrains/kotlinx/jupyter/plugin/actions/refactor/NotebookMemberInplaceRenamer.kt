@@ -1,9 +1,12 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 
+import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.impl.FinishMarkAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.ImaginaryEditor
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.Pair
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
@@ -32,6 +35,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificatio
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showRerunActionNeeded
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier
@@ -73,11 +77,22 @@ class NotebookMemberInplaceRenamer(
     override fun createRenameProcessor(element: PsiElement, newName: String): RenameProcessor {
         return object : MyRenameProcessor(element, newName) {
             private val findUsagesNotebookHandler = KotlinNotebookElementFindUsagesHandler(element)
+            private val injectedManager = InjectedLanguageManager.getInstance(element.project)
+            private val elementHost = injectedManager.getInjectionHost(element.containingFile)
+            private var adjustmentTextRange: TextRange? = null
+
             override fun performRefactoring(usages: Array<out UsageInfo>) {
                 if (foundRefsSize > 0) {
                     showRerunActionNeeded(myProject)
+                    val hostFile = injectedManager.getTopLevelFile(element)
+                    if (adjustmentTextRange != null) {
+                        FileDocumentManager.getInstance().getDocument(hostFile.virtualFile)
+                            ?.putUserData(RenamingEnclosedRange, adjustmentTextRange)
+                    }
                 }
-                super.performRefactoring(usages)
+                runReadAction {
+                    super.performRefactoring(usages)
+                }
             }
 
             override fun findUsages(): Array<UsageInfo> {
@@ -92,11 +107,22 @@ class NotebookMemberInplaceRenamer(
                     }
                     if (size == ans.size) {
                         showRerunActionNeeded(myProject)
+                        var (topL, topR) = elementHost?.let {
+                            val r = it.textRange
+                            r.startOffset to r.endOffset
+                        } ?: (0 to 0)
                         ans.forEach {
                             val el = it.element?.containingFile
                             if (el != null) {
                                 invalidateStoredUserData(el, null)
+                                injectedManager.getInjectionHost(el)?.textRange?.let { host ->
+                                    topL = minOf(topL, host.startOffset)
+                                    topR = maxOf(topR, host.endOffset)
+                                }
                             }
+                        }
+                        if (topR != 0) {
+                            adjustmentTextRange = TextRange(topL, topR)
                         }
                         return ans.toTypedArray()
                     }

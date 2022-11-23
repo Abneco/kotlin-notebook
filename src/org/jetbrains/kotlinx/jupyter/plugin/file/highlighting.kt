@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_FILE_ANALYSIS_DONE_KEY
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 
@@ -32,6 +33,10 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                                                                InjectedLanguageManager.getInstance(file.project))
 
         return synchronized(document) {
+            val afterRenaming = document.getUserData(RenamingEnclosedRange)
+            if (afterRenaming != null) {
+                return@synchronized afterRenaming
+            }
             if (document.getUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY) != null) {
                 return dummyTextChangeRange
             }
@@ -68,6 +73,8 @@ internal object NotebookHighlightingUtilityObject {
     val ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY: Key<HighlightInfoHolder> = Key.create("injected.element.pass.info.holder")
     @JvmField
     val NOTEBOOK_FILE_ANALYSIS_DONE_KEY = Key.create<Boolean>("notebook.file.analysis.done")
+
+    internal val RenamingEnclosedRange: Key<TextRange> = Key.create("notebook.after.rename.changed.range")
 
     fun isLooksLikeNotebookDocument(document: Document): Boolean =
         FileDocumentManager.getInstance().getFile(document)?.extension == notebookDocumentFileExtension

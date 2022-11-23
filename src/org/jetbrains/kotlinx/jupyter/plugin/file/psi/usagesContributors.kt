@@ -118,7 +118,8 @@ internal object NotebookUsagesContributorFactory : NotebookUsagesContributor() {
     private fun extractNotebookFileFromScope(element: PsiElement, scope: SearchScope): VirtualFile? {
         return when (val scopeFile = (scope as? LocalSearchScope)?.virtualFiles?.firstOrNull()) {
             is VirtualFileWindow -> scopeFile.delegate
-            else -> scopeFile
+            else -> if (element.containingFile.virtualFile is VirtualFileWindow)
+                (element.containingFile.virtualFile as? VirtualFileWindow)?.delegate else scopeFile
         }
     }
 

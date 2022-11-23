@@ -11,6 +11,7 @@ import com.intellij.psi.PsiFile
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_FILE_ANALYSIS_DONE_KEY
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListWarn
@@ -130,6 +131,7 @@ class JupyterKotlinCellExecutionCallback(
                 }
             }
             FileDocumentManager.getInstance().getDocument(virtualFile)?.let {
+                it.putUserData(RenamingEnclosedRange, null)
                 it.putUserData(NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE, null)
                 it.putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)
             }
