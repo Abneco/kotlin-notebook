@@ -127,8 +127,8 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 if (element !is JupyterPsiCellImpl) return true
                 val ktFile = tryGetInjectedKtFileIfPossibleOrProvided(element, project) as? PsiFile ?: return true
 
-                val modificationArea = if (document?.getUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE) != null) {
-                    synchronized(document) { document.getUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE) }
+                val modificationArea = if (document?.getUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE) != null) {
+                    synchronized(document) { document.getUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE) }
                 } else null
 
                 val registry = KotlinNotebookAbstractInlayTypeHintsProvider.getOrCreateTypeHintsRegistry(element)

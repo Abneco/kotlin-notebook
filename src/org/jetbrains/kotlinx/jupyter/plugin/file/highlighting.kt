@@ -18,8 +18,8 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showKernelRestart
-import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE
-import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_FILE_ANALYSIS_DONE_KEY
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
@@ -35,7 +35,8 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         val jupyterFile = file as? JupyterFile ?: return null
         val document = FileDocumentManager.getInstance().getDocument(jupyterFile.virtualFile) ?: return null
 
-        file.getNotebookCellList()?.ensureScriptConfigurations(ScriptConfigurationManager.getInstance(file.project),
+        val cells = file.getNotebookCellList()
+        cells?.ensureScriptConfigurations(ScriptConfigurationManager.getInstance(file.project),
                                                                InjectedLanguageManager.getInstance(file.project))
 
         return synchronized(document) {
@@ -43,10 +44,12 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             if (afterRenaming != null) {
                 return@synchronized afterRenaming
             }
-            if (document.getUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY) != null) {
-                return dummyTextChangeRange
-            }
-            document.getUserData(NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE)
+
+            val cellInd = document.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)?.let { // notebook file is already rebuild
+                cells?.get(it)
+            }?.textRange
+            val possibleRange = document.getUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE)
+            if (cellInd != null && possibleRange?.endOffset != cellInd.endOffset) cellInd else possibleRange
         }?.let {
             TextRange(it.startOffset, it.endOffset + 1)
         }
@@ -73,13 +76,14 @@ internal object NotebookHighlightingUtilityObject {
     private const val notebookDocumentFileExtension: String = "ipynb"
 
     @JvmField
-    val NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE = Key.create<TextRange>("notebook.document.ignored.range")
+    val NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE = Key.create<TextRange>("notebook.document.ignored.range")
     @JvmField
     val ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY: Key<HighlightInfoHolder> = Key.create("injected.element.pass.info.holder")
     @JvmField
     val NOTEBOOK_FILE_ANALYSIS_DONE_KEY = Key.create<Boolean>("notebook.file.analysis.done")
 
     internal val RenamingEnclosedRange: Key<TextRange> = Key.create("notebook.after.rename.changed.range")
+    internal val NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX: Key<Int> = Key.create("notebook.document.target.cell.ind")
 
     fun isLooksLikeNotebookDocument(document: Document): Boolean =
         FileDocumentManager.getInstance().getFile(document)?.extension == notebookDocumentFileExtension
@@ -89,8 +93,9 @@ internal object NotebookHighlightingUtilityObject {
 
     fun Document.invalidateStateAfterCellExecution() {
         putUserData(RenamingEnclosedRange, null)
-        putUserData(NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE, null)
+        putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE, null)
         putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)
+        putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
     }
 
 

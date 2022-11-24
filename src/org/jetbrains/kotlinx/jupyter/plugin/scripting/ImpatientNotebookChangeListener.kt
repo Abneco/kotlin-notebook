@@ -11,12 +11,19 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY
-import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_FILE_ANALYSIS_DONE_KEY
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
 
+
+internal enum class NotebookChangeEventsType {
+    CELL_LIST_CHANGE_EVENT,
+    MARKDOWN_CONVERSION_EVENT,
+    REGULAR
+}
 
 class ImpatientNotebookChangeListener(
     private val project: Project,
@@ -45,25 +52,38 @@ class ImpatientNotebookChangeListener(
             it.contains("#%%")
         }
 
-        val isMdEvent = (event.oldFragment.contains(" md") || event.newFragment.contains(" md"))
-                && (event.newFragment.isEmpty() || event.oldFragment.isEmpty())
-        val cellOfChange = if (isMdEvent) psiCells?.get(neededCellIndex)
-                            else psiCells?.get(if (neededCellIndex > 0) neededCellIndex - 1 else 0)
+        val eventsType = event.identifyEventChangeType()
+        val isMdEvent = eventsType == NotebookChangeEventsType.MARKDOWN_CONVERSION_EVENT
+        val actualCellIndex = if (isMdEvent) neededCellIndex else if (neededCellIndex > 0) neededCellIndex - 1 else 0
+        val cellOfChange = psiCells?.get(actualCellIndex)
 
         if (lineOfChange > allLines.size - 1 || cellOfChange == null) return // ignore change of whole document
         val delta = if (event.newLength > event.oldLength) event.newLength else -event.oldLength
 
+        val properCellIndexOrNull = if (eventsType != NotebookChangeEventsType.CELL_LIST_CHANGE_EVENT) actualCellIndex else null
         runReadAction {
             val injectedPsi = injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first
 
             injectedPsi?.putUserData(ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY, null)
             //psiCells[0]?.putCopyableUserData(ANALYZER_PASS_INJECTION_IGNORED_HOST_KEY, true)
-            document.putUserData(NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE,
+            document.putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE,
                                  TextRange(cellOfChange.textRange.startOffset, cellOfChange.textRange.endOffset + delta))
             document.putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)
+            document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
             cellOfChange.putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostHintsRegistry, mutableMapOf())
             //println("Inside before change for ${injectedPsi?.containingFile?.name}, hostsSize: $hostSize, injected: ${injectedPsi?.text}")
         }
+    }
+    private fun DocumentEvent.identifyEventChangeType(): NotebookChangeEventsType {
+        val event = this
+        val oldFragment = event.oldFragment
+        val newFragment = event.newFragment
+        return if ((oldFragment.contains(" md")
+                    || newFragment.contains(" md")) && (newFragment.isEmpty() || oldFragment.isEmpty()))
+            NotebookChangeEventsType.MARKDOWN_CONVERSION_EVENT
+        else if (oldFragment.contains("#%%") || newFragment.contains("#%%"))
+            NotebookChangeEventsType.CELL_LIST_CHANGE_EVENT
+        else NotebookChangeEventsType.REGULAR
     }
 
     override fun beforeDocumentChange(event: DocumentEvent) {
