@@ -1,13 +1,14 @@
 package org.jetbrains.kotlinx.jupyter.plugin.file
 
 import com.intellij.ide.FileIconPatcher
+import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import icons.KotlinJupyterIcons
 import java.util.*
 import javax.swing.Icon
 
-class JupyterKotlinIconPatcher : FileIconPatcher {
+class JupyterKotlinIconPatcher : FileIconPatcher, DumbAware {
     private val cache: MutableSet<VirtualFile> = Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap()))
 
     private fun shouldPatch(virtualFile: VirtualFile?): Boolean {
