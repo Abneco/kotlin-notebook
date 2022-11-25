@@ -53,7 +53,6 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         }?.let {
             TextRange(it.startOffset, it.endOffset + 1)
         }
-        //val cellList = (jupyterFile.children.first() as? JupyterNotebook)?.psiCellList
     }
 
     private fun Collection<PsiLanguageInjectionHost>?.ensureScriptConfigurations(scriptingManager: ScriptConfigurationManager, manager: InjectedLanguageManager) {

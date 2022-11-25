@@ -47,6 +47,7 @@ class KotlinInProcessJupyterClient(
     private val clientSessions = mutableMapOf<KernelId, KernelZMQClientSession>()
 
     private val defaultKernel = "kotlin"
+    private var disposed: Boolean = false
 
     private val kernelSpecs: Map<KernelName, JupyterKernelSpec> = mapOf(
         defaultKernel to JupyterKernelSpecBase(
@@ -71,9 +72,11 @@ class KotlinInProcessJupyterClient(
                 val notebookFile = findBackedNotebook(file) ?: return@create
                 val service = JupyterCompilerService.getInstance(project).get(notebookFile) ?: return@create
                 service.clear()
-                runReadAction {
-                    FileDocumentManager.getInstance().getDocument(notebookFile)?.let {
-                        resetSessionMetaInformation(it, notebookFile, project)
+                if (!disposed) {
+                    runReadAction {
+                        FileDocumentManager.getInstance().getDocument(notebookFile)?.let {
+                            resetSessionMetaInformation(it, notebookFile, project)
+                        }
                     }
                 }
             }
@@ -149,6 +152,7 @@ class KotlinInProcessJupyterClient(
     }
 
     override fun dispose() {
+        disposed = true
         kernels.clear()
         sessions.clear()
         sessionsByKernelId.clear()
