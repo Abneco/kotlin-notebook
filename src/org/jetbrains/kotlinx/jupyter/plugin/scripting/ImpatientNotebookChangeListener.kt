@@ -20,7 +20,8 @@ import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
 
 
 internal enum class NotebookChangeEventsType {
-    CELL_LIST_CHANGE_EVENT,
+    CELL_LIST_ADD_EVENT,
+    CELL_LIST_DELETE_EVENT,
     MARKDOWN_CONVERSION_EVENT,
     REGULAR
 }
@@ -33,6 +34,8 @@ class ImpatientNotebookChangeListener(
         assertBackedNotebook(virtualFile)
     }
     private val injectedManager = InjectedLanguageManager.getInstance(project)
+    private var lastTimeCellChangeActionPerformed = 0L
+    private var lastAdjustedRange: TextRange? = null
 
     private fun handleNotebookChangeEvent(event: DocumentEvent) {
         val file = FileDocumentManager.getInstance().getFile(event.document) ?: return
@@ -53,21 +56,38 @@ class ImpatientNotebookChangeListener(
         }
 
         val eventsType = event.identifyEventChangeType()
-        val isMdEvent = eventsType == NotebookChangeEventsType.MARKDOWN_CONVERSION_EVENT
-        val actualCellIndex = if (isMdEvent) neededCellIndex else if (neededCellIndex > 0) neededCellIndex - 1 else 0
+        val actualCellIndex = if (eventsType
+            == NotebookChangeEventsType.MARKDOWN_CONVERSION_EVENT || eventsType == NotebookChangeEventsType.CELL_LIST_ADD_EVENT) neededCellIndex else if (neededCellIndex > 0) neededCellIndex - 1 else 0
         val cellOfChange = psiCells?.get(actualCellIndex)
 
         if (lineOfChange > allLines.size - 1 || cellOfChange == null) return // ignore change of whole document
         val delta = if (event.newLength > event.oldLength) event.newLength else -event.oldLength
+        val isCellListChange = eventsType.isCellListChangeEvent()
 
-        val properCellIndexOrNull = if (eventsType != NotebookChangeEventsType.CELL_LIST_CHANGE_EVENT) actualCellIndex else null
+        val properCellIndexOrNull = if (!isCellListChange) actualCellIndex else null
+        var properTextRange
+            = if (isCellListChange) TextRange(event.offset, event.offset + event.newLength)
+              else TextRange(cellOfChange.textRange.startOffset, cellOfChange.textRange.endOffset + delta)
+
+        // heuristic on cell move event
+        if (isCellListChange) {
+            val currentTime = System.currentTimeMillis()
+            val last = lastAdjustedRange
+            if (currentTime - lastTimeCellChangeActionPerformed < 200 && last != null) {
+                properTextRange = properTextRange.union(last).let { TextRange(it.startOffset, it.endOffset + delta) }
+            } else {
+                lastTimeCellChangeActionPerformed = System.currentTimeMillis()
+            }
+            lastAdjustedRange = properTextRange
+        } else lastAdjustedRange = null
+
         runReadAction {
             val injectedPsi = injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first
 
             injectedPsi?.putUserData(ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY, null)
             //psiCells[0]?.putCopyableUserData(ANALYZER_PASS_INJECTION_IGNORED_HOST_KEY, true)
             document.putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE,
-                                 TextRange(cellOfChange.textRange.startOffset, cellOfChange.textRange.endOffset + delta))
+                                 properTextRange)
             document.putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)
             document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
             cellOfChange.putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostHintsRegistry, mutableMapOf())
@@ -81,10 +101,28 @@ class ImpatientNotebookChangeListener(
         return if ((oldFragment.contains(" md")
                     || newFragment.contains(" md")) && (newFragment.isEmpty() || oldFragment.isEmpty()))
             NotebookChangeEventsType.MARKDOWN_CONVERSION_EVENT
-        else if (oldFragment.contains("#%%") || newFragment.contains("#%%"))
-            NotebookChangeEventsType.CELL_LIST_CHANGE_EVENT
+        else if (newFragment.contains("#%%") && oldFragment.isEmpty())
+            NotebookChangeEventsType.CELL_LIST_ADD_EVENT
+        else if (oldFragment.contains("#%%") && newFragment.isEmpty())
+            NotebookChangeEventsType.CELL_LIST_DELETE_EVENT
         else NotebookChangeEventsType.REGULAR
     }
+
+    private fun invokeHeuristicOnCellMove(targetTextRange: TextRange): TextRange {
+        val currentTime = System.currentTimeMillis()
+        var range = targetTextRange
+        val last = lastAdjustedRange
+        if (currentTime - lastTimeCellChangeActionPerformed < 200 && last != null) {
+            range = range.union(last)
+        } else {
+            lastTimeCellChangeActionPerformed = System.currentTimeMillis()
+        }
+        lastAdjustedRange = range
+        return range
+    }
+
+    private fun NotebookChangeEventsType.isCellListChangeEvent(): Boolean =
+        this == NotebookChangeEventsType.CELL_LIST_ADD_EVENT || this == NotebookChangeEventsType.CELL_LIST_DELETE_EVENT
 
     override fun beforeDocumentChange(event: DocumentEvent) {
         handleNotebookChangeEvent(event)
