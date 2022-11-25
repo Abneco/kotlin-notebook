@@ -77,7 +77,7 @@ internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
 
 internal fun PsiElement?.isInsideKotlinNotebookFile(): Boolean {
     val virtualFile = (this?.containingFile?.virtualFile as? VirtualFileWindow)?.delegate ?: return false
-    return (isBackedNotebook(virtualFile) && virtualFile.isKotlinNotebook)
+    return virtualFile.isKotlinNotebook
 }
 
 internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {

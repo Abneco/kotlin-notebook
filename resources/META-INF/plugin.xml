@@ -62,6 +62,11 @@
         <findUsagesHandlerFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookFindUsagesHandlerFactory" order="first" />
         <!--<lang.elementManipulator forClass="com.intellij.lang.elementManipulator" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementManipulator"/>-->
 
+        <psi.referenceContributor
+                id="kotlinNotebookFilePathReferenceContributor"
+                language="kotlin"
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookFilePathReferenceProvider"/>
+
         <projectConfigurable groupId="tools"
                              bundle="messages.JupyterKotlinBundle"
                              key="kotlin.jupyter.settings.title"
