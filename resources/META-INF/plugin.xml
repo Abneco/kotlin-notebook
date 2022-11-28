@@ -61,6 +61,7 @@
         <!--<renameHandler implementation= />-->
         <findUsagesHandlerFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookFindUsagesHandlerFactory" order="first" />
         <!--<lang.elementManipulator forClass="com.intellij.lang.elementManipulator" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementManipulator"/>-->
+        <formattingService implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.KotlinNotebookFileFormattingService"/>
 
         <psi.referenceContributor
                 id="kotlinNotebookFilePathReferenceContributor"

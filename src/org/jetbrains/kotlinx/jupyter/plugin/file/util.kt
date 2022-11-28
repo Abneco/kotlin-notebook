@@ -4,10 +4,12 @@ package org.jetbrains.kotlinx.jupyter.plugin.file
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
@@ -15,6 +17,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.util.parentOfType
 import com.intellij.testFramework.LightVirtualFile
 import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.isScript
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
@@ -72,8 +75,16 @@ private fun getLanguageFromOriginalFile(file: VirtualFile): Language? {
 internal fun PsiFile?.getNotebookCellList() =
     (this?.children?.first() as? JupyterNotebook)?.psiCellList
 
+internal fun List<PsiLanguageInjectionHost>.getInjectedKtFiles(injectedLanguageManager: InjectedLanguageManager) =
+    this.mapNotNull { h ->
+        injectedLanguageManager.getInjectedPsiFiles(h)?.firstOrNull { it.first is KtFile }?.first as? KtFile
+    }
+
 internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
     PsiManager.getInstance(project).findFile(this)
+
+internal fun Document.toPsiFile(project: Project): PsiFile? =
+    PsiDocumentManager.getInstance(project).getPsiFile(this)
 
 internal fun PsiElement?.isInsideKotlinNotebookFile(): Boolean {
     val virtualFile = (this?.containingFile?.virtualFile as? VirtualFileWindow)?.delegate ?: return false
