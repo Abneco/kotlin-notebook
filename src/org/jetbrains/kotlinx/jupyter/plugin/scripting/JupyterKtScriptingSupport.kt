@@ -61,7 +61,11 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     }
 
     override fun afterUpdate() {
-        ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()
+        try {
+            ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()
+        } catch (ex: Exception) {
+            logger<JupyterKtScriptingSupport>().warn("Post-update: error occurred during reloading of script configurations: ${ex.cause}")
+        }
     }
 
     override fun collectConfigurations(builder: ScriptClassRootsBuilder) {
