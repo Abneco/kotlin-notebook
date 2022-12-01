@@ -7,10 +7,13 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.roots.OrderRootType
+import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
@@ -251,6 +254,25 @@ class JupyterCompilerPerFileService(
         }
     }
 
+    private fun addAsPermanentLibrary(classpath: List<String>, sourceClasspath: List<String>) {
+        runWriteAction {
+            val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(projectService.project)
+
+            val libraryName = "Permanent Script Dependencies"
+            val newLibrary = libraryTable.getLibraryByName(libraryName)
+                ?: libraryTable.createLibrary(libraryName)
+
+            val model = newLibrary.modifiableModel
+            for (path in classpath) {
+                model.addRoot("file://$path", OrderRootType.CLASSES)
+            }
+            for (path in sourceClasspath) {
+                model.addRoot("file://$path", OrderRootType.SOURCES)
+            }
+            model.commit()
+        }
+    }
+
     fun addCompiledSnippet(
         snippetMetadata: EvaluatedSnippetMetadata,
         cellSource: String,
@@ -284,8 +306,15 @@ class JupyterCompilerPerFileService(
                         add(File(it))
                     }
                 })
-                _sourceRoots.addSnippet(listOf(lineSourcesDir.toFile()) + snippetMetadata.newSources.map { File(it) })
+                _sourceRoots.addSnippet(ArrayList<File>(snippetMetadata.newSources.size + 1).apply {
+                    add(lineSourcesDir.toFile())
+                    snippetMetadata.newSources.forEach {
+                        add(File(it))
+                    }
+                })
                 additionalDefaultImports.addSnippet(snippetMetadata.newImports)
+
+                addAsPermanentLibrary(snippetMetadata.newClasspath, snippetMetadata.newSources)
 
                 val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
                 val classLoader = URLClassLoader(
