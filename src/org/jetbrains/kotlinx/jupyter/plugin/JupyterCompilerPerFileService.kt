@@ -325,9 +325,9 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    fun codeRanges(cell: JupyterPsiCell): CellRanges {
+    fun codeRanges(cell: JupyterPsiCell): CodeRangesResult {
         val code = getCellCode(cell)
-        if (looksLikeReplCommand(code)) return CellRanges(null, listOf(TextRange(0, cell.textLength)))
+        if (looksLikeReplCommand(code)) return CodeRangesResult(CellRanges(null, listOf(TextRange(0, cell.textLength))), true)
 
         val text = cell.text
         val magicIntervals = magicsProcessor.magicsIntervals(text)
@@ -339,8 +339,13 @@ class JupyterCompilerPerFileService(
         val codeRanges = magicsProcessor.codeIntervals(text, magicIntervals).toRanges()
         val magicRanges = magicIntervals.toRanges()
 
-        return CellRanges(codeRanges, magicRanges)
+        return CodeRangesResult(CellRanges(codeRanges, magicRanges), false)
     }
+
+    data class CodeRangesResult(
+        val ranges: CellRanges,
+        val isCommand: Boolean,
+    )
 
     private fun clearPreviousSnippets() {
         _currentClasspath.clear()

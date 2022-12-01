@@ -110,7 +110,7 @@ class KotlinKernelProcessService {
             "HmacSHA256",
             "x-x-x",
             scriptJars,
-            homeDirectory,
+            null,
             null,
             "kotlin_notebook"
         )

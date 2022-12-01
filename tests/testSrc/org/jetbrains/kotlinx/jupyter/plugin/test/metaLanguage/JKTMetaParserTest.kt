@@ -23,4 +23,9 @@ class JKTMetaParserTest : ParsingTestCase("", JKTMetaFileType.EXTENSION, JKTMeta
     fun testSimpleParsing() {
         doTest(true)
     }
+
+    @Test
+    fun testCommandsParsing() {
+        doTest(true)
+    }
 }

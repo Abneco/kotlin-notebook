@@ -5,31 +5,34 @@ import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.openapi.application.invokeLater
 import com.intellij.psi.PsiElement
-import com.intellij.psi.impl.source.tree.LeafPsiElement
-import com.intellij.psi.util.elementType
+import com.intellij.psi.util.findParentOfType
+import com.intellij.refactoring.suggested.startOffset
 import org.jetbrains.kotlinx.jupyter.common.ReplCommand
 import org.jetbrains.kotlinx.jupyter.common.ReplEnum
 import org.jetbrains.kotlinx.jupyter.common.ReplLineMagic
-import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.libraries.ResourceLibraryDescriptorsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.lang.psi.JKTMetaStatement
 import org.jetbrains.kotlinx.jupyter.plugin.lang.util.replEnum
-import org.jetbrains.kotlinx.jupyter.plugin.psi.meta.JKTMetaStatementId
-import org.jetbrains.kotlinx.jupyter.plugin.psi.meta.JKTMetaTypes
-import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage
+import java.util.concurrent.CountDownLatch
 
 class JKTMetaCompletionContributor : CompletionContributor() {
+    private val magicsCompleter = KotlinNotebookMagicsCompleter(ResourceLibraryDescriptorsProvider())
+
     override fun fillCompletionVariants(parameters: CompletionParameters, result: CompletionResultSet) {
         super.fillCompletionVariants(parameters, result)
 
         val position = parameters.position
-        if (position.elementType == JKTMetaTypes.ID) {
-            fillIdVariants(result, position.findMetaStatement()?.replEnum)
-        } else {
-            val original = parameters.originalPosition ?: return
-            if (original.containingFile?.virtualFile?.isKotlinNotebook != true) return
+        val metaStatement = position.findMetaStatement() ?: return
 
-            fillIdVariants(result, original.findMetaStatementEnumInJupyter())
+        when(val replEnum = metaStatement.replEnum) {
+            ReplCommand -> fillIdVariants(result, replEnum)
+            ReplLineMagic -> fillMagicVariants(
+                metaStatement.text,
+                parameters.offset - metaStatement.startOffset,
+                result
+            )
         }
     }
 
@@ -41,29 +44,18 @@ class JKTMetaCompletionContributor : CompletionContributor() {
         result.stopHere()
     }
 
-    companion object {
-        private const val oneLongCommand = "%useLatestDescriptors"
-        private const val metaIDCommand = ':'
-        private const val metaMagicCommand = '%'
-
-        fun PsiElement.findMetaStatementEnumInJupyter(): ReplEnum<*>? {
-            if (language != JupyterLanguage) return null
-            // consider only leaf nodes to get text from
-            if (this !is LeafPsiElement) return null
-            val elemText = text
-            if (elemText.length > oneLongCommand.length) return null
-            return when (elemText[0]) {
-              metaIDCommand -> {
-                  ReplCommand
-              }
-              metaMagicCommand -> ReplLineMagic
-              else -> null
-            }
+    private fun fillMagicVariants(statementText: String, cursor: Int, result: CompletionResultSet) {
+        val replyNotifier = CountDownLatch(1)
+        invokeLater {
+            magicsCompleter.process(statementText, cursor, result)
+            replyNotifier.countDown()
         }
+        replyNotifier.await()
+    }
+
+    companion object {
         fun PsiElement.findMetaStatement(): JKTMetaStatement? {
-            if (this is JKTMetaStatement) return this
-            if (this is JKTMetaStatementId || this.parent is JKTMetaStatementId) return this.parent.findMetaStatement()
-            return null
+            return findParentOfType<JKTMetaStatement>(strict = false)
         }
 
         private fun ReplEnum<*>.toLookupElements(): List<LookupElement> {

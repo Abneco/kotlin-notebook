@@ -50,7 +50,7 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
             hosts.removeIf { it !in actualNotebookCells }
             hosts.add(element)
 
-            val ranges = compilerService.codeRanges(element)
+            val (ranges, isCommand) = compilerService.codeRanges(element)
 
             fun List<TextRange>.inject(language: Language, extension: String) {
                 registrar.startInjecting(
@@ -66,7 +66,7 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
 
             try {
                 ranges.codeRanges?.inject(kotlinLanguage, projectCompilerService.fileExtension)
-                if ((ranges.magicRanges?.size ?: 0) > 1) {
+                if ((ranges.magicRanges?.size ?: 0) > 1 || isCommand) {
                     ranges.magicRanges?.inject(metaLanguage, JKTMetaFileType.EXTENSION)
                 }
             } catch (_: RuntimeException) {} // ignore concurrent change in NotebookVirtualFileSystem
