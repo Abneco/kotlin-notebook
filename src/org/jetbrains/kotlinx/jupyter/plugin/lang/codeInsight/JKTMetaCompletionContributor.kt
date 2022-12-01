@@ -5,7 +5,7 @@ import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
-import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.findParentOfType
 import com.intellij.refactoring.suggested.startOffset
@@ -46,7 +46,7 @@ class JKTMetaCompletionContributor : CompletionContributor() {
 
     private fun fillMagicVariants(statementText: String, cursor: Int, result: CompletionResultSet) {
         val replyNotifier = CountDownLatch(1)
-        invokeLater {
+        ApplicationManager.getApplication().executeOnPooledThread {
             magicsCompleter.process(statementText, cursor, result)
             replyNotifier.countDown()
         }
