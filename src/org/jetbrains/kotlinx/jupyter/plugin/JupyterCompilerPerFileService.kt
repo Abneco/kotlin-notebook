@@ -207,6 +207,7 @@ class JupyterCompilerPerFileService(
                 provider.getKernelJars()
             }?.let { jarsDir ->
                 _currentClasspath.addInitial(jarsDir.allJarsFromDir())
+                _sourceRoots.addInitial(KotlinKernelProcessService.getInstance().libSourcesJars)
                 kernelJarsAdded = true
             }
         }

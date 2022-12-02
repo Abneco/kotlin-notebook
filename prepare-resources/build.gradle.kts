@@ -72,11 +72,28 @@ val testOutDir = classesDir.resolve("test/intellij.kotlin.jupyter.tests").apply 
 
 val resourcesDir = projectDir.parentFile.resolve("resources")
 
+val zipTasks = mutableListOf<Task>()
+
 listOf(kernel, ideLib, lib).forEach { conf ->
     val capName = conf.name.capitalized()
     val dirName = buildDir.resolve(conf.name)
     val zipFileName = conf.name + ".zip"
     val zipPathInResources = resourcesDir.resolve(zipFileName)
+
+    val zipSrcFileName = conf.name + "Sources.zip"
+    val zipSrcPathInResources = resourcesDir.resolve(zipSrcFileName)
+
+    val componentIds = conf.incoming.resolutionResult.allDependencies.map { it.from.id }
+    @Suppress("UnstableApiUsage")
+    val sourceRequestResult = dependencies.createArtifactResolutionQuery()
+        .forComponents(componentIds)
+        .withArtifacts(JvmLibrary::class.java, SourcesArtifact::class.java)
+        .execute()
+    val sourcesArtifacts = sourceRequestResult.resolvedComponents.flatMap {
+        it.getArtifacts(SourcesArtifact::class).mapNotNull { res ->
+            (res as? ResolvedArtifactResult)?.file
+        }
+    }
 
     val copyTask = tasks.create<Copy>("copy$capName") {
         from(conf)
@@ -97,6 +114,15 @@ listOf(kernel, ideLib, lib).forEach { conf ->
         destinationDirectory.set(resourcesDir)
     }
 
+    val zipSourcesTask = tasks.create<Zip>("zipSources$capName") {
+        dependsOn(tasks.build)
+
+        from(sourcesArtifacts)
+        archiveFileName.set(zipSrcPathInResources.toString())
+        outputs.file(archiveFileName.get())
+        destinationDirectory.set(resourcesDir)
+    }
+
     val copyZipToProdTask = tasks.create<Copy>("copyZipProdOut$capName") {
         dependsOn(zipTask)
 
@@ -113,11 +139,14 @@ listOf(kernel, ideLib, lib).forEach { conf ->
     val copyZipTask = tasks.create("copyZip$capName") {
         // dependsOn(copyZipToTestTask, copyZipToProdTask)
         dependsOn(zipTask)
+        dependsOn(zipSourcesTask)
     }
+
+    zipTasks.add(copyZipTask)
 }
 
 val prepareKernelResources: Task by tasks.creating {
-    dependsOn("copyZipKernel", "copyZipLib", "copyZipIdeLib")
+    dependsOn(zipTasks)
 
     doLast {
         println("Resources folder after preparing resources:")

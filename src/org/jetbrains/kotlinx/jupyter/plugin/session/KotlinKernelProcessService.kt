@@ -42,6 +42,10 @@ class KotlinKernelProcessService {
         homeDirectory.resolve("ideLib")
     }
 
+    private val libSourcesJarsDir by lazy {
+        homeDirectory.resolve("libSources")
+    }
+
     private val kernelJars by lazy {
         val kernelJarsDir = homeDirectory.resolve("kernel")
         unzipResourceSafe("kernel.zip", kernelJarsDir)
@@ -52,6 +56,9 @@ class KotlinKernelProcessService {
     }
     val ideJars by lazy {
         unzipResourceSafe("ideLib.zip", ideScriptJarsDir)
+    }
+    val libSourcesJars by lazy {
+        unzipResourceSafe("libSources.zip", libSourcesJarsDir)
     }
 
     private fun unzipResourceSafe(resourceZipPath: String, dir: File): List<File> {
