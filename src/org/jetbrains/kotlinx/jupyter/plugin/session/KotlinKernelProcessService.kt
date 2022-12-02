@@ -21,6 +21,7 @@ import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.absolute
 
 @Service(Service.Level.APP)
 class KotlinKernelProcessService {
@@ -125,8 +126,10 @@ class KotlinKernelProcessService {
             javaExec.absolutePath
         } ?: "java"
 
+        val workingDir = notebookPath.absolute().parent
+
         val extraJavaArgs = buildList {
-            add("-Duser.dir=${notebookPath.parent.systemIndependentPath}")
+            add("-Duser.dir=${workingDir.systemIndependentPath}/")
             KernelVmCommandCustomizer.addVmArguments(this)
         }
 
@@ -138,6 +141,7 @@ class KotlinKernelProcessService {
         )
 
         val cmd = GeneralCommandLine(cmdArgs)
+            .withWorkDirectory(workingDir.toFile())
 
         return KotlinKernelProcessHandler(
             cmd, kernelConfig, notebookPath,
