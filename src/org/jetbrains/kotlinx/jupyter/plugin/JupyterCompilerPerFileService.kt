@@ -209,8 +209,11 @@ class JupyterCompilerPerFileService(
                 val sourcesJars = KotlinKernelProcessService.getInstance().libSourcesJars
                 _currentClasspath.addInitial(jars)
                 _sourceRoots.addInitial(sourcesJars)
-                ApplicationManager.getApplication().invokeLaterOnWriteThread {
-                    addAsPermanentLibrary(jars.map { it.absolutePath }, sourcesJars.map { it.absolutePath })
+                val application = ApplicationManager.getApplication()
+                if (!application.isUnitTestMode) {
+                    application.invokeLaterOnWriteThread {
+                        addAsPermanentLibrary(jars.map { it.absolutePath }, sourcesJars.map { it.absolutePath })
+                    }
                 }
                 kernelJarsAdded = true
             }
