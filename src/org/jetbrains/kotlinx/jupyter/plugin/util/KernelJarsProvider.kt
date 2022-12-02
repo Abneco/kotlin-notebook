@@ -3,6 +3,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.util
 
 import java.io.File
 
-fun interface KernelJarsDirProvider {
-    fun getKernelJars(): File?
+fun interface KernelJarsProvider {
+    fun getKernelJars(): List<File>
 }

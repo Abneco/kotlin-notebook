@@ -46,7 +46,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptC
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
 import org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookPluginUpdater
-import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsDirProvider
+import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
 import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
@@ -123,14 +123,14 @@ class JupyterCompilerPerFileService(
     }
 
     private var kernelJarsAdded: Boolean = false
-    private val kernelJarsProviders: Collection<KernelJarsDirProvider> = listOf(
-        KernelJarsDirProvider {
+    private val kernelJarsProviders: Collection<KernelJarsProvider> = listOf(
+        KernelJarsProvider {
             // return getPluginResource("kernelJars")
-            KotlinKernelProcessService.getInstance().scriptClassPathDir
+            KotlinKernelProcessService.getInstance().ideJars
         },
-        KernelJarsDirProvider {
+        KernelJarsProvider {
             LOG.warn("Bad way only worked...")
-            getSession()?.detectKotlinKernelJarsDir()
+            getSession()?.detectKotlinKernelJarsDir()?.allJarsFromDir().orEmpty()
         },
     )
 
@@ -205,9 +205,13 @@ class JupyterCompilerPerFileService(
         compileLock.write {
             kernelJarsProviders.firstNotNullOfOrNull { provider ->
                 provider.getKernelJars()
-            }?.let { jarsDir ->
-                _currentClasspath.addInitial(jarsDir.allJarsFromDir())
-                _sourceRoots.addInitial(KotlinKernelProcessService.getInstance().libSourcesJars)
+            }?.let { jars ->
+                val sourcesJars = KotlinKernelProcessService.getInstance().libSourcesJars
+                _currentClasspath.addInitial(jars)
+                _sourceRoots.addInitial(sourcesJars)
+                ApplicationManager.getApplication().invokeLaterOnWriteThread {
+                    addAsPermanentLibrary(jars.map { it.absolutePath }, sourcesJars.map { it.absolutePath })
+                }
                 kernelJarsAdded = true
             }
         }

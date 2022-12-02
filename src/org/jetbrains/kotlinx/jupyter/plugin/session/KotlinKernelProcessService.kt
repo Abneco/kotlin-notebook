@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.session
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
@@ -35,15 +36,7 @@ class KotlinKernelProcessService {
 
     private val portsGenerator = KernelPortsGenerator(32768, 65536)
     private val homeDirectory by lazy {
-        Files.createTempDirectory("kernelProcess").toFile()
-    }
-
-    private val ideScriptJarsDir by lazy {
-        homeDirectory.resolve("ideLib")
-    }
-
-    private val libSourcesJarsDir by lazy {
-        homeDirectory.resolve("libSources")
+        PathManager.getSystemDir().resolve("kotlin-jupyter").resolve("kernelProcess").toFile()
     }
 
     private val kernelJars by lazy {
@@ -55,9 +48,11 @@ class KotlinKernelProcessService {
         unzipResourceSafe("lib.zip", scriptJarsDir)
     }
     val ideJars by lazy {
+        val ideScriptJarsDir = homeDirectory.resolve("ideLib")
         unzipResourceSafe("ideLib.zip", ideScriptJarsDir)
     }
     val libSourcesJars by lazy {
+        val libSourcesJarsDir = homeDirectory.resolve("libSources")
         unzipResourceSafe("libSources.zip", libSourcesJarsDir)
     }
 
@@ -95,15 +90,15 @@ class KotlinKernelProcessService {
             }
         }
 
-        ZipUtil.extract(zipPath, dir.toPath(), null)
+        val files = mutableListOf<File>()
+        ZipUtil.extract(zipPath, dir.toPath()) { fileDir, fileName ->
+            val file = fileDir.resolve(fileName)
+            files.add(file)
+            true
+        }
         Files.delete(zipPath)
 
-        return dir.walkTopDown().filter { it.isFile }.toList()
-    }
-
-    val scriptClassPathDir: File get() {
-        ideJars
-        return ideScriptJarsDir
+        return files
     }
 
     fun create(
