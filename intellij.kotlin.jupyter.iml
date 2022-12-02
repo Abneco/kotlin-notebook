@@ -73,5 +73,6 @@
     <orderEntry type="module" module-name="kotlin.base.project-structure" />
     <orderEntry type="module" module-name="intellij.java.impl" />
     <orderEntry type="module" module-name="intellij.notebooks.visualization" />
+    <orderEntry type="module" module-name="kotlin.refactorings.common" />
   </component>
 </module>
