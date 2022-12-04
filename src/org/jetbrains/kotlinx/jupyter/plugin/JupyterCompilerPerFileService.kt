@@ -271,11 +271,17 @@ class JupyterCompilerPerFileService(
                 ?: libraryTable.createLibrary(libraryName)
 
             val model = newLibrary.modifiableModel
+            fun addPath(path: String, rootType: OrderRootType) {
+                if (path.endsWith(".jar")) {
+                    model.addRoot("file://$path", rootType)
+                }
+            }
+
             for (path in classpath) {
-                model.addRoot("file://$path", OrderRootType.CLASSES)
+                addPath(path, OrderRootType.CLASSES)
             }
             for (path in sourceClasspath) {
-                model.addRoot("file://$path", OrderRootType.SOURCES)
+                addPath(path, OrderRootType.SOURCES)
             }
             model.commit()
         }
