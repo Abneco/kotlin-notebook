@@ -2,6 +2,8 @@
 package org.jetbrains.kotlinx.jupyter.plugin.file
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+import com.intellij.codeInsight.daemon.impl.HighlightInfo
+import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.injection.InjectedLanguageManager
@@ -17,10 +19,12 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showKernelRestart
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
@@ -67,10 +71,59 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
 }
 
+// might be done in HighlightingVisitorAdapter
+internal class NotebookSelectedCellErrorsFilter: HighlightInfoFilter {
+    private lateinit var host: PsiLanguageInjectionHost
+    private var completeAnalysisHost: PsiLanguageInjectionHost? = null
+    private var lastPsiFile: PsiFile? = null
+    override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {
+        if (file == null || !file.name.endsWith(notebookInjectedFileExtension)) return true
+        val manager = InjectedLanguageManager.getInstance(file.project)
+        if (file != lastPsiFile) {
+            lastPsiFile = file
+            if (!tryUpdateCurrentInjectedFileTarget(file, manager)) return true
+        }
+        if (!::host.isInitialized && !tryUpdateCurrentInjectedFileTarget(file, manager)) {
+            return true
+        }
+        // comment for default behaviour
+        //if (highlightInfo.severity == HighlightSeverity.ERROR
+        //    && host != completeAnalysisHost) return false
+
+        return true
+    }
+
+    private fun tryUpdateCurrentInjectedFileTarget(file: PsiFile, manager: InjectedLanguageManager): Boolean {
+        host = manager.getInjectionHost(file) ?: return false
+        val topLevel = manager.getTopLevelFile(file)
+        completeAnalysisHost = JupyterCompilerService.getForFile(file.project, topLevel.virtualFile).completeAnalysisCellTarget
+        return true
+    }
+}
+
+
+
+
+class NotebookHighlightingCustomizer(private val project: Project, private val vFile: VirtualFile) {
+    private val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
+    var targetCell: PsiLanguageInjectionHost? = null
+
+    fun isHostTargetedForAnalysis(file: PsiFile): Boolean =
+        injectedLanguageManager.getInjectionHost(file) == targetCell
+
+    fun computeRestrictedRangeWithPrevTargetOrProvided(providedChangeRange: TextRange, delta: Int): TextRange {
+        val cell = targetCell
+        return if (cell == null) providedChangeRange
+        else providedChangeRange.union(cell.textRange).grown(delta)
+    }
+}
+
+
+
 internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(rhs)
 
 internal object NotebookHighlightingUtilityObject {
-    private const val notebookInjectedFileExtension: String = "jupyter.kts"
+    const val notebookInjectedFileExtension: String = "jupyter.kts"
     private const val notebookInjectedMetaFileExtension: String = "juktm"
     private const val notebookDocumentFileExtension: String = "ipynb"
 
@@ -90,9 +143,9 @@ internal object NotebookHighlightingUtilityObject {
     fun isLooksLikeNotebookFile(file: PsiFile): Boolean =
         file.fileType.defaultExtension == notebookDocumentFileExtension
 
-    fun Document.invalidateStateAfterCellExecution() {
+    fun Document.invalidateStateAfterCellExecution(executedCell: PsiLanguageInjectionHost? = null) {
         putUserData(RenamingEnclosedRange, null)
-        putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE, null)
+        putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE, executedCell?.textRange)
         putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)
         putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
     }

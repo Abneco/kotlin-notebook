@@ -86,6 +86,9 @@ internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
 internal fun Document.toPsiFile(project: Project): PsiFile? =
     PsiDocumentManager.getInstance(project).getPsiFile(this)
 
+internal fun PsiFile.toDocument(project: Project): Document? =
+    PsiDocumentManager.getInstance(project).getDocument(this)
+
 internal fun PsiElement?.isInsideKotlinNotebookFile(): Boolean {
     val virtualFile = (this?.containingFile?.virtualFile as? VirtualFileWindow)?.delegate ?: return false
     return virtualFile.isKotlinNotebook

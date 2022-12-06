@@ -6,7 +6,6 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
-import org.jetbrains.kotlinx.jupyter.plugin.editor.NotebookCaretListener
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterEditorCustomizer
@@ -20,7 +19,7 @@ object KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
         editor.putUserData(FoldingUpdate.INJECTED_CODE_FOLDING_ENABLED, false)
         if (editor.isJupyter) {
             val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-            editor.caretModel.addCaretListener(NotebookCaretListener(project, virtualFile, editor), compilerService)
+            //editor.caretModel.addCaretListener(NotebookCaretListener(project, virtualFile, editor), compilerService)
         }
     }
 }

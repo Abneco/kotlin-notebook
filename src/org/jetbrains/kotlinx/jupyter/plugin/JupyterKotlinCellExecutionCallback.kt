@@ -77,7 +77,11 @@ class JupyterKotlinCellExecutionCallback(
 
     override fun onExecuteReply(message: JupyterMessage) = invokeLater {
         try {
-            val snippetMetadataObject = message.getMetadata("eval_metadata") ?: return@invokeLater
+            val snippetMetadataObject = message.getMetadata("eval_metadata")
+            if (snippetMetadataObject == null) {
+                JupyterCompilerService.getForFile(project, virtualFile).completeAnalysisCellTarget = psiCell
+                return@invokeLater
+            }
             val snippetMetadata: EvaluatedSnippetMetadata
             val deserializationTime = measureTimeMillis {
                 snippetMetadata = snippetMetadataObject.deserialize()
@@ -94,7 +98,7 @@ class JupyterKotlinCellExecutionCallback(
              */
             val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
             compilerService.addCompiledSnippet(snippetMetadata, cellSource)
-
+            compilerService.completeAnalysisCellTarget = psiCell
             updateInjectedCellInfo(snippetMetadata)
         } catch (exception: Throwable) {
             LOG.warn("Kotlin execution callback failed", exception)
@@ -128,7 +132,7 @@ class JupyterKotlinCellExecutionCallback(
                     compilerService.cellOrdinalToClassName[it] = properCompiledClass
                 }
             }
-            FileDocumentManager.getInstance().getDocument(virtualFile)?.invalidateStateAfterCellExecution()
+            FileDocumentManager.getInstance().getDocument(virtualFile)?.invalidateStateAfterCellExecution(null)
             psiCell.putUserData(CELL_CLASS_NAME, properCompiledClass)
         }
     }

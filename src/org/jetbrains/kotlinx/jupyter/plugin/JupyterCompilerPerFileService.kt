@@ -98,6 +98,7 @@ class JupyterCompilerPerFileService(
     private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ContainerUtil.newConcurrentSet() // LoggingList()
     private val scriptingSupport = JupyterKtScriptingSupport.getInstance(projectService.project)
     val cellOrdinalToClassName = mutableMapOf<Int, String>()
+    var completeAnalysisCellTarget: PsiLanguageInjectionHost? = null
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
