@@ -21,6 +21,7 @@ import kotlin.script.experimental.api.ScriptEvaluationConfiguration
 import kotlin.script.experimental.api.asSuccess
 import kotlin.script.experimental.api.fileExtension
 import kotlin.script.experimental.api.refineConfiguration
+import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
 
@@ -67,6 +68,13 @@ class JupyterCompilerService(val project: Project) : Disposable {
                 baseClassLoader(this@JupyterCompilerService::class.java.classLoader)
             }
         }
+    }
+
+    val scriptDefinition by lazy {
+        ScriptDefinition(
+            initialCompileConfiguration,
+            evaluationConfiguration
+        )
     }
 
     val fileExtension: String by lazy {

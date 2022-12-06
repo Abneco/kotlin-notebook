@@ -35,6 +35,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookUsagesContributorFa
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.ReferenceSearchStrategy
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isCompiledCellClassDeclaration
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isItGeneratedNameInsideLambdaCall
+import org.jetbrains.kotlinx.jupyter.plugin.util.switchForScriptsAsEntities
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
@@ -100,10 +101,15 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             val notebookService = JupyterCompilerService.getForFile(project, notebook)
             addTemplateClassesRoots(notebookService.currentClasspath.map { it.absolutePath })
             addSources(notebookService.currentSourceRoots.map { it.absolutePath })
+
+            switchForScriptsAsEntities(
+                on = { notebookService.scripts().forEach { (file, conf) -> add(file, conf) } },
+                off = {}
+            )
         }
     }
 
-    private fun getConfiguration(psiFile: KtFile): ScriptCompilationConfigurationResult? {
+    fun getConfiguration(psiFile: KtFile): ScriptCompilationConfigurationResult? {
         return runReadAction {
             if (!psiFile.isScript()) return@runReadAction null
             val scriptDef = psiFile.findScriptDefinition() ?: return@runReadAction null

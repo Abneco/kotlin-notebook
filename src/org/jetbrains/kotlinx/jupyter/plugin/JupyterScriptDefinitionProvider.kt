@@ -30,12 +30,7 @@ class JupyterScriptDefinitionProvider(project: Project) : ScriptDefinitionsProvi
         baseHostConfiguration: ScriptingHostConfiguration,
         loadedScriptDefinitions: List<ScriptDefinition>
     ): Iterable<ScriptDefinition> {
-        return loadedScriptDefinitions + listOf(
-            ScriptDefinition(
-                projectCompilerService.initialCompileConfiguration,
-                projectCompilerService.evaluationConfiguration
-            )
-        )
+        return loadedScriptDefinitions + projectCompilerService.scriptDefinition
     }
 
     override fun dispose() {

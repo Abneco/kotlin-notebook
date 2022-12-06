@@ -31,6 +31,8 @@ import kotlinx.coroutines.cancel
 import org.jetbrains.kotlin.idea.core.script.ClasspathToVfsConverter
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.util.CodeInterval
@@ -71,6 +73,7 @@ import kotlin.script.experimental.api.dependenciesSources
 import kotlin.script.experimental.api.hostConfiguration
 import kotlin.script.experimental.api.ide
 import kotlin.script.experimental.api.implicitReceivers
+import kotlin.script.experimental.api.valueOrNull
 import kotlin.script.experimental.host.getScriptingClass
 import kotlin.script.experimental.host.with
 import kotlin.script.experimental.jvm.JvmDependency
@@ -93,6 +96,7 @@ class JupyterCompilerPerFileService(
     private val listLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(1)
     private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ContainerUtil.newConcurrentSet() // LoggingList()
+    private val scriptingSupport = JupyterKtScriptingSupport.getInstance(projectService.project)
     val cellOrdinalToClassName = mutableMapOf<Int, String>()
 
     private val classesDir: Path by lazy {
@@ -142,6 +146,25 @@ class JupyterCompilerPerFileService(
 
     private val coroutineScope = CoroutineScope(Job())
     private var previousSessionId: String? = null
+
+    fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
+        return runReadAction {
+            val injectedManager = InjectedLanguageManager.getInstance(projectService.project)
+            readInjectionHosts { hosts ->
+                hosts.flatMap { host ->
+                    injectedManager
+                        .getInjectedPsiFiles(host)
+                        .orEmpty()
+                        .map { it.first }
+                        .filterIsInstance<KtFile>()
+                        .mapNotNull { ktFile ->
+                            val conf = scriptingSupport.getConfiguration(ktFile)?.valueOrNull()
+                            if (conf != null) (ktFile.virtualFile to conf) else null
+                        }
+                }
+            }
+        }
+    }
 
     private fun syncWithSyntaxDaemonAnalyzer() {
         val project = projectService.project
@@ -250,8 +273,8 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    fun readInjectionHosts(readAction: (Collection<PsiLanguageInjectionHost>) -> Unit) {
-        listLock.read {
+    private fun <R> readInjectionHosts(readAction: (Collection<PsiLanguageInjectionHost>) -> R): R {
+        return listLock.read {
             readAction(nbInjectionHosts)
         }
     }
@@ -342,7 +365,7 @@ class JupyterCompilerPerFileService(
                 }
 
                 updateCellsAnalysis()
-                JupyterKtScriptingSupport.getInstance(projectService.project).update()
+                scriptingSupport.update()
             } catch (e: Exception) {
                 LOG.error(e)
             }
