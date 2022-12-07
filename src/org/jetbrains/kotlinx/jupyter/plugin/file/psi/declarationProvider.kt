@@ -19,7 +19,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
-import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.originFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
@@ -32,7 +32,7 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
         val psiFile = sourceElement.containingFile
         val virtualFile = psiFile.virtualFile as? VirtualFileWindow ?: return emptyArray()
         val notebookFile = virtualFile.delegate
-        if (!isBackedNotebook(notebookFile)) return emptyArray()
+        if (!BackedNotebookVirtualFile.isBacked(notebookFile)) return emptyArray()
         sourceElement.reference?.resolve()?.let { return arrayOf(it) }
         val refExpr = sourceElement.getParentOfType<KtReferenceExpression>(true) ?: return emptyArray()
         if (refExpr.references.none { it.resolve() != null } )  return emptyArray()
@@ -85,9 +85,10 @@ internal class NotebookReferencesProvider: ReferenceSearcher {
     override fun collectSearchRequests(parameters: ReferencesSearch.SearchParameters): Collection<Query<out PsiReference>> {
         val virtualFile = parameters.elementToSearch.containingFile?.virtualFile ?: return emptyList()
         if (virtualFile !is VirtualFileWindow) return emptyList()
-        if (!isBackedNotebook(virtualFile) || !virtualFile.isKotlinNotebook) return emptyList()
+        val backedNotebook = BackedNotebookVirtualFile.takeIfBacked(virtualFile)
 
-        if (!parameters.scopeDeterminedByUser.contains(virtualFile.originFile)) return emptyList()
+        if (backedNotebook == null || !virtualFile.isKotlinNotebook) return emptyList()
+        if (!parameters.scopeDeterminedByUser.contains(backedNotebook.originFile)) return emptyList()
         if (parameters.effectiveSearchScope is LocalSearchScope) return emptyList()
 
         return listOf(

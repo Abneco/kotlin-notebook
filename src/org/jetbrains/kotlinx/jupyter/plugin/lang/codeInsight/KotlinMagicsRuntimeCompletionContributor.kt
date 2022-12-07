@@ -15,13 +15,12 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.util.Key
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiFile
 import com.intellij.util.ProcessingContext
 import org.jetbrains.kotlinx.jupyter.messaging.CompleteReply
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
-import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterWebSocketClientClosedException
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
@@ -43,7 +42,7 @@ class KotlinMagicsRuntimeCompletionContributor: CompletionContributor(), DumbAwa
                 val psiFile = parameters.originalFile
                 val notebookVirtualFile = getVirtualFile(psiFile) ?: return
                 val project = psiFile.project
-                val session = JupyterRuntimeService.getInstance(project).getSession(notebookVirtualFile) ?: return
+                val session = JupyterRuntimeService.getInstance(project).getSession(notebookVirtualFile.file) ?: return
 
                 try {
                     if (nonFinishedRequests.getAndIncrement() > 0) return
@@ -78,10 +77,10 @@ class KotlinMagicsRuntimeCompletionContributor: CompletionContributor(), DumbAwa
         })
     }
 
-    fun getVirtualFile(psiFile: PsiFile) : VirtualFile? {
+    fun getVirtualFile(psiFile: PsiFile) : BackedNotebookVirtualFile? {
         val vFile = psiFile.virtualFile
         val originalFile = if (vFile is VirtualFileWindow) vFile.delegate else vFile
-        return takeIfBackedNotebook(originalFile)
+        return originalFile?.let(BackedNotebookVirtualFile::takeIfBacked)
     }
 
     fun sendCompleteRequestMessage(session: JupyterNotebookSession, result: CompletionResultSet, otherResults: Set<CompletionResult>,

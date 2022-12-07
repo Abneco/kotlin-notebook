@@ -26,6 +26,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObje
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 
@@ -96,7 +97,7 @@ internal class NotebookSelectedCellErrorsFilter: HighlightInfoFilter {
     private fun tryUpdateCurrentInjectedFileTarget(file: PsiFile, manager: InjectedLanguageManager): Boolean {
         host = manager.getInjectionHost(file) ?: return false
         val topLevel = manager.getTopLevelFile(file)
-        completeAnalysisHost = JupyterCompilerService.getForFile(file.project, topLevel.virtualFile).completeAnalysisCellTarget
+        completeAnalysisHost = JupyterCompilerService.getForFile(file.project, BackedNotebookVirtualFile(topLevel.virtualFile)).completeAnalysisCellTarget
         return true
     }
 }

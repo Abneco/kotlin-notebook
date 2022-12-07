@@ -7,20 +7,19 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
-import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import kotlin.math.min
 
-class NotebookCaretListener(private val project: Project, private val vFile: VirtualFile,
+class NotebookCaretListener(private val project: Project, private val vFile: BackedNotebookVirtualFile,
                             private val editor: Editor): CaretListener {
-    private val psiFile = vFile.toPsiFile(project)
+    private val psiFile = vFile.file.toPsiFile(project)
     private var lastCellInd: Int = -1
     private var lastCell: PsiLanguageInjectionHost? = null
     private var lastTimeCellFocusChanged = 0L
@@ -29,7 +28,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Vir
     private val doc = psiFile?.toDocument(project)
 
     init {
-        assert(isBackedNotebook(vFile))
         assert(psiFile != null)
     }
 

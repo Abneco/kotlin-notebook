@@ -10,7 +10,7 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaFileType
 import org.jetbrains.kotlinx.jupyter.plugin.lang.JupyterKtMetaLanguage
-import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.RAW_CELL_SUFFIX
@@ -37,9 +37,9 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
         if (element !is JupyterPsiCellImpl) return
 
         val containingFile = element.originalElement.containingFile
-        val virtualFile = takeIfBackedNotebook(containingFile.originalFile.virtualFile) ?: return
+        val virtualFile = containingFile.originalFile.virtualFile?.let(BackedNotebookVirtualFile::takeIfBacked) ?: return
 
-        if (!virtualFile.isKotlinNotebook) return
+        if (!virtualFile.file.isKotlinNotebook) return
         if (element.cellMarker.text.matches(NON_CODE_CELL_REGEX)) return
 
         val compilerService = projectCompilerService.getOrCreate(virtualFile)

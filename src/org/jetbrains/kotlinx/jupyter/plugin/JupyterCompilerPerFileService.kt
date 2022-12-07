@@ -51,7 +51,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookPluginUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
-import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
@@ -89,7 +89,7 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
  * @property projectService Project service that owns this sub-service
  */
 class JupyterCompilerPerFileService(
-    private val virtualFile: VirtualFile,
+    private val virtualFile: BackedNotebookVirtualFile,
     private val projectService: JupyterCompilerService,
 ) : Disposable {
     private val compileLock = ReentrantReadWriteLock()
@@ -185,16 +185,14 @@ class JupyterCompilerPerFileService(
     }
 
     init {
-        assertBackedNotebook(virtualFile)
-
         updateClasspathWithExternalDependencies()
         Disposer.register(projectService, this)
         //syncWithSyntaxDaemonAnalyzer()
 
         val doc = runReadAction {
-            FileDocumentManager.getInstance().getDocument(virtualFile)!!
+            FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
         }
-        if (virtualFile.isKotlinNotebook) {
+        if (virtualFile.file.isKotlinNotebook) {
             doc.addDocumentListener(
                 ImpatientNotebookChangeListener(projectService.project, virtualFile),
                 projectService

@@ -8,7 +8,6 @@ import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
-import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
@@ -16,7 +15,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObje
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_FILE_ANALYSIS_DONE_KEY
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
-import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 
 internal enum class NotebookChangeEventsType {
@@ -28,22 +27,18 @@ internal enum class NotebookChangeEventsType {
 
 class ImpatientNotebookChangeListener(
     private val project: Project,
-    private val virtualFile: VirtualFile
+    private val virtualFile: BackedNotebookVirtualFile
 ): DocumentListener {
-    init {
-        assertBackedNotebook(virtualFile)
-    }
     private val injectedManager = InjectedLanguageManager.getInstance(project)
     private var lastTimeCellChangeActionPerformed = 0L
     private var lastAdjustedRange: TextRange? = null
 
     private fun handleNotebookChangeEvent(event: DocumentEvent) {
-        val file = FileDocumentManager.getInstance().getFile(event.document) ?: return
+        val file = FileDocumentManager.getInstance().getFile(event.document)?.let(::BackedNotebookVirtualFile) ?: return
 
-        assertBackedNotebook(file)
         val (document, psiFile, psiCells) = runReadAction {
-            val d = FileDocumentManager.getInstance().getDocument(file)
-            val psiFile = file.toPsiFile(project)
+            val d = FileDocumentManager.getInstance().getDocument(file.file)
+            val psiFile = file.file.toPsiFile(project)
             val psiCells = psiFile?.getNotebookCellList()
             Triple(d, psiFile, psiCells)
         }

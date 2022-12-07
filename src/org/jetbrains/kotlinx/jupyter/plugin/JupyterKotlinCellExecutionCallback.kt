@@ -6,14 +6,13 @@ import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListWarn
-import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInputRequestMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
@@ -35,14 +34,11 @@ import kotlin.system.measureTimeMillis
  */
 class JupyterKotlinCellExecutionCallback(
     private val project: Project,
-    private val virtualFile: VirtualFile, // backed
+    private val virtualFile: BackedNotebookVirtualFile,
     private val psiCell: JupyterPsiCell,
     private val cellSource: String,
 ) : JupyterExecutionCallback {
 
-    init {
-      assertBackedNotebook(virtualFile)
-    }
 
     override val channel: JupyterMessageChannel
         get() = JupyterMessageChannel.ANY
@@ -132,7 +128,7 @@ class JupyterKotlinCellExecutionCallback(
                     compilerService.cellOrdinalToClassName[it] = properCompiledClass
                 }
             }
-            FileDocumentManager.getInstance().getDocument(virtualFile)?.invalidateStateAfterCellExecution(null)
+            FileDocumentManager.getInstance().getDocument(virtualFile.file)?.invalidateStateAfterCellExecution(null)
             psiCell.putUserData(CELL_CLASS_NAME, properCompiledClass)
         }
     }

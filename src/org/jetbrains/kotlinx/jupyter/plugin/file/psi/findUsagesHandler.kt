@@ -30,7 +30,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookGotoDeclarationProvider.Companion.tryGetPreviousValidResolvedResult
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.tryResolveCompiledDeclaration
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
-import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 internal fun isCompiledCellClassDeclaration(element: PsiElement?): Boolean =
@@ -45,7 +45,7 @@ internal class NotebookFindUsagesHandlerFactory : FindUsagesHandlerFactory() {
                         return isCompiledCellClassDeclaration(element) || isFromJVMDeclaration(element)
 
         val notebookFile = fileWindow.delegate
-        val isProperNotebook = isBackedNotebook(notebookFile) && notebookFile.isKotlinNotebook
+        val isProperNotebook = BackedNotebookVirtualFile.isBacked(notebookFile) && notebookFile.isKotlinNotebook
         return isProperNotebook && PsiTreeUtil.getParentOfType(element, KtReferenceExpression::class.java) == null
     }
 

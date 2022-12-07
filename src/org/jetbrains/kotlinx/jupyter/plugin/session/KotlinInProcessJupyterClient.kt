@@ -10,7 +10,7 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.resetSessionMetaInformation
-import org.jetbrains.plugins.notebooks.core.impl.file.findBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelDoesNotExistsException
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
@@ -69,13 +69,13 @@ class KotlinInProcessJupyterClient(
             onBeforeStartNotify = { showKotlinNotebookServerManagementToolWindow(project, it) },
             onKernelTerminated = { _, _ ->
                 val file = VirtualFileManager.getInstance().findFileByNioPath(notebookPath) ?: return@create
-                val notebookFile = findBackedNotebook(file) ?: return@create
+                val notebookFile = BackedNotebookVirtualFile.find(file) ?: return@create
                 val service = JupyterCompilerService.getInstance(project).get(notebookFile) ?: return@create
                 service.clear()
                 if (!project.isDisposed && afterRestart) {
                     runReadAction {
-                        FileDocumentManager.getInstance().getDocument(notebookFile)?.let {
-                            resetSessionMetaInformation(it, notebookFile, project)
+                        FileDocumentManager.getInstance().getDocument(notebookFile.file)?.let {
+                            resetSessionMetaInformation(it, notebookFile.file, project)
                         }
                     }
                     afterRestart = false 

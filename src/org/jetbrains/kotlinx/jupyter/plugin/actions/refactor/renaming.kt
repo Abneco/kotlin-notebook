@@ -51,6 +51,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUs
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookGotoDeclarationProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 import java.awt.Component
@@ -202,7 +203,7 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
                 && isNotebookRefactoringSupported(psiElement)
                 && (isCompiledElem
                 || cell?.getUserData(CELL_CLASS_NAME) != null
-                || JupyterCompilerService.getForFile(psiFile.project, virtualFile).cellOrdinalToClassName[ind] != null)
+                || JupyterCompilerService.getForFile(psiFile.project, BackedNotebookVirtualFile(virtualFile)).cellOrdinalToClassName[ind] != null)
                 //|| cell?.getUserData(CELL_CLASS_NAME) != null)
     }
 

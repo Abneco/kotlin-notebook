@@ -13,8 +13,7 @@ import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
-import org.jetbrains.plugins.notebooks.core.impl.file.assertBackedNotebook
-import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.io.File
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
@@ -55,7 +54,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
                 beforeCompiling { (sourceCode, config, _) ->
                     val virtualFile = (sourceCode as? KtFileScriptSource)?.virtualFile
                     val fileDelegate = (virtualFile as? VirtualFileWindow)?.delegate
-                    val notebookFile = takeIfBackedNotebook(fileDelegate) ?: return@beforeCompiling config.asSuccess()
+                    val notebookFile = fileDelegate?.let(BackedNotebookVirtualFile::takeIfBacked) ?: return@beforeCompiling config.asSuccess()
                     getOrCreate(notebookFile).handleBeforeCompiling(sourceCode, config).asSuccess()
                 }
             }
@@ -87,14 +86,12 @@ class JupyterCompilerService(val project: Project) : Disposable {
 
     val language = Language.findLanguageByID("kotlin")!!
 
-    fun getOrCreate(virtualFile: VirtualFile): JupyterCompilerPerFileService {
-        assertBackedNotebook(virtualFile)
-        return mapping.getOrPut(virtualFile) { JupyterCompilerPerFileService(virtualFile, this) }
+    fun getOrCreate(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
+        return mapping.getOrPut(virtualFile.file) { JupyterCompilerPerFileService(virtualFile, this) }
     }
 
-    fun get(virtualFile: VirtualFile): JupyterCompilerPerFileService? {
-        assertBackedNotebook(virtualFile)
-        return mapping[virtualFile]
+    fun get(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService? {
+        return mapping[virtualFile.file]
     }
 
     override fun dispose() {
@@ -103,8 +100,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
     companion object {
         fun getInstance(project: Project) = project.service<JupyterCompilerService>()
 
-        fun getForFile(project: Project, virtualFile: VirtualFile): JupyterCompilerPerFileService {
-            assertBackedNotebook(virtualFile)
+        fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
             return getInstance(project).getOrCreate(virtualFile)
         }
     }

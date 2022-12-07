@@ -22,7 +22,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.retrieveElementUnderCaret
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
-import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 // todo: convert to lambda
@@ -126,7 +126,7 @@ internal object NotebookUsagesContributorFactory : NotebookUsagesContributor() {
     fun invokeElementUsagesContributor(targetElementInfo: TargetElementInfo, scope: SearchScope): Array<PsiElement>? {
         val (element, isFromCompiledCellClass, isFromByteCode) = targetElementInfo
         val notebookFile = extractNotebookFileFromScope(element, scope) ?: return null
-        if (!isBackedNotebook(notebookFile) || !notebookFile.isKotlinNotebook) return null
+        if (!BackedNotebookVirtualFile.isBacked(notebookFile) || !notebookFile.isKotlinNotebook) return null
 
         val isFromDSLibs = isFromDataFrameLibInternals(element)
         //println("Would try to resolve! $element")

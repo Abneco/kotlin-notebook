@@ -36,6 +36,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.psi.ReferenceSearchStrategy
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isCompiledCellClassDeclaration
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isItGeneratedNameInsideLambdaCall
 import org.jetbrains.kotlinx.jupyter.plugin.util.switchForScriptsAsEntities
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
@@ -77,7 +78,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         val editors = editorManager?.allEditors ?: return
 
         val openFiles = editors.mapNotNull { (it as? JupyterFileEditor)?.getNotebookFile() }
-        val notebookFiles = openFiles.filter { it.fileType is JupyterFileType }
+        val notebookFiles = openFiles.mapNotNull { if (it.fileType is JupyterFileType) BackedNotebookVirtualFile(it) else null }
         builder.addRootsFromNotebooks(notebookFiles)
     }
 
@@ -96,7 +97,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         return updater.isInTransaction()
     }
 
-    private fun ScriptClassRootsBuilder.addRootsFromNotebooks(notebooks: Collection<VirtualFile>) {
+    private fun ScriptClassRootsBuilder.addRootsFromNotebooks(notebooks: Collection<BackedNotebookVirtualFile>) {
         for (notebook in notebooks) {
             val notebookService = JupyterCompilerService.getForFile(project, notebook)
             addTemplateClassesRoots(notebookService.currentClasspath.map { it.absolutePath })
@@ -128,7 +129,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         val foundData = mutableSetOf<PsiElement>()
         val asPsiFile = PsiManager.getInstance(project).findFile(virtualFile)
         val notebookCells = (asPsiFile?.children?.first() as? JupyterNotebook)?.psiCellList ?: return null
-        val ordinalMap = JupyterCompilerService.getForFile(project, virtualFile).cellOrdinalToClassName
+        val ordinalMap = JupyterCompilerService.getForFile(project, BackedNotebookVirtualFile(virtualFile)).cellOrdinalToClassName
         val injectionManager = InjectedLanguageManager.getInstance(project)
         val targetHost = injectionManager.getInjectionHost(target.containingFile)
         val targetClassName = runIf(searchStrategy == ReferenceSearchStrategy.REFERENCES) {

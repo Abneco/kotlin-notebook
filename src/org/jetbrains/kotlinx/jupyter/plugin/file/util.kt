@@ -20,9 +20,8 @@ import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.isScript
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
-import org.jetbrains.plugins.notebooks.core.impl.file.isBackedNotebook
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
-import org.jetbrains.plugins.notebooks.core.impl.file.takeIfBackedNotebook
 import org.jetbrains.plugins.notebooks.jupyter.NOTEBOOK_LANGUAGE
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
@@ -43,14 +42,15 @@ fun isKotlinNotebookInjectedFile(file: PsiFile?): Boolean {
 
 
 private val VirtualFile.notebookLanguage: Language? get(){
-    if (isBackedNotebook(this)) {
-        return notebook.language
+    BackedNotebookVirtualFile.takeIfBacked(this)?.let {
+        return it.notebook.language
     }
 
     return if (this is LightVirtualFile) {
         // It's copy of either notebook or origin file being modified
-        val notebookFile = takeIfBackedNotebook(originalFile)
-            ?: takeIfBackedNotebook((originalFile as? LightVirtualFile)?.originalFile)
+        val notebookFile =
+            originalFile?.let(BackedNotebookVirtualFile::takeIfBacked)
+            ?: (originalFile as? LightVirtualFile)?.originalFile?.let(BackedNotebookVirtualFile::takeIfBacked)
         notebookFile?.notebook?.language
             ?: originalFile?.getUserData(NOTEBOOK_LANGUAGE)
             ?: getLanguageFromOriginalFile(this)
