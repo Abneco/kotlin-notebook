@@ -5,7 +5,6 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.impl.DefaultHighlightInfoProcessor
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter
-import com.intellij.codeInsight.daemon.impl.HighlightingSessionImpl
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.HighlightSeverity
@@ -15,18 +14,16 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.CodeInsightColors
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.NlsSafe
-import com.intellij.openapi.util.ProperTextRange
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.impl.source.tree.injected.changesHandler.range
-import com.intellij.refactoring.suggested.endOffset
-import com.intellij.refactoring.suggested.startOffset
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
@@ -64,7 +61,8 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                 cells?.get(it)
             }?.textRange
             val possibleRange = document.getUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE)
-            if (cellInd != null && possibleRange?.endOffset != cellInd.endOffset) cellInd else possibleRange
+            //if (cellInd != null && possibleRange?.endOffset != cellInd.endOffset) cellInd else possibleRange
+            possibleRange
         }?.let {
             TextRange(it.startOffset, it.endOffset + 1)
         }
@@ -81,7 +79,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
     }
 
 }
-
+@Deprecated("Scheduled for removal")
 internal class NotebookSelectedCellErrorsFilter: HighlightInfoFilter {
     private lateinit var host: PsiLanguageInjectionHost
     private var completeAnalysisHost: PsiLanguageInjectionHost? = null
@@ -120,7 +118,7 @@ class NotebookHighlightingCustomizer(private val project: Project, private val v
     private val highlightInfoProcessor = DefaultHighlightInfoProcessor()
     var targetCell: PsiLanguageInjectionHost? = null
     //private val session = HighlightingSessionImpl
-    private var editor = FileEditorManager.getInstance(project).getSelectedEditor(vFile)
+    private var editor: FileEditor? = null
 
     fun isHostTargetedForAnalysis(file: PsiFile): Boolean =
         injectedLanguageManager.getInjectionHost(file) == targetCell
@@ -137,22 +135,15 @@ class NotebookHighlightingCustomizer(private val project: Project, private val v
         toRecycleHighlights[host]?.addAll(infos)
     }
 
-    fun recycleHighlights(injectedFile: PsiFile) {
-        val host = injectedLanguageManager.getInjectionHost(injectedFile) ?: return
+    fun recycleHighlights(injectedFile: PsiFile?, injectionHost: PsiLanguageInjectionHost? = null) {
+        if (injectedFile == null && injectionHost == null) return
+        val host = (injectionHost ?: injectedLanguageManager.getInjectionHost(injectedFile!!)) ?: return
         val infos = toRecycleHighlights[host] ?: return
         if (editor == null) {
             editor = FileEditorManager.getInstance(project).getSelectedEditor(vFile)
         }
-        if (editor == null) {
-            println("Editor is null!")
-        }
-
-        HighlightingSessionImpl.runInsideHighlightingSession(injectedFile, null,
-                                                                           ProperTextRange.create(host.startOffset, host.endOffset),
-                                                                           false) {
-            infos.forEach { it.highlighter.setTextAttributesKey(CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES) }
-        }
-
+        val file = injectedLanguageManager.getTopLevelFile(host) ?: return
+        infos.forEach { it.highlighter?.setTextAttributesKey(CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES) }
         infos.clear()
     }
 
@@ -161,39 +152,44 @@ class NotebookHighlightingCustomizer(private val project: Project, private val v
 
 class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
     private val project = injectedFile.project
-    lateinit var targetHost: PsiLanguageInjectionHost
-    private var completeAnalysisHost: PsiLanguageInjectionHost? = null
+    private lateinit var targetHost: PsiLanguageInjectionHost
     private val injectedManager = InjectedLanguageManager.getInstance(project)
-
+    private lateinit var highlightingCustomizer: NotebookHighlightingCustomizer
+    private val completeAnalysisRange = NotebookHighlightingUtilityObject.getCompleteAnalysisRangeForWholeNotebook(injectedFile)
     init {
       assert(tryUpdateCurrentInjectedFileTarget())
     }
+    var isShouldHighlightErrors: Boolean = false
 
     private fun tryUpdateCurrentInjectedFileTarget(): Boolean {
         targetHost = injectedManager.getInjectionHost(injectedFile) ?: return false
-        val topLevel = injectedManager.getTopLevelFile(injectedFile)
-        completeAnalysisHost = JupyterCompilerService.getForFile(project, topLevel.virtualFile).completeAnalysisCellTarget
+        isShouldHighlightErrors = completeAnalysisRange?.contains(targetHost.textRange) ?:
+                (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange,
+                                                                                      targetHost.textRange.shiftLeft(1)))
+
+
         return true
     }
 
-    val isShouldHighlightErrors = completeAnalysisHost == injectedManager.getInjectionHost(injectedFile)
-
     fun updateHolderOrProvided(holder: HighlightInfoHolder) {
-        if (isShouldHighlightErrors) return
+        if (isShouldHighlightErrors) {
+            return
+        }
         val toAdd = mutableListOf<HighlightInfo>()
         if (holder.hasErrorResults()) {
             for (i in 0 until holder.size()) {
                 val el = holder[i]
                 if (el.severity == HighlightSeverity.ERROR) {
                     toAdd.add(HighlightInfoManipulator.convertToShadowedDeclaration(el))
-                    //filteredErrors.add(el)
                 } else {
                     toAdd.add(el)
                 }
             }
             holder.clear()
             holder.addAll(toAdd)
+            assert(!holder.hasErrorResults())
         }
+        //highlightingCustomizer.errorHighlightsAdded(injectedFile, toAdd)
     }
 
 }
@@ -215,7 +211,19 @@ internal object NotebookHighlightingUtilityObject {
     val NOTEBOOK_FILE_ANALYSIS_DONE_KEY = Key.create<Boolean>("notebook.file.analysis.done")
 
     internal val RenamingEnclosedRange: Key<TextRange> = Key.create("notebook.after.rename.changed.range")
+    internal val CompleteHighlightingRange: Key<TextRange> = Key.create("notebook.document.errors.analysis.range")
     internal val NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX: Key<Int> = Key.create("notebook.document.target.cell.ind")
+
+    fun getCompleteAnalysisRangeForWholeNotebook(injectedFile: PsiFile): TextRange? {
+        val project = injectedFile.project
+        val manager = InjectedLanguageManager.getInstance(project)
+        val topLevelFile = manager.getTopLevelFile(injectedFile)
+        return topLevelFile.toDocument(project)?.let {
+            synchronized(it) {
+                it.getUserData(CompleteHighlightingRange)
+            }
+        }
+    }
 
     fun isLooksLikeNotebookDocument(document: Document): Boolean =
         FileDocumentManager.getInstance().getFile(document)?.extension == notebookDocumentFileExtension
@@ -226,6 +234,7 @@ internal object NotebookHighlightingUtilityObject {
     fun Document.invalidateStateAfterCellExecution(executedCell: PsiLanguageInjectionHost? = null) {
         putUserData(RenamingEnclosedRange, null)
         putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE, executedCell?.textRange)
+        putUserData(CompleteHighlightingRange, executedCell?.textRange)
         putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)
         putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
     }

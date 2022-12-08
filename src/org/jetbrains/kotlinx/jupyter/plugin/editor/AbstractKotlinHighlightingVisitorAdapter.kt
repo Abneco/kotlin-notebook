@@ -17,7 +17,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.InjectedFileHighlightingHelper
 
 abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingVisitor>(
     private val visitorFactory: (AnnotationHolder) -> T,
-    private val isShouldUseNewHighlighting: Boolean = false // 0 if default
+    private val isShouldUseNewHighlighting: Boolean = true // 0 if default
 ) : HighlightVisitor {
     private var visitor: T? = null
     private var highlightingHelper: InjectedFileHighlightingHelper? = null

@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_FILE_ANALYSIS_DONE_KEY
@@ -83,6 +84,7 @@ class ImpatientNotebookChangeListener(
             //psiCells[0]?.putCopyableUserData(ANALYZER_PASS_INJECTION_IGNORED_HOST_KEY, true)
             document.putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE,
                                  properTextRange)
+            document.putUserData(CompleteHighlightingRange, properTextRange)
             document.putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)
             document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
             cellOfChange.putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostHintsRegistry, mutableMapOf())

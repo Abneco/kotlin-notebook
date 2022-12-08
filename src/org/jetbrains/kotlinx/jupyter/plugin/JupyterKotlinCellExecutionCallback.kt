@@ -8,6 +8,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
@@ -75,7 +76,9 @@ class JupyterKotlinCellExecutionCallback(
         try {
             val snippetMetadataObject = message.getMetadata("eval_metadata")
             if (snippetMetadataObject == null) {
-                JupyterCompilerService.getForFile(project, virtualFile).completeAnalysisCellTarget = psiCell
+                FileDocumentManager.getInstance().getDocument(virtualFile.file)?.putUserData(
+                    CompleteHighlightingRange, psiCell.textRange
+                )
                 return@invokeLater
             }
             val snippetMetadata: EvaluatedSnippetMetadata
@@ -94,7 +97,6 @@ class JupyterKotlinCellExecutionCallback(
              */
             val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
             compilerService.addCompiledSnippet(snippetMetadata, cellSource)
-            compilerService.completeAnalysisCellTarget = psiCell
             updateInjectedCellInfo(snippetMetadata)
         } catch (exception: Throwable) {
             LOG.warn("Kotlin execution callback failed", exception)
@@ -128,7 +130,7 @@ class JupyterKotlinCellExecutionCallback(
                     compilerService.cellOrdinalToClassName[it] = properCompiledClass
                 }
             }
-            FileDocumentManager.getInstance().getDocument(virtualFile.file)?.invalidateStateAfterCellExecution(null)
+            FileDocumentManager.getInstance().getDocument(virtualFile.file)?.invalidateStateAfterCellExecution(psiCell)
             psiCell.putUserData(CELL_CLASS_NAME, properCompiledClass)
         }
     }
