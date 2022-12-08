@@ -100,7 +100,6 @@ class JupyterCompilerPerFileService(
     val cellOrdinalToClassName = mutableMapOf<Int, String>()
     @Deprecated("For removal")
     var completeAnalysisCellTarget: PsiLanguageInjectionHost? = null
-    //val highlightingCustomizer = NotebookHighlightingCustomizer(projectService.project, virtualFile)
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")

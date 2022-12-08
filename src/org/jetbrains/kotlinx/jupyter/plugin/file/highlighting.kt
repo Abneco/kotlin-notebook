@@ -4,7 +4,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.file
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.impl.DefaultHighlightInfoProcessor
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
-import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.HighlightSeverity
@@ -26,14 +25,11 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.impl.source.tree.injected.changesHandler.range
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showKernelRestart
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
-import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 
@@ -79,37 +75,6 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
     }
 
 }
-@Deprecated("Scheduled for removal")
-internal class NotebookSelectedCellErrorsFilter: HighlightInfoFilter {
-    private lateinit var host: PsiLanguageInjectionHost
-    private var completeAnalysisHost: PsiLanguageInjectionHost? = null
-    private var lastPsiFile: PsiFile? = null
-    override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {
-        if (file == null || !file.name.endsWith(notebookInjectedFileExtension)) return true
-        val manager = InjectedLanguageManager.getInstance(file.project)
-        if (file != lastPsiFile) {
-            lastPsiFile = file
-            if (!tryUpdateCurrentInjectedFileTarget(file, manager)) return true
-        }
-        if (!::host.isInitialized && !tryUpdateCurrentInjectedFileTarget(file, manager)) {
-            return true
-        }
-        // comment for default behaviour
-        //if (highlightInfo.severity == HighlightSeverity.ERROR) return false
-            //&& host != completeAnalysisHost) return false
-
-        return true
-    }
-
-    private fun tryUpdateCurrentInjectedFileTarget(file: PsiFile, manager: InjectedLanguageManager): Boolean {
-        host = manager.getInjectionHost(file) ?: return false
-        val topLevel = manager.getTopLevelFile(file)
-        completeAnalysisHost = JupyterCompilerService.getForFile(file.project, BackedNotebookVirtualFile(topLevel.virtualFile)).completeAnalysisCellTarget
-        return true
-    }
-}
-
-
 
 
 class NotebookHighlightingCustomizer(private val project: Project, private val vFile: VirtualFile) {
