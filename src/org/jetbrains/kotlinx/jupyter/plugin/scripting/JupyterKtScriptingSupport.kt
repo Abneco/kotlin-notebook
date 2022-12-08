@@ -8,6 +8,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.RecursionManager
 import com.intellij.openapi.vfs.VirtualFile
@@ -66,7 +67,11 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         try {
             ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()
         } catch (ex: Exception) {
-            logger<JupyterKtScriptingSupport>().warn("Post-update: error occurred during reloading of script configurations: ${ex.cause}")
+            if (ex is ProcessCanceledException) {
+                ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()
+            } else {
+                logger<JupyterKtScriptingSupport>().warn("Post-update: error occurred during reloading of script configurations: ${ex.cause}")
+            }
         }
     }
 
