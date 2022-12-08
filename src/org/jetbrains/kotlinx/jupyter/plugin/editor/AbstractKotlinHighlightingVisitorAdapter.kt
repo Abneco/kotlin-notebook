@@ -13,11 +13,14 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtilBase
 import org.jetbrains.kotlin.idea.base.highlighting.visitor.AbstractHighlightingVisitor
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlinx.jupyter.plugin.file.InjectedFileHighlightingHelper
 
 abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingVisitor>(
     private val visitorFactory: (AnnotationHolder) -> T,
+    private val isShouldUseNewHighlighting: Boolean = false // 0 if default
 ) : HighlightVisitor {
     private var visitor: T? = null
+    private var highlightingHelper: InjectedFileHighlightingHelper? = null
 
     override fun suitableForFile(file: PsiFile): Boolean {
         return file is KtFile && InjectedLanguageUtilBase.getHighlightTokens(file) != null
@@ -40,9 +43,21 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
                 visitor = visitorFactory(annoHolder)
                 action.run()
             }
+
+            if (isShouldUseNewHighlighting) {
+                prepareForFileAndAdjust(file, holder)
+            }
+
             return true
         } finally {
             visitor = null
         }
+    }
+
+    private fun prepareForFileAndAdjust(injectedFile: PsiFile, holder: HighlightInfoHolder) {
+        if (highlightingHelper == null || highlightingHelper?.injectedFile != injectedFile) {
+            highlightingHelper = InjectedFileHighlightingHelper(injectedFile)
+        }
+        highlightingHelper?.updateHolderOrProvided(holder)
     }
 }

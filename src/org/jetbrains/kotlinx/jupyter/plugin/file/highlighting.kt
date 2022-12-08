@@ -2,21 +2,31 @@
 package org.jetbrains.kotlinx.jupyter.plugin.file
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+import com.intellij.codeInsight.daemon.impl.DefaultHighlightInfoProcessor
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter
+import com.intellij.codeInsight.daemon.impl.HighlightingSessionImpl
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
+import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.colors.CodeInsightColors
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.NlsSafe
+import com.intellij.openapi.util.ProperTextRange
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
+import com.intellij.psi.impl.source.tree.injected.changesHandler.range
+import com.intellij.refactoring.suggested.endOffset
+import com.intellij.refactoring.suggested.startOffset
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
@@ -72,7 +82,6 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
 }
 
-// might be done in HighlightingVisitorAdapter
 internal class NotebookSelectedCellErrorsFilter: HighlightInfoFilter {
     private lateinit var host: PsiLanguageInjectionHost
     private var completeAnalysisHost: PsiLanguageInjectionHost? = null
@@ -88,8 +97,8 @@ internal class NotebookSelectedCellErrorsFilter: HighlightInfoFilter {
             return true
         }
         // comment for default behaviour
-        //if (highlightInfo.severity == HighlightSeverity.ERROR
-        //    && host != completeAnalysisHost) return false
+        //if (highlightInfo.severity == HighlightSeverity.ERROR) return false
+            //&& host != completeAnalysisHost) return false
 
         return true
     }
@@ -107,7 +116,11 @@ internal class NotebookSelectedCellErrorsFilter: HighlightInfoFilter {
 
 class NotebookHighlightingCustomizer(private val project: Project, private val vFile: VirtualFile) {
     private val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
+    private val toRecycleHighlights = mutableMapOf<PsiLanguageInjectionHost, MutableList<HighlightInfo>>()
+    private val highlightInfoProcessor = DefaultHighlightInfoProcessor()
     var targetCell: PsiLanguageInjectionHost? = null
+    //private val session = HighlightingSessionImpl
+    private var editor = FileEditorManager.getInstance(project).getSelectedEditor(vFile)
 
     fun isHostTargetedForAnalysis(file: PsiFile): Boolean =
         injectedLanguageManager.getInjectionHost(file) == targetCell
@@ -117,6 +130,72 @@ class NotebookHighlightingCustomizer(private val project: Project, private val v
         return if (cell == null) providedChangeRange
         else providedChangeRange.union(cell.textRange).grown(delta)
     }
+
+    fun errorHighlightsAdded(injectedFile: PsiFile, infos: Collection<HighlightInfo>) {
+        val host = injectedLanguageManager.getInjectionHost(injectedFile) ?: return
+        toRecycleHighlights.putIfAbsent(host, mutableListOf())
+        toRecycleHighlights[host]?.addAll(infos)
+    }
+
+    fun recycleHighlights(injectedFile: PsiFile) {
+        val host = injectedLanguageManager.getInjectionHost(injectedFile) ?: return
+        val infos = toRecycleHighlights[host] ?: return
+        if (editor == null) {
+            editor = FileEditorManager.getInstance(project).getSelectedEditor(vFile)
+        }
+        if (editor == null) {
+            println("Editor is null!")
+        }
+
+        HighlightingSessionImpl.runInsideHighlightingSession(injectedFile, null,
+                                                                           ProperTextRange.create(host.startOffset, host.endOffset),
+                                                                           false) {
+            infos.forEach { it.highlighter.setTextAttributesKey(CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES) }
+        }
+
+        infos.clear()
+    }
+
+    // make a separate service
+}
+
+class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
+    private val project = injectedFile.project
+    lateinit var targetHost: PsiLanguageInjectionHost
+    private var completeAnalysisHost: PsiLanguageInjectionHost? = null
+    private val injectedManager = InjectedLanguageManager.getInstance(project)
+
+    init {
+      assert(tryUpdateCurrentInjectedFileTarget())
+    }
+
+    private fun tryUpdateCurrentInjectedFileTarget(): Boolean {
+        targetHost = injectedManager.getInjectionHost(injectedFile) ?: return false
+        val topLevel = injectedManager.getTopLevelFile(injectedFile)
+        completeAnalysisHost = JupyterCompilerService.getForFile(project, topLevel.virtualFile).completeAnalysisCellTarget
+        return true
+    }
+
+    val isShouldHighlightErrors = completeAnalysisHost == injectedManager.getInjectionHost(injectedFile)
+
+    fun updateHolderOrProvided(holder: HighlightInfoHolder) {
+        if (isShouldHighlightErrors) return
+        val toAdd = mutableListOf<HighlightInfo>()
+        if (holder.hasErrorResults()) {
+            for (i in 0 until holder.size()) {
+                val el = holder[i]
+                if (el.severity == HighlightSeverity.ERROR) {
+                    toAdd.add(HighlightInfoManipulator.convertToShadowedDeclaration(el))
+                    //filteredErrors.add(el)
+                } else {
+                    toAdd.add(el)
+                }
+            }
+            holder.clear()
+            holder.addAll(toAdd)
+        }
+    }
+
 }
 
 
@@ -168,5 +247,24 @@ internal object NotebookHighlightingUtilityObject {
         invokeLater {
             psiFile?.let { DaemonCodeAnalyzer.getInstance(project).restart(it) }
         }
+    }
+}
+
+
+internal object HighlightInfoManipulator {
+    @NlsSafe
+    private const val shadowedSymbolDescription = "Not yet provided symbol"
+    private val shadowedSymbolSeverity = HighlightInfo.convertSeverity(HighlightSeverity.INFORMATION)
+    fun convertToShadowedDeclaration(info: HighlightInfo): HighlightInfo {
+        val n = HighlightInfo.newHighlightInfo(shadowedSymbolSeverity)
+            .range(info.range)
+            .description(shadowedSymbolDescription)
+            .textAttributes(CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES)
+            .unescapedToolTip(shadowedSymbolDescription)
+            .needsUpdateOnTyping(info.needUpdateOnTyping())
+            .group(0)
+        return if (info.isAfterEndOfLine)
+                    n.endOfLine().createUnconditionally()
+                else n.createUnconditionally()
     }
 }

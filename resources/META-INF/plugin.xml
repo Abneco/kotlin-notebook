@@ -32,7 +32,6 @@
         <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.notifications.NotebookLocationNotificationProvider"/>
         <fileIconPatcher implementation="org.jetbrains.kotlinx.jupyter.plugin.file.JupyterKotlinIconPatcher"/>
         <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.BeforeResolveHighlightingVisitorAdapter"/>
-        <daemon.highlightInfoFilter implementation="org.jetbrains.kotlinx.jupyter.plugin.file.NotebookSelectedCellErrorsFilter"/>
         <formatting.injectedOptions implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinInjectedFormattingOptionsProvider"/>
 
         <fileType name="Jupyter Kotlin meta language"
