@@ -24,6 +24,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.impl.source.tree.injected.changesHandler.range
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.editor.fixers.range
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showKernelRestart
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
@@ -37,7 +38,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
     private val notebookCodeUtility = NotebookHighlightingUtilityObject
     private val dummyTextChangeRange = TextRange(0, 0)
 
-    override fun reduceRange(file: PsiFile, editor: Editor): TextRange? {
+    override fun reduceRange(file: PsiFile, editor: Editor): Collection<TextRange>? {
         if (!notebookCodeUtility.isLooksLikeNotebookFile(file)) return null
 
         val jupyterFile = file as? JupyterFile ?: return null
@@ -60,7 +61,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             //if (cellInd != null && possibleRange?.endOffset != cellInd.endOffset) cellInd else possibleRange
             possibleRange
         }?.let {
-            TextRange(it.startOffset, it.endOffset + 1)
+            listOf(TextRange(it.startOffset, it.endOffset + 1))
         }
     }
 
@@ -129,9 +130,10 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
     private fun tryUpdateCurrentInjectedFileTarget(): Boolean {
         targetHost = injectedManager.getInjectionHost(injectedFile) ?: return false
         isShouldHighlightErrors = completeAnalysisRange?.contains(targetHost.textRange) ?:
-                (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange,
-                                                                                      targetHost.textRange.shiftLeft(1)))
-
+                (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange, targetHost.textRange.shiftLeft(1)))
+        if (isShouldHighlightErrors) {
+            println("Should highlight errors for ${injectedFile.name} with range: ${targetHost?.range}")
+        } else println("should not for ${injectedFile.name} with range: ${targetHost?.range}")
 
         return true
     }
