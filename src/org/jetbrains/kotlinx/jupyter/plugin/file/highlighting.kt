@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showKernelRestart
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
@@ -52,6 +53,10 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             val afterRenaming = document.getUserData(RenamingEnclosedRange)
             if (afterRenaming != null) {
                 return@synchronized afterRenaming
+            }
+            val severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
+            if (severalUpdates?.isNotEmpty() == true) {
+                return severalUpdates
             }
 
             val cellInd = document.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)?.let { // notebook file is already rebuild
@@ -172,6 +177,8 @@ internal object NotebookHighlightingUtilityObject {
 
     @JvmField
     val NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE = Key.create<TextRange>("notebook.document.ignored.range")
+    // to unify
+    val NotebookDocumentTargetRanges = Key.create<Collection<TextRange>>("notebook.document.target.ranges")
     @JvmField
     val ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY: Key<HighlightInfoHolder> = Key.create("injected.element.pass.info.holder")
     @JvmField
@@ -200,6 +207,7 @@ internal object NotebookHighlightingUtilityObject {
 
     fun Document.invalidateStateAfterCellExecution(executedCell: PsiLanguageInjectionHost? = null) {
         putUserData(RenamingEnclosedRange, null)
+        putUserData(NotebookDocumentTargetRanges, null)
         putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE, executedCell?.textRange)
         putUserData(CompleteHighlightingRange, executedCell?.textRange)
         putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)

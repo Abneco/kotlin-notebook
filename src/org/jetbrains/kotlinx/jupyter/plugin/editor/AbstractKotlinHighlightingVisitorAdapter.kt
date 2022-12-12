@@ -55,9 +55,7 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
     }
 
     private fun prepareForFileAndAdjust(injectedFile: PsiFile, holder: HighlightInfoHolder) {
-        if (highlightingHelper == null || highlightingHelper?.injectedFile != injectedFile) {
-            highlightingHelper = InjectedFileHighlightingHelper(injectedFile)
-        }
+        highlightingHelper = InjectedFileHighlightingHelper(injectedFile)
         highlightingHelper?.updateHolderOrProvided(holder)
     }
 }
