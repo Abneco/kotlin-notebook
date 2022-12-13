@@ -5,16 +5,20 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DAEMON_EVENT_TOPIC
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DaemonListener
 import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiLanguageInjectionHost
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
@@ -29,22 +33,21 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
     private var lastCellInd: Int = -1
     private var lastCell: PsiLanguageInjectionHost? = null
     private var prevCell: PsiLanguageInjectionHost? = null
+    private var floatingPrevCell: PsiLanguageInjectionHost? = null
     private var lastTimeCellFocusChanged = 0L
     private val codeAnalyzer = DaemonCodeAnalyzer.getInstance(project)
     private val doc = psiFile?.toDocument(project)
     private var deferredFastUpdate: Job? = null
+    private val updateScope = CoroutineScope(Dispatchers.Default)
 
     init {
         assert(psiFile != null)
         project.messageBus.connect().subscribe(DAEMON_EVENT_TOPIC, object : DaemonListener {
             override fun daemonFinished(fileEditors: MutableCollection<out FileEditor>) {
-                //fileEditors.firstOrNull { it == editor }?.let {
-                //    if (lastCell != null) {
-                //        doc?.putUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE, lastCell?.textRange)
-                //        prevCell = null
-                //    }
-                //}
-                super.daemonFinished(fileEditors)
+                fileEditors.firstOrNull { it == editor }?.let {
+                    floatingPrevCell = null
+                    prevCell = null
+                }
             }
         })
     }
@@ -61,22 +64,21 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastTimeCellFocusChanged < 600) { // might be reworked
             deferredFastUpdate?.cancel()
-            deferredFastUpdate = runBlocking {
+            deferredFastUpdate = updateScope.async {
                 launch {
-                    delay(1400)
-                    lastCell = psiFile.getNotebookCellList()?.get(ord)
-                    doc?.putUserData(NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
-                    doc?.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, lastCell?.textRange)
-                    psiFile?.let {
-                        invokeLater {
-                            codeAnalyzer.restart(it)
-                        }
+                    delay(700)
+                    floatingPrevCell = prevCell
+                    lastCell = runReadAction {
+                        psiFile.getNotebookCellList()?.get(ord)
                     }
+                    val curRange = lastCell?.textRange
+                    performRangedUpdate(curRange, listOfNotNull(curRange, floatingPrevCell?.textRange))
                 }
             }
             //println("should not trigger an event! for cell $ord")
         } else {
             lastCellInd = ord
+            floatingPrevCell = null
             prevCell = lastCell
             lastCell = psiFile.getNotebookCellList()?.let {
                 it[
@@ -86,18 +88,22 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             }
             val prevRange = prevCell?.textRange
             val currRange = lastCell?.textRange
-            doc?.putUserData(NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges, listOfNotNull(prevRange, currRange))
-            doc?.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, lastCell?.textRange)
-            //println("doc: $doc, putting complete analysis as ${lastCell?.textRange}, text: ${lastCell?.text}")
-            psiFile?.let {
-                invokeLater {
-                    codeAnalyzer.restart(it)
-                }
-            }
+            performRangedUpdate(currRange, listOfNotNull(prevRange, currRange))
             //println("Cell focus changed to $ord")
         }
         lastTimeCellFocusChanged = System.currentTimeMillis()
         super.caretPositionChanged(event)
+    }
+
+    private fun performRangedUpdate(completeAnalysisRange: TextRange?, reducedRanges: Collection<TextRange>?) {
+        doc?.putUserData(NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges, reducedRanges)
+        doc?.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, completeAnalysisRange)
+        //println("doc: $doc, putting complete analysis as ${lastCell?.textRange}, text: ${lastCell?.text}")
+        psiFile?.let {
+            invokeLater {
+                codeAnalyzer.restart(it)
+            }
+        }
     }
 }
 
