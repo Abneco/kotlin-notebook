@@ -125,12 +125,15 @@ class JupyterKotlinCellExecutionCallback(
             val properCompiledClass = snippetMetadata.compiledData.sources.firstOrNull()?.fileName?.substringBefore(".kts")?.let { it + "_jupyter" }
             (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
                 ?.putUserData(CELL_CLASS_NAME, properCompiledClass)
-            (psiCell.parent as? JupyterNotebook)?.psiCellList?.indexOf(psiCell)?.let {
-                if (properCompiledClass != null) {
-                    compilerService.cellOrdinalToClassName[it] = properCompiledClass
+            var nextCell: JupyterPsiCell? = null
+            (psiCell.parent as? JupyterNotebook)?.psiCellList?.let { cells ->
+                val executedCellInd = cells.indexOf(psiCell)
+                if (properCompiledClass != null && executedCellInd != -1) {
+                    compilerService.cellOrdinalToClassName[executedCellInd] = properCompiledClass
+                    nextCell = if (executedCellInd + 1 != cells.size) cells[executedCellInd + 1] else null
                 }
             }
-            FileDocumentManager.getInstance().getDocument(virtualFile.file)?.invalidateStateAfterCellExecution(psiCell)
+            FileDocumentManager.getInstance().getDocument(virtualFile.file)?.invalidateStateAfterCellExecution(nextCell) // need to highlight next cell if ok
             psiCell.putUserData(CELL_CLASS_NAME, properCompiledClass)
         }
     }
