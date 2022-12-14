@@ -114,7 +114,6 @@ class NotebookMemberInplaceRenamer(
                         ans.forEach {
                             val el = it.element?.containingFile
                             if (el != null) {
-                                invalidateStoredUserData(el, null)
                                 injectedManager.getInjectionHost(el)?.textRange?.let { host ->
                                     targetHostRanges.add(host)
                                 }
