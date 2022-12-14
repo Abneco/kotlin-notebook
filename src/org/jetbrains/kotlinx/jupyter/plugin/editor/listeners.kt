@@ -20,6 +20,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
@@ -47,6 +48,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                 fileEditors.firstOrNull { it == editor }?.let {
                     floatingPrevCell = null
                     prevCell = null
+                    doc?.putUserData(RenamingEnclosedRange, null)
                 }
             }
         })

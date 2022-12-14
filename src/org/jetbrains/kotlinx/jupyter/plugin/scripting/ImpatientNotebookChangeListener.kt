@@ -82,7 +82,6 @@ class ImpatientNotebookChangeListener(
             val injectedPsi = injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first
 
             injectedPsi?.putUserData(ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY, null)
-            //psiCells[0]?.putCopyableUserData(ANALYZER_PASS_INJECTION_IGNORED_HOST_KEY, true)
             document.putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE,
                                  properTextRange)
             document.putUserData(CompleteHighlightingRange, properTextRange)

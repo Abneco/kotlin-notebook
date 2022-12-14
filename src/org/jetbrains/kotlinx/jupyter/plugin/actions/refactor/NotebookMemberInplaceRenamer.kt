@@ -79,7 +79,7 @@ class NotebookMemberInplaceRenamer(
             private val findUsagesNotebookHandler = KotlinNotebookElementFindUsagesHandler(element)
             private val injectedManager = InjectedLanguageManager.getInstance(element.project)
             private val elementHost = injectedManager.getInjectionHost(element.containingFile)
-            private var adjustmentTextRange: TextRange? = null
+            private var adjustmentTextRange: Collection<TextRange>? = null
 
             override fun performRefactoring(usages: Array<out UsageInfo>) {
                 if (foundRefsSize > 0) {
@@ -107,22 +107,21 @@ class NotebookMemberInplaceRenamer(
                     }
                     if (size == ans.size) {
                         showRerunActionNeeded(myProject)
-                        var (topL, topR) = elementHost?.let {
-                            val r = it.textRange
-                            r.startOffset to r.endOffset
-                        } ?: (0 to 0)
+                        val targetHostRanges = mutableListOf<TextRange>()
+                        elementHost?.textRange?.let {
+                            targetHostRanges.add(it)
+                        }
                         ans.forEach {
                             val el = it.element?.containingFile
                             if (el != null) {
                                 invalidateStoredUserData(el, null)
                                 injectedManager.getInjectionHost(el)?.textRange?.let { host ->
-                                    topL = minOf(topL, host.startOffset)
-                                    topR = maxOf(topR, host.endOffset)
+                                    targetHostRanges.add(host)
                                 }
                             }
                         }
-                        if (topR != 0) {
-                            adjustmentTextRange = TextRange(topL, topR)
+                        if (targetHostRanges.isNotEmpty()) {
+                            adjustmentTextRange = targetHostRanges
                         }
                         return ans.toTypedArray()
                     }

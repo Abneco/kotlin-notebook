@@ -24,7 +24,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.impl.source.tree.injected.changesHandler.range
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.editor.fixers.range
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showKernelRestart
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
@@ -51,8 +50,8 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
         return synchronized(document) {
             val afterRenaming = document.getUserData(RenamingEnclosedRange)
-            if (afterRenaming != null) {
-                return@synchronized afterRenaming
+            if (afterRenaming?.isNotEmpty() == true) {
+                return afterRenaming
             }
             val severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
             if (severalUpdates?.isNotEmpty() == true) {
@@ -136,9 +135,7 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
         targetHost = injectedManager.getInjectionHost(injectedFile) ?: return false
         isShouldHighlightErrors = completeAnalysisRange?.contains(targetHost.textRange) ?:
                 (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange, targetHost.textRange.shiftLeft(1)))
-        if (isShouldHighlightErrors) {
-            println("Should highlight errors for ${injectedFile.name} with range: ${targetHost?.range}")
-        } else println("should not for ${injectedFile.name} with range: ${targetHost?.range}")
+
 
         return true
     }
@@ -176,7 +173,7 @@ internal object NotebookHighlightingUtilityObject {
     private const val notebookDocumentFileExtension: String = "ipynb"
 
     @JvmField
-    val NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE = Key.create<TextRange>("notebook.document.ignored.range")
+    val NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE = Key.create<TextRange>("notebook.document.target.range")
     // to unify
     val NotebookDocumentTargetRanges = Key.create<Collection<TextRange>>("notebook.document.target.ranges")
     @JvmField
@@ -184,7 +181,7 @@ internal object NotebookHighlightingUtilityObject {
     @JvmField
     val NOTEBOOK_FILE_ANALYSIS_DONE_KEY = Key.create<Boolean>("notebook.file.analysis.done")
 
-    internal val RenamingEnclosedRange: Key<TextRange> = Key.create("notebook.after.rename.changed.range")
+    internal val RenamingEnclosedRange: Key<Collection<TextRange>> = Key.create("notebook.after.rename.changed.range")
     internal val CompleteHighlightingRange: Key<TextRange> = Key.create("notebook.document.errors.analysis.range")
     internal val NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX: Key<Int> = Key.create("notebook.document.target.cell.ind")
 
