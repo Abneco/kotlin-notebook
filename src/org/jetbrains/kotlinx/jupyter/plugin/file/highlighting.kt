@@ -178,11 +178,11 @@ internal object NotebookHighlightingUtilityObject {
     val NotebookDocumentTargetRanges = Key.create<Collection<TextRange>>("notebook.document.target.ranges")
     @JvmField
     val ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY: Key<HighlightInfoHolder> = Key.create("injected.element.pass.info.holder")
-    @JvmField
-    val NOTEBOOK_FILE_ANALYSIS_DONE_KEY = Key.create<Boolean>("notebook.file.analysis.done")
 
+    internal val InjectedHostHasErrors = Key.create<AtomicReference<Boolean>>("injected.element.errors.found")
     internal val RenamingEnclosedRange: Key<Collection<TextRange>> = Key.create("notebook.after.rename.changed.range")
     internal val CompleteHighlightingRange: Key<TextRange> = Key.create("notebook.document.errors.analysis.range")
+
     internal val NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX: Key<Int> = Key.create("notebook.document.target.cell.ind")
 
     fun getCompleteAnalysisRangeForWholeNotebook(injectedFile: PsiFile): TextRange? {
@@ -207,7 +207,6 @@ internal object NotebookHighlightingUtilityObject {
         putUserData(NotebookDocumentTargetRanges, null)
         putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE, executedCell?.textRange)
         putUserData(CompleteHighlightingRange, executedCell?.textRange)
-        putUserData(NOTEBOOK_FILE_ANALYSIS_DONE_KEY, null)
         putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
     }
 
