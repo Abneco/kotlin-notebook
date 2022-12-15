@@ -26,12 +26,14 @@ import com.intellij.psi.impl.source.tree.injected.changesHandler.range
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showKernelRestart
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.InjectedHostHasErrors
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
+import java.util.concurrent.atomic.AtomicReference
 
 
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
@@ -145,7 +147,10 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
             return
         }
         val toAdd = mutableListOf<HighlightInfo>()
+        val errorRef = targetHost.getUserData(InjectedHostHasErrors)
+            ?: AtomicReference(true).also { targetHost.putUserData(InjectedHostHasErrors, it) }
         if (holder.hasErrorResults()) {
+            errorRef.set(true) // update after typing?
             for (i in 0 until holder.size()) {
                 val el = holder[i]
                 if (el.severity == HighlightSeverity.ERROR) {
@@ -157,7 +162,7 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
             holder.clear()
             holder.addAll(toAdd)
             assert(!holder.hasErrorResults())
-        }
+        } else errorRef.compareAndSet(true, false)
         //highlightingCustomizer.errorHighlightsAdded(injectedFile, toAdd)
     }
 
