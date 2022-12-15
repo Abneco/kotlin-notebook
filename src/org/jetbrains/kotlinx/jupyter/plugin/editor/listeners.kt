@@ -10,6 +10,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.fileEditor.FileEditor
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiLanguageInjectionHost
@@ -20,6 +21,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
@@ -35,6 +37,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
     private var lastCell: PsiLanguageInjectionHost? = null
     private var prevCell: PsiLanguageInjectionHost? = null
     private var floatingPrevCell: PsiLanguageInjectionHost? = null
+    private var floatingCellInd: Int = -1
     private var lastTimeCellFocusChanged = 0L
     private val codeAnalyzer = DaemonCodeAnalyzer.getInstance(project)
     private val doc = psiFile?.toDocument(project)
@@ -45,10 +48,15 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         assert(psiFile != null)
         project.messageBus.connect().subscribe(DAEMON_EVENT_TOPIC, object : DaemonListener {
             override fun daemonFinished(fileEditors: MutableCollection<out FileEditor>) {
-                fileEditors.firstOrNull { it == editor }?.let {
+                fileEditors.firstOrNull { (it as? TextEditor)?.editor == editor }?.let {
                     floatingPrevCell = null
                     prevCell = null
+                    if (floatingCellInd != -1) { // store ind
+                        lastCellInd = floatingCellInd
+                        floatingCellInd = -1
+                    }
                     doc?.putUserData(RenamingEnclosedRange, null)
+                    doc?.putUserData(NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
                 }
             }
         })
@@ -68,12 +76,21 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             deferredFastUpdate?.cancel()
             deferredFastUpdate = updateScope.async {
                 launch {
-                    delay(700)
-                    floatingPrevCell = prevCell
-                    lastCell = runReadAction {
-                        psiFile.getNotebookCellList()?.get(ord)
+                    delay(800)
+                    val cells = runReadAction {
+                        psiFile.getNotebookCellList()
                     }
+                    floatingPrevCell = prevCell ?: cells?.get(lastCellInd)
+                    if (prevCell == null) {
+                        floatingCellInd = ord
+                    }
+                    lastCell = cells?.get(ord)
+
                     val curRange = lastCell?.textRange
+                    val floatingRange = floatingPrevCell?.textRange
+                    if (curRange != null && floatingRange?.equalsToRange(curRange.startOffset, curRange.endOffset) == true) {
+                        floatingPrevCell = null
+                    }
                     performRangedUpdate(curRange, listOfNotNull(curRange, floatingPrevCell?.textRange))
                 }
             }
