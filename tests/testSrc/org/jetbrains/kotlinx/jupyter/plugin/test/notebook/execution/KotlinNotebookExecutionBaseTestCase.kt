@@ -1,0 +1,87 @@
+// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution
+
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
+import com.intellij.psi.impl.source.resolve.FileContextUtil
+import com.intellij.testFramework.TestLoggerFactory
+import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
+import org.jetbrains.plugins.notebooks.jackson
+import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServers
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
+import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
+import org.junit.jupiter.api.Assertions
+
+interface ReceivedMessages {
+    val reply: JupyterMessage?
+    val outputs: List<JupyterMessage>
+}
+
+data class ReceivedMessagesBuilder(
+    override var reply: JupyterMessage? = null,
+    override val outputs: MutableList<JupyterMessage> = mutableListOf(),
+): ReceivedMessages
+
+interface ReceivedMessagesTester {
+    val expectedCellsCount: Int
+
+    val cellsToExecute: List<Int>
+        get() = (0 until expectedCellsCount).toList()
+
+    fun assertCellMessages(cellNum: Int, messages: ReceivedMessages)
+
+    fun doAfterCellRun(cellNum: Int, psiCell: JupyterPsiCell, executionManager: JupyterCellExecutionManager, editor: Editor) {
+
+    }
+}
+
+val JupyterMessage.messageData get() = messageContent["data"] as ObjectNode
+
+fun textPlainOutput(content: String): ObjectNode = jackson.createObjectNode().apply {
+    put("text/plain", content)
+}
+
+abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase() {
+    override lateinit var originalVirtualFile: VirtualFile
+
+    override fun setUp() {
+        super.setUp()
+      Disposer.register(testRootDisposable, JupyterServers.getInstance())
+    }
+
+    protected fun configureExecutionTest(): PsiFile {
+      TestLoggerFactory.enableDebugLogging(myFixture.projectDisposable, javaClass)
+        myFixture.setCaresAboutInjection(true)
+        myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
+      invokeAndWaitIfNeeded {
+        setMode(NotebookEditorMode.EDIT)
+      }
+        originalVirtualFile = myFixture.file.virtualFile
+        // `myFixture.file` may return the file which is injected inside one of the cells
+        val notebookFile = runReadAction {
+          FileContextUtil.getFileContext(myFixture.file)?.containingFile ?: myFixture.file
+        }
+        return notebookFile
+    }
+
+    class OutputsTester(private val cellOutputs: List<List<ObjectNode>>): ReceivedMessagesTester {
+        override val expectedCellsCount: Int
+            get() = cellOutputs.size
+
+        override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) {
+            KotlinNotebookExecutionTest.log.debug("Checking outputs for cell #$cellNum")
+            val expectedOutputs = cellOutputs[cellNum]
+            val actualOutputs = messages.outputs.map { it.messageContent["data"] }
+          Assertions.assertIterableEquals(expectedOutputs, actualOutputs)
+        }
+    }
+}
