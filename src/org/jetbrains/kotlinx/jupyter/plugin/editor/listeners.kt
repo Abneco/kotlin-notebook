@@ -20,6 +20,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.InjectedHostHasErrors
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
@@ -44,12 +45,19 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
     private val doc = psiFile?.toDocument(project)
     private var deferredFastUpdate: Job? = null
     private val updateScope = CoroutineScope(Dispatchers.Default)
+    private var isFirstRun = true
 
     init {
         assert(psiFile != null)
         project.messageBus.connect().subscribe(DAEMON_EVENT_TOPIC, object : DaemonListener {
+            private val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
             override fun daemonFinished(fileEditors: MutableCollection<out FileEditor>) {
                 fileEditors.firstOrNull { (it as? TextEditor)?.editor == editor }?.let {
+                    if (!scriptDefManager.isReady()) {
+                        return
+                    }
+
+                    if (isFirstRun) isFirstRun = false
                     floatingPrevCell = null
                     prevCell = null
                     if (floatingCellInd != -1) { // store ind
@@ -71,7 +79,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         }
         val cell = editor.getCell(min(event.newPosition.line, editor.document.lineCount - 1))
         val ord = cell.ordinal
-        if (ord == lastCellInd) return
+        if (ord == lastCellInd || isFirstRun) return
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastTimeCellFocusChanged < 600) { // might be reworked
             deferredFastUpdate?.cancel()
