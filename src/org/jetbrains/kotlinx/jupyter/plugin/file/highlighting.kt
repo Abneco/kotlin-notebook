@@ -15,6 +15,7 @@ import com.intellij.openapi.editor.colors.CodeInsightColors
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.NlsSafe
@@ -99,9 +100,8 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
         if (ApplicationManager.getApplication().isDispatchThread) {
             scheduleUpdateLater(this)
-        } else while (!scriptDefManager.isReady()) {
-            Thread.sleep(500)
-        }
+        } else throw ProcessCanceledException()
+        // for some reason, in debug mode calling isReady() might cause DL
     }
 }
 
@@ -132,7 +132,7 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
         val errorRef = targetHost.getUserData(InjectedHostHasErrors)
             ?: AtomicReference(true).also { targetHost.putUserData(InjectedHostHasErrors, it) }
         if (holder.hasErrorResults()) {
-            errorRef.set(true) // update after typing?
+            errorRef.set(true)
             for (i in 0 until holder.size()) {
                 val el = holder[i]
                 if (el.severity == HighlightSeverity.ERROR) {
@@ -170,7 +170,7 @@ internal object NotebookHighlightingUtilityObject {
 
     internal val NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX: Key<Int> = Key.create("notebook.document.target.cell.ind")
 
-    fun scheduleUpdateLater(file: PsiFile, delayDelta: Long = 900) {
+    fun scheduleUpdateLater(file: PsiFile, delayDelta: Long = 700) {
         updateScope.async {
             val manager = ScriptDefinitionsManager.getInstance(file.project)
             var isReady = manager.isReady()
