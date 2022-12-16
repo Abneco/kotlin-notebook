@@ -15,6 +15,7 @@ import com.intellij.openapi.editor.colors.CodeInsightColors
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.NlsSafe
@@ -24,7 +25,9 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.impl.source.tree.injected.changesHandler.range
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.editor.fixers.range
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showKernelRestart
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.InjectedHostHasErrors
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
@@ -33,7 +36,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObje
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
+import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.min
 
 
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
@@ -218,9 +223,16 @@ internal object NotebookHighlightingUtilityObject {
 
     /**
      * [require] ReadAction
+     * [require] EDT thread
      */
     fun resetSessionMetaInformation(document: Document, vFile: VirtualFile, project: Project, wouldShowNotification: Boolean = true) {
-        document.invalidateStateAfterCellExecution()
+        val cell = FileEditorManager.getInstance(project).getSelectedEditor(vFile)?.safeAs<TextEditor>()?.let {
+            val editor = it.editor
+            val pos = editor.caretModel.logicalPosition
+            val cell = editor.getCell(min(pos.line, document.lineCount - 1))
+            vFile.toPsiFile(project)?.getNotebookCellList()?.get(cell.ordinal)
+        }
+        document.invalidateStateAfterCellExecution(cell)
         val psiFile = vFile.toPsiFile(project)
         psiFile?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
         psiFile?.getNotebookCellList()?.forEach {

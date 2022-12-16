@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.session
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
@@ -73,9 +74,11 @@ class KotlinInProcessJupyterClient(
                 val service = JupyterCompilerService.getInstance(project).get(notebookFile) ?: return@create
                 service.clear()
                 if (!project.isDisposed && afterRestart) {
-                    runReadAction {
-                        FileDocumentManager.getInstance().getDocument(notebookFile.file)?.let {
-                            resetSessionMetaInformation(it, notebookFile.file, project)
+                    invokeLater {
+                        runReadAction {
+                            FileDocumentManager.getInstance().getDocument(notebookFile.file)?.let {
+                                resetSessionMetaInformation(it, notebookFile.file, project)
+                            }
                         }
                     }
                     afterRestart = false 
