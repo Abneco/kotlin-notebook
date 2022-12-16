@@ -2,7 +2,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.file
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
-import com.intellij.codeInsight.daemon.impl.DefaultHighlightInfoProcessor
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
@@ -13,7 +12,6 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.CodeInsightColors
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
@@ -88,50 +86,10 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
 }
 
-
-class NotebookHighlightingCustomizer(private val project: Project, private val vFile: VirtualFile) {
-    private val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
-    private val toRecycleHighlights = mutableMapOf<PsiLanguageInjectionHost, MutableList<HighlightInfo>>()
-    private val highlightInfoProcessor = DefaultHighlightInfoProcessor()
-    var targetCell: PsiLanguageInjectionHost? = null
-    //private val session = HighlightingSessionImpl
-    private var editor: FileEditor? = null
-
-    fun isHostTargetedForAnalysis(file: PsiFile): Boolean =
-        injectedLanguageManager.getInjectionHost(file) == targetCell
-
-    fun computeRestrictedRangeWithPrevTargetOrProvided(providedChangeRange: TextRange, delta: Int): TextRange {
-        val cell = targetCell
-        return if (cell == null) providedChangeRange
-        else providedChangeRange.union(cell.textRange).grown(delta)
-    }
-
-    fun errorHighlightsAdded(injectedFile: PsiFile, infos: Collection<HighlightInfo>) {
-        val host = injectedLanguageManager.getInjectionHost(injectedFile) ?: return
-        toRecycleHighlights.putIfAbsent(host, mutableListOf())
-        toRecycleHighlights[host]?.addAll(infos)
-    }
-
-    fun recycleHighlights(injectedFile: PsiFile?, injectionHost: PsiLanguageInjectionHost? = null) {
-        if (injectedFile == null && injectionHost == null) return
-        val host = (injectionHost ?: injectedLanguageManager.getInjectionHost(injectedFile!!)) ?: return
-        val infos = toRecycleHighlights[host] ?: return
-        if (editor == null) {
-            editor = FileEditorManager.getInstance(project).getSelectedEditor(vFile)
-        }
-        val file = injectedLanguageManager.getTopLevelFile(host) ?: return
-        infos.forEach { it.highlighter?.setTextAttributesKey(CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES) }
-        infos.clear()
-    }
-
-    // make a separate service
-}
-
 class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
     private val project = injectedFile.project
     private lateinit var targetHost: PsiLanguageInjectionHost
     private val injectedManager = InjectedLanguageManager.getInstance(project)
-    private lateinit var highlightingCustomizer: NotebookHighlightingCustomizer
     private val completeAnalysisRange = NotebookHighlightingUtilityObject.getCompleteAnalysisRangeForWholeNotebook(injectedFile)
     init {
       assert(tryUpdateCurrentInjectedFileTarget())
@@ -168,12 +126,9 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
             holder.addAll(toAdd)
             assert(!holder.hasErrorResults())
         } else errorRef.compareAndSet(true, false)
-        //highlightingCustomizer.errorHighlightsAdded(injectedFile, toAdd)
     }
 
 }
-
-
 
 internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(rhs)
 
@@ -252,6 +207,7 @@ internal object HighlightInfoManipulator {
     @NlsSafe
     private const val shadowedSymbolDescription = "Not yet provided symbol"
     private val shadowedSymbolSeverity = HighlightInfo.convertSeverity(HighlightSeverity.INFORMATION)
+
     fun convertToShadowedDeclaration(info: HighlightInfo): HighlightInfo {
         val n = HighlightInfo.newHighlightInfo(shadowedSymbolSeverity)
             .range(info.range)
@@ -260,6 +216,7 @@ internal object HighlightInfoManipulator {
             .unescapedToolTip(shadowedSymbolDescription)
             .needsUpdateOnTyping(info.needUpdateOnTyping())
             .group(0)
+
         return if (info.isAfterEndOfLine)
                     n.endOfLine().createUnconditionally()
                 else n.createUnconditionally()
