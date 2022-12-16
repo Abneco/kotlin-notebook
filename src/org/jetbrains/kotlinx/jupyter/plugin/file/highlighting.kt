@@ -7,6 +7,7 @@ import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeRed
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -22,7 +23,12 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.impl.source.tree.injected.changesHandler.range
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.idea.editor.fixers.range
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
@@ -32,6 +38,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObje
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.scheduleUpdateLater
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
@@ -52,6 +59,8 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         val cells = file.getNotebookCellList()
         cells?.ensureScriptConfigurations(ScriptConfigurationManager.getInstance(file.project),
                                                                InjectedLanguageManager.getInstance(file.project))
+        jupyterFile.ensureScriptManagerReady()
+
 
         return synchronized(document) {
             val afterRenaming = document.getUserData(RenamingEnclosedRange)
@@ -84,6 +93,16 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         }
     }
 
+    private fun PsiFile.ensureScriptManagerReady() {
+        val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
+        if (scriptDefManager.isReady()) return
+
+        if (ApplicationManager.getApplication().isDispatchThread) {
+            scheduleUpdateLater(this)
+        } else while (!scriptDefManager.isReady()) {
+            Thread.sleep(500)
+        }
+    }
 }
 
 class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
@@ -136,6 +155,7 @@ internal object NotebookHighlightingUtilityObject {
     const val notebookInjectedFileExtension: String = "jupyter.kts"
     private const val notebookInjectedMetaFileExtension: String = "juktm"
     private const val notebookDocumentFileExtension: String = "ipynb"
+    private val updateScope = CoroutineScope(Dispatchers.Default)
 
     @JvmField
     val NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE = Key.create<TextRange>("notebook.document.target.range")
@@ -149,6 +169,20 @@ internal object NotebookHighlightingUtilityObject {
     internal val CompleteHighlightingRange: Key<TextRange> = Key.create("notebook.document.errors.analysis.range")
 
     internal val NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX: Key<Int> = Key.create("notebook.document.target.cell.ind")
+
+    fun scheduleUpdateLater(file: PsiFile, delayDelta: Long = 900) {
+        updateScope.async {
+            val manager = ScriptDefinitionsManager.getInstance(file.project)
+            var isReady = manager.isReady()
+            while (!isReady) {
+                delay(delayDelta)
+                isReady = manager.isReady()
+            }
+            invokeLater {
+                DaemonCodeAnalyzer.getInstance(file.project).restart(file)
+            }
+        }
+    }
 
     fun getCompleteAnalysisRangeForWholeNotebook(injectedFile: PsiFile): TextRange? {
         val project = injectedFile.project
