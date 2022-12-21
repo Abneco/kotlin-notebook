@@ -109,7 +109,11 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             addSources(notebookService.currentSourceRoots.map { it.absolutePath })
 
             switchForScriptsAsEntities(
-                on = { notebookService.scripts().forEach { (file, conf) -> add(file, conf) } },
+                on = {
+                    warnAboutDependenciesExistence(false)
+                    notebookService.scripts().forEach { (file, conf) -> add(file, conf) }
+                    warnAboutDependenciesExistence(true)
+                },
                 off = {}
             )
         }
