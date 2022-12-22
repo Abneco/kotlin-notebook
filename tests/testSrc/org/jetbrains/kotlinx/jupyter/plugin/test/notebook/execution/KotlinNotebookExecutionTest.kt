@@ -18,6 +18,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServers
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
@@ -148,30 +149,32 @@ class KotlinNotebookExecutionTest : KotlinNotebookBaseTestCase() {
             val messages = ReceivedMessagesBuilder()
             val cell = notebookCells[cellNumber]
             runReadAction {
-                executionManager.executeCode(
-                    null,
-                    cell,
-                    ignoreOutput = false,
-                    cleanOutput = true,
-                    onError = { ex: Exception ->
-                        endExceptionally(AssertionError("Notebook execution was not successful", ex))
-                    },
-                    callback = object : JupyterExecutionCallbackAdapter() {
-                        override fun onStatus(message: JupyterStatusMessage) {
-                            if (message.executionState == JupyterStatusMessage.JupyterExecutionState.IDLE) {
+                executionManager.submitTask(
+                    JupyterExecutionTask(
+                        null,
+                        cell,
+                        ignoreOutput = false,
+                        cleanOutput = true,
+                        onError = { ex: Exception ->
+                            endExceptionally(AssertionError("Notebook execution was not successful", ex))
+                        },
+                        callback = object : JupyterExecutionCallbackAdapter() {
+                            override fun onStatus(message: JupyterStatusMessage) {
+                                if (message.executionState == JupyterStatusMessage.JupyterExecutionState.IDLE) {
                                 receivedMessagesFutures[cellNumber].complete(messages)
                             }
                         }
 
-                        override fun onExecuteReply(message: JupyterMessage) {
-                            messages.reply = message
-                        }
+                            override fun onExecuteReply(message: JupyterMessage) {
+                                messages.reply = message
+                            }
 
-                        override fun onUpdateOutput(message: JupyterMessage) {
-                            messages.outputs.add(message)
-                        }
-                    },
-                    silent = false,
+                            override fun onUpdateOutput(message: JupyterMessage) {
+                                messages.outputs.add(message)
+                            }
+                        },
+                        silent = false,
+                    )
                 )
             }
             tester.doAfterCellRun(cellNumber, cell, executionManager, myFixture.editor)
