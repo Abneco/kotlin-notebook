@@ -8,7 +8,7 @@ import icons.KotlinJupyterIcons
 import java.util.*
 import javax.swing.Icon
 
-class JupyterKotlinIconPatcher : FileIconPatcher, DumbAware {
+object JupyterKotlinIconPatcher : FileIconPatcher, DumbAware {
     private val cache: MutableSet<VirtualFile> = Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap()))
 
     private fun shouldPatch(virtualFile: VirtualFile?): Boolean {
