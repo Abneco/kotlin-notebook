@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package icons;
 
 import com.intellij.ui.IconManager;
@@ -14,7 +14,7 @@ public final class KotlinJupyterIcons {
   private static @NotNull Icon load(@NotNull String path, int cacheKey, int flags) {
     return IconManager.getInstance().loadRasterizedIcon(path, KotlinJupyterIcons.class.getClassLoader(), cacheKey, flags);
   }
-  /** 16x16 */ public static final @NotNull Icon FileIcon = load("icons/fileIcon.svg", 1262710072, 0);
-  /** 16x16 */ public static final @NotNull Icon FileIconGrey = load("icons/fileIconGrey.svg", 114122656, 0);
-  /** 16x16 */ public static final @NotNull Icon FileIconGreyKotlin = load("icons/fileIconGreyKotlin.svg", 1408301993, 0);
+  /** 16x16 */ public static final @NotNull Icon FileIcon = load("icons/fileIcon.svg", 1962825736, 0);
+  /** 16x16 */ public static final @NotNull Icon FileIconGrey = load("icons/fileIconGrey.svg", 1739599805, 0);
+  /** 16x16 */ public static final @NotNull Icon FileIconGreyKotlin = load("icons/fileIconGreyKotlin.svg", 72373811, 0);
 }
