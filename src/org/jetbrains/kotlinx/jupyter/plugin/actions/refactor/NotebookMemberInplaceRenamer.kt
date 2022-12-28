@@ -9,13 +9,7 @@ import com.intellij.openapi.editor.impl.ImaginaryEditor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.Pair
 import com.intellij.openapi.util.TextRange
-import com.intellij.psi.PsiDocumentManager
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiNameIdentifierOwner
-import com.intellij.psi.PsiNamedElement
-import com.intellij.psi.PsiRecursiveElementVisitor
-import com.intellij.psi.PsiReference
+import com.intellij.psi.*
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtil
 import com.intellij.psi.search.SearchScope
@@ -131,8 +125,8 @@ class NotebookMemberInplaceRenamer(
 
     override fun getSelectedInEditorElement(
         nameIdentifier: PsiElement?,
-        refs: MutableCollection<out PsiReference>?,
-        stringUsages: MutableCollection<out Pair<PsiElement, TextRange>>?,
+        refs: Collection<PsiReference>,
+        stringUsages: Collection<Pair<PsiElement, TextRange>>,
         offset: Int
     ): PsiElement {
         // todo: look in MemberInPlaceRenamer
