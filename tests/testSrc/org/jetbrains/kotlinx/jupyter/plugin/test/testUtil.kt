@@ -91,6 +91,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: 
                         }
                     },
                     silent = false,
+                    project = project
                 )
             )
         }
