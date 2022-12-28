@@ -95,7 +95,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     }
 
     override fun isApplicable(file: VirtualFile): Boolean {
-        return file.name.endsWith(compilerService.fileSuffix) && file is VirtualFileWindow
+        return file.name.endsWith(compilerService.fileSuffix)
     }
 
     override fun isConfigurationLoadingInProgress(file: KtFile): Boolean {
