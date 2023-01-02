@@ -97,7 +97,7 @@ class JupyterCompilerPerFileService(
     private val directoryCounter = AtomicInteger(1)
     private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ContainerUtil.newConcurrentSet() // LoggingList()
     private val scriptingSupport = JupyterKtScriptingSupport.getInstance(projectService.project)
-    val cellOrdinalToClassName = mutableMapOf<Int, String>()
+    val cellOrdinalToClassName = mutableMapOf<Int, Set<String>>()
     @Deprecated("For removal")
     var completeAnalysisCellTarget: PsiLanguageInjectionHost? = null
 

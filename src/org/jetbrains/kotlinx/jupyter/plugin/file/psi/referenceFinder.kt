@@ -36,7 +36,7 @@ enum class ReferenceSearchStrategy {
 
 object NotebookReferenceFinder {
     // Holds compiled class name
-    val CELL_CLASS_NAME: Key<String> = Key.create("COMPILED_CELL_SCRIPT_CLASS_NAME")
+    val CELL_CLASS_NAME: Key<Set<String>> = Key.create("COMPILED_CELL_SCRIPT_CLASS_NAME")
 
     private val referenceResolver = NotebookReferenceExpressionResolver
 
@@ -49,11 +49,11 @@ object NotebookReferenceFinder {
 
         searchTargets.firstOrNull { host ->
             val compiledName = host.getUserData(CELL_CLASS_NAME) ?: return@firstOrNull false
-            compiledName == targetName
+            compiledName.contains(targetName)
         }?.let {
             val asPsiFile = injectionManager.getInjectedPsiFiles(it)?.firstOrNull()?.first as? KtFile ?: return null
             val ans = mutableListOf<NavigatablePsiElement>()
-            traverseChildrenAndSearch(injectionManager, it, targetName, asPsiFile, psiElement, foundData = ans)
+            traverseChildrenAndSearch(injectionManager, it, setOf(targetName), asPsiFile, psiElement, foundData = ans)
             return ans.firstOrNull()
         }
 
@@ -61,7 +61,7 @@ object NotebookReferenceFinder {
     }
 
     fun traverseChildrenAndSearch(injectionManager: InjectedLanguageManager, injectionHost: PsiLanguageInjectionHost,
-                                  possibleClassName: String?, element: PsiElement, targetElement: PsiElement,
+                                  possibleClassNames: Set<String>?, element: PsiElement, targetElement: PsiElement,
                                   searchStrategy: ReferenceSearchStrategy = ReferenceSearchStrategy.DECLARATION,
                                   foundData: MutableList<NavigatablePsiElement>?): Unit {
         val resolvedNullableRef = targetElement.reference?.resolve()
@@ -95,7 +95,7 @@ object NotebookReferenceFinder {
                     it as KtDeclaration
                     it ?: return@firstOrNull false
                     val declarationMatchResult = if (referenceInfo != null)
-                            tryMatchWithDeclaration(injectionHost, possibleClassName, targetElement, it, referenceInfo)
+                            tryMatchWithDeclaration(injectionHost, possibleClassNames, targetElement, it, referenceInfo)
                         else true
                     val nameToCompare = if (targetElement is KtDeclaration) targetElement.name else targetElement.text
                     it.name == nameToCompare && it.isPublic
@@ -103,7 +103,7 @@ object NotebookReferenceFinder {
                             && declarationMatchResult
                 }?.let { listOf(it as NavigatablePsiElement) }
             }
-            ReferenceSearchStrategy.REFERENCES -> getProperUsagesForTargetElement(injectionHost, possibleClassName, element, targetElement)
+            ReferenceSearchStrategy.REFERENCES -> getProperUsagesForTargetElement(injectionHost, possibleClassNames, element, targetElement)
         }?.let {
             foundData?.addAll(it)
             return
@@ -117,11 +117,11 @@ object NotebookReferenceFinder {
 
         for (declaredPublicClass in declaredPublicClasses) {
             //if (foundData != null) continue
-            traverseChildrenAndSearch(injectionManager, injectionHost, possibleClassName, declaredPublicClass, targetElement, searchStrategy, foundData)
+            traverseChildrenAndSearch(injectionManager, injectionHost, possibleClassNames, declaredPublicClass, targetElement, searchStrategy, foundData)
         }
     }
 
-    private fun getProperUsagesForTargetElement(injectionHost: PsiLanguageInjectionHost, possibleClassName: String?, element: PsiElement, targetElement: PsiElement): List<NavigatablePsiElement> {
+    private fun getProperUsagesForTargetElement(injectionHost: PsiLanguageInjectionHost, possibleClassNames: Set<String>?, element: PsiElement, targetElement: PsiElement): List<NavigatablePsiElement> {
         val ans = mutableListOf<NavigatablePsiElement>()
         val targetName = if (targetElement is KtObjectDeclaration) targetElement.nameAsSafeName.asString() else targetElement.text
         val targetDeclaration = targetElement.parentOfType<KtDeclaration>(true)!!
@@ -135,7 +135,7 @@ object NotebookReferenceFinder {
                     if (targetDeclaration.containingFile == resolvedRefInfo?.containingFile && element.reference?.isReferenceTo(targetDeclaration) == true) {
                         ans.add(element as KtElement)
                         // if not then tryMatch class with class present in compiled sources
-                    } else if (resolvedRefInfo != null && tryMatchWithDeclaration(injectionHost, possibleClassName, targetElement, targetDeclaration, ProvidedReferenceInfo(resolvedRefInfo))) {
+                    } else if (resolvedRefInfo != null && tryMatchWithDeclaration(injectionHost, possibleClassNames, targetElement, targetDeclaration, ProvidedReferenceInfo(resolvedRefInfo))) {
                         ans.add(element as KtElement)
                     }
                 }
@@ -146,7 +146,7 @@ object NotebookReferenceFinder {
         return ans
     }
 
-    private fun tryMatchWithDeclaration(host: PsiLanguageInjectionHost, possibleClassName: String?, targetElement: PsiElement, candidateDeclaration: KtDeclaration, referenceInfo: ProvidedReferenceInfo): Boolean {
+    private fun tryMatchWithDeclaration(host: PsiLanguageInjectionHost, possibleClassName: Set<String>?, targetElement: PsiElement, candidateDeclaration: KtDeclaration, referenceInfo: ProvidedReferenceInfo): Boolean {
         candidateDeclaration.parentOfType<KtClass>(withSelf = true)?.let {
             return it.name == referenceInfo.enclosingClass?.name
         }
@@ -154,8 +154,8 @@ object NotebookReferenceFinder {
         val compiledClassName = possibleClassName
                                 ?: host.getUserData(CELL_CLASS_NAME)
                                 ?: candidateDeclaration.containingKtFile.getUserData(CELL_CLASS_NAME)
-                                ?: ""
-        return compiledClassName == referenceInfo.enclosingClass?.name
+
+        return compiledClassName?.contains(referenceInfo.enclosingClass?.name) == true
     }
 
     private fun getProperDeclarationsForScriptOrClass(element: PsiElement, isPartOfDotCall: Boolean = false): Array<KtDeclaration> {

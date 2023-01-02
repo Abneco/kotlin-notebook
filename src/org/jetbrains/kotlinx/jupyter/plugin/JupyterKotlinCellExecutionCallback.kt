@@ -122,7 +122,9 @@ class JupyterKotlinCellExecutionCallback(
         val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
 
         runAsWriteActionIfNeeded { // maybe synchronized
-            val properCompiledClass = snippetMetadata.compiledData.sources.firstOrNull()?.fileName?.substringBefore(".kts")?.let { it + "_jupyter" }
+            val properCompiledClass = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
+                it.fileName.substringBefore(".kts").let { f -> f + "_jupyter" }
+            }
             (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
                 ?.putUserData(CELL_CLASS_NAME, properCompiledClass)
             var nextCell: JupyterPsiCell? = null
