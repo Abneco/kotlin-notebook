@@ -40,7 +40,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
 
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
                 val project = editor.project ?: element.project
-                if (DumbService.isDumb(project) || element !is JupyterPsiCellImpl) return true
+                if (DumbService.isDumb(project) || element !is JupyterPsiCellImpl || !element.isValid) return true
 
                 // todo: store previous results
                 //val modificationArea = if (document.getUserData(NotebookInjectedCodeUtility.NOTEBOOK_DOCUMENT_IGNORE_ANALYSIS_RANGE) != null) {
@@ -97,7 +97,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                 for (element in traverser.preOrderDfsTraversal()) {
                     if (!action(element)) return false
                 }
-            } catch (_: Exception) {
+            } catch (_: Throwable) { // ignore any 
                 return false
             }
             return true
