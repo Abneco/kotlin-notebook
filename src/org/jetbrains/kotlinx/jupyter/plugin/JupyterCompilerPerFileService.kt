@@ -3,6 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+import com.intellij.configurationStore.runAsWriteActionIfNeeded
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -18,6 +19,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.containers.ContainerUtil
@@ -42,7 +44,9 @@ import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.ImpatientNotebookChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
@@ -54,6 +58,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterSource
 import java.io.File
@@ -148,6 +153,10 @@ class JupyterCompilerPerFileService(
 
     private val coroutineScope = CoroutineScope(Job())
     private var previousSessionId: String? = null
+
+    fun implicitClassNames(): List<String> {
+        return implicitsList.map { it.typeName }
+    }
 
     fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
         return runReadAction {
@@ -313,6 +322,7 @@ class JupyterCompilerPerFileService(
     fun addCompiledSnippet(
         snippetMetadata: EvaluatedSnippetMetadata,
         cellSource: String,
+        psiCell: JupyterPsiCell,
     ) {
         compileLock.writeLock().withLock {
             try {
@@ -363,12 +373,41 @@ class JupyterCompilerPerFileService(
                     val kClass = classLoader.loadClass(className).kotlin
                     implicitsList.addClass(kClass)
                 }
-
-                updateCellsAnalysis()
-                scriptingSupport.update()
+                updateInjectedCellInfo(snippetMetadata, psiCell)
             } catch (e: Exception) {
                 LOG.error(e)
             }
+        }
+    }
+
+    fun updateScripting() {
+        compileLock.writeLock().withLock {
+            updateCellsAnalysis()
+            scriptingSupport.update()
+        }
+    }
+
+    private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell) {
+        val project = projectService.project
+        val injectManager = InjectedLanguageManager.getInstance(project)
+        val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
+
+        runAsWriteActionIfNeeded { // maybe synchronized
+            val properCompiledClass = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
+                it.fileName.substringBefore(".kts").let { f -> f + "_jupyter" }
+            }
+            (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
+                ?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
+            var nextCell: JupyterPsiCell? = null
+            (psiCell.parent as? JupyterNotebook)?.psiCellList?.let { cells ->
+                val executedCellInd = cells.indexOf(psiCell)
+                if (executedCellInd != -1) {
+                    compilerService.cellOrdinalToClassName[executedCellInd] = properCompiledClass
+                    nextCell = if (executedCellInd + 1 != cells.size) cells[executedCellInd + 1] else null
+                }
+            }
+            FileDocumentManager.getInstance().getDocument(virtualFile.file)?.invalidateStateAfterCellExecution(nextCell) // need to highlight next cell if ok
+            psiCell.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
         }
     }
 

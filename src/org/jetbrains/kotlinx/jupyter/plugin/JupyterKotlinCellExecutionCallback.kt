@@ -1,16 +1,11 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
-import com.intellij.configurationStore.runAsWriteActionIfNeeded
-import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiFile
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.CompleteHighlightingRange
-import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
-import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListWarn
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -19,7 +14,6 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import kotlin.system.measureTimeMillis
 
@@ -38,6 +32,7 @@ class JupyterKotlinCellExecutionCallback(
     private val virtualFile: BackedNotebookVirtualFile,
     private val psiCell: JupyterPsiCell,
     private val cellSource: String,
+    private val index: Int,
 ) : JupyterExecutionCallback {
 
 
@@ -46,6 +41,7 @@ class JupyterKotlinCellExecutionCallback(
     override var finalizeCallback = {}
 
     override fun expire() {
+        updateScriptingIfNeeded()
     }
 
     override fun onCommInfoReply(message: JupyterMessage) {
@@ -96,8 +92,8 @@ class JupyterKotlinCellExecutionCallback(
              * and pass the metadata we received to it.
              */
             val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-            compilerService.addCompiledSnippet(snippetMetadata, cellSource)
-            updateInjectedCellInfo(snippetMetadata)
+            compilerService.addCompiledSnippet(snippetMetadata, cellSource, psiCell)
+            updateScriptingIfNeeded()
         } catch (exception: Throwable) {
             LOG.warn("Kotlin execution callback failed", exception)
         } finally {
@@ -117,26 +113,13 @@ class JupyterKotlinCellExecutionCallback(
     override fun onUpdateOutput(message: JupyterMessage) {
     }
 
-    private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata) {
-        val injectManager = InjectedLanguageManager.getInstance(project)
-        val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
+    private fun updateScriptingIfNeeded() {
+        val factory = JupyterKotlinCellExecutionCallbackFactory.getInstance()
+        val shouldUpdateDependencies = factory.unregisterCallback(virtualFile, index)
 
-        runAsWriteActionIfNeeded { // maybe synchronized
-            val properCompiledClass = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
-                it.fileName.substringBefore(".kts").let { f -> f + "_jupyter" }
-            }
-            (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
-                ?.putUserData(CELL_CLASS_NAME, properCompiledClass)
-            var nextCell: JupyterPsiCell? = null
-            (psiCell.parent as? JupyterNotebook)?.psiCellList?.let { cells ->
-                val executedCellInd = cells.indexOf(psiCell)
-                if (properCompiledClass != null && executedCellInd != -1) {
-                    compilerService.cellOrdinalToClassName[executedCellInd] = properCompiledClass
-                    nextCell = if (executedCellInd + 1 != cells.size) cells[executedCellInd + 1] else null
-                }
-            }
-            FileDocumentManager.getInstance().getDocument(virtualFile.file)?.invalidateStateAfterCellExecution(nextCell) // need to highlight next cell if ok
-            psiCell.putUserData(CELL_CLASS_NAME, properCompiledClass)
+        if (shouldUpdateDependencies) {
+            val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
+            compilerService.updateScripting()
         }
     }
 

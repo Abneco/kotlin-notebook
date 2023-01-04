@@ -179,7 +179,7 @@ internal object NotebookHighlightingUtilityObject {
                 isReady = manager.isReady()
             }
             invokeLater {
-                DaemonCodeAnalyzer.getInstance(file.project).restart(file)
+                file.restartAnalyzing()
             }
         }
     }
@@ -231,7 +231,7 @@ internal object NotebookHighlightingUtilityObject {
             showKernelRestart(project)
         }
         invokeLater {
-            psiFile?.let { DaemonCodeAnalyzer.getInstance(project).restart(it) }
+            psiFile?.restartAnalyzing()
         }
     }
 }

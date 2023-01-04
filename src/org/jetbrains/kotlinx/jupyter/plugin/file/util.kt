@@ -1,6 +1,7 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.kotlinx.jupyter.plugin.file
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
@@ -103,4 +104,8 @@ internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
     val injectInfo = injectedManager.getInjectedPsiFiles(host)?.firstOrNull()?.first ?: return null
 
     return (injectInfo as? PsiFile)?.findElementAt(caretOffSet - host.startOffsetInParent - 5)
+}
+
+internal fun PsiFile.restartAnalyzing() {
+    DaemonCodeAnalyzer.getInstance(this.project).restart(this)
 }
