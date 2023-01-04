@@ -40,7 +40,7 @@ internal class ProvidedLibrariesReferencesProducer: Processor<PsiReference> {
 internal typealias TargetElementInfo = Triple<PsiElement, Boolean, Boolean>
 
 sealed class NotebookUsagesContributor {
-    protected fun findUsageForElement(scope: VirtualFile, targetElement: PsiElement): MutableSet<PsiElement>? {
+    private fun findUsageForElement(scope: VirtualFile, targetElement: PsiElement): MutableSet<PsiElement>? {
         val scriptingSupport = JupyterKtScriptingSupport.getInstance(targetElement.project)
         return scriptingSupport.searchForElementDeclarationOrUsages(adjustElement(targetElement), scope, searchStrategy = ReferenceSearchStrategy.REFERENCES)
     }

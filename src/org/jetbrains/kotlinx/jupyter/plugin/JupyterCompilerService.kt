@@ -45,7 +45,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
         } else emptyList()
     }
 
-    val initialCompileConfiguration by lazy {
+    private val initialCompileConfiguration by lazy {
         getCompilationConfiguration(
             scriptClasspath = initialClasspath,
             compilerArgsConfigurator = DefaultCompilerArgsConfigurator(),
@@ -61,7 +61,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
         }
     }
 
-    val evaluationConfiguration by lazy {
+    private val evaluationConfiguration by lazy {
         ScriptEvaluationConfiguration {
             jvm {
                 baseClassLoader(this@JupyterCompilerService::class.java.classLoader)
