@@ -13,7 +13,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtilBase
 import org.jetbrains.kotlin.idea.base.highlighting.visitor.AbstractHighlightingVisitor
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlinx.jupyter.plugin.file.InjectedFileHighlightingHelper
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.InjectedFileHighlightingHelper
 
 abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingVisitor>(
     protected val visitorFactory: (AnnotationHolder) -> T,

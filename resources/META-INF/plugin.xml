@@ -24,7 +24,7 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.codeInsight.daemon.impl">
-        <injectedLanguageHighlightingRangeReducer implementation="org.jetbrains.kotlinx.jupyter.plugin.file.KotlinNotebookInjectedRangeReducer" order="first"/>
+        <injectedLanguageHighlightingRangeReducer implementation="org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.KotlinNotebookInjectedRangeReducer" order="first"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -33,8 +33,8 @@
         <fileIconPatcher implementation="org.jetbrains.kotlinx.jupyter.plugin.file.JupyterKotlinIconPatcher"/>
         <iconProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.file.KotlinNotebookIconProvider"/>
         <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.BeforeResolveHighlightingVisitorAdapter"/>
-        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.file.KotlinNotebookBeforeHighlightingVisitor" order="first"/>
-        <daemon.highlightInfoFilter implementation="org.jetbrains.kotlinx.jupyter.plugin.file.KotlinNotebookHighlightingErrorFilter"/>
+        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.KotlinNotebookBeforeHighlightingVisitor" order="first"/>
+        <daemon.highlightInfoFilter implementation="org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.KotlinNotebookHighlightingErrorFilter"/>
         <formatting.injectedOptions implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinInjectedFormattingOptionsProvider"/>
 
         <fileType name="Jupyter Kotlin meta language"

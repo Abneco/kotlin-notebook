@@ -9,9 +9,9 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
-import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.getInjectedKtFiles
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
