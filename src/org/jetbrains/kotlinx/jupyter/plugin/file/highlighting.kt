@@ -1,10 +1,12 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.file
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
+import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter
+import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
+import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
@@ -28,17 +30,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import org.jetbrains.kotlin.idea.base.highlighting.visitor.AbstractAnnotationHolderHighlightingVisitor
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
-import org.jetbrains.kotlin.idea.editor.fixers.range
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showKernelRestart
+import org.jetbrains.kotlinx.jupyter.plugin.editor.AbstractKotlinHighlightingVisitorAdapter
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.InjectedHostHasErrors
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NonTargetHostErrorRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.RenamingEnclosedRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
 import org.jetbrains.kotlinx.jupyter.plugin.file.NotebookHighlightingUtilityObject.scheduleUpdateLater
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
@@ -105,45 +110,55 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
     }
 }
 
-class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
+class InjectedFileHighlightingHelper(val injectedFile: PsiFile, isFirstPass: Boolean) {
     private val project = injectedFile.project
     private lateinit var targetHost: PsiLanguageInjectionHost
+    private var errorRegistry: Collection<HighlightInfo>? = null
     private val injectedManager = InjectedLanguageManager.getInstance(project)
-    private val completeAnalysisRange = NotebookHighlightingUtilityObject.getCompleteAnalysisRangeForWholeNotebook(injectedFile)
+    private var completeAnalysisRange: TextRange? = null
     init {
-      assert(tryUpdateCurrentInjectedFileTarget())
+        assert(tryUpdateCurrentInjectedFileTarget(isFirstPass))
     }
-    var isShouldHighlightErrors: Boolean = false
+    private var isShouldHighlightErrors: Boolean = false
 
-    private fun tryUpdateCurrentInjectedFileTarget(): Boolean {
+    private fun tryUpdateCurrentInjectedFileTarget(completeUpdate: Boolean): Boolean {
         targetHost = injectedManager.getInjectionHost(injectedFile) ?: return false
+        if (!completeUpdate) {
+            errorRegistry = synchronized(injectedFile) {
+                injectedFile.getUserData(NonTargetHostErrorRegistry)
+            }
+            isShouldHighlightErrors = errorRegistry == null
+            return true
+        }
+        completeAnalysisRange = NotebookHighlightingUtilityObject.getCompleteAnalysisRangeForWholeNotebook(injectedFile)
         isShouldHighlightErrors = completeAnalysisRange?.contains(targetHost.textRange) ?:
-                (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange, targetHost.textRange.shiftLeft(1)))
+                (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange!!, targetHost.textRange.shiftLeft(1)))
+        //if (isShouldHighlightErrors) {
+        //    println("Should highlight errors for ${injectedFile.name} with range: ${targetHost?.range}")
+        //} else println("should not for ${injectedFile.name} with range: ${targetHost?.range}")
 
 
         return true
+    }
+
+    fun markTargetHost() {
+        injectedFile.putUserData(NonTargetHostErrorRegistry, if (isShouldHighlightErrors) null else mutableSetOf())
     }
 
     fun updateHolderOrProvided(holder: HighlightInfoHolder) {
         if (isShouldHighlightErrors) {
             return
         }
-        val toAdd = mutableListOf<HighlightInfo>()
         val errorRef = targetHost.getUserData(InjectedHostHasErrors)
             ?: AtomicReference(true).also { targetHost.putUserData(InjectedHostHasErrors, it) }
-        if (holder.hasErrorResults()) {
+        val registry = errorRegistry ?: return
+        if (registry.isNotEmpty()) {
             errorRef.set(true)
-            for (i in 0 until holder.size()) {
-                val el = holder[i]
+            for (el in registry) {
                 if (el.severity == HighlightSeverity.ERROR) {
-                    toAdd.add(HighlightInfoManipulator.convertToShadowedDeclaration(el))
-                } else {
-                    toAdd.add(el)
+                    holder.add(HighlightInfoManipulator.convertToShadowedDeclaration(el))
                 }
             }
-            holder.clear()
-            holder.addAll(toAdd)
-            assert(!holder.hasErrorResults())
         } else errorRef.compareAndSet(true, false)
     }
 
@@ -167,6 +182,7 @@ internal object NotebookHighlightingUtilityObject {
     internal val InjectedHostHasErrors = Key.create<AtomicReference<Boolean>>("injected.element.errors.found")
     internal val RenamingEnclosedRange: Key<Collection<TextRange>> = Key.create("notebook.after.rename.changed.range")
     internal val CompleteHighlightingRange: Key<TextRange> = Key.create("notebook.document.errors.analysis.range")
+    internal val NonTargetHostErrorRegistry: Key<MutableCollection<HighlightInfo>> = Key.create("injected.element.actual.errors.registry")
 
     internal val NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX: Key<Int> = Key.create("notebook.document.target.cell.ind")
 
@@ -254,5 +270,39 @@ internal object HighlightInfoManipulator {
         return if (info.isAfterEndOfLine)
                     n.endOfLine().createUnconditionally()
                 else n.createUnconditionally()
+    }
+}
+
+internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlightingVisitorAdapter<KotlinNotebookDummyVisitor> (
+    { annotationHolder -> KotlinNotebookDummyVisitor(annotationHolder) }
+) {
+    override fun clone(): HighlightVisitor {
+        return KotlinNotebookBeforeHighlightingVisitor()
+    }
+
+    override fun analyze(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, action: Runnable): Boolean {
+        prepareForFileAndAdjust(file, holder, stage = PassStage.MarkTargetHostBeforeHighlighting)
+        return true
+    }
+}
+
+internal class KotlinNotebookDummyVisitor(holder: AnnotationHolder) : AbstractAnnotationHolderHighlightingVisitor(holder) {
+    override fun visitFile(file: PsiFile) {
+        return
+    }
+}
+
+
+class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
+    override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {
+        if (file == null || !file.name.endsWith(notebookInjectedFileExtension)) return true
+        val errorRegistry = file.getUserData(NonTargetHostErrorRegistry) ?: return true
+
+        if (highlightInfo.severity == HighlightSeverity.ERROR) {
+            errorRegistry.add(highlightInfo)
+            return false
+        }
+
+        return true
     }
 }

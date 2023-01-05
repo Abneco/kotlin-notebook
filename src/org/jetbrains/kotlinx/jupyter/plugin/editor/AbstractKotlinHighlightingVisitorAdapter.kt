@@ -16,11 +16,16 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.InjectedFileHighlightingHelper
 
 abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingVisitor>(
-    private val visitorFactory: (AnnotationHolder) -> T,
+    protected val visitorFactory: (AnnotationHolder) -> T,
     private val isShouldUseNewHighlighting: Boolean = true // 0 if default
 ) : HighlightVisitor {
+    protected enum class PassStage {
+        MarkTargetHostBeforeHighlighting,
+        AdjustHolder
+    }
+
     private var visitor: T? = null
-    private var highlightingHelper: InjectedFileHighlightingHelper? = null
+    protected var highlightingHelper: InjectedFileHighlightingHelper? = null
 
     override fun suitableForFile(file: PsiFile): Boolean {
         return file is KtFile && InjectedLanguageUtilBase.getHighlightTokens(file) != null
@@ -45,7 +50,7 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
             }
 
             if (isShouldUseNewHighlighting) {
-                prepareForFileAndAdjust(file, holder)
+                prepareForFileAndAdjust(file, holder, PassStage.AdjustHolder)
             }
 
             return true
@@ -54,8 +59,12 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
         }
     }
 
-    private fun prepareForFileAndAdjust(injectedFile: PsiFile, holder: HighlightInfoHolder) {
-        highlightingHelper = InjectedFileHighlightingHelper(injectedFile)
-        highlightingHelper?.updateHolderOrProvided(holder)
+    protected fun prepareForFileAndAdjust(injectedFile: PsiFile, holder: HighlightInfoHolder, stage: PassStage) {
+        highlightingHelper = InjectedFileHighlightingHelper(injectedFile,
+                                                            stage == PassStage.MarkTargetHostBeforeHighlighting)
+        when (stage) {
+            PassStage.AdjustHolder -> highlightingHelper?.updateHolderOrProvided(holder)
+            PassStage.MarkTargetHostBeforeHighlighting -> highlightingHelper?.markTargetHost()
+        }
     }
 }
