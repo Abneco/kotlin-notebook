@@ -24,18 +24,24 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
     private fun registerNewCallback(file: BackedNotebookVirtualFile): Int {
         return countersLock.write {
             val (cnt, pq) = callbacksCounters[file] ?: (0 to PriorityQueue<Int>())
+            if (pq.size > 1 && !pq.contains(-1)) {
+                pq.add(-1)
+            }
             pq.add(cnt)
             callbacksCounters[file] = (cnt + 1) to pq
             cnt
         }
     }
 
-    // returns true if it was the last registered callback
-    fun unregisterCallback(file: BackedNotebookVirtualFile, index: Int): Boolean {
+    // returns true if it was the last registered callback and was not after single run with error
+    fun unregisterCallback(file: BackedNotebookVirtualFile, index: Int, onError: Boolean = false): Boolean {
         return countersLock.write {
             val (_, pq) = callbacksCounters[file] ?: return@write false
             pq.remove(index)
-            pq.isEmpty()
+            val isAfterSeriesRuns = pq.size == 1 && pq.contains(-1)
+            if (isAfterSeriesRuns) pq.remove(-1)
+            val singleErrorRun = onError && !isAfterSeriesRuns
+            pq.isEmpty() && !singleErrorRun
         }
     }
 

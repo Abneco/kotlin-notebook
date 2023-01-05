@@ -75,6 +75,7 @@ class JupyterKotlinCellExecutionCallback(
                 FileDocumentManager.getInstance().getDocument(virtualFile.file)?.putUserData(
                     CompleteHighlightingRange, psiCell.textRange
                 )
+                updateScriptingIfNeeded(true)
                 return@invokeLater
             }
             val snippetMetadata: EvaluatedSnippetMetadata
@@ -113,9 +114,9 @@ class JupyterKotlinCellExecutionCallback(
     override fun onUpdateOutput(message: JupyterMessage) {
     }
 
-    private fun updateScriptingIfNeeded() {
+    private fun updateScriptingIfNeeded(onError: Boolean = false) {
         val factory = JupyterKotlinCellExecutionCallbackFactory.getInstance()
-        val shouldUpdateDependencies = factory.unregisterCallback(virtualFile, index)
+        val shouldUpdateDependencies = factory.unregisterCallback(virtualFile, index, onError)
 
         if (shouldUpdateDependencies) {
             val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
