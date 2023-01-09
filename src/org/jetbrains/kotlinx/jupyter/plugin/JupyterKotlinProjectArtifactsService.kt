@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.compiler.CompilerPaths
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
@@ -68,7 +69,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
     private fun addBuildListener() {
         project.service<BuildViewManager>().addListener(
             BuildProgressListener { buildId, event ->
-                println("$buildId $event")
+                LOG.debug("$buildId $event")
             },
             this@JupyterKotlinProjectArtifactsService
         )
@@ -203,6 +204,8 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
     }
 
     companion object {
+        private val LOG = logger<JupyterKotlinProjectArtifactsService>()
+
         fun getInstance(project: Project): JupyterKotlinProjectArtifactsService {
             return project.service()
         }
