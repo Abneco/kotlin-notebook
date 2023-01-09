@@ -1,13 +1,10 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
-import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterBackedVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.write
@@ -45,18 +42,11 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
         }
     }
 
-    override fun create(psiCell: JupyterPsiCell): JupyterExecutionCallback? {
-        var notebookFile: BackedNotebookVirtualFile? = null
-        lateinit var cellProject: Project
-        lateinit var jupyterPsiCell: JupyterPsiCell
-        lateinit var cellSource: String
-        runReadAction {
-            notebookFile = psiCell.getJupyterBackedVirtualFile()!!
-            cellProject = psiCell.project
-            jupyterPsiCell = psiCell
-            cellSource = psiCell.text
-        }
-        val file = notebookFile ?: return null
+    override fun create(task: JupyterExecutionTask): JupyterExecutionCallback? {
+        val file = task.notebookVirtualFile
+        val cellProject = task.project ?: return null
+        val jupyterPsiCell = task.psiCell
+        val cellSource = task.source
         if (!file.file.isKotlinNotebook) return null
 
         val index = registerNewCallback(file)
