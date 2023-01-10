@@ -30,6 +30,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCompleteAnalysisArea
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.isEitherSymmetricallyContainedRange
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
@@ -45,11 +46,13 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
     }
 
     override fun getCollectorFor(file: PsiFile, editor: Editor, settings: T, sink: InlayHintsSink): InlayHintsCollector? {
+        val project = file.project
+
         return object : FactoryInlayHintsCollector(editor) {
             private val document = FileDocumentManager.getInstance().getDocument(file.virtualFile)!!
+            private val optionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
 
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
-                val project = editor.project ?: element.project
                 if (DumbService.isDumb(project) || element !is JupyterPsiCellImpl || !element.isValid) return true
 
                 val modificationArea = document.getNotebookCompleteAnalysisArea()
@@ -58,6 +61,8 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
 
 
                 if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
+                    if (optionsProvider.state.shouldLimitTypeHintsByActiveCell) return true
+
                     registry.entries.forEach { (el, data) ->
                         val resolved = data.filter { isElementSupported(it, settings) }.ifEmpty { return@forEach }
                         resolved.forEach { hintType ->

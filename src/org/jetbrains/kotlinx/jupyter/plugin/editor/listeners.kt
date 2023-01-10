@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DAEMON_EVENT_TOPIC
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DaemonListener
+import com.intellij.codeInsight.hints.InlayHintsPassFactory
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Editor
@@ -28,6 +29,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import kotlin.math.min
@@ -35,16 +37,18 @@ import kotlin.math.min
 class NotebookCaretListener(private val project: Project, private val vFile: BackedNotebookVirtualFile,
                             private val editor: Editor): CaretListener {
     private val psiFile = vFile.file.toPsiFile(project)
+    private val doc = psiFile?.toDocument(project)
+    private val updateScope = CoroutineScope(Dispatchers.Default)
+    private val projectOptionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
+    private val codeAnalyzer = DaemonCodeAnalyzer.getInstance(project)
+
     private var lastCellInd: Int = -1
     private var lastCell: PsiLanguageInjectionHost? = null
     private var prevCell: PsiLanguageInjectionHost? = null
     private var floatingPrevCell: PsiLanguageInjectionHost? = null
     private var floatingCellInd: Int = -1
     private var lastTimeCellFocusChanged = 0L
-    private val codeAnalyzer = DaemonCodeAnalyzer.getInstance(project)
-    private val doc = psiFile?.toDocument(project)
     private var deferredFastUpdate: Job? = null
-    private val updateScope = CoroutineScope(Dispatchers.Default)
     private var isFirstRun = true
 
     init {
@@ -129,6 +133,9 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         doc?.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, completeAnalysisRange)
         //println("doc: $doc, putting complete analysis as ${lastCell?.textRange}, text: ${lastCell?.text}")
         psiFile?.let {
+            if (projectOptionsProvider.state.shouldLimitTypeHintsByActiveCell) {
+                InlayHintsPassFactory.clearModificationStamp(editor)
+            }
             invokeLater {
                 codeAnalyzer.restart(it)
             }

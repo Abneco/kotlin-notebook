@@ -5,9 +5,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ui.configuration.SdkComboBox
 import com.intellij.openapi.roots.ui.configuration.SdkComboBoxModel
 import com.intellij.openapi.ui.DialogPanel
+import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.panel
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 import javax.swing.JCheckBox
+import javax.swing.JComponent
 import javax.swing.JPanel
 
 class KotlinNotebookSettingsPanel(
@@ -17,17 +19,23 @@ class KotlinNotebookSettingsPanel(
     private lateinit var panel: DialogPanel
     private lateinit var jdkPath: SdkComboBox
     private lateinit var shouldBuildProject: JCheckBox
+    private lateinit var shouldLimitTypeHintsByActiveCell: JCheckBox
+    private val initOrder = listOf(
+        ::initJdkComboBox,
+        ::initShouldBuildCheckBox,
+        ::initShouldLimitTypeHintsCheckBox
+    )
 
     private fun collectState(): KotlinNotebookProjectOptionsProvider.State {
         return KotlinNotebookProjectOptionsProvider.State(
             jdkPath = jdkPath.getSelectedSdk()?.homePath,
             shouldBuildProject = shouldBuildProject.isSelected,
+            shouldLimitTypeHintsByActiveCell = shouldLimitTypeHintsByActiveCell.isSelected
         )
     }
 
     fun createPanel(): JPanel {
-        initJdkComboBox()
-        initShouldBuildCheckBox()
+        initOrder.forEach { it.invoke() }
 
         return panel {
             row(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.path")) {
@@ -36,6 +44,11 @@ class KotlinNotebookSettingsPanel(
             row(null) {
                 cell(shouldBuildProject)
             }
+            this.group(JupyterKotlinBundle.message("kotlin.jupyter.settings.typeHints")) {
+                row(null) {
+                    cell(shouldLimitTypeHintsByActiveCell)
+                }
+            }
         }.also { panel = it }
     }
 
@@ -43,6 +56,13 @@ class KotlinNotebookSettingsPanel(
         shouldBuildProject = JCheckBox(
             JupyterKotlinBundle.message("checkbox.should.build.project"),
             optionsProvider.state.shouldBuildProject
+        )
+    }
+
+    private fun initShouldLimitTypeHintsCheckBox() {
+        shouldLimitTypeHintsByActiveCell = JCheckBox(
+            JupyterKotlinBundle.message("checkbox.should.typehint.only.active.cell"),
+            optionsProvider.state.shouldLimitTypeHintsByActiveCell
         )
     }
 

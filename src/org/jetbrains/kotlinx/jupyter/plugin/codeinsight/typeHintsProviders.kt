@@ -31,6 +31,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractIn
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.psiHostChainHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.putBindingContext
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.isEitherSymmetricallyContainedRange
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 
 
@@ -122,6 +123,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
 
         return object : FactoryInlayHintsCollector(editor) {
             private val document = FileDocumentManager.getInstance().getDocument(file.virtualFile)
+            private val optionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
 
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
                 if (file.project.service<DumbService>().isDumb) return true
@@ -134,6 +136,8 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 val registry = KotlinNotebookAbstractInlayTypeHintsProvider.getOrCreateChainCallTypeHintsRegistry(element)
                                                 // lhs.contains(rhs) || rhs.contains(rhs)
                 if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
+                    if (optionsProvider.state.shouldLimitTypeHintsByActiveCell) return true
+
                     registry.entries.forEach { (el, data) ->
                         if (el !is KtQualifiedExpression) return@forEach
                         val c = el.getBindingContext() ?: return@forEach // getTypeComputationContext(el)
