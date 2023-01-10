@@ -85,7 +85,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
     }
 }
 
-internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(rhs)
+internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(lhs)
 
 class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
     override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {

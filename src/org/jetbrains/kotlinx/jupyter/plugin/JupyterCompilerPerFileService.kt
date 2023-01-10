@@ -425,6 +425,7 @@ class JupyterCompilerPerFileService(
                 val properFile = injectedManager.getInjectedPsiFiles(host)
                     ?.firstOrNull()?.first
                 properFile?.putUserData(ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY, null)
+                host.putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostChainHintsRegistry, mutableMapOf())
                 host.putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostHintsRegistry, mutableMapOf())
             }
         }

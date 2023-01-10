@@ -26,8 +26,10 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.types.KotlinType
-import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.psiHostHintsRegistry
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
+import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.getBindingContext
+import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.getNotebookModificationArea
+import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.psiHostChainHintsRegistry
+import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.putBindingContext
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.isEitherSymmetricallyContainedRange
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 
@@ -127,16 +129,14 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 if (element !is JupyterPsiCellImpl) return true
                 val ktFile = tryGetInjectedKtFileIfPossibleOrProvided(element, project) as? PsiFile ?: return true
 
-                val modificationArea = if (document?.getUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE) != null) {
-                    synchronized(document) { document.getUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE) }
-                } else null
+                val modificationArea = document?.getNotebookModificationArea()
 
-                val registry = KotlinNotebookAbstractInlayTypeHintsProvider.getOrCreateTypeHintsRegistry(element)
+                val registry = KotlinNotebookAbstractInlayTypeHintsProvider.getOrCreateChainCallTypeHintsRegistry(element)
                                                 // lhs.contains(rhs) || rhs.contains(rhs)
                 if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
                     registry.entries.forEach { (el, data) ->
                         if (el !is KtQualifiedExpression) return@forEach
-                        val c = getTypeComputationContext(el)
+                        val c = el.getBindingContext() ?: return@forEach // getTypeComputationContext(el)
                         val withTypes = data.mapNotNull { it.first.getType(c)?.let { t -> ExpressionWithType(it.first, t)} }
                         addInlayElementsToSink(c, withTypes, sink, factory, offset = element.textOffset + shiftMargin)
                     }
@@ -164,11 +164,13 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
             manager.getInjectionHost(it.containingFile)
         }
         val registry = runIf(host != null) {
-            host!!.getUserData(psiHostHintsRegistry)
+            host!!.getUserData(psiHostChainHintsRegistry)
         }
+        val topMostExpression = elements.first().expression
         if (host != null) {
-            registry?.put(elements.first().expression, elements.map { Pair(it.expression, it.type.getInlayPresentation(it.expression, factory, host.project, context)) })
+            registry?.put(topMostExpression, elements.map { Pair(it.expression, it.type.getInlayPresentation(it.expression, factory, host.project, context)) })
         }
+        topMostExpression.putBindingContext(context)
 
         super.addInlayElementsAdapter(context, elements, sink, factory, offset)
     }

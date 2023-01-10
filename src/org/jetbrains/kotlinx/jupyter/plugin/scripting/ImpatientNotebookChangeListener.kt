@@ -86,6 +86,7 @@ class ImpatientNotebookChangeListener(
             document.putUserData(CompleteHighlightingRange, properTextRange)
             document.putUserData(NotebookDocumentTargetRanges, null)
             document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
+            cellOfChange.putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostChainHintsRegistry, mutableMapOf())
             cellOfChange.putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostHintsRegistry, mutableMapOf())
             //println("Inside before change for ${injectedPsi?.containingFile?.name}, hostsSize: $hostSize, injected: ${injectedPsi?.text}")
         }
