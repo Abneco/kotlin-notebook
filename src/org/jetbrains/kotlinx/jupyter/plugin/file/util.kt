@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.isScript
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.jupyter.NOTEBOOK_LANGUAGE
@@ -105,6 +106,12 @@ internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
 
     return (injectInfo as? PsiFile)?.findElementAt(caretOffSet - host.startOffsetInParent - 5)
 }
+
+internal fun Document?.getNotebookCompleteAnalysisArea() =
+    if (this?.getUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange) != null) {
+        synchronized(this) { this.getUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange) }
+    } else null
+
 
 internal fun PsiFile.restartAnalyzing() {
     DaemonCodeAnalyzer.getInstance(this.project).restart(this)
