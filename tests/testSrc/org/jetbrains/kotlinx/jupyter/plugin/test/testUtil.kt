@@ -11,6 +11,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMess
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterBackedVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
@@ -94,6 +95,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: 
                             messages.outputs.add(message)
                         }
                     },
+                    notebookVirtualFile = cell.getJupyterBackedVirtualFile()!!,
                     project = project
                 )
             )
