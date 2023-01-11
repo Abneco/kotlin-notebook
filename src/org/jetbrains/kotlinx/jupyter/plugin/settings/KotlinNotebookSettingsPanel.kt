@@ -16,62 +16,71 @@ class KotlinNotebookSettingsPanel(
     private val project: Project,
     private val optionsProvider: KotlinNotebookProjectOptionsProvider
 ) {
+    private class OptionComponentInitializer<T: JComponent>(
+        init: () -> T,
+        val setupUI: Panel.(OptionComponentInitializer<*>) -> Unit
+    ) {
+        val component: T by lazy { init() }
+    }
+
     private lateinit var panel: DialogPanel
-    private lateinit var jdkPath: SdkComboBox
-    private lateinit var shouldBuildProject: JCheckBox
-    private lateinit var shouldLimitTypeHintsByActiveCell: JCheckBox
-    private val initOrder = listOf(
-        ::initJdkComboBox,
-        ::initShouldBuildCheckBox,
-        ::initShouldLimitTypeHintsCheckBox
+    private val jdkPath = OptionComponentInitializer<SdkComboBox>(::initJdkComboBox) {
+        row(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.path")) {
+            cell(it.component)
+        }
+    }
+    private val shouldBuildProject = OptionComponentInitializer<JCheckBox>(::initShouldBuildCheckBox) {
+        row(null) {
+            cell(it.component)
+        }
+    }
+    private val shouldLimitTypeHintsByActiveCell = OptionComponentInitializer<JCheckBox>(::initShouldLimitTypeHintsCheckBox) {
+        this.group(JupyterKotlinBundle.message("kotlin.jupyter.settings.typeHints")) {
+            row(null) {
+                cell(it.component)
+            }
+        }
+    }
+    private val providerInitializers = listOf(
+        jdkPath,
+        shouldBuildProject,
+        shouldLimitTypeHintsByActiveCell
     )
 
     private fun collectState(): KotlinNotebookProjectOptionsProvider.State {
         return KotlinNotebookProjectOptionsProvider.State(
-            jdkPath = jdkPath.getSelectedSdk()?.homePath,
-            shouldBuildProject = shouldBuildProject.isSelected,
-            shouldLimitTypeHintsByActiveCell = shouldLimitTypeHintsByActiveCell.isSelected
+            jdkPath = jdkPath.component.getSelectedSdk()?.homePath,
+            shouldBuildProject = shouldBuildProject.component.isSelected,
+            shouldLimitTypeHintsByActiveCell = shouldLimitTypeHintsByActiveCell.component.isSelected
         )
     }
 
     fun createPanel(): JPanel {
-        initOrder.forEach { it.invoke() }
-
         return panel {
-            row(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.path")) {
-                cell(jdkPath)
-            }
-            row(null) {
-                cell(shouldBuildProject)
-            }
-            this.group(JupyterKotlinBundle.message("kotlin.jupyter.settings.typeHints")) {
-                row(null) {
-                    cell(shouldLimitTypeHintsByActiveCell)
-                }
-            }
+            providerInitializers.forEach { it.setupUI(this, it) }
         }.also { panel = it }
     }
 
-    private fun initShouldBuildCheckBox() {
-        shouldBuildProject = JCheckBox(
+    private fun initShouldBuildCheckBox(): JCheckBox {
+        return JCheckBox(
             JupyterKotlinBundle.message("checkbox.should.build.project"),
             optionsProvider.state.shouldBuildProject
         )
     }
 
-    private fun initShouldLimitTypeHintsCheckBox() {
-        shouldLimitTypeHintsByActiveCell = JCheckBox(
+    private fun initShouldLimitTypeHintsCheckBox(): JCheckBox {
+        return JCheckBox(
             JupyterKotlinBundle.message("checkbox.should.typehint.only.active.cell"),
             optionsProvider.state.shouldLimitTypeHintsByActiveCell
         )
     }
 
-    private fun initJdkComboBox() {
+    private fun initJdkComboBox(): SdkComboBox {
         val comboBoxModel = SdkComboBoxModel.createProjectJdkComboBoxModel(
             project,
             KotlinNotebookProjectOptionsProvider.getInstance(project),
         )
-        jdkPath = SdkComboBox(comboBoxModel)
+        return SdkComboBox(comboBoxModel)
     }
 
     fun apply() {
