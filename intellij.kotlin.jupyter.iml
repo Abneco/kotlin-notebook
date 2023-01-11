@@ -74,5 +74,6 @@
     <orderEntry type="module" module-name="intellij.java.impl" />
     <orderEntry type="module" module-name="intellij.notebooks.visualization" />
     <orderEntry type="module" module-name="kotlin.refactorings.common" />
+    <orderEntry type="module" module-name="kotlin.base.fe10.highlighting" />
   </component>
 </module>

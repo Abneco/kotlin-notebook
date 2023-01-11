@@ -1,11 +1,21 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.file.highlighting
 
+import com.intellij.codeHighlighting.Pass
+import com.intellij.codeInsight.daemon.impl.HighlightInfo
+import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.AnnotationHolder
+import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.psi.PsiFile
+import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.idea.base.highlighting.visitor.AbstractAnnotationHolderHighlightingVisitor
+import org.jetbrains.kotlin.idea.caches.resolve.analyzeWithAllCompilerChecks
+import org.jetbrains.kotlin.idea.highlighter.AbstractKotlinHighlightVisitor.Companion.suppressHighlight
+import org.jetbrains.kotlin.idea.highlighter.AbstractKotlinHighlightVisitor.Companion.unsuppressHighlight
+import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.AbstractKotlinHighlightingVisitorAdapter
 
 
@@ -17,7 +27,29 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
     }
 
     override fun analyze(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, action: Runnable): Boolean {
+        if (file !is KtFile) return true
         prepareForFileAndAdjust(file, holder, stage = PassStage.MarkTargetHostBeforeHighlighting)
+        val isTargetHost = synchronized(file) {
+            file.getUserData(NotebookHighlightingUtilityObject.NonTargetHostErrorRegistry) == null
+        }
+
+        if (isTargetHost) {
+            file.unsuppressHighlight()
+            return true
+        }
+
+        file.analyzeWithAllCompilerChecks(
+            {
+                if (it.severity == Severity.ERROR) {
+                    val element = it.psiElement as? KtElement
+                    val info = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
+                        .severity(HighlightSeverity.ERROR).range(it.psiElement)
+                        .group(Pass.UPDATE_ALL).description(it.factory.name).createUnconditionally()
+                    element?.suppressHighlight()
+                    holder.add(info)
+                }
+            }
+        )
         return true
     }
 }
