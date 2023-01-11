@@ -68,7 +68,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: 
         runReadAction {
             executionManager.submitTask(
                 JupyterExecutionTask(
-                    code = null,
+                    code = cell.source.text,
                     psiCell = cell,
                     options = JupyterExecutionTask.Options(
                         onExecutionStartedWhenSubmitted = false,
