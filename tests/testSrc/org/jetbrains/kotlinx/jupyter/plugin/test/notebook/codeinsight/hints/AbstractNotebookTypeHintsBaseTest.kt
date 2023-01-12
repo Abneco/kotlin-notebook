@@ -8,17 +8,24 @@ import com.intellij.codeInsight.hints.InlayHintsProvider
 import com.intellij.codeInsight.hints.InlayHintsSinkImpl
 import com.intellij.codeInsight.hints.LinearOrderInlayRenderer
 import com.intellij.codeInsight.hints.presentation.PresentationRenderer
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.SyntaxTraverser
+import com.intellij.refactoring.suggested.startOffset
 import com.intellij.util.containers.isEmpty
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.markHostAsCompleteAnalysisTarget
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
+import org.jetbrains.kotlinx.jupyter.plugin.test.getCells
+import org.jetbrains.kotlinx.jupyter.plugin.test.isInjectedKtFile
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import java.io.File
 
 
 abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTestCase() {
@@ -27,6 +34,7 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
     override fun runInDispatchThread(): Boolean {
         return true
     }
+    abstract val provider: InlayHintsProvider<*>
 
     companion object {
         const val hintsEmptyMessage = "// NO HINTS"
@@ -40,7 +48,7 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
 
     open val isLimitTypeHintsByActiveCell: Boolean = false
 
-    protected val markerShift = KotlinNotebookAbstractInlayTypeHintsProvider.markerShift
+    protected open val markerShift = KotlinNotebookAbstractInlayTypeHintsProvider.markerShift
 
     @JvmOverloads
     fun <T : Any> runTestProvider(cellOffset: Int,
@@ -51,7 +59,6 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
                                   verifyHintPresence: Boolean = false) {
         val sourceText = InlayDumpUtil.removeHints(expectedText)
         val actualText = runReadAction {
-            //(" ".repeat(cellShiftMargin + markerShift) + dumpInlayHints(sourceText, provider, settings)).trimStart()
             dumpInlayHints(sourceText, provider, cellOffset, settings)
         }
         assertEquals(expectedText, actualText)
@@ -98,6 +105,37 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
             }
         } else {
             collector.collect(cell, editor, sink)
+        }
+    }
+
+
+    protected fun <T: Any> doTest(provider: InlayHintsProvider<T>, cellInd: Int, limitedAreaTargetInd: Int? = null,
+                                  setupAction: (T) -> Unit = {}) {
+        val notebookFile = configureExecutionTest()
+        val cells = notebookFile.getCells()
+        val neededCell = cells.getOrNull(cellInd) ?: error("Invalid cell index provided")
+        limitedAreaTargetInd?.let {
+            enableLimitByActiveCell()
+            val completeAnalysis = cells.getOrNull(limitedAreaTargetInd) ?: error("Provided complete highlighting area is invalid")
+            val doc = myFixture.getDocument(notebookFile) ?: error("Document should not be null")
+            markHostAsCompleteAnalysisTarget(doc, completeAnalysis)
+        }
+
+        val cellShift = neededCell.startOffset
+        val injectedFileContents = runReadAction {
+            (InjectedLanguageManager.getInstance(project)
+                .getInjectedPsiFiles(neededCell)?.firstOrNull { it.first.containingFile.isInjectedKtFile() }?.first as? PsiFile)?.text
+        } ?: error("No suitable KtFile found in a host")
+
+        with(provider) {
+            val expectedFileContents = FileUtil.loadFile(File("$testDataPath/${getTestName(true)}.kt"), true)
+            val settings = createSettings()
+            setupAction(settings)
+            runTestProvider(cellShift, injectedFileContents, expectedFileContents, this, settings, verifyHintPresence = true)
+        }
+
+        limitedAreaTargetInd?.let {
+            disableLimitByActiveCell()
         }
     }
 }
