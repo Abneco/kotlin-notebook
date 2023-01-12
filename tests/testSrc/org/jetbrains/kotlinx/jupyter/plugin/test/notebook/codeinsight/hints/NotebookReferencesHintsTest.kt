@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.codeinsight.hints
 
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookReferencesTypeHintsProvider
+import org.junit.Ignore
 import org.junit.Test
 
 class NotebookReferencesHintsTest : AbstractNotebookTypeHintsBaseTest() {
@@ -11,6 +12,7 @@ class NotebookReferencesHintsTest : AbstractNotebookTypeHintsBaseTest() {
         get() = super.markerShift //- 1
 
     @Test
+    @Ignore("Correct path to type definition differs on TC")
     fun testProperties() {
         doTest(provider, 0) {
             it.propertyType = true
