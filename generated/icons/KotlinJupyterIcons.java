@@ -14,7 +14,7 @@ public final class KotlinJupyterIcons {
   private static @NotNull Icon load(@NotNull String path, int cacheKey, int flags) {
     return IconManager.getInstance().loadRasterizedIcon(path, KotlinJupyterIcons.class.getClassLoader(), cacheKey, flags);
   }
-  /** 64x64 */ public static final @NotNull Icon FileIcon = load("icons/fileIcon.svg", 2045625422, 0);
-  /** 16x16 */ public static final @NotNull Icon FileIconGrey = load("icons/fileIconGrey.svg", -387442071, 0);
+  /** 16x16 */ public static final @NotNull Icon FileIcon = load("icons/fileIcon.svg", -1788959931, 0);
   /** 16x16 */ public static final @NotNull Icon FileIconGreyKotlin = load("icons/fileIconGreyKotlin.svg", -574153644, 0);
+  /** 16x16 */ public static final @NotNull Icon ToolWindowIcon = load("icons/toolWindowIcon.svg", 720582807, 0);
 }
