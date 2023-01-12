@@ -42,7 +42,6 @@ import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
-import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
@@ -425,8 +424,6 @@ class JupyterCompilerPerFileService(
                 val properFile = injectedManager.getInjectedPsiFiles(host)
                     ?.firstOrNull()?.first
                 properFile?.putUserData(ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY, null)
-                host.putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostChainHintsRegistry, mutableMapOf())
-                host.putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostHintsRegistry, mutableMapOf())
             }
         }
     }
