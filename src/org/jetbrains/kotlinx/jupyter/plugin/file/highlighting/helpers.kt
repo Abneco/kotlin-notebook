@@ -23,6 +23,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
@@ -34,6 +35,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.min
+
+@TestOnly
+fun markHostAsCompleteAnalysisTarget(document: Document, host: PsiLanguageInjectionHost) {
+    document.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, host.textRange)
+}
 
 internal object NotebookHighlightingUtilityObject {
     const val notebookInjectedFileExtension: String = "jupyter.kts"

@@ -42,11 +42,15 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
 }
 
 
+fun PsiFile.getCells(): List<JupyterPsiCell> = descendantsOfType<JupyterPsiCell>().toList()
+
+fun PsiFile.isInjectedKtFile(): Boolean = name.endsWith("kts")
+
 fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: Editor) {
     val project = notebookFile.project
     val document = PsiDocumentManager.getInstance(project).getDocument(notebookFile)!!
     val executionManager = JupyterCellExecutionManager.getInstance(project)
-    val notebookCells = notebookFile.descendantsOfType<JupyterPsiCell>().toList()
+    val notebookCells = notebookFile.getCells()
     val cellsCount = notebookCells.size
     Assertions.assertEquals(tester.expectedCellsCount, cellsCount)
 

@@ -25,5 +25,6 @@
     <orderEntry type="module" module-name="kotlin.test-framework" />
     <orderEntry type="module" module-name="intellij.platform.tests" scope="TEST" />
     <orderEntry type="module" module-name="intellij.notebooks.visualization" scope="TEST" />
+    <orderEntry type="module" module-name="kotlin.idea" scope="TEST" />
   </component>
 </module>

@@ -78,7 +78,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
 
                 val properFileElement = tryGetInjectedKtFileIfPossibleOrProvided(element, project)
 
-               return traverseElementsAndApplyAction(properFileElement) { elem ->
+                return traverseElementsAndApplyAction(properFileElement) { elem ->
                     val resolved = HintType.resolve(elem).ifEmpty { return@traverseElementsAndApplyAction true }
                     val f = factory
                     resolved.forEach { hintType ->

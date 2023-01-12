@@ -55,7 +55,7 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
 
     override fun setUp() {
         super.setUp()
-      Disposer.register(testRootDisposable, JupyterServers.getInstance())
+        Disposer.register(testRootDisposable, JupyterServers.getInstance())
     }
 
     protected fun configureExecutionTest(): PsiFile {
