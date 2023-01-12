@@ -10,6 +10,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebo
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
+import org.jetbrains.plugins.notebooks.editor.getIntervalPointer
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterBackedVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
@@ -71,6 +72,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: 
                 JupyterExecutionTask(
                     code = cell.source.text,
                     psiCell = cell,
+                    cellPointer = getIntervalPointer(editor, cellNumber)!!,
                     options = JupyterExecutionTask.Options(
                         onExecutionStartedWhenSubmitted = false,
                         ignoreOutput = false,
