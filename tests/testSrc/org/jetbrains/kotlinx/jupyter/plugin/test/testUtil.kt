@@ -4,13 +4,13 @@ package org.jetbrains.kotlinx.jupyter.plugin.test
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Editor
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.descendantsOfType
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionTest
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
-import org.jetbrains.plugins.notebooks.editor.getIntervalPointer
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterBackedVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
@@ -20,6 +20,8 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
+import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
+import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointerFactory
 import org.junit.Rule
 import org.junit.jupiter.api.Assertions
 import org.junit.runner.RunWith
@@ -42,6 +44,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
 
 fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: Editor) {
     val project = notebookFile.project
+    val document = PsiDocumentManager.getInstance(project).getDocument(notebookFile)!!
     val executionManager = JupyterCellExecutionManager.getInstance(project)
     val notebookCells = notebookFile.descendantsOfType<JupyterPsiCell>().toList()
     val cellsCount = notebookCells.size
@@ -68,11 +71,13 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: 
         val messages = ReceivedMessagesBuilder()
         val cell = notebookCells[cellNumber]
         runReadAction {
+            val cellPointer = NotebookIntervalPointerFactory.get(project, document)
+                .create(NotebookCellLines.get(document).intervals[cellNumber])
             executionManager.submitTask(
                 JupyterExecutionTask(
                     code = cell.source.text,
                     psiCell = cell,
-                    cellPointer = getIntervalPointer(editor, cellNumber)!!,
+                    cellPointer = cellPointer,
                     options = JupyterExecutionTask.Options(
                         onExecutionStartedWhenSubmitted = false,
                         ignoreOutput = false,
