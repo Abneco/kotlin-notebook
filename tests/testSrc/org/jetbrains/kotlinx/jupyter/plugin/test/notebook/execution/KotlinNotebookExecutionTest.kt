@@ -9,6 +9,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.EditorSessionInitializationSe
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterBackedVirtualFileOrThrow
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.junit.Ignore
 import org.junit.Test
@@ -62,7 +63,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
                 EditorSessionInitializationService.getInstance().onSessionInitialized(editor) {
                     Thread.sleep(2000)
                     runReadAction {
-                        executionManager.interrupt(psiCell)
+                        executionManager.interrupt(psiCell.getJupyterBackedVirtualFileOrThrow())
                     }
                 }
             }
