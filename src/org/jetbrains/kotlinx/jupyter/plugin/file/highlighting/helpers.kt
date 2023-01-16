@@ -59,6 +59,8 @@ internal object NotebookHighlightingUtilityObject {
     internal val CompleteHighlightingRange: Key<TextRange> = Key.create("notebook.document.errors.analysis.range")
     internal val NonTargetHostErrorRegistry: Key<MutableCollection<HighlightInfo>> = Key.create("injected.element.actual.errors.registry")
 
+    internal val ReformatDocumentActionTargets: Key<MutableSet<Int>> = Key.create("notebook.refactor.action.triggered")
+
     internal val NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX: Key<Int> = Key.create("notebook.document.target.cell.ind")
 
     fun scheduleUpdateLater(file: PsiFile, delayDelta: Long = 700) {

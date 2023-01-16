@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NonTargetHostErrorRegistry
@@ -58,9 +59,12 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             }?.textRange
             val possibleRange = document.getUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE)
             //if (cellInd != null && possibleRange?.endOffset != cellInd.endOffset) cellInd else possibleRange
-            possibleRange
+            if (possibleRange == null && cellInd != null) {
+                document.putUserData(CompleteHighlightingRange, cellInd)
+                cellInd
+            } else null
         }?.let {
-            listOf(TextRange(it.startOffset, it.endOffset + 1))
+            listOf(TextRange(it.startOffset, it.endOffset + 2))
         }
     }
 

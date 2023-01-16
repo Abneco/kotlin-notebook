@@ -3,18 +3,20 @@ package org.jetbrains.kotlinx.jupyter.plugin.scripting
 
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
-import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.ReformatDocumentActionTargets
+import org.jetbrains.kotlinx.jupyter.plugin.file.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
@@ -33,6 +35,7 @@ class ImpatientNotebookChangeListener(
     private val injectedManager = InjectedLanguageManager.getInstance(project)
     private var lastTimeCellChangeActionPerformed = 0L
     private var lastAdjustedRange: TextRange? = null
+    private var cellsAffectedByReformat = mutableSetOf<Int>()
 
     private fun handleNotebookChangeEvent(event: DocumentEvent) {
         val file = FileDocumentManager.getInstance().getFile(event.document)?.let(::BackedNotebookVirtualFile) ?: return
@@ -57,6 +60,15 @@ class ImpatientNotebookChangeListener(
         val cellOfChange = psiCells?.get(actualCellIndex)
 
         if (lineOfChange > allLines.size - 1 || cellOfChange == null) return // ignore change of whole document
+        val isInDocumentReformatAction = synchronized(document) {
+            document.getUserData(ReformatDocumentActionTargets) != null
+        }
+        if (isInDocumentReformatAction) {
+            cellsAffectedByReformat.add(actualCellIndex)
+            document.handleWholeRefactorAction(cellsAffectedByReformat)
+            return
+        } else cellsAffectedByReformat.clear()
+
         val delta = if (event.newLength > event.oldLength) event.newLength else -event.oldLength
         val isCellListChange = eventsType.isCellListChangeEvent()
 
@@ -79,15 +91,16 @@ class ImpatientNotebookChangeListener(
 
         runReadAction {
             val injectedPsi = injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first
-
+            val actualRangeToStore = if (injectedPsi != null) { // null means concurrent race
+                properTextRange
+            } else null
             injectedPsi?.putUserData(ANALYZER_PASS_INJECTED_INFO_HOLDER_KEY, null)
             document.putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE,
-                                 properTextRange)
-            document.putUserData(CompleteHighlightingRange, properTextRange)
+                                 actualRangeToStore)
+            document.putUserData(CompleteHighlightingRange, actualRangeToStore)
             document.putUserData(NotebookDocumentTargetRanges, null)
             document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
-            cellOfChange.putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostChainHintsRegistry, mutableMapOf())
-            cellOfChange.putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostHintsRegistry, mutableMapOf())
+            cellOfChange.invalidateTypeHintsRegistry()
             //println("Inside before change for ${injectedPsi?.containingFile?.name}, hostsSize: $hostSize, injected: ${injectedPsi?.text}")
         }
     }
@@ -116,6 +129,11 @@ class ImpatientNotebookChangeListener(
         }
         lastAdjustedRange = range
         return range
+    }
+
+    private fun Document.handleWholeRefactorAction(targets: MutableSet<Int>) {
+        //putUserData(NotebookDocumentTargetRanges, getRangesAfterDocumentReformatOrNull(allCells))
+        putUserData(ReformatDocumentActionTargets, targets)
     }
 
     private fun NotebookChangeEventsType.isCellListChangeEvent(): Boolean =

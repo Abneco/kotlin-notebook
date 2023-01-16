@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.isScript
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
@@ -115,4 +116,9 @@ internal fun Document?.getNotebookCompleteAnalysisArea() =
 
 internal fun PsiFile.restartAnalyzing() {
     DaemonCodeAnalyzer.getInstance(this.project).restart(this)
+}
+
+internal fun PsiLanguageInjectionHost.invalidateTypeHintsRegistry() {
+    putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostChainHintsRegistry, mutableMapOf())
+    putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostHintsRegistry, mutableMapOf())
 }
