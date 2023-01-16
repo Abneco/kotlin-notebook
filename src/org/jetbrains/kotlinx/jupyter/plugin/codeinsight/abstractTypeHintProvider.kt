@@ -63,15 +63,19 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                 if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
                     if (optionsProvider.state.shouldLimitTypeHintsByActiveCell) return true
 
-                    registry.entries.forEach { (el, data) ->
-                        val resolved = data.filter { isElementSupported(it, settings) }.ifEmpty { return@forEach }
-                        resolved.forEach { hintType ->
-                            addInlayElementToSink(el, project,
-                                                  hintType, sink,
-                                                  factory, this@KotlinNotebookAbstractInlayTypeHintsProvider,
-                                                  hintsPriority, hintsArePlacedAtTheEndOfLine, hostOffset,
-                                                  registry, RegistryMode.Apply)
+                    try {
+                        registry.entries.forEach { (el, data) ->
+                            val resolved = data.filter { isElementSupported(it, settings) }.ifEmpty { return@forEach }
+                            resolved.forEach { hintType ->
+                                addInlayElementToSink(el, project,
+                                                      hintType, sink,
+                                                      factory, this@KotlinNotebookAbstractInlayTypeHintsProvider,
+                                                      hintsPriority, hintsArePlacedAtTheEndOfLine, hostOffset,
+                                                      registry, RegistryMode.Apply)
+                            }
                         }
+                    } catch (_: Throwable) {
+                        return true
                     }
                     return true
                 }
