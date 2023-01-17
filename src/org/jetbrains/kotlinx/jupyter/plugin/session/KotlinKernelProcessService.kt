@@ -121,7 +121,7 @@ class KotlinKernelProcessService {
         val classpathSeparator = System.getProperty("path.separator")
 
         val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
-        val javaExecutable = options.state.jdkPath?.let { javaHome ->
+        val javaExecutable = options.state.jdk.getPath(project)?.let { javaHome ->
             val binDir = File(javaHome).absoluteFile.resolve("bin")
             val javaExec = if (SystemInfo.isWindows) binDir.resolve("java.exe")
             else binDir.resolve("java")

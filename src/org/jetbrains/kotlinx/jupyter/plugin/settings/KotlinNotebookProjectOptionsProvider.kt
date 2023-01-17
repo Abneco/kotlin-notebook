@@ -34,7 +34,7 @@ class KotlinNotebookProjectOptionsProvider(
 
 
     data class State(
-        var jdkPath: String? = null,
+        var jdk: KotlinNotebookJdkOption = ProjectJdkOption,
         var shouldBuildProject: Boolean = true,
         var shouldLimitTypeHintsByActiveCell: Boolean = false,
     )
