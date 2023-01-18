@@ -100,6 +100,12 @@ internal object NotebookHighlightingUtilityObject {
         putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
     }
 
+    fun Document.reactOnThemeChangedEvent() {
+        putUserData(NotebookDocumentTargetRanges, null)
+        putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE, null)
+        putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
+        putUserData(RenamingEnclosedRange, null)
+    }
 
     /**
      * [require] ReadAction
@@ -121,9 +127,9 @@ internal object NotebookHighlightingUtilityObject {
         if (wouldShowNotification) {
           NotebookNotificationUtility.showKernelRestart(project)
         }
-      invokeLater {
-        psiFile?.restartAnalyzing()
-      }
+        invokeLater {
+            psiFile?.restartAnalyzing()
+        }
     }
 }
 
