@@ -91,7 +91,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: 
                     onError = { ex: Exception ->
                         endExceptionally(AssertionError("Notebook execution was not successful", ex))
                     },
-                    callback = object : JupyterExecutionCallbackAdapter() {
+                    callbacks = listOf(object : JupyterExecutionCallbackAdapter() {
                         override fun onStatus(message: JupyterStatusMessage) {
                             if (message.executionState == JupyterStatusMessage.JupyterExecutionState.IDLE) {
                                 receivedMessagesFutures[cellExecutionNumber[cellNumber]!!].complete(messages)
@@ -105,7 +105,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: 
                         override fun onUpdateOutput(message: JupyterMessage) {
                             messages.outputs.add(message)
                         }
-                    },
+                    }),
                     notebookVirtualFile = cell.getJupyterBackedVirtualFile()!!,
                     project = project
                 )
