@@ -83,6 +83,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: 
                     psiCell = cell,
                     cellPointer = cellPointer,
                     options = JupyterExecutionTask.Options(
+                        purpose = JupyterExecutionTask.Purpose.CELL_EXECUTION,
                         notifyWhenSubmitted = false,
                         ignoreOutput = false,
                         cleanOutput = true,
