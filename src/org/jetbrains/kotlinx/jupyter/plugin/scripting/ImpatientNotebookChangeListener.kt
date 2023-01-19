@@ -72,16 +72,17 @@ class ImpatientNotebookChangeListener(
         val isCellListChange = eventsType.isCellListChangeEvent()
 
         val properCellIndexOrNull = if (!isCellListChange) actualCellIndex else null
+        val cellRange = cellOfChange.textRange
         var properTextRange
             = if (isCellListChange) TextRange(event.offset, event.offset + event.newLength)
-              else TextRange(cellOfChange.textRange.startOffset, cellOfChange.textRange.endOffset + delta)
+              else cellRange.createSafeTextRangeWithDelta(delta)
 
         // heuristic on cell move event
         if (isCellListChange) {
             val currentTime = System.currentTimeMillis()
             val last = lastAdjustedRange
             if (currentTime - lastTimeCellChangeActionPerformed < 200 && last != null) {
-                properTextRange = properTextRange.union(last).let { TextRange(it.startOffset, it.endOffset + delta) }
+                properTextRange = properTextRange.union(last).createSafeTextRangeWithDelta(delta)
             } else {
                 lastTimeCellChangeActionPerformed = System.currentTimeMillis()
             }
@@ -140,4 +141,9 @@ class ImpatientNotebookChangeListener(
     override fun beforeDocumentChange(event: DocumentEvent) {
         handleNotebookChangeEvent(event)
     }
+}
+
+internal fun TextRange.createSafeTextRangeWithDelta(delta: Int): TextRange {
+    val newEnd = endOffset + delta
+    return if (newEnd < startOffset) this else TextRange(startOffset, newEnd)
 }
