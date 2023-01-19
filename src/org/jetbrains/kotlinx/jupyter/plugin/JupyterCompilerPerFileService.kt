@@ -7,8 +7,8 @@ import com.intellij.configurationStore.runAsWriteActionIfNeeded
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditor
@@ -22,6 +22,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.containers.nullize
 import com.intellij.util.io.delete
@@ -101,8 +102,6 @@ class JupyterCompilerPerFileService(
     private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ContainerUtil.newConcurrentSet() // LoggingList()
     private val scriptingSupport = JupyterKtScriptingSupport.getInstance(projectService.project)
     val cellOrdinalToClassName = mutableMapOf<Int, Set<String>>()
-    @Deprecated("For removal")
-    var completeAnalysisCellTarget: PsiLanguageInjectionHost? = null
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -293,27 +292,29 @@ class JupyterCompilerPerFileService(
     }
 
     private fun addAsPermanentLibrary(classpath: List<String>, sourceClasspath: List<String>) {
-        runWriteAction {
-            val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(projectService.project)
+        val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(projectService.project)
 
-            val libraryName = "Permanent Script Dependencies"
-            val newLibrary = libraryTable.getLibraryByName(libraryName)
-                ?: libraryTable.createLibrary(libraryName)
+        val libraryName = "Permanent Script Dependencies"
+        val newLibrary = libraryTable.getLibraryByName(libraryName)
+            ?: libraryTable.createLibrary(libraryName)
 
-            val model = newLibrary.modifiableModel
-            fun addPath(path: String, rootType: OrderRootType) {
-                if (path.endsWith(".jar")) {
-                    model.addRoot("file://$path", rootType)
-                }
+        val model = newLibrary.modifiableModel
+        fun addPath(path: String, rootType: OrderRootType) {
+            if (path.endsWith(".jar")) {
+                model.addRoot("file://$path", rootType)
             }
+        }
 
-            for (path in classpath) {
-                addPath(path, OrderRootType.CLASSES)
+        for (path in classpath) {
+            addPath(path, OrderRootType.CLASSES)
+        }
+        for (path in sourceClasspath) {
+            addPath(path, OrderRootType.SOURCES)
+        }
+        invokeLater {
+            runAsWriteActionIfNeeded {
+                model.commit()
             }
-            for (path in sourceClasspath) {
-                addPath(path, OrderRootType.SOURCES)
-            }
-            model.commit()
         }
     }
 
@@ -359,7 +360,9 @@ class JupyterCompilerPerFileService(
                 })
                 additionalDefaultImports.addSnippet(snippetMetadata.newImports)
 
-                addAsPermanentLibrary(snippetMetadata.newClasspath, snippetMetadata.newSources)
+                AppExecutorUtil.getAppExecutorService().execute {
+                    addAsPermanentLibrary(snippetMetadata.newClasspath, snippetMetadata.newSources)
+                }
 
                 val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
                 val classLoader = URLClassLoader(
@@ -404,7 +407,8 @@ class JupyterCompilerPerFileService(
                     nextCell = if (executedCellInd + 1 != cells.size) cells[executedCellInd + 1] else null
                 }
             }
-            FileDocumentManager.getInstance().getDocument(virtualFile.file)?.invalidateStateAfterCellExecution(nextCell) // need to highlight next cell if ok
+            FileDocumentManager.getInstance().getDocument(virtualFile.file)
+                ?.invalidateStateAfterCellExecution(nextCell) // need to highlight next cell if ok
             psiCell.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
         }
     }
