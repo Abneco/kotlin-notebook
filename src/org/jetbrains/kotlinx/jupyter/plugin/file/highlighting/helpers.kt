@@ -47,12 +47,15 @@ internal object NotebookHighlightingUtilityObject {
     private const val notebookDocumentFileExtension: String = "ipynb"
     private val updateScope = CoroutineScope(Dispatchers.Default)
 
+    const val scriptingMissingClassError = "MISSING_SCRIPT_RECEIVER_CLASS"
+
     @JvmField
     val NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE = Key.create<TextRange>("notebook.document.target.range")
     // to unify
     val NotebookDocumentTargetRanges = Key.create<Collection<TextRange>>("notebook.document.target.ranges")
 
     internal val InjectedHostHasErrors = Key.create<AtomicReference<Boolean>>("injected.element.errors.found")
+    internal val DocumentScriptManagerUpdateNeeded = Key.create<AtomicReference<Boolean>>("document.script.def.manager.update")
     internal val RenamingEnclosedRange: Key<Collection<TextRange>> = Key.create("notebook.after.rename.changed.range")
     internal val CompleteHighlightingRange: Key<TextRange> = Key.create("notebook.document.errors.analysis.range")
     internal val NonTargetHostErrorRegistry: Key<MutableCollection<HighlightInfo>> = Key.create("injected.element.actual.errors.registry")

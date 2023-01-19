@@ -5,7 +5,9 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
+import org.jetbrains.kotlinx.jupyter.plugin.file.getOrCreateForceScriptDefinitionsUpdateFlag
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListWarn
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -94,6 +96,7 @@ class JupyterKotlinCellExecutionCallback(
              */
             val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
             compilerService.addCompiledSnippet(snippetMetadata, cellSource, psiCell)
+            queueDefinitionsUpdateIfNeeded(snippetMetadata)
             updateScriptingIfNeeded()
         } catch (exception: Throwable) {
             LOG.warn("Kotlin execution callback failed", exception)
@@ -122,6 +125,12 @@ class JupyterKotlinCellExecutionCallback(
             val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
             compilerService.updateScripting()
         }
+    }
+
+    private fun queueDefinitionsUpdateIfNeeded(snippetMetadata: EvaluatedSnippetMetadata) {
+        if (snippetMetadata.newClasspath.size < 300) return
+        virtualFile.file.toDocument()
+            ?.getOrCreateForceScriptDefinitionsUpdateFlag()?.compareAndSet(false, true)
     }
 
     companion object {

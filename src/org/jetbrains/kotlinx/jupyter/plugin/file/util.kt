@@ -6,6 +6,7 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.editor.Document
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
@@ -17,7 +18,9 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.PsiManager
 import com.intellij.psi.util.parentOfType
 import com.intellij.testFramework.LightVirtualFile
+import com.intellij.util.concurrency.AppExecutorUtil
 import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.isScript
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
@@ -29,6 +32,7 @@ import org.jetbrains.plugins.notebooks.jupyter.NOTEBOOK_LANGUAGE
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import java.util.concurrent.atomic.AtomicReference
 
 val VirtualFile?.isKotlinNotebook: Boolean get() {
     if (this == null || extension != "ipynb") return false
@@ -86,6 +90,9 @@ internal fun List<PsiLanguageInjectionHost>.getInjectedKtFiles(injectedLanguageM
 internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
     PsiManager.getInstance(project).findFile(this)
 
+internal fun VirtualFile.toDocument(): Document? =
+    FileDocumentManager.getInstance().getCachedDocument(this)
+
 internal fun Document.toPsiFile(project: Project): PsiFile? =
     PsiDocumentManager.getInstance(project).getPsiFile(this)
 
@@ -122,3 +129,17 @@ internal fun PsiLanguageInjectionHost.invalidateTypeHintsRegistry() {
     putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostChainHintsRegistry, mutableMapOf())
     putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostHintsRegistry, mutableMapOf())
 }
+
+internal fun Document.getOrCreateForceScriptDefinitionsUpdateFlag(): AtomicReference<Boolean> {
+    val stored = getUserData(NotebookHighlightingUtilityObject.DocumentScriptManagerUpdateNeeded)
+    return if (stored == null) {
+        val r = AtomicReference(false)
+        putUserData(NotebookHighlightingUtilityObject.DocumentScriptManagerUpdateNeeded, r)
+        r
+    } else stored
+}
+
+internal fun Project.scheduleScriptDefinitionsManagerUpdate() =
+    AppExecutorUtil.getAppExecutorService().execute {
+        ScriptDefinitionsManager.getInstance(this).reloadScriptDefinitions()
+    }
