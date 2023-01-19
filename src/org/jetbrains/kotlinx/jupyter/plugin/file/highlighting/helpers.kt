@@ -26,6 +26,8 @@ import kotlinx.coroutines.delay
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
+import org.jetbrains.kotlin.idea.editor.fixers.end
+import org.jetbrains.kotlin.idea.editor.fixers.start
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
@@ -181,10 +183,12 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile, isFirstPass: Boo
         val errorRef = targetHost.getUserData(NotebookHighlightingUtilityObject.InjectedHostHasErrors)
             ?: AtomicReference(true).also { targetHost.putUserData(NotebookHighlightingUtilityObject.InjectedHostHasErrors, it) }
         val registry = errorRegistry ?: return
+
+        val seenInfos = mutableSetOf<Int>()
         if (registry.isNotEmpty()) {
             errorRef.set(true)
             for (el in registry) {
-                if (el.severity == HighlightSeverity.ERROR) {
+                if (el.severity == HighlightSeverity.ERROR && seenInfos.add(el.range.start) && seenInfos.add(el.range.end)) {
                     holder.add(HighlightInfoManipulator.convertToShadowedDeclaration(el))
                 }
             }
@@ -206,7 +210,7 @@ internal object HighlightInfoManipulator {
             .range(info.range)
             .textAttributes(CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES)
             .needsUpdateOnTyping(info.needUpdateOnTyping())
-            .fillProperDescription(info)
+            .fillInProperDescription(info)
             .group(0)
 
         return if (info.isAfterEndOfLine)
@@ -214,10 +218,10 @@ internal object HighlightInfoManipulator {
         else n.createUnconditionally()
     }
 
-    private fun HighlightInfo.Builder.fillProperDescription(info: HighlightInfo): HighlightInfo.Builder {
+    private fun HighlightInfo.Builder.fillInProperDescription(info: HighlightInfo): HighlightInfo.Builder {
         return if (info.description == Errors.UNRESOLVED_REFERENCE.name)
                   this.description(shadowedSymbolDescription).unescapedToolTip(shadowedSymbolDescription)
-               else this //.escapedToolTip(improperSymbolDescription)
+               else this.escapedToolTip(improperSymbolDescription)
     }
 }
 
