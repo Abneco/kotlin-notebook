@@ -24,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import org.jetbrains.annotations.TestOnly
+import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
@@ -196,20 +197,27 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile, isFirstPass: Boo
 internal object HighlightInfoManipulator {
     @NlsSafe
     private const val shadowedSymbolDescription = "Not yet provided symbol"
+    @NlsSafe
+    private const val improperSymbolDescription = "Improper usage"
     private val shadowedSymbolSeverity = HighlightInfo.convertSeverity(HighlightSeverity.INFORMATION)
 
     fun convertToShadowedDeclaration(info: HighlightInfo): HighlightInfo {
         val n = HighlightInfo.newHighlightInfo(shadowedSymbolSeverity)
             .range(info.range)
-            .description(shadowedSymbolDescription)
             .textAttributes(CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES)
-            .unescapedToolTip(shadowedSymbolDescription)
             .needsUpdateOnTyping(info.needUpdateOnTyping())
+            .fillProperDescription(info)
             .group(0)
 
         return if (info.isAfterEndOfLine)
             n.endOfLine().createUnconditionally()
         else n.createUnconditionally()
+    }
+
+    private fun HighlightInfo.Builder.fillProperDescription(info: HighlightInfo): HighlightInfo.Builder {
+        return if (info.description == Errors.UNRESOLVED_REFERENCE.name)
+                  this.description(shadowedSymbolDescription).unescapedToolTip(shadowedSymbolDescription)
+               else this //.escapedToolTip(improperSymbolDescription)
     }
 }
 
