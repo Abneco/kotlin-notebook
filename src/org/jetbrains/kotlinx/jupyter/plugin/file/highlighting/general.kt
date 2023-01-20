@@ -7,6 +7,7 @@ import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeRed
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -28,6 +29,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scheduleUpdateLater
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingClassError
+import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.file.scheduleScriptDefinitionsManagerUpdate
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
@@ -110,6 +112,9 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
         if (highlightInfo.severity == HighlightSeverity.ERROR) {
             if (highlightInfo.description == scriptingMissingClassError) {
                 file.project.scheduleScriptDefinitionsManagerUpdate()
+                invokeLater {
+                    file.restartAnalyzing()
+                }
                 throw ProcessCanceledException()
             }
             errorRegistry.add(highlightInfo)
