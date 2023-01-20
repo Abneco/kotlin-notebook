@@ -2,11 +2,13 @@
 package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 
 import com.intellij.codeInsight.actions.ReformatCodeProcessor
+import com.intellij.configurationStore.runAsWriteActionIfNeeded
 import com.intellij.formatting.FormattingContext
 import com.intellij.formatting.service.AbstractDocumentFormattingService
 import com.intellij.formatting.service.FormattingService
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
@@ -37,6 +39,15 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
         quickFormat: Boolean
     ) {
         val asPsiFile = formattingContext.containingFile
+        if (!asPsiFile.isValid) {
+            runAsWriteActionIfNeeded {
+                asPsiFile.viewProvider.contentsSynchronized()
+            }
+        }
+        if (quickFormat && formattingRanges.size == 1 && formattingRanges.first().length < 20) {
+            logger<KotlinNotebookFileFormattingService>().debug("Quick format for $document, ranges: $formattingRanges")
+            return
+        }
         val cellList = asPsiFile.getNotebookCellList() ?: return
         val project = formattingContext.project
         val injectedManager = InjectedLanguageManager.getInstance(project)
@@ -57,7 +68,9 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
         }
         document.putUserData(ReformatDocumentActionTargets, mutableSetOf())
         val baseProcessor = ReformatCodeProcessor(project, toProcess.toTypedArray(), afterUpdate,  false)
-        baseProcessor.run()
+        try {
+            baseProcessor.run()
+        } catch (_: Throwable) {}
     }
 
     private fun getRangesAfterDocumentReformatOrNull(notebookCells: List<JupyterPsiCell>, targets: Collection<Int>?): List<TextRange>? = if (targets?.isNotEmpty() == false) {
