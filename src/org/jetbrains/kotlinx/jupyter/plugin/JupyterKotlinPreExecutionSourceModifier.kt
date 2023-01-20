@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showAbsentDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showOutdatedDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.util.SKIP_PROJECT_BUILD_COMMENT
@@ -21,6 +22,7 @@ class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier {
 
     private fun addProjectDependencies(project: Project, source: String): String? {
         if (source.contains(SKIP_PROJECT_BUILD_COMMENT)) return null
+        if (looksLikeReplCommand(source)) return null
 
         val artifactsService = JupyterKotlinProjectArtifactsService.getInstance(project)
         val artifacts = runBlocking { artifactsService.buildProject() }
