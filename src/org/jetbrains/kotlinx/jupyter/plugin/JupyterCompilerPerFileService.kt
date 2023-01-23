@@ -299,9 +299,17 @@ class JupyterCompilerPerFileService(
             ?: libraryTable.createLibrary(libraryName)
 
         val model = newLibrary.modifiableModel
+        val existingRoots = buildMap<OrderRootType, Set<String>> {
+            for (rootType in listOf(OrderRootType.CLASSES, OrderRootType.SOURCES)) {
+                put(rootType, newLibrary.rootProvider.getUrls(rootType).toSet())
+            }
+        }
+
         fun addPath(path: String, rootType: OrderRootType) {
             if (path.endsWith(".jar")) {
-                model.addRoot("file://$path", rootType)
+                val rootPath = "file://${File(path).invariantSeparatorsPath}"
+                if (existingRoots[rootType]!!.contains(rootPath)) return
+                model.addRoot(rootPath, rootType)
             }
         }
 
