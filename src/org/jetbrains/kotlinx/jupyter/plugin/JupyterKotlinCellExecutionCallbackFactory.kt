@@ -1,6 +1,8 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
+import com.intellij.openapi.application.runReadAction
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.plugins.notebooks.jupyter.editor.getCells
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
@@ -45,7 +47,11 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
     override fun create(task: JupyterExecutionTask): JupyterExecutionCallback? {
         val file = task.notebookVirtualFile
         val cellProject = task.project ?: return null
-        val jupyterPsiCell = task.psiCell
+        val jupyterPsiCell = runReadAction {
+            val cellIndex = task.options.cellPointer?.get()?.ordinal ?: return@runReadAction null
+            getCells(cellProject, task.notebookVirtualFile)?.getOrNull(cellIndex)
+        }
+        if (jupyterPsiCell == null) return null // cell is not exists already
         val cellSource = task.source
         if (!file.file.isKotlinNotebook) return null
 
