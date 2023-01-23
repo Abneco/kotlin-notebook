@@ -101,6 +101,7 @@ class JupyterCompilerPerFileService(
     private val directoryCounter = AtomicInteger(1)
     private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ContainerUtil.newConcurrentSet() // LoggingList()
     private val scriptingSupport = JupyterKtScriptingSupport.getInstance(projectService.project)
+    private val implicitListsLoadQueue = ArrayDeque<Pair<Path, List<String>>>()
     val cellOrdinalToClassName = mutableMapOf<Int, Set<String>>()
 
     private val classesDir: Path by lazy {
@@ -373,15 +374,8 @@ class JupyterCompilerPerFileService(
                 }
 
                 val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
-                val classLoader = URLClassLoader(
-                    arrayOf(lineClassesDir.toUri().toURL()),
-                    (implicitsList.lastOrNull()?.fromClass ?: this::class).java.classLoader
-                )
-                kClassNames.forEach { className ->
-                    LOG.debug("Adding class: $className")
-                    val kClass = classLoader.loadClass(className).kotlin
-                    implicitsList.addClass(kClass)
-                }
+                implicitListsLoadQueue.addLast(Pair(lineClassesDir, kClassNames))
+                needsToUpdate = true
                 updateInjectedCellInfo(snippetMetadata, psiCell)
             } catch (e: Exception) {
                 LOG.error(e)
@@ -393,6 +387,35 @@ class JupyterCompilerPerFileService(
         compileLock.writeLock().withLock {
             //updateCellsAnalysis()
             scriptingSupport.update()
+        }
+    }
+
+    private fun createNextClassLoader(classesDirPath: Path): ClassLoader
+        = URLClassLoader(
+            arrayOf(classesDirPath.toUri().toURL()),
+            (implicitsList.lastOrNull()?.fromClass ?: this::class).java.classLoader
+        )
+
+    val hasPendingUpdates: Boolean get() = compileLock.read { needsToUpdate }
+    private var needsToUpdate: Boolean = false
+
+    fun afterScriptingUpdate() {
+        if (hasPendingUpdates) {
+            compileLock.writeLock().withLock { needsToUpdate = false }
+        }
+    }
+
+    fun loadReceiverClassesIfAny(): Boolean {
+        compileLock.writeLock().withLock {
+            val (lineDir, classes) = implicitListsLoadQueue.removeFirstOrNull() ?: return needsToUpdate
+            val loader = createNextClassLoader(lineDir)
+            classes.forEach { className ->
+                LOG.debug("Adding class: $className")
+                val kClass = loader.loadClass(className).kotlin
+                implicitsList.addClass(kClass)
+            }
+            needsToUpdate = true
+            return true
         }
     }
 

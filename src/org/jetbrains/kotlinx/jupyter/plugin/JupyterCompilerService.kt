@@ -94,6 +94,16 @@ class JupyterCompilerService(val project: Project) : Disposable {
         return mapping[virtualFile.file]
     }
 
+    val needToUpdateImplicitsReceiversIfAny: Boolean get() {
+        var shouldUpdate = false
+        mapping.forEach { (_, u) -> if (u.hasPendingUpdates || u.loadReceiverClassesIfAny()) shouldUpdate = true }
+        return shouldUpdate
+    }
+
+    fun afterScriptingUpdate() {
+        mapping.forEach { (_, u) -> u.afterScriptingUpdate() }
+    }
+
     override fun dispose() {
     }
 

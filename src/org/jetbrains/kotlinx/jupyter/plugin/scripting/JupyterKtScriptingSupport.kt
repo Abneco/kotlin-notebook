@@ -66,6 +66,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     override fun afterUpdate() {
         try {
             ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()
+            compilerService.afterScriptingUpdate()
         } catch (ex: Exception) {
             if (ex is ProcessCanceledException) {
                 ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()

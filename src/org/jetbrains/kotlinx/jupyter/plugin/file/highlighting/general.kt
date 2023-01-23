@@ -7,8 +7,6 @@ import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeRed
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.invokeLater
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -18,8 +16,8 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
-import org.jetbrains.kotlinx.jupyter.plugin.file.getOrCreateForceScriptDefinitionsUpdateFlag
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
@@ -29,8 +27,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scheduleUpdateLater
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingClassError
-import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
-import org.jetbrains.kotlinx.jupyter.plugin.file.scheduleScriptDefinitionsManagerUpdate
+import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 
@@ -47,7 +44,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         val cells = file.getNotebookCellList()
         cells?.ensureScriptConfigurations(ScriptConfigurationManager.getInstance(file.project),
                                                                InjectedLanguageManager.getInstance(file.project))
-        jupyterFile.ensureScriptManagerReady(document)
+        jupyterFile.ensureScriptManagerReady()
 
         return synchronized(document) {
             val afterRenaming = document.getUserData(RenamingEnclosedRange)
@@ -83,15 +80,13 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         }
     }
 
-    private fun PsiFile.ensureScriptManagerReady(document: Document) {
+    private fun PsiFile.ensureScriptManagerReady() {
         val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
 
         if (scriptDefManager.isReady()) {
-            document.getOrCreateForceScriptDefinitionsUpdateFlag().let {
-                if (it.compareAndSet(true, false)) {
-                    project.scheduleScriptDefinitionsManagerUpdate()
-                    throw ProcessCanceledException()
-                }
+            if (JupyterCompilerService.getInstance(project).needToUpdateImplicitsReceiversIfAny) {
+                JupyterKtScriptingSupport.getInstance(project).update()
+                throw ProcessCanceledException()
             }
             return
         }
@@ -111,11 +106,8 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
 
         if (highlightInfo.severity == HighlightSeverity.ERROR) {
             if (highlightInfo.description == scriptingMissingClassError) {
-                file.project.scheduleScriptDefinitionsManagerUpdate()
-                invokeLater {
-                    file.restartAnalyzing()
-                }
-                throw ProcessCanceledException()
+                //file.project.scheduleScriptDefinitionsManagerUpdate()
+                return false
             }
             errorRegistry.add(highlightInfo)
             return false
