@@ -7,6 +7,7 @@ import com.intellij.formatting.FormattingContext
 import com.intellij.formatting.service.AbstractDocumentFormattingService
 import com.intellij.formatting.service.FormattingService
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.model.SideEffectGuard
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
@@ -83,12 +84,11 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
         }
         // FORMATTER_TAGS_ENABLED
         val baseProcessor = ReformatCodeProcessor(project,
-                                                  if (isWholeDocumentReformat)
-                                                      toProcess.toTypedArray()
-                                                  else arrayOf(asPsiFile), afterUpdate,
+                                                  toProcess.toTypedArray(), afterUpdate,
                                                   !isWholeDocumentReformat)
         try {
-            baseProcessor.run()
+            if (isWholeDocumentReformat) baseProcessor.run()
+            else SideEffectGuard.computeWithoutSideEffects<Unit, Exception> { baseProcessor.run() }
         } catch (t: Throwable) {
             thisLogger().debug("Error occurred during reformatting ${t.message}")
         }
