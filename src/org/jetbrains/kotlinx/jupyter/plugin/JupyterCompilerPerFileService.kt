@@ -7,6 +7,7 @@ import com.intellij.configurationStore.runAsWriteActionIfNeeded
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
@@ -43,6 +44,7 @@ import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
+import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService.Companion.scriptDependenciesLibName
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
@@ -295,9 +297,12 @@ class JupyterCompilerPerFileService(
     private fun addAsPermanentLibrary(classpath: List<String>, sourceClasspath: List<String>) {
         val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(projectService.project)
 
-        val libraryName = "Permanent Script Dependencies"
-        val newLibrary = libraryTable.getLibraryByName(libraryName)
-            ?: libraryTable.createLibrary(libraryName)
+        val newLibrary = libraryTable.getLibraryByName(scriptDependenciesLibName)
+            ?: invokeAndWaitIfNeeded {
+                runAsWriteActionIfNeeded {
+                    libraryTable.createLibrary(scriptDependenciesLibName)
+                }
+            }
 
         val model = newLibrary.modifiableModel
         val existingRoots = buildMap<OrderRootType, Set<String>> {
