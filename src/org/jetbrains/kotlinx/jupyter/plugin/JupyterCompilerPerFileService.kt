@@ -45,6 +45,7 @@ import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService.Companion.scriptDependenciesLibName
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
@@ -412,14 +413,22 @@ class JupyterCompilerPerFileService(
 
     fun loadReceiverClassesIfAny(): Boolean {
         compileLock.writeLock().withLock {
-            val (lineDir, classes) = implicitListsLoadQueue.removeFirstOrNull() ?: return needsToUpdate
-            val loader = createNextClassLoader(lineDir)
-            classes.forEach { className ->
-                LOG.debug("Adding class: $className")
-                val kClass = loader.loadClass(className).kotlin
-                implicitsList.addClass(kClass)
+            val (lineDir, classes) = implicitListsLoadQueue.firstOrNull() ?: return needsToUpdate
+            try {
+                val loader = createNextClassLoader(lineDir)
+                classes.forEach { className ->
+                    LOG.debug("Adding class: $className")
+                    val kClass = loader.loadClass(className).kotlin
+                    implicitsList.addClass(kClass)
+                }
+                implicitListsLoadQueue.removeFirstOrNull()
+                needsToUpdate = true
+            } catch (t: Throwable) {
+                if (t is UnsupportedClassVersionError) {
+                    val msg = t.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
+                    NotebookNotificationUtility.showKernelJDKInconsistentError(projectService.project, msg)
+                } else LOG.error(t)
             }
-            needsToUpdate = true
             return true
         }
     }
