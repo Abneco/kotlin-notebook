@@ -8,7 +8,7 @@ import com.intellij.formatting.service.AbstractDocumentFormattingService
 import com.intellij.formatting.service.FormattingService
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.invokeLater
-import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
@@ -39,20 +39,28 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
         quickFormat: Boolean
     ) {
         val asPsiFile = formattingContext.containingFile
-        if (!asPsiFile.isValid) {
+        if (!asPsiFile.isValid || formattingRanges.firstOrNull()?.length == 1) {
             runAsWriteActionIfNeeded {
                 asPsiFile.viewProvider.contentsSynchronized()
             }
-        }
-        if (quickFormat && formattingRanges.size == 1 && formattingRanges.first().length < 20) {
-            logger<KotlinNotebookFileFormattingService>().debug("Quick format for $document, ranges: $formattingRanges")
             return
         }
+
         val cellList = asPsiFile.getNotebookCellList() ?: return
         val project = formattingContext.project
         val injectedManager = InjectedLanguageManager.getInstance(project)
+        val formattingRangesSet = formattingRanges.toSet()
+        val documentLength = document.textLength
+        val isWholeDocumentReformat = !quickFormat && isReformationWholeDocument(formattingRanges, documentLength)
 
-        val toProcess = cellList.getInjectedKtFiles(injectedManager)
+        val toProcess = if (isWholeDocumentReformat)
+                            cellList.getInjectedKtFiles(injectedManager)
+                        else cellList.filter { it.textRange in formattingRangesSet }.getInjectedKtFiles(injectedManager)
+        if (toProcess.isEmpty()) {
+            //asPsiFile.viewProvider.contentsSynchronized()
+            return
+        }
+
         val afterUpdate = {
             //document.putUserData(NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges, null)
             val targets = synchronized(document) {
@@ -67,11 +75,27 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
             }
         }
         document.putUserData(ReformatDocumentActionTargets, mutableSetOf())
-        val baseProcessor = ReformatCodeProcessor(project, toProcess.toTypedArray(), afterUpdate,  false)
+
+        if (!isWholeDocumentReformat && toProcess.any { !it.isValid }) {
+            runAsWriteActionIfNeeded {
+                asPsiFile.viewProvider.contentsSynchronized()
+            }
+        }
+        // FORMATTER_TAGS_ENABLED
+        val baseProcessor = ReformatCodeProcessor(project,
+                                                  if (isWholeDocumentReformat)
+                                                      toProcess.toTypedArray()
+                                                  else arrayOf(asPsiFile), afterUpdate,
+                                                  !isWholeDocumentReformat)
         try {
             baseProcessor.run()
-        } catch (_: Throwable) {}
+        } catch (t: Throwable) {
+            thisLogger().debug("Error occurred during reformatting ${t.message}")
+        }
     }
+
+    private fun isReformationWholeDocument(ranges: Collection<TextRange>, documentLength: Int) =
+        ranges.size == 1 && ranges.first().length == documentLength
 
     private fun getRangesAfterDocumentReformatOrNull(notebookCells: List<JupyterPsiCell>, targets: Collection<Int>?): List<TextRange>? = if (targets?.isNotEmpty() == false) {
         targets.mapNotNull { notebookCells[it].textRange }
