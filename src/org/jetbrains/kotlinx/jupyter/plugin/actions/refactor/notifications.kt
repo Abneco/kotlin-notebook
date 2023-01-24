@@ -2,12 +2,17 @@
 package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 
 import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.notification.SingletonNotificationManager
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.NlsSafe
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookConfigurable
 
 internal object NotebookNotificationUtility {
     private fun prepareNotificationGroupTemplate() =
@@ -66,6 +71,22 @@ internal object NotebookNotificationUtility {
             .notify(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"),
                     JupyterKotlinBundle.message("kotlin.jupyter.session.restart"),
                     project)
+    }
+
+    fun showKernelJDKInconsistentError(project: Project, @NlsSafe loaderError: String = "") {
+        prepareNotificationGroupTemplate().wrapActionInNotify(project) {
+            createNotification(JupyterKotlinBundle
+                                   .message("kotlin.jupyter.session.classloader.error") + "\n" +
+                                       loaderError, NotificationType.WARNING)
+                .setTitle(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"))
+                .addAction(object : NotificationAction(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.action.preview")) {
+                    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+                        ShowSettingsUtil.getInstance().showSettingsDialog(project, KotlinNotebookConfigurable::class.java) {
+                            it.focusOn(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.path"))
+                        }
+                    }
+                })
+        }
     }
 
     //fun showErrorHint(project: Project, editor: Editor, @NlsContexts.DialogMessage message: String, @NlsContexts.DialogTitle title: String) {
