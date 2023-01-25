@@ -51,6 +51,8 @@ internal object NotebookHighlightingUtilityObject {
     private val updateScope = CoroutineScope(Dispatchers.Default)
 
     const val scriptingMissingClassError = "MISSING_SCRIPT_RECEIVER_CLASS"
+    @NlsSafe
+    const val scriptingMissingBaseClassError = "[MISSING_SCRIPT_BASE_CLASS]"
 
     @JvmField
     val NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE = Key.create<TextRange>("notebook.document.target.range")

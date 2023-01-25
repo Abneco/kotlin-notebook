@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showAbsentInitialBaseDependenciesInfo
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
@@ -26,6 +27,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scheduleUpdateLater
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingBaseClassError
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingClassError
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
@@ -102,7 +104,16 @@ internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange)
 class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
     override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {
         if (file == null || !file.name.endsWith(notebookInjectedFileExtension)) return true
-        val errorRegistry = file.getUserData(NonTargetHostErrorRegistry) ?: return true
+        //val errorRegistry = file.getUserData(NonTargetHostErrorRegistry) ?: return true
+        val errorRegistry = file.getUserData(NonTargetHostErrorRegistry)
+        if (errorRegistry == null) {
+            val description = highlightInfo.description ?: return true
+            if (description.startsWith(scriptingMissingBaseClassError)) {
+                showAbsentInitialBaseDependenciesInfo(file.project)
+                return false
+            }
+            return true
+        }
 
         if (highlightInfo.severity == HighlightSeverity.ERROR) {
             if (highlightInfo.description == scriptingMissingClassError) {

@@ -1,12 +1,7 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationAction
-import com.intellij.notification.NotificationGroup
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
-import com.intellij.notification.SingletonNotificationManager
+import com.intellij.notification.*
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
@@ -71,6 +66,13 @@ internal object NotebookNotificationUtility {
             .notify(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"),
                     JupyterKotlinBundle.message("kotlin.jupyter.session.restart"),
                     project)
+    }
+
+    fun showAbsentInitialBaseDependenciesInfo(project: Project) {
+        informSingletonManager
+          .notify(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"),
+                  JupyterKotlinBundle.message("kotlin.jupyter.session.initial.setup"),
+                  project)
     }
 
     fun showKernelJDKInconsistentError(project: Project, @NlsSafe loaderError: String = "") {
