@@ -37,7 +37,13 @@ class KotlinNotebookProjectOptionsProvider(
         var jdk: KotlinNotebookJdkOption = ProjectJdkOption,
         var shouldBuildProject: Boolean = true,
         var shouldLimitTypeHintsByActiveCell: Boolean = false,
-    )
+    ) {
+        fun equals(other: State, project: Project): Boolean {
+            return jdk.getPath(project) == other.jdk.getPath(project) &&
+                    shouldBuildProject == other.shouldBuildProject &&
+                    shouldLimitTypeHintsByActiveCell == other.shouldLimitTypeHintsByActiveCell
+        }
+    }
 
     class PresentableNameGetter: com.intellij.openapi.components.State.NameGetter() {
         override fun get(): String = JupyterKotlinBundle.message("kotlin.jupyter.settings.title")

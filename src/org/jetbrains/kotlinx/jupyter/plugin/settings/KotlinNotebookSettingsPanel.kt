@@ -106,6 +106,6 @@ class KotlinNotebookSettingsPanel(
     }
 
     fun isModified(): Boolean {
-        return collectState() != optionsProvider.state
+        return !collectState().equals(optionsProvider.state, project)
     }
 }
