@@ -84,6 +84,7 @@ class KotlinNotebookSettingsPanel(
         val comboBoxModel = SdkComboBoxModel.createProjectJdkComboBoxModel(
             project,
             KotlinNotebookProjectOptionsProvider.getInstance(project),
+            sdkFilter = ::isSuitableForStartingKernel
         )
         val comboBox = SdkComboBox(comboBoxModel)
         val projectItem = comboBox.showProjectSdkItem()

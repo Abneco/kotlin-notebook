@@ -20,11 +20,18 @@ class JdkOptionWithPath(val homePath: String): KotlinNotebookJdkOption {
     }
 }
 
+private val runtimeJavaSdkVersion: JavaSdkVersion? by lazy {
+    val runtimeVersion = Runtime.version()
+    JavaSdkVersion.fromVersionString(runtimeVersion.toString())
+}
+
 @OptIn(ExperimentalContracts::class)
-private fun isSuitableForStartingKernel(sdk: Sdk?): Boolean {
+internal fun isSuitableForStartingKernel(sdk: Sdk?): Boolean {
     contract { returns(true) implies (sdk != null) }
     if (sdk == null) return false
-    return sdk.sdkType is JavaSdk && JavaSdk.getInstance().getVersion(sdk)?.isAtLeast(JavaSdkVersion.JDK_11) == true
+    if (sdk.sdkType !is JavaSdk) return false
+    val version = JavaSdk.getInstance().getVersion(sdk) ?: return false
+    return JavaSdkVersion.JDK_11 <= version && (runtimeJavaSdkVersion == null || version <= runtimeJavaSdkVersion)
 }
 
 object ProjectJdkOption : KotlinNotebookJdkOption {
