@@ -1,7 +1,12 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 
-import com.intellij.notification.*
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationGroup
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
+import com.intellij.notification.SingletonNotificationManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
@@ -76,18 +81,17 @@ internal object NotebookNotificationUtility {
     }
 
     fun showKernelJDKInconsistentError(project: Project, @NlsSafe loaderError: String = "") {
-        prepareNotificationGroupTemplate().wrapActionInNotify(project) {
-            createNotification(JupyterKotlinBundle
-                                   .message("kotlin.jupyter.session.classloader.error") + "\n" +
-                                       loaderError, NotificationType.WARNING)
-                .setTitle(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"))
-                .addAction(object : NotificationAction(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.action.preview")) {
-                    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
-                        ShowSettingsUtil.getInstance().showSettingsDialog(project, KotlinNotebookConfigurable::class.java) {
-                            it.focusOn(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.path"))
-                        }
+        informSingletonManagerWarning.notify(JupyterKotlinBundle.message("kotlin.jupyter.settings.title"),
+                                             JupyterKotlinBundle.message("kotlin.jupyter.session.classloader.error") +
+                                                     "\n" + loaderError, project
+        ) { notification ->
+            notification.addAction(object : NotificationAction(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.action.preview")) {
+                override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+                    ShowSettingsUtil.getInstance().showSettingsDialog(project, KotlinNotebookConfigurable::class.java) {
+                        it.focusOn(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.path"))
                     }
-                })
+                }
+            })
         }
     }
 
