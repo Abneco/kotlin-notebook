@@ -81,14 +81,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: 
                 JupyterExecutionTask(
                     code = cell.source.text,
                     psiCell = cell,
-                    options = JupyterExecutionTask.Options(
-                        purpose = JupyterExecutionTask.Purpose.CELL_EXECUTION,
-                        cellPointer = cellPointer,
-                        notifyWhenSubmitted = false,
-                        ignoreOutput = false,
-                        cleanOutput = true,
-                        silent = false,
-                    ),
+                    options = JupyterExecutionTask.Options.cellExecution(cellPointer),
                     onError = { ex: Exception ->
                         endExceptionally(AssertionError("Notebook execution was not successful", ex))
                     },
