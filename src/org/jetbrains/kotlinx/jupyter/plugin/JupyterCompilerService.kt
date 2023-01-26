@@ -4,12 +4,9 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.invokeLater
-import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ultimate.PluginVerifier
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
@@ -40,15 +37,6 @@ class JupyterCompilerService(val project: Project) : Disposable {
 
     init {
         PluginVerifier.verifyUltimatePlugin()
-        LibraryTablesRegistrar.getInstance().getLibraryTable(project).let {
-            it.getLibraryByName(scriptDependenciesLibName)
-                ?:
-            invokeLater {
-                runWriteAction {
-                    it.createLibrary(scriptDependenciesLibName)
-                }
-            }
-        }
     }
 
     val initialClasspath: List<File> by lazy {
