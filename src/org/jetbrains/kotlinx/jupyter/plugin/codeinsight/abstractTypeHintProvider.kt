@@ -24,6 +24,7 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.SyntaxTraverser
 import org.jetbrains.kotlin.idea.codeInsight.hints.HintType
 import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
+import org.jetbrains.kotlin.idea.codeInsight.hints.getInlayPresentationForInlayInfoDetails
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
