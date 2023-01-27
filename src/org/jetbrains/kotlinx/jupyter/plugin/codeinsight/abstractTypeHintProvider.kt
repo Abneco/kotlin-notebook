@@ -34,6 +34,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.isEitherSymmetrica
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 
 typealias PsiHostChainCallTypeHintsRegistry = MutableMap<PsiElement, List<Pair<PsiElement, InlayPresentation>>>
@@ -131,6 +132,14 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                 host.putUserData(psiHostChainHintsRegistry, mutableMapOf())
                 host.getUserData(psiHostChainHintsRegistry)!!
             } else stored
+        }
+
+        internal fun invalidateTypeHintsRegistry(host: PsiLanguageInjectionHost) {
+            if (host !is JupyterPsiCell) return
+            synchronized(host) {
+                host.getUserData(psiHostHintsRegistry)?.clear()
+                host.getUserData(psiHostChainHintsRegistry)?.clear()
+            }
         }
 
         internal fun getOrCreateTypeHintsRegistry(host: PsiLanguageInjectionHost): PsiHostTypeHintsRegistry = synchronized(host) {

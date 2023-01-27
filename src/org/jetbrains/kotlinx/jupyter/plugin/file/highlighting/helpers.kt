@@ -30,6 +30,7 @@ import org.jetbrains.kotlin.idea.editor.fixers.end
 import org.jetbrains.kotlin.idea.editor.fixers.start
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
@@ -132,6 +133,8 @@ internal object NotebookHighlightingUtilityObject {
         psiFile?.getNotebookCellList()?.forEach {
             it.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
         }
+        psiFile?.getNotebookCellList()?.forEach(::invalidateTypeHintsRegistry)
+
         if (wouldShowNotification) {
           NotebookNotificationUtility.showKernelRestart(project)
         }
