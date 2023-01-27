@@ -25,7 +25,7 @@ class NotebookBaseHighlightingTest : AbstractNotebookHighlightingTest() {
         doTest(ResultCheckStrategy.ShadowedErrors)
     }
 
-    //@Test
+    @Test
     fun testResolvedAfterExecution() {
         doTest(ResultCheckStrategy.ShadowedErrors) {
             executeCells(object : ReceivedMessagesTester {
