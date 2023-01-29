@@ -11,6 +11,7 @@ import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.codeInsight.hints.presentation.RecursivelyUpdatingRootPresentation
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -76,7 +77,8 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                                                       registry, RegistryMode.Apply)
                             }
                         }
-                    } catch (_: Throwable) {
+                    } catch (t: Throwable) {
+                        logger.warn("Error during applying type hints for ${this::class} from registry: ${t.message}")
                         return true
                     }
                     return true
@@ -108,6 +110,8 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
         get() = JupyterKotlinBundle.message("inlay.hint.description.prefix", properTarget)
 
     companion object {
+        private val logger = logger<KotlinNotebookAbstractInlayTypeHintsProvider<*>>()
+
         internal val psiHostChainHintsRegistry = Key.create<PsiHostChainCallTypeHintsRegistry>("jupyter.kotlin.inlay.hints.chain.call.registry")
         internal val psiHostHintsRegistry = Key.create<PsiHostTypeHintsRegistry>("jupyter.kotlin.inlay.hints.registry")
         internal val psiBindingContext = Key.create<BindingContext>("jupyter.kotlin.inlay.hints.binding.context")

@@ -11,6 +11,7 @@ import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.DumbService
@@ -109,7 +110,10 @@ class NotebookValuesHintProvider: KotlinNotebookAbstractInlayTypeHintsProvider<K
 }
 
 class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
-    private val shiftMargin = KotlinNotebookAbstractInlayTypeHintsProvider.markerShift
+    companion object {
+        private val logger = thisLogger()
+        private const val shiftMargin = KotlinNotebookAbstractInlayTypeHintsProvider.markerShift
+    }
 
     override val previewText: String = ""
 
@@ -137,12 +141,17 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                                                 // lhs.contains(rhs) || rhs.contains(rhs)
                 if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
                     if (optionsProvider.state.shouldLimitTypeHintsByActiveCell) return true
-
-                    registry.entries.forEach { (el, data) ->
-                        if (el !is KtQualifiedExpression) return@forEach
-                        val c = el.getBindingContext() ?: return@forEach // getTypeComputationContext(el)
-                        val withTypes = data.mapNotNull { it.first.getType(c)?.let { t -> ExpressionWithType(it.first, t)} }
-                        addInlayElementsToSink(c, withTypes, sink, factory, offset = element.textOffset + shiftMargin)
+                    try {
+                        registry.entries.forEach { (el, data) ->
+                            if (el !is KtQualifiedExpression) return@forEach
+                            val c = el.getBindingContext() ?: return@forEach // getTypeComputationContext(el)
+                            val withTypes = data.mapNotNull { it.first.getType(c)?.let { t -> ExpressionWithType(it.first, t)} }
+                            // if file is valid
+                            addInlayElementsToSink(c, withTypes, sink, factory, offset = element.textOffset + shiftMargin)
+                        }
+                    } catch (t: Throwable) {
+                        logger.warn("Error during applying type hints from registry: ${t.message}")
+                        return true
                     }
                     return true
                 }
