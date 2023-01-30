@@ -37,7 +37,6 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
                 if (session.kernelName.toLowerCaseAsciiOnly() == "kotlin") {
                     session.execute(
                         """
-                            $SKIP_PROJECT_BUILD_COMMENT
                             SessionOptions.resolveSources = true
                             SessionOptions.serializeScriptData = true
                             ${ if (UIUtil.isUnderDarcula()) "notebook.changeColorScheme(ColorScheme.DARK)" else "" }
