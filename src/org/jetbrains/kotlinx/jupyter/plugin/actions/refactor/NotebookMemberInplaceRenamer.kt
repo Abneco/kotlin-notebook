@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.impl.FinishMarkAction
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.ImaginaryEditor
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -195,11 +196,12 @@ class NotebookMemberInplaceRenamer(
 
         return try {
             buildTemplateAndStart(references, stringUsages, scope, containingFile)
-        } catch (e: Throwable) {
+        } catch (t: Throwable) {
             myEditor.putUserData(INPLACE_RENAMER, null)
             FinishMarkAction.finish(myProject, myEditor, myMarkAction)
             foundRefsSize = 0
-            throw e
+            thisLogger().warn("Error occurred during template: ${t.message}")
+            return false
         }
     }
 

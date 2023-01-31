@@ -68,8 +68,13 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                         lastCellInd = floatingCellInd
                         floatingCellInd = -1
                     }
+                    val isAfterRenaming = doc?.getUserData(RenamingEnclosedRange) != null
                     doc?.putUserData(RenamingEnclosedRange, null)
                     doc?.putUserData(NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
+                    if (isAfterRenaming) {
+                        lastCellInd = 0
+                    }
+                    //doc?.getOrCreateForceScriptDefinitionsUpdateFlag()?.let {  }
                 }
             }
         })
