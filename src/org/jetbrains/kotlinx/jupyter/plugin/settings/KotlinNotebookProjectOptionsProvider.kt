@@ -37,11 +37,13 @@ class KotlinNotebookProjectOptionsProvider(
         var jdk: KotlinNotebookJdkOption = ProjectJdkOption,
         var shouldBuildProject: Boolean = true,
         var shouldLimitTypeHintsByActiveCell: Boolean = false,
+        var shouldAddProjectLibrariesToClasspath: Boolean = true,
     ) {
         fun equals(other: State, project: Project): Boolean {
             return jdk.getPath(project) == other.jdk.getPath(project) &&
                     shouldBuildProject == other.shouldBuildProject &&
-                    shouldLimitTypeHintsByActiveCell == other.shouldLimitTypeHintsByActiveCell
+                    shouldLimitTypeHintsByActiveCell == other.shouldLimitTypeHintsByActiveCell &&
+                    shouldAddProjectLibrariesToClasspath == other.shouldAddProjectLibrariesToClasspath
         }
     }
 

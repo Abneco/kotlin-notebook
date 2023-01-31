@@ -83,9 +83,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
                 val fileProjects = ProjectLocator.getInstance().getProjectsForFile(vFile)
                 if (project !in fileProjects) return false
 
-                if (vFile.fileType == JupyterFileType || vFile.fileType.defaultExtension !in fileExtensionsOfInterest) return false
-
-                return true
+                return !(vFile.fileType == JupyterFileType || vFile.fileType.defaultExtension !in fileExtensionsOfInterest)
             }
 
             override fun after(events: List<VFileEvent>) {
@@ -123,7 +121,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
     }
 
     @Synchronized
-    private fun buildProjectAsync(): Deferred<ProjectArtifacts> {
+    private fun buildProjectAsync(includeLibraryFiles: Boolean): Deferred<ProjectArtifacts> {
         if (buildAsyncResult != null) return buildAsyncResult!!
         isBuildUpToDate.set(true)
 
@@ -143,20 +141,22 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
             enableCollectionOfGeneratedFiles()
         }
 
-        val resultPromise = taskManager.run(buildTaskContext, buildTask).then {
+        val resultPromise = taskManager.run(buildTaskContext, buildTask).then { buildResult ->
             val allModules = ModuleManager.getInstance(project).modules
-            val hasErrors = it.hasErrors()
+            val hasErrors = buildResult.hasErrors()
 
-            val projectJarPaths = mutableListOf<String>().also { paths ->
-                CompilerPaths.getOutputPaths(allModules).forEach { path ->
-                    paths.add(path)
-                    val javaOutput = "classes${File.separatorChar}java"
-                    val kotlinOutput = "classes${File.separatorChar}kotlin"
-                    if (path.contains(javaOutput)) {
-                        paths.add(path.replace(javaOutput, kotlinOutput))
+            val projectJarPaths = mutableListOf<String>()
+                .also { paths ->
+                    CompilerPaths.getOutputPaths(allModules).forEach { path ->
+                        paths.add(path)
+                        val javaOutput = "classes${File.separatorChar}java"
+                        val kotlinOutput = "classes${File.separatorChar}kotlin"
+                        if (path.contains(javaOutput)) {
+                            paths.add(path.replace(javaOutput, kotlinOutput))
+                        }
                     }
-                }
-            }.filter { File(it).exists() }
+                }.distinct()
+                .filter { File(it).exists() }
 
             if (hasErrors) {
                 val isEmpty = projectJarPaths.none { File(it).isNotEmptyDirectory }
@@ -165,16 +165,22 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
                 } else currDependenciesState = DependenciesState.ABSENT
             } else currDependenciesState = DependenciesState.PROVIDED
 
-            val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
-            val librariesClassesPaths = libraryTable.libraries.flatMap { library ->
-                library
-                    .getFiles(OrderRootType.CLASSES)
-                    .filter { it.isInLocalFileSystem }
-                    .mapNotNull { it.fileSystem.getNioPath(it)?.toRealPath()?.toString() }
+            if (!includeLibraryFiles) {
+                projectJarPaths
+            } else {
+                val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
+                val librariesClassesPaths = libraryTable.libraries.flatMap { library ->
+                    if (library.name == JupyterCompilerService.scriptDependenciesLibName) {
+                        emptyList()
+                    } else {
+                        library
+                            .getFiles(OrderRootType.CLASSES)
+                            .filter { it.isInLocalFileSystem }
+                            .mapNotNull { it.fileSystem.getNioPath(it)?.toRealPath()?.toString() }
+                    }
+                }
+                projectJarPaths + librariesClassesPaths
             }
-
-            val allPaths = projectJarPaths + librariesClassesPaths
-            allPaths
         }
 
         return coroutineScope.async {
@@ -195,7 +201,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
             deferred.await()
         } else {
             buildAsyncResult = null
-            buildProjectAsync().await()
+            buildProjectAsync(options.shouldAddProjectLibrariesToClasspath).await()
         }
     }
 

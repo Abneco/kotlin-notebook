@@ -37,6 +37,11 @@ class KotlinNotebookSettingsPanel(
             cell(it.component)
         }
     }
+    private val shouldAddProjectLibrariesToClasspath = OptionComponentInitializer(::initShouldAddProjectLibrariesToClasspath) {
+        row(null) {
+            cell(it.component)
+        }
+    }
     private val shouldLimitTypeHintsByActiveCell = OptionComponentInitializer(::initShouldLimitTypeHintsCheckBox) {
         this.group(JupyterKotlinBundle.message("kotlin.jupyter.settings.typeHints")) {
             row(null) {
@@ -47,6 +52,7 @@ class KotlinNotebookSettingsPanel(
     private val providerInitializers = listOf(
         jdkPath,
         shouldBuildProject,
+        shouldAddProjectLibrariesToClasspath,
         shouldLimitTypeHintsByActiveCell
     )
 
@@ -56,6 +62,7 @@ class KotlinNotebookSettingsPanel(
         return KotlinNotebookProjectOptionsProvider.State(
             jdk = jdk,
             shouldBuildProject = shouldBuildProject.component.isSelected,
+            shouldAddProjectLibrariesToClasspath = shouldAddProjectLibrariesToClasspath.component.isSelected,
             shouldLimitTypeHintsByActiveCell = shouldLimitTypeHintsByActiveCell.component.isSelected
         )
     }
@@ -70,6 +77,13 @@ class KotlinNotebookSettingsPanel(
         return JCheckBox(
             JupyterKotlinBundle.message("checkbox.should.build.project"),
             optionsProvider.state.shouldBuildProject
+        )
+    }
+
+    private fun initShouldAddProjectLibrariesToClasspath(): JCheckBox {
+        return JCheckBox(
+            JupyterKotlinBundle.message("checkbox.should.add.libraries"),
+            optionsProvider.state.shouldAddProjectLibrariesToClasspath
         )
     }
 
