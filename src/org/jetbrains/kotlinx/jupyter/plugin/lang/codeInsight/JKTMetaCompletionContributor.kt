@@ -16,6 +16,7 @@ import org.jetbrains.kotlinx.jupyter.libraries.ResourceLibraryDescriptorsProvide
 import org.jetbrains.kotlinx.jupyter.plugin.lang.psi.JKTMetaStatement
 import org.jetbrains.kotlinx.jupyter.plugin.lang.util.replEnum
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class JKTMetaCompletionContributor : CompletionContributor() {
     private val magicsCompleter = KotlinNotebookMagicsCompleter(ResourceLibraryDescriptorsProvider())
@@ -46,11 +47,17 @@ class JKTMetaCompletionContributor : CompletionContributor() {
 
     private fun fillMagicVariants(statementText: String, cursor: Int, result: CompletionResultSet) {
         val replyNotifier = CountDownLatch(1)
-        ApplicationManager.getApplication().executeOnPooledThread {
-            magicsCompleter.process(statementText, cursor, result)
-            replyNotifier.countDown()
+        val future = ApplicationManager.getApplication().executeOnPooledThread {
+            try {
+                magicsCompleter.process(statementText, cursor, result)
+            } finally {
+                replyNotifier.countDown()
+            }
         }
-        replyNotifier.await()
+        val completionEnded = replyNotifier.await(20, TimeUnit.SECONDS)
+        if (!completionEnded) {
+            future.cancel(true)
+        }
     }
 
     companion object {
