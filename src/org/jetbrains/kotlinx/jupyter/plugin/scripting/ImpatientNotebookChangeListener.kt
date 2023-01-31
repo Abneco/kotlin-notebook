@@ -15,6 +15,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.ReformatDocumentActionTargets
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -89,6 +90,7 @@ class ImpatientNotebookChangeListener(
             lastAdjustedRange = properTextRange
         } else lastAdjustedRange = null
 
+        val renameRange = synchronized(document) { document.getUserData(RenamingEnclosedRange) }
         runReadAction {
             val injectedPsi = injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first
             val actualRangeToStore = if (injectedPsi != null) { // null means concurrent race
@@ -96,9 +98,11 @@ class ImpatientNotebookChangeListener(
             } else null
             document.putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE,
                                  actualRangeToStore)
+            if (renameRange == null) {
+                document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
+            }
             document.putUserData(CompleteHighlightingRange, actualRangeToStore)
             document.putUserData(NotebookDocumentTargetRanges, null)
-            document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
             cellOfChange.invalidateTypeHintsRegistry()
             //println("Inside before change for ${injectedPsi?.containingFile?.name}, hostsSize: $hostSize, injected: ${injectedPsi?.text}")
         }

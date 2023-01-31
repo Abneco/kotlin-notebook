@@ -255,11 +255,14 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
 
     override fun createMemberRenamer(element: PsiElement, elementToRename: PsiNameIdentifierOwner, editor: Editor): MemberInplaceRenamer {
         //val offset = editor.caretModel.offset
+        //val nameIdentifier = elementToRename.nameIdentifier
         //val editorPsiFile = PsiDocumentManager.getInstance(element.project).getPsiFile(editor.document)
         //if (nameIdentifier != null && editorPsiFile == elementToRename.containingFile && elementToRename is KtPrimaryConstructor && offset !in nameIdentifier.textRange && offset in elementToRename.textRange) {
         //    editor.caretModel.moveToOffset(nameIdentifier.textOffset)
         //}
-        return NotebookMemberInplaceRenamer(element, elementToRename, editor)
+
+        val originalCaretElement = InjectedLanguageManager.getInstance(element.project).getInjectionHost(element)
+        return NotebookMemberInplaceRenamer(element, elementToRename, editor, originalCaretElement)
     }
 
     override fun isAvailable(element: PsiElement?, editor: Editor, file: PsiFile): Boolean {

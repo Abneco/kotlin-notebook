@@ -11,6 +11,7 @@ import com.intellij.openapi.util.Pair
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiRecursiveElementVisitor
@@ -33,6 +34,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showExistingUsagesMessage
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showRerunActionNeeded
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
+import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
@@ -42,7 +45,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier
 class NotebookMemberInplaceRenamer(
     substituted: PsiElement,
     elementToRename: PsiNamedElement,
-    editor: Editor
+    editor: Editor,
+    private val originalHostInvocation: PsiLanguageInjectionHost?
 ) : MemberInplaceRenamer(elementToRename, elementToRename, editor) {
     private val originalElement: PsiElement = substituted
     private val isSameScope = originalElement.containingFile == elementToRename.containingFile
@@ -84,8 +88,11 @@ class NotebookMemberInplaceRenamer(
                     showRerunActionNeeded(myProject)
                     val hostFile = injectedManager.getTopLevelFile(element)
                     if (adjustmentTextRange != null) {
-                        FileDocumentManager.getInstance().getDocument(hostFile.virtualFile)
-                            ?.putUserData(RenamingEnclosedRange, adjustmentTextRange)
+                        FileDocumentManager.getInstance().getDocument(hostFile.virtualFile)?.let {
+                            it.putUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX,
+                                           hostFile?.getNotebookCellList()?.indexOf(originalHostInvocation))
+                            it.putUserData(RenamingEnclosedRange, adjustmentTextRange)
+                        }
                     }
                 }
                 runReadAction {
@@ -105,7 +112,7 @@ class NotebookMemberInplaceRenamer(
                     }
                     if (size == ans.size) {
                         showRerunActionNeeded(myProject)
-                        val targetHostRanges = mutableListOf<TextRange>()
+                        val targetHostRanges = mutableSetOf<TextRange>()
                         elementHost?.textRange?.let {
                             targetHostRanges.add(it)
                         }

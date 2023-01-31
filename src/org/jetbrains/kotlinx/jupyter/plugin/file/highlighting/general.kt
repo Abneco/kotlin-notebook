@@ -11,10 +11,12 @@ import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.roots.impl.ProjectFileIndexFacade
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
+import com.intellij.psi.search.PsiSearchHelper
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
@@ -33,6 +35,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingBaseClassError
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingClassError
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 
@@ -52,18 +55,22 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         jupyterFile.ensureScriptManagerReady()
 
         return synchronized(document) {
+            val cellInd = document.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)?.let { // notebook file is already rebuild
+                cells?.get(it)
+            }?.textRange
             val afterRenaming = document.getUserData(RenamingEnclosedRange)
             if (afterRenaming?.isNotEmpty() == true) {
+                if (cellInd != null) {
+                    document.putUserData(CompleteHighlightingRange, cellInd)
+                }
                 return afterRenaming
             }
             val severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
             if (severalUpdates?.isNotEmpty() == true) {
+                println("Run on range $severalUpdates")
                 return severalUpdates
             }
 
-            val cellInd = document.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)?.let { // notebook file is already rebuild
-                cells?.get(it)
-            }?.textRange
             val possibleRange = document.getUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE)
             //if (cellInd != null && possibleRange?.endOffset != cellInd.endOffset) cellInd else possibleRange
             if (possibleRange == null && cellInd != null) {
