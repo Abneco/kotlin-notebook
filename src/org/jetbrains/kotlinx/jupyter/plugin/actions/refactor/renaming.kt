@@ -3,6 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.template.impl.TemplateManagerImpl
 import com.intellij.ide.DataManager
+import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
@@ -196,14 +197,16 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
         if (isCompiledElem) {
             if (!containingFile.name.startsWith("Line_")) return false
         }
+
         val cell = (manager.getInjectionHost(containingFile) as? JupyterPsiCellImpl)
         val ind = (cell?.parent as? JupyterNotebook)?.psiCellList?.indexOf(cell) // todo: might be costy
+        val notebookFile = if (virtualFile is VirtualFileWindow) virtualFile.delegate else virtualFile
 
         return isKotlinNotebookInjectedFile(psiFile)
                 && isNotebookRefactoringSupported(psiElement)
                 && (isCompiledElem
                 || cell?.getUserData(CELL_CLASS_NAME) != null
-                || JupyterCompilerService.getForFile(psiFile.project, BackedNotebookVirtualFile(virtualFile)).cellOrdinalToClassName[ind] != null)
+                || JupyterCompilerService.getForFile(psiFile.project, BackedNotebookVirtualFile(notebookFile)).cellOrdinalToClassName[ind] != null)
                 //|| cell?.getUserData(CELL_CLASS_NAME) != null)
     }
 
