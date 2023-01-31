@@ -1,7 +1,7 @@
 import org.gradle.configurationcache.extensions.capitalized
 
 plugins {
-    kotlin("jvm") version "1.7.10"
+    kotlin("jvm") version "1.8.0"
 }
 
 repositories {
@@ -34,6 +34,15 @@ fun ModuleDependency.excludeKotlinDependencies(vararg dependencyNames: String) {
     }
 }
 
+fun ModuleDependency.excludeStandardKotlinDependencies() {
+    excludeKotlinDependencies(
+        "stdlib",
+        "stdlib-common",
+        "kotlin-stdlib-jdk7",
+        "kotlin-stdlib-jdk8"
+    )
+}
+
 fun detectIntellijRoot(): File {
     val pathString = projectDir.absoluteFile.invariantSeparatorsPath
     val intellijPathString = pathString.substringBefore("plugins/")
@@ -48,20 +57,18 @@ dependencies {
     ideLib(kotlinJupyter("lib")) { isTransitive = false }
     ideLib(kotlinJupyter("api")) { isTransitive = false }
     ideLib(kotlinJupyter("common-dependencies")) {
-        excludeKotlinDependencies(
-            "stdlib",
-            "stdlib-common",
-            "kotlin-stdlib-jdk7",
-            "kotlin-stdlib-jdk8"
-        )
+        excludeStandardKotlinDependencies()
     }
     ideLib(kotlin("stdlib"))
     ideLib(kotlin("stdlib-common"))
 
     lib(kotlinJupyter("lib"))
     lib(kotlinJupyter("api"))
-    lib(kotlinJupyter("common-dependencies"))
-    lib(kotlin("script-runtime:1.7.10"))
+    lib(kotlinJupyter("common-dependencies")) {
+        excludeStandardKotlinDependencies()
+    }
+    lib(kotlin("stdlib"))
+    lib(kotlin("script-runtime"))
 }
 
 val intellijRoot = detectIntellijRoot()
