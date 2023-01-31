@@ -66,8 +66,9 @@ private fun convertObject(objectNode: ObjectNode): JsonObject {
     }
 }
 
-inline fun <reified T> JsonNode.deserialize(): T {
+inline fun <reified T> JsonNode.deserialize(): T? {
     val json = toKotlinSerializationJson()
+    if (json is JsonNull) return null
     return Json.decodeFromJsonElement(json)
 }
 

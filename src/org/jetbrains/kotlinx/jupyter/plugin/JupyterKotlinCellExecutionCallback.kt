@@ -78,23 +78,25 @@ class JupyterKotlinCellExecutionCallback(
                 updateScriptingIfNeeded(true)
                 return@invokeLater
             }
-            val snippetMetadata: EvaluatedSnippetMetadata
+            val snippetMetadata: EvaluatedSnippetMetadata?
             val deserializationTime = measureTimeMillis {
                 snippetMetadata = snippetMetadataObject.deserialize()
             }
 
             LOG.logListWarn(
                 "Cell executed. Deserialization took $deserializationTime ms. New classpath received",
-                snippetMetadata.newClasspath
+                snippetMetadata?.newClasspath.orEmpty()
             )
 
             /**
              * Acquire an instance of [JupyterCompilerPerFileService] for this notebook
              * and pass the metadata we received to it.
              */
-            val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-            compilerService.addCompiledSnippet(snippetMetadata, cellSource, psiCell)
-            updateScriptingIfNeeded()
+            if (snippetMetadata != null) {
+                val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
+                compilerService.addCompiledSnippet(snippetMetadata, cellSource, psiCell)
+                updateScriptingIfNeeded()
+            }
         } catch (exception: Throwable) {
             LOG.warn("Kotlin execution callback failed", exception)
         } finally {

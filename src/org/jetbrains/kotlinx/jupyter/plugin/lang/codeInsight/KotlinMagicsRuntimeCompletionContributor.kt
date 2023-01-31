@@ -101,7 +101,7 @@ class KotlinMagicsRuntimeCompletionContributor: CompletionContributor(), DumbAwa
     }
 
     fun getLookupElements(message: JupyterMessage, stringsToExclude: Set<String>): List<LookupElement> {
-        val reply = message.messageContent.deserialize<CompleteReply>()
+        val reply = message.messageContent.deserialize<CompleteReply>() ?: return emptyList()
         return reply.metadata.extended.mapNotNull {
             if(it.text in stringsToExclude) null
             else LookupElementBuilder.create(it.text).withTypeText(it.tail).apply { putUserData(RUNTIME_COMPLETION, true) }
