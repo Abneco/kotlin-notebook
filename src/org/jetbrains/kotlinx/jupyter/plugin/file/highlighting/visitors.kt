@@ -8,6 +8,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.idea.base.highlighting.visitor.AbstractAnnotationHolderHighlightingVisitor
@@ -38,18 +39,23 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
             return true
         }
 
-        file.analyzeWithAllCompilerChecks(
-            {
-                if (it.severity == Severity.ERROR) {
-                    val element = it.psiElement as? KtElement
-                    val info = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
-                        .severity(HighlightSeverity.ERROR).range(it.psiElement)
-                        .group(Pass.UPDATE_ALL).description(it.factory.name).createUnconditionally()
-                    element?.suppressHighlight()
-                    holder.add(info)
+        try {
+            file.analyzeWithAllCompilerChecks(
+                {
+                    if (it.severity == Severity.ERROR) {
+                        val element = it.psiElement as? KtElement
+                        val info = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
+                            .severity(HighlightSeverity.ERROR).range(it.psiElement)
+                            .group(Pass.UPDATE_ALL).description(it.factory.name).createUnconditionally()
+                        element?.suppressHighlight()
+                        holder.add(info)
+                    }
                 }
-            }
-        )
+            )
+        } catch (t: Throwable) {
+            thisLogger().warn("Exception during analyze: $t")
+            return false
+        }
         return true
     }
 }
