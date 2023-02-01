@@ -64,7 +64,6 @@ internal object NotebookHighlightingUtilityObject {
     val NotebookDocumentTargetRanges = Key.create<Collection<TextRange>>("notebook.document.target.ranges")
 
     internal val InjectedHostHasErrors = Key.create<AtomicReference<Boolean>>("injected.element.errors.found")
-    internal val DocumentScriptManagerUpdateNeeded = Key.create<AtomicReference<Boolean>>("document.script.def.manager.update")
     internal val RenamingEnclosedRange: Key<Collection<TextRange>> = Key.create("notebook.after.rename.changed.range")
     internal val CompleteHighlightingRange: Key<TextRange> = Key.create("notebook.document.errors.analysis.range")
     internal val NonTargetHostErrorMark: Key<Boolean> = Key.create("injected.element.actual.errors.registry")

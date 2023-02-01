@@ -32,7 +32,6 @@ import org.jetbrains.plugins.notebooks.jupyter.NOTEBOOK_LANGUAGE
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
-import java.util.concurrent.atomic.AtomicReference
 
 val VirtualFile?.isKotlinNotebook: Boolean get() {
     if (this == null || extension != "ipynb") return false
@@ -130,14 +129,6 @@ internal fun PsiLanguageInjectionHost.invalidateTypeHintsRegistry() {
     putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostHintsRegistry, mutableMapOf())
 }
 
-internal fun Document.getOrCreateForceScriptDefinitionsUpdateFlag(): AtomicReference<Boolean> {
-    val stored = getUserData(NotebookHighlightingUtilityObject.DocumentScriptManagerUpdateNeeded)
-    return if (stored == null) {
-        val r = AtomicReference(false)
-        putUserData(NotebookHighlightingUtilityObject.DocumentScriptManagerUpdateNeeded, r)
-        r
-    } else stored
-}
 
 internal fun Project.scheduleScriptDefinitionsManagerUpdate() =
     AppExecutorUtil.getAppExecutorService().execute {
