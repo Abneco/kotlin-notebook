@@ -29,10 +29,10 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
 
     override fun analyze(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, action: Runnable): Boolean {
         if (file !is KtFile) return true
-        prepareForFileAndAdjust(file, holder, stage = PassStage.MarkTargetHostBeforeHighlighting)
-        val isTargetHost = synchronized(file) {
-            file.getUserData(NotebookHighlightingUtilityObject.NonTargetHostErrorRegistry) == null
-        }
+        prepareForFile(file, holder, stage = PassStage.MarkTargetHostBeforeHighlighting)
+        val helper = highlightingHelper!!
+
+        val isTargetHost = helper.isCurrentFileTarget
 
         if (isTargetHost) {
             file.unsuppressHighlight()
@@ -40,18 +40,24 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
         }
 
         try {
+            val seenInfos = mutableSetOf<HighlightInfo>()
             file.analyzeWithAllCompilerChecks(
                 {
                     if (it.severity == Severity.ERROR) {
                         val element = it.psiElement as? KtElement
+                        element?.suppressHighlight()
+                        if (!helper.isShouldAcceptDiagnostic(it)) return@analyzeWithAllCompilerChecks
+
                         val info = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
                             .severity(HighlightSeverity.ERROR).range(it.psiElement)
                             .group(Pass.UPDATE_ALL).description(it.factory.name).createUnconditionally()
-                        element?.suppressHighlight()
-                        holder.add(info)
+                        // might store right here shadowed
+                        seenInfos.add(info)
                     }
                 }
             )
+
+            helper.convertReceivedHighlightInfos(seenInfos, holder)
         } catch (t: Throwable) {
             thisLogger().warn("Exception during analyze: $t")
             return false

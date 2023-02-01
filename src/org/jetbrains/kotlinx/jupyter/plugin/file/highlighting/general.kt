@@ -4,19 +4,16 @@ package org.jetbrains.kotlinx.jupyter.plugin.file.highlighting
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
-import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
-import com.intellij.openapi.roots.impl.ProjectFileIndexFacade
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
-import com.intellij.psi.search.PsiSearchHelper
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
@@ -35,7 +32,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingBaseClassError
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingClassError
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 
@@ -67,7 +63,6 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             }
             val severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
             if (severalUpdates?.isNotEmpty() == true) {
-                println("Run on range $severalUpdates")
                 return severalUpdates
             }
 
@@ -116,37 +111,23 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
     override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {
         if (file == null || !file.name.endsWith(notebookInjectedFileExtension)) return true
         //val errorRegistry = file.getUserData(NonTargetHostErrorRegistry) ?: return true
-        val errorRegistry = file.getUserData(NonTargetHostErrorRegistry)
-        if (errorRegistry == null) {
-            val description = highlightInfo.description ?: return true
-            if (description.startsWith(scriptingMissingBaseClassError)) {
-                showAbsentInitialBaseDependenciesInfo(file.project)
-                return false
-            }
+        val isTargetHost = file.getUserData(NonTargetHostErrorRegistry) == null
+        if (isTargetHost) return true
 
-            return !description.startsWith(scriptReceiverErrorMsg).also {
-                it.ifTrue {
-                    if (!reloadRequested) {
-                        invokeLater { ScriptDefinitionsManager.getInstance(file.project).reloadScriptDefinitions() }
-                    }
-                    reloadRequested = true
-                }
-            }
-        }
-
-        if (highlightInfo.severity == HighlightSeverity.ERROR) {
-            if (highlightInfo.checkIfMissingBaseClassError()) {
-                return false
-            }
-            if (highlightInfo.description == scriptingMissingClassError) {
-                //file.project.scheduleScriptDefinitionsManagerUpdate()
-                return false
-            }
-            errorRegistry.add(highlightInfo)
+        val description = highlightInfo.description ?: return true
+        if (description.startsWith(scriptingMissingBaseClassError)) {
+            showAbsentInitialBaseDependenciesInfo(file.project)
             return false
         }
 
-        return true
+        return !description.startsWith(scriptReceiverErrorMsg).also {
+            it.ifTrue {
+                if (!reloadRequested) {
+                    invokeLater { ScriptDefinitionsManager.getInstance(file.project).reloadScriptDefinitions() }
+                }
+                reloadRequested = true
+            }
+        }
     }
 
     companion object {

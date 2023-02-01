@@ -24,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import org.jetbrains.annotations.TestOnly
+import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.idea.editor.fixers.end
@@ -167,7 +168,7 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile, isFirstPass: Boo
     private fun tryUpdateCurrentInjectedFileTarget(completeUpdate: Boolean): Boolean {
         targetHost = injectedManager.getInjectionHost(injectedFile) ?: return false
         if (!completeUpdate) {
-            errorRegistry = synchronized(injectedFile) {
+            errorRegistry = synchronized(injectedFile) { // to remove
                 injectedFile.getUserData(NotebookHighlightingUtilityObject.NonTargetHostErrorRegistry)
             }
             isShouldHighlightErrors = errorRegistry == null
@@ -184,10 +185,28 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile, isFirstPass: Boo
         return true
     }
 
+    val isCurrentFileTarget: Boolean get() = isShouldHighlightErrors
+
     fun markTargetHost() {
         injectedFile.putUserData(NotebookHighlightingUtilityObject.NonTargetHostErrorRegistry, if (isShouldHighlightErrors) null else mutableSetOf())
     }
 
+    fun convertReceivedHighlightInfos(foundData: Collection<HighlightInfo>, holder: HighlightInfoHolder) {
+        val errorRef = targetHost.getUserData(NotebookHighlightingUtilityObject.InjectedHostHasErrors)
+            ?: AtomicReference(foundData.isNotEmpty()).also { targetHost.putUserData(NotebookHighlightingUtilityObject.InjectedHostHasErrors, it) }
+
+        val seenInfosOffsets = mutableSetOf<Int>()
+        if (foundData.isNotEmpty()) errorRef.set(true)
+        else errorRef.compareAndSet(true, false)
+
+        for (el in foundData) {
+            if (el.severity == HighlightSeverity.ERROR && seenInfosOffsets.add(el.range.start) && seenInfosOffsets.add(el.range.end)) {
+                holder.add(HighlightInfoManipulator.convertToShadowedDeclaration(el))
+            }
+        }
+    }
+
+    @Deprecated("Use [convertReceivedHighlightInfos]")
     fun updateHolderOrProvided(holder: HighlightInfoHolder) {
         if (isShouldHighlightErrors) {
             return
@@ -205,6 +224,15 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile, isFirstPass: Boo
                 }
             }
         } else errorRef.compareAndSet(true, false)
+    }
+
+    fun isShouldAcceptDiagnostic(elem: Diagnostic): Boolean {
+        val info = elem.factory.name
+        if (info.startsWith(NotebookHighlightingUtilityObject.scriptingMissingBaseClassError)) {
+            NotebookNotificationUtility.showAbsentInitialBaseDependenciesInfo(elem.psiFile.project)
+            return false
+        }
+        return info != NotebookHighlightingUtilityObject.scriptingMissingClassError
     }
 
 }

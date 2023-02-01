@@ -21,7 +21,7 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
 ) : HighlightVisitor {
     protected enum class PassStage {
         MarkTargetHostBeforeHighlighting,
-        AdjustHolder
+        ContributeToHolder
     }
 
     private var visitor: T? = null
@@ -50,7 +50,7 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
             }
 
             if (isShouldUseNewHighlighting) {
-                prepareForFileAndAdjust(file, holder, PassStage.AdjustHolder)
+                //prepareForFileAndAdjust(file, holder, PassStage.AdjustHolder)
             }
 
             return true
@@ -59,11 +59,14 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
         }
     }
 
-    protected fun prepareForFileAndAdjust(injectedFile: PsiFile, holder: HighlightInfoHolder, stage: PassStage) {
+    protected fun prepareForFile(injectedFile: PsiFile, holder: HighlightInfoHolder, stage: PassStage) {
         highlightingHelper = InjectedFileHighlightingHelper(injectedFile,
                                                             stage == PassStage.MarkTargetHostBeforeHighlighting)
+
+        assert(stage == PassStage.MarkTargetHostBeforeHighlighting)
         when (stage) {
-            PassStage.AdjustHolder -> highlightingHelper?.updateHolderOrProvided(holder)
+            //PassStage.ContributeToHolder -> highlightingHelper?.updateHolderOrProvided(holder)
+            PassStage.ContributeToHolder -> Unit
             PassStage.MarkTargetHostBeforeHighlighting -> highlightingHelper?.markTargetHost()
         }
     }
