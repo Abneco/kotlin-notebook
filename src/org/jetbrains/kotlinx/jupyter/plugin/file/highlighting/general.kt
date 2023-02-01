@@ -135,6 +135,9 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
         }
 
         if (highlightInfo.severity == HighlightSeverity.ERROR) {
+            if (highlightInfo.checkIfMissingBaseClassError()) {
+                return false
+            }
             if (highlightInfo.description == scriptingMissingClassError) {
                 //file.project.scheduleScriptDefinitionsManagerUpdate()
                 return false
@@ -147,6 +150,11 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
     }
 
     companion object {
+        internal fun HighlightInfo.checkIfMissingBaseClassError(): Boolean {
+            val description = description ?: return false
+            return description.startsWith(scriptingMissingBaseClassError)
+        }
+
         @NlsSafe
         internal const val scriptReceiverErrorMsg = "[$scriptingMissingClassError]"
     }
