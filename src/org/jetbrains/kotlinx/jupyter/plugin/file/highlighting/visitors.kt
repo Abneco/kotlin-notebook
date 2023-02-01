@@ -1,13 +1,10 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.file.highlighting
 
-import com.intellij.codeHighlighting.Pass
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
-import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.AnnotationHolder
-import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.diagnostics.Severity
@@ -18,6 +15,7 @@ import org.jetbrains.kotlin.idea.highlighter.AbstractKotlinHighlightVisitor.Comp
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.AbstractKotlinHighlightingVisitorAdapter
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.HighlightInfoManipulator.convertToShadowedDeclaration
 
 
 internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlightingVisitorAdapter<KotlinNotebookDummyVisitor>(
@@ -48,20 +46,21 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
                         element?.suppressHighlight()
                         if (!helper.isShouldAcceptDiagnostic(it)) return@analyzeWithAllCompilerChecks
 
-                        val info = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
-                            .severity(HighlightSeverity.ERROR).range(it.psiElement)
-                            .group(Pass.UPDATE_ALL).description(it.factory.name).createUnconditionally()
-                        // might store right here shadowed
-                        seenInfos.add(info)
+                        val info = convertToShadowedDeclaration(it)
+
+                        if (info != null) {
+                            seenInfos.add(info)
+                        } else thisLogger().warn("Cannot convert diagnostic to shadowed: $it")
                     }
                 }
             )
 
-            helper.convertReceivedHighlightInfos(seenInfos, holder)
+            helper.applyReceivedHighlightInfos(seenInfos, holder)
         } catch (t: Throwable) {
             thisLogger().warn("Exception during analyze: $t")
             return false
         }
+
         return true
     }
 }

@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.diagnostics.Errors
+import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.idea.editor.fixers.end
 import org.jetbrains.kotlin.idea.editor.fixers.start
@@ -170,9 +171,6 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
         completeAnalysisRange = NotebookHighlightingUtilityObject.getCompleteAnalysisRangeForWholeNotebook(injectedFile)
         isShouldHighlightErrors = completeAnalysisRange?.contains(targetHost.textRange) ?:
                 (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange!!, targetHost.textRange.shiftLeft(1)))
-        //if (isShouldHighlightErrors) {
-        //    println("Should highlight errors for ${injectedFile.name} with range: ${targetHost?.range}")
-        //} else println("should not for ${injectedFile.name} with range: ${targetHost?.range}")
 
 
         return true
@@ -184,7 +182,7 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
         injectedFile.putUserData(NotebookHighlightingUtilityObject.NonTargetHostErrorMark, if (isShouldHighlightErrors) null else true)
     }
 
-    fun convertReceivedHighlightInfos(foundData: Collection<HighlightInfo>, holder: HighlightInfoHolder) {
+    fun applyReceivedHighlightInfos(foundData: Collection<HighlightInfo>, holder: HighlightInfoHolder) {
         val errorRef = targetHost.getUserData(NotebookHighlightingUtilityObject.InjectedHostHasErrors)
             ?: AtomicReference(foundData.isNotEmpty()).also { targetHost.putUserData(NotebookHighlightingUtilityObject.InjectedHostHasErrors, it) }
 
@@ -193,8 +191,8 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
         else errorRef.compareAndSet(true, false)
 
         for (el in foundData) {
-            if (el.severity == HighlightSeverity.ERROR && seenInfosOffsets.add(el.range.start) && seenInfosOffsets.add(el.range.end)) {
-                holder.add(HighlightInfoManipulator.convertToShadowedDeclaration(el))
+            if (seenInfosOffsets.add(el.range.start) && seenInfosOffsets.add(el.range.end)) {
+                holder.add(el)
             }
         }
     }
@@ -238,6 +236,19 @@ internal object HighlightInfoManipulator {
     private const val improperSymbolDescription = "Improper usage"
     private val shadowedSymbolSeverity = HighlightInfo.convertSeverity(HighlightSeverity.INFORMATION)
 
+    fun convertToShadowedDeclaration(diagnostic: Diagnostic): HighlightInfo? {
+        if (diagnostic.severity != Severity.ERROR) return null
+        val element = diagnostic.psiElement
+
+        return HighlightInfo.newHighlightInfo(shadowedSymbolSeverity)
+            .range(element.textRange)
+            .textAttributes(CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES)
+            .needsUpdateOnTyping(false)
+            .group(0)
+            .fillInProperDescription(diagnostic)
+            .createUnconditionally()
+    }
+
     fun convertToShadowedDeclaration(info: HighlightInfo): HighlightInfo {
         val n = HighlightInfo.newHighlightInfo(shadowedSymbolSeverity)
             .range(info.range)
@@ -249,6 +260,12 @@ internal object HighlightInfoManipulator {
         return if (info.isAfterEndOfLine)
             n.endOfLine().createUnconditionally()
         else n.createUnconditionally()
+    }
+
+    private fun HighlightInfo.Builder.fillInProperDescription(diagnostic: Diagnostic): HighlightInfo.Builder {
+        return if (diagnostic.factory.name == Errors.UNRESOLVED_REFERENCE.name)
+            this.description(shadowedSymbolDescription).unescapedToolTip(shadowedSymbolDescription)
+        else this.escapedToolTip(improperSymbolDescription)
     }
 
     private fun HighlightInfo.Builder.fillInProperDescription(info: HighlightInfo): HighlightInfo.Builder {
