@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.idea.editor.fixers.end
 import org.jetbrains.kotlin.idea.editor.fixers.start
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.invalidateTypeHintsRegistry
@@ -128,12 +129,18 @@ internal object NotebookHighlightingUtilityObject {
             vFile.toPsiFile(project)?.getNotebookCellList()?.get(cell.ordinal)
         }
         document.invalidateStateAfterCellExecution(cell)
+        val injectedManager = InjectedLanguageManager.getInstance(project)
         val psiFile = vFile.toPsiFile(project)
         psiFile?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
-        psiFile?.getNotebookCellList()?.forEach {
+        val cellList = psiFile?.getNotebookCellList()
+        cellList?.forEach {
             it.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
+            it.putUserData(InjectedHostHasErrors, null)
+            invalidateTypeHintsRegistry(it)
+            injectedManager.getInjectedPsiFiles(it)?.firstOrNull { f ->
+                f.first is KtFile
+            }?.first?.putUserData(NonTargetHostErrorRegistry, null)
         }
-        psiFile?.getNotebookCellList()?.forEach(::invalidateTypeHintsRegistry)
 
         if (wouldShowNotification) {
           NotebookNotificationUtility.showKernelRestart(project)

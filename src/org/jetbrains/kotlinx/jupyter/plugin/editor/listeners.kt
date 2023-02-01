@@ -117,7 +117,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             lastCellInd = ord
             floatingPrevCell = null
             val errorsRef = lastCell?.getUserData(InjectedHostHasErrors)
-            prevCell = if (errorsRef?.acquire == true) lastCell else null
+            prevCell = if (errorsRef?.acquire == true || errorsRef == null) lastCell else null
             lastCell = psiFile.getNotebookCellList()?.let {
                 it[
                     if (lastCellInd >= it.size) it.lastIndex
