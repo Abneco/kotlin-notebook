@@ -66,7 +66,7 @@ internal object NotebookHighlightingUtilityObject {
     internal val DocumentScriptManagerUpdateNeeded = Key.create<AtomicReference<Boolean>>("document.script.def.manager.update")
     internal val RenamingEnclosedRange: Key<Collection<TextRange>> = Key.create("notebook.after.rename.changed.range")
     internal val CompleteHighlightingRange: Key<TextRange> = Key.create("notebook.document.errors.analysis.range")
-    internal val NonTargetHostErrorRegistry: Key<MutableCollection<HighlightInfo>> = Key.create("injected.element.actual.errors.registry")
+    internal val NonTargetHostErrorMark: Key<Boolean> = Key.create("injected.element.actual.errors.registry")
 
     internal val ReformatDocumentActionTargets: Key<MutableSet<Int>> = Key.create("notebook.refactor.action.triggered")
 
@@ -140,7 +140,7 @@ internal object NotebookHighlightingUtilityObject {
             invalidateTypeHintsRegistry(it)
             injectedManager.getInjectedPsiFiles(it)?.firstOrNull { f ->
                 f.first is KtFile
-            }?.first?.putUserData(NonTargetHostErrorRegistry, null)
+            }?.first?.putUserData(NonTargetHostErrorMark, null)
         }
 
         if (wouldShowNotification) {
@@ -154,26 +154,19 @@ internal object NotebookHighlightingUtilityObject {
 
 
 
-class InjectedFileHighlightingHelper(val injectedFile: PsiFile, isFirstPass: Boolean) {
+class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
     private val project = injectedFile.project
     private lateinit var targetHost: PsiLanguageInjectionHost
     private var errorRegistry: Collection<HighlightInfo>? = null
     private val injectedManager = InjectedLanguageManager.getInstance(project)
     private var completeAnalysisRange: TextRange? = null
     init {
-        assert(tryUpdateCurrentInjectedFileTarget(isFirstPass))
+        assert(tryUpdateCurrentInjectedFileTarget())
     }
     private var isShouldHighlightErrors: Boolean = false
 
-    private fun tryUpdateCurrentInjectedFileTarget(completeUpdate: Boolean): Boolean {
+    private fun tryUpdateCurrentInjectedFileTarget(): Boolean {
         targetHost = injectedManager.getInjectionHost(injectedFile) ?: return false
-        if (!completeUpdate) {
-            errorRegistry = synchronized(injectedFile) { // to remove
-                injectedFile.getUserData(NotebookHighlightingUtilityObject.NonTargetHostErrorRegistry)
-            }
-            isShouldHighlightErrors = errorRegistry == null
-            return true
-        }
         completeAnalysisRange = NotebookHighlightingUtilityObject.getCompleteAnalysisRangeForWholeNotebook(injectedFile)
         isShouldHighlightErrors = completeAnalysisRange?.contains(targetHost.textRange) ?:
                 (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange!!, targetHost.textRange.shiftLeft(1)))
@@ -188,7 +181,7 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile, isFirstPass: Boo
     val isCurrentFileTarget: Boolean get() = isShouldHighlightErrors
 
     fun markTargetHost() {
-        injectedFile.putUserData(NotebookHighlightingUtilityObject.NonTargetHostErrorRegistry, if (isShouldHighlightErrors) null else mutableSetOf())
+        injectedFile.putUserData(NotebookHighlightingUtilityObject.NonTargetHostErrorMark, if (isShouldHighlightErrors) null else true)
     }
 
     fun convertReceivedHighlightInfos(foundData: Collection<HighlightInfo>, holder: HighlightInfoHolder) {

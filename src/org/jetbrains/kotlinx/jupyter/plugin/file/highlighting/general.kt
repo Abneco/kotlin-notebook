@@ -111,8 +111,8 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
     override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {
         if (file == null || !file.name.endsWith(notebookInjectedFileExtension)) return true
         //val errorRegistry = file.getUserData(NonTargetHostErrorRegistry) ?: return true
-        val isTargetHost = file.getUserData(NonTargetHostErrorRegistry) == null
-        if (isTargetHost) return true
+        val isTargetHost = file.getUserData(NonTargetHostErrorMark) == null
+        if (!isTargetHost) return true
 
         val description = highlightInfo.description ?: return true
         if (description.startsWith(scriptingMissingBaseClassError)) {

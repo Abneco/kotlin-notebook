@@ -49,10 +49,6 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
                 action.run()
             }
 
-            if (isShouldUseNewHighlighting) {
-                //prepareForFileAndAdjust(file, holder, PassStage.AdjustHolder)
-            }
-
             return true
         } finally {
             visitor = null
@@ -60,12 +56,10 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
     }
 
     protected fun prepareForFile(injectedFile: PsiFile, holder: HighlightInfoHolder, stage: PassStage) {
-        highlightingHelper = InjectedFileHighlightingHelper(injectedFile,
-                                                            stage == PassStage.MarkTargetHostBeforeHighlighting)
+        highlightingHelper = InjectedFileHighlightingHelper(injectedFile)
 
         assert(stage == PassStage.MarkTargetHostBeforeHighlighting)
         when (stage) {
-            //PassStage.ContributeToHolder -> highlightingHelper?.updateHolderOrProvided(holder)
             PassStage.ContributeToHolder -> Unit
             PassStage.MarkTargetHostBeforeHighlighting -> highlightingHelper?.markTargetHost()
         }
