@@ -32,7 +32,15 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
 import kotlin.math.min
+
+internal enum class DaemonState {
+    Started, Finished, Aborted
+}
+
 
 class NotebookCaretListener(private val project: Project, private val vFile: BackedNotebookVirtualFile,
                             private val editor: Editor): CaretListener {
@@ -41,6 +49,9 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
     private val updateScope = CoroutineScope(Dispatchers.Default)
     private val projectOptionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
     private val codeAnalyzer = DaemonCodeAnalyzer.getInstance(project)
+
+    private var state = DaemonState.Finished
+    private val stateLock = ReentrantReadWriteLock()
 
     private var lastCellInd: Int = -1
     private var lastCell: PsiLanguageInjectionHost? = null
@@ -61,6 +72,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                         return
                     }
 
+                    stateLock.write { state = DaemonState.Finished }
                     if (isFirstRun) isFirstRun = false
                     floatingPrevCell = null
                     prevCell = null
@@ -74,7 +86,15 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     if (isAfterRenaming) {
                         lastCellInd = 0
                     }
-                    //doc?.getOrCreateForceScriptDefinitionsUpdateFlag()?.let {  }
+                }
+            }
+
+            override fun daemonStarting(fileEditors: MutableCollection<out FileEditor>) {
+                if (!scriptDefManager.isReady()) {
+                    return
+                }
+                fileEditors.firstOrNull { (it as? TextEditor)?.editor == editor }?.let {
+                    stateLock.write { state = DaemonState.Started }
                 }
             }
         })
@@ -88,7 +108,10 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         }
         val cell = editor.getCell(min(event.newPosition.line, editor.document.lineCount - 1))
         val ord = cell.ordinal
-        if (ord == lastCellInd || isFirstRun) return
+        val currState = stateLock.read { state }
+        val isBadState = currState != DaemonState.Finished
+        //println("currState $currState, isBad: $isBadState")
+        if ((ord == lastCellInd && !isBadState) || isFirstRun) return
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastTimeCellFocusChanged < 600) { // might be reworked
             deferredFastUpdate?.cancel()
