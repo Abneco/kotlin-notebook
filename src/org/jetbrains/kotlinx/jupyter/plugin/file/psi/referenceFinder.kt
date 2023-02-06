@@ -27,6 +27,7 @@ import org.jetbrains.kotlin.psi.psiUtil.getChildrenOfType
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlin.psi.psiUtil.isPropertyParameter
 import org.jetbrains.kotlin.psi.psiUtil.isPublic
+import org.jetbrains.kotlin.psi.stubs.elements.KtClassElementType
 import org.jetbrains.kotlin.psi.stubs.elements.KtNameReferenceExpressionElementType
 
 enum class ReferenceSearchStrategy {
@@ -147,8 +148,10 @@ object NotebookReferenceFinder {
     }
 
     private fun tryMatchWithDeclaration(host: PsiLanguageInjectionHost, possibleClassName: Set<String>?, targetElement: PsiElement, candidateDeclaration: KtDeclaration, referenceInfo: ProvidedReferenceInfo): Boolean {
-        candidateDeclaration.parentOfType<KtClass>(withSelf = true)?.let {
-            return it.name == referenceInfo.enclosingClass?.name
+        if (referenceInfo.type !is KtClassElementType) {
+            candidateDeclaration.parentOfType<KtClass>(withSelf = true)?.let {
+                return it.name == referenceInfo.enclosingClass?.name
+            }
         }
 
         val compiledClassName = possibleClassName
