@@ -157,7 +157,6 @@ internal object NotebookHighlightingUtilityObject {
 class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
     private val project = injectedFile.project
     private lateinit var targetHost: PsiLanguageInjectionHost
-    private var errorRegistry: Collection<HighlightInfo>? = null
     private val injectedManager = InjectedLanguageManager.getInstance(project)
     private var completeAnalysisRange: TextRange? = null
     init {
@@ -194,26 +193,6 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
                 holder.add(el)
             }
         }
-    }
-
-    @Deprecated("Use [convertReceivedHighlightInfos]")
-    fun updateHolderOrProvided(holder: HighlightInfoHolder) {
-        if (isShouldHighlightErrors) {
-            return
-        }
-        val errorRef = targetHost.getErrorPresenceIndicator()
-            ?: AtomicReference(true).also { targetHost.putUserData(NotebookHighlightingUtilityObject.InjectedHostHasErrors, it) }
-        val registry = errorRegistry ?: return
-
-        val seenInfos = mutableSetOf<Int>()
-        if (registry.isNotEmpty()) {
-            errorRef.set(true)
-            for (el in registry) {
-                if (el.severity == HighlightSeverity.ERROR && seenInfos.add(el.range.start) && seenInfos.add(el.range.end)) {
-                    holder.add(HighlightInfoManipulator.convertToShadowedDeclaration(el))
-                }
-            }
-        } else errorRef.compareAndSet(true, false)
     }
 
     fun isShouldAcceptDiagnostic(elem: Diagnostic): Boolean {
