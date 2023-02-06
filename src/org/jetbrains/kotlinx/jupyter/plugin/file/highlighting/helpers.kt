@@ -35,6 +35,7 @@ import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
@@ -118,6 +119,8 @@ internal object NotebookHighlightingUtilityObject {
         putUserData(RenamingEnclosedRange, null)
     }
 
+    fun PsiLanguageInjectionHost.getErrorPresenceIndicator() = getUserData(InjectedHostHasErrors)
+
     /**
      * [require] ReadAction
      * [require] EDT thread
@@ -182,7 +185,7 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
     }
 
     fun applyReceivedHighlightInfos(foundData: Collection<HighlightInfo>, holder: HighlightInfoHolder) {
-        val errorRef = targetHost.getUserData(NotebookHighlightingUtilityObject.InjectedHostHasErrors)
+        val errorRef = targetHost.getErrorPresenceIndicator()
             ?: AtomicReference(foundData.isNotEmpty()).also { targetHost.putUserData(NotebookHighlightingUtilityObject.InjectedHostHasErrors, it) }
 
         val seenInfosOffsets = mutableSetOf<Int>()
@@ -201,7 +204,7 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
         if (isShouldHighlightErrors) {
             return
         }
-        val errorRef = targetHost.getUserData(NotebookHighlightingUtilityObject.InjectedHostHasErrors)
+        val errorRef = targetHost.getErrorPresenceIndicator()
             ?: AtomicReference(true).also { targetHost.putUserData(NotebookHighlightingUtilityObject.InjectedHostHasErrors, it) }
         val registry = errorRegistry ?: return
 

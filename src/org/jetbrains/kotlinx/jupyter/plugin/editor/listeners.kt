@@ -24,9 +24,9 @@ import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.InjectedHostHasErrors
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
@@ -139,7 +139,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         } else {
             lastCellInd = ord
             floatingPrevCell = null
-            val errorsRef = lastCell?.getUserData(InjectedHostHasErrors)
+            val errorsRef = lastCell?.getErrorPresenceIndicator()
             prevCell = if (errorsRef?.acquire == true || errorsRef == null) lastCell else null
             lastCell = psiFile.getNotebookCellList()?.let {
                 it[
