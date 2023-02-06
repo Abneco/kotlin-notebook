@@ -15,7 +15,6 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.getInjectedKtFiles
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.ReformatDocumentActionTargets
@@ -67,7 +66,6 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
             val targets = synchronized(document) {
                 document.getUserData(ReformatDocumentActionTargets)
             }
-            document.putUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE, null)
             document.putUserData(ReformatDocumentActionTargets, null)
             document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
             document.putUserData(NotebookDocumentTargetRanges, getRangesAfterDocumentReformatOrNull(cellList, targets))

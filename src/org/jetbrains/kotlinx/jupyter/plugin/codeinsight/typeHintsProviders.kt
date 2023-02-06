@@ -28,9 +28,9 @@ import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.getBindingContext
-import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.getNotebookModificationArea
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.psiHostChainHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.putBindingContext
+import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCompleteAnalysisArea
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.isEitherSymmetricallyContainedRange
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
@@ -135,7 +135,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 if (element !is JupyterPsiCellImpl) return true
                 val ktFile = tryGetInjectedKtFileIfPossibleOrProvided(element, project) as? PsiFile ?: return true
 
-                val modificationArea = document?.getNotebookModificationArea()
+                val modificationArea = document?.getNotebookCompleteAnalysisArea()
 
                 val registry = KotlinNotebookAbstractInlayTypeHintsProvider.getOrCreateChainCallTypeHintsRegistry(element)
                                                 // lhs.contains(rhs) || rhs.contains(rhs)

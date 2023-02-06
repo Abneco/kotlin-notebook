@@ -12,13 +12,11 @@ import com.intellij.codeInsight.hints.presentation.RecursivelyUpdatingRootPresen
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
@@ -30,7 +28,6 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCompleteAnalysisArea
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.isEitherSymmetricallyContainedRange
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage
@@ -67,6 +64,10 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                     if (optionsProvider.state.shouldLimitTypeHintsByActiveCell) return true
 
                     try {
+                        if (!element.isValid) {
+                            logger.warn("Error during applying type hints from registry: host is invalid")
+                            return false
+                        }
                         registry.entries.forEach { (el, data) ->
                             val resolved = data.filter { isElementSupported(it, settings) }.ifEmpty { return@forEach }
                             resolved.forEach { hintType ->
@@ -176,11 +177,6 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                 sink.addInlineElement(p.offset, RecursivelyUpdatingRootPresentation(p.presentation), horizontalConstraints)
             }
         }
-
-        internal fun Document?.getNotebookModificationArea(): TextRange? =
-            if (this?.getUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE) != null) {
-                synchronized(this) { this.getUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE) }
-            } else null
 
         const val markerShift = CELL_MARKER.length + 1
         fun isLanguageSupported(language: Language): Boolean = language == JupyterLanguage

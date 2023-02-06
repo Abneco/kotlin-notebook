@@ -59,8 +59,6 @@ internal object NotebookHighlightingUtilityObject {
     @NlsSafe
     const val scriptingMissingBaseClassError = "[MISSING_SCRIPT_BASE_CLASS]"
 
-    @JvmField
-    val NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE = Key.create<TextRange>("notebook.document.target.range")
     // to unify
     val NotebookDocumentTargetRanges = Key.create<Collection<TextRange>>("notebook.document.target.ranges")
 
@@ -107,14 +105,13 @@ internal object NotebookHighlightingUtilityObject {
     fun Document.invalidateStateAfterCellExecution(executedCell: PsiLanguageInjectionHost? = null) {
         putUserData(RenamingEnclosedRange, null)
         putUserData(NotebookDocumentTargetRanges, null)
-        putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE, executedCell?.textRange)
         putUserData(CompleteHighlightingRange, executedCell?.textRange)
         putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
     }
 
     fun Document.reactOnThemeChangedEvent() {
         putUserData(NotebookDocumentTargetRanges, null)
-        putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE, null)
+        putUserData(CompleteHighlightingRange, null)
         putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
         putUserData(RenamingEnclosedRange, null)
     }

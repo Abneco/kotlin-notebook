@@ -23,7 +23,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificatio
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
@@ -66,7 +65,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                 return severalUpdates
             }
 
-            val possibleRange = document.getUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE)
+            val possibleRange = document.getUserData(CompleteHighlightingRange)
             //if (cellInd != null && possibleRange?.endOffset != cellInd.endOffset) cellInd else possibleRange
             if (possibleRange == null && cellInd != null) {
                 document.putUserData(CompleteHighlightingRange, cellInd)
