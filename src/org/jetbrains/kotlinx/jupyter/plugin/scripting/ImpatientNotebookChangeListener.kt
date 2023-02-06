@@ -96,21 +96,20 @@ class ImpatientNotebookChangeListener(
         cellOfChange.getErrorPresenceIndicator()
             ?.compareAndSet(false, true)
 
-        runReadAction {
-            val injectedPsi = injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first
-            val actualRangeToStore = if (injectedPsi != null) { // null means concurrent race
-                properTextRange
-            } else null
-            document.putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE,
-                                 actualRangeToStore)
-            if (renameRange == null) {
-                document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
-            }
-            document.putUserData(CompleteHighlightingRange, actualRangeToStore)
-            document.putUserData(NotebookDocumentTargetRanges, null)
-            cellOfChange.invalidateTypeHintsRegistry()
-            //println("Inside before change for ${injectedPsi?.containingFile?.name}, hostsSize: $hostSize, injected: ${injectedPsi?.text}")
+
+        val injectedPsi = runReadAction { injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first }
+        val actualRangeToStore = if (injectedPsi != null) { // null means concurrent race
+            properTextRange
+        } else null
+        document.putUserData(NOTEBOOK_DOCUMENT_TARGET_ANALYSIS_RANGE,
+                             actualRangeToStore)
+        if (renameRange == null) {
+            document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
         }
+        document.putUserData(CompleteHighlightingRange, actualRangeToStore)
+        document.putUserData(NotebookDocumentTargetRanges, null)
+        cellOfChange.invalidateTypeHintsRegistry()
+
     }
     private fun DocumentEvent.identifyEventChangeType(): NotebookChangeEventsType {
         val event = this
