@@ -102,9 +102,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                 }
             }
 
-            override fun daemonCancelEventOccurred(reason: String) {
-                stateLock.write { state = DaemonState.Aborted }
-            }
         })
     }
 
@@ -117,8 +114,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         val cell = editor.getCell(min(event.newPosition.line, editor.document.lineCount - 1))
         val ord = cell.ordinal
         val currState = stateLock.read { state }
-        val isGoodState = currState != DaemonState.Aborted && !isSizeChanged
-
+        val isGoodState = currState == DaemonState.Finished && !isSizeChanged
         if ((ord == lastCellInd && isGoodState) || isFirstRun) return
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastTimeCellFocusChanged < 600) { // might be reworked
