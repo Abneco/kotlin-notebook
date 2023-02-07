@@ -92,6 +92,8 @@
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">
         <jupyterLanguageBasedFileViewProviderChooser implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinFileViewProviderChooser"/>
         <editor.notebookEditorCreatedCallback implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinNotebookEditorFactoryListener"/>
+        <editor.outputs.notebookObjectOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.outputs.plots.PlotDataKeyExtractor"/>
+        <editor.outputs.notebookOutputComponentFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.outputs.plots.LetsPlotOutputComponentFactory"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">

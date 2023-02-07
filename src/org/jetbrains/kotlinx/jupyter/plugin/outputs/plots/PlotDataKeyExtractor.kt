@@ -1,0 +1,25 @@
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.kotlinx.jupyter.plugin.outputs.plots
+
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.node.TextNode
+import com.intellij.util.asSafely
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutputDataKeyExtractor
+import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataKey
+
+class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
+    override fun extractKey(dataObject: ObjectNode, executionCount: Int?): NotebookOutputDataKey? {
+        if (!dataObject.has(plotKey)) return null
+        val plotValue = dataObject[plotKey].asSafely<ObjectNode>() ?: return null
+        val plotType = plotValue[plotTypeKey].asSafely<TextNode>()?.asText() ?: return null
+        return when(plotType) {
+            "lets_plot_spec" -> plotValue["output"].asSafely<ObjectNode>()?.let { outputSpec -> LetsPlotOutputDataKey(outputSpec, executionCount) }
+            else -> null
+        }
+    }
+
+    companion object {
+        private const val plotKey = "application/plot"
+        private const val plotTypeKey = "output_type"
+    }
+}
