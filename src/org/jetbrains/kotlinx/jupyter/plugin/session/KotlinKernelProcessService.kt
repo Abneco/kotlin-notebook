@@ -22,6 +22,7 @@ import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import kotlin.io.path.absolute
 
 @Service(Service.Level.APP)
@@ -80,11 +81,11 @@ class KotlinKernelProcessService {
 
         val resourceStream = Thread.currentThread().contextClassLoader.getResourceAsStream(resourceZipPath)
         if (resourceStream != null) {
-            Files.copy(resourceStream, zipPath)
+            Files.copy(resourceStream, zipPath, StandardCopyOption.REPLACE_EXISTING)
         } else {
             val pluginResourcePath = KotlinJupyterResourcesUtil.getPluginResource(resourceZipPath)?.toPath()
             if (pluginResourcePath != null) {
-                Files.copy(pluginResourcePath, zipPath)
+                Files.copy(pluginResourcePath, zipPath, StandardCopyOption.REPLACE_EXISTING)
             } else {
                 throw RuntimeException("There is no resource $resourceZipPath neither in JAR resources nor in plugin resources")
             }
