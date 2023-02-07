@@ -53,11 +53,15 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             val cellInd = document.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)?.let { // notebook file is already rebuild
                 cells?.get(it)
             }?.textRange
+            val completeHLRange = document.getUserData(CompleteHighlightingRange)
+            if (cellInd != null && (completeHLRange == null || completeHLRange.startOffset == cellInd.startOffset)) { // converge
+                document.putUserData(CompleteHighlightingRange, cellInd)
+                if (document.getUserData(NotebookDocumentTargetRanges)?.size == 1) {
+                    document.putUserData(NotebookDocumentTargetRanges, listOf(cellInd))
+                }
+            }
             val afterRenaming = document.getUserData(RenamingEnclosedRange)
             if (afterRenaming?.isNotEmpty() == true) {
-                if (cellInd != null) {
-                    document.putUserData(CompleteHighlightingRange, cellInd)
-                }
                 return afterRenaming
             }
             val severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
@@ -66,13 +70,9 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             }
 
             val possibleRange = document.getUserData(CompleteHighlightingRange)
-            //if (cellInd != null && possibleRange?.endOffset != cellInd.endOffset) cellInd else possibleRange
-            if (possibleRange == null && cellInd != null) {
-                document.putUserData(CompleteHighlightingRange, cellInd)
-                cellInd
-            } else null
+            document.getUserData(CompleteHighlightingRange)
         }?.let {
-            listOf(TextRange(it.startOffset, it.endOffset + 2))
+            listOf(TextRange(it.startOffset, it.endOffset + 1))
         }
     }
 
