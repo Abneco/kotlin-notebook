@@ -53,10 +53,15 @@ class ImpatientNotebookChangeListener(
         val neededCellIndex = allLines.take(lineOfChange).count {
             it.contains("#%%")
         }
+        val cellSize = psiCells?.size ?: 0
 
         val eventsType = event.identifyEventChangeType()
         val actualCellIndex = if (eventsType
-            == NotebookChangeEventsType.MARKDOWN_CONVERSION_EVENT || eventsType == NotebookChangeEventsType.CELL_LIST_ADD_EVENT) neededCellIndex else if (neededCellIndex > 0) neededCellIndex - 1 else 0
+            == NotebookChangeEventsType.MARKDOWN_CONVERSION_EVENT || eventsType == NotebookChangeEventsType.CELL_LIST_ADD_EVENT) neededCellIndex
+            else if (eventsType == NotebookChangeEventsType.CELL_LIST_DELETE_EVENT) {
+                if (neededCellIndex + 1 < cellSize) neededCellIndex + 1 else neededCellIndex
+            }
+            else if (neededCellIndex > 0) neededCellIndex - 1 else 0
         val cellOfChange = psiCells?.get(actualCellIndex)
 
         if (lineOfChange > allLines.size - 1 || cellOfChange == null) return // ignore change of whole document
@@ -71,8 +76,11 @@ class ImpatientNotebookChangeListener(
 
         val delta = if (event.newLength > event.oldLength) event.newLength else -event.oldLength
         val isCellListChange = eventsType.isCellListChangeEvent()
+        val isDeleteEvent = eventsType == NotebookChangeEventsType.CELL_LIST_DELETE_EVENT
 
-        val properCellIndexOrNull = if (!isCellListChange) actualCellIndex else null
+        val properCellIndexOrNull = if (isCellListChange) {
+            if (isDeleteEvent) actualCellIndex - 1 else null
+        } else actualCellIndex
         val cellRange = cellOfChange.textRange
         var properTextRange
             = if (isCellListChange) TextRange(event.offset, event.offset + event.newLength)
@@ -97,7 +105,7 @@ class ImpatientNotebookChangeListener(
 
 
         val injectedPsi = runReadAction { injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first }
-        val actualRangeToStore = if (injectedPsi != null) { // null means concurrent race
+        val actualRangeToStore = if (injectedPsi != null && !isDeleteEvent) { // null means concurrent race
             properTextRange
         } else null
         if (renameRange == null) {
