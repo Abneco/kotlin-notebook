@@ -59,9 +59,9 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                 val registry = getOrCreateTypeHintsRegistry(element)
                 val hostOffset = element.textOffset
 
-
+                val shouldLimit = optionsProvider.state.shouldLimitTypeHintsByActiveCell
                 if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
-                    if (optionsProvider.state.shouldLimitTypeHintsByActiveCell) return true
+                    if (shouldLimit) return true
 
                     try {
                         if (!element.isValid) {
@@ -91,7 +91,9 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                     val resolved = HintType.resolve(elem).ifEmpty { return@traverseElementsAndApplyAction true }
                     val f = factory
                     resolved.forEach { hintType ->
-                        registry.putIfAbsent(elem, mutableSetOf())
+                        if (!shouldLimit) {
+                            registry.putIfAbsent(elem, mutableSetOf())
+                        }
                         if (isElementSupported(hintType, settings)) {
                             addInlayElementToSink(elem, project,
                                                   hintType, sink,

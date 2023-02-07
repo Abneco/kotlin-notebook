@@ -118,6 +118,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
     override val previewText: String = ""
 
     override val description: String = "${super.description} in Kotlin Notebook"
+    private var lastShouldLimitOptionValue: Boolean = false
 
     override fun isLanguageSupported(language: Language): Boolean = KotlinNotebookAbstractInlayTypeHintsProvider.isLanguageSupported(language)
 
@@ -140,7 +141,8 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 val registry = KotlinNotebookAbstractInlayTypeHintsProvider.getOrCreateChainCallTypeHintsRegistry(element)
                                                 // lhs.contains(rhs) || rhs.contains(rhs)
                 if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
-                    if (optionsProvider.state.shouldLimitTypeHintsByActiveCell) return true
+                    lastShouldLimitOptionValue = optionsProvider.state.shouldLimitTypeHintsByActiveCell
+                    if (lastShouldLimitOptionValue) return true
                     try {
                         registry.entries.forEach { (el, data) ->
                             if (el !is KtQualifiedExpression) return@forEach
@@ -176,11 +178,11 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
             val manager = InjectedLanguageManager.getInstance(it.project)
             manager.getInjectionHost(it.containingFile)
         }
+        val topMostExpression = elements.first().expression
         val registry = runIf(host != null) {
             host!!.getUserData(psiHostChainHintsRegistry)
         }
-        val topMostExpression = elements.first().expression
-        if (host != null) {
+        if (host != null && !lastShouldLimitOptionValue) {
             registry?.put(topMostExpression, elements.map { Pair(it.expression, it.type.getInlayPresentation(it.expression, factory, host.project, context)) })
         }
         topMostExpression.putBindingContext(context)
