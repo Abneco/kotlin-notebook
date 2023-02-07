@@ -61,6 +61,8 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
     private var lastTimeCellFocusChanged = 0L
     private var deferredFastUpdate: Job? = null
     private var isFirstRun = true
+    private var isSizeChanged = false
+    private var lastCellSize = -1
 
     init {
         assert(psiFile != null)
@@ -97,6 +99,10 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     stateLock.write { state = DaemonState.Started }
                 }
             }
+
+            override fun daemonCancelEventOccurred(reason: String) {
+                stateLock.write { state = DaemonState.Aborted }
+            }
         })
     }
 
@@ -109,9 +115,9 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         val cell = editor.getCell(min(event.newPosition.line, editor.document.lineCount - 1))
         val ord = cell.ordinal
         val currState = stateLock.read { state }
-        val isBadState = currState != DaemonState.Finished
-        //println("currState $currState, isBad: $isBadState")
-        if ((ord == lastCellInd && !isBadState) || isFirstRun) return
+        val isGoodState = currState != DaemonState.Aborted && !isSizeChanged
+
+        if ((ord == lastCellInd && isGoodState) || isFirstRun) return
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastTimeCellFocusChanged < 600) { // might be reworked
             deferredFastUpdate?.cancel()
@@ -142,6 +148,9 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             val errorsRef = lastCell?.getErrorPresenceIndicator()
             prevCell = if (errorsRef?.acquire == true || errorsRef == null) lastCell else null
             lastCell = psiFile.getNotebookCellList()?.let {
+                val prevSize = lastCellSize
+                lastCellSize = it.size
+                isSizeChanged = prevSize != -1 && prevSize != lastCellSize
                 it[
                     if (lastCellInd >= it.size) it.lastIndex
                     else lastCellInd
