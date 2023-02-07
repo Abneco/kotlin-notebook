@@ -132,7 +132,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     if (curRange != null && floatingRange?.equalsToRange(curRange.startOffset, curRange.endOffset) == true) {
                         floatingPrevCell = null
                     }
-                    performRangedUpdate(curRange, listOfNotNull(curRange, floatingPrevCell?.textRange))
+                    performRangedUpdate(curRange, setOfNotNull(curRange, floatingPrevCell?.textRange))
                 }
             }
             //println("should not trigger an event! for cell $ord")
@@ -149,7 +149,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             }
             val prevRange = prevCell?.textRange
             val currRange = lastCell?.textRange
-            performRangedUpdate(currRange, listOfNotNull(prevRange, currRange))
+            performRangedUpdate(currRange, setOfNotNull(prevRange, currRange))
             //println("Cell focus changed to $ord")
         }
         lastTimeCellFocusChanged = System.currentTimeMillis()

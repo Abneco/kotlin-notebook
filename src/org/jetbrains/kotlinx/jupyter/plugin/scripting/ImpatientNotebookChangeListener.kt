@@ -46,7 +46,7 @@ class ImpatientNotebookChangeListener(
             val psiCells = psiFile?.getNotebookCellList()
             Triple(d, psiFile, psiCells)
         }
-        if (document == null || psiFile == null || document.textLength == event.offset) return
+        if (document == null || psiFile == null) return
         //println("Inside exec before doc changed")
         val lineOfChange = document.getLineNumber(event.offset)
         val allLines = document.text.lines()
@@ -57,7 +57,7 @@ class ImpatientNotebookChangeListener(
 
         val eventsType = event.identifyEventChangeType()
         val actualCellIndex = if (eventsType
-            == NotebookChangeEventsType.MARKDOWN_CONVERSION_EVENT || eventsType == NotebookChangeEventsType.CELL_LIST_ADD_EVENT) neededCellIndex
+            == NotebookChangeEventsType.MARKDOWN_CONVERSION_EVENT) neededCellIndex
             else if (eventsType == NotebookChangeEventsType.CELL_LIST_DELETE_EVENT) {
                 if (neededCellIndex + 1 < cellSize) neededCellIndex + 1 else neededCellIndex
             }
@@ -77,10 +77,9 @@ class ImpatientNotebookChangeListener(
         val delta = if (event.newLength > event.oldLength) event.newLength else -event.oldLength
         val isCellListChange = eventsType.isCellListChangeEvent()
         val isDeleteEvent = eventsType == NotebookChangeEventsType.CELL_LIST_DELETE_EVENT
+        val isAddEvent = eventsType == NotebookChangeEventsType.CELL_LIST_ADD_EVENT
 
-        val properCellIndexOrNull = if (isCellListChange) {
-            if (isDeleteEvent) actualCellIndex - 1 else null
-        } else actualCellIndex
+        val properCellIndexOrNull = if (isDeleteEvent) actualCellIndex - 1 else if (isAddEvent) neededCellIndex else actualCellIndex
         val cellRange = cellOfChange.textRange
         var properTextRange
             = if (isCellListChange) TextRange(event.offset, event.offset + event.newLength)
@@ -105,14 +104,17 @@ class ImpatientNotebookChangeListener(
 
 
         val injectedPsi = runReadAction { injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first }
-        val actualRangeToStore = if (injectedPsi != null && !isDeleteEvent) { // null means concurrent race
+        val actualRangeToStore = if (injectedPsi != null && !isCellListChange) { // null means concurrent race
             properTextRange
         } else null
         if (renameRange == null) {
             document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
         }
+        val targetRangesAfterAddOrNull = if (isCellListChange && !isDeleteEvent) {
+            setOfNotNull(psiCells.getOrNull(neededCellIndex)?.textRange, cellOfChange.textRange)
+        } else null
         document.putUserData(CompleteHighlightingRange, actualRangeToStore)
-        document.putUserData(NotebookDocumentTargetRanges, null)
+        document.putUserData(NotebookDocumentTargetRanges, targetRangesAfterAddOrNull)
         cellOfChange.invalidateTypeHintsRegistry()
 
     }

@@ -53,10 +53,11 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             val cellInd = document.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)?.let { // notebook file is already rebuild
                 cells?.get(it)
             }?.textRange
+            var severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
             val completeHLRange = document.getUserData(CompleteHighlightingRange)
             if (cellInd != null && (completeHLRange == null || completeHLRange.startOffset == cellInd.startOffset)) { // converge
                 document.putUserData(CompleteHighlightingRange, cellInd)
-                if (document.getUserData(NotebookDocumentTargetRanges)?.size == 1) {
+                if (severalUpdates?.size == 1) {
                     document.putUserData(NotebookDocumentTargetRanges, listOf(cellInd))
                 }
             }
@@ -64,8 +65,14 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             if (afterRenaming?.isNotEmpty() == true) {
                 return afterRenaming
             }
-            val severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
+            //val severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
             if (severalUpdates?.isNotEmpty() == true) {
+                if (cellInd != null && !severalUpdates.contains(cellInd)) {
+                    document.putUserData(NotebookDocumentTargetRanges, severalUpdates.toMutableSet().also {
+                        it.add(cellInd)
+                        severalUpdates = it
+                    })
+                }
                 return severalUpdates
             }
 
