@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
@@ -85,6 +86,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     val isAfterRenaming = doc?.getUserData(RenamingEnclosedRange) != null
                     doc?.putUserData(RenamingEnclosedRange, null)
                     doc?.putUserData(NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
+                    doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
                     if (isAfterRenaming) {
                         lastCellInd = 0
                     }
