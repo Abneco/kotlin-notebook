@@ -15,9 +15,11 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.getInjectedKtFiles
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.ReformatDocumentActionTargets
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.retrieveCellIntervalUnderCaret
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
@@ -61,14 +63,20 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
             return
         }
 
+        val invokedInCell = document.retrieveCellIntervalUnderCaret(asPsiFile.virtualFile, project)
         val afterUpdate = {
-            //document.putUserData(NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges, null)
             val targets = synchronized(document) {
                 document.getUserData(ReformatDocumentActionTargets)
             }
             document.putUserData(ReformatDocumentActionTargets, null)
-            document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
+            if (invokedInCell != null) {
+                document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
+            }
             document.putUserData(NotebookDocumentTargetRanges, getRangesAfterDocumentReformatOrNull(cellList, targets))
+            invokedInCell?.ordinal?.let {
+                document.putUserData(CompleteHighlightingRange, cellList.get(it)?.textRange)
+            }
+
             invokeLater {
                 asPsiFile.restartAnalyzing()
             }

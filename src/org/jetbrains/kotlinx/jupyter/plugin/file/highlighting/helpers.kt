@@ -40,6 +40,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
+import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
+import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.min
@@ -118,6 +120,13 @@ internal object NotebookHighlightingUtilityObject {
     }
 
     fun PsiLanguageInjectionHost.getErrorPresenceIndicator() = getUserData(InjectedHostHasErrors)
+
+    fun Document.retrieveCellIntervalUnderCaret(virtualFile: VirtualFile, project: Project): NotebookCellLines.Interval? {
+        val editor = (FileEditorManager.getInstance(project).getSelectedEditor(virtualFile) as? JupyterFileEditor)?.editor
+        val caretOffset = editor?.caretModel?.offset ?: return null
+        val lineNumber = getLineNumber(caretOffset)
+        return editor.getCell(lineNumber)
+    }
 
     /**
      * [require] ReadAction
