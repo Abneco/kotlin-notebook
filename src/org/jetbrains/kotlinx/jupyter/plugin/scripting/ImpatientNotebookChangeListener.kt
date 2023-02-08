@@ -14,6 +14,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.ReformatDocumentActionTargets
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
@@ -22,6 +23,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
+import java.util.concurrent.atomic.AtomicReference
 
 
 internal enum class NotebookChangeEventsType {
@@ -39,6 +41,10 @@ class ImpatientNotebookChangeListener(
     private var lastTimeCellChangeActionPerformed = 0L
     private var lastAdjustedRange: TextRange? = null
     private var cellsAffectedByReformat = mutableSetOf<Int>()
+    init {
+        FileDocumentManager.getInstance().getDocument(virtualFile.file)
+            ?.putUserData(NotebookDocumentStructureNontrivialChanged, AtomicReference(false))
+    }
 
     private fun handleNotebookChangeEvent(event: DocumentEvent) {
         val file = FileDocumentManager.getInstance().getFile(event.document)?.let(::BackedNotebookVirtualFile) ?: return
@@ -102,6 +108,9 @@ class ImpatientNotebookChangeListener(
                     val isMoveDown = event.oldFragment.trim().toString() != psiCells[caretCellIndex].text.trim()
                     if (isMoveDown) {
                         properCellIndexOrNull += 1
+                    } else {
+                        // no other way to indicate size changed in CaretListener 
+                        document.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(false, true)
                     }
                 }
 

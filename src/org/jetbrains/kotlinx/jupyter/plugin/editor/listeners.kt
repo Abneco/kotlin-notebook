@@ -25,6 +25,7 @@ import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
@@ -73,6 +74,11 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                 fileEditors.firstOrNull { (it as? TextEditor)?.editor == editor }?.let {
                     if (!scriptDefManager.isReady()) {
                         return
+                    }
+
+                    // for proper cell move up handle 
+                    if (doc?.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(true, false) == true) {
+                        isSizeChanged = true
                     }
 
                     stateLock.write { state = DaemonState.Finished }
