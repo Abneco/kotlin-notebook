@@ -65,13 +65,16 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             if (afterRenaming?.isNotEmpty() == true) {
                 return afterRenaming
             }
-            //val severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
+
             if (severalUpdates?.isNotEmpty() == true) {
                 if (cellInd != null && !severalUpdates.contains(cellInd)) {
                     document.putUserData(NotebookDocumentTargetRanges, severalUpdates.toMutableSet().also {
                         it.add(cellInd)
                         severalUpdates = it
                     })
+                // undo action might be performed, so set proper range
+                } else if (cellInd == null && !severalUpdates.isNullOrEmpty() && severalUpdates?.none { completeHLRange?.intersects(it) == true } == true) {
+                    document.putUserData(CompleteHighlightingRange, severalUpdates?.firstOrNull())
                 }
                 return severalUpdates
             }

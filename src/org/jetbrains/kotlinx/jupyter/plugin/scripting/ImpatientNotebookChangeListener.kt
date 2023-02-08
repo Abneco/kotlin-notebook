@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.scripting
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Document
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -108,11 +109,11 @@ class ImpatientNotebookChangeListener(
                     val isMoveDown = event.oldFragment.trim().toString() != psiCells[caretCellIndex].text.trim()
                     if (isMoveDown) {
                         properCellIndexOrNull += 1
-                    } else {
-                        // no other way to indicate size changed in CaretListener 
-                        document.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(false, true)
                     }
                 }
+
+                // no other way to indicate size changed in CaretListener
+                document.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(false, true)
 
                 isSingleDeleteEvent = false
                 properTextRange = properTextRange.union(last).createSafeTextRangeWithDelta(delta)
@@ -126,7 +127,6 @@ class ImpatientNotebookChangeListener(
 
         cellOfChange.getErrorPresenceIndicator()
             ?.compareAndSet(false, true)
-
 
         val injectedPsi = runReadAction { injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first }
         val actualRangeToStore = if (injectedPsi != null && !isCellListChange) { // null means concurrent race
@@ -190,8 +190,11 @@ internal fun TextRange.createSafeTextRangeWithDelta(delta: Int): TextRange {
     return if (newEnd < startOffset) this else TextRange(startOffset, newEnd)
 }
 
+internal fun Document.retrieveEditor(vFile: VirtualFile, project: Project): Editor?
+    = (FileEditorManager.getInstance(project).getSelectedEditor(vFile) as? JupyterFileEditor)?.editor
+
 internal fun Document.retrieveLineNumberUnderCaret(vFile: VirtualFile, project: Project): Int? {
-    val editor = (FileEditorManager.getInstance(project).getSelectedEditor(vFile) as? JupyterFileEditor)?.editor
+    val editor = retrieveEditor(vFile, project)
     val caretOffset = editor?.caretModel?.offset ?: return null
     return getLineNumber(caretOffset)
 }
