@@ -3,12 +3,16 @@ package org.jetbrains.kotlinx.jupyter.plugin.outputs.plots
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.asSafely
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutputDataKeyExtractor
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataKey
 
+internal val letsPlotSwingOutputsEnabled = Registry.`is`("lets.plot.swing.outputs.enabled", false)
+
 class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
     override fun extractKey(dataObject: ObjectNode, executionCount: Int?): NotebookOutputDataKey? {
+        if (!letsPlotSwingOutputsEnabled) return null
         if (!dataObject.has(plotKey)) return null
         val plotValue = dataObject[plotKey].asSafely<ObjectNode>() ?: return null
         val plotType = plotValue[plotTypeKey].asSafely<TextNode>()?.asText() ?: return null

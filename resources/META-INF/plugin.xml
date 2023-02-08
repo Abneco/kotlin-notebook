@@ -28,6 +28,9 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
+        <registryKey key="lets.plot.swing.outputs.enabled" defaultValue="false"
+                         description="When enabled, outputs of LetsPlot plotting library in Kotlin Notebooks will be rendered using no-browser approach"/>
+
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinIntoCellsInjector"/>
         <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.notifications.NotebookLocationNotificationProvider"/>
         <fileIconPatcher implementation="org.jetbrains.kotlinx.jupyter.plugin.file.JupyterKotlinIconPatcher"/>
