@@ -138,12 +138,14 @@ class ImpatientNotebookChangeListener(
         val event = this
         val oldFragment = event.oldFragment
         val newFragment = event.newFragment
+        val isNewEmpty = newFragment.isEmpty()
+        val isOldEmpty = oldFragment.isEmpty()
         return if ((oldFragment.contains(" md")
-                    || newFragment.contains(" md")) && (newFragment.isEmpty() || oldFragment.isEmpty()))
+                    || newFragment.contains(" md")) && (isNewEmpty || isOldEmpty))
             NotebookChangeEventsType.MARKDOWN_CONVERSION_EVENT
-        else if (newFragment.contains("#%%") && oldFragment.isEmpty())
+        else if (newFragment.contains("#%%") && isOldEmpty)
             NotebookChangeEventsType.CELL_LIST_ADD_EVENT
-        else if (oldFragment.contains("#%%") && newFragment.isEmpty())
+        else if (oldFragment.contains("#%%") && isNewEmpty)
             NotebookChangeEventsType.CELL_LIST_DELETE_EVENT
         else NotebookChangeEventsType.REGULAR
     }
