@@ -76,7 +76,6 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                 return severalUpdates
             }
 
-            val possibleRange = document.getUserData(CompleteHighlightingRange)
             document.getUserData(CompleteHighlightingRange)
         }?.let {
             listOf(TextRange(it.startOffset, it.endOffset + 1))
