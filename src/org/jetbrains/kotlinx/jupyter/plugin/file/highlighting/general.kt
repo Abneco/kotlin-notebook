@@ -33,6 +33,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingClassError
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
+import org.jetbrains.plugins.notebooks.visualization.getCell
 
 
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
@@ -46,6 +47,8 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         val document = FileDocumentManager.getInstance().getDocument(jupyterFile.virtualFile) ?: return null
 
         val cells = file.getNotebookCellList()
+        val caretOffSet = editor.caretModel.offset
+        val cellUnderEditor = editor.getCell(document.getLineNumber(caretOffSet))
         cells?.ensureScriptConfigurations(ScriptConfigurationManager.getInstance(file.project),
                                                                InjectedLanguageManager.getInstance(file.project))
         jupyterFile.ensureScriptManagerReady()
@@ -59,6 +62,14 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             var severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
             val completeHLRange = document.getUserData(CompleteHighlightingRange)
             if (cellChangeRange != null && (completeHLRange == null || completeHLRange.startOffset == cellChangeRange.startOffset)) { // converge
+                // this might happen after redo action
+                val nothingMatches =
+                    completeHLRange == null && (cellUnderEditor.ordinal - cellIndx > 0) && severalUpdates == null
+                if (nothingMatches) {
+                    val toPut = cells?.get(cellUnderEditor.ordinal)?.textRange
+                    document.putUserData(CompleteHighlightingRange, toPut)
+                    return listOfNotNull(toPut)
+                }
                 document.putUserData(CompleteHighlightingRange, cellChangeRange)
                 if (severalUpdates?.size == 1) {
                     document.putUserData(NotebookDocumentTargetRanges, listOf(cellIndx))
