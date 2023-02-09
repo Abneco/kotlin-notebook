@@ -12,6 +12,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
@@ -26,6 +27,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.min
 
 
 internal enum class NotebookChangeEventsType {
@@ -107,6 +109,7 @@ class ImpatientNotebookChangeListener(
                 val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
                 val ind = cellUnderCaret?.ordinal
                 if (ind != null) {
+                    JupyterCompilerService.getForFile(project, virtualFile).swapCellsData(ind - 1, ind -2, psiCells)
                     val isMoveDown = event.oldFragment.trim().toString() != psiCells[ind - 1].text.trim()
                     if (isMoveDown) {
                         properCellIndexOrNull += 1

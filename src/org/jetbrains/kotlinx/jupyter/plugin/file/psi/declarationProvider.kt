@@ -65,6 +65,10 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
         internal fun tryGetPreviousValidResolvedResult(sourceElement: PsiElement): PsiElement? {
             sourceElement.getUserData(IN_EDITOR_ELEM_REF_KEY)?.let {
                 val knownRef = sourceElement.parent?.reference?.resolve()
+                if (!it.isValid || !it.containingFile.isValid) {
+                    sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, null)
+                    return null
+                }
                 val storedClassName = it.containingFile.getUserData(CELL_CLASS_NAME)
                 if (knownRef != null && it.isValid && storedClassName?.contains(knownRef.containingFile.name.substringBefore(".class")) == true
                     || storedClassName?.contains(sourceElement.containingFile.name.substringBefore(".class")) == true) {

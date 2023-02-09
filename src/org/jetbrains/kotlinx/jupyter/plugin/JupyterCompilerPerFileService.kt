@@ -433,6 +433,22 @@ class JupyterCompilerPerFileService(
         }
     }
 
+    fun swapCellsData(lhs: Int, rhs: Int, cellList: List<PsiLanguageInjectionHost>) {
+        if (lhs == rhs || lhs < 0 || rhs < 0) return
+
+        val lhsWas = cellOrdinalToClassName[lhs]
+        val rhsWas = cellOrdinalToClassName[rhs]
+        if (lhsWas?.isEmpty() == false) {
+            cellOrdinalToClassName[rhs] = lhsWas
+        } else cellOrdinalToClassName.remove(rhs)
+        if (rhsWas?.isEmpty() == false) {
+            cellOrdinalToClassName[lhs] = rhsWas
+        } else cellOrdinalToClassName.remove(lhs)
+
+        cellList.getOrNull(rhs)?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, lhsWas)
+        cellList.getOrNull(lhs)?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, rhsWas)
+    }
+
     private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell) {
         val project = projectService.project
         val injectManager = InjectedLanguageManager.getInstance(project)
