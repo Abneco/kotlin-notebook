@@ -41,6 +41,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
@@ -62,7 +63,7 @@ internal object NotebookHighlightingUtilityObject {
     const val scriptingMissingBaseClassError = "[MISSING_SCRIPT_BASE_CLASS]"
 
     // to unify
-    val NotebookDocumentTargetRanges = Key.create<Collection<TextRange>>("notebook.document.target.ranges")
+    val NotebookDocumentTargetRanges = Key.create<Collection<Int>>("notebook.document.target.ranges")
     internal val NotebookDocumentStructureNontrivialChanged = Key.create<AtomicReference<Boolean>>("notebook.document.structure.changed")
 
     internal val InjectedHostHasErrors = Key.create<AtomicReference<Boolean>>("injected.element.errors.found")
@@ -111,6 +112,10 @@ internal object NotebookHighlightingUtilityObject {
         putUserData(CompleteHighlightingRange, executedCell?.textRange)
         putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
     }
+
+    fun getCellRangesInDocumentOrNull(notebookCells: List<JupyterPsiCell>, targets: Collection<Int>?): List<TextRange>? = if (targets?.isNotEmpty() == false) {
+        targets.mapNotNull { notebookCells[it].textRange }
+    } else null
 
     fun Document.reactOnThemeChangedEvent() {
         putUserData(NotebookDocumentTargetRanges, null)

@@ -135,11 +135,11 @@ class ImpatientNotebookChangeListener(
         if (renameRange == null) {
             document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
         }
-        val targetRangesAfterAddOrNull = if (isCellListChange && !isSingleDeleteEvent) {
-            setOfNotNull(psiCells.getOrNull(neededCellIndex)?.textRange, cellOfChange.textRange)
+        val targetIndexesAfterAddOrNull = if (isCellListChange && !isSingleDeleteEvent) {
+            setOfNotNull(neededCellIndex, actualCellIndex) // actualCellInd == added before new
         } else null
         document.putUserData(CompleteHighlightingRange, actualRangeToStore)
-        document.putUserData(NotebookDocumentTargetRanges, targetRangesAfterAddOrNull)
+        document.putUserData(NotebookDocumentTargetRanges, targetIndexesAfterAddOrNull)
         cellOfChange.invalidateTypeHintsRegistry()
     }
 

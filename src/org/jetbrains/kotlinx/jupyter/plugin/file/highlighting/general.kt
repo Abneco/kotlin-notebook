@@ -26,6 +26,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getCellRangesInDocumentOrNull
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scheduleUpdateLater
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingBaseClassError
@@ -50,15 +51,17 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         jupyterFile.ensureScriptManagerReady()
 
         return synchronized(document) {
-            val cellInd = document.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)?.let { // notebook file is already rebuild
+            val cellIndx = document.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)
+            val cellOfChange = cellIndx?.let { // notebook file is already rebuild
                 cells?.get(it)
-            }?.textRange
+            }
+            val cellChangeRange = cellOfChange?.textRange
             var severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
             val completeHLRange = document.getUserData(CompleteHighlightingRange)
-            if (cellInd != null && (completeHLRange == null || completeHLRange.startOffset == cellInd.startOffset)) { // converge
-                document.putUserData(CompleteHighlightingRange, cellInd)
+            if (cellChangeRange != null && (completeHLRange == null || completeHLRange.startOffset == cellChangeRange.startOffset)) { // converge
+                document.putUserData(CompleteHighlightingRange, cellChangeRange)
                 if (severalUpdates?.size == 1) {
-                    document.putUserData(NotebookDocumentTargetRanges, listOf(cellInd))
+                    document.putUserData(NotebookDocumentTargetRanges, listOf(cellIndx))
                 }
             }
             val afterRenaming = document.getUserData(RenamingEnclosedRange)
@@ -66,22 +69,19 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                 return afterRenaming
             }
 
-            if (severalUpdates?.isNotEmpty() == true) {
-                if (cellInd != null && !severalUpdates.contains(cellInd)) {
+            if (severalUpdates?.isNotEmpty() == true && cells != null) {
+                if (cellOfChange != null && !severalUpdates.contains(cellIndx)) {
                     document.putUserData(NotebookDocumentTargetRanges, severalUpdates.toMutableSet().also {
-                        it.add(cellInd)
+                        it.add(cellIndx)
                         severalUpdates = it
                     })
-                // undo action might be performed, so set proper range
-                } else if (cellInd == null && !severalUpdates.isNullOrEmpty() && severalUpdates?.none { completeHLRange?.intersects(it) == true } == true) {
-                    document.putUserData(CompleteHighlightingRange, severalUpdates?.firstOrNull())
                 }
-                return severalUpdates
+                return getCellRangesInDocumentOrNull(cells, severalUpdates)
             }
 
             document.getUserData(CompleteHighlightingRange)
         }?.let {
-            listOf(TextRange(it.startOffset, it.endOffset + 1))
+            listOf(it)
         }
     }
 

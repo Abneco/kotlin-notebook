@@ -23,7 +23,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 
 class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
     override fun getFeatures(): Set<FormattingService.Feature>
@@ -72,7 +71,7 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
             if (invokedInCell != null) {
                 document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
             }
-            document.putUserData(NotebookDocumentTargetRanges, getRangesAfterDocumentReformatOrNull(cellList, targets))
+            document.putUserData(NotebookDocumentTargetRanges, targets)
             invokedInCell?.ordinal?.let {
                 document.putUserData(CompleteHighlightingRange, cellList.get(it)?.textRange)
             }
@@ -103,7 +102,4 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
     private fun isReformationWholeDocument(ranges: Collection<TextRange>, documentLength: Int) =
         ranges.size == 1 && ranges.first().length == documentLength
 
-    private fun getRangesAfterDocumentReformatOrNull(notebookCells: List<JupyterPsiCell>, targets: Collection<Int>?): List<TextRange>? = if (targets?.isNotEmpty() == false) {
-        targets.mapNotNull { notebookCells[it].textRange }
-    } else null
 }

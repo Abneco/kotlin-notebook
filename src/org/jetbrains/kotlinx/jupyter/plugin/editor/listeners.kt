@@ -15,6 +15,7 @@ import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiLanguageInjectionHost
+import com.intellij.util.runIf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -91,7 +92,8 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     }
                     val isAfterRenaming = doc?.getUserData(RenamingEnclosedRange) != null
                     doc?.putUserData(RenamingEnclosedRange, null)
-                    doc?.putUserData(NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
+                    //doc?.putUserData(NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
+                    doc?.putUserData(NotebookDocumentTargetRanges, listOf(lastCellInd))
                     doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
                     if (isAfterRenaming) {
                         lastCellInd = 0
@@ -142,7 +144,10 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     if (curRange != null && floatingRange?.equalsToRange(curRange.startOffset, curRange.endOffset) == true) {
                         floatingPrevCell = null
                     }
-                    performRangedUpdate(curRange, setOfNotNull(curRange, floatingPrevCell?.textRange))
+                    val prev = floatingPrevCell
+                    val floatingInd = if (prev == null) null else cells?.indexOf(prev)
+
+                    performRangedUpdate(curRange, setOfNotNull(ord, floatingInd))
                 }
             }
             //println("should not trigger an event! for cell $ord")
@@ -151,7 +156,8 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             floatingPrevCell = null
             val errorsRef = lastCell?.getErrorPresenceIndicator()
             prevCell = if (errorsRef?.acquire == true || errorsRef == null) lastCell else null
-            lastCell = psiFile.getNotebookCellList()?.let {
+            val cells = psiFile.getNotebookCellList()
+            lastCell = cells?.let {
                 val prevSize = lastCellSize
                 lastCellSize = it.size
                 isSizeChanged = prevSize != -1 && prevSize != lastCellSize
@@ -162,15 +168,19 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             }
             val prevRange = prevCell?.textRange
             val currRange = lastCell?.textRange
-            performRangedUpdate(currRange, setOfNotNull(prevRange, currRange))
+            val prev = prevCell
+            val prevInd =  runIf(prev != null) {
+                cells?.indexOf(prev)
+            }
+            performRangedUpdate(currRange, setOfNotNull(prevInd, lastCellInd))
             //println("Cell focus changed to $ord")
         }
         lastTimeCellFocusChanged = System.currentTimeMillis()
         super.caretPositionChanged(event)
     }
 
-    private fun performRangedUpdate(completeAnalysisRange: TextRange?, reducedRanges: Collection<TextRange>?) {
-        doc?.putUserData(NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges, reducedRanges)
+    private fun performRangedUpdate(completeAnalysisRange: TextRange?, reducedIndexes: Collection<Int>?) {
+        doc?.putUserData(NotebookDocumentTargetRanges, reducedIndexes)
         doc?.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, completeAnalysisRange)
         //println("doc: $doc, putting complete analysis as ${lastCell?.textRange}, text: ${lastCell?.text}")
         psiFile?.let {
