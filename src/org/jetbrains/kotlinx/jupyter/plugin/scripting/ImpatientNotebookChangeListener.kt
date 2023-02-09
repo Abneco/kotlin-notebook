@@ -24,6 +24,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
+import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
 
 
@@ -63,6 +64,8 @@ class ImpatientNotebookChangeListener(
         val neededCellIndex = allLines.take(lineOfChange).count {
             it.contains("#%%")
         }
+        val editor = document.retrieveEditor(file.file, project)
+
         val cellSize = psiCells?.size ?: 0
 
         val eventsType = event.identifyEventChangeType()
@@ -101,12 +104,10 @@ class ImpatientNotebookChangeListener(
             val currentTime = System.currentTimeMillis()
             val last = lastAdjustedRange
             if (currentTime - lastTimeCellChangeActionPerformed < 200 && last != null) {
-                val caretLine = document.retrieveLineNumberUnderCaret(file.file, project)
-                if (caretLine != null) {
-                    val caretCellIndex = allLines.take(caretLine).count {
-                        it.contains("#%%")
-                    }
-                    val isMoveDown = event.oldFragment.trim().toString() != psiCells[caretCellIndex].text.trim()
+                val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
+                val ind = cellUnderCaret?.ordinal
+                if (ind != null) {
+                    val isMoveDown = event.oldFragment.trim().toString() != psiCells[ind - 1].text.trim()
                     if (isMoveDown) {
                         properCellIndexOrNull += 1
                     }
@@ -136,7 +137,8 @@ class ImpatientNotebookChangeListener(
             document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
         }
         val targetIndexesAfterAddOrNull = if (isCellListChange && !isSingleDeleteEvent) {
-            setOfNotNull(neededCellIndex, actualCellIndex) // actualCellInd == added before new
+            val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
+            setOfNotNull(neededCellIndex, cellUnderCaret?.ordinal)
         } else null
         document.putUserData(CompleteHighlightingRange, actualRangeToStore)
         document.putUserData(NotebookDocumentTargetRanges, targetIndexesAfterAddOrNull)
