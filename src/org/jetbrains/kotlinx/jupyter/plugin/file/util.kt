@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.file
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
@@ -6,6 +6,8 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.editor.Document
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
@@ -36,6 +38,11 @@ import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 val VirtualFile?.isKotlinNotebook: Boolean get() {
     if (this == null || extension != "ipynb") return false
     return notebookLanguage === KotlinLanguage.INSTANCE
+}
+
+val Editor.isKotlinNotebook: Boolean get() {
+    if (this !is EditorEx) return false
+    return FileDocumentManager.getInstance().getFile(document).isKotlinNotebook
 }
 
 fun isKotlinNotebookInjectedFile(file: PsiFile?): Boolean {

@@ -36,12 +36,14 @@ class KotlinNotebookProjectOptionsProvider : PersistentStateComponent<KotlinNote
         var shouldBuildProject: Boolean = true,
         var shouldLimitTypeHintsByActiveCell: Boolean = false,
         var shouldAddProjectLibrariesToClasspath: Boolean = true,
+        var shouldShowExecutionCount: Boolean = true
     ) {
         fun equals(other: State, project: Project): Boolean {
             return jdk.getPath(project) == other.jdk.getPath(project) &&
                     shouldBuildProject == other.shouldBuildProject &&
                     shouldLimitTypeHintsByActiveCell == other.shouldLimitTypeHintsByActiveCell &&
-                    shouldAddProjectLibrariesToClasspath == other.shouldAddProjectLibrariesToClasspath
+                    shouldAddProjectLibrariesToClasspath == other.shouldAddProjectLibrariesToClasspath &&
+                    shouldShowExecutionCount == other.shouldShowExecutionCount
         }
     }
 

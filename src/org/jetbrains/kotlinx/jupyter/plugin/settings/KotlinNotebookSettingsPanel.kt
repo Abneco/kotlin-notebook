@@ -1,6 +1,8 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.settings
 
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdk
 import com.intellij.openapi.projectRoots.ProjectJdkTable
@@ -11,6 +13,8 @@ import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.panel
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.plugins.notebooks.editor.JupyterNotebookGutterManager
 import javax.swing.JCheckBox
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -49,11 +53,19 @@ class KotlinNotebookSettingsPanel(
             }
         }
     }
+    private val shouldShowExecutionCount = OptionComponentInitializer(::initShouldShowExecutionCountCheckBox) {
+        this.group(JupyterKotlinBundle.message("kotlin.jupyter.settings.appearance")) {
+            row(null) {
+                cell(it.component)
+            }
+        }
+    }
     private val providerInitializers = listOf(
         jdkPath,
         shouldBuildProject,
         shouldAddProjectLibrariesToClasspath,
-        shouldLimitTypeHintsByActiveCell
+        shouldLimitTypeHintsByActiveCell,
+        shouldShowExecutionCount
     )
 
     private fun collectState(): KotlinNotebookProjectOptionsProvider.State {
@@ -63,7 +75,8 @@ class KotlinNotebookSettingsPanel(
             jdk = jdk,
             shouldBuildProject = shouldBuildProject.component.isSelected,
             shouldAddProjectLibrariesToClasspath = shouldAddProjectLibrariesToClasspath.component.isSelected,
-            shouldLimitTypeHintsByActiveCell = shouldLimitTypeHintsByActiveCell.component.isSelected
+            shouldLimitTypeHintsByActiveCell = shouldLimitTypeHintsByActiveCell.component.isSelected,
+            shouldShowExecutionCount = shouldShowExecutionCount.component.isSelected
         )
     }
 
@@ -94,6 +107,13 @@ class KotlinNotebookSettingsPanel(
         )
     }
 
+    private fun initShouldShowExecutionCountCheckBox(): JCheckBox {
+        return JCheckBox(
+            JupyterKotlinBundle.message("checkbox.should.show.execution.count"),
+            optionsProvider.state.shouldShowExecutionCount
+        )
+    }
+
     private fun initJdkComboBox(): SdkComboBox {
         val comboBoxModel = SdkComboBoxModel.createProjectJdkComboBoxModel(
             project,
@@ -117,7 +137,22 @@ class KotlinNotebookSettingsPanel(
     }
 
     fun apply() {
-        optionsProvider.loadState(collectState())
+        val oldState = optionsProvider.state
+        val newState = collectState()
+        optionsProvider.loadState(newState)
+
+        if (oldState.shouldShowExecutionCount != newState.shouldShowExecutionCount) {
+            refreshEditors()
+        }
+    }
+
+    private fun refreshEditors() {
+        EditorFactory.getInstance().allEditors.forEach {
+            if (it.isKotlinNotebook) {
+                JupyterNotebookGutterManager.putHighlighters(it as EditorEx)
+                it.component.repaint()
+            }
+        }
     }
 
     fun isModified(): Boolean {

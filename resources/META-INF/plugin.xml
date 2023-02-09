@@ -97,6 +97,8 @@
         <editor.notebookEditorCreatedCallback implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinNotebookEditorFactoryListener"/>
         <editor.outputs.notebookObjectOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.outputs.plots.PlotDataKeyExtractor"/>
         <editor.outputs.notebookOutputComponentFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.outputs.plots.LetsPlotOutputComponentFactory"/>
+        <editor.notebookEditorAppearanceProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinNotebookEditorAppearanceProvider"
+                order="before JupyterNotebookEditorAppearanceProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
