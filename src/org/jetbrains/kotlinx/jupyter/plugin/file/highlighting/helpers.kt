@@ -31,6 +31,7 @@ import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.idea.editor.fixers.end
 import org.jetbrains.kotlin.idea.editor.fixers.start
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.invalidateTypeHintsRegistry
@@ -115,6 +116,7 @@ internal object NotebookHighlightingUtilityObject {
     fun Document.invalidateStateAfterCellExecution(executedCell: PsiLanguageInjectionHost? = null, executedCellInd: Int? = null) {
         putUserData(RenamingEnclosedRange, null)
         putUserData(NotebookDocumentTargetRanges, null)
+        getUserData(NotebookQueuedTargetRanges)?.addIfNotNull(executedCellInd?.minus(1))
         putUserData(CompleteHighlightingRange, executedCell?.textRange)
         putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, executedCellInd)
     }
