@@ -24,7 +24,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
@@ -35,11 +34,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
-import org.jetbrains.plugins.notebooks.visualization.NotebookCellLinesEvent
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.concurrent.read
 import kotlin.concurrent.write
 import kotlin.math.min
 
@@ -99,6 +95,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     //doc?.putUserData(NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
                     doc?.putUserData(NotebookDocumentTargetRanges, listOf(lastCellInd))
                     doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
+                    doc?.getUserData(NotebookQueuedTargetRanges)?.clear()
                     if (isAfterRenaming) {
                         lastCellInd = 0
                     }
@@ -171,13 +168,11 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     else lastCellInd
                 ]
             }
-            val prevRange = prevCell?.textRange
-            val currRange = lastCell?.textRange
             val prev = prevCell
             val prevInd =  runIf(prev != null) {
                 cells?.indexOf(prev)
             }
-            performRangedUpdate(currRange, setOfNotNull(prevInd, lastCellInd))
+            performRangedUpdate(null, setOfNotNull(prevInd, lastCellInd))
             //println("Cell focus changed to $ord")
         }
         lastTimeCellFocusChanged = System.currentTimeMillis()
@@ -185,8 +180,9 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
 
     private fun performRangedUpdate(completeAnalysisRange: TextRange?, reducedIndexes: Collection<Int>) {
         doc?.putUserData(NotebookDocumentTargetRanges, reducedIndexes)
-        doc?.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, completeAnalysisRange)
-        doc?.getUserData(NotebookQueuedTargetRanges)?.add(reducedIndexes.first())
+        //doc?.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, completeAnalysisRange)
+        doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, reducedIndexes.last())
+        doc?.getUserData(NotebookQueuedTargetRanges)?.addAll(reducedIndexes)
         //println("doc: $doc, putting complete analysis as ${lastCell?.textRange}, text: ${lastCell?.text}")
         psiFile?.let {
             if (projectOptionsProvider.state.shouldLimitTypeHintsByActiveCell) {

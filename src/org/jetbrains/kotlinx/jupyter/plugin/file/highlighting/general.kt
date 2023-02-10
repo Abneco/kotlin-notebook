@@ -83,8 +83,13 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                     document.putUserData(NotebookDocumentTargetRanges, highlightingQueue)
                 }
             }
+            if (cellIndx != null && completeHLRange != null) {
+                document.putUserData(CompleteHighlightingRange, cellChangeRange)
+            }
             if (cellIndx == null && severalUpdates?.size == 1) { // converge
                 severalUpdates = setOfNotNull(cellUnderEditor.ordinal)
+                document.putUserData(NotebookDocumentTargetRanges, severalUpdates)
+                document.putUserData(CompleteHighlightingRange, cells?.get(cellUnderEditor.ordinal)?.textRange)
             }
 
             if (highlightingQueue != null && cells != null) {
