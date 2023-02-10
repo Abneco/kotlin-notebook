@@ -120,6 +120,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
     override fun caretPositionChanged(event: CaretEvent) {
         if (lastCellInd == -1) {
             lastCellInd = 0
+            isSizeChanged = true
             lastTimeCellFocusChanged = System.currentTimeMillis()
             return
         }
