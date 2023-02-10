@@ -112,15 +112,15 @@ internal object NotebookHighlightingUtilityObject {
     fun isLooksLikeNotebookFile(file: PsiFile): Boolean =
         file.fileType.defaultExtension == notebookDocumentFileExtension
 
-    fun Document.invalidateStateAfterCellExecution(executedCell: PsiLanguageInjectionHost? = null) {
+    fun Document.invalidateStateAfterCellExecution(executedCell: PsiLanguageInjectionHost? = null, executedCellInd: Int? = null) {
         putUserData(RenamingEnclosedRange, null)
         putUserData(NotebookDocumentTargetRanges, null)
         putUserData(CompleteHighlightingRange, executedCell?.textRange)
-        putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
+        putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, executedCellInd)
     }
 
-    fun getCellRangesInDocumentOrNull(notebookCells: List<JupyterPsiCell>, targets: Collection<Int>?): List<TextRange>? = if (targets?.isNotEmpty() == false) {
-        targets.mapNotNull { notebookCells[it].textRange }
+    fun getCellRangesInDocumentOrNull(notebookCells: List<JupyterPsiCell>, targets: Collection<Int>?): List<TextRange>? = if (targets?.isNotEmpty() == true) {
+        targets.mapNotNull { notebookCells.getOrNull(it)?.textRange }
     } else null
 
     fun Document.reactOnThemeChangedEvent() {

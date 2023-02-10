@@ -460,16 +460,16 @@ class JupyterCompilerPerFileService(
             }
             (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
                 ?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
-            var nextCell: JupyterPsiCell? = null
+            var nextCellInd: Int? = null
             (psiCell.parent as? JupyterNotebook)?.psiCellList?.let { cells ->
                 val executedCellInd = cells.indexOf(psiCell)
                 if (executedCellInd != -1) {
                     compilerService.cellOrdinalToClassName[executedCellInd] = properCompiledClass
-                    nextCell = if (executedCellInd + 1 != cells.size) cells[executedCellInd + 1] else null
+                    nextCellInd = if (executedCellInd + 1 != cells.size) executedCellInd + 1 else null
                 }
             }
             FileDocumentManager.getInstance().getDocument(virtualFile.file)
-                ?.invalidateStateAfterCellExecution(nextCell) // need to highlight next cell if ok
+                ?.invalidateStateAfterCellExecution(executedCellInd = nextCellInd) // need to highlight next cell if ok
             psiCell.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
         }
     }
