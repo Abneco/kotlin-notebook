@@ -12,12 +12,14 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.refactoring.suggested.startOffset
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.ReformatDocumentActionTargets
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
@@ -27,7 +29,6 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.math.min
 
 
 internal enum class NotebookChangeEventsType {
@@ -46,8 +47,10 @@ class ImpatientNotebookChangeListener(
     private var lastAdjustedRange: TextRange? = null
     private var cellsAffectedByReformat = mutableSetOf<Int>()
     init {
-        FileDocumentManager.getInstance().getDocument(virtualFile.file)
-            ?.putUserData(NotebookDocumentStructureNontrivialChanged, AtomicReference(false))
+        FileDocumentManager.getInstance().getDocument(virtualFile.file)?.let {
+            it.putUserData(NotebookDocumentStructureNontrivialChanged, AtomicReference(false))
+            it.putUserData(NotebookQueuedTargetRanges, mutableSetOf())
+        }
     }
 
     private fun handleNotebookChangeEvent(event: DocumentEvent) {
@@ -116,14 +119,14 @@ class ImpatientNotebookChangeListener(
                     }
                 }
 
-                // no other way to indicate size changed in CaretListener
-                document.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(false, true)
-
                 isSingleDeleteEvent = false
                 properTextRange = properTextRange.union(last).createSafeTextRangeWithDelta(delta)
             } else {
                 lastTimeCellChangeActionPerformed = System.currentTimeMillis()
             }
+            // no other way to indicate size changed in CaretListener
+            document.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(false, true)
+
             lastAdjustedRange = properTextRange
         } else lastAdjustedRange = null
 
@@ -138,12 +141,15 @@ class ImpatientNotebookChangeListener(
         } else null
         if (renameRange == null) {
             document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
+            document.putUserData(CompleteHighlightingRange, null)
         }
         val targetIndexesAfterAddOrNull = if (isCellListChange && !isSingleDeleteEvent) {
             val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
-            setOfNotNull(neededCellIndex, cellUnderCaret?.ordinal)
+            val isAddedAbove = event.offset > (psiCells.getOrNull(neededCellIndex)?.startOffset ?: (event.offset + 1))
+            setOfNotNull(neededCellIndex, cellUnderCaret?.ordinal?.plus(if (isAddedAbove) -1 else 1)).also {
+                document.getUserData(NotebookQueuedTargetRanges)?.addAll(it)
+            }
         } else null
-        document.putUserData(CompleteHighlightingRange, actualRangeToStore)
         document.putUserData(NotebookDocumentTargetRanges, targetIndexesAfterAddOrNull)
         cellOfChange.invalidateTypeHintsRegistry()
     }

@@ -64,6 +64,12 @@ internal object NotebookHighlightingUtilityObject {
 
     // to unify
     val NotebookDocumentTargetRanges = Key.create<Collection<Int>>("notebook.document.target.ranges")
+
+    /**
+     * Used to determine which ranges are scheduled for HL.
+     * This is needed to invalidate old ones
+     */
+    internal val NotebookQueuedTargetRanges = Key.create<MutableSet<Int>>("notebook.document.target.queued")
     internal val NotebookDocumentStructureNontrivialChanged = Key.create<AtomicReference<Boolean>>("notebook.document.structure.changed")
 
     internal val InjectedHostHasErrors = Key.create<AtomicReference<Boolean>>("injected.element.errors.found")

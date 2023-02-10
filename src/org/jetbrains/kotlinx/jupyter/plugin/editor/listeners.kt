@@ -28,12 +28,15 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
+import org.jetbrains.plugins.notebooks.visualization.NotebookCellLinesEvent
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -83,6 +86,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     }
 
                     stateLock.write { state = DaemonState.Finished }
+                    doc?.getUserData(NotebookQueuedTargetRanges)?.clear()
                     if (isFirstRun) isFirstRun = false
                     floatingPrevCell = null
                     prevCell = null
@@ -176,12 +180,12 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             //println("Cell focus changed to $ord")
         }
         lastTimeCellFocusChanged = System.currentTimeMillis()
-        super.caretPositionChanged(event)
     }
 
-    private fun performRangedUpdate(completeAnalysisRange: TextRange?, reducedIndexes: Collection<Int>?) {
+    private fun performRangedUpdate(completeAnalysisRange: TextRange?, reducedIndexes: Collection<Int>) {
         doc?.putUserData(NotebookDocumentTargetRanges, reducedIndexes)
         doc?.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, completeAnalysisRange)
+        doc?.getUserData(NotebookQueuedTargetRanges)?.add(reducedIndexes.first())
         //println("doc: $doc, putting complete analysis as ${lastCell?.textRange}, text: ${lastCell?.text}")
         psiFile?.let {
             if (projectOptionsProvider.state.shouldLimitTypeHintsByActiveCell) {

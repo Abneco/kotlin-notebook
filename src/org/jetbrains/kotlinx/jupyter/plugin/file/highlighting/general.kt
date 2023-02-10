@@ -17,6 +17,7 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlin.utils.addToStdlib.ifTrue
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showAbsentInitialBaseDependenciesInfo
@@ -25,6 +26,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getCellRangesInDocumentOrNull
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
@@ -59,22 +61,38 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                 cells?.get(it)
             }
             val cellChangeRange = cellOfChange?.textRange
-            var severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
             val completeHLRange = document.getUserData(CompleteHighlightingRange)
+            var severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
+            val highlightingQueue = document.getUserData(NotebookQueuedTargetRanges)
+
             if (cellChangeRange != null && (completeHLRange == null || completeHLRange.startOffset == cellChangeRange.startOffset)) { // converge
+                val correctUnderEditorInd = cellUnderEditor.ordinal - 1
                 // this might happen after redo action
                 val nothingMatches =
-                    completeHLRange == null && (cellUnderEditor.ordinal - cellIndx > 0) && severalUpdates == null
+                    completeHLRange == null && (correctUnderEditorInd - cellIndx > 0) && severalUpdates == null
                 if (nothingMatches) {
-                    val toPut = cells?.get(cellUnderEditor.ordinal)?.textRange
+                    val toPut = cells?.get(correctUnderEditorInd)?.textRange
                     document.putUserData(CompleteHighlightingRange, toPut)
+                    highlightingQueue?.clear()
+                    highlightingQueue?.addIfNotNull(correctUnderEditorInd)
                     return listOfNotNull(toPut)
                 }
                 document.putUserData(CompleteHighlightingRange, cellChangeRange)
                 if (severalUpdates?.size == 1) {
-                    document.putUserData(NotebookDocumentTargetRanges, listOf(cellIndx))
+                    highlightingQueue?.add(cellIndx)
+                    document.putUserData(NotebookDocumentTargetRanges, highlightingQueue)
                 }
             }
+            if (cellIndx == null && severalUpdates?.size == 1) { // converge
+                severalUpdates = setOfNotNull(cellUnderEditor.ordinal)
+            }
+
+            if (highlightingQueue != null && cells != null) {
+                highlightingQueue.addIfNotNull(cellIndx)
+                if (severalUpdates == null) return getCellRangesInDocumentOrNull(cells, highlightingQueue)
+                highlightingQueue.addAll(severalUpdates)
+            }
+
             val afterRenaming = document.getUserData(RenamingEnclosedRange)
             if (afterRenaming?.isNotEmpty() == true) {
                 return afterRenaming
@@ -85,8 +103,9 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                     document.putUserData(NotebookDocumentTargetRanges, severalUpdates.toMutableSet().also {
                         it.add(cellIndx)
                         severalUpdates = it
+                        highlightingQueue?.addAll(it)
                     })
-                }
+                } else severalUpdates?.let { highlightingQueue?.addAll(it) }
                 return getCellRangesInDocumentOrNull(cells, severalUpdates)
             }
 
