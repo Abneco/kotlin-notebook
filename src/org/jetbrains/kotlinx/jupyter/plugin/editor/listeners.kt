@@ -149,7 +149,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     val prev = floatingPrevCell
                     val floatingInd = if (prev == null) null else cells?.indexOf(prev)
 
-                    performRangedUpdate(curRange, setOfNotNull(ord, floatingInd))
+                    performRangedUpdate(curRange, setOfNotNull(floatingInd, ord), true)
                 }
             }
             //println("should not trigger an event! for cell $ord")
@@ -178,11 +178,13 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         lastTimeCellFocusChanged = System.currentTimeMillis()
     }
 
-    private fun performRangedUpdate(completeAnalysisRange: TextRange?, reducedIndexes: Collection<Int>) {
+    private fun performRangedUpdate(completeAnalysisRange: TextRange?, reducedIndexes: Collection<Int>, withFloating: Boolean = false) {
         doc?.putUserData(NotebookDocumentTargetRanges, reducedIndexes)
         //doc?.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, completeAnalysisRange)
         doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, reducedIndexes.last())
-        doc?.getUserData(NotebookQueuedTargetRanges)?.addAll(reducedIndexes)
+        doc?.getUserData(NotebookQueuedTargetRanges)?.let {
+            if (!withFloating) it.addAll(it) else it.add(reducedIndexes.first())
+        }
         //println("doc: $doc, putting complete analysis as ${lastCell?.textRange}, text: ${lastCell?.text}")
         psiFile?.let {
             if (projectOptionsProvider.state.shouldLimitTypeHintsByActiveCell) {
