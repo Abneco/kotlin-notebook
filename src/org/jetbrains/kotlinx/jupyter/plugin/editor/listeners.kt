@@ -169,7 +169,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                 ]
             }
             val prev = prevCell
-            val prevInd =  runIf(prev != null) {
+            val prevInd = runIf(prev != null) {
                 cells?.indexOf(prev)
             }
             performRangedUpdate(null, setOfNotNull(prevInd, lastCellInd))
@@ -182,9 +182,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         doc?.putUserData(NotebookDocumentTargetRanges, reducedIndexes)
         //doc?.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, completeAnalysisRange)
         doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, reducedIndexes.last())
-        doc?.getUserData(NotebookQueuedTargetRanges)?.let {
-            if (!withFloating) it.addAll(it) else it.add(reducedIndexes.first())
-        }
+        doc?.getUserData(NotebookQueuedTargetRanges)?.addAll(reducedIndexes)
         //println("doc: $doc, putting complete analysis as ${lastCell?.textRange}, text: ${lastCell?.text}")
         psiFile?.let {
             if (projectOptionsProvider.state.shouldLimitTypeHintsByActiveCell) {

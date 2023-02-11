@@ -145,8 +145,8 @@ class ImpatientNotebookChangeListener(
         }
         val targetIndexesAfterAddOrNull = if (isCellListChange && !isSingleDeleteEvent) {
             val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
-            val isAddedAbove = event.offset > (psiCells.getOrNull(neededCellIndex)?.startOffset ?: (event.offset + 1))
-            setOfNotNull(neededCellIndex, cellUnderCaret?.ordinal?.plus(if (isAddedAbove) -1 else 1)).also {
+
+            setOfNotNull(neededCellIndex, cellUnderCaret?.ordinal?.minus(1), cellUnderCaret?.ordinal?.plus(1)).also {
                 document.getUserData(NotebookQueuedTargetRanges)?.addAll(it)
             }
         } else null

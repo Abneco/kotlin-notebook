@@ -66,13 +66,14 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             val highlightingQueue = document.getUserData(NotebookQueuedTargetRanges)
 
             if (cellChangeRange != null && (completeHLRange == null || completeHLRange.startOffset == cellChangeRange.startOffset)) { // converge
-                val correctUnderEditorInd = cellUnderEditor.ordinal - 1
+                val correctUnderEditorInd = cellUnderEditor.ordinal
                 // this might happen after redo action
                 val nothingMatches =
                     completeHLRange == null && (correctUnderEditorInd - cellIndx > 0) && severalUpdates == null
                 if (nothingMatches) {
                     val toPut = cells?.get(correctUnderEditorInd)?.textRange
                     document.putUserData(CompleteHighlightingRange, toPut)
+                    document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, correctUnderEditorInd)
                     highlightingQueue?.clear()
                     highlightingQueue?.addIfNotNull(correctUnderEditorInd)
                     return listOfNotNull(toPut)
@@ -87,7 +88,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                 document.putUserData(CompleteHighlightingRange, cellChangeRange)
             }
             if (cellIndx == null && severalUpdates?.size == 1) { // converge
-                severalUpdates = setOfNotNull(cellUnderEditor.ordinal)
+                severalUpdates = setOfNotNull(cellUnderEditor.ordinal).union(severalUpdates)
                 document.putUserData(NotebookDocumentTargetRanges, severalUpdates)
                 document.putUserData(CompleteHighlightingRange, cells?.get(cellUnderEditor.ordinal)?.textRange)
             }
@@ -103,15 +104,16 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                 return afterRenaming
             }
 
-            if (severalUpdates?.isNotEmpty() == true && cells != null) {
-                if (cellOfChange != null && !severalUpdates.contains(cellIndx)) {
-                    document.putUserData(NotebookDocumentTargetRanges, severalUpdates.toMutableSet().also {
-                        it.add(cellIndx)
-                        severalUpdates = it
-                        highlightingQueue?.addAll(it)
-                    })
-                } else severalUpdates?.let { highlightingQueue?.addAll(it) }
-                return getCellRangesInDocumentOrNull(cells, severalUpdates)
+            if (severalUpdates?.isNotEmpty() == true && cells != null) { // updates U queue
+                val mergedUpdates = severalUpdates.toMutableSet().also {
+                    it.addIfNotNull(cellIndx)
+                    if (highlightingQueue != null) {
+                        it.addAll(highlightingQueue)
+                    }
+                    highlightingQueue?.addAll(it)
+                }
+                document.putUserData(NotebookDocumentTargetRanges, mergedUpdates)
+                return getCellRangesInDocumentOrNull(cells, highlightingQueue)
             }
 
             document.getUserData(CompleteHighlightingRange)
