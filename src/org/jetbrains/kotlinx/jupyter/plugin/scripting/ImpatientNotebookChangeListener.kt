@@ -146,7 +146,15 @@ class ImpatientNotebookChangeListener(
             val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
 
             setOfNotNull(neededCellIndex, cellUnderCaret?.ordinal?.minus(1), cellUnderCaret?.ordinal?.plus(1)).also {
-                document.getUserData(NotebookQueuedTargetRanges)?.addAll(it)
+                document.getUserData(NotebookQueuedTargetRanges)?.let { q ->
+                    synchronized(q) {
+                        val v = q.toList()
+                        q.clear()
+                        q.addAll(v.map { el -> el.minus(1) })
+                        q.addAll(v.map { el -> el.plus(1) })
+                        q.addAll(it)
+                    }
+                }
             }
         } else null
         document.putUserData(NotebookDocumentTargetRanges, targetIndexesAfterAddOrNull)
