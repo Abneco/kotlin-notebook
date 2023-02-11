@@ -117,7 +117,10 @@ internal object NotebookHighlightingUtilityObject {
     fun Document.invalidateStateAfterCellExecution(executedCell: PsiLanguageInjectionHost? = null, executedCellInd: Int? = null) {
         putUserData(RenamingEnclosedRange, null)
         putUserData(NotebookDocumentTargetRanges, null)
-        getUserData(NotebookQueuedTargetRanges)?.addIfNotNull(executedCellInd?.minus(1))
+        getUserData(NotebookQueuedTargetRanges)?.let {
+          it.addIfNotNull(executedCellInd)
+          it.addIfNotNull(executedCellInd?.minus(1))
+        }
         putUserData(CompleteHighlightingRange, null)
         putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, executedCellInd)
     }
