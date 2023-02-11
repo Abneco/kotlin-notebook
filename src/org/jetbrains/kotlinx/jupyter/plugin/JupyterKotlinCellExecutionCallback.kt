@@ -5,7 +5,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListWarn
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -72,9 +72,9 @@ class JupyterKotlinCellExecutionCallback(
         try {
             val snippetMetadataObject = message.getMetadata("eval_metadata")
             if (snippetMetadataObject == null) {
-                FileDocumentManager.getInstance().getDocument(virtualFile.file)?.putUserData(
-                    CompleteHighlightingRange, psiCell.textRange
-                )
+                FileDocumentManager.getInstance().getDocument(virtualFile.file)?.let {
+                    it.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(false, true)
+                }
                 updateScriptingIfNeeded(true)
                 return@invokeLater
             }

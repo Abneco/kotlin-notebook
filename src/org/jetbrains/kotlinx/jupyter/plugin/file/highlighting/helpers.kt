@@ -117,7 +117,7 @@ internal object NotebookHighlightingUtilityObject {
         putUserData(RenamingEnclosedRange, null)
         putUserData(NotebookDocumentTargetRanges, null)
         getUserData(NotebookQueuedTargetRanges)?.addIfNotNull(executedCellInd?.minus(1))
-        putUserData(CompleteHighlightingRange, executedCell?.textRange)
+        putUserData(CompleteHighlightingRange, null)
         putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, executedCellInd)
     }
 

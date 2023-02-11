@@ -58,7 +58,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         return synchronized(document) {
             val cellIndx = document.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)
             val cellOfChange = cellIndx?.let { // notebook file is already rebuild
-                cells?.get(it)
+                cells?.getOrNull(it)
             }
             val cellChangeRange = cellOfChange?.textRange
             val completeHLRange = document.getUserData(CompleteHighlightingRange)
