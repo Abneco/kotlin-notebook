@@ -120,14 +120,23 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             deferredFastUpdate?.cancel()
             deferredFastUpdate = updateScope.async {
                 launch {
-                    delay(600)
+                    val storedFloating = lastCellInd
+                    delay(400)
+                    val newOrd = runReadAction {
+                        editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it) }
+                    }
+                    if (newOrd != null && newOrd.ordinal != ord) {
+                        floatingCellInd = newOrd.ordinal
+                        performRangedUpdate(setOfNotNull(ord, newOrd.ordinal))
+                    }
+
+                    if (prevCell == null) {
+                        floatingCellInd = ord
+                    }
                     val cells = runReadAction {
                         psiFile.getNotebookCellList()
                     }
                     floatingPrevCell = prevCell ?: cells?.get(lastCellInd)
-                    if (prevCell == null) {
-                        floatingCellInd = ord
-                    }
                     lastCell = cells?.get(ord)
 
                     val prevKnownInd = lastCellInd
@@ -135,8 +144,11 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     if (prevKnownInd == floatingInd) {
                         floatingPrevCell = null
                     }
+                    val toStore = if (floatingInd == -1) {
+                        storedFloating
+                    } else floatingInd // concurrent change occurred
 
-                    performRangedUpdate(setOfNotNull(prevKnownInd, floatingInd))
+                    performRangedUpdate(setOfNotNull(storedFloating, prevKnownInd, toStore))
                 }
             }
             //println("should not trigger an event! for cell $ord")
