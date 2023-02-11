@@ -81,8 +81,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                         isSizeChanged = true
                     }
 
-                    stateLock.write { state = DaemonState.Finished }
-                    doc?.getUserData(NotebookQueuedTargetRanges)?.clear()
+                    //stateLock.write { state = DaemonState.Finished }
                     if (isFirstRun) isFirstRun = false
                     floatingPrevCell = null
                     prevCell = null
@@ -102,15 +101,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                 }
             }
 
-            override fun daemonStarting(fileEditors: MutableCollection<out FileEditor>) {
-                if (!scriptDefManager.isReady()) {
-                    return
-                }
-                fileEditors.firstOrNull { (it as? TextEditor)?.editor == editor }?.let {
-                    stateLock.write { state = DaemonState.Started }
-                }
-            }
-
         })
     }
 
@@ -123,15 +113,14 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         }
         val cell = editor.getCell(min(event.newPosition.line, editor.document.lineCount - 1))
         val ord = cell.ordinal
-        val currState = stateLock.read { state }
-        val isGoodState = currState == DaemonState.Finished && !isSizeChanged
+        val isGoodState = !isSizeChanged
         if ((ord == lastCellInd && isGoodState) || isFirstRun) return
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastTimeCellFocusChanged < 600) { // might be reworked
             deferredFastUpdate?.cancel()
             deferredFastUpdate = updateScope.async {
                 launch {
-                    delay(800)
+                    delay(600)
                     val cells = runReadAction {
                         psiFile.getNotebookCellList()
                     }
@@ -141,15 +130,13 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     }
                     lastCell = cells?.get(ord)
 
-                    val curRange = lastCell?.textRange
-                    val floatingRange = floatingPrevCell?.textRange
-                    if (curRange != null && floatingRange?.equalsToRange(curRange.startOffset, curRange.endOffset) == true) {
+                    val prevKnownInd = lastCellInd
+                    val floatingInd = floatingCellInd
+                    if (prevKnownInd == floatingInd) {
                         floatingPrevCell = null
                     }
-                    val prev = floatingPrevCell
-                    val floatingInd = if (prev == null) null else cells?.indexOf(prev)
 
-                    performRangedUpdate(curRange, setOfNotNull(floatingInd, ord), true)
+                    performRangedUpdate(setOfNotNull(prevKnownInd, floatingInd))
                 }
             }
             //println("should not trigger an event! for cell $ord")
@@ -172,13 +159,13 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             val prevInd = runIf(prev != null) {
                 cells?.indexOf(prev)
             }
-            performRangedUpdate(null, setOfNotNull(prevInd, lastCellInd))
+            performRangedUpdate(setOfNotNull(prevInd, lastCellInd))
             //println("Cell focus changed to $ord")
         }
         lastTimeCellFocusChanged = System.currentTimeMillis()
     }
 
-    private fun performRangedUpdate(completeAnalysisRange: TextRange?, reducedIndexes: Collection<Int>, withFloating: Boolean = false) {
+    private fun performRangedUpdate(reducedIndexes: Collection<Int>) {
         doc?.putUserData(NotebookDocumentTargetRanges, reducedIndexes)
         //doc?.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, completeAnalysisRange)
         doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, reducedIndexes.last())
