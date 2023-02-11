@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.file.highlighting
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
+import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
@@ -14,11 +15,12 @@ import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
+import com.intellij.psi.search.FilenameIndex
+import com.intellij.psi.search.ProjectScope
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
-import org.jetbrains.kotlin.utils.addToStdlib.ifTrue
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showAbsentInitialBaseDependenciesInfo
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
@@ -33,6 +35,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scheduleUpdateLater
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingBaseClassError
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingClassError
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingDependencyPrefix
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
@@ -165,14 +168,25 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
             return false
         }
 
-        return !description.startsWith(scriptReceiverErrorMsg).also {
-            it.ifTrue {
-                if (!reloadRequested) {
-                    invokeLater { ScriptDefinitionsManager.getInstance(file.project).reloadScriptDefinitions() }
+        if (highlightInfo.severity == HighlightSeverity.ERROR
+            && (description.startsWith("[${scriptingMissingDependencyPrefix}") || description.startsWith(scriptingMissingDependencyPrefix))) {
+            if (reloadRequested) return false
+            val missingClass = description.substringAfter("Cannot access class \'").substringBeforeLast("\'")
+            val project = file.project
+            val found = if (missingClass.startsWith("Line_")) true
+                else {
+                    val fqnName = missingClass.count { it == '.' } > 0
+                    val properClass = (if (fqnName) missingClass.substringAfterLast(".") else missingClass) + ".class"
+                    FilenameIndex.getFilesByName(project, properClass, ProjectScope.getLibrariesScope(project)).isNotEmpty()
                 }
+            if (found && !reloadRequested) {
+                invokeLater { JupyterKtScriptingSupport.getInstance(file.project).update() }
                 reloadRequested = true
+                return false
             }
         }
+
+        return true
     }
 
     companion object {

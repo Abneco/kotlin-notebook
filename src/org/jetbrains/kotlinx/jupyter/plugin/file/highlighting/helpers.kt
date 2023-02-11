@@ -59,9 +59,10 @@ internal object NotebookHighlightingUtilityObject {
     private const val notebookDocumentFileExtension: String = "ipynb"
     private val updateScope = CoroutineScope(Dispatchers.Default)
 
-    const val scriptingMissingClassError = "MISSING_SCRIPT_RECEIVER_CLASS"
+    const val scriptingMissingDependencyPrefix = "MISSING"
+    const val scriptingMissingClassError = "${scriptingMissingDependencyPrefix}_SCRIPT_RECEIVER_CLASS"
     @NlsSafe
-    const val scriptingMissingBaseClassError = "[MISSING_SCRIPT_BASE_CLASS]"
+    const val scriptingMissingBaseClassError = "[${scriptingMissingDependencyPrefix}_SCRIPT_BASE_CLASS]"
 
     // to unify
     val NotebookDocumentTargetRanges = Key.create<Collection<Int>>("notebook.document.target.ranges")
