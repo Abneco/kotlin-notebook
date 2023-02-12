@@ -163,7 +163,7 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
         if (!isTargetHost) return true
 
         val description = highlightInfo.description ?: return true
-        if (description.startsWith(scriptingMissingBaseClassError)) {
+        if (highlightInfo.severity == HighlightSeverity.ERROR && description.startsWith(scriptingMissingBaseClassError)) {
             showAbsentInitialBaseDependenciesInfo(file.project)
             return false
         }
