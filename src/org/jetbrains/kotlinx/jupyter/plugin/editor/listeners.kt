@@ -121,13 +121,14 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             deferredFastUpdate = updateScope.async {
                 launch {
                     val storedFloating = lastCellInd
-                    delay(400)
+                    delay(600)
                     val newOrd = runReadAction {
                         editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it) }
                     }
+                    if (storedFloating == newOrd?.ordinal && ord != storedFloating) return@launch
                     if (newOrd != null && newOrd.ordinal != ord) {
                         floatingCellInd = newOrd.ordinal
-                        performRangedUpdate(setOfNotNull(ord, newOrd.ordinal))
+                        performRangedUpdate(setOfNotNull(ord, storedFloating, newOrd.ordinal))
                     }
 
                     if (prevCell == null) {

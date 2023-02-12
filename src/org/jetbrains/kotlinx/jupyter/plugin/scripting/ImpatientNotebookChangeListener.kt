@@ -142,10 +142,9 @@ class ImpatientNotebookChangeListener(
             document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
             document.putUserData(CompleteHighlightingRange, null)
         }
-        val targetIndexesAfterAddOrNull = if (isCellListChange && !isSingleDeleteEvent) {
+        val targetIndexesAfterAddOrNull = if (isCellListChange) {
             val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
-
-            setOfNotNull(neededCellIndex, cellUnderCaret?.ordinal?.minus(1), cellUnderCaret?.ordinal?.plus(1)).also {
+            val s = setOfNotNull(neededCellIndex, cellUnderCaret?.ordinal?.minus(1), cellUnderCaret?.ordinal?.plus(1)).also {
                 document.getUserData(NotebookQueuedTargetRanges)?.let { q ->
                     synchronized(q) {
                         val v = q.toList()
@@ -156,6 +155,7 @@ class ImpatientNotebookChangeListener(
                     }
                 }
             }
+            if (isSingleDeleteEvent) null else s
         } else null
         document.putUserData(NotebookDocumentTargetRanges, targetIndexesAfterAddOrNull)
         cellOfChange.invalidateTypeHintsRegistry()
