@@ -23,7 +23,7 @@ class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
     }
 
     companion object {
-        private const val plotKey = "application/plot"
+        private const val plotKey = "application/plot+json"
         private const val plotTypeKey = "output_type"
     }
 }
