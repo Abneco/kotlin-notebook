@@ -168,16 +168,13 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
 
         val description = highlightInfo.description ?: return true
         if (highlightInfo.severity == HighlightSeverity.ERROR
-            && (description.startsWith(scriptingMissingBaseClassError)
-                    || description.startsWith(scriptBaseClassAccessFailure)) && !reloadRequested) {
+            && description.isLikeMissingDependencyClassError(true) && !reloadRequested) {
             showAbsentInitialBaseDependenciesInfo(file.project)
             reloadRequested = true
             return false
         }
 
-        if (highlightInfo.severity == HighlightSeverity.ERROR
-            && (description.startsWith("[${scriptingMissingDependencyPrefix}")
-                    || description.startsWith(scriptingMissingDependencyPrefix) || description.startsWith(scriptClassAccessFailure))) {
+        if (highlightInfo.severity == HighlightSeverity.ERROR && description.isLikeMissingDependencyClassError(false)) {
             if (reloadRequested) return false
             val missingClass = description.substringAfter("Cannot access class \'").substringBeforeLast("\'")
             val project = file.project
@@ -198,12 +195,17 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
     }
 
     companion object {
-        internal fun String.isKTNBClass(): Boolean =
-            length >= 14 && take(5) == "Line_" && takeLast(7) == "jupyter"
+        private val classRegex = Regex("Line_.+_jupyter")
+        internal fun String.isKTNBClass(): Boolean = matches(classRegex)
         internal fun HighlightInfo.checkIfMissingBaseClassError(): Boolean {
             val description = description ?: return false
             return description.startsWith(scriptingMissingBaseClassError)
         }
+
+        internal fun String.isLikeMissingDependencyClassError(baseClassCheck: Boolean) =
+            if (baseClassCheck) startsWith(scriptingMissingBaseClassError) || startsWith(scriptBaseClassAccessFailure)
+            else startsWith("[${scriptingMissingDependencyPrefix}")
+                    || startsWith(scriptingMissingDependencyPrefix) || startsWith(scriptClassAccessFailure)
 
         @NlsSafe
         internal const val scriptReceiverErrorMsg = "[$scriptingMissingClassError]"
