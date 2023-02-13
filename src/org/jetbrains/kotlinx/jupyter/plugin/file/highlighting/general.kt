@@ -163,14 +163,17 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
         if (!isTargetHost) return true
 
         val description = highlightInfo.description ?: return true
-        if (highlightInfo.severity == HighlightSeverity.ERROR && description.startsWith(scriptingMissingBaseClassError) && !reloadRequested) {
+        if (highlightInfo.severity == HighlightSeverity.ERROR
+            && (description.startsWith(scriptingMissingBaseClassError)
+                    || description.startsWith(scriptBaseClassAccessFailure)) && !reloadRequested) {
             showAbsentInitialBaseDependenciesInfo(file.project)
             reloadRequested = true
             return false
         }
 
         if (highlightInfo.severity == HighlightSeverity.ERROR
-            && (description.startsWith("[${scriptingMissingDependencyPrefix}") || description.startsWith(scriptingMissingDependencyPrefix))) {
+            && (description.startsWith("[${scriptingMissingDependencyPrefix}")
+                    || description.startsWith(scriptingMissingDependencyPrefix) || description.startsWith(scriptClassAccessFailure))) {
             if (reloadRequested) return false
             val missingClass = description.substringAfter("Cannot access class \'").substringBeforeLast("\'")
             val project = file.project
@@ -200,5 +203,9 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
 
         @NlsSafe
         internal const val scriptReceiverErrorMsg = "[$scriptingMissingClassError]"
+        @NlsSafe
+        internal const val scriptClassAccessFailure  = "Cannot access "
+        @NlsSafe
+        internal const val scriptBaseClassAccessFailure  = "Cannot access script base class"
     }
 }
