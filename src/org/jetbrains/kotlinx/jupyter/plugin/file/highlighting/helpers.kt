@@ -150,13 +150,14 @@ internal object NotebookHighlightingUtilityObject {
      * [require] EDT thread
      */
     fun resetSessionMetaInformation(document: Document, vFile: VirtualFile, project: Project, wouldShowNotification: Boolean = true) {
-        val cell = FileEditorManager.getInstance(project).getSelectedEditor(vFile)?.safeAs<TextEditor>()?.let {
+        val cellOrdinal = FileEditorManager.getInstance(project).getSelectedEditor(vFile)?.safeAs<TextEditor>()?.let {
             val editor = it.editor
             val pos = editor.caretModel.logicalPosition
             val cell = editor.getCell(min(pos.line, document.lineCount - 1))
-            vFile.toPsiFile(project)?.getNotebookCellList()?.get(cell.ordinal)
+            cell.ordinal
         }
-        document.invalidateStateAfterCellExecution(cell)
+        val cell = cellOrdinal?.let { vFile.toPsiFile(project)?.getNotebookCellList()?.getOrNull(it) }
+        document.invalidateStateAfterCellExecution(cell, cellOrdinal)
         val injectedManager = InjectedLanguageManager.getInstance(project)
         val psiFile = vFile.toPsiFile(project)
         psiFile?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
