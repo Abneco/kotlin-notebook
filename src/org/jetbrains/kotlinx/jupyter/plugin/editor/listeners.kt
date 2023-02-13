@@ -13,7 +13,6 @@ import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.util.runIf
 import kotlinx.coroutines.CoroutineScope
@@ -36,7 +35,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOption
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.concurrent.write
 import kotlin.math.min
 
 internal enum class DaemonState {
@@ -76,8 +74,9 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                         return
                     }
 
-                    // for proper cell move up handle 
-                    if (doc?.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(true, false) == true) {
+                    // for proper cell move up handle
+                    val afterNonTrivialChange = doc?.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(true, false) == true
+                    if (afterNonTrivialChange) {
                         isSizeChanged = true
                     }
 
@@ -85,7 +84,12 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     if (isFirstRun) isFirstRun = false
                     floatingPrevCell = null
                     prevCell = null
-                    if (floatingCellInd != -1) { // store ind
+                    if (afterNonTrivialChange) {
+                        val toSwap = doc?.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)
+                            ?: editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it).ordinal }
+                        if (toSwap != null) lastCellInd = toSwap
+                        floatingCellInd = -1
+                    } else if (floatingCellInd != -1) { // store ind
                         lastCellInd = floatingCellInd
                         floatingCellInd = -1
                     }
@@ -154,10 +158,12 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             }
             //println("should not trigger an event! for cell $ord")
         } else {
+            val knownPrevInd = lastCellInd
             lastCellInd = ord
             floatingPrevCell = null
             val errorsRef = lastCell?.getErrorPresenceIndicator()
             prevCell = if (errorsRef?.acquire == true || errorsRef == null) lastCell else null
+            val prev = prevCell
             val cells = psiFile.getNotebookCellList()
             lastCell = cells?.let {
                 val prevSize = lastCellSize
@@ -168,11 +174,11 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     else lastCellInd
                 ]
             }
-            val prev = prevCell
             val prevInd = runIf(prev != null) {
-                cells?.indexOf(prev)
+                cells?.indexOf(prev)?.let { if (it == -1) knownPrevInd else it }
             }
-            performRangedUpdate(setOfNotNull(prevInd, lastCellInd))
+            val guaranteeAddition = if (knownPrevInd == ord) knownPrevInd - 1 else knownPrevInd
+            performRangedUpdate(setOfNotNull(prevInd, guaranteeAddition, lastCellInd))
             //println("Cell focus changed to $ord")
         }
         lastTimeCellFocusChanged = System.currentTimeMillis()
