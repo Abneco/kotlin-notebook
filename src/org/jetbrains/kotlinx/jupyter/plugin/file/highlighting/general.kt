@@ -155,7 +155,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(lhs)
 
 class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
-    private var reloadRequested = true
+    private var reloadRequested = false
     override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {
         if (file == null || !file.name.endsWith(notebookInjectedFileExtension)) return true
         //val errorRegistry = file.getUserData(NonTargetHostErrorRegistry) ?: return true
@@ -163,8 +163,9 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
         if (!isTargetHost) return true
 
         val description = highlightInfo.description ?: return true
-        if (highlightInfo.severity == HighlightSeverity.ERROR && description.startsWith(scriptingMissingBaseClassError)) {
+        if (highlightInfo.severity == HighlightSeverity.ERROR && description.startsWith(scriptingMissingBaseClassError) && !reloadRequested) {
             showAbsentInitialBaseDependenciesInfo(file.project)
+            reloadRequested = true
             return false
         }
 
@@ -173,7 +174,7 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
             if (reloadRequested) return false
             val missingClass = description.substringAfter("Cannot access class \'").substringBeforeLast("\'")
             val project = file.project
-            val found = if (missingClass.startsWith("Line_")) true
+            val found = if (missingClass.isKTNBClass()) true
                 else {
                     val fqnName = missingClass.count { it == '.' } > 0
                     val properClass = (if (fqnName) missingClass.substringAfterLast(".") else missingClass) + ".class"
@@ -190,6 +191,8 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
     }
 
     companion object {
+        internal fun String.isKTNBClass(): Boolean =
+            length >= 14 && take(5) == "Line_" && takeLast(7) == "jupyter"
         internal fun HighlightInfo.checkIfMissingBaseClassError(): Boolean {
             val description = description ?: return false
             return description.startsWith(scriptingMissingBaseClassError)
