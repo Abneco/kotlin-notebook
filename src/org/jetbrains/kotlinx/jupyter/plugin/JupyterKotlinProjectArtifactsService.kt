@@ -29,12 +29,10 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
-import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -46,15 +44,20 @@ enum class DependenciesState {
     ABSENT
 }
 
-@Service
+@Service(Service.Level.PROJECT)
 class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private var buildAsyncResult: Deferred<ProjectArtifacts>? = null
     private var buildResult: ProjectArtifacts? = null
     private val isBuildUpToDate: AtomicBoolean = AtomicBoolean(false)
     private val fileExtensionsOfInterest = setOf(
-        KotlinFileType.INSTANCE.defaultExtension,
-        "java"
+        // source files
+        "kt",
+        "java",
+
+        // build script files
+        "kts",
+        "gradle",
     )
     @Volatile
     private var currDependenciesState = DependenciesState.PROVIDED
@@ -83,7 +86,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
                 val fileProjects = ProjectLocator.getInstance().getProjectsForFile(vFile)
                 if (project !in fileProjects) return false
 
-                return !(vFile.fileType == JupyterFileType || vFile.fileType.defaultExtension !in fileExtensionsOfInterest)
+                return vFile.extension in fileExtensionsOfInterest
             }
 
             override fun after(events: List<VFileEvent>) {
@@ -165,22 +168,32 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
                 } else currDependenciesState = DependenciesState.ABSENT
             } else currDependenciesState = DependenciesState.PROVIDED
 
-            if (!includeLibraryFiles) {
-                projectJarPaths
+            val libraryFiles = if (!includeLibraryFiles) {
+                emptyList()
             } else {
                 val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
-                val librariesClassesPaths = libraryTable.libraries.flatMap { library ->
+                libraryTable.libraries.flatMap { library ->
                     if (library.name == JupyterCompilerService.scriptDependenciesLibName) {
                         emptyList()
                     } else {
                         library
                             .getFiles(OrderRootType.CLASSES)
-                            .filter { it.isInLocalFileSystem }
-                            .mapNotNull { it.fileSystem.getNioPath(it)?.toRealPath()?.toString() }
+                            .mapNotNull { vFile ->
+                                File(vFile.presentableUrl)
+                                    .takeIf {
+                                        try {
+                                            it.exists()
+                                        } catch (e: SecurityException) {
+                                            false
+                                        }
+                                    }
+                                    ?.absolutePath
+                            }
                     }
                 }
-                projectJarPaths + librariesClassesPaths
             }
+
+            projectJarPaths + libraryFiles
         }
 
         return coroutineScope.async {
@@ -197,7 +210,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
         if (!options.shouldBuildProject) return emptyList()
 
         val deferred = buildAsyncResult
-        return if (deferred != null && (deferred.isCompleted && isBuildUpToDate.get() || !deferred.isCompleted)) {
+        return if (deferred != null && (!deferred.isCompleted || isBuildUpToDate.get())) {
             deferred.await()
         } else {
             buildAsyncResult = null

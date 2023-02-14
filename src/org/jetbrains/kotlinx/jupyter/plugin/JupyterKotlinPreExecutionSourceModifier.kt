@@ -25,7 +25,9 @@ class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier {
         if (looksLikeReplCommand(source)) return null
 
         val artifactsService = JupyterKotlinProjectArtifactsService.getInstance(project)
-        val artifacts = runBlocking { artifactsService.buildProject() }
+        val artifacts = runBlocking {
+            artifactsService.buildProject()
+        }
         if (artifacts.isEmpty()) return null
 
         when (artifactsService.checkProjectDependenciesStatus()) {
