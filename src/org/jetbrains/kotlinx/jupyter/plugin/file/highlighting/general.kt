@@ -94,7 +94,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                 } else cellChangeRange
                 document.putUserData(CompleteHighlightingRange, newCompleteRange)
             }
-            if (cellIndx == null && severalUpdates?.size == 1) { // converge
+            if (cellIndx == null && severalUpdates?.size == 1 && severalUpdates.first() != 0) { // converge
                 severalUpdates = setOfNotNull(cellUnderEditor.ordinal).union(severalUpdates)
                 document.putUserData(NotebookDocumentTargetRanges, severalUpdates)
                 document.putUserData(CompleteHighlightingRange, cells?.get(cellUnderEditor.ordinal)?.textRange)
