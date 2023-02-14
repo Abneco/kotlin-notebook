@@ -19,11 +19,6 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
     protected val visitorFactory: (AnnotationHolder) -> T,
     private val isShouldUseNewHighlighting: Boolean = true // 0 if default
 ) : HighlightVisitor {
-    protected enum class PassStage {
-        MarkTargetHostBeforeHighlighting,
-        ContributeToHolder
-    }
-
     private var visitor: T? = null
     protected var highlightingHelper: InjectedFileHighlightingHelper? = null
 
@@ -55,13 +50,9 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
         }
     }
 
-    protected fun prepareForFile(injectedFile: PsiFile, holder: HighlightInfoHolder, stage: PassStage) {
+    protected fun prepareForFile(injectedFile: PsiFile) {
         highlightingHelper = InjectedFileHighlightingHelper(injectedFile)
 
-        assert(stage == PassStage.MarkTargetHostBeforeHighlighting)
-        when (stage) {
-            PassStage.ContributeToHolder -> Unit
-            PassStage.MarkTargetHostBeforeHighlighting -> highlightingHelper?.markTargetHost()
-        }
+        highlightingHelper?.markTargetHost()
     }
 }

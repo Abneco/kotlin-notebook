@@ -27,7 +27,7 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
 
     override fun analyze(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, action: Runnable): Boolean {
         if (file !is KtFile) return true
-        prepareForFile(file, holder, stage = PassStage.MarkTargetHostBeforeHighlighting)
+        prepareForFile(file)
         val helper = highlightingHelper!!
 
         val isTargetHost = helper.isCurrentFileTarget
