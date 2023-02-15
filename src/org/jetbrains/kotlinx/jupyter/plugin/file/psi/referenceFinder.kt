@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.psi.psiUtil.isPropertyParameter
 import org.jetbrains.kotlin.psi.psiUtil.isPublic
 import org.jetbrains.kotlin.psi.stubs.elements.KtClassElementType
 import org.jetbrains.kotlin.psi.stubs.elements.KtNameReferenceExpressionElementType
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.KotlinNotebookHighlightingErrorFilter.Companion.classRegex
 
 enum class ReferenceSearchStrategy {
     DECLARATION,
@@ -47,12 +48,14 @@ object NotebookReferenceFinder {
         val project = psiElement.project
         val injectionManager = InjectedLanguageManager.getInstance(project)
         val targetName = psiElement.containingFile.name.removeSuffix(".class")
+        val isNavigationTargetCellClassItself = (psiElement as? KtClass)?.name?.matches(classRegex) == true
 
         searchTargets.firstOrNull { host ->
             val compiledName = host.getUserData(CELL_CLASS_NAME) ?: return@firstOrNull false
             compiledName.contains(targetName)
         }?.let {
             val asPsiFile = injectionManager.getInjectedPsiFiles(it)?.firstOrNull()?.first as? KtFile ?: return null
+            if (isNavigationTargetCellClassItself) return asPsiFile
             val ans = mutableListOf<NavigatablePsiElement>()
             traverseChildrenAndSearch(injectionManager, it, setOf(targetName), asPsiFile, psiElement, foundData = ans)
             return ans.firstOrNull()

@@ -195,7 +195,7 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
     }
 
     companion object {
-        private val classRegex = Regex("Line_.+_jupyter")
+        internal val classRegex = Regex("Line_.+_jupyter")
         internal fun String.isKTNBClass(): Boolean = matches(classRegex)
         internal fun HighlightInfo.checkIfMissingBaseClassError(): Boolean {
             val description = description ?: return false
