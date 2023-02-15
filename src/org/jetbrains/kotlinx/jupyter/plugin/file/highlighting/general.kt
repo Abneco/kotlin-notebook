@@ -176,7 +176,7 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
 
         if (highlightInfo.severity == HighlightSeverity.ERROR && description.isLikeMissingDependencyClassError(false)) {
             if (reloadRequested) return false
-            val missingClass = description.substringAfter("Cannot access class \'").substringBeforeLast("\'")
+            val missingClass = description.substringAfter("Cannot access ").split("\'")[1]
             val project = file.project
             val found = if (missingClass.isKTNBClass()) true
                 else {
