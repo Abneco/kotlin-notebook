@@ -133,6 +133,7 @@ class KotlinKernelProcessService {
 
         val extraJavaArgs = buildList {
             add("-Duser.dir=${workingDir.systemIndependentPath}/")
+            add("-Xmx3256M")
             KernelVmCommandCustomizer.addVmArguments(this)
         }
 
