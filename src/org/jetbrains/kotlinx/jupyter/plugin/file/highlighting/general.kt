@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showAbsentInitialBaseDependenciesInfo
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
@@ -37,6 +38,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingClassError
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scriptingMissingDependencyPrefix
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
 
@@ -50,6 +52,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
         val jupyterFile = file as? JupyterFile ?: return null
         val document = FileDocumentManager.getInstance().getDocument(jupyterFile.virtualFile) ?: return null
+        val backedNotebook = takeIfBacked(jupyterFile.virtualFile)
 
         val cells = file.getNotebookCellList()
         val caretOffSet = editor.caretModel.offset
@@ -67,6 +70,9 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             val completeHLRange = document.getUserData(CompleteHighlightingRange)
             var severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
             val highlightingQueue = document.getUserData(NotebookQueuedTargetRanges)
+            backedNotebook?.let {
+                highlightingQueue?.addAll(JupyterKotlinCellExecutionCallbackFactory.getInstance().getLastExecutedCellsList(it))
+            }
 
             if (cellChangeRange != null && (completeHLRange == null || completeHLRange.startOffset == cellChangeRange.startOffset)) { // converge
                 val correctUnderEditorInd = cellUnderEditor.ordinal

@@ -73,6 +73,7 @@ internal object NotebookHighlightingUtilityObject {
      */
     internal val NotebookQueuedTargetRanges = Key.create<MutableSet<Int>>("notebook.document.target.queued")
     internal val NotebookDocumentStructureNontrivialChanged = Key.create<AtomicReference<Boolean>>("notebook.document.structure.changed")
+    internal val NotebookCellsUpdatesAllowedToChange = Key.create<AtomicReference<Boolean>>("notebook.cells.updates.allowed.to.change")
 
     internal val InjectedHostHasErrors = Key.create<AtomicReference<Boolean>>("injected.element.errors.found")
     internal val RenamingEnclosedRange: Key<Collection<TextRange>> = Key.create("notebook.after.rename.changed.range")
@@ -187,6 +188,7 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
     private lateinit var targetHost: PsiLanguageInjectionHost
     private val injectedManager = InjectedLanguageManager.getInstance(project)
     private var completeAnalysisRange: TextRange? = null
+    val topLevelFile: PsiFile? = injectedManager.getTopLevelFile(injectedFile)
     init {
         assert(tryUpdateCurrentInjectedFileTarget())
     }

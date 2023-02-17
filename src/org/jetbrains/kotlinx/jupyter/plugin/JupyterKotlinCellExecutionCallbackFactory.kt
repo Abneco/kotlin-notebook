@@ -1,14 +1,17 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.openapi.application.runReadAction
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.jupyter.editor.getCells
+import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
+import org.jetbrains.plugins.notebooks.jupyter.editor.getCells
 import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
 import kotlin.concurrent.write
 
 /**
@@ -18,19 +21,30 @@ import kotlin.concurrent.write
 class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFactory {
 
     private val callbacksCounters = mutableMapOf<BackedNotebookVirtualFile, Pair<Int, PriorityQueue<Int>>>()
+    private val highlightOrder = mutableMapOf<BackedNotebookVirtualFile, MutableSet<Int>>()
+    private val lastExecutedList = mutableMapOf<BackedNotebookVirtualFile, MutableSet<Int>>()
     private val countersLock = ReentrantReadWriteLock()
 
-    private fun registerNewCallback(file: BackedNotebookVirtualFile): Int {
+    private fun registerNewCallback(file: BackedNotebookVirtualFile, cellOrd: Int): Int {
         return countersLock.write {
             val (cnt, pq) = callbacksCounters[file] ?: (0 to PriorityQueue<Int>())
+            val order = highlightOrder.getOrPut(file) { mutableSetOf() }
             if (pq.size > 1 && !pq.contains(-1)) {
                 pq.add(-1)
             }
+            order.add(cellOrd)
             pq.add(cnt)
             callbacksCounters[file] = (cnt + 1) to pq
             cnt
         }
     }
+
+    fun daemonFinished(file: BackedNotebookVirtualFile) = countersLock.write {
+        lastExecutedList[file]?.clear()
+    }
+
+    fun getLastExecutedCellsList(file: BackedNotebookVirtualFile): Set<Int>
+        = countersLock.read { lastExecutedList[file] ?: mutableSetOf()  }
 
     // returns true if it was the last registered callback and was not after single run with error
     fun unregisterCallback(file: BackedNotebookVirtualFile, index: Int, onError: Boolean = false): Boolean {
@@ -40,6 +54,14 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
             val isAfterSeriesRuns = pq.size == 1 && pq.contains(-1)
             if (isAfterSeriesRuns) pq.remove(-1)
             val singleErrorRun = onError && !isAfterSeriesRuns
+            if (isAfterSeriesRuns) {
+                lastExecutedList[file] = highlightOrder[file]?.toMutableSet() ?: mutableSetOf()
+                highlightOrder[file]?.clear()
+                file.file.toDocument()?.getUserData(NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange)
+                    ?.compareAndSet(true, false)
+            }
+            if (singleErrorRun && !pq.contains(-1)) highlightOrder[file]?.clear()
+
             pq.isEmpty() && !singleErrorRun
         }
     }
@@ -47,20 +69,21 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
     override fun create(task: JupyterExecutionTask): JupyterExecutionCallback? {
         val file = task.notebookVirtualFile
         val cellProject = task.project ?: return null
-        val jupyterPsiCell = runReadAction {
+        val jupyterPsiCellData = runReadAction {
             val cellIndex = task.options.cellPointer?.get()?.ordinal ?: return@runReadAction null
-            getCells(cellProject, task.notebookVirtualFile)?.getOrNull(cellIndex)
+            getCells(cellProject, task.notebookVirtualFile)?.getOrNull(cellIndex) to cellIndex
         }
-        if (jupyterPsiCell == null) return null // cell is not exists already
+        val cell = jupyterPsiCellData?.first
+        if (cell == null) return null // cell is not exists already
         val cellSource = task.source
         if (!file.file.isKotlinNotebook) return null
 
-        val index = registerNewCallback(file)
+        val index = registerNewCallback(file, jupyterPsiCellData.second)
 
         return JupyterKotlinCellExecutionCallback(
             cellProject,
             file,
-            jupyterPsiCell,
+            cell,
             cellSource,
             index,
         )

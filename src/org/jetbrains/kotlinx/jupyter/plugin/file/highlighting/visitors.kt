@@ -16,6 +16,8 @@ import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.AbstractKotlinHighlightingVisitorAdapter
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.HighlightInfoManipulator.convertToShadowedDeclaration
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange
+import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 
 
 internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlightingVisitorAdapter<KotlinNotebookDummyVisitor>(
@@ -36,6 +38,8 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
             file.unsuppressHighlight()
             return true
         }
+        val document = helper.topLevelFile?.toDocument(file.project)
+        val cellsAllowedToChangeMark = document?.getUserData(NotebookCellsUpdatesAllowedToChange)
 
         try {
             val seenInfos = mutableSetOf<HighlightInfo>()
@@ -57,9 +61,12 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
 
             helper.applyReceivedHighlightInfos(seenInfos, holder)
         } catch (t: Throwable) {
+            cellsAllowedToChangeMark?.compareAndSet(true, false)
             thisLogger().warn("Exception during analyze: $t")
             return false
         }
+
+        cellsAllowedToChangeMark?.compareAndSet(false, true)
 
         return true
     }
