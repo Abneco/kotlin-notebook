@@ -413,21 +413,28 @@ class JupyterCompilerPerFileService(
 
     fun loadReceiverClassesIfAny(): Boolean {
         compileLock.writeLock().withLock {
-            val (lineDir, classes) = implicitListsLoadQueue.firstOrNull() ?: return needsToUpdate
-            try {
-                val loader = createNextClassLoader(lineDir)
-                classes.forEach { className ->
-                    LOG.debug("Adding class: $className")
-                    val kClass = loader.loadClass(className).kotlin
-                    implicitsList.addClass(kClass)
+            if (implicitListsLoadQueue.isEmpty()) {
+                needsToUpdate = false
+                return false
+            }
+            while (implicitListsLoadQueue.isNotEmpty()) {
+                val (lineDir, classes) = implicitListsLoadQueue.firstOrNull() ?: return needsToUpdate
+                try {
+                    val loader = createNextClassLoader(lineDir)
+                    classes.forEach { className ->
+                        LOG.debug("Adding class: $className")
+                        val kClass = loader.loadClass(className).kotlin
+                        implicitsList.addClass(kClass)
+                    }
+                    implicitListsLoadQueue.removeFirstOrNull()
+                    needsToUpdate = true
+                } catch (t: Throwable) {
+                    if (t is UnsupportedClassVersionError) {
+                        val msg = t.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
+                        NotebookNotificationUtility.showKernelJDKInconsistentError(projectService.project, msg)
+                    } else LOG.error(t)
+                    return true
                 }
-                implicitListsLoadQueue.removeFirstOrNull()
-                needsToUpdate = true
-            } catch (t: Throwable) {
-                if (t is UnsupportedClassVersionError) {
-                    val msg = t.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
-                    NotebookNotificationUtility.showKernelJDKInconsistentError(projectService.project, msg)
-                } else LOG.error(t)
             }
             return true
         }

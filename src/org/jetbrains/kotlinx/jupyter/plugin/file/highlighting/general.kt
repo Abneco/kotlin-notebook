@@ -144,7 +144,9 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
         if (scriptDefManager.isReady()) {
             if (JupyterCompilerService.getInstance(project).needToUpdateImplicitsReceiversIfAny) {
-                JupyterKtScriptingSupport.getInstance(project).update()
+                invokeLater {
+                    JupyterKtScriptingSupport.getInstance(project).update()
+                }
                 throw ProcessCanceledException()
             }
             return
