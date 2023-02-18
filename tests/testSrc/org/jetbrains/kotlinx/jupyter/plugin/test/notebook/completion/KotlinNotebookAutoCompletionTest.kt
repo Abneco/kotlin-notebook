@@ -19,6 +19,10 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
 
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/autocompletion"
 
+    internal enum class CompletionMode(val ch: Char) {
+        REPLACE('\t'), ADD('\n')
+    }
+
     @Test
     fun testCommandCompletion() = doTest { tester ->
         tester.typeWithPauses("l")
@@ -35,6 +39,57 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
     fun testKotlinCompletionInSameCell() = doTest { tester ->
         tester.typeWithPauses(".")
         assertContainsElements(lookupStrings, "displays", "lastCell", "kernelVersion")
+    }
+
+    @Test
+    fun testKotlinCompletionInsertionCorrectStd() = doTest { tester ->
+        tester.typeWithPauses("li")
+        val elements = myFixture?.lookupElements
+
+        assertNoThrowable {
+            invokeAndWaitIfNeeded {
+                elements?.first { it.lookupString == "listOf" }.let {
+                    tester.lookup.finishLookup(CompletionMode.REPLACE.ch, it)
+                }
+            }
+        }
+
+        val t = runReadAction { myFixture.editor.document.text }
+        assert(t.contains("listOf<>(x)") )
+    }
+
+    @Test
+    fun testKotlinCompletionInsertionCorrectReplace() = doTest { tester ->
+        tester.typeWithPauses("i")
+        val elements = myFixture?.lookupElements
+
+        assertNoThrowable {
+            invokeAndWaitIfNeeded {
+                elements?.first { it.lookupString == "id" }.let {
+                    tester.lookup.finishLookup(CompletionMode.REPLACE.ch, it)
+                }
+            }
+        }
+
+        val t = runReadAction { myFixture.editor.document.text }
+        assert(t.contains("id(x)") )
+    }
+
+    @Test
+    fun testKotlinCompletionInsertionCorrectAdd() = doTest { tester ->
+        tester.typeWithPauses("i")
+        val elements = myFixture?.lookupElements
+
+        assertNoThrowable {
+            invokeAndWaitIfNeeded {
+                elements?.first { it.lookupString == "id" }.let {
+                    tester.lookup.finishLookup(CompletionMode.ADD.ch, it)
+                }
+            }
+        }
+
+        val t = runReadAction { myFixture.editor.document.text }
+        assert(t.contains("id()listOf(x)") )
     }
 
     @Test
