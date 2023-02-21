@@ -57,7 +57,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     fun update() {
         // cache.clear()
         if (updater.isInTransaction()) return
-        logger<JupyterKtScriptingSupport>().warn("Running scripting support update")
+        LOG.warn("Running scripting support update")
         RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
             updater.invalidateAndCommit()
         }
@@ -71,7 +71,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             if (ex is ProcessCanceledException) {
                 ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()
             } else {
-                logger<JupyterKtScriptingSupport>().warn("Post-update: error occurred during reloading of script configurations: ${ex.cause}")
+                LOG.warn("Post-update: error occurred during reloading of script configurations: ${ex.cause}")
             }
         }
     }
@@ -112,7 +112,12 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             switchForScriptsAsEntities(
                 on = {
                     warnAboutDependenciesExistence(false)
-                    notebookService.scripts().forEach { (file, conf) -> add(file, conf) }
+                    try {
+                        notebookService.scripts().forEach { (file, conf) -> add(file, conf) }
+                    } catch (e: Throwable) {
+                        if (e is ProcessCanceledException) throw e
+                        LOG.error("Notebook injected scripts can't be obtained. Notebook: [$notebook]", e)
+                    }
                     warnAboutDependenciesExistence(true)
                 },
                 off = {}
@@ -191,5 +196,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
     companion object {
         fun getInstance(project: Project) = project.service<JupyterKtScriptingSupport>()
+
+        private val LOG = logger<JupyterKtScriptingSupport>()
     }
 }

@@ -2,23 +2,23 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.fasterxml.jackson.databind.node.ArrayNode
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.configurationStore.runAsWriteActionIfNeeded
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
@@ -68,6 +68,8 @@ import java.net.URLClassLoader
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -155,44 +157,50 @@ class JupyterCompilerPerFileService(
     private val coroutineScope = CoroutineScope(Job())
     private var previousSessionId: String? = null
 
-    fun implicitClassNames(): List<String> {
-        return implicitsList.map { it.typeName }
-    }
-
     fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
-        return runReadAction {
-            val injectedManager = InjectedLanguageManager.getInstance(projectService.project)
-            readInjectionHosts { hosts ->
-                hosts.flatMap { host ->
-                    injectedManager
-                        .getInjectedPsiFiles(host)
-                        .orEmpty()
-                        .map { it.first }
-                        .filterIsInstance<KtFile>()
-                        .mapNotNull { ktFile ->
-                            val conf = scriptingSupport.getConfiguration(ktFile)?.valueOrNull()
-                            if (conf != null) (ktFile.virtualFile to conf) else null
-                        }
+        val psiDocumentManager = PsiDocumentManager.getInstance(projectService.project)
+        val fileDocumentManager = FileDocumentManager.getInstance()
+        val attemptsLimit = 3
+        for (attempt in 1..attemptsLimit) {
+            val res = runReadAction {
+                val injectedManager = InjectedLanguageManager.getInstance(projectService.project)
+                readInjectionHosts { hosts ->
+                    hosts?.flatMap { host ->
+                        injectedManager
+                            .getInjectedPsiFiles(host)
+                            .orEmpty()
+                            .map { it.first }
+                            .filterIsInstance<KtFile>()
+                            .mapNotNull { ktFile ->
+                                val conf = scriptingSupport.getConfiguration(ktFile)?.valueOrNull()
+                                if (conf != null) (ktFile.virtualFile to conf) else null
+                            }
+                    }
                 }
             }
+            if (res != null) return res
+            val document = runReadAction {
+                fileDocumentManager.getDocument(virtualFile.file)
+            } ?: return emptyList()
+
+            val commitNotifier = CountDownLatch(1)
+            // We commit document here and hope that Jupyter file will be reparsed,
+            // and injection hosts will be recollected on this reparse
+            invokeLater(ModalityState.NON_MODAL) {
+                try {
+                    psiDocumentManager.commitDocument(document)
+                } finally {
+                    commitNotifier.countDown()
+                }
+            }
+            if (!commitNotifier.await(30, TimeUnit.SECONDS)) {
+                LOG.error("Too long wait for document to commit", Throwable())
+                return emptyList()
+            }
         }
-    }
 
-    private fun syncWithSyntaxDaemonAnalyzer() {
-        val project = projectService.project
-        project.messageBus.connect(this).subscribe(DaemonCodeAnalyzer.DAEMON_EVENT_TOPIC, object : DaemonCodeAnalyzer.DaemonListener {
-            override fun daemonCancelEventOccurred(reason: String) {
-                //println("Daemon canceled: $reason")
-            }
-
-            override fun daemonFinished() { // done analysing?
-                //updateCellsAnalysis(false, false) // maybe needed
-            }
-
-            override fun daemonStarting(fileEditors: MutableCollection<out FileEditor>) {
-                //updateCellsAnalysis(true) // always triggers
-            }
-        })
+        LOG.error("No luck in obtaining notebook's scripts in $attemptsLimit attempts")
+        return emptyList()
     }
 
     init {
@@ -283,9 +291,16 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private fun <R> readInjectionHosts(readAction: (Collection<PsiLanguageInjectionHost>) -> R): R {
+    private fun <R> readInjectionHosts(readAction: (Collection<PsiLanguageInjectionHost>?) -> R): R {
         return listLock.read {
-            readAction(nbInjectionHosts)
+            val hosts = if (nbInjectionHosts.isEmpty()) {
+                emptyList()
+            } else if (!nbInjectionHosts.first().containingFile.isValid) {
+                null
+            } else {
+                nbInjectionHosts
+            }
+            readAction(hosts)
         }
     }
 
@@ -485,17 +500,6 @@ class JupyterCompilerPerFileService(
         val sourceElement = PsiTreeUtil.getChildOfType(cell, JupyterSource::class.java)
         val source = sourceElement?.text.orEmpty()
         return source.trimStart()
-    }
-
-    private fun updateCellsAnalysis() {
-        val injectedManager = InjectedLanguageManager.getInstance(projectService.project)
-        // update all after exec
-        readInjectionHosts {
-            it.forEach { host ->
-                val properFile = injectedManager.getInjectedPsiFiles(host)
-                    ?.firstOrNull()?.first
-            }
-        }
     }
 
     fun codeRanges(cell: JupyterPsiCell): CodeRangesResult {
