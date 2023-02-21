@@ -18,7 +18,7 @@ class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
         val plotValue = dataObject[PLOT_KEY].asSafely<ObjectNode>() ?: return null
         val plotType = plotValue[PLOT_TYPE_KEY].asSafely<TextNode>()?.asText() ?: return null
         return when(plotType) {
-            //"lets_plot_spec" -> plotValue["output"].asSafely<ObjectNode>()?.let { outputSpec -> LetsPlotOutputDataKey(outputSpec, executionCount) }
+            "lets_plot_spec" -> plotValue["output"].asSafely<ObjectNode>()?.let { outputSpec -> LetsPlotOutputDataKey(outputSpec, executionCount) }
             else -> null
         }
     }
