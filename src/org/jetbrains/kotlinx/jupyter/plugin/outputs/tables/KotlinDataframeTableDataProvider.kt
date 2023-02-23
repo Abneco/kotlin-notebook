@@ -9,6 +9,11 @@ import com.intellij.lang.Language
 import com.jetbrains.python.debugger.pydev.TableCommandType
 import com.jetbrains.python.debugger.pydev.tables.CommandOutputType
 import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.Companion.columnsField
+import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.Companion.nColsField
+import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.Companion.nRowsField
+import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.Companion.separator
+import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.Companion.serializedDataframeField
 import org.jetbrains.plugins.notebooks.tables.DSTableBundle
 import org.jetbrains.plugins.notebooks.tables.DSTableData
 import org.jetbrains.plugins.notebooks.tables.DataId
@@ -70,7 +75,7 @@ class KotlinDataFrameProvider : DSTableDataProvider {
         return parseDataFromKotlinDataframeOutput(dataId, tableHtml)
     }
 
-    fun getSliceCommand(initCommand: String, isInteractive: Boolean, start: Int, end: Int): String {
+    private fun getSliceCommand(initCommand: String, isInteractive: Boolean, start: Int, end: Int): String {
         return if (isInteractive) {
             """
             DISPLAY(RepresentationChangeWrapper(when ($initCommand) {
@@ -120,10 +125,10 @@ class KotlinDataFrameProvider : DSTableDataProvider {
 
         val rawJson = mapper.readTree(text)
 
-        val nRow = rawJson["nrow"].asInt()
-        val nCol = rawJson["ncol"].asInt()
+        val nRow = rawJson[nRowsField].asInt()
+        val nCol = rawJson[nColsField].asInt()
         val columnNames = mutableListOf<String>()
-        (rawJson["columns"] as ArrayNode).elements().forEach {
+        (rawJson[columnsField] as ArrayNode).elements().forEach {
             columnNames.add(it.asText())
         }
         val dimensionsStr = DSTableBundle.message("ds.table.dimensions.info", nRow, nCol)
@@ -136,8 +141,8 @@ class KotlinDataFrameProvider : DSTableDataProvider {
 
         val rawJson = mapper.readTree(text)
 
-        val rawRows = asConcatenatedRows(rawJson["kotlin_dataframe"])
-        val rows = rawRows.split("kotlin_dataframe_sep")
+        val rawRows = asConcatenatedRows(rawJson[serializedDataframeField])
+        val rows = rawRows.split(separator)
         val rowJson = mapper.readTree(rows[0])
         val keys: MutableList<String> = ArrayList()
         val iterator = rowJson.fieldNames()
@@ -155,7 +160,7 @@ class KotlinDataFrameProvider : DSTableDataProvider {
 
     private fun asConcatenatedRows(text: JsonNode): String {
         return if (text.isArray) {
-            (text as ArrayNode).joinToString(separator = "kotlin_dataframe_sep")
+            (text as ArrayNode).joinToString(separator = separator)
         } else {
             text.asText()
         }

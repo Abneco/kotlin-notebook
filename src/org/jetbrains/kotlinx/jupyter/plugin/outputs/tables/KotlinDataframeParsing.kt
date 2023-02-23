@@ -10,7 +10,12 @@ import org.jetbrains.plugins.notebooks.tables.api.DSTableText
 class KotlinDataframeParsing {
     companion object {
         private const val jsonPayloadField = "application/json"
-        private const val serializedDataframeField = "kotlin_dataframe"
+        const val serializedDataframeField = "kotlin_dataframe"
+        const val separator = "kotlin_dataframe_sep"
+        const val columnsField = "columns"
+        const val nRowsField = "nrow"
+        const val nColsField = "ncol"
+
 
         fun isKotlinDataFrame(dataObject: ObjectNode): Boolean {
             if (!dataObject.has(jsonPayloadField)) return false
