@@ -37,6 +37,7 @@ import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
+import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.util.CodeInterval
@@ -475,6 +476,10 @@ class JupyterCompilerPerFileService(
         val project = projectService.project
         val injectManager = InjectedLanguageManager.getInstance(project)
         val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
+        val topLevelFile = if (!psiCell.containingFile.isValid) {
+            InjectedLanguageManager.getInstance(project).getTopLevelFile(psiCell)
+        } else psiCell.containingFile
+        val document = FileDocumentManager.getInstance().getDocument(topLevelFile.virtualFile)
 
         runAsWriteActionIfNeeded { // maybe synchronized
             val properCompiledClass = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
@@ -490,9 +495,13 @@ class JupyterCompilerPerFileService(
                     nextCellInd = if (executedCellInd + 1 != cells.size) executedCellInd + 1 else null
                 }
             }
-            FileDocumentManager.getInstance().getDocument(virtualFile.file)
+            document
                 ?.invalidateStateAfterCellExecution(executedCellInd = nextCellInd) // need to highlight next cell if ok
-            psiCell.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
+            synchronized(psiCell) {
+                val last = psiCell.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)?.firstOrNull()
+                properCompiledClass.addIfNotNull(last)
+                psiCell.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
+            }
         }
     }
 

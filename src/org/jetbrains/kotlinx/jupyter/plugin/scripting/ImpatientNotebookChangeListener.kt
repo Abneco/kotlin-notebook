@@ -62,7 +62,6 @@ class ImpatientNotebookChangeListener(
             Triple(d, psiFile, psiCells)
         }
         if (document == null || psiFile == null) return
-        //println("Inside exec before doc changed")
         val lineOfChange = document.getLineNumber(event.offset)
         val allLines = document.text.lines()
         val neededCellIndex = allLines.take(lineOfChange).count {
@@ -70,6 +69,7 @@ class ImpatientNotebookChangeListener(
         }
         val editor = document.retrieveEditor(file.file, project)
 
+        //println("old needed cell ind: #$neededCellIndex, new: ${editor?.getCell(min(lineOfChange, editor.document.lineCount - 1))}")
         val cellSize = psiCells?.size ?: 0
 
         val eventsType = event.identifyEventChangeType()
@@ -112,7 +112,7 @@ class ImpatientNotebookChangeListener(
                 val ind = cellUnderCaret?.ordinal
                 if (ind != null) {
                     JupyterCompilerService.getForFile(project, virtualFile).swapCellsData(ind - 1, ind -2, psiCells)
-                    val isMoveDown = event.oldFragment.trim().toString() != psiCells[ind - 1].text.trim()
+                    val isMoveDown = event.oldFragment.trim().toString() != psiCells.getOrNull(ind - 1)?.text?.trim()
                     if (isMoveDown) {
                         properCellIndexOrNull += 1
                     }
