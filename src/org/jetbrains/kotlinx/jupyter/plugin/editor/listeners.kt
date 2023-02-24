@@ -54,7 +54,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
     private val projectOptionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
     private val codeAnalyzer = DaemonCodeAnalyzer.getInstance(project)
 
-    private var state = DaemonState.Finished
     private val stateLock = ReentrantReadWriteLock()
 
     private var lastCellInd: Int = -1
@@ -99,11 +98,16 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                         floatingCellInd = -1
                     }
                     val isAfterRenaming = doc?.getUserData(RenamingEnclosedRange) != null
-                    doc?.putUserData(RenamingEnclosedRange, null)
-                    //doc?.putUserData(NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
-                    doc?.putUserData(NotebookDocumentTargetRanges, listOf(lastCellInd))
-                    doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
-                    doc?.getUserData(NotebookQueuedTargetRanges)?.clear()
+                    stateLock.write {
+                        doc?.putUserData(RenamingEnclosedRange, null)
+                        //doc?.putUserData(NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
+                        doc?.putUserData(NotebookDocumentTargetRanges, listOf(lastCellInd))
+                        doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
+                        doc?.getUserData(NotebookQueuedTargetRanges)?.clear()
+                        if (doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
+                            JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile)
+                        }
+                    }
                     if (isAfterRenaming) {
                         lastCellInd = 0
                     }
