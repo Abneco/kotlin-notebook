@@ -41,16 +41,14 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
         quickFormat: Boolean
     ) {
         val asPsiFile = formattingContext.containingFile
-        if (!asPsiFile.isValid || formattingRanges.firstOrNull()?.length == 1) {
-            runAsWriteActionIfNeeded {
-                asPsiFile.viewProvider.contentsSynchronized()
-            }
+        val project = formattingContext.project
+        val injectedManager = InjectedLanguageManager.getInstance(project)
+        if (!asPsiFile.isValid || formattingRanges.size == 1 && formattingRanges.firstOrNull()?.length == 1) {
+            //injectedManager.getTopLevelFile(asPsiFile)
             return
         }
 
         val cellList = asPsiFile.getNotebookCellList() ?: return
-        val project = formattingContext.project
-        val injectedManager = InjectedLanguageManager.getInstance(project)
         val formattingRangesSet = formattingRanges.toSet()
         val documentLength = document.textLength
         val isWholeDocumentReformat = !quickFormat && isReformationWholeDocument(formattingRanges, documentLength)
