@@ -28,6 +28,9 @@ class KotlinJupyterServer(
     override val kernelSpecs: List<JupyterKernelSpec>
         get() = client.getKernelSpecs()
 
+    override val defaultKernelSpec: JupyterKernelSpec?
+        get() = kernelSpecs.find { kernelSpec -> kernelSpec.name == client.getDefaultKernelSpec() }
+
     override fun updateKernelSpecs() {
     }
 
