@@ -11,6 +11,7 @@ import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.command.impl.StartMarkAction
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.CaretModel
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
@@ -82,7 +83,7 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
     private val goToDeclarationProvider = NotebookGotoDeclarationProvider()
 
     private fun tryResolveToDeclaration(element: PsiElement, editor: Editor?): PsiElement? {
-        goToDeclarationProvider.getGotoDeclarationTargets(element, 0, editor)?.firstOrNull()?.let {
+        goToDeclarationProvider.getGotoDeclarationTargets(element, editor?.caretModel?.offset ?: 0 , editor)?.firstOrNull()?.let {
             return it
         } ?: return null
     }
@@ -139,6 +140,9 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
 
 //class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
 class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
+    internal companion object {
+        private val log = thisLogger()
+    }
     private fun findNearestActualElementAt(file: PsiFile, caretModel: CaretModel): PsiElement? {
         var shift = 0
         var element: PsiElement?
@@ -226,9 +230,14 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
                 ) {
                     processor.substituteElementToRename(elementToRename, editor, object : Pass<PsiElement>() {
                         override fun pass(element: PsiElement) {
+                            val identifier = element as PsiNameIdentifierOwner
+                            if (elementToRename is LeafPsiElement && identifier.name != elementToRename.text) {
+                                log.debug("Renaming aborted: found element to rename ${elementToRename} differs from ${identifier.name}")
+                                return
+                            }
                             val renamer = createMemberRenamer(
                                 elementToRename,
-                                (element as PsiNameIdentifierOwner), editor
+                                identifier, editor
                             )
                             val startedRename = renamer.performInplaceRename()
                             if (!startedRename) {
