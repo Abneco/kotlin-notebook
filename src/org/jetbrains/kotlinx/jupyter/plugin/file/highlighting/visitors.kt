@@ -6,6 +6,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.idea.base.highlighting.visitor.AbstractAnnotationHolderHighlightingVisitor
@@ -62,6 +63,9 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
             helper.applyReceivedHighlightInfos(seenInfos, holder)
         } catch (t: Throwable) {
             cellsAllowedToChangeMark?.compareAndSet(true, false)
+            if (t is ProcessCanceledException) {
+                throw t
+            }
             thisLogger().warn("Exception during analyze: $t")
             return false
         }
