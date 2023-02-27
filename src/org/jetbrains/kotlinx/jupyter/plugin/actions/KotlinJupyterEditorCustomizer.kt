@@ -15,7 +15,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterEditorCustomizer
 import org.jetbrains.plugins.notebooks.jupyter.editor.isJupyter
 
-object KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
+class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
     override fun onEditorCreated(project: Project, editor: Editor, virtualFile: BackedNotebookVirtualFile) {
         if (!virtualFile.file.isKotlinNotebook) return
 
