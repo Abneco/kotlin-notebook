@@ -8,6 +8,7 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.ImaginaryEditor
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.Pair
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
@@ -196,11 +197,16 @@ class NotebookMemberInplaceRenamer(
 
         return try {
             buildTemplateAndStart(references, stringUsages, scope, containingFile)
-        } catch (t: Throwable) {
+        } catch (e: Throwable) {
             myEditor.putUserData(INPLACE_RENAMER, null)
             FinishMarkAction.finish(myProject, myEditor, myMarkAction)
             foundRefsSize = 0
-            thisLogger().warn("Error occurred during template: ${t.message}")
+
+            if (e is ProcessCanceledException) {
+                throw e
+            }
+
+            thisLogger().warn("Error occurred during template: ${e.message}")
             return false
         }
     }

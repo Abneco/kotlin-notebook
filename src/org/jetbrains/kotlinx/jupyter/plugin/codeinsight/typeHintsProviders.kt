@@ -14,6 +14,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.DumbService
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -151,8 +152,11 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                             // if file is valid
                             addInlayElementsToSink(c, withTypes, sink, factory, offset = element.textOffset + shiftMargin)
                         }
-                    } catch (t: Throwable) {
-                        logger.warn("Error during applying type hints from registry: ${t.message}")
+                    } catch (e: Throwable) {
+                        if (e is ProcessCanceledException) {
+                            throw e
+                        }
+                        logger.warn("Error during applying type hints from registry: ${e.message}")
                         return true
                     }
                     return true

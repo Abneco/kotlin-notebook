@@ -61,12 +61,12 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
             )
 
             helper.applyReceivedHighlightInfos(seenInfos, holder)
-        } catch (t: Throwable) {
+        } catch (e: Throwable) {
             cellsAllowedToChangeMark?.compareAndSet(true, false)
-            if (t is ProcessCanceledException) {
-                throw t
+            if (e is ProcessCanceledException) {
+                throw e
             }
-            thisLogger().warn("Exception during analyze: $t")
+            thisLogger().warn("Exception during analyze: $e")
             return false
         }
 

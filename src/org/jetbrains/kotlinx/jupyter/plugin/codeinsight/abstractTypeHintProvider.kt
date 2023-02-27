@@ -14,6 +14,7 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
@@ -78,8 +79,11 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                                                       registry, RegistryMode.Apply)
                             }
                         }
-                    } catch (t: Throwable) {
-                        logger.warn("Error during applying type hints for ${this::class} from registry: ${t.message}")
+                    } catch (e: Throwable) {
+                        if (e is ProcessCanceledException) {
+                            throw e
+                        }
+                        logger.warn("Error during applying type hints for ${this::class} from registry: ${e.message}")
                         return true
                     }
                     return true
@@ -189,7 +193,10 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                 for (element in traverser.preOrderDfsTraversal()) {
                     if (!action(element)) return false
                 }
-            } catch (_: Throwable) { // ignore any 
+            } catch (e: Throwable) { // ignore any
+                if (e is ProcessCanceledException) {
+                    throw e
+                }
                 return false
             }
             return true

@@ -12,6 +12,7 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.openapi.application.ex.ApplicationUtil
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.util.Key
@@ -59,6 +60,7 @@ class KotlinMagicsRuntimeCompletionContributor: CompletionContributor(), DumbAwa
                         }
                         catch (e: Throwable) {
                             when (e) {
+                                is ProcessCanceledException -> throw e
                                 is InterruptedException -> Unit
                                 is JupyterWebSocketClientClosedException -> Unit
                                 is JupyterRestClientErrorResponseException -> Unit

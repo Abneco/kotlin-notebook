@@ -227,7 +227,7 @@ class JupyterCompilerPerFileService(
             } else null
         } catch (e: Throwable) {
             // TODO: show error for user with asking for configuring Python interpreter for the module
-            if (e is ProcessCanceledException) return null
+            if (e is ProcessCanceledException) throw e
             LOG.warn("Cannot create Jupyter session for Kotlin notebook", e)
             null
         }
@@ -286,9 +286,11 @@ class JupyterCompilerPerFileService(
             }
             implicitReceivers(implicitsList)
             defaultImports(additionalDefaultImports.getList())
-            ide.dependenciesSources(JvmDependency(
-                projectService.project.allSourceRoots() + _sourceRoots.getList()
-            ))
+            ide.dependenciesSources(
+                JvmDependency(
+                    projectService.project.allSourceRoots() + _sourceRoots.getList()
+                )
+            )
         }
     }
 
@@ -412,11 +414,10 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private fun createNextClassLoader(classesDirPath: Path): ClassLoader
-        = URLClassLoader(
-            arrayOf(classesDirPath.toUri().toURL()),
-            (implicitsList.lastOrNull()?.fromClass ?: this::class).java.classLoader
-        )
+    private fun createNextClassLoader(classesDirPath: Path): ClassLoader = URLClassLoader(
+        arrayOf(classesDirPath.toUri().toURL()),
+        (implicitsList.lastOrNull()?.fromClass ?: this::class).java.classLoader
+    )
 
     val hasPendingUpdates: Boolean get() = compileLock.read { needsToUpdate }
     private var needsToUpdate: Boolean = false
@@ -444,11 +445,17 @@ class JupyterCompilerPerFileService(
                     }
                     implicitListsLoadQueue.removeFirstOrNull()
                     needsToUpdate = true
-                } catch (t: Throwable) {
-                    if (t is UnsupportedClassVersionError) {
-                        val msg = t.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
-                        NotebookNotificationUtility.showKernelJDKInconsistentError(projectService.project, msg)
-                    } else LOG.error(t)
+                } catch (e: Throwable) {
+                    when (e) {
+                        is ProcessCanceledException -> {
+                            throw e
+                        }
+                        is UnsupportedClassVersionError -> {
+                            val msg = e.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
+                            NotebookNotificationUtility.showKernelJDKInconsistentError(projectService.project, msg)
+                        }
+                        else -> LOG.error(e)
+                    }
                     return true
                 }
             }
