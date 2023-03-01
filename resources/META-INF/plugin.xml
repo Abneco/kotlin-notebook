@@ -111,7 +111,7 @@
         <editor.outputs.notebookOutputComponentFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.outputs.plots.LetsPlotOutputComponentFactory"/>
         <editor.notebookEditorAppearanceProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinNotebookEditorAppearanceProvider"
                 order="before JupyterNotebookEditorAppearanceProvider"/>
-        <editor.outputs.notebookOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeOutputDataKeyExtractor"/>
+        <editor.outputs.notebookOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeOutputDataKeyExtractor" order="first"/>
         <tables.externalPluginsTableDataProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeTableDataProvider"/>
     </extensions>
 

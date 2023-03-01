@@ -23,7 +23,6 @@ import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataK
  * Extract [JupyterTableOutputDataKey] from Kotlin Dataframe produced cell output
  */
 class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
-    override val isTargetedForSpecificData = true
     override fun extract(editor: EditorImpl, interval: NotebookCellLines.Interval): List<NotebookOutputDataKey>? {
         val res = when {
             !editor.isJupyter -> null
