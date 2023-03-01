@@ -66,25 +66,30 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
     private var isFirstRun = true
     private var isSizeChanged = false
     private var lastCellSize = -1
+    private var lastCancelTime: Long? = null
 
     init {
         assert(psiFile != null)
         doc?.putUserData(NotebookCellsUpdatesAllowedToChange, AtomicReference(true))
         project.messageBus.connect().subscribe(DAEMON_EVENT_TOPIC, object : DaemonListener {
             private val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
+
+            override fun daemonCancelEventOccurred(reason: String) {
+                lastCancelTime = System.currentTimeMillis()
+            }
+
             override fun daemonFinished(fileEditors: MutableCollection<out FileEditor>) {
                 fileEditors.firstOrNull { (it as? TextEditor)?.editor == editor }?.let {
                     if (!scriptDefManager.isReady()) {
                         return
                     }
-
+                    val savedlastCancelTime = lastCancelTime
                     // for proper cell move up handle
                     val afterNonTrivialChange = doc?.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(true, false) == true
                     if (afterNonTrivialChange) {
                         isSizeChanged = true
                     }
 
-                    //stateLock.write { state = DaemonState.Finished }
                     if (isFirstRun) isFirstRun = false
                     floatingPrevCell = null
                     prevCell = null
@@ -103,9 +108,12 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                         //doc?.putUserData(NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
                         doc?.putUserData(NotebookDocumentTargetRanges, listOf(lastCellInd))
                         doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
-                        doc?.getUserData(NotebookQueuedTargetRanges)?.clear()
-                        if (doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
-                            JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile)
+                        val dff = System.currentTimeMillis() - (savedlastCancelTime ?: 0)
+                        if (dff > 250) {
+                            doc?.getUserData(NotebookQueuedTargetRanges)?.clear()
+                            if (doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
+                                JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile)
+                            }
                         }
                     }
                     if (isAfterRenaming) {
