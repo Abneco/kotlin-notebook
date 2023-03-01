@@ -41,7 +41,7 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
     override fun isLanguageSupported(lang: Language): Boolean = lang == KotlinLanguage.INSTANCE
 }
 
-class KotlinDataFrameProvider : DSTableDataProvider {
+class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper()) : DSTableDataProvider {
     override val type: DSTableDataType = DSTableDataType.EXTERNAL
 
     override fun parseTextToFrameInfo(text: String): DSDataFrameInfo {
@@ -76,23 +76,25 @@ class KotlinDataFrameProvider : DSTableDataProvider {
     }
 
     private fun getSliceCommand(initCommand: String, isInteractive: Boolean, start: Int, end: Int): String {
+        val sliceExpression = "filter { it.index() >= ${start} && it.index() < ${end} }"
+
         return if (isInteractive) {
             """
             DISPLAY(RepresentationChangeWrapper(when ($initCommand) {
-              is Pivot<*> -> ($initCommand as Pivot<*>).frames().toDataFrame().filter { it.index() >= ${start} && it.index() < ${end} }
-              is ReducedPivot<*> -> ($initCommand as ReducedPivot<*>).values().toDataFrame().filter { it.index() >= ${start} && it.index() < ${end} }
-              is PivotGroupBy<*> -> ($initCommand as PivotGroupBy<*>).frames().filter { it.index() >= ${start} && it.index() < ${end} }
-              is ReducedPivotGroupBy<*> -> ($initCommand as ReducedPivotGroupBy<*>).values().filter { it.index() >= ${start} && it.index() < ${end} }
-              is SplitWithTransform<*, *, *> -> ($initCommand as SplitWithTransform<*, *, *>).into().filter { it.index() >= ${start} && it.index() < ${end} }
-              is Merge<*, *, *> -> ($initCommand as Merge<*, *, *>).into("merged").filter { it.index() >= ${start} && it.index() < ${end} }
-              is Gather<*, *, *, *> -> ($initCommand as Gather<*, *, *, *>).into("key", "value").filter { it.index() >= ${start} && it.index() < ${end} }
-              is Update<*, *> -> ($initCommand as Update<*, *>).df.filter { it.index() >= ${start} && it.index() < ${end} }
-              is Convert<*, *> -> ($initCommand as Convert<*, *>).df.filter { it.index() >= ${start} && it.index() < ${end} }
-              is FormattedFrame<*> -> ($initCommand as FormattedFrame<*>).df.filter { it.index() >= ${start} && it.index() < ${end} }
-              is AnyCol -> (dataFrameOf($initCommand as AnyCol)).filter { it.index() >= ${start} && it.index() < ${end} }
-              is AnyRow -> (($initCommand as AnyRow).toDataFrame()).filter { it.index() >= ${start} && it.index() < ${end} }
-              is GroupBy<*, *> -> (($initCommand as GroupBy<*, *>).toDataFrame()).filter { it.index() >= ${start} && it.index() < ${end} }
-              else -> ($initCommand as DataFrame<*>).filter { it.index() >= ${start} && it.index() < ${end} }
+              is Pivot<*> -> ($initCommand as Pivot<*>).frames().toDataFrame().$sliceExpression
+              is ReducedPivot<*> -> ($initCommand as ReducedPivot<*>).values().toDataFrame().$sliceExpression
+              is PivotGroupBy<*> -> ($initCommand as PivotGroupBy<*>).frames().$sliceExpression
+              is ReducedPivotGroupBy<*> -> ($initCommand as ReducedPivotGroupBy<*>).values().$sliceExpression
+              is SplitWithTransform<*, *, *> -> ($initCommand as SplitWithTransform<*, *, *>).into().$sliceExpression
+              is Merge<*, *, *> -> ($initCommand as Merge<*, *, *>).into("merged").$sliceExpression
+              is Gather<*, *, *, *> -> ($initCommand as Gather<*, *, *, *>).into("key", "value").$sliceExpression
+              is Update<*, *> -> ($initCommand as Update<*, *>).df.$sliceExpression
+              is Convert<*, *> -> ($initCommand as Convert<*, *>).df.$sliceExpression
+              is FormattedFrame<*> -> ($initCommand as FormattedFrame<*>).df.$sliceExpression
+              is AnyCol -> (dataFrameOf($initCommand as AnyCol)).$sliceExpression
+              is AnyRow -> (($initCommand as AnyRow).toDataFrame()).$sliceExpression
+              is GroupBy<*, *> -> (($initCommand as GroupBy<*, *>).toDataFrame()).$sliceExpression
+              else -> ($initCommand as DataFrame<*>).$sliceExpression
             }), "")
             """.trimIndent()
         } else {
@@ -121,8 +123,6 @@ class KotlinDataFrameProvider : DSTableDataProvider {
     override fun isFallbackToTruncatedSupported(): Boolean = true
 
     private fun parseFrameInfoFromKotlinDataframeOutput(text: String): DSDataFrameInfo {
-        val mapper = ObjectMapper()
-
         val rawJson = mapper.readTree(text)
 
         val nRow = rawJson[nRowsField].asInt()
@@ -137,8 +137,6 @@ class KotlinDataFrameProvider : DSTableDataProvider {
     }
 
     private fun parseDataFromKotlinDataframeOutput(id: DataId, text: String): DSTableData {
-        val mapper = ObjectMapper()
-
         val rawJson = mapper.readTree(text)
 
         val rawRows = asConcatenatedRows(rawJson[serializedDataframeField])
