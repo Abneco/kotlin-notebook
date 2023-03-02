@@ -31,6 +31,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
+import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
@@ -115,6 +116,9 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                                 JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile)
                             }
                         }
+                        if (dff < 400) invokeLater {
+                            psiFile?.restartAnalyzing()
+                        }
                     }
                     if (isAfterRenaming) {
                         lastCellInd = 0
@@ -142,6 +146,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             deferredFastUpdate = updateScope.async {
                 launch {
                     val storedFloating = lastCellInd
+                    val storedPrevCell = prevCell
                     delay(600)
                     val newOrd = runReadAction {
                         editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it) }
@@ -152,13 +157,13 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                         performRangedUpdate(setOfNotNull(ord, storedFloating, newOrd.ordinal))
                     }
 
-                    if (prevCell == null) {
+                    if (storedPrevCell == null) {
                         floatingCellInd = ord
                     }
                     val cells = runReadAction {
                         psiFile.getNotebookCellList()
                     }
-                    floatingPrevCell = prevCell ?: cells?.get(lastCellInd)
+                    floatingPrevCell = storedPrevCell ?: cells?.get(lastCellInd)
                     lastCell = cells?.get(ord)
 
                     val prevKnownInd = lastCellInd
