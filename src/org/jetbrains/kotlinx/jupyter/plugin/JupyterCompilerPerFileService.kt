@@ -492,8 +492,6 @@ class JupyterCompilerPerFileService(
             val properCompiledClass = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
                 it.fileName.substringBefore(".kts").let { f -> f + "_jupyter" }
             }
-            (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
-                ?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
             var nextCellInd: Int? = null
             (psiCell.parent as? JupyterNotebook)?.psiCellList?.let { cells ->
                 val executedCellInd = cells.indexOf(psiCell)
@@ -501,6 +499,12 @@ class JupyterCompilerPerFileService(
                     compilerService.cellOrdinalToClassName[executedCellInd] = properCompiledClass
                     nextCellInd = if (executedCellInd + 1 != cells.size) executedCellInd + 1 else null
                 }
+            }
+            try {
+                (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
+                    ?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
+            } catch (ex: Exception) {
+                LOG.warn("Exception during storing cell-related data: $ex")
             }
             document
                 ?.invalidateStateAfterCellExecution(executedCellInd = nextCellInd) // need to highlight next cell if ok
