@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completionWithImport
 
 import com.intellij.openapi.actionSystem.IdeActions
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.testFramework.runInEdtAndWait
@@ -10,6 +11,7 @@ import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
+import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion.KotlinNotebookAutoCompletionTest
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
@@ -54,6 +56,35 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
             }
             
         """.trimIndent(), actualText)
+    }
+
+    @Test
+    fun completionInsertionCorrectWithExternalImport() = doTest(
+        object : ReceivedMessagesTester {
+            override val expectedCellsCount: Int = 2
+
+            override val cellsToExecute: List<Int> = listOf(0)
+
+            override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) {
+                println("#$cellNum: $messages")
+            }
+        }
+    ) { tester ->
+        tester.typeWithPauses("fail")
+        val elements = myFixture?.lookupElements
+
+        assertNoThrowable {
+            invokeAndWaitIfNeeded {
+                elements?.first { it.lookupString == "fail" && it.userDataString.contains("fail  {...}")}.let {
+                    tester.lookup.finishLookup(KotlinNotebookAutoCompletionTest.CompletionMode.ADD.ch, it)
+                }
+            }
+        }
+        tester.joinCommit()
+
+        val t = runReadAction { myFixture.editor.document.text }
+        assert(t.startsWith("import org.junit.jupiter.api.fail\n") )
+        assert(t.contains("fail {  }id(x)") )
     }
 
     private fun doTest(executionTester: ReceivedMessagesTester, completionChecker: (CompletionAutoPopupTester) -> Unit) {
