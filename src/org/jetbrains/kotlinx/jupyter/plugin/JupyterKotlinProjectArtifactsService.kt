@@ -26,9 +26,7 @@ import com.intellij.task.ProjectTaskManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
@@ -45,8 +43,7 @@ enum class DependenciesState {
 }
 
 @Service(Service.Level.PROJECT)
-class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
+class JupyterKotlinProjectArtifactsService(val project: Project, private val coroutineScope: CoroutineScope) : Disposable {
     private var buildAsyncResult: Deferred<ProjectArtifacts>? = null
     private var buildResult: ProjectArtifacts? = null
     private val isBuildUpToDate: AtomicBoolean = AtomicBoolean(false)
@@ -219,7 +216,6 @@ class JupyterKotlinProjectArtifactsService(val project: Project) : Disposable {
     }
 
     override fun dispose() {
-        coroutineScope.cancel()
     }
 
     companion object {
