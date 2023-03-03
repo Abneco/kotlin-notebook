@@ -190,6 +190,9 @@
         </action>
         <action id="ToggleBuildProjectAction" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterToggleBuildProjectAction"/>
         <action id="ToggleAddProjectLibrariesAction" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterToggleAddProjectLibrariesAction"/>
+        <action id="ToggleShowExecutionCount" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterToggleShowExecutionCountAction">
+            <add-to-group group-id="JupyterEditorGutterPopupActions"/>
+        </action>
 
         <group id="KotlinJupyterSettingsActions" popup="true" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterSettingsActions">
             <reference id="ToggleBuildProjectAction"/>

@@ -7,6 +7,10 @@ import com.intellij.openapi.components.SettingsCategory
 import com.intellij.openapi.components.SimplePersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.editor.ex.EditorEx
+import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.plugins.notebooks.editor.JupyterNotebookGutterManager
 
 @Service
 @State(
@@ -15,5 +19,16 @@ import com.intellij.openapi.components.Storage
 class KotlinNotebookApplicationOptionsProvider : SimplePersistentStateComponent<KotlinNotebookApplicationOptionsProvider.State>(State()) {
     class State : BaseState() {
         var shouldShowExecutionCount by property(true)
+    }
+
+    companion object {
+        internal fun refreshEditors() {
+            EditorFactory.getInstance().allEditors.forEach {
+                if (it.isKotlinNotebook) {
+                    JupyterNotebookGutterManager.putHighlighters(it as EditorEx)
+                    it.component.repaint()
+                }
+            }
+        }
     }
 }

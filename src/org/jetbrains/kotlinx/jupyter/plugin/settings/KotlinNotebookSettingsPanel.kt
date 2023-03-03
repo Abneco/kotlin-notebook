@@ -2,8 +2,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.settings
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.editor.EditorFactory
-import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ui.configuration.SdkComboBox
 import com.intellij.openapi.roots.ui.configuration.SdkComboBoxModel
@@ -18,8 +16,6 @@ import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.execution.ParametersListUtil
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
-import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.editor.JupyterNotebookGutterManager
 
 object KotlinNotebookSettingsPanel {
     fun createPanel(
@@ -42,7 +38,7 @@ object KotlinNotebookSettingsPanel {
                 row(null) {
                     checkBox(JupyterKotlinBundle.message("checkbox.should.show.execution.count"))
                         .bindSelected(applicationOptions.state::shouldShowExecutionCount)
-                        .onApply { refreshEditors() }
+                        .onApply { KotlinNotebookApplicationOptionsProvider.refreshEditors() }
                 }
             }
         }
@@ -108,13 +104,4 @@ object KotlinNotebookSettingsPanel {
             if (selectedItem is SdkListItem.ProjectSdkItem) return null
             return getSelectedSdk()?.name
         }
-
-    private fun refreshEditors() {
-        EditorFactory.getInstance().allEditors.forEach {
-            if (it.isKotlinNotebook) {
-                JupyterNotebookGutterManager.putHighlighters(it as EditorEx)
-                it.component.repaint()
-            }
-        }
-    }
 }
