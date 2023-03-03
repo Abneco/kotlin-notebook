@@ -33,7 +33,7 @@ class KotlinNotebookMagicsCompleter(
     fun process(metaStatement: String, cursor: Int, result: CompletionResultSet) {
         if (metaStatement.isEmpty() || metaStatement[0] != '%') return
         val handler = Handler()
-        handler.handle(metaStatement.substring(1), cursor - 1)
+        handler.handle(metaStatement.substring(1), if (cursor > 0) cursor - 1 else cursor)
         result.addAllElements(handler.completions)
     }
 }
