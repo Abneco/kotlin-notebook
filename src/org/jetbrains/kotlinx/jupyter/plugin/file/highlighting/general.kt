@@ -81,9 +81,13 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                     completeHLRange == null && (correctUnderEditorInd - cellIndx > 0) && severalUpdates == null
                 if (nothingMatches) {
                     val toPut = cells?.get(correctUnderEditorInd)?.textRange
+                    val structureChangeIndicator = document.getUserData(NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged)
                     document.putUserData(CompleteHighlightingRange, toPut)
                     document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, correctUnderEditorInd)
-                    highlightingQueue?.clear()
+                    // clear only if nothing structural was done
+                    if (structureChangeIndicator?.get() == false) {
+                        highlightingQueue?.clear()
+                    }
                     highlightingQueue?.addIfNotNull(correctUnderEditorInd)
                     return listOfNotNull(toPut)
                 }
