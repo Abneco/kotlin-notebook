@@ -40,6 +40,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
+import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.getCell
 
 
@@ -52,6 +53,8 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
         val jupyterFile = file as? JupyterFile ?: return null
         val document = FileDocumentManager.getInstance().getDocument(jupyterFile.virtualFile) ?: return null
+        if (!NotebookCellLines.hasSupport(editor)) return null
+
         val backedNotebook = takeIfBacked(jupyterFile.virtualFile)
 
         val cells = file.getNotebookCellList()

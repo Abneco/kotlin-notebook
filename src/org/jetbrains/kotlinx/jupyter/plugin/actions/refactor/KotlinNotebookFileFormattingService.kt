@@ -7,7 +7,6 @@ import com.intellij.formatting.FormattingContext
 import com.intellij.formatting.service.AbstractDocumentFormattingService
 import com.intellij.formatting.service.FormattingService
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.model.SideEffectGuard
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
@@ -25,9 +24,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
-class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
-    override fun getFeatures(): Set<FormattingService.Feature>
-        = setOf(FormattingService.Feature.AD_HOC_FORMATTING, FormattingService.Feature.FORMAT_FRAGMENTS)
+class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() {
+    override fun getFeatures(): Set<FormattingService.Feature> =
+        setOf(FormattingService.Feature.AD_HOC_FORMATTING, FormattingService.Feature.FORMAT_FRAGMENTS)
 
     override fun canFormat(file: PsiFile): Boolean {
         return file is JupyterFile && file.virtualFile.isKotlinNotebook
@@ -43,23 +42,29 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
         val asPsiFile = formattingContext.containingFile
         val project = formattingContext.project
         val injectedManager = InjectedLanguageManager.getInstance(project)
-        if (!asPsiFile.isValid || formattingRanges.size == 1 && formattingRanges.firstOrNull()?.length == 1) {
+        if (!asPsiFile.isValid) {
             //injectedManager.getTopLevelFile(asPsiFile)
             return
         }
 
         val cellList = asPsiFile.getNotebookCellList() ?: return
-        val formattingRangesSet = formattingRanges.toSet()
         val documentLength = document.textLength
         val isWholeDocumentReformat = !quickFormat && isReformationWholeDocument(formattingRanges, documentLength)
 
-        val toProcess = if (isWholeDocumentReformat)
-                            cellList.getInjectedKtFiles(injectedManager)
-                        else cellList.filter { it.textRange in formattingRangesSet }.getInjectedKtFiles(injectedManager)
-        if (toProcess.isEmpty()) {
-            //asPsiFile.viewProvider.contentsSynchronized()
-            return
-        }
+        val toProcess = cellList
+            .run {
+                if (isWholeDocumentReformat) {
+                    this
+                } else {
+                    filter { cell ->
+                        formattingRanges.any { range ->
+                            range.intersectsStrict(cell.textRange)
+                        }
+                    }
+                }
+            }
+            .getInjectedKtFiles(injectedManager)
+            .takeIf { it.isNotEmpty() } ?: return
 
         val invokedInCell = document.retrieveCellIntervalUnderCaret(asPsiFile.virtualFile, project)
         val afterUpdate = {
@@ -72,7 +77,7 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
             }
             document.putUserData(NotebookDocumentTargetRanges, targets)
             invokedInCell?.ordinal?.let {
-                document.putUserData(CompleteHighlightingRange, cellList.get(it)?.textRange)
+                document.putUserData(CompleteHighlightingRange, cellList[it]?.textRange)
             }
 
             invokeLater {
@@ -87,12 +92,13 @@ class KotlinNotebookFileFormattingService: AbstractDocumentFormattingService() {
             }
         }
         // FORMATTER_TAGS_ENABLED
-        val baseProcessor = ReformatCodeProcessor(project,
-                                                  toProcess.toTypedArray(), afterUpdate,
-                                                  !isWholeDocumentReformat)
+        val baseProcessor = ReformatCodeProcessor(
+            project,
+            toProcess.toTypedArray(), afterUpdate,
+            false
+        )
         try {
-            if (isWholeDocumentReformat) baseProcessor.run()
-            else SideEffectGuard.computeWithoutSideEffects<Unit, Exception> { baseProcessor.run() }
+            baseProcessor.run()
         } catch (e: Throwable) {
             if (e is ProcessCanceledException) {
                 throw e

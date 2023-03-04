@@ -134,10 +134,6 @@ class ImpatientNotebookChangeListener(
         cellOfChange.getErrorPresenceIndicator()
             ?.compareAndSet(false, true)
 
-        val injectedPsi = runReadAction { injectedManager.getInjectedPsiFiles(cellOfChange)?.firstOrNull()?.first }
-        val actualRangeToStore = if (injectedPsi != null && !isCellListChange) { // null means concurrent race
-            properTextRange
-        } else null
         if (renameRange == null) {
             document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
             document.putUserData(CompleteHighlightingRange, null)
