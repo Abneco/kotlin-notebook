@@ -57,7 +57,12 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
         val backedNotebook = takeIfBacked(jupyterFile.virtualFile)
 
-        val cells = file.getNotebookCellList()
+        val cells = try {
+            file.getNotebookCellList()
+        } catch (ex: IllegalStateException) {
+            LOG.debug("Can't get Notebook cells list: $ex")
+            null
+        }
         val caretOffSet = editor.caretModel.offset
         val cellUnderEditor = editor.getCell(document.getLineNumber(caretOffSet))
         cells?.ensureScriptConfigurations(ScriptConfigurationManager.getInstance(file.project),
@@ -172,6 +177,10 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             scheduleUpdateLater(this)
         } else throw ProcessCanceledException()
         // for some reason, in debug mode calling isReady() might cause DL
+    }
+
+    companion object {
+        private val LOG = thisLogger()
     }
 }
 
