@@ -137,6 +137,9 @@ class ImpatientNotebookChangeListener(
         if (renameRange == null) {
             document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
             document.putUserData(CompleteHighlightingRange, null)
+            if (eventsType == NotebookChangeEventsType.REGULAR) {
+                document.getUserData(NotebookQueuedTargetRanges)?.add(properCellIndexOrNull)
+            }
         }
         val targetIndexesAfterAddOrNull = if (isCellListChange) {
             val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
