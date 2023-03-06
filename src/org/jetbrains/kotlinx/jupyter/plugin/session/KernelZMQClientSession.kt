@@ -104,7 +104,7 @@ class KernelZMQClientSession(
                 try {
                     loopBody()
                 } catch (e: InterruptedException) {
-                    log.debug(interruptedMessage)
+                    LOG.debug(interruptedMessage)
                     threadsToInterrupt.forEach { it.interrupt() }
                     break
                 }
@@ -128,7 +128,6 @@ class KernelZMQClientSession(
                         thread(name = "$socketType's socket thread") {
                             socketLoop("Socket $socketType: Interrupted") {
                                 fun rethrowAsInterrupted(e: Throwable) {
-                                    log.warn("Kernel interrupted", e)
                                     throw InterruptedException("Kernel interrupted with exception: $e")
                                 }
 
@@ -171,7 +170,7 @@ class KernelZMQClientSession(
     }
 
     companion object {
-        private val log = logger<KernelZMQClientSession>()
+        private val LOG = logger<KernelZMQClientSession>()
     }
 }
 

@@ -82,18 +82,19 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
         }
         tester.joinCommit()
 
-        val text = runReadAction { myFixture.editor.document.text }
+        val actualText = runReadAction { myFixture.editor.document.text }
 
-        // Testing infrastructure isn't perfect, and it can't process post-formatting
-        // for some reason. That's why newline isn't added in test. But in production
-        // it works for this exact case
-        assert(text.contains("import org.junit.jupiter.api.fail") ) { "Cell text is $text" }
-        assert(text.contains("fail {  }id(x)") ) { "Cell text is $text" }
+        TestCase.assertEquals("""
+            import org.junit.jupiter.api.fail
+
+            val someVar = 123 + x
+            fail {  }id (x)
+        """.trimIndent(), actualText)
     }
 
     private fun doTest(executionTester: ReceivedMessagesTester, completionChecker: (CompletionAutoPopupTester) -> Unit) {
         withDisabledJcef {
-            val notebookFile = configureExecutionTest()
+            val notebookFile = configureExecutionTest(copyNotebookToProject = true)
             executeCells(executionTester, notebookFile, myFixture.editor)
 
             runInEdtAndWait {

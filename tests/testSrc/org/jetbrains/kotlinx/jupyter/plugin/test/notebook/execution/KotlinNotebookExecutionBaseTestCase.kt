@@ -58,10 +58,16 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
         Disposer.register(testRootDisposable, JupyterServers.getInstance())
     }
 
-    protected fun configureExecutionTest(): PsiFile {
+    protected fun configureExecutionTest(
+        copyNotebookToProject: Boolean = false,
+    ): PsiFile {
       TestLoggerFactory.enableDebugLogging(myFixture.projectDisposable, javaClass)
         myFixture.setCaresAboutInjection(true)
-        myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
+        myFixture.configureByJupyterFile(
+            jupyterFileName = "${getTestName(true)}.ipynb",
+            testDataPath = testDataPath,
+            isCopyToProject = copyNotebookToProject,
+        )
       invokeAndWaitIfNeeded {
         setMode(NotebookEditorMode.EDIT)
       }

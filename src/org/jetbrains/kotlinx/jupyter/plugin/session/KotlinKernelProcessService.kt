@@ -24,6 +24,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import kotlin.io.path.absolute
+import kotlin.io.path.exists
 
 @Service(Service.Level.APP)
 class KotlinKernelProcessService {
@@ -129,10 +130,12 @@ class KotlinKernelProcessService {
             javaExec.absolutePath
         } ?: "java"
 
-        val workingDir = notebookPath.absolute().parent
+        /** There could be no physical working directory if the kernel is started from test
+         and the notebook file is in i.e. [com.intellij.openapi.vfs.ex.temp.TempFileSystem] */
+        val workingDir = notebookPath.absolute().parent.takeIf { it.exists() }
 
         val extraJavaArgs = buildList {
-            add("-Duser.dir=${workingDir.systemIndependentPath}/")
+            workingDir?.let { add("-Duser.dir=${workingDir.systemIndependentPath}/") }
             add("-Xmx3256M")
             KernelVmCommandCustomizer.addVmArguments(this)
         }
@@ -144,8 +147,9 @@ class KotlinKernelProcessService {
             extraJavaArgs
         )
 
-        val cmd = GeneralCommandLine(cmdArgs)
-            .withWorkDirectory(workingDir.toFile())
+        val cmd = GeneralCommandLine(cmdArgs).apply {
+            workingDir?.let { withWorkDirectory(it.toFile()) }
+        }
 
         return KotlinKernelProcessHandler(
             cmd, kernelConfig, notebookPath,
