@@ -113,7 +113,9 @@ internal object NotebookUsagesContributorFactory : NotebookUsagesContributor() {
     const val dfPrefix = ".kotlinx.dataframe." // dataFrame
     private val dfLibCallsRegex = Regex(".+$dfPrefix^(DataFrame).+")
     // search through ".kotlinx.dataframe.^DataFrame" package
-    private fun isFromDataFrameLibInternals(element: PsiElement): Boolean = element.text.contains(dfPrefix) && !element.text.contains("${dfPrefix}DataFrame")
+    private fun isFromDataFrameLibInternals(element: PsiElement): Boolean = element.text?.let {
+        it.contains(dfPrefix) && !it.contains("${dfPrefix}DataFrame")
+    } ?: false
 
     private fun extractNotebookFileFromScope(element: PsiElement, scope: SearchScope): VirtualFile? {
         return when (val scopeFile = (scope as? LocalSearchScope)?.virtualFiles?.firstOrNull()) {
