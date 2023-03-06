@@ -76,38 +76,17 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     }
 
     private fun getSliceCommand(initCommand: String, isInteractive: Boolean, start: Int, end: Int): String {
-        val sliceExpression = "filter { it.index() >= ${start} && it.index() < ${end} }"
-
         return if (isInteractive) {
             """
-            DISPLAY(RepresentationChangeWrapper(when ($initCommand) {
-              is Pivot<*> -> ($initCommand as Pivot<*>).frames().toDataFrame().$sliceExpression
-              is ReducedPivot<*> -> ($initCommand as ReducedPivot<*>).values().toDataFrame().$sliceExpression
-              is PivotGroupBy<*> -> ($initCommand as PivotGroupBy<*>).frames().$sliceExpression
-              is ReducedPivotGroupBy<*> -> ($initCommand as ReducedPivotGroupBy<*>).values().$sliceExpression
-              is SplitWithTransform<*, *, *> -> ($initCommand as SplitWithTransform<*, *, *>).into().$sliceExpression
-              is Merge<*, *, *> -> ($initCommand as Merge<*, *, *>).into("merged").$sliceExpression
-              is Gather<*, *, *, *> -> ($initCommand as Gather<*, *, *, *>).into("key", "value").$sliceExpression
-              is Update<*, *> -> ($initCommand as Update<*, *>).df.$sliceExpression
-              is Convert<*, *> -> ($initCommand as Convert<*, *>).df.$sliceExpression
-              is FormattedFrame<*> -> ($initCommand as FormattedFrame<*>).df.$sliceExpression
-              is AnyCol -> (dataFrameOf($initCommand as AnyCol)).$sliceExpression
-              is AnyRow -> (($initCommand as AnyRow).toDataFrame()).$sliceExpression
-              is GroupBy<*, *> -> (($initCommand as GroupBy<*, *>).toDataFrame()).$sliceExpression
-              else -> ($initCommand as DataFrame<*>).$sliceExpression
-            }), "")
+            DISPLAY(getRowsSubsetForRendering($initCommand, $start, $end), "")
             """.trimIndent()
         } else {
             initCommand
         }
     }
 
-    override fun getSortingCommand(initCommand: String, sortKeys: List<RowSorter.SortKey>, columns: List<String>): String {
-        return getSortCommand(initCommand, sortKeys, columns)
-    }
-
-    private fun getSortCommand(initExpression: String, sortKeys: List<RowSorter.SortKey>, cols: List<String>?): String {
-        if (cols.isNullOrEmpty()) return initExpression
+    override fun getSortingCommand(initExpression: String, sortKeys: List<RowSorter.SortKey>, cols: List<String>): String {
+        if (cols.isEmpty()) return initExpression
 
         val kotlinDataframeSortKeys = sortKeys
             .map { "\"${cols[it.column]}\"${if (it.sortOrder == SortOrder.DESCENDING) ".desc()" else ""}" }
