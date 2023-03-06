@@ -85,18 +85,18 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         }
     }
 
-    override fun getSortingCommand(initExpression: String, sortKeys: List<RowSorter.SortKey>, cols: List<String>): String {
-        if (cols.isEmpty()) return initExpression
+    override fun getSortingCommand(initCommand: String, sortKeys: List<RowSorter.SortKey>, columns: List<String>): String {
+        if (columns.isEmpty()) return initCommand
 
         val kotlinDataframeSortKeys = sortKeys
-            .map { "\"${cols[it.column]}\"${if (it.sortOrder == SortOrder.DESCENDING) ".desc()" else ""}" }
+            .map { "\"${columns[it.column]}\"${if (it.sortOrder == SortOrder.DESCENDING) ".desc()" else ""}" }
             .toMutableList()
 
         if (sortKeys.size == 1 && sortKeys[0].sortOrder != SortOrder.DESCENDING) {
             kotlinDataframeSortKeys.add(kotlinDataframeSortKeys[0])
         }
 
-        return "(($initExpression as DataFrame<*>).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} })"
+        return "(($initCommand as DataFrame<*>).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} })"
     }
 
     override fun isFallbackToTruncatedSupported(): Boolean = true
