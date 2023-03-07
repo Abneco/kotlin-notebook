@@ -5,6 +5,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.colors.CodeInsightColors
@@ -41,6 +42,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
+import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
@@ -174,6 +176,9 @@ internal object NotebookHighlightingUtilityObject {
 
         if (wouldShowNotification) {
           NotebookNotificationUtility.showKernelRestart(project)
+        }
+        invokeAndWaitIfNeeded {
+            JupyterKtScriptingSupport.getInstance(project).update()
         }
         invokeLater {
             psiFile?.restartAnalyzing()
