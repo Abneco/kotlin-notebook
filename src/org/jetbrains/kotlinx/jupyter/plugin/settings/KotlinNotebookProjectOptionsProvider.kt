@@ -33,9 +33,9 @@ class KotlinNotebookProjectOptionsProvider : PersistentStateComponent<KotlinNote
 
     data class State(
         var jdk: KotlinNotebookJdkOption = ProjectJdkOption,
-        var shouldBuildProject: Boolean = true,
+        var shouldBuildProject: Boolean = false,
         var shouldLimitTypeHintsByActiveCell: Boolean = false,
-        var shouldAddProjectLibrariesToClasspath: Boolean = true,
+        var shouldAddProjectLibrariesToClasspath: Boolean = false,
         var shouldShowExecutionCount: Boolean = true
     ) {
         fun equals(other: State, project: Project): Boolean {
