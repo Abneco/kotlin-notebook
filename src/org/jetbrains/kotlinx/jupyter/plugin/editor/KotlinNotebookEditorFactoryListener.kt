@@ -5,11 +5,10 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.util.ui.UIUtil
-import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
-import org.jetbrains.kotlinx.jupyter.plugin.util.SKIP_PROJECT_BUILD_COMMENT
+import org.jetbrains.kotlinx.jupyter.plugin.session.isKotlinNotebookSession
+import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookCodegen
 import org.jetbrains.plugins.notebooks.editor.NotebookEditorCreatedCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
@@ -34,18 +33,19 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
 
         project.messageBus.connect(editor.disposable).subscribe(JupyterRuntimeService.Listener.TOPIC, object : JupyterRuntimeService.Listener {
             override fun sessionCreated(session: JupyterNotebookSession) {
-                if (session.kernelName.toLowerCaseAsciiOnly() == "kotlin") {
+                if (session.isKotlinNotebookSession()) {
+                    val initCode = """
+                        ${KotlinNotebookCodegen.generateSessionOptions(resolveSources = true, serializeScriptData = true)}
+                        ${KotlinNotebookCodegen.generateColorSchemeChangeCode()}
+                    """.trimIndent()
+
                     session.execute(
-                        """
-                            SessionOptions.resolveSources = true
-                            SessionOptions.serializeScriptData = true
-                            ${ if (UIUtil.isUnderDarcula()) "notebook.changeColorScheme(ColorScheme.DARK)" else "" }
-                        """.trimIndent(),
+                        initCode,
                         onMessageCreated = {},
                         callbacks = listOf(
                             object : JupyterExecutionCallbackAdapter() {
                                 override fun onExecuteReply(message: JupyterMessage) {
-                                    logger<KotlinNotebookEditorFactoryListener>().debug(
+                                    LOG.debug(
                                         "Kotlin session has been initialized with response: ${message.json}"
                                     )
                                     EditorSessionInitializationService.getInstance().notifySessionInitialized(editor)
@@ -57,5 +57,9 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
                 }
             }
         })
+    }
+
+    companion object {
+        private val LOG = logger<KotlinNotebookEditorFactoryListener>()
     }
 }
