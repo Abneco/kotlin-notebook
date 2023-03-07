@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.lang.Language
+import com.intellij.openapi.util.registry.Registry
 import com.jetbrains.python.debugger.pydev.TableCommandType
 import com.jetbrains.python.debugger.pydev.tables.CommandOutputType
 import org.jetbrains.kotlin.idea.KotlinLanguage
@@ -27,12 +28,16 @@ import org.jetbrains.plugins.notebooks.tables.api.DSTableCommandExecutor
 import javax.swing.RowSorter
 import javax.swing.SortOrder
 
-
 class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
-    override fun isTableDataFormatSupported(text: DSTableText): Boolean = KotlinDataframeParsing.isKotlinDataFrame(text)
+    override fun isTableDataFormatSupported(text: DSTableText): Boolean {
+        return isSwingUiEnabledForKotlinDataframe() &&
+                KotlinDataframeParsing.isKotlinDataFrame(text)
+    }
 
-    override fun isTableDataFormatSupported(messageContentData: ObjectNode): Boolean =
-        KotlinDataframeParsing.isKotlinDataFrame(messageContentData)
+    override fun isTableDataFormatSupported(messageContentData: ObjectNode): Boolean {
+        return isSwingUiEnabledForKotlinDataframe() &&
+                KotlinDataframeParsing.isKotlinDataFrame(messageContentData)
+    }
 
     override fun getDataProvider(): DSTableDataProvider = KotlinDataFrameProvider()
 
@@ -78,7 +83,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     private fun getSliceCommand(initCommand: String, isInteractive: Boolean, start: Int, end: Int): String {
         return if (isInteractive) {
             """
-            DISPLAY(getRowsSubsetForRendering($initCommand, $start, $end), "")
+            DISPLAY(KotlinNotebookPluginUtils.getRowsSubsetForRendering($initCommand, $start, $end), "")
             """.trimIndent()
         } else {
             initCommand
@@ -143,3 +148,5 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         }
     }
 }
+
+internal fun isSwingUiEnabledForKotlinDataframe(): Boolean = Registry.`is`("kotlin.dataframe.swing.outputs.enabled", false)

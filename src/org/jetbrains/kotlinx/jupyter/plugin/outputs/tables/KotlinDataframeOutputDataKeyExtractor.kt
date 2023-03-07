@@ -25,6 +25,7 @@ import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataK
 class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
     override fun extract(editor: EditorImpl, interval: NotebookCellLines.Interval): List<NotebookOutputDataKey>? {
         val res = when {
+            !isSwingUiEnabledForKotlinDataframe() -> null
             !editor.isJupyter -> null
             interval.type != NotebookCellLines.CellType.CODE -> null
             else -> extractImpl(editor, interval)

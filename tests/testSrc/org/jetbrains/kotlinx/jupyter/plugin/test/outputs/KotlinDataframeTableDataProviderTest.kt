@@ -21,8 +21,8 @@ import java.io.File
 class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
     @Test
     fun `test format check`() {
-        val (dataframeProvider, data) = prepareProviderAndData()
-        Assert.assertTrue(dataframeProvider.isTableDataFormatSupported(data))
+        val (_, data) = prepareProviderAndData()
+        Assert.assertTrue(KotlinDataframeParsing.isKotlinDataFrame(data))
     }
 
 
