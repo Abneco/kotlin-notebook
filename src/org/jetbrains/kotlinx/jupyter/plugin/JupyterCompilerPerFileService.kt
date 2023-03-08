@@ -71,6 +71,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -399,7 +400,7 @@ class JupyterCompilerPerFileService(
 
                 val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
                 implicitListsLoadQueue.addLast(Pair(lineClassesDir, kClassNames))
-                needsToUpdate = true
+                needsToUpdate.set(true)
                 updateInjectedCellInfo(snippetMetadata, psiCell)
             } catch (e: Exception) {
                 LOG.error(e)
@@ -419,25 +420,26 @@ class JupyterCompilerPerFileService(
         (implicitsList.lastOrNull()?.fromClass ?: this::class).java.classLoader
     )
 
-    val hasPendingUpdates: Boolean get() = compileLock.read { needsToUpdate }
-    private var needsToUpdate: Boolean = false
+    val hasPendingUpdates: Boolean get() = if (compileLock.isWriteLocked) needsToUpdate.get()
+        else compileLock.read { needsToUpdate.get() }
+    private var needsToUpdate = AtomicBoolean(false)
 
     fun afterScriptingUpdate() {
         if (hasPendingUpdates) {
-            compileLock.writeLock().withLock { needsToUpdate = false }
+            compileLock.writeLock().withLock { needsToUpdate.set(false) }
         }
     }
 
     fun loadReceiverClassesIfAny(): Boolean {
         compileLock.writeLock().withLock {
             if (implicitListsLoadQueue.isEmpty()) {
-                needsToUpdate = false
+                needsToUpdate.compareAndSet(true, false)
                 return false
             }
             while (implicitListsLoadQueue.isNotEmpty()) {
                 val firstElem = implicitListsLoadQueue.firstOrNull()
                 if (firstElem == null) {
-                    needsToUpdate = false
+                    needsToUpdate.set(false)
                     return false
                 }
                 val (lineDir, classes) = firstElem
@@ -449,7 +451,7 @@ class JupyterCompilerPerFileService(
                         implicitsList.addClass(kClass)
                     }
                     implicitListsLoadQueue.removeFirstOrNull()
-                    needsToUpdate = true
+                    needsToUpdate.set(true)
                 } catch (e: Throwable) {
                     when (e) {
                         is ProcessCanceledException -> {
