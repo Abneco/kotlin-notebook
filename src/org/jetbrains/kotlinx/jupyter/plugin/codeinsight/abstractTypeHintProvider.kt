@@ -70,6 +70,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                             return false
                         }
                         registry.entries.forEach { (el, data) ->
+                            if (!element.containingFile.virtualFile.isValid || !element.containingFile.isValid) return false
                             val resolved = data.filter { isElementSupported(it, settings) }.ifEmpty { return@forEach }
                             resolved.forEach { hintType ->
                                 addInlayElementToSink(el, project,
