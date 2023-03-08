@@ -435,7 +435,12 @@ class JupyterCompilerPerFileService(
                 return false
             }
             while (implicitListsLoadQueue.isNotEmpty()) {
-                val (lineDir, classes) = implicitListsLoadQueue.firstOrNull() ?: return needsToUpdate
+                val firstElem = implicitListsLoadQueue.firstOrNull()
+                if (firstElem == null) {
+                    needsToUpdate = false
+                    return false
+                }
+                val (lineDir, classes) = firstElem
                 try {
                     val loader = createNextClassLoader(lineDir)
                     classes.forEach { className ->

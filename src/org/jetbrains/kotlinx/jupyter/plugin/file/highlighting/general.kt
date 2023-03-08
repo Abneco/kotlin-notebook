@@ -168,6 +168,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         if (scriptDefManager.isReady()) {
             if (JupyterCompilerService.getInstance(project).needToUpdateImplicitsReceiversIfAny) {
                 invokeLater {
+                    LOG.warn("Requesting update of scripting after loading new classes in ${this.name}")
                     JupyterKtScriptingSupport.getInstance(project).update()
                 }
                 throw ProcessCanceledException()
@@ -202,9 +203,10 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
             reloadRequested = true
             return false
         }
+        val reloadState = reloadRequested
 
         if (highlightInfo.severity == HighlightSeverity.ERROR && description.isLikeMissingDependencyClassError(false)) {
-            if (reloadRequested) return false
+            if (reloadState) return false
             val missingClass = description.substringAfter("Cannot access ").split("\'")[1]
             val project = file.project
             val found = if (missingClass.isKTNBClass()) true
@@ -213,7 +215,9 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
                     val properClass = (if (fqnName) missingClass.substringAfterLast(".") else missingClass) + ".class"
                     FilenameIndex.getFilesByName(project, properClass, ProjectScope.getLibrariesScope(project)).isNotEmpty()
                 }
-            if (found && !reloadRequested) {
+            LOG.warn("Faced ${highlightInfo.description} error, will try to update scripting")
+            if (found && !reloadState) {
+                LOG.warn("Requesting reload of scripting...")
                 invokeLater { JupyterKtScriptingSupport.getInstance(file.project).update() }
                 reloadRequested = true
                 return false
@@ -224,6 +228,8 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
     }
 
     companion object {
+        private val LOG = thisLogger()
+
         internal val classRegex = Regex("Line_.+_jupyter")
         internal fun String.isKTNBClass(): Boolean = matches(classRegex)
         internal fun HighlightInfo.checkIfMissingBaseClassError(): Boolean {
