@@ -556,13 +556,16 @@ class JupyterCompilerPerFileService(
     }
 
     fun clear() {
-        clearPreviousSnippets()
+        compileLock.write {
+            clearPreviousSnippets()
 
-        nbInjectionHosts.clear()
-        classesDir.delete(true)
-        coroutineScope.cancel()
+            nbInjectionHosts.clear()
+            classesDir.delete(true)
+            coroutineScope.cancel()
+            implicitListsLoadQueue.clear()
 
-        ClasspathToVfsConverter.clearCaches()
+            ClasspathToVfsConverter.clearCaches()
+        }
 
         val manager = ScriptConfigurationManager.getInstance(projectService.project) as? CompositeScriptConfigurationManager
         manager?.updater?.invalidateAndCommit()
