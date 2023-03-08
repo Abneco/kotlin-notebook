@@ -126,9 +126,9 @@ object NotebookReferenceFinder {
     }
 
     private fun getProperUsagesForTargetElement(injectionHost: PsiLanguageInjectionHost, possibleClassNames: Set<String>?, element: PsiElement, targetElement: PsiElement): List<NavigatablePsiElement> {
-        val ans = mutableListOf<NavigatablePsiElement>()
+        val result = mutableListOf<NavigatablePsiElement>()
         val targetName = if (targetElement is KtObjectDeclaration) targetElement.nameAsSafeName.asString() else targetElement.text
-        val targetDeclaration = targetElement.parentOfType<KtDeclaration>(true)!!
+        val targetDeclaration = targetElement.parentOfType<KtDeclaration>(true) ?: return result
         element.containingFile.acceptChildren(object : PsiRecursiveElementVisitor() {
             override fun visitElement(element: PsiElement) {
                 if ((element.elementType is KtNameReferenceExpressionElementType || element is KtCallExpression)
@@ -137,17 +137,17 @@ object NotebookReferenceFinder {
                     //val properNameElement = if (element is KtCallExpression) element.calleeExpression else element
                     val resolvedRefInfo = referenceResolver.tryResolveQualifier(element)
                     if (targetDeclaration.containingFile == resolvedRefInfo?.containingFile && element.reference?.isReferenceTo(targetDeclaration) == true) {
-                        ans.add(element as KtElement)
+                        result.add(element as KtElement)
                         // if not then tryMatch class with class present in compiled sources
                     } else if (resolvedRefInfo != null && tryMatchWithDeclaration(injectionHost, possibleClassNames, targetElement, targetDeclaration, ProvidedReferenceInfo(resolvedRefInfo))) {
-                        ans.add(element as KtElement)
+                        result.add(element as KtElement)
                     }
                 }
                 super.visitElement(element)
             }
         })
 
-        return ans
+        return result
     }
 
     private fun tryMatchWithDeclaration(host: PsiLanguageInjectionHost, possibleClassName: Set<String>?, targetElement: PsiElement, candidateDeclaration: KtDeclaration, referenceInfo: ProvidedReferenceInfo): Boolean {
