@@ -122,8 +122,8 @@ class KotlinKernelProcessService {
 
         val classpathSeparator = System.getProperty("path.separator")
 
-        val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
-        val javaExecutable = options.state.jdk.getPath(project)?.let { javaHome ->
+        val options = KotlinNotebookProjectOptionsProvider.getInstance(project).state
+        val javaExecutable = options.jdk.getPath(project)?.let { javaHome ->
             val binDir = File(javaHome).absoluteFile.resolve("bin")
             val javaExec = if (SystemInfo.isWindows) binDir.resolve("java.exe")
             else binDir.resolve("java")
@@ -136,7 +136,10 @@ class KotlinKernelProcessService {
 
         val extraJavaArgs = buildList {
             workingDir?.let { add("-Duser.dir=${workingDir.systemIndependentPath}/") }
-            add("-Xmx3256M")
+            add("-Xmx${options.heapMaxLimitInMib}M")
+            for (extraArg in options.extraJvmArguments) {
+                add(extraArg)
+            }
             KernelVmCommandCustomizer.addVmArguments(this)
         }
 

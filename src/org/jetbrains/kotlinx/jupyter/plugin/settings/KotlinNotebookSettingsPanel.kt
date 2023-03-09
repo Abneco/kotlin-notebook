@@ -10,8 +10,12 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ui.configuration.SdkComboBox
 import com.intellij.openapi.roots.ui.configuration.SdkComboBoxModel
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.ui.dsl.builder.Panel
+import com.intellij.ui.JBIntSpinner
+import com.intellij.ui.components.fields.ExpandableTextField
+import com.intellij.ui.dsl.builder.Row
+import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.util.execution.ParametersListUtil
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.editor.JupyterNotebookGutterManager
@@ -23,56 +27,35 @@ class KotlinNotebookSettingsPanel(
     private val project: Project,
     private val optionsProvider: KotlinNotebookProjectOptionsProvider
 ) {
-    private class OptionComponentInitializer<T: JComponent>(
-        init: () -> T,
-        val setupUI: Panel.(OptionComponentInitializer<*>) -> Unit
-    ) {
+    private class OptionComponent<T: JComponent>(init: () -> T) {
         val component: T by lazy { init() }
     }
 
+    private class OptionComponentInRow<T: JComponent>(private val init: Row.() -> T) {
+        val component: T get() = _component!!
+        private var _component: T? = null
+
+        fun createComponent(row: Row): T {
+            return _component ?: init(row).also { c -> _component = c }
+        }
+    }
+
     private lateinit var panel: DialogPanel
-    private val jdkPath = OptionComponentInitializer(::initJdkComboBox) {
-        row(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.path")) {
-            cell(it.component)
-        }
-    }
-    private val shouldBuildProject = OptionComponentInitializer(::initShouldBuildCheckBox) {
-        row(null) {
-            cell(it.component)
-        }
-    }
-    private val shouldAddProjectLibrariesToClasspath = OptionComponentInitializer(::initShouldAddProjectLibrariesToClasspath) {
-        row(null) {
-            cell(it.component)
-        }
-    }
-    private val shouldLimitTypeHintsByActiveCell = OptionComponentInitializer(::initShouldLimitTypeHintsCheckBox) {
-        this.group(JupyterKotlinBundle.message("kotlin.jupyter.settings.typeHints")) {
-            row(null) {
-                cell(it.component)
-            }
-        }
-    }
-    private val shouldShowExecutionCount = OptionComponentInitializer(::initShouldShowExecutionCountCheckBox) {
-        this.group(JupyterKotlinBundle.message("kotlin.jupyter.settings.appearance")) {
-            row(null) {
-                cell(it.component)
-            }
-        }
-    }
-    private val providerInitializers = listOf(
-        jdkPath,
-        shouldBuildProject,
-        shouldAddProjectLibrariesToClasspath,
-        shouldLimitTypeHintsByActiveCell,
-        shouldShowExecutionCount
-    )
+    private val jdkPath = OptionComponent(::initJdkComboBox)
+    private val heapMaxLimitInMib = OptionComponentInRow { initHeapMaxSizeLimitField() }
+    private val extraJvmArgs = OptionComponentInRow { initExtraJvmArgumentsField() }
+    private val shouldBuildProject = OptionComponent(::initShouldBuildCheckBox)
+    private val shouldAddProjectLibrariesToClasspath = OptionComponent(::initShouldAddProjectLibrariesToClasspath)
+    private val shouldLimitTypeHintsByActiveCell = OptionComponent(::initShouldLimitTypeHintsCheckBox)
+    private val shouldShowExecutionCount = OptionComponent(::initShouldShowExecutionCountCheckBox)
 
     private fun collectState(): KotlinNotebookProjectOptionsProvider.State {
         val path = jdkPath.component.getSelectedSdk()?.homePath
         val jdk = if (path == null) ProjectJdkOption else JdkOptionWithPath(path)
         return KotlinNotebookProjectOptionsProvider.State(
             jdk = jdk,
+            heapMaxLimitInMib = heapMaxLimitInMib.component.number,
+            extraJvmArguments = ParametersListUtil.parse(extraJvmArgs.component.text),
             shouldBuildProject = shouldBuildProject.component.isSelected,
             shouldAddProjectLibrariesToClasspath = shouldAddProjectLibrariesToClasspath.component.isSelected,
             shouldLimitTypeHintsByActiveCell = shouldLimitTypeHintsByActiveCell.component.isSelected,
@@ -82,7 +65,34 @@ class KotlinNotebookSettingsPanel(
 
     fun createPanel(): JPanel {
         return panel {
-            providerInitializers.forEach { it.setupUI(this, it) }
+            group(JupyterKotlinBundle.message("kotlin.jupyter.settings.build")) {
+                row(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.path")) {
+                    cell(jdkPath.component)
+                }
+                row(JupyterKotlinBundle.message("kotlin.jupyter.settings.jvm.max.heap")) {
+                    heapMaxLimitInMib.createComponent(this)
+                    label(JupyterKotlinBundle.message("kotlin.jupyter.settings.jvm.max.heap.units"))
+                }
+                row(JupyterKotlinBundle.message("kotlin.jupyter.settings.jvm.extra.args")) {
+                    extraJvmArgs.createComponent(this)
+                }
+                row(null) {
+                    cell(shouldBuildProject.component)
+                }
+                row(null) {
+                    cell(shouldAddProjectLibrariesToClasspath.component)
+                }
+            }
+            group(JupyterKotlinBundle.message("kotlin.jupyter.settings.typeHints")) {
+                row(null) {
+                    cell(shouldLimitTypeHintsByActiveCell.component)
+                }
+            }
+            group(JupyterKotlinBundle.message("kotlin.jupyter.settings.appearance")) {
+                row(null) {
+                    cell(shouldShowExecutionCount.component)
+                }
+            }
         }.also { panel = it }
     }
 
@@ -112,6 +122,27 @@ class KotlinNotebookSettingsPanel(
             JupyterKotlinBundle.message("checkbox.should.show.execution.count"),
             optionsProvider.state.shouldShowExecutionCount
         )
+    }
+
+    private fun Row.initHeapMaxSizeLimitField(): JBIntSpinner {
+        val cell = spinner(0..99999, 100)
+        cell.validationRequestor { callback -> cell.onChanged { callback() } }
+
+        val component = cell.component
+        return component.apply {
+            number = optionsProvider.state.heapMaxLimitInMib
+        }
+    }
+
+    private fun Row.initExtraJvmArgumentsField(): ExpandableTextField {
+        val cell = expandableTextField()
+        cell.columns(48)
+
+        val component = cell.component
+        return component.apply {
+            setMonospaced(true)
+            text = ParametersListUtil.DEFAULT_LINE_JOINER.`fun`(optionsProvider.state.extraJvmArguments)
+        }
     }
 
     private fun initJdkComboBox(): SdkComboBox {

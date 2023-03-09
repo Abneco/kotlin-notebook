@@ -20,6 +20,8 @@ class KotlinNotebookProjectOptionsProvider : PersistentStateComponent<KotlinNote
 
     companion object {
         fun getInstance(project: Project): KotlinNotebookProjectOptionsProvider = project.service()
+
+        const val DEFAULT_HEAP_MAX_LIMIT_MIB = 3256
     }
 
     private var state = State()
@@ -33,13 +35,17 @@ class KotlinNotebookProjectOptionsProvider : PersistentStateComponent<KotlinNote
 
     data class State(
         var jdk: KotlinNotebookJdkOption = ProjectJdkOption,
+        var heapMaxLimitInMib: Int = DEFAULT_HEAP_MAX_LIMIT_MIB,
+        var extraJvmArguments: List<String> = emptyList(),
         var shouldBuildProject: Boolean = false,
         var shouldLimitTypeHintsByActiveCell: Boolean = false,
         var shouldAddProjectLibrariesToClasspath: Boolean = false,
-        var shouldShowExecutionCount: Boolean = true
+        var shouldShowExecutionCount: Boolean = true,
     ) {
         fun equals(other: State, project: Project): Boolean {
             return jdk.getPath(project) == other.jdk.getPath(project) &&
+                    heapMaxLimitInMib == other.heapMaxLimitInMib &&
+                    extraJvmArguments == other.extraJvmArguments &&
                     shouldBuildProject == other.shouldBuildProject &&
                     shouldLimitTypeHintsByActiveCell == other.shouldLimitTypeHintsByActiveCell &&
                     shouldAddProjectLibrariesToClasspath == other.shouldAddProjectLibrariesToClasspath &&
