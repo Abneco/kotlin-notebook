@@ -143,6 +143,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                     highlightingQueue?.add(cellUnderEditor.ordinal)
                     document.putUserData(CompleteHighlightingRange, cells[cellUnderEditor.ordinal]?.textRange)
                 }
+                highlightingQueue?.add(cellUnderEditor.ordinal)
                 return getCellRangesInDocumentOrNull(cells, highlightingQueue)
             }
 

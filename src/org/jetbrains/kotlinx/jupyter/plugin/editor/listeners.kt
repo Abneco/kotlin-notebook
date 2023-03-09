@@ -24,7 +24,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
-import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
@@ -125,7 +124,8 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                                 JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile)
                             }
                         }
-                        if (dff < 400) invokeLater {
+                        if (dff < 600) invokeLater {
+                            LOG.warn("Requesting HL restart after recent cancelled event")
                             psiFile?.restartAnalyzing()
                         }
                     }
@@ -163,6 +163,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     if (newOrd != null && newOrd.ordinal != ord) {
                         floatingCellInd = newOrd.ordinal
                         performRangedUpdate(setOfNotNull(ord, storedFloating, newOrd.ordinal))
+                        return@launch
                     }
                     val storedPrevCell = prevCell
 
