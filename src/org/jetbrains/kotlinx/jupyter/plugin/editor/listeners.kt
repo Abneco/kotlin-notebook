@@ -7,6 +7,7 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DaemonListener
 import com.intellij.codeInsight.hints.InlayHintsPassFactory
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
@@ -21,7 +22,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
+import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
@@ -35,11 +38,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.util.tryWithWriteLock
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.concurrent.write
 import kotlin.math.min
 
 internal enum class DaemonState {
@@ -49,6 +52,9 @@ internal enum class DaemonState {
 
 class NotebookCaretListener(private val project: Project, private val vFile: BackedNotebookVirtualFile,
                             private val editor: Editor): CaretListener {
+    companion object {
+        private val LOG = thisLogger()
+    }
     private val psiFile = vFile.file.toPsiFile(project)
     private val doc = psiFile?.toDocument(project)
     private val updateScope = CoroutineScope(Dispatchers.Default)
@@ -104,7 +110,8 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                         floatingCellInd = -1
                     }
                     val isAfterRenaming = doc?.getUserData(RenamingEnclosedRange) != null
-                    stateLock.write {
+                    val lastCellIndCopy = lastCellInd
+                    stateLock.tryWithWriteLock {
                         doc?.putUserData(RenamingEnclosedRange, null)
                         //doc?.putUserData(NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
                         doc?.putUserData(NotebookDocumentTargetRanges, listOf(lastCellInd))
@@ -146,7 +153,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             deferredFastUpdate = updateScope.async {
                 launch {
                     val storedFloating = lastCellInd
-                    val storedPrevCell = prevCell
                     delay(600)
                     val newOrd = runReadAction {
                         editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it) }
@@ -156,6 +162,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                         floatingCellInd = newOrd.ordinal
                         performRangedUpdate(setOfNotNull(ord, storedFloating, newOrd.ordinal))
                     }
+                    val storedPrevCell = prevCell
 
                     if (storedPrevCell == null) {
                         floatingCellInd = ord
