@@ -27,7 +27,7 @@ class KotlinNotebookSettingsPanel(
     private val project: Project,
     private val optionsProvider: KotlinNotebookProjectOptionsProvider
 ) {
-    private class OptionComponent<T: JComponent>(init: () -> T) {
+    private class OptionComponent<T : JComponent>(init: () -> T) {
         val component: T by lazy { init() }
     }
 
@@ -50,15 +50,15 @@ class KotlinNotebookSettingsPanel(
     private val shouldShowExecutionCount = OptionComponent(::initShouldShowExecutionCountCheckBox)
 
     private fun collectState(): KotlinNotebookProjectOptionsProvider.State {
-        return KotlinNotebookProjectOptionsProvider.State(
-            jdkPath = jdkPath.component.getSelectedSdk()?.homePath,
-            heapMaxLimitInMib = heapMaxLimitInMib.component.number,
-            extraJvmArguments = ParametersListUtil.parse(extraJvmArgs.component.text),
-            shouldBuildProject = shouldBuildProject.component.isSelected,
-            shouldAddProjectLibrariesToClasspath = shouldAddProjectLibrariesToClasspath.component.isSelected,
-            shouldLimitTypeHintsByActiveCell = shouldLimitTypeHintsByActiveCell.component.isSelected,
-            shouldShowExecutionCount = shouldShowExecutionCount.component.isSelected
-        )
+        return KotlinNotebookProjectOptionsProvider.State().also {
+            it.jdkPath = jdkPath.component.getSelectedSdk()?.homePath
+            it.heapMaxLimitInMib = heapMaxLimitInMib.component.number
+            it.extraJvmArguments = ParametersListUtil.parse(extraJvmArgs.component.text)
+            it.shouldBuildProject = shouldBuildProject.component.isSelected
+            it.shouldAddProjectLibrariesToClasspath = shouldAddProjectLibrariesToClasspath.component.isSelected
+            it.shouldLimitTypeHintsByActiveCell = shouldLimitTypeHintsByActiveCell.component.isSelected
+            it.shouldShowExecutionCount = shouldShowExecutionCount.component.isSelected
+        }
     }
 
     fun createPanel(): JPanel {
