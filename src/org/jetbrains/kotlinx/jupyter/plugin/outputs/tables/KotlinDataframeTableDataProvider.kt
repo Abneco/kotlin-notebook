@@ -10,11 +10,11 @@ import com.intellij.openapi.util.registry.Registry
 import com.jetbrains.python.debugger.pydev.TableCommandType
 import com.jetbrains.python.debugger.pydev.tables.CommandOutputType
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.Companion.columnsField
-import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.Companion.nColsField
-import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.Companion.nRowsField
-import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.Companion.separator
-import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.Companion.serializedDataframeField
+import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.columnsField
+import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.nColsField
+import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.nRowsField
+import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.separator
+import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.serializedDataframeField
 import org.jetbrains.plugins.notebooks.tables.DSTableBundle
 import org.jetbrains.plugins.notebooks.tables.DSTableData
 import org.jetbrains.plugins.notebooks.tables.DataId
@@ -28,14 +28,18 @@ import org.jetbrains.plugins.notebooks.tables.api.DSTableCommandExecutor
 import javax.swing.RowSorter
 import javax.swing.SortOrder
 
+
+internal val isSwingUiEnabledForKotlinDataframe: Boolean
+    get() = Registry.`is`("kotlin.dataframe.swing.outputs.enabled", false)
+
 class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
     override fun isTableDataFormatSupported(text: DSTableText): Boolean {
-        return isSwingUiEnabledForKotlinDataframe() &&
+        return isSwingUiEnabledForKotlinDataframe &&
                 KotlinDataframeParsing.isKotlinDataFrame(text)
     }
 
     override fun isTableDataFormatSupported(messageContentData: ObjectNode): Boolean {
-        return isSwingUiEnabledForKotlinDataframe() &&
+        return isSwingUiEnabledForKotlinDataframe &&
                 KotlinDataframeParsing.isKotlinDataFrame(messageContentData)
     }
 
@@ -148,5 +152,3 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         }
     }
 }
-
-internal fun isSwingUiEnabledForKotlinDataframe(): Boolean = Registry.`is`("kotlin.dataframe.swing.outputs.enabled", false)

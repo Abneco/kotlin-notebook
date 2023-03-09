@@ -7,29 +7,27 @@ import org.jetbrains.plugins.notebooks.tables.api.DSTableText
 /**
  * Utils for parsing encoded table data produced by Kotlin Dataframe library
  */
-class KotlinDataframeParsing {
-    companion object {
-        private const val jsonPayloadField = "application/json"
-        const val serializedDataframeField = "kotlin_dataframe"
-        const val separator = "kotlin_dataframe_sep"
-        const val columnsField = "columns"
-        const val nRowsField = "nrow"
-        const val nColsField = "ncol"
+object KotlinDataframeParsing {
+    private const val jsonPayloadField = "application/kotlindataframe+json"
+    const val serializedDataframeField = "kotlin_dataframe"
+    const val separator = "kotlin_dataframe_sep"
+    const val columnsField = "columns"
+    const val nRowsField = "nrow"
+    const val nColsField = "ncol"
 
 
-        fun isKotlinDataFrame(dataObject: ObjectNode): Boolean {
-            if (!dataObject.has(jsonPayloadField)) return false
-            val jsonPayload = dataObject[jsonPayloadField].asText() ?: return false
+    fun isKotlinDataFrame(dataObject: ObjectNode): Boolean {
+        if (!dataObject.has(jsonPayloadField)) return false
+        val jsonPayload = dataObject[jsonPayloadField].asText() ?: return false
 
-            return jsonPayload.contains(serializedDataframeField)
-        }
+        return jsonPayload.contains(serializedDataframeField)
+    }
 
-        fun isKotlinDataFrame(serializedTableData: DSTableText): Boolean {
-            return serializedTableData.plainText?.contains(serializedDataframeField) ?: false
-        }
+    fun isKotlinDataFrame(serializedTableData: DSTableText): Boolean {
+        return serializedTableData.plainText?.contains(serializedDataframeField) ?: false
+    }
 
-        fun extractSerializedDataFrame(dataObject: ObjectNode): String {
-            return dataObject[jsonPayloadField].asText()
-        }
+    fun extractSerializedDataFrame(dataObject: ObjectNode): String {
+        return dataObject[jsonPayloadField].asText()
     }
 }
