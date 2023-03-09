@@ -34,7 +34,7 @@ class KotlinNotebookProjectOptionsProvider : PersistentStateComponent<KotlinNote
 
 
     data class State(
-        var jdk: KotlinNotebookJdkOption = ProjectJdkOption,
+        var jdkPath: String? = null,
         var heapMaxLimitInMib: Int = DEFAULT_HEAP_MAX_LIMIT_MIB,
         var extraJvmArguments: List<String> = emptyList(),
         var shouldBuildProject: Boolean = false,
@@ -42,6 +42,11 @@ class KotlinNotebookProjectOptionsProvider : PersistentStateComponent<KotlinNote
         var shouldAddProjectLibrariesToClasspath: Boolean = false,
         var shouldShowExecutionCount: Boolean = true,
     ) {
+        val jdk: KotlinNotebookJdkOption get() {
+            val path = jdkPath ?: return ProjectJdkOption
+            return JdkOptionWithPath(path)
+        }
+
         fun equals(other: State, project: Project): Boolean {
             return jdk.getPath(project) == other.jdk.getPath(project) &&
                     heapMaxLimitInMib == other.heapMaxLimitInMib &&

@@ -50,10 +50,8 @@ class KotlinNotebookSettingsPanel(
     private val shouldShowExecutionCount = OptionComponent(::initShouldShowExecutionCountCheckBox)
 
     private fun collectState(): KotlinNotebookProjectOptionsProvider.State {
-        val path = jdkPath.component.getSelectedSdk()?.homePath
-        val jdk = if (path == null) ProjectJdkOption else JdkOptionWithPath(path)
         return KotlinNotebookProjectOptionsProvider.State(
-            jdk = jdk,
+            jdkPath = jdkPath.component.getSelectedSdk()?.homePath,
             heapMaxLimitInMib = heapMaxLimitInMib.component.number,
             extraJvmArguments = ParametersListUtil.parse(extraJvmArgs.component.text),
             shouldBuildProject = shouldBuildProject.component.isSelected,
