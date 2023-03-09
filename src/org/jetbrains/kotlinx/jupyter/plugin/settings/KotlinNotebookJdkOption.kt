@@ -12,6 +12,13 @@ import kotlin.contracts.contract
 
 sealed interface KotlinNotebookJdkOption {
     fun getPath(project: Project): String?
+
+    companion object {
+        fun fromPath(path: String?): KotlinNotebookJdkOption {
+            if (path == null) return ProjectJdkOption
+            return JdkOptionWithPath(path)
+        }
+    }
 }
 
 class JdkOptionWithPath(val homePath: String): KotlinNotebookJdkOption {
