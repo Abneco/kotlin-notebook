@@ -66,7 +66,8 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
     private var lastCellInd: Int = -1
     private var lastCell: PsiLanguageInjectionHost? = null
     private var prevCell: PsiLanguageInjectionHost? = null
-    private var floatingPrevCell: PsiLanguageInjectionHost? = null
+    // todo: delete
+    private var lastStartedFastFrom: Int? = null
     private var floatingCellInd: Int = -1
     private var lastTimeCellFocusChanged = 0L
     private var deferredFastUpdate: Job? = null
@@ -98,7 +99,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     }
 
                     if (isFirstRun) isFirstRun = false
-                    floatingPrevCell = null
                     prevCell = null
                     if (afterNonTrivialChange) {
                         val toSwap = doc?.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)
@@ -114,11 +114,14 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     stateLock.tryWithWriteLock {
                         doc?.putUserData(RenamingEnclosedRange, null)
                         //doc?.putUserData(NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
-                        doc?.putUserData(NotebookDocumentTargetRanges, listOf(lastCellInd))
+                        doc?.putUserData(NotebookDocumentTargetRanges, listOf(lastCellIndCopy))
                         doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
                         val dff = System.currentTimeMillis() - (savedlastCancelTime ?: 0)
-                        if (dff > 250) {
-                            doc?.getUserData(NotebookQueuedTargetRanges)?.clear()
+                        if (dff > 350) {
+                            val queue = doc?.getUserData(NotebookQueuedTargetRanges)
+                            if (queue != null && !DaemonCodeAnalyzerStatusService.getInstance(project).daemonRunning && queue.size > 2) {
+                                queue.clear()
+                            }
                             if (doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
                                 JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile)
                             }
@@ -170,14 +173,11 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     val cells = runReadAction {
                         psiFile.getNotebookCellList()
                     }
-                    floatingPrevCell = storedPrevCell ?: cells?.get(lastCellInd)
                     lastCell = cells?.get(ord)
 
                     val prevKnownInd = lastCellInd
                     val floatingInd = floatingCellInd
-                    if (prevKnownInd == floatingInd) {
-                        floatingPrevCell = null
-                    }
+
                     val toStore = if (floatingInd == -1) {
                         storedFloating
                     } else floatingInd // concurrent change occurred
@@ -189,7 +189,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         } else {
             val knownPrevInd = lastCellInd
             lastCellInd = ord
-            floatingPrevCell = null
             val errorsRef = lastCell?.getErrorPresenceIndicator()
             prevCell = if (errorsRef?.acquire == true || errorsRef == null) lastCell else null
             val prev = prevCell
