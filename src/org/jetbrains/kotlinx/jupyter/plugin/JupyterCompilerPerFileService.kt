@@ -58,6 +58,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookPluginUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
+import org.jetbrains.kotlinx.jupyter.plugin.util.tryWithWriteLock
+import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
+import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
@@ -75,7 +78,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
-import kotlin.concurrent.withLock
 import kotlin.concurrent.write
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
@@ -357,7 +359,7 @@ class JupyterCompilerPerFileService(
         cellSource: String,
         psiCell: JupyterPsiCell,
     ) {
-        compileLock.writeLock().withLock {
+        compileLock.withWriteLock {
             try {
                 KotlinNotebookPluginUpdater.getInstance().pluginUsed()
 
@@ -409,7 +411,7 @@ class JupyterCompilerPerFileService(
     }
 
     fun updateScripting() {
-        compileLock.writeLock().withLock {
+        compileLock.withWriteLock {
             //updateCellsAnalysis()
             scriptingSupport.update()
         }
@@ -420,18 +422,17 @@ class JupyterCompilerPerFileService(
         (implicitsList.lastOrNull()?.fromClass ?: this::class).java.classLoader
     )
 
-    val hasPendingUpdates: Boolean get() = if (compileLock.isWriteLocked) needsToUpdate.get()
-        else compileLock.read { needsToUpdate.get() }
+    val hasPendingUpdates: Boolean get() = needsToUpdate.get()
     private var needsToUpdate = AtomicBoolean(false)
 
     fun afterScriptingUpdate() {
         if (hasPendingUpdates) {
-            compileLock.writeLock().withLock { needsToUpdate.set(false) }
+            needsToUpdate.set(false)
         }
     }
 
     fun loadReceiverClassesIfAny(): Boolean {
-        compileLock.writeLock().withLock {
+        return compileLock.tryWithWriteLock<Boolean> {
             if (implicitListsLoadQueue.isEmpty()) {
                 needsToUpdate.compareAndSet(true, false)
                 return false
@@ -439,8 +440,7 @@ class JupyterCompilerPerFileService(
             while (implicitListsLoadQueue.isNotEmpty()) {
                 val firstElem = implicitListsLoadQueue.firstOrNull()
                 if (firstElem == null) {
-                    needsToUpdate.set(false)
-                    return false
+                    return needsToUpdate.get()
                 }
                 val (lineDir, classes) = firstElem
                 try {
@@ -461,13 +461,17 @@ class JupyterCompilerPerFileService(
                             val msg = e.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
                             NotebookNotificationUtility.showKernelJDKInconsistentError(projectService.project, msg)
                         }
+                        is ClassNotFoundException -> {
+                            implicitListsLoadQueue.removeFirstOrNull()
+                            LOG.error(e)
+                        }
                         else -> LOG.error(e)
                     }
                     return true
                 }
             }
             return true
-        }
+        } ?: false
     }
 
     fun swapCellsData(lhs: Int, rhs: Int, cellList: List<PsiLanguageInjectionHost>) {
@@ -565,9 +569,9 @@ class JupyterCompilerPerFileService(
             classesDir.delete(true)
             coroutineScope.cancel()
             implicitListsLoadQueue.clear()
-
-            ClasspathToVfsConverter.clearCaches()
         }
+
+        ClasspathToVfsConverter.clearCaches()
 
         val manager = ScriptConfigurationManager.getInstance(projectService.project) as? CompositeScriptConfigurationManager
         manager?.updater?.invalidateAndCommit()
@@ -585,32 +589,20 @@ class JupyterCompilerPerFileService(
     ) {
         private val lock = ReentrantReadWriteLock()
 
-        private fun <R> withWriteLock(action: () -> R): R {
-            return lock.writeLock().withLock {
-                action()
-            }
-        }
-
-        private fun <R> withReadLock(action: () -> R): R {
-            return lock.readLock().withLock {
-                action()
-            }
-        }
-
         fun clear() {
-            withWriteLock { snippetsPart.clear() }
+            lock.withWriteLock { snippetsPart.clear() }
         }
 
         fun addInitial(items: Collection<T>) {
-            withWriteLock { initialPart.addAll(items) }
+            lock.withWriteLock { initialPart.addAll(items) }
         }
 
         fun addSnippet(items: Collection<T>) {
-            withWriteLock { snippetsPart.addAll(items) }
+            lock.withWriteLock { snippetsPart.addAll(items) }
         }
 
         fun getList(): List<T> {
-            return withReadLock { (initialPart + snippetsPart).distinct() }
+            return lock.withReadLock { (initialPart + snippetsPart).distinct() }
         }
     }
 
