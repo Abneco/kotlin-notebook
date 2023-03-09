@@ -66,8 +66,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
     private var lastCellInd: Int = -1
     private var lastCell: PsiLanguageInjectionHost? = null
     private var prevCell: PsiLanguageInjectionHost? = null
-    // todo: delete
-    private var lastStartedFastFrom: Int? = null
+
     private var floatingCellInd: Int = -1
     private var lastTimeCellFocusChanged = 0L
     private var deferredFastUpdate: Job? = null
@@ -151,12 +150,12 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         val isGoodState = !isSizeChanged
         if ((ord == lastCellInd && isGoodState) || isFirstRun) return
         val currentTime = System.currentTimeMillis()
-        if (currentTime - lastTimeCellFocusChanged < 600) { // might be reworked
+        if (currentTime - lastTimeCellFocusChanged < 500) { // might be reworked
             deferredFastUpdate?.cancel()
             deferredFastUpdate = updateScope.async {
                 launch {
                     val storedFloating = lastCellInd
-                    delay(600)
+                    delay(500)
                     val newOrd = runReadAction {
                         editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it) }
                     }
