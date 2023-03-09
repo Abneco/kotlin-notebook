@@ -166,6 +166,10 @@ class KotlinNotebookSettingsPanel(
     }
 
     fun apply() {
+        val projectSdksModel = jdkPath.component.model.sdksModel
+        if (projectSdksModel.isModified) {
+            projectSdksModel.apply()
+        }
         val oldState = optionsProvider.state
         val newState = collectState()
         optionsProvider.loadState(newState)
@@ -185,6 +189,6 @@ class KotlinNotebookSettingsPanel(
     }
 
     fun isModified(): Boolean {
-        return !collectState().equals(optionsProvider.state, project)
+        return jdkPath.component.model.sdksModel.isModified || !collectState().equals(optionsProvider.state, project)
     }
 }
