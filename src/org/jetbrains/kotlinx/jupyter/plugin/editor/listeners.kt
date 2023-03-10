@@ -89,32 +89,33 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     if (!scriptDefManager.isReady()) {
                         return
                     }
-                    val savedlastCancelTime = lastCancelTime
+                    val savedLastCancelTime = lastCancelTime
                     // for proper cell move up handle
                     val afterNonTrivialChange = doc?.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(true, false) == true
                     if (afterNonTrivialChange) {
                         isSizeChanged = true
                     }
 
-                    if (isFirstRun) isFirstRun = false
-                    prevCell = null
-                    if (afterNonTrivialChange) {
-                        val toSwap = doc?.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)
-                            ?: editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it).ordinal }
-                        if (toSwap != null) lastCellInd = toSwap
-                        floatingCellInd = -1
-                    } else if (floatingCellInd != -1) { // store ind
-                        lastCellInd = floatingCellInd
-                        floatingCellInd = -1
-                    }
-                    val isAfterRenaming = doc?.getUserData(RenamingEnclosedRange) != null
-                    val lastCellIndCopy = lastCellInd
                     stateLock.tryWithWriteLock {
+                        if (isFirstRun) isFirstRun = false
+                        prevCell = null
+                        if (afterNonTrivialChange) {
+                            val toSwap = doc?.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)
+                                ?: editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it).ordinal }
+                            if (toSwap != null) lastCellInd = toSwap
+                            floatingCellInd = -1
+                        } else if (floatingCellInd != -1) { // store ind
+                            lastCellInd = editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it).ordinal } ?: floatingCellInd
+                            floatingCellInd = -1
+                        }
+                        val isAfterRenaming = doc?.getUserData(RenamingEnclosedRange) != null
+                        val lastCellIndCopy = lastCellInd
+
+
                         doc?.putUserData(RenamingEnclosedRange, null)
-                        //doc?.putUserData(NotebookDocumentTargetRanges, listOfNotNull(lastCell?.textRange))
                         doc?.putUserData(NotebookDocumentTargetRanges, listOf(lastCellIndCopy))
                         doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
-                        val dff = System.currentTimeMillis() - (savedlastCancelTime ?: 0)
+                        val dff = System.currentTimeMillis() - (savedLastCancelTime ?: 0)
                         if (dff > 350) {
                             val queue = doc?.getUserData(NotebookQueuedTargetRanges)
                             if (queue != null && !DaemonCodeAnalyzerStatusService.getInstance(project).daemonRunning && queue.size > 2) {
@@ -128,9 +129,9 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                             LOG.warn("Requesting HL restart after recent cancelled event")
                             psiFile?.restartAnalyzing()
                         }
-                    }
-                    if (isAfterRenaming) {
-                        lastCellInd = 0
+                        if (isAfterRenaming) {
+                            lastCellInd = 0
+                        }
                     }
                 }
             }
