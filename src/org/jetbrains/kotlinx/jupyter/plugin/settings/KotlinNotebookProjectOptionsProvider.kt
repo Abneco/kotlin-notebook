@@ -34,7 +34,6 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
         var shouldBuildProject by property(false)
         var shouldLimitTypeHintsByActiveCell by property(false)
         var shouldAddProjectLibrariesToClasspath by property(false)
-        var shouldShowExecutionCount by property(true)
 
         val jdk: KotlinNotebookJdkOption
             get() {

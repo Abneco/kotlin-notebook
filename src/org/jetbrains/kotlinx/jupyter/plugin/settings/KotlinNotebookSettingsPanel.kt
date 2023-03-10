@@ -22,31 +22,34 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.editor.JupyterNotebookGutterManager
 
 object KotlinNotebookSettingsPanel {
-    fun createPanel(project: Project, optionsProvider: KotlinNotebookProjectOptionsProvider, parentDisposable: Disposable): DialogPanel {
+    fun createPanel(
+        project: Project, projectOptions: KotlinNotebookProjectOptionsProvider,
+        applicationOptions: KotlinNotebookApplicationOptionsProvider, parentDisposable: Disposable
+    ): DialogPanel {
         return panel {
             group(JupyterKotlinBundle.message("kotlin.jupyter.settings.build")) {
-                createJdkComboBox(project, optionsProvider.state, parentDisposable)
-                createMaxHeapSizeSpinner(optionsProvider.state)
-                createExtraJvmArgumentsField(optionsProvider.state)
+                createJdkComboBox(project, projectOptions.state, parentDisposable)
+                createMaxHeapSizeSpinner(projectOptions.state)
+                createExtraJvmArgumentsField(projectOptions.state)
                 row {
                     checkBox(JupyterKotlinBundle.message("checkbox.should.build.project"))
-                        .bindSelected(optionsProvider.state::shouldBuildProject)
+                        .bindSelected(projectOptions.state::shouldBuildProject)
                 }
                 row {
                     checkBox(JupyterKotlinBundle.message("checkbox.should.add.libraries"))
-                        .bindSelected(optionsProvider.state::shouldAddProjectLibrariesToClasspath)
+                        .bindSelected(projectOptions.state::shouldAddProjectLibrariesToClasspath)
                 }
             }
             group(JupyterKotlinBundle.message("kotlin.jupyter.settings.typeHints")) {
                 row(null) {
                     checkBox(JupyterKotlinBundle.message("checkbox.should.typehint.only.active.cell"))
-                        .bindSelected(optionsProvider.state::shouldLimitTypeHintsByActiveCell)
+                        .bindSelected(projectOptions.state::shouldLimitTypeHintsByActiveCell)
                 }
             }
             group(JupyterKotlinBundle.message("kotlin.jupyter.settings.appearance")) {
                 row(null) {
                     checkBox(JupyterKotlinBundle.message("checkbox.should.show.execution.count"))
-                        .bindSelected(optionsProvider.state::shouldShowExecutionCount)
+                        .bindSelected(applicationOptions.state::shouldShowExecutionCount)
                         .onApply { refreshEditors() }
                 }
             }
