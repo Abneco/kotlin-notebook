@@ -59,6 +59,8 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
     private val updateScope = CoroutineScope(Dispatchers.Default)
     private val projectOptionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
     private val codeAnalyzer = DaemonCodeAnalyzer.getInstance(project)
+    private val codeAnalyzerStatus = DaemonCodeAnalyzerStatusService.getInstance(project)
+    private val fastUpdateQueueGuardMark = AtomicReference(false)
 
     private val stateLock = ReentrantReadWriteLock()
 
@@ -118,8 +120,9 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                         val dff = System.currentTimeMillis() - (savedLastCancelTime ?: 0)
                         if (dff > 350) {
                             val queue = doc?.getUserData(NotebookQueuedTargetRanges)
-                            if (queue != null && !DaemonCodeAnalyzerStatusService.getInstance(project).daemonRunning && queue.size > 2) {
-                                queue.clear()
+                            // we don't want to lose any updates happened during concurrent modification or delay
+                            if ((queue?.size ?: 0) > 2 && !codeAnalyzerStatus.daemonRunning && !fastUpdateQueueGuardMark.compareAndSet(true, false)) {
+                                queue?.clear()
                             }
                             if (doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
                                 JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile)
@@ -152,6 +155,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
         if ((ord == lastCellInd && isGoodState) || isFirstRun) return
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastTimeCellFocusChanged < 500) { // might be reworked
+            fastUpdateQueueGuardMark.compareAndSet(false, true)
             deferredFastUpdate?.cancel()
             deferredFastUpdate = updateScope.async {
                 launch {
