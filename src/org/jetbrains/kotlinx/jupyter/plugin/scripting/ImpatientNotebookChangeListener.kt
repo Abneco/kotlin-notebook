@@ -28,6 +28,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.min
 
 
 internal enum class NotebookChangeEventsType {
@@ -41,6 +42,9 @@ class ImpatientNotebookChangeListener(
     private val project: Project,
     private val virtualFile: BackedNotebookVirtualFile
 ): DocumentListener {
+    companion object {
+        private val sampleTextRangeRef = TextRange(1, 1)
+    }
     private val injectedManager = InjectedLanguageManager.getInstance(project)
     private var lastTimeCellChangeActionPerformed = 0L
     private var lastAdjustedRange: TextRange? = null
@@ -64,12 +68,12 @@ class ImpatientNotebookChangeListener(
         if (document == null || psiFile == null) return
         val lineOfChange = document.getLineNumber(event.offset)
         val allLines = document.text.lines()
-        val neededCellIndex = allLines.take(lineOfChange).count {
-            it.contains("#%%")
-        }
         val editor = document.retrieveEditor(file.file, project)
+        val neededCellIndex = editor?.getCell(min(lineOfChange, editor.document.lineCount - 1))?.ordinal?.let { it + 1 }
+            ?: allLines.take(lineOfChange).count {
+                it.contains("#%%")
+            }
 
-        //println("old needed cell ind: #$neededCellIndex, new: ${editor?.getCell(min(lineOfChange, editor.document.lineCount - 1))}")
         val cellSize = psiCells?.size ?: 0
 
         val eventsType = event.identifyEventChangeType()
@@ -95,13 +99,7 @@ class ImpatientNotebookChangeListener(
             return
         } else cellsAffectedByReformat.clear()
 
-        val delta = if (event.newLength > event.oldLength) event.newLength else -event.oldLength
-
         var properCellIndexOrNull = if (isSingleDeleteEvent) actualCellIndex - 1 else if (isAddEvent) neededCellIndex else actualCellIndex
-        val cellRange = cellOfChange.textRange
-        var properTextRange
-            = if (isCellListChange) TextRange(event.offset, event.offset + event.newLength)
-              else cellRange.createSafeTextRangeWithDelta(delta)
 
         // heuristic on cell move event
         if (isCellListChange) {
@@ -119,14 +117,13 @@ class ImpatientNotebookChangeListener(
                 }
 
                 isSingleDeleteEvent = false
-                properTextRange = properTextRange.union(last).createSafeTextRangeWithDelta(delta)
             } else {
                 lastTimeCellChangeActionPerformed = System.currentTimeMillis()
             }
             // no other way to indicate size changed in CaretListener
             document.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(false, true)
 
-            lastAdjustedRange = properTextRange
+            lastAdjustedRange = sampleTextRangeRef
         } else lastAdjustedRange = null
 
         val renameRange = synchronized(document) { document.getUserData(RenamingEnclosedRange) }
@@ -174,19 +171,6 @@ class ImpatientNotebookChangeListener(
         else if (oldFragment.contains("#%%") && isNewEmpty)
             NotebookChangeEventsType.CELL_LIST_DELETE_EVENT
         else NotebookChangeEventsType.REGULAR
-    }
-
-    private fun invokeHeuristicOnCellMove(targetTextRange: TextRange): TextRange {
-        val currentTime = System.currentTimeMillis()
-        var range = targetTextRange
-        val last = lastAdjustedRange
-        if (currentTime - lastTimeCellChangeActionPerformed < 200 && last != null) {
-            range = range.union(last)
-        } else {
-            lastTimeCellChangeActionPerformed = System.currentTimeMillis()
-        }
-        lastAdjustedRange = range
-        return range
     }
 
     private fun Document.handleWholeRefactorAction(targets: MutableSet<Int>) {
