@@ -8,6 +8,8 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.JavaSdk
+import com.intellij.openapi.projectRoots.ProjectJdkTable
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 
 @Service(Service.Level.PROJECT)
@@ -26,6 +28,7 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
 
     class State : BaseState() {
         var jdkPath by string(null)
+        var jdkName by string(null)
         var heapMaxLimitInMib by property(DEFAULT_HEAP_MAX_LIMIT_MIB)
         var extraJvmArguments by list<String>()
         var shouldBuildProject by property(false)
@@ -33,7 +36,22 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
         var shouldAddProjectLibrariesToClasspath by property(false)
         var shouldShowExecutionCount by property(true)
 
-        val jdk: KotlinNotebookJdkOption get() = KotlinNotebookJdkOption.fromPath(jdkPath)
+        val jdk: KotlinNotebookJdkOption
+            get() {
+                migrateJdkPath()
+                return KotlinNotebookJdkOption.fromName(jdkName)
+            }
+
+        internal fun migrateJdkPath() {
+            if (jdkName == null && jdkPath != null) {
+                // migration from jdkPath to jdkName
+                val jdk = ProjectJdkTable.getInstance().getSdksOfType(JavaSdk.getInstance()).firstOrNull {
+                    it.homePath == jdkPath
+                }
+                jdkName = jdk?.name
+                jdkPath = null
+            }
+        }
     }
 
     class PresentableNameGetter : com.intellij.openapi.components.State.NameGetter() {

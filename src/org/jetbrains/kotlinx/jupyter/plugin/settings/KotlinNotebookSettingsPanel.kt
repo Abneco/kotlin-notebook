@@ -5,11 +5,9 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.projectRoots.JavaSdk
-import com.intellij.openapi.projectRoots.ProjectJdkTable
-import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ui.configuration.SdkComboBox
 import com.intellij.openapi.roots.ui.configuration.SdkComboBoxModel
+import com.intellij.openapi.roots.ui.configuration.SdkListItem
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.Row
@@ -91,31 +89,30 @@ object KotlinNotebookSettingsPanel {
             val sdkModel = sdkComboBox.model.sdksModel
             cell(sdkComboBox)
                 .onReset {
-                    val projectItem = sdkComboBox.showProjectSdkItem()
-                    val jdk = state.jdk
-                    val jdkPath = jdk.getPath(project)
-                    if (jdkPath != null) {
-                        val jdks = ProjectJdkTable.getInstance().getSdksOfType(JavaSdk.getInstance())
-                        val sdk: Sdk? = jdks.firstOrNull { it.homePath == jdkPath }
-                        if (sdk != null) {
-                            sdkComboBox.setSelectedSdk(sdk)
-                        }
-                    } else if (jdk is ProjectJdkOption) {
-                        sdkComboBox.selectedItem = projectItem
+                    val jdkName = state.jdkName
+                    if (jdkName != null) {
+                        sdkComboBox.setSelectedSdk(jdkName)
+                    } else {
+                        sdkComboBox.selectedItem = SdkListItem.ProjectSdkItem()
                     }
                 }
                 .onIsModified {
-                    val selectedOption = KotlinNotebookJdkOption.fromPath(sdkComboBox.getSelectedSdk()?.homePath)
-                    sdkModel.isModified || state.jdk.getPath(project) != selectedOption.getPath(project)
+                    sdkModel.isModified || state.jdkName != sdkComboBox.selectedSdkName
                 }
                 .onApply {
                     if (sdkModel.isModified) {
                         sdkModel.apply()
                     }
-                    state.jdkPath = sdkComboBox.getSelectedSdk()?.homePath
+                    state.jdkName = sdkComboBox.selectedSdkName
                 }
         }
     }
+
+    private val SdkComboBox.selectedSdkName: String?
+        get() {
+            if (selectedItem is SdkListItem.ProjectSdkItem) return null
+            return getSelectedSdk()?.name
+        }
 
     private fun refreshEditors() {
         EditorFactory.getInstance().allEditors.forEach {

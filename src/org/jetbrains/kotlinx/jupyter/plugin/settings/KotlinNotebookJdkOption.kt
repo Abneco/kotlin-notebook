@@ -14,16 +14,16 @@ sealed interface KotlinNotebookJdkOption {
     fun getPath(project: Project): String?
 
     companion object {
-        fun fromPath(path: String?): KotlinNotebookJdkOption {
-            if (path == null) return ProjectJdkOption
-            return JdkOptionWithPath(path)
+        fun fromName(name: String?): KotlinNotebookJdkOption {
+            if (name == null) return ProjectJdkOption
+            return NamedJdkOption(name)
         }
     }
 }
 
-class JdkOptionWithPath(val homePath: String): KotlinNotebookJdkOption {
-    override fun getPath(project: Project): String {
-        return homePath
+class NamedJdkOption(private val name: String): KotlinNotebookJdkOption {
+    override fun getPath(project: Project): String? {
+        return ProjectJdkTable.getInstance().findJdk(name, JavaSdk.getInstance().name)?.homePath
     }
 }
 
