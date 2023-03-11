@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin
 import com.intellij.lang.Language
 import com.intellij.lang.injection.MultiHostInjector
 import com.intellij.lang.injection.MultiHostRegistrar
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
@@ -69,7 +70,12 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
                 if ((ranges.magicRanges?.size ?: 0) > 1 || isCommand) {
                     ranges.magicRanges?.inject(metaLanguage, JKTMetaFileType.EXTENSION)
                 }
-            } catch (_: RuntimeException) {} // ignore concurrent change in NotebookVirtualFileSystem
+            } catch (e: RuntimeException) {
+                // ignore concurrent change in NotebookVirtualFileSystem
+                if (e is ProcessCanceledException) {
+                    throw e
+                }
+            }
         }
     }
 
