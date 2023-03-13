@@ -1,13 +1,14 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.actions.refactor
 
+import com.intellij.injected.editor.DocumentWindow
+import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.impl.FinishMarkAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.ImaginaryEditor
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.Pair
 import com.intellij.openapi.util.TextRange
@@ -32,6 +33,7 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
+import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showExistingUsagesMessage
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showRerunActionNeeded
@@ -42,6 +44,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier
+import org.jetbrains.plugins.notebooks.visualization.getCell
 
 
 class NotebookMemberInplaceRenamer(
@@ -55,6 +58,10 @@ class NotebookMemberInplaceRenamer(
     private var foundRefsSize: Int = 0
     private val prevClassData = myElementToRename.containingFile.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)
     private val fileSuffix: String get() = JupyterCompilerService.getInstance(originalElement.project).fileSuffix
+    private val topLevelDocument = when (val d = myEditor.document) {
+        is DocumentWindow -> d.delegate
+        else -> d
+    }
 
     override fun performRenameInner(element: PsiElement?, newName: String?) {
         super.performRenameInner(element, newName)
@@ -84,13 +91,17 @@ class NotebookMemberInplaceRenamer(
             private val injectedManager = InjectedLanguageManager.getInstance(element.project)
             private val elementHost = injectedManager.getInjectionHost(element.containingFile)
             private var adjustmentTextRange: Collection<TextRange>? = null
+            private val topLevelEditor = when (myEditor) {
+                is EditorWindow -> (myEditor as EditorWindow).delegate
+                else -> myEditor
+            }
 
             override fun performRefactoring(usages: Array<out UsageInfo>) {
                 if (foundRefsSize > 0) {
                     showRerunActionNeeded(myProject)
                     val hostFile = injectedManager.getTopLevelFile(element)
                     if (adjustmentTextRange != null) {
-                        FileDocumentManager.getInstance().getDocument(hostFile.virtualFile)?.let {
+                        topLevelDocument.let {
                             it.putUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX,
                                            hostFile?.getNotebookCellList()?.indexOf(originalHostInvocation))
                             it.putUserData(RenamingEnclosedRange, adjustmentTextRange)
@@ -115,6 +126,7 @@ class NotebookMemberInplaceRenamer(
                     if (size == ans.size) {
                         showRerunActionNeeded(myProject)
                         val targetHostRanges = mutableSetOf<TextRange>()
+                        val targetHostIndxs = mutableSetOf<Int>()
                         elementHost?.textRange?.let {
                             targetHostRanges.add(it)
                         }
@@ -122,12 +134,20 @@ class NotebookMemberInplaceRenamer(
                             val el = it.element?.containingFile
                             if (el != null) {
                                 injectedManager.getInjectionHost(el)?.textRange?.let { host ->
+                                    targetHostIndxs.addIfNotNull(
+                                        topLevelEditor.getCell(
+                                            topLevelDocument.getLineNumber(host.startOffset)
+                                        ).ordinal
+                                    )
                                     targetHostRanges.add(host)
                                 }
                             }
                         }
                         if (targetHostRanges.isNotEmpty()) {
                             adjustmentTextRange = targetHostRanges
+                            topLevelDocument.getUserData(NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges)?.let {
+                                it.addAll(targetHostIndxs)
+                            }
                         }
                         return ans.toTypedArray()
                     }

@@ -110,7 +110,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                             lastCellInd = editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it).ordinal } ?: floatingCellInd
                             floatingCellInd = -1
                         }
-                        val isAfterRenaming = doc?.getUserData(RenamingEnclosedRange) != null
                         val lastCellIndCopy = lastCellInd
 
 
@@ -128,12 +127,9 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                                 JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile)
                             }
                         }
-                        if (dff < 600) invokeLater {
-                            LOG.warn("Requesting HL restart after recent cancelled event")
+                        if (dff < 600 && !codeAnalyzerStatus.daemonRunning) invokeLater {
+                            LOG.warn("Requesting HL restart after recent cancelled event with dff: $dff")
                             psiFile?.restartAnalyzing()
-                        }
-                        if (isAfterRenaming) {
-                            lastCellInd = 0
                         }
                     }
                 }

@@ -13,12 +13,13 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
+import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlinx.jupyter.plugin.file.getInjectedKtFiles
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.ReformatDocumentActionTargets
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.retrieveCellIntervalUnderCaret
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
@@ -44,6 +45,9 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
         val injectedManager = InjectedLanguageManager.getInstance(project)
         if (!asPsiFile.isValid) {
             //injectedManager.getTopLevelFile(asPsiFile)
+            return
+        }
+        if (document.getUserData(RenamingEnclosedRange) != null) {
             return
         }
 
@@ -72,16 +76,15 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
                 document.getUserData(ReformatDocumentActionTargets)
             }
             document.putUserData(ReformatDocumentActionTargets, null)
-            if (invokedInCell != null) {
-                document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
+            if (invokedInCell?.ordinal != null) {
+                document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, invokedInCell.ordinal)
             }
             document.putUserData(NotebookDocumentTargetRanges, targets)
-            invokedInCell?.ordinal?.let {
-                document.putUserData(CompleteHighlightingRange, cellList[it]?.textRange)
-            }
 
-            invokeLater {
-                asPsiFile.restartAnalyzing()
+            if (!DaemonCodeAnalyzerStatusService.getInstance(project).daemonRunning) {
+                invokeLater {
+                    asPsiFile.restartAnalyzing()
+                }
             }
         }
         document.putUserData(ReformatDocumentActionTargets, mutableSetOf())
