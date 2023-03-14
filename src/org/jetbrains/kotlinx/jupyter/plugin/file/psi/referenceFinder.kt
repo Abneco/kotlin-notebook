@@ -127,13 +127,13 @@ object NotebookReferenceFinder {
 
     private fun getProperUsagesForTargetElement(injectionHost: PsiLanguageInjectionHost, possibleClassNames: Set<String>?, element: PsiElement, targetElement: PsiElement): List<NavigatablePsiElement> {
         val result = mutableListOf<NavigatablePsiElement>()
-        val targetName = if (targetElement is KtObjectDeclaration) targetElement.nameAsSafeName.asString() else targetElement.text
+        val targetName: String? = if (targetElement is KtObjectDeclaration) targetElement.nameAsSafeName.asString() else targetElement.text
         val targetDeclaration = targetElement.parentOfType<KtDeclaration>(true) ?: return result
         element.containingFile.acceptChildren(object : PsiRecursiveElementVisitor() {
             override fun visitElement(element: PsiElement) {
                 if ((element.elementType is KtNameReferenceExpressionElementType || element is KtCallExpression)
                     // collect all similar expressions and then decide do they correspond to a one KtFile
-                    && element.textMatches(targetName)) {
+                    && targetName != null && element.textMatches(targetName)) {
                     //val properNameElement = if (element is KtCallExpression) element.calleeExpression else element
                     val resolvedRefInfo = referenceResolver.tryResolveQualifier(element)
                     if (targetDeclaration.containingFile == resolvedRefInfo?.containingFile && element.reference?.isReferenceTo(targetDeclaration) == true) {
