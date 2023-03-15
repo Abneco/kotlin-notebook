@@ -10,6 +10,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdk
 import com.intellij.openapi.projectRoots.ProjectJdkTable
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 
 @Service(Service.Level.PROJECT)
@@ -26,14 +27,30 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
         const val DEFAULT_HEAP_MAX_LIMIT_MIB = 3256
     }
 
+    @RequiresEdt
+    internal fun getNotebookSettingsToMigrate() : KotlinNotebookSettings? {
+        if (state.isPerNotebookSettingsMigrated) return null
+        return KotlinNotebookSettings(state.shouldBuildProject, state.shouldAddProjectLibrariesToClasspath)
+    }
+
+    @RequiresEdt
+    internal fun markNotebookSettingsMigrated() {
+        state.isPerNotebookSettingsMigrated = true
+        state.shouldBuildProject = false
+        state.shouldAddProjectLibrariesToClasspath = false
+    }
+
     class State : BaseState() {
         var jdkPath by string(null)
         var jdkName by string(null)
         var heapMaxLimitInMib by property(DEFAULT_HEAP_MAX_LIMIT_MIB)
         var extraJvmArguments by list<String>()
-        var shouldBuildProject by property(false)
         var shouldLimitTypeHintsByActiveCell by property(false)
+
+        // these properties are migrated to per-notebook properties
+        var shouldBuildProject by property(false)
         var shouldAddProjectLibrariesToClasspath by property(false)
+        var isPerNotebookSettingsMigrated by property(false)
 
         val jdk: KotlinNotebookJdkOption
             get() {

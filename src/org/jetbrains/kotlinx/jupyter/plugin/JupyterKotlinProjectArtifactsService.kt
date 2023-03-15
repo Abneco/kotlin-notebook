@@ -33,10 +33,12 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.concurrency.asDeferred
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettingsCache
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSettings
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
 import org.jetbrains.kotlinx.jupyter.plugin.util.parentsWithSelf
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import java.io.File
@@ -44,13 +46,13 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 
-enum class DependenciesState {
+private enum class DependenciesState {
     PROVIDED,
     OUTDATED,
     ABSENT
 }
 
-data class BuildResult(val artifacts: ProjectArtifacts, val state: DependenciesState) {
+private data class BuildResult(val artifacts: ProjectArtifacts, val state: DependenciesState) {
     companion object {
         val EMPTY = BuildResult(emptyList(), DependenciesState.PROVIDED)
     }
@@ -61,7 +63,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
     private val buildResultCache: BaseCache<BuildResult> = BuildResultCache(project, this)
     private val librariesCache: BaseCache<ProjectArtifacts> = LibrariesCache(project, coroutineScope)
 
-    private val sessionData = mutableMapOf<String, MutableSet<String>>()
+    private val sessionData = mutableMapOf<String, SessionData>()
     private val sessionDataLock = ReentrantLock()
 
     private var firstRun: Boolean = true
@@ -125,37 +127,39 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
         project.messageBus.connect(this).subscribe(JupyterRuntimeService.Listener.TOPIC, sessionListener)
     }
 
-    suspend fun buildProject(): BuildResult {
-        val options = KotlinNotebookProjectOptionsProvider.getInstance(project).state
-        val isBuildProject = options.shouldBuildProject
-        if (!isBuildProject) return BuildResult.EMPTY
+    private suspend fun JupyterKotlinProjectArtifactsService.buildProject(settings: KotlinNotebookSettings): BuildResult {
+        if (!settings.isBuildProject) return BuildResult.EMPTY
 
         return buildResultCache.getValue()
     }
 
-    suspend fun getLibraries(): ProjectArtifacts {
-        val options = KotlinNotebookProjectOptionsProvider.getInstance(project).state
-        val isAddLibraries = options.shouldAddProjectLibrariesToClasspath
-        if (!isAddLibraries) return emptyList()
+    private suspend fun JupyterKotlinProjectArtifactsService.getLibraries(settings: KotlinNotebookSettings): ProjectArtifacts {
+        if (!settings.isAddProjectLibrariesToClasspath) return emptyList()
 
         return librariesCache.getValue()
     }
 
-    private fun getOnlyNewArtifacts(sessionId: String, allArtifacts: Collection<String>): Collection<String> {
-        return sessionDataLock.withLock {
-            val oldArtifacts = sessionData.getOrPut(sessionId) { mutableSetOf() }
-            val newArtifacts = allArtifacts.filter { it !in oldArtifacts }
-            oldArtifacts.addAll(newArtifacts)
-            newArtifacts
+    fun registerSession(session: JupyterNotebookSession) {
+        val file = session.virtualFile ?: return
+        sessionDataLock.withLock {
+            sessionData[session.sessionId] = SessionData(file, mutableSetOf())
         }
     }
 
     fun getNewArtifactsForSession(sessionId: String): Collection<String> {
+        val (virtualFile, oldArtifacts) = sessionDataLock.withLock { sessionData[sessionId] } ?: return emptyList()
+
+        val notebookSettings = KotlinNotebookPerFileSettingsCache.getInstance(project).getSettings(virtualFile)
+
         val (buildProjectResult, libraries) = runBlocking {
-            Pair(buildProject(), getLibraries())
+            Pair(buildProject(notebookSettings), getLibraries(notebookSettings))
         }
         val allArtifacts = buildProjectResult.artifacts + libraries
-        val newArtifacts = getOnlyNewArtifacts(sessionId, allArtifacts)
+        val newArtifacts = sessionDataLock.withLock {
+            val newArtifacts = allArtifacts.filter { it !in oldArtifacts }
+            oldArtifacts.addAll(newArtifacts)
+            newArtifacts
+        }
 
         when (buildProjectResult.state) {
             DependenciesState.OUTDATED -> NotebookNotificationUtility.showOutdatedDependencies(project)
@@ -175,6 +179,8 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
     }
 
     override fun dispose() = Unit
+
+    private data class SessionData(val file: BackedNotebookVirtualFile, val artifactsCache: MutableSet<String>)
 
     private class BuildResultCache(private val project: Project, parent: Disposable) : BaseCache<BuildResult>(BuildResult.EMPTY),
                                                                                        Disposable {
@@ -301,6 +307,11 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
 
         fun getInstance(project: Project): JupyterKotlinProjectArtifactsService {
             return project.service()
+        }
+
+        suspend fun JupyterKotlinProjectArtifactsService.buildProjectAndGetLibraries(notebookFile: BackedNotebookVirtualFile): ProjectArtifacts {
+            val settings = KotlinNotebookPerFileSettingsCache.getInstance(project).getSettings(notebookFile)
+            return buildProject(settings).artifacts + getLibraries(settings)
         }
     }
 }

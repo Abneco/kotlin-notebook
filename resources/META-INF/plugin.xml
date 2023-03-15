@@ -141,5 +141,18 @@
         <action id="CreateNewKotlinNotebook" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterNotebookCreateAction">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="JupyterCreateFileAction"/>
         </action>
+        <action id="ToggleBuildProjectAction" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterToggleBuildProjectAction"/>
+        <action id="ToggleAddProjectLibrariesAction" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterToggleAddProjectLibrariesAction"/>
+
+        <group id="KotlinJupyterSettingsActions" popup="true" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterSettingsActions">
+            <reference id="ToggleBuildProjectAction"/>
+            <reference id="ToggleAddProjectLibrariesAction"/>
+        </group>
+
+        <group id="KotlinJupyterEditorPopupActions" compact="true">
+            <separator/>
+            <reference id="KotlinJupyterSettingsActions"/>
+            <add-to-group group-id="JupyterEditorPopupActions"/>
+        </group>
     </actions>
 </idea-plugin>

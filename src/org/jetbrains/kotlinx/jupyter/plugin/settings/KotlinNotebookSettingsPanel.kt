@@ -31,14 +31,6 @@ object KotlinNotebookSettingsPanel {
                 createJdkComboBox(project, projectOptions.state, parentDisposable)
                 createMaxHeapSizeSpinner(projectOptions.state)
                 createExtraJvmArgumentsField(projectOptions.state)
-                row {
-                    checkBox(JupyterKotlinBundle.message("checkbox.should.build.project"))
-                        .bindSelected(projectOptions.state::shouldBuildProject)
-                }
-                row {
-                    checkBox(JupyterKotlinBundle.message("checkbox.should.add.libraries"))
-                        .bindSelected(projectOptions.state::shouldAddProjectLibrariesToClasspath)
-                }
             }
             group(JupyterKotlinBundle.message("kotlin.jupyter.settings.typeHints")) {
                 row(null) {

@@ -13,6 +13,8 @@ class JupyterKotlinRuntimeServiceListener : JupyterRuntimeService.Listener {
     override fun sessionCreated(session: JupyterNotebookSession) {
         if (!session.isKotlinNotebookSession()) return
 
+        JupyterKotlinProjectArtifactsService.getInstance(session.project).registerSession(session)
+
         val initCode = """
                         ${KotlinNotebookCodegen.generateSessionOptions(resolveSources = true, serializeScriptData = true)}
                         ${KotlinNotebookCodegen.generateColorSchemeChangeCode()}
