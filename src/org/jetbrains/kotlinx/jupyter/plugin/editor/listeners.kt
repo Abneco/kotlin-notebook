@@ -24,12 +24,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
+import org.jetbrains.kotlin.idea.refactoring.invokeOnceOnCommandFinish
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookEditorCaretListenerReferenceKey
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
@@ -38,6 +40,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.tryWithWriteLock
+import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
@@ -79,6 +82,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
     init {
         assert(psiFile != null)
         doc?.putUserData(NotebookCellsUpdatesAllowedToChange, AtomicReference(true))
+        editor.putUserData(NotebookEditorCaretListenerReferenceKey, this)
         project.messageBus.connect().subscribe(DAEMON_EVENT_TOPIC, object : DaemonListener {
             private val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
 
@@ -226,6 +230,19 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             invokeLater {
                 codeAnalyzer.restart(it)
             }
+        }
+    }
+
+    fun resetState() {
+        stateLock.withWriteLock {
+            deferredFastUpdate?.cancel()
+            lastCellInd = -1
+            floatingCellInd = -1
+            isFirstRun = true
+            lastCancelTime = null
+            lastCell = null
+            prevCell = null
+            lastTimeCellFocusChanged = 0L
         }
     }
 }

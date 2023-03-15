@@ -10,6 +10,7 @@ import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.colors.CodeInsightColors
+import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
@@ -32,11 +33,13 @@ import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.idea.editor.fixers.end
 import org.jetbrains.kotlin.idea.editor.fixers.start
+import org.jetbrains.kotlin.idea.refactoring.invokeOnceOnCommandFinish
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.invalidateTypeHintsRegistry
+import org.jetbrains.kotlinx.jupyter.plugin.editor.NotebookCaretListener
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
@@ -78,6 +81,8 @@ internal object NotebookHighlightingUtilityObject {
     internal val NotebookQueuedTargetRanges = Key.create<MutableSet<Int>>("notebook.document.target.queued")
     internal val NotebookDocumentStructureNontrivialChanged = Key.create<AtomicReference<Boolean>>("notebook.document.structure.changed")
     internal val NotebookCellsUpdatesAllowedToChange = Key.create<AtomicReference<Boolean>>("notebook.cells.updates.allowed.to.change")
+
+    internal val NotebookEditorCaretListenerReferenceKey = Key.create<CaretListener>("editor.notebook.stored.listener")
 
     internal val InjectedHostHasErrors = Key.create<AtomicReference<Boolean>>("injected.element.errors.found")
     internal val RenamingEnclosedRange: Key<Collection<TextRange>> = Key.create("notebook.after.rename.changed.range")
@@ -185,6 +190,11 @@ internal object NotebookHighlightingUtilityObject {
             JupyterKtScriptingSupport.getInstance(project).update()
         }
         invokeLater {
+            (document.getUserData(NotebookEditorCaretListenerReferenceKey) as? NotebookCaretListener)
+                ?.resetState()
+            document.getUserData(NotebookQueuedTargetRanges)?.addAll(
+                psiFile?.getNotebookCellList()?.indices?.toList() ?: listOf()
+            )
             psiFile?.restartAnalyzing()
         }
     }
