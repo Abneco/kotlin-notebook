@@ -18,6 +18,7 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
@@ -79,7 +80,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private fun addVFSChangesListener() {
-        val listener = object : BulkFileListener, Disposable {
+        val listener = object : BulkFileListener {
             private fun isChangingEvent(event: VFileEvent): Boolean {
                 val vFile = event.file ?: return false
 
@@ -96,13 +97,8 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
                     isBuildUpToDate.set(false)
                 }
             }
-
-            override fun dispose() {
-            }
         }
-        Disposer.register(this, listener)
-
-        project.messageBus.connect().subscribe(VirtualFileManager.VFS_CHANGES, listener)
+        project.messageBus.connect(this).subscribe(VirtualFileManager.VFS_CHANGES, listener)
     }
 
     private fun mainModules(project: Project): List<Module> {
@@ -210,8 +206,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         return buildAsyncResult?.await() ?: emptyList()
     }
 
-    override fun dispose() {
-    }
+    override fun dispose() = Unit
 
     companion object {
         private val LOG = logger<JupyterKotlinProjectArtifactsService>()
