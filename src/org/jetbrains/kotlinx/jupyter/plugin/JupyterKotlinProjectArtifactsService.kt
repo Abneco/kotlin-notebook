@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.build.BuildProgressListener
@@ -168,19 +168,16 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
                     if (library.name == JupyterCompilerService.scriptDependenciesLibName) {
                         emptyList()
                     } else {
-                        library
-                            .getFiles(OrderRootType.CLASSES)
-                            .mapNotNull { vFile ->
-                                File(vFile.presentableUrl)
-                                    .takeIf {
-                                        try {
-                                            it.exists()
-                                        } catch (e: SecurityException) {
-                                            false
-                                        }
-                                    }
-                                    ?.absolutePath
+                        library.getFiles(OrderRootType.CLASSES)
+                            .map { VfsUtilCore.virtualToIoFile(it) }
+                            .filter {
+                                try {
+                                    it.exists()
+                                } catch (_: SecurityException) {
+                                    false
+                                }
                             }
+                            .map { it.absolutePath }
                     }
                 }
             }
