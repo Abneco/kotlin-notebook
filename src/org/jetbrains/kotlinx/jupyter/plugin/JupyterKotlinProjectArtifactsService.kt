@@ -169,6 +169,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
                         emptyList()
                     } else {
                         library.getFiles(OrderRootType.CLASSES)
+                            // nio can't be used here since JarFileSystemImpl#getNioPath returns null for a jar root file
                             .map { VfsUtilCore.virtualToIoFile(it) }
                             .filter {
                                 try {
