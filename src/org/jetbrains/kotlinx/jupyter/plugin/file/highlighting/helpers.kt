@@ -116,7 +116,7 @@ internal object NotebookHighlightingUtilityObject {
     fun isLooksLikeNotebookDocument(document: Document): Boolean =
         FileDocumentManager.getInstance().getFile(document)?.extension == notebookDocumentFileExtension
 
-    fun isLooksLikeNotebookFile(file: PsiFile): Boolean =
+    fun looksLikeNotebookFile(file: PsiFile): Boolean =
         file.fileType.defaultExtension == notebookDocumentFileExtension
 
     fun Document.invalidateStateAfterCellExecution(executedCell: PsiLanguageInjectionHost? = null, executedCellInd: Int? = null) {

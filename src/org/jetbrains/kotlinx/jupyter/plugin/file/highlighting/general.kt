@@ -50,7 +50,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
     private val dummyTextChangeRange = TextRange(0, 0)
 
     override fun reduceRange(file: PsiFile, editor: Editor): Collection<TextRange>? {
-        if (!notebookCodeUtility.isLooksLikeNotebookFile(file)) return null
+        if (!notebookCodeUtility.looksLikeNotebookFile(file)) return null
 
         val jupyterFile = file as? JupyterFile ?: return null
         val document = FileDocumentManager.getInstance().getDocument(jupyterFile.virtualFile) ?: return null
