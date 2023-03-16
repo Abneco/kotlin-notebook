@@ -35,7 +35,6 @@ import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.idea.editor.fixers.end
 import org.jetbrains.kotlin.idea.editor.fixers.start
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.invalidateTypeHintsRegistry
@@ -65,6 +64,7 @@ internal object NotebookHighlightingUtilityObject {
     private const val notebookDocumentFileExtension: String = "ipynb"
     private val updateScope = CoroutineScope(Dispatchers.Default)
     private val LOG = thisLogger()
+    const val cellToHighlightLimit: Int = 15
 
     const val scriptingMissingDependencyPrefix = "MISSING"
     const val scriptingMissingClassError = "${scriptingMissingDependencyPrefix}_SCRIPT_RECEIVER_CLASS"
@@ -144,10 +144,6 @@ internal object NotebookHighlightingUtilityObject {
     fun Document.invalidateStateAfterCellExecution(executedCell: PsiLanguageInjectionHost? = null, executedCellInd: Int? = null) {
         putUserData(RenamingEnclosedRange, null)
         putUserData(NotebookDocumentTargetRanges, null)
-        getUserData(NotebookQueuedTargetRanges)?.let {
-          it.addIfNotNull(executedCellInd)
-          it.addIfNotNull(executedCellInd?.minus(1))
-        }
         putUserData(CompleteHighlightingRange, null)
         putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, executedCellInd)
     }

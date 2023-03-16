@@ -1,10 +1,15 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.cellToHighlightLimit
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scheduleHLUpdate
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
+import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
+import org.jetbrains.kotlinx.jupyter.plugin.util.trimToSize
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
@@ -44,12 +49,17 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
         }
     }
 
-    fun daemonFinished(file: BackedNotebookVirtualFile) = countersLock.write {
-        lastExecutedList[file]?.clear()
+    fun daemonFinished(file: BackedNotebookVirtualFile, project: Project, document: Document? = null) = countersLock.write {
+        val resulted = lastExecutedList[file]?.trimToSize(cellToHighlightLimit)
+        if (resulted?.isEmpty() == false) {
+            file.file.toPsiFile(project)?.scheduleHLUpdate(document)
+        }
     }
 
     fun getLastExecutedCellsList(file: BackedNotebookVirtualFile): Set<Int>
-        = countersLock.read { lastExecutedList[file] ?: mutableSetOf()  }
+        = countersLock.read { lastExecutedList[file]?.let { set ->
+            if (set.size < cellToHighlightLimit) set else set.take(cellToHighlightLimit).toSet()
+        } ?: mutableSetOf()  }
 
     // returns true if it was the last registered callback and was not after single run with error
     fun unregisterCallback(file: BackedNotebookVirtualFile, index: Int, onError: Boolean = false): Boolean {

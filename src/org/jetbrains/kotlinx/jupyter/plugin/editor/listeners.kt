@@ -134,7 +134,7 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                             // we don't want to lose any updates happened during concurrent modification or delay
                             if ((queue?.size ?: 0) > 2 && !codeAnalyzerStatus.daemonRunning && doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
                                 LOG.warn("Clearing HL queue")
-                                JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile)
+                                JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile, project, doc)
                                 queue?.clear()
                             }
                         }
