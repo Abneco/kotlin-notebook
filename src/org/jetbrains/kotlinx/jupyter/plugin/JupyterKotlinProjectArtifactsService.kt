@@ -23,10 +23,12 @@ import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.task.ProjectTaskContext
 import com.intellij.task.ProjectTaskManager
+import com.intellij.util.cancelOnDispose
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
 import org.jetbrains.concurrency.Promise
+import org.jetbrains.concurrency.asDeferred
 import org.jetbrains.concurrency.resolvedPromise
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
@@ -34,7 +36,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
 import org.jetbrains.kotlinx.jupyter.plugin.util.parentsWithSelf
 import java.io.File
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -48,7 +49,7 @@ enum class DependenciesState {
 
 @Service(Service.Level.PROJECT)
 class JupyterKotlinProjectArtifactsService(val project: Project, private val coroutineScope: CoroutineScope) : Disposable {
-    private var buildAsyncResult: Deferred<ProjectArtifacts>? = null
+    private var buildAsyncResult: Deferred<ProjectArtifacts> = CompletableDeferred(emptyList())
     private val isBuildUpToDate: AtomicBoolean = AtomicBoolean(false)
     private val fileExtensionsOfInterest = setOf(
         // source files
@@ -118,7 +119,6 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         }
     }
 
-    @Synchronized
     private fun buildProjectAsync(includeLibraryFiles: Boolean): Deferred<ProjectArtifacts> {
         isBuildUpToDate.set(true)
 
@@ -126,9 +126,8 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         val allFiles = if (includeLibraryFiles) {
             projectFiles.then { it + getLibraryFiles() }
         } else projectFiles
-        return coroutineScope.async {
-            allFiles.blockingGet(1, TimeUnit.DAYS).orEmpty()
-        }
+
+        return allFiles.asDeferred().also { it.cancelOnDispose(this) }
     }
 
     private fun getProjectFiles(): Promise<ProjectArtifacts> {
@@ -189,13 +188,14 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         val options = KotlinNotebookProjectOptionsProvider.getInstance(project).state
         if (!options.shouldBuildProject) return emptyList()
 
-        accessLock.withLock {
+        val deferredArtifacts = accessLock.withLock {
             val deferred = buildAsyncResult
-            if (deferred == null || (deferred.isCompleted && !isBuildUpToDate.get())) {
+            if (deferred.isCompleted && !isBuildUpToDate.get()) {
                 buildAsyncResult = buildProjectAsync(options.shouldAddProjectLibrariesToClasspath)
             }
+            buildAsyncResult
         }
-        return buildAsyncResult?.await() ?: emptyList()
+        return deferredArtifacts.await()
     }
 
     override fun dispose() = Unit
