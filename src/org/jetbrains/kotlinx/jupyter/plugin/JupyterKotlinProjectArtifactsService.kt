@@ -119,17 +119,6 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         }
     }
 
-    private fun buildProjectAsync(includeLibraryFiles: Boolean): Deferred<ProjectArtifacts> {
-        isBuildUpToDate.set(true)
-
-        val projectFiles = getProjectFiles()
-        val allFiles = if (includeLibraryFiles) {
-            projectFiles.then { it + getLibraryFiles() }
-        } else projectFiles
-
-        return allFiles.asDeferred().also { it.cancelOnDispose(this) }
-    }
-
     private fun getProjectFiles(): Promise<ProjectArtifacts> {
         val taskManager = ProjectTaskManager.getInstance(project)
 
@@ -191,7 +180,14 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         val deferredArtifacts = accessLock.withLock {
             val deferred = buildAsyncResult
             if (deferred.isCompleted && !isBuildUpToDate.get()) {
-                buildAsyncResult = buildProjectAsync(options.shouldAddProjectLibrariesToClasspath)
+                isBuildUpToDate.set(true)
+
+                val projectFiles = getProjectFiles()
+                val allFiles = if (options.shouldAddProjectLibrariesToClasspath) {
+                    projectFiles.then { it + getLibraryFiles() }
+                } else projectFiles
+
+                buildAsyncResult = allFiles.asDeferred()
             }
             buildAsyncResult
         }
