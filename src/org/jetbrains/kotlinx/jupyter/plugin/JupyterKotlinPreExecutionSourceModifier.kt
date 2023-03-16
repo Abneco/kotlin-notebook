@@ -1,6 +1,8 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.kotlinx.jupyter.plugin
 
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import kotlinx.coroutines.runBlocking
@@ -8,15 +10,21 @@ import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showAbsentDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showOutdatedDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.util.SKIP_PROJECT_BUILD_COMMENT
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.PreExecutionSourceModifier
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpec
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier {
+class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier, Disposable {
     private var firstRun: Boolean = true
     private val artifactsCache = mutableMapOf<String, MutableSet<String>>()
     private val artifactsCacheLock = ReentrantLock()
+
+    init {
+        registerSessionDeleteListener()
+    }
 
     override fun amendSource(project: Project, sessionId: String, kernelSpec: JupyterKernelSpec, source: String): String? {
         if (kernelSpec.language != "kotlin") return null
@@ -60,6 +68,9 @@ class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier {
         return amendedSource
     }
 
+    override fun dispose() {
+    }
+
     private fun getOnlyNewArtifacts(sessionId: String, allArtifacts: Collection<String>): Collection<String> {
         return artifactsCacheLock.withLock {
             val oldArtifacts = artifactsCache.getOrPut(sessionId) { mutableSetOf() }
@@ -67,5 +78,18 @@ class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier {
             oldArtifacts.addAll(newArtifacts)
             newArtifacts
         }
+    }
+
+    private fun registerSessionDeleteListener() {
+        ApplicationManager.getApplication().messageBus.connect(this).subscribe(
+            JupyterRuntimeService.Listener.TOPIC,
+            object : JupyterRuntimeService.Listener {
+                override fun sessionDeleted(session: JupyterNotebookSession) {
+                    artifactsCacheLock.withLock {
+                        artifactsCache.remove(session.sessionId)
+                    }
+                }
+            }
+        )
     }
 }
