@@ -9,6 +9,7 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -29,6 +30,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
@@ -68,7 +70,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         val cellUnderEditor = editor.getCell(document.getLineNumber(caretOffSet))
         cells?.ensureScriptConfigurations(ScriptConfigurationManager.getInstance(file.project),
                                                                InjectedLanguageManager.getInstance(file.project))
-        jupyterFile.ensureScriptManagerReady()
+        jupyterFile.ensureScriptManagerReady(document)
 
         return synchronized(document) {
             val cellIndx = document.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)
@@ -165,13 +167,14 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         }
     }
 
-    private fun PsiFile.ensureScriptManagerReady() {
+    private fun PsiFile.ensureScriptManagerReady(doc: Document) {
         val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
 
         if (scriptDefManager.isReady()) {
             if (JupyterCompilerService.getInstance(project).needToUpdateImplicitsReceiversIfAny) {
                 invokeLater {
                     LOG.warn("Requesting update of scripting after loading new classes in ${this.name}")
+                    doc.getUserData(NotebookCellsUpdatesAllowedToChange)?.compareAndSet(true, false)
                     JupyterKtScriptingSupport.getInstance(project).update()
                 }
                 throw ProcessCanceledException()

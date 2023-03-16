@@ -90,6 +90,12 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
 
             override fun daemonCancelEventOccurred(reason: String) {
                 lastCancelTime = System.currentTimeMillis()
+                if (reason.startsWith("Command")) {
+                    invokeOnceOnCommandFinish {
+                        psiFile?.restartAnalyzing()
+                    }
+                }
+                //println(reason)
             }
 
             override fun daemonFinished(fileEditors: MutableCollection<out FileEditor>) {
@@ -126,11 +132,10 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                         if (dff > 350) {
                             val queue = doc?.getUserData(NotebookQueuedTargetRanges)
                             // we don't want to lose any updates happened during concurrent modification or delay
-                            if ((queue?.size ?: 0) > 2 && !codeAnalyzerStatus.daemonRunning && !fastUpdateQueueGuardMark.compareAndSet(true, false)) {
-                                queue?.clear()
-                            }
-                            if (doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
+                            if ((queue?.size ?: 0) > 2 && !codeAnalyzerStatus.daemonRunning && doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
+                                LOG.warn("Clearing HL queue")
                                 JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile)
+                                queue?.clear()
                             }
                         }
                         if (dff < 600 && !codeAnalyzerStatus.daemonRunning) invokeLater {

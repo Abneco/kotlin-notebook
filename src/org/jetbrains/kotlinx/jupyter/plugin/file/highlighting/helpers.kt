@@ -27,13 +27,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import org.jetbrains.annotations.TestOnly
+import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.idea.editor.fixers.end
 import org.jetbrains.kotlin.idea.editor.fixers.start
-import org.jetbrains.kotlin.idea.refactoring.invokeOnceOnCommandFinish
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
@@ -92,6 +92,23 @@ internal object NotebookHighlightingUtilityObject {
     internal val ReformatDocumentActionTargets: Key<MutableSet<Int>> = Key.create("notebook.refactor.action.triggered")
 
     internal val NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX: Key<Int> = Key.create("notebook.document.target.cell.ind")
+
+    fun scheduleUpdateNoChecks(file: PsiFile, delayDelta: Long = 320, afterRequest: () -> Unit = {}) {
+        updateScope.async {
+            delay(delayDelta)
+            while (DaemonCodeAnalyzerStatusService.getInstance(file.project).daemonRunning) {
+                delay(200)
+            }
+            file.restartAnalyzing()
+            afterRequest()
+        }
+    }
+
+    fun PsiFile.scheduleHLUpdate(document: Document?) {
+        scheduleUpdateNoChecks(this) {
+            document?.getUserData(NotebookCellsUpdatesAllowedToChange)?.compareAndSet(false, true)
+        }
+    }
 
     fun scheduleUpdateLater(file: PsiFile, delayDelta: Long = 700) {
         updateScope.async {

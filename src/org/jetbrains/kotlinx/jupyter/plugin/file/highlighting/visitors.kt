@@ -62,7 +62,6 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
 
             helper.applyReceivedHighlightInfos(seenInfos, holder)
         } catch (e: Throwable) {
-            cellsAllowedToChangeMark?.compareAndSet(true, false)
             if (e is ProcessCanceledException) {
                 throw e
             }
@@ -70,7 +69,7 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
             return false
         }
 
-        cellsAllowedToChangeMark?.compareAndSet(false, true)
+        //cellsAllowedToChangeMark?.compareAndSet(false, true)
 
         return true
     }
