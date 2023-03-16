@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.fasterxml.jackson.databind.node.ArrayNode
@@ -269,7 +269,7 @@ class JupyterCompilerPerFileService(
     private fun updateClasspathWithProjectArtifactsAsync() {
         coroutineScope.async {
             val buildService = JupyterKotlinProjectArtifactsService.getInstance(projectService.project)
-            val artifacts = buildService.buildProject()
+            val artifacts = buildService.buildProject().artifacts + buildService.getLibraries()
             val updated = compileLock.withWriteLock {
                 val oldSize = _currentClasspath.size
                 _currentClasspath.addSnippet(artifacts.map { File(it) })
