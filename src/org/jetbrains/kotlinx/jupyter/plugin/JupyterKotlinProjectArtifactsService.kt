@@ -31,9 +31,12 @@ import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
+import org.jetbrains.kotlinx.jupyter.plugin.util.parentsWithSelf
 import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 
 enum class DependenciesState {
@@ -45,7 +48,6 @@ enum class DependenciesState {
 @Service(Service.Level.PROJECT)
 class JupyterKotlinProjectArtifactsService(val project: Project, private val coroutineScope: CoroutineScope) : Disposable {
     private var buildAsyncResult: Deferred<ProjectArtifacts>? = null
-    private var buildResult: ProjectArtifacts? = null
     private val isBuildUpToDate: AtomicBoolean = AtomicBoolean(false)
     private val fileExtensionsOfInterest = setOf(
         // source files
@@ -58,6 +60,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     )
     @Volatile
     private var currDependenciesState = DependenciesState.PROVIDED
+    private val accessLock = ReentrantLock()
 
     fun checkProjectDependenciesStatus(): DependenciesState = currDependenciesState
 
@@ -83,6 +86,8 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
                 val fileProjects = ProjectLocator.getInstance().getProjectsForFile(vFile)
                 if (project !in fileProjects) return false
 
+                // TODO: reconsider this approach, maybe create extra option
+                if (vFile.parentsWithSelf.any { it.isDirectory && it.name == "generated" }) return false
                 return vFile.extension in fileExtensionsOfInterest
             }
 
@@ -98,10 +103,6 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         Disposer.register(this, listener)
 
         project.messageBus.connect().subscribe(VirtualFileManager.VFS_CHANGES, listener)
-    }
-
-    fun getProjectBuildResult(): ProjectArtifacts? {
-        return buildResult
     }
 
     private fun mainModules(project: Project): List<Module> {
@@ -122,7 +123,6 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
 
     @Synchronized
     private fun buildProjectAsync(includeLibraryFiles: Boolean): Deferred<ProjectArtifacts> {
-        if (buildAsyncResult != null) return buildAsyncResult!!
         isBuildUpToDate.set(true)
 
         val taskManager = ProjectTaskManager.getInstance(project)
@@ -158,12 +158,11 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
                 }.distinct()
                 .filter { File(it).exists() }
 
-            if (hasErrors) {
-                val isEmpty = projectJarPaths.none { File(it).isNotEmptyDirectory }
-                if (!isEmpty) {
-                    currDependenciesState = DependenciesState.OUTDATED
-                } else currDependenciesState = DependenciesState.ABSENT
-            } else currDependenciesState = DependenciesState.PROVIDED
+            currDependenciesState = if (hasErrors) {
+                if (!projectJarPaths.none { File(it).isNotEmptyDirectory }) {
+                    DependenciesState.OUTDATED
+                } else DependenciesState.ABSENT
+            } else DependenciesState.PROVIDED
 
             val libraryFiles = if (!includeLibraryFiles) {
                 emptyList()
@@ -194,11 +193,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         }
 
         return coroutineScope.async {
-            val res = resultPromise.blockingGet(1, TimeUnit.DAYS).orEmpty()
-            buildResult = res
-            res
-        }.also {
-            buildAsyncResult = it
+            resultPromise.blockingGet(1, TimeUnit.DAYS).orEmpty()
         }
     }
 
@@ -206,13 +201,13 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         val options = KotlinNotebookProjectOptionsProvider.getInstance(project).state
         if (!options.shouldBuildProject) return emptyList()
 
-        val deferred = buildAsyncResult
-        return if (deferred != null && (!deferred.isCompleted || isBuildUpToDate.get())) {
-            deferred.await()
-        } else {
-            buildAsyncResult = null
-            buildProjectAsync(options.shouldAddProjectLibrariesToClasspath).await()
+        accessLock.withLock {
+            val deferred = buildAsyncResult
+            if (deferred == null || (deferred.isCompleted && !isBuildUpToDate.get())) {
+                buildAsyncResult = buildProjectAsync(options.shouldAddProjectLibrariesToClasspath)
+            }
         }
+        return buildAsyncResult?.await() ?: emptyList()
     }
 
     override fun dispose() {

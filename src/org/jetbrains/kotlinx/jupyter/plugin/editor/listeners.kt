@@ -5,6 +5,7 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DAEMON_EVENT_TOPIC
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DaemonListener
 import com.intellij.codeInsight.hints.InlayHintsPassFactory
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.thisLogger
@@ -20,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
@@ -53,7 +55,7 @@ internal enum class DaemonState {
 
 
 class NotebookCaretListener(private val project: Project, private val vFile: BackedNotebookVirtualFile,
-                            private val editor: Editor): CaretListener {
+                            private val editor: Editor): CaretListener, Disposable {
     companion object {
         private val LOG = thisLogger()
     }
@@ -215,6 +217,11 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             //println("Cell focus changed to $ord")
         }
         lastTimeCellFocusChanged = System.currentTimeMillis()
+    }
+
+    override fun dispose() {
+        deferredFastUpdate?.cancel()
+        updateScope.cancel()
     }
 
     private fun performRangedUpdate(reducedIndexes: Collection<Int>) {

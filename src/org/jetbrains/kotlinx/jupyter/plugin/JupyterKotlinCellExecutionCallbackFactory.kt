@@ -1,6 +1,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
@@ -25,15 +26,19 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
     private val lastExecutedList = mutableMapOf<BackedNotebookVirtualFile, MutableSet<Int>>()
     private val countersLock = ReentrantReadWriteLock()
 
-    private fun registerNewCallback(file: BackedNotebookVirtualFile, cellOrd: Int): Int {
+    private fun registerNewCallback(file: BackedNotebookVirtualFile, cellOrd: Int?): Int {
         return countersLock.write {
             val (cnt, pq) = callbacksCounters[file] ?: (0 to PriorityQueue<Int>())
-            val order = highlightOrder.getOrPut(file) { mutableSetOf() }
             if (pq.size > 1 && !pq.contains(-1)) {
                 pq.add(-1)
             }
-            order.add(cellOrd)
             pq.add(cnt)
+
+            if (cellOrd != null) {
+                val order = highlightOrder.getOrPut(file) { mutableSetOf() }
+                order.add(cellOrd)
+            }
+
             callbacksCounters[file] = (cnt + 1) to pq
             cnt
         }
@@ -85,6 +90,21 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
             file,
             cell,
             cellSource,
+            index,
+        )
+    }
+
+    fun createNotBoundCallback(
+        project: Project,
+        virtualFile: BackedNotebookVirtualFile,
+        source: String
+    ): JupyterExecutionCallback {
+        val index = registerNewCallback(virtualFile, null)
+        return JupyterKotlinCellExecutionCallback(
+            project,
+            virtualFile,
+            null,
+            source,
             index,
         )
     }

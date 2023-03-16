@@ -10,25 +10,30 @@ import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificatio
 import org.jetbrains.kotlinx.jupyter.plugin.util.SKIP_PROJECT_BUILD_COMMENT
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.PreExecutionSourceModifier
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpec
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier {
     private var firstRun: Boolean = true
+    private val artifactsCache = mutableMapOf<String, MutableSet<String>>()
+    private val artifactsCacheLock = ReentrantLock()
 
-    override fun amendSource(project: Project, kernelSpec: JupyterKernelSpec, source: String): String? {
+    override fun amendSource(project: Project, sessionId: String, kernelSpec: JupyterKernelSpec, source: String): String? {
         if (kernelSpec.language != "kotlin") return null
 
-        return addProjectDependencies(project, source)
+        return addProjectDependencies(project, sessionId, source)
     }
 
-    private fun addProjectDependencies(project: Project, source: String): String? {
+    private fun addProjectDependencies(project: Project, sessionId: String, source: String): String? {
         if (source.contains(SKIP_PROJECT_BUILD_COMMENT)) return null
         if (looksLikeReplCommand(source)) return null
 
         val artifactsService = JupyterKotlinProjectArtifactsService.getInstance(project)
-        val artifacts = runBlocking {
+        val allArtifacts = runBlocking {
             artifactsService.buildProject()
         }
-        if (artifacts.isEmpty()) return null
+        val newArtifacts = getOnlyNewArtifacts(sessionId, allArtifacts)
+        if (newArtifacts.isEmpty()) return null
 
         when (artifactsService.checkProjectDependenciesStatus()) {
             DependenciesState.OUTDATED -> showOutdatedDependencies(project)
@@ -45,7 +50,7 @@ class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier {
         firstRun = false
 
         val amendedSource = buildString {
-            for (artifact in artifacts) {
+            for (artifact in newArtifacts) {
                 append("@file:DependsOn(\"")
                 append(StringUtil.escapeStringCharacters(artifact))
                 append("\")\n")
@@ -53,5 +58,14 @@ class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier {
             append(source)
         }
         return amendedSource
+    }
+
+    private fun getOnlyNewArtifacts(sessionId: String, allArtifacts: Collection<String>): Collection<String> {
+        return artifactsCacheLock.withLock {
+            val oldArtifacts = artifactsCache.getOrPut(sessionId) { mutableSetOf() }
+            val newArtifacts = allArtifacts.filter { it !in oldArtifacts }
+            oldArtifacts.addAll(newArtifacts)
+            newArtifacts
+        }
     }
 }

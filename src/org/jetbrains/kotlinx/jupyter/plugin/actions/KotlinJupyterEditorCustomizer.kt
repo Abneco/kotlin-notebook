@@ -6,6 +6,8 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.EditorColorsListener
 import com.intellij.openapi.editor.colors.EditorColorsManager
+import com.intellij.openapi.editor.ex.EditorEx
+import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.NotebookCaretListener
@@ -21,8 +23,8 @@ class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
 
         editor.putUserData(FoldingUpdate.INJECTED_CODE_FOLDING_ENABLED, false)
         if (editor.isJupyter) {
-            val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-            editor.caretModel.addCaretListener(NotebookCaretListener(project, virtualFile, editor), compilerService)
+            val compilerService = JupyterCompilerService.getInstance(project)
+            editor.caretModel.addCaretListener(NotebookCaretListener(project, virtualFile, editor), (editor as? EditorImpl)?.disposable ?:compilerService)
             ApplicationManager.getApplication().messageBus.connect()
                 .subscribe(EditorColorsManager.TOPIC,
                            EditorColorsListener {

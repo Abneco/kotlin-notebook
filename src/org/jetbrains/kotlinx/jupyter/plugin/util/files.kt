@@ -39,4 +39,6 @@ fun Project.isInsideSourceRoot(vFile: VirtualFile): Boolean {
     }
 }
 
+val VirtualFile.parentsWithSelf: Sequence<VirtualFile> get() = generateSequence(this) { it.parent }
+
 typealias ProjectArtifacts = List<String>

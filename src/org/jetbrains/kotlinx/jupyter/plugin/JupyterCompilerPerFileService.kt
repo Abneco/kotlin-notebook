@@ -210,7 +210,6 @@ class JupyterCompilerPerFileService(
     init {
         updateClasspathWithExternalDependencies()
         Disposer.register(projectService, this)
-        //syncWithSyntaxDaemonAnalyzer()
 
         val doc = runReadAction {
             FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
@@ -218,7 +217,7 @@ class JupyterCompilerPerFileService(
         if (virtualFile.file.isKotlinNotebook) {
             doc.addDocumentListener(
                 ImpatientNotebookChangeListener(projectService.project, virtualFile),
-                projectService
+                this
             )
         }
     }
@@ -238,16 +237,14 @@ class JupyterCompilerPerFileService(
 
     private fun updateClasspathWithExternalDependencies() {
         updateClasspathWithKernelJars()
-
-        coroutineScope.async {
-            updateClasspathWithProjectArtifacts()
-        }
+        updateClasspathWithProjectArtifactsAsync()
     }
 
     private fun updateClasspathWithKernelJars() {
         if (kernelJarsAdded) return
 
         compileLock.write {
+            if (kernelJarsAdded) return
             kernelJarsProviders.firstNotNullOfOrNull { provider ->
                 provider.getKernelJars()
             }?.let { jars ->
@@ -265,12 +262,20 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private suspend fun updateClasspathWithProjectArtifacts() {
-        val buildService = JupyterKotlinProjectArtifactsService.getInstance(projectService.project)
-        val artifacts =
-            buildService.getProjectBuildResult()
-                ?: buildService.buildProject()
-        _currentClasspath.addInitial(artifacts.map { File(it) })
+    private fun updateClasspathWithProjectArtifactsAsync() {
+        coroutineScope.async {
+            val buildService = JupyterKotlinProjectArtifactsService.getInstance(projectService.project)
+            val artifacts = buildService.buildProject()
+            val updated = compileLock.withWriteLock {
+                val oldSize = _currentClasspath.size
+                _currentClasspath.addSnippet(artifacts.map { File(it) })
+                val newSize = _currentClasspath.size
+                oldSize != newSize
+            }
+            if (updated) {
+                JupyterKtScriptingSupport.getInstance(projectService.project).update()
+            }
+        }
     }
 
     fun handleBeforeCompiling(
@@ -356,8 +361,8 @@ class JupyterCompilerPerFileService(
 
     fun addCompiledSnippet(
         snippetMetadata: EvaluatedSnippetMetadata,
-        cellSource: String,
-        psiCell: JupyterPsiCell,
+        cellSource: String?,
+        psiCell: JupyterPsiCell?,
     ) {
         compileLock.withWriteLock {
             try {
@@ -403,7 +408,9 @@ class JupyterCompilerPerFileService(
                 val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
                 implicitListsLoadQueue.addLast(Pair(lineClassesDir, kClassNames))
                 needsToUpdate.set(true)
-                updateInjectedCellInfo(snippetMetadata, psiCell)
+                if (psiCell != null) {
+                    updateInjectedCellInfo(snippetMetadata, psiCell)
+                }
             } catch (e: Exception) {
                 LOG.error(e)
             }
@@ -588,6 +595,8 @@ class JupyterCompilerPerFileService(
         private val snippetsPart: MutableSet<T> = mutableSetOf(),
     ) {
         private val lock = ReentrantReadWriteLock()
+
+        val size: Int get() = initialPart.size + snippetsPart.size
 
         fun clear() {
             lock.withWriteLock { snippetsPart.clear() }

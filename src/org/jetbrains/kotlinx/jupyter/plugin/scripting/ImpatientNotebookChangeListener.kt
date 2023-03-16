@@ -50,9 +50,11 @@ class ImpatientNotebookChangeListener(
     private var lastAdjustedRange: TextRange? = null
     private var cellsAffectedByReformat = mutableSetOf<Int>()
     init {
-        FileDocumentManager.getInstance().getDocument(virtualFile.file)?.let {
-            it.putUserData(NotebookDocumentStructureNontrivialChanged, AtomicReference(false))
-            it.putUserData(NotebookQueuedTargetRanges, mutableSetOf())
+        runReadAction {
+            FileDocumentManager.getInstance().getDocument(virtualFile.file)?.let {
+                it.putUserData(NotebookDocumentStructureNontrivialChanged, AtomicReference(false))
+                it.putUserData(NotebookQueuedTargetRanges, mutableSetOf())
+            }
         }
     }
 

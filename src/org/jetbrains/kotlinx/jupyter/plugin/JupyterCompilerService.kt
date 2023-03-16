@@ -4,16 +4,23 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ultimate.PluginVerifier
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
+import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
+import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
+import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelListener
 import java.io.File
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
@@ -37,6 +44,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
 
     init {
         PluginVerifier.verifyUltimatePlugin()
+        registerKernelRestartListener()
     }
 
     val initialClasspath: List<File> by lazy {
@@ -90,6 +98,11 @@ class JupyterCompilerService(val project: Project) : Disposable {
         return mapping.getOrPut(virtualFile.file) { JupyterCompilerPerFileService(virtualFile, this) }
     }
 
+    fun removeSession(virtualFile: BackedNotebookVirtualFile) {
+        get(virtualFile)?.let { Disposer.dispose(it) }
+        mapping.remove(virtualFile.file)
+    }
+
     fun get(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService? {
         return mapping[virtualFile.file]
     }
@@ -102,6 +115,15 @@ class JupyterCompilerService(val project: Project) : Disposable {
 
     fun afterScriptingUpdate() {
         mapping.forEach { (_, u) -> u.afterScriptingUpdate() }
+    }
+
+    private fun registerKernelRestartListener() {
+        ApplicationManager.getApplication().messageBus.connect(this)
+            .subscribe(JupyterRestartKernelListener.TOPIC, object : JupyterRestartKernelListener {
+                override fun inActionPerformed(notebookFile: BackedNotebookVirtualFile) {
+                    removeSession(notebookFile)
+                }
+            })
     }
 
     override fun dispose() {

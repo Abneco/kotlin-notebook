@@ -31,12 +31,10 @@ import kotlin.system.measureTimeMillis
 class JupyterKotlinCellExecutionCallback(
     private val project: Project,
     private val virtualFile: BackedNotebookVirtualFile,
-    private val psiCell: JupyterPsiCell,
+    private val psiCell: JupyterPsiCell?,
     private val cellSource: String,
     private val index: Int,
 ) : JupyterExecutionCallback {
-
-
     override val channel: JupyterMessageChannel
         get() = JupyterMessageChannel.ANY
     override var finalizeCallback = {}

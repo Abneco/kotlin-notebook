@@ -71,8 +71,6 @@ class KotlinInProcessJupyterClient(
             onKernelTerminated = { _, _ ->
                 val file = VirtualFileManager.getInstance().findFileByNioPath(notebookPath) ?: return@create
                 val notebookFile = BackedNotebookVirtualFile.find(file) ?: return@create
-                val service = JupyterCompilerService.getInstance(project).get(notebookFile) ?: return@create
-                service.clear()
                 if (!project.isDisposed && afterRestart) {
                     invokeLater {
                         runReadAction {

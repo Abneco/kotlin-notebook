@@ -5,6 +5,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.session.isKotlinNotebookSession
@@ -39,10 +40,18 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
                         ${KotlinNotebookCodegen.generateColorSchemeChangeCode()}
                     """.trimIndent()
 
+                    val mainExecutionCallback = session.virtualFile?.let { virtualFile ->
+                        JupyterKotlinCellExecutionCallbackFactory.getInstance().createNotBoundCallback(
+                            project,
+                            virtualFile,
+                            initCode
+                        )
+                    }
+
                     session.execute(
                         initCode,
                         onMessageCreated = {},
-                        callbacks = listOf(
+                        callbacks = listOfNotNull(
                             object : JupyterExecutionCallbackAdapter() {
                                 override fun onExecuteReply(message: JupyterMessage) {
                                     LOG.debug(
@@ -50,7 +59,8 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
                                     )
                                     EditorSessionInitializationService.getInstance().notifySessionInitialized(editor)
                                 }
-                            }
+                            },
+                            mainExecutionCallback
                         ),
                         silent = true,
                     )
