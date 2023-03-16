@@ -17,17 +17,17 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.task.ProjectTaskContext
 import com.intellij.task.ProjectTaskManager
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import org.jetbrains.concurrency.Promise
+import org.jetbrains.concurrency.resolvedPromise
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
@@ -59,6 +59,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         "kts",
         "gradle",
     )
+
     @Volatile
     private var currDependenciesState = DependenciesState.PROVIDED
     private val accessLock = ReentrantLock()
@@ -121,25 +122,28 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     private fun buildProjectAsync(includeLibraryFiles: Boolean): Deferred<ProjectArtifacts> {
         isBuildUpToDate.set(true)
 
+        val projectFiles = getProjectFiles()
+        val allFiles = if (includeLibraryFiles) {
+            projectFiles.then { it + getLibraryFiles() }
+        } else projectFiles
+        return coroutineScope.async {
+            allFiles.blockingGet(1, TimeUnit.DAYS).orEmpty()
+        }
+    }
+
+    private fun getProjectFiles(): Promise<ProjectArtifacts> {
         val taskManager = ProjectTaskManager.getInstance(project)
 
         val modulesToBuild = mainModules(project)
-        if (modulesToBuild.isEmpty()) return CompletableDeferred(emptyList())
+        if (modulesToBuild.isEmpty()) return resolvedPromise(emptyList())
 
-        val buildTask = taskManager.createModulesBuildTask(
-            modulesToBuild.toTypedArray(),
-            true,
-            true,
-            false
-        )
-
+        val buildTask = taskManager.createModulesBuildTask(modulesToBuild.toTypedArray(), true, true, false)
         val buildTaskContext = ProjectTaskContext().apply {
             enableCollectionOfGeneratedFiles()
         }
 
-        val resultPromise = taskManager.run(buildTaskContext, buildTask).then { buildResult ->
+        return taskManager.run(buildTaskContext, buildTask).then { buildResult ->
             val allModules = ModuleManager.getInstance(project).modules
-            val hasErrors = buildResult.hasErrors()
 
             val projectJarPaths = mutableListOf<String>()
                 .also { paths ->
@@ -151,43 +155,33 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
                             paths.add(path.replace(javaOutput, kotlinOutput))
                         }
                     }
-                }.distinct()
+                }
+                .distinct()
                 .filter { File(it).exists() }
 
-            currDependenciesState = if (hasErrors) {
-                if (!projectJarPaths.none { File(it).isNotEmptyDirectory }) {
-                    DependenciesState.OUTDATED
-                } else DependenciesState.ABSENT
-            } else DependenciesState.PROVIDED
+            currDependenciesState = if (!buildResult.hasErrors()) DependenciesState.PROVIDED
+            else if (projectJarPaths.any { File(it).isNotEmptyDirectory }) DependenciesState.OUTDATED
+            else DependenciesState.ABSENT
 
-            val libraryFiles = if (!includeLibraryFiles) {
-                emptyList()
-            } else {
-                val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
-                libraryTable.libraries.flatMap { library ->
-                    if (library.name == JupyterCompilerService.scriptDependenciesLibName) {
-                        emptyList()
-                    } else {
-                        library.getFiles(OrderRootType.CLASSES)
-                            // nio can't be used here since JarFileSystemImpl#getNioPath returns null for a jar root file
-                            .map { VfsUtilCore.virtualToIoFile(it) }
-                            .filter {
-                                try {
-                                    it.exists()
-                                } catch (_: SecurityException) {
-                                    false
-                                }
-                            }
-                            .map { it.absolutePath }
+            projectJarPaths
+        }
+    }
+
+    private fun getLibraryFiles(): ProjectArtifacts {
+        return LibraryTablesRegistrar.getInstance().getLibraryTable(project).libraries.filter {
+            it.name != JupyterCompilerService.scriptDependenciesLibName
+        }.flatMap { library ->
+            library.getFiles(OrderRootType.CLASSES)
+                // nio can't be used here since JarFileSystemImpl#getNioPath returns null for a jar root file
+                .map { VfsUtilCore.virtualToIoFile(it) }
+                .filter {
+                    try {
+                        it.exists()
+                    } catch (_: SecurityException) {
+                        false
                     }
                 }
-            }
-
-            projectJarPaths + libraryFiles
-        }
-
-        return coroutineScope.async {
-            resultPromise.blockingGet(1, TimeUnit.DAYS).orEmpty()
+                .map { it.absolutePath }
         }
     }
 
