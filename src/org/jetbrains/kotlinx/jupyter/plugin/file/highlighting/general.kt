@@ -173,7 +173,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         if (scriptDefManager.isReady()) {
             if (JupyterCompilerService.getInstance(project).needToUpdateImplicitsReceiversIfAny) {
                 invokeLater {
-                    LOG.warn("Requesting update of scripting after loading new classes in ${this.name}")
+                    LOG.info("Requesting update of scripting after loading new classes in ${this.name}")
                     doc.getUserData(NotebookCellsUpdatesAllowedToChange)?.compareAndSet(true, false)
                     JupyterKtScriptingSupport.getInstance(project).update()
                 }
@@ -223,7 +223,7 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
                 }
             LOG.warn("Faced ${highlightInfo.description} error, will try to update scripting")
             if (found && !reloadState) {
-                LOG.warn("Requesting reload of scripting...")
+                LOG.info("Requesting reload of scripting...")
                 invokeLater { JupyterKtScriptingSupport.getInstance(file.project).update() }
                 reloadRequested = true
                 return false

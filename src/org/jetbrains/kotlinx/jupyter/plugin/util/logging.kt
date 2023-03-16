@@ -7,8 +7,8 @@ import java.time.format.DateTimeFormatter
 
 private val dateFormatter = DateTimeFormatter.ofPattern("H:m:s")
 
-fun Logger.logListWarn(message: String, list: List<Any>) {
-    warn("$message. Listing ${list.size} elements:${list.joinToString("\n", "\n")}")
+fun Logger.logListInfo(message: String, list: List<Any>) {
+    info("$message. Listing ${list.size} elements:${list.joinToString("\n", "\n")}")
 }
 
 class LogEntry(

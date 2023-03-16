@@ -149,18 +149,16 @@ class JupyterCompilerPerFileService(
     private var kernelJarsAdded: Boolean = false
     private val kernelJarsProviders: Collection<KernelJarsProvider> = listOf(
         KernelJarsProvider {
-            // return getPluginResource("kernelJars")
             KotlinKernelProcessService.getInstance().ideJars
         },
         KernelJarsProvider {
-            LOG.warn("Bad way only worked...")
+            LOG.warn("Kernel jars were requested from running Jupyter session...")
             getSession()?.detectKotlinKernelJarsDir()?.allJarsFromDir().orEmpty()
         },
     )
 
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterKotlinPluginScriptClassGetter(ScriptTemplateWithDisplayHelpers::class) {
-        // LOG.warn("Getting implicits list")
         implicitsList
     }
 
@@ -379,7 +377,7 @@ class JupyterCompilerPerFileService(
                 }.get()
 
                 if (sessionId != previousSessionId) {
-                    LOG.warn("Clearing Kotlin snippets. Previous session ID: $previousSessionId")
+                    LOG.info("Clearing Kotlin snippets. Previous session ID: $previousSessionId")
                     clearPreviousSnippets()
                     previousSessionId = sessionId
                 }
@@ -533,7 +531,7 @@ class JupyterCompilerPerFileService(
                 (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
                     ?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
             } catch (ex: Exception) {
-                LOG.warn("Exception during storing cell-related data: $ex")
+                LOG.warn("Exception during storing cell-related data", ex)
             }
             document
                 ?.invalidateStateAfterCellExecution(executedCellInd = nextCellInd) // need to highlight next cell if ok

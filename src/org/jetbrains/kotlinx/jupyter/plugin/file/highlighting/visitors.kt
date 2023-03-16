@@ -65,7 +65,7 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
             if (e is ProcessCanceledException) {
                 throw e
             }
-            thisLogger().warn("Exception during analyze: $e")
+            thisLogger().warn("Exception during analyze", e)
             return false
         }
 

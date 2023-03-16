@@ -84,7 +84,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                         if (e is ProcessCanceledException) {
                             throw e
                         }
-                        logger.warn("Error during applying type hints for ${this::class} from registry: ${e.message}")
+                        logger.warn("Error during applying type hints for ${this::class} from registry", e)
                         return true
                     }
                     return true

@@ -57,7 +57,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     fun update() {
         // cache.clear()
         if (updater.isInTransaction()) return
-        LOG.warn("Running scripting support update")
+        LOG.info("Running scripting support update")
         RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
             updater.invalidateAndCommit()
         }
@@ -71,7 +71,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             if (ex is ProcessCanceledException) {
                 ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()
             } else {
-                LOG.warn("Post-update: error occurred during reloading of script configurations: ${ex.cause}")
+                LOG.warn("Post-update: error occurred during reloading of script configurations", ex)
             }
         }
     }

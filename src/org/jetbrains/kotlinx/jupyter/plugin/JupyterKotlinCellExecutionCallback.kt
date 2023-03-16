@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
-import org.jetbrains.kotlinx.jupyter.plugin.util.logListWarn
+import org.jetbrains.kotlinx.jupyter.plugin.util.logListInfo
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInputRequestMessage
@@ -82,7 +82,7 @@ class JupyterKotlinCellExecutionCallback(
                 snippetMetadata = snippetMetadataObject.deserialize()
             }
 
-            LOG.logListWarn(
+            LOG.logListInfo(
                 "Cell executed. Deserialization took $deserializationTime ms. New classpath received",
                 snippetMetadata?.newClasspath.orEmpty()
             )

@@ -179,7 +179,7 @@ internal object NotebookHighlightingUtilityObject {
             val cell = editor.getCell(min(pos.line, document.lineCount - 1))
             cell.ordinal
         }
-        LOG.warn("Resetting session meta information")
+        LOG.info("Resetting session meta information")
         val cell = cellOrdinal?.let { vFile.toPsiFile(project)?.getNotebookCellList()?.getOrNull(it) }
         document.invalidateStateAfterCellExecution(cell, cellOrdinal)
         val injectedManager = InjectedLanguageManager.getInstance(project)
@@ -199,7 +199,7 @@ internal object NotebookHighlightingUtilityObject {
           NotebookNotificationUtility.showKernelRestart(project)
         }
         invokeAndWaitIfNeeded {
-            LOG.warn("Requesting restart of scripting support after session restart")
+            LOG.info("Requesting restart of scripting support after session restart")
             JupyterKtScriptingSupport.getInstance(project).update()
         }
         invokeLater {

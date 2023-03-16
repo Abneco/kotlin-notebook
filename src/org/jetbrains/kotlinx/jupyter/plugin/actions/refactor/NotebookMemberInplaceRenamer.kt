@@ -226,7 +226,7 @@ class NotebookMemberInplaceRenamer(
                 throw e
             }
 
-            thisLogger().warn("Error occurred during template: ${e.message}")
+            thisLogger().warn("Error occurred during template", e)
             return false
         }
     }
