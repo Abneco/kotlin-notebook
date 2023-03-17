@@ -70,7 +70,12 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
             if (isAfterSeriesRuns) pq.remove(-1)
             val singleErrorRun = onError && !isAfterSeriesRuns
             if (isAfterSeriesRuns) {
-                lastExecutedList[file] = highlightOrder[file]?.toMutableSet() ?: mutableSetOf()
+                val stateBefore = lastExecutedList[file]
+                if (stateBefore.isNullOrEmpty()) { // ensure additive operation
+                    lastExecutedList[file] = highlightOrder[file]?.toMutableSet() ?: mutableSetOf()
+                } else highlightOrder[file]?.toMutableSet()?.let {
+                    stateBefore.addAll(it)
+                }
                 highlightOrder[file]?.clear()
                 file.file.toDocument()?.getUserData(NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange)
                     ?.compareAndSet(true, false)
