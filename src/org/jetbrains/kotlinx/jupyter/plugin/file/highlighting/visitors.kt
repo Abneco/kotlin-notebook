@@ -39,8 +39,6 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
             file.unsuppressHighlight()
             return true
         }
-        val document = helper.topLevelFile?.toDocument(file.project)
-        val cellsAllowedToChangeMark = document?.getUserData(NotebookCellsUpdatesAllowedToChange)
 
         try {
             val seenInfos = mutableSetOf<HighlightInfo>()
@@ -68,8 +66,6 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
             thisLogger().warn("Exception during analyze", e)
             return false
         }
-
-        //cellsAllowedToChangeMark?.compareAndSet(false, true)
 
         return true
     }
