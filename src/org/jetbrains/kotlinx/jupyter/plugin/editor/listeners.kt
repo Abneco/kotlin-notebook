@@ -95,7 +95,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                         psiFile?.restartAnalyzing()
                     }
                 }
-                //println(reason)
             }
 
             override fun daemonFinished(fileEditors: MutableCollection<out FileEditor>) {

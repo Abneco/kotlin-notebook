@@ -230,7 +230,7 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
         targetHost = injectedManager.getInjectionHost(injectedFile) ?: return false
         completeAnalysisRange = NotebookHighlightingUtilityObject.getCompleteAnalysisRangeForWholeNotebook(injectedFile)
         isShouldHighlightErrors = completeAnalysisRange?.contains(targetHost.textRange) ?:
-                (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange!!, targetHost.textRange.shiftLeft(1)))
+                (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange!!, targetHost.textRange))
 
 
         return true
