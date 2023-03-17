@@ -134,13 +134,9 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                             // we don't want to lose any updates happened during concurrent modification or delay
                             if ((queue?.size ?: 0) > 2 && !codeAnalyzerStatus.daemonRunning && doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
                                 LOG.debug("Clearing HL queue")
-                                JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile, project, doc)
+                                JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile, project, queue, doc)
                                 queue?.clear()
                             }
-                        }
-                        if (dff < 600 && !codeAnalyzerStatus.daemonRunning) invokeLater {
-                            LOG.warn("Requesting HL restart after recent cancelled event with dff: $dff")
-                            psiFile?.restartAnalyzing()
                         }
                     }
                 }

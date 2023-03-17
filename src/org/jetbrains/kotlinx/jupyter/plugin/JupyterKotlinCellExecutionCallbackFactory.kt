@@ -10,6 +10,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.trimToSize
+import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
@@ -49,8 +50,10 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
         }
     }
 
-    fun daemonFinished(file: BackedNotebookVirtualFile, project: Project, document: Document? = null) = countersLock.write {
-        val resulted = lastExecutedList[file]?.trimToSize(cellToHighlightLimit)
+    fun daemonFinished(file: BackedNotebookVirtualFile, project: Project, queueCompleted: Set<Int>?, document: Document? = null) = countersLock.write {
+        val resulted = countersLock.withWriteLock {
+            lastExecutedList[file]?.trimToSize(cellToHighlightLimit, queueCompleted)
+        }
         if (resulted?.isEmpty() == false) {
             file.file.toPsiFile(project)?.scheduleHLUpdate(document)
         }
