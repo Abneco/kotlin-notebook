@@ -77,53 +77,6 @@
     <orderEntry type="module" module-name="kotlin.base.fe10.highlighting" />
     <orderEntry type="module" module-name="intellij.java" />
     <orderEntry type="module-library">
-      <library name="jetbrains.lets.plot.batik" type="repository">
-        <properties maven-id="org.jetbrains.lets-plot:lets-plot-batik:3.0.0">
-          <exclude>
-            <dependency maven-id="org.apache.xmlgraphics:batik-css" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-xml" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-util" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-transcoder" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-svggen" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-svg-dom" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-shared-resources" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-script" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-parser" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-i18n" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-gvt" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-ext" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-dom" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-constants" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-codec" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-bridge" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-awt-util" />
-            <dependency maven-id="org.apache.xmlgraphics:batik-anim" />
-            <dependency maven-id="org.jetbrains.kotlinx:kotlinx-html-jvm" />
-            <dependency maven-id="org.jetbrains.kotlin:kotlin-stdlib-jdk8" />
-            <dependency maven-id="org.jetbrains:annotations" />
-            <dependency maven-id="org.jetbrains.kotlin:kotlin-stdlib-jdk7" />
-            <dependency maven-id="org.apache.xmlgraphics:xmlgraphics-commons" />
-            <dependency maven-id="org.jetbrains.kotlin:kotlin-stdlib" />
-            <dependency maven-id="commons-logging:commons-logging" />
-            <dependency maven-id="org.jetbrains.kotlin:kotlin-stdlib-common" />
-            <dependency maven-id="io.github.microutils:kotlin-logging" />
-            <dependency maven-id="xml-apis:xml-apis-ext" />
-            <dependency maven-id="xml-apis:xml-apis" />
-            <dependency maven-id="commons-io:commons-io" />
-          </exclude>
-        </properties>
-        <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-batik/3.0.0/lets-plot-batik-3.0.0.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-common/3.0.0/lets-plot-common-3.0.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-batik/3.0.0/lets-plot-batik-3.0.0-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-common/3.0.0/lets-plot-common-3.0.0-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
       <library name="io.github.microutils.kotlin.logging.jvm" type="repository">
         <properties maven-id="io.github.microutils:kotlin-logging-jvm:3.0.5">
           <exclude>
@@ -169,7 +122,18 @@
         </SOURCES>
       </library>
     </orderEntry>
-    <orderEntry type="library" name="batik-transcoder" level="project" />
     <orderEntry type="library" name="commons-io" level="project" />
+    <orderEntry type="module-library">
+      <library name="jetbrains.lets.plot.shadowed" type="repository">
+        <properties maven-id="org.jetbrains.lets-plot:lets-plot-shadowed:3.1.1-alpha1-4" />
+        <CLASSES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha1-4/lets-plot-shadowed-3.1.1-alpha1-4.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha1-4/lets-plot-shadowed-3.1.1-alpha1-4-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
   </component>
 </module>

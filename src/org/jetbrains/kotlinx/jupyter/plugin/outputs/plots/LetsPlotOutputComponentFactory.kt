@@ -23,7 +23,7 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
     override fun createComponent(
         editor: EditorImpl,
         output: LetsPlotOutputDataKey
-    ): NotebookOutputComponentFactory.CreatedComponent<LetsPlotComponent>? {
+    ): NotebookOutputComponentFactory.CreatedComponent<LetsPlotComponent> {
         val component = LetsPlotComponent()
         component.initialize(output)
         return NotebookOutputComponentFactory.CreatedComponent(
