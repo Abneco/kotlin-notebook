@@ -90,11 +90,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
 
             override fun daemonCancelEventOccurred(reason: String) {
                 lastCancelTime = System.currentTimeMillis()
-                if (reason.startsWith("Command")) {
-                    invokeOnceOnCommandFinish {
-                        psiFile?.restartAnalyzing()
-                    }
-                }
             }
 
             override fun daemonFinished(fileEditors: MutableCollection<out FileEditor>) {
@@ -166,7 +161,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     val newOrd = runReadAction {
                         editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it) }
                     }
-                    if (storedFloating == newOrd?.ordinal && ord != storedFloating) return@launch
                     if (newOrd != null && newOrd.ordinal != ord) {
                         floatingCellInd = newOrd.ordinal
                         performRangedUpdate(setOfNotNull(ord, storedFloating, newOrd.ordinal))
@@ -192,7 +186,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
                     performRangedUpdate(setOfNotNull(storedFloating, prevKnownInd, toStore))
                 }
             }
-            //println("should not trigger an event! for cell $ord")
         } else {
             val knownPrevInd = lastCellInd
             lastCellInd = ord
@@ -214,7 +207,6 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
             }
             val guaranteeAddition = if (knownPrevInd == ord) knownPrevInd - 1 else knownPrevInd
             performRangedUpdate(setOfNotNull(prevInd, guaranteeAddition, lastCellInd))
-            //println("Cell focus changed to $ord")
         }
         lastTimeCellFocusChanged = System.currentTimeMillis()
     }
@@ -226,10 +218,8 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
 
     private fun performRangedUpdate(reducedIndexes: Collection<Int>) {
         doc?.putUserData(NotebookDocumentTargetRanges, reducedIndexes)
-        //doc?.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, completeAnalysisRange)
         doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, reducedIndexes.last())
         doc?.getUserData(NotebookQueuedTargetRanges)?.addAll(reducedIndexes)
-        //println("doc: $doc, putting complete analysis as ${lastCell?.textRange}, text: ${lastCell?.text}")
         psiFile?.let {
             if (projectOptionsProvider.state.shouldLimitTypeHintsByActiveCell) {
                 InlayHintsPassFactory.clearModificationStamp(editor)
