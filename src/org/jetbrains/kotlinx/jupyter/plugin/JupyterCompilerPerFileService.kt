@@ -434,7 +434,7 @@ class JupyterCompilerPerFileService(
     )
 
     val hasPendingUpdates: Boolean get() = needsToUpdate.get()
-    private var needsToUpdate = AtomicBoolean(false)
+    private val needsToUpdate = AtomicBoolean(false)
 
     fun afterScriptingUpdate() {
         if (hasPendingUpdates) {
