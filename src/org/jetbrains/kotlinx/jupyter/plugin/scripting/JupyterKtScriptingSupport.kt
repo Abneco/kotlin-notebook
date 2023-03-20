@@ -1,3 +1,4 @@
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.scripting
 
 import com.intellij.injected.editor.VirtualFileWindow
@@ -19,6 +20,7 @@ import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport
 import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsBuilder
+import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsUpdater
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
@@ -44,21 +46,6 @@ import kotlin.script.experimental.api.valueOrNull
 class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport {
     private val compilerService = JupyterCompilerService.getInstance(project)
     private val editorManager: FileEditorManager? get() = FileEditorManager.getInstance(project)
-
-    private val configurationManager: CompositeScriptConfigurationManager
-        get() = ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager
-
-    private val updater
-        get() = configurationManager.updater
-
-    fun update() {
-        // cache.clear()
-        if (updater.isInTransaction()) return
-        LOG.info("Running scripting support update")
-        RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
-            updater.invalidateAndCommit()
-        }
-    }
 
     override fun afterUpdate() {
         try {
@@ -89,7 +76,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         if (file !is VirtualFileWindow) return null
         val psiFile = PsiManager.getInstance(project).findFile(file) ?: return null
         if (psiFile !is KtFile) return null
-        return getConfiguration(psiFile)?.valueOrNull()
+        return getConfiguration(project, psiFile)?.valueOrNull()
     }
 
     override fun isApplicable(file: VirtualFile): Boolean {
@@ -97,7 +84,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     }
 
     override fun isConfigurationLoadingInProgress(file: KtFile): Boolean {
-        return updater.isInTransaction()
+        return getUpdater(project).isInTransaction()
     }
 
     private fun ScriptClassRootsBuilder.addRootsFromNotebooks(notebooks: Collection<BackedNotebookVirtualFile>) {
@@ -122,81 +109,95 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         }
     }
 
-    fun getConfiguration(psiFile: KtFile): ScriptCompilationConfigurationResult? {
-        return runReadAction {
-            if (!psiFile.isScript()) return@runReadAction null
-            val scriptDef = psiFile.findScriptDefinition() ?: return@runReadAction null
+    companion object {
+        private val LOG = logger<JupyterKtScriptingSupport>()
 
-            refineScriptCompilationConfiguration(
-                KtFileScriptSource(psiFile),
-                scriptDef,
-                project
-            )
+        private fun getUpdater(project: Project): ScriptClassRootsUpdater {
+            return (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
         }
-    }
 
-    fun searchForElementDeclarationOrUsages(target: PsiElement, virtualFile: VirtualFile, searchStrategy: ReferenceSearchStrategy): MutableSet<PsiElement>? {
-        if (!virtualFile.isKotlinNotebook) return null
-        val injectedManager = InjectedLanguageManager.getInstance(project)
-        val foundData = mutableSetOf<PsiElement>()
-        val asPsiFile = PsiManager.getInstance(project).findFile(virtualFile)
-        val notebookCells = (asPsiFile?.children?.first() as? JupyterNotebook)?.psiCellList ?: return null
-        val ordinalMap = JupyterCompilerService.getForFile(project, BackedNotebookVirtualFile(virtualFile)).cellOrdinalToClassName
-        val injectionManager = InjectedLanguageManager.getInstance(project)
-        val targetHost = injectionManager.getInjectionHost(target.containingFile)
-        val targetClassName = runIf(searchStrategy == ReferenceSearchStrategy.REFERENCES) {
-            targetHost?.let {
-                val name = ordinalMap[notebookCells.indexOf(it)]
-                if (it.getUserData(CELL_CLASS_NAME) == null && name != null) it.putUserData(CELL_CLASS_NAME, name)
-                name
+        fun update(project: Project) {
+            // cache.clear()
+            val updater = getUpdater(project)
+            if (updater.isInTransaction()) return
+            LOG.info("Running scripting support update")
+            RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
+                updater.invalidateAndCommit()
             }
         }
-        if (target.parent == null) return null // means we have inconsistent notebook state
-        val targetContainingFile = target.containingFile
 
-        var isLocalSearch = if (searchStrategy == ReferenceSearchStrategy.REFERENCES) targetHost?.getUserData(CELL_CLASS_NAME) == null && !isCompiledCellClassDeclaration(target) else false
-        if (!isLocalSearch && targetContainingFile.name.contains(dfPrefix)) {
-            isLocalSearch = isItGeneratedNameInsideLambdaCall(target, target)
+        fun getConfiguration(project: Project, psiFile: KtFile): ScriptCompilationConfigurationResult? {
+            return runReadAction {
+                if (!psiFile.isScript()) return@runReadAction null
+                val scriptDef = psiFile.findScriptDefinition() ?: return@runReadAction null
+
+                refineScriptCompilationConfiguration(KtFileScriptSource(psiFile), scriptDef, project)
+            }
         }
-        //println("isLocalSearch: $isLocalSearch for ${target.text}")
-        val properContainer = if (isLocalSearch) listOf(injectionManager.getInjectionHost(targetContainingFile)) else notebookCells
 
-        return runReadAction {
-            for (ind in properContainer.indices) {
-                val gotHost = properContainer[ind] ?: continue
-                val host = if (isLocalSearch) gotHost else notebookCells[ind]
-                val firstInjectedFileInfo = injectedManager.getInjectedPsiFiles(host)?.firstOrNull() ?: continue
-                val psiFile = firstInjectedFileInfo.first ?: continue
-                // should second part still be there?
-                if (target.parent == null) { // means we have inconsistent notebook state
-                    break
+        fun searchForElementDeclarationOrUsages(
+            project: Project,
+            target: PsiElement,
+            virtualFile: VirtualFile,
+            searchStrategy: ReferenceSearchStrategy
+        ): MutableSet<PsiElement>? {
+            if (!virtualFile.isKotlinNotebook) return null
+            val injectedManager = InjectedLanguageManager.getInstance(project)
+            val foundData = mutableSetOf<PsiElement>()
+            val asPsiFile = PsiManager.getInstance(project).findFile(virtualFile)
+            val notebookCells = (asPsiFile?.children?.first() as? JupyterNotebook)?.psiCellList ?: return null
+            val ordinalMap = JupyterCompilerService.getForFile(project, BackedNotebookVirtualFile(virtualFile)).cellOrdinalToClassName
+            val injectionManager = InjectedLanguageManager.getInstance(project)
+            val targetHost = injectionManager.getInjectionHost(target.containingFile)
+            val targetClassName = runIf(searchStrategy == ReferenceSearchStrategy.REFERENCES) {
+                targetHost?.let {
+                    val name = ordinalMap[notebookCells.indexOf(it)]
+                    if (it.getUserData(CELL_CLASS_NAME) == null && name != null) it.putUserData(CELL_CLASS_NAME, name)
+                    name
                 }
-                if (psiFile !is KtFile || (psiFile == targetContainingFile && searchStrategy == ReferenceSearchStrategy.DECLARATION)) continue
-                val scriptBlock = psiFile.findChildrenByClass(KtScript::class.java).firstOrNull()?.blockExpression ?: continue
-                val elements = mutableListOf<NavigatablePsiElement>()
-                val possibleClassName = ordinalMap[ind]
-                traverseChildrenAndSearch(injectionManager, host, targetClassName ?: possibleClassName, scriptBlock, target, searchStrategy, elements)
+            }
+            if (target.parent == null) return null // means we have inconsistent notebook state
+            val targetContainingFile = target.containingFile
 
-                if (searchStrategy == ReferenceSearchStrategy.DECLARATION) {
-                    val first = elements.firstOrNull()
-                    if (first != null) {
-                        foundData.add(first)
+            var isLocalSearch = if (searchStrategy == ReferenceSearchStrategy.REFERENCES) {
+                targetHost?.getUserData(CELL_CLASS_NAME) == null && !isCompiledCellClassDeclaration(target)
+            } else false
+            if (!isLocalSearch && targetContainingFile.name.contains(dfPrefix)) {
+                isLocalSearch = isItGeneratedNameInsideLambdaCall(target, target)
+            }
+            //println("isLocalSearch: $isLocalSearch for ${target.text}")
+            val properContainer = if (isLocalSearch) listOf(injectionManager.getInjectionHost(targetContainingFile)) else notebookCells
+
+            return runReadAction {
+                for (ind in properContainer.indices) {
+                    val gotHost = properContainer[ind] ?: continue
+                    val host = if (isLocalSearch) gotHost else notebookCells[ind]
+                    val firstInjectedFileInfo = injectedManager.getInjectedPsiFiles(host)?.firstOrNull() ?: continue
+                    val psiFile = firstInjectedFileInfo.first ?: continue
+                    // should second part still be there?
+                    if (target.parent == null) { // means we have inconsistent notebook state
                         break
                     }
-                } else foundData += elements
+                    if (psiFile !is KtFile || (psiFile == targetContainingFile && searchStrategy == ReferenceSearchStrategy.DECLARATION)) continue
+                    val scriptBlock = psiFile.findChildrenByClass(KtScript::class.java).firstOrNull()?.blockExpression ?: continue
+                    val elements = mutableListOf<NavigatablePsiElement>()
+                    val possibleClassName = ordinalMap[ind]
+                    traverseChildrenAndSearch(
+                        injectionManager, host, targetClassName ?: possibleClassName, scriptBlock, target, searchStrategy,
+                        elements
+                    )
+
+                    if (searchStrategy == ReferenceSearchStrategy.DECLARATION) {
+                        val first = elements.firstOrNull()
+                        if (first != null) {
+                            foundData.add(first)
+                            break
+                        }
+                    } else foundData += elements
+                }
+
+                return@runReadAction foundData
             }
-
-            return@runReadAction foundData
         }
-    }
-
-
-    companion object {
-        fun getInstance(project: Project): JupyterKtScriptingSupport {
-            return ScriptingSupport.EPN.findExtension(JupyterKtScriptingSupport::class.java, project)
-                ?: error("No ${JupyterKtScriptingSupport::class} instance found")
-        }
-
-        private val LOG = logger<JupyterKtScriptingSupport>()
     }
 }

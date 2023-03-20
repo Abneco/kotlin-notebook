@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.file.psi
 
 import com.intellij.codeInsight.navigation.actions.GotoDeclarationHandler
@@ -37,8 +37,6 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
         val refExpr = sourceElement.getParentOfType<KtReferenceExpression>(true) ?: return emptyArray()
         if (refExpr.references.none { it.resolve() != null } )  return emptyArray()
         tryGetPreviousValidResolvedResult(sourceElement)?.let { return arrayOf(it) }
-        val scriptingSupport = JupyterKtScriptingSupport.getInstance(project)
-
 
         if (PsiTreeUtil.getParentOfType(sourceElement, KtReferenceExpression::class.java) == null) {
             return null
@@ -54,11 +52,13 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
         }
 
         // try exhaustive search
-        return scriptingSupport.searchForElementDeclarationOrUsages(sourceElement, notebookFile, ReferenceSearchStrategy.DECLARATION)
-            ?.firstOrNull()?.let {
-                sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, it)
-                arrayOf(it)
-            } ?: emptyArray()
+        return JupyterKtScriptingSupport.searchForElementDeclarationOrUsages(
+            project, sourceElement, notebookFile,
+            ReferenceSearchStrategy.DECLARATION
+        )?.firstOrNull()?.let {
+            sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, it)
+            arrayOf(it)
+        } ?: emptyArray()
     }
 
     companion object {

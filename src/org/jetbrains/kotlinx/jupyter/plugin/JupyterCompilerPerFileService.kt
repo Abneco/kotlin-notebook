@@ -120,7 +120,6 @@ class JupyterCompilerPerFileService(
     private val listLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(1)
     private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ContainerUtil.newConcurrentSet() // LoggingList()
-    private val scriptingSupport = JupyterKtScriptingSupport.getInstance(project)
     private val implicitListsLoadQueue = ArrayDeque<Pair<Path, List<String>>>()
     val cellOrdinalToClassName = mutableMapOf<Int, Set<String>>()
 
@@ -185,7 +184,7 @@ class JupyterCompilerPerFileService(
                             .map { it.first }
                             .filterIsInstance<KtFile>()
                             .mapNotNull { ktFile ->
-                                val conf = scriptingSupport.getConfiguration(ktFile)?.valueOrNull()
+                                val conf = JupyterKtScriptingSupport.getConfiguration(project, ktFile)?.valueOrNull()
                                 if (conf != null) (ktFile.virtualFile to conf) else null
                             }
                     }
@@ -282,7 +281,7 @@ class JupyterCompilerPerFileService(
                 oldSize != newSize
             }
             if (updated) {
-                JupyterKtScriptingSupport.getInstance(project).update()
+                JupyterKtScriptingSupport.update(project)
             }
         }
     }
@@ -428,7 +427,7 @@ class JupyterCompilerPerFileService(
     fun updateScripting() {
         compileLock.withWriteLock {
             //updateCellsAnalysis()
-            scriptingSupport.update()
+            JupyterKtScriptingSupport.update(project)
         }
     }
 

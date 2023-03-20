@@ -204,7 +204,7 @@ internal object NotebookHighlightingUtilityObject {
         invokeAndWaitIfNeeded {
             LOG.info("Requesting restart of scripting support after session restart")
             document.getUserData(NotebookCellsUpdatesAllowedToChange)?.compareAndSet(true, false)
-            JupyterKtScriptingSupport.getInstance(project).update()
+            JupyterKtScriptingSupport.update(project)
         }
         invokeLater {
             (document.getUserData(NotebookEditorCaretListenerReferenceKey) as? NotebookCaretListener)

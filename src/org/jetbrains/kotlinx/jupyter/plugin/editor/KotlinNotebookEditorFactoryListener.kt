@@ -16,7 +16,7 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
             val file = FileDocumentManager.getInstance().getFile(editor.document)
             if (file.isKotlinNotebook) {
                 val project = editor.project ?: return
-                JupyterKtScriptingSupport.getInstance(project).update()
+                JupyterKtScriptingSupport.update(project)
             }
         }
     }

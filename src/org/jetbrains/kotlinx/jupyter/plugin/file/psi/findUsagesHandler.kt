@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.file.psi
 
 import com.intellij.find.findUsages.FindUsagesHandler
@@ -137,9 +137,11 @@ internal class KotlinNotebookElementFindUsagesHandler(
     }
 
     private fun findUsageForElement(targetElement: PsiElement): Set<PsiElement>? {
-        val scriptingSupport = JupyterKtScriptingSupport.getInstance(targetElement.project)
         val notebookFileState = notebookFile ?: return null
-        return scriptingSupport.searchForElementDeclarationOrUsages(adjustElement(targetElement), notebookFileState, searchStrategy = ReferenceSearchStrategy.REFERENCES)
+        return JupyterKtScriptingSupport.searchForElementDeclarationOrUsages(
+            project, adjustElement(targetElement), notebookFileState,
+            searchStrategy = ReferenceSearchStrategy.REFERENCES
+        )
     }
 
 }
