@@ -117,7 +117,9 @@ class KotlinKernelProcessService {
             scriptJars,
             null,
             null,
-            "kotlin_notebook"
+            "kotlin_notebook",
+            // TODO: make it an option
+            jvmTargetForSnippets = null,
         )
 
         val classpathSeparator = System.getProperty("path.separator")
