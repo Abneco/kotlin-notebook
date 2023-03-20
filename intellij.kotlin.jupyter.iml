@@ -76,27 +76,6 @@
     <orderEntry type="module" module-name="kotlin.refactorings.common" />
     <orderEntry type="module" module-name="kotlin.base.fe10.highlighting" />
     <orderEntry type="module" module-name="intellij.java" />
-    <orderEntry type="module-library">
-      <library name="io.github.microutils.kotlin.logging.jvm" type="repository">
-        <properties maven-id="io.github.microutils:kotlin-logging-jvm:3.0.5">
-          <exclude>
-            <dependency maven-id="org.jetbrains.kotlin:kotlin-stdlib-common" />
-            <dependency maven-id="org.jetbrains:annotations" />
-            <dependency maven-id="org.jetbrains.kotlin:kotlin-stdlib-jdk7" />
-            <dependency maven-id="org.jetbrains.kotlin:kotlin-stdlib-jdk8" />
-            <dependency maven-id="org.jetbrains.kotlin:kotlin-stdlib" />
-            <dependency maven-id="org.slf4j:slf4j-api" />
-          </exclude>
-        </properties>
-        <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/io/github/microutils/kotlin-logging-jvm/3.0.5/kotlin-logging-jvm-3.0.5.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/io/github/microutils/kotlin-logging-jvm/3.0.5/kotlin-logging-jvm-3.0.5-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
     <orderEntry type="library" name="Slf4j" level="project" />
     <orderEntry type="library" name="kotlinx-html-jvm" level="project" />
     <orderEntry type="library" name="xml-apis-ext" level="project" />
@@ -115,13 +94,13 @@
     <orderEntry type="library" name="commons-io" level="project" />
     <orderEntry type="module-library">
       <library name="jetbrains.lets.plot.shadowed" type="repository">
-        <properties maven-id="org.jetbrains.lets-plot:lets-plot-shadowed:3.1.1-alpha1-4" />
+        <properties maven-id="org.jetbrains.lets-plot:lets-plot-shadowed:3.1.1-alpha1-5" />
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha1-4/lets-plot-shadowed-3.1.1-alpha1-4.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha1-5/lets-plot-shadowed-3.1.1-alpha1-5.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha1-4/lets-plot-shadowed-3.1.1-alpha1-4-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha1-5/lets-plot-shadowed-3.1.1-alpha1-5-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
