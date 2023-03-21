@@ -29,12 +29,16 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.concurrency.asDeferred
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
+import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
 import org.jetbrains.kotlinx.jupyter.plugin.util.parentsWithSelf
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import java.io.File
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -57,6 +61,11 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
     private val buildResultCache: BaseCache<BuildResult> = BuildResultCache(project, this)
     private val librariesCache: BaseCache<ProjectArtifacts> = LibrariesCache(project, coroutineScope)
 
+    private val sessionData = mutableMapOf<String, MutableSet<String>>()
+    private val sessionDataLock = ReentrantLock()
+
+    private var firstRun: Boolean = true
+
     private val fileExtensionsOfInterest = setOf(
         // source files
         "kt",
@@ -70,6 +79,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
     init {
         addBuildListener()
         addVFSChangesListener()
+        addSessionListener()
     }
 
     private fun addBuildListener() {
@@ -104,6 +114,17 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
         project.messageBus.connect(this).subscribe(VirtualFileManager.VFS_CHANGES, listener)
     }
 
+    private fun addSessionListener() {
+        val sessionListener = object : JupyterRuntimeService.Listener {
+            override fun sessionDeleted(session: JupyterNotebookSession) {
+                sessionDataLock.withLock {
+                    sessionData.remove(session.sessionId)
+                }
+            }
+        }
+        project.messageBus.connect(this).subscribe(JupyterRuntimeService.Listener.TOPIC, sessionListener)
+    }
+
     suspend fun buildProject(): BuildResult {
         val options = KotlinNotebookProjectOptionsProvider.getInstance(project).state
         val isBuildProject = options.shouldBuildProject
@@ -118,6 +139,39 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
         if (!isAddLibraries) return emptyList()
 
         return librariesCache.getValue()
+    }
+
+    private fun getOnlyNewArtifacts(sessionId: String, allArtifacts: Collection<String>): Collection<String> {
+        return sessionDataLock.withLock {
+            val oldArtifacts = sessionData.getOrPut(sessionId) { mutableSetOf() }
+            val newArtifacts = allArtifacts.filter { it !in oldArtifacts }
+            oldArtifacts.addAll(newArtifacts)
+            newArtifacts
+        }
+    }
+
+    fun getNewArtifactsForSession(sessionId: String): Collection<String> {
+        val (buildProjectResult, libraries) = runBlocking {
+            Pair(buildProject(), getLibraries())
+        }
+        val allArtifacts = buildProjectResult.artifacts + libraries
+        val newArtifacts = getOnlyNewArtifacts(sessionId, allArtifacts)
+
+        when (buildProjectResult.state) {
+            DependenciesState.OUTDATED -> NotebookNotificationUtility.showOutdatedDependencies(project)
+            DependenciesState.ABSENT -> {
+                NotebookNotificationUtility.showAbsentDependencies(project)
+                if (firstRun) {
+                    firstRun = false
+                    throw RuntimeException(JupyterKotlinBundle.message("kotlin.jupyter.dependencies.build.error.throwable"))
+                }
+                return emptyList()
+            }
+            else -> {}
+        }
+        firstRun = false
+
+        return newArtifacts
     }
 
     override fun dispose() = Unit
