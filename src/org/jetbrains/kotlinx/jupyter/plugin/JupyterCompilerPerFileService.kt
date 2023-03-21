@@ -13,6 +13,7 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.openapi.util.Disposer
@@ -101,21 +102,25 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
  * including magics handling, storing dependencies and a list
  * of compiled scripts.
  *
- * @property virtualFile File with Kotlin notebook
- * @property projectService Project service that owns this sub-service
+ * @property project       Target Project instance
+ * @property virtualFile   File with Kotlin notebook
+ * @param initialClasspath Initial classpath to use
+ * @param parent           Parent Disposable
  */
 class JupyterCompilerPerFileService(
+    private val project: Project,
     private val virtualFile: BackedNotebookVirtualFile,
-    private val projectService: JupyterCompilerService,
+    initialClasspath: List<File>,
+    parent: Disposable
 ) : Disposable {
     private val psiFile = runReadAction {
-        virtualFile.file.toPsiFile(projectService.project)
+        virtualFile.file.toPsiFile(project)
     }
     private val compileLock = ReentrantReadWriteLock()
     private val listLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(1)
     private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ContainerUtil.newConcurrentSet() // LoggingList()
-    private val scriptingSupport = JupyterKtScriptingSupport.getInstance(projectService.project)
+    private val scriptingSupport = JupyterKtScriptingSupport.getInstance(project)
     private val implicitListsLoadQueue = ArrayDeque<Pair<Path, List<String>>>()
     val cellOrdinalToClassName = mutableMapOf<Int, Set<String>>()
 
@@ -132,7 +137,7 @@ class JupyterCompilerPerFileService(
 
     private val _currentClasspath: TwoPartsList<File> by lazy {
         TwoPartsList<File>().apply {
-            addInitial(projectService.initialClasspath)
+            addInitial(initialClasspath)
         }
     }
     val currentClasspath: List<File> get() = _currentClasspath.getList()
@@ -166,12 +171,12 @@ class JupyterCompilerPerFileService(
     private var previousSessionId: String? = null
 
     fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
-        val psiDocumentManager = PsiDocumentManager.getInstance(projectService.project)
+        val psiDocumentManager = PsiDocumentManager.getInstance(project)
         val fileDocumentManager = FileDocumentManager.getInstance()
         val attemptsLimit = 3
         for (attempt in 1..attemptsLimit) {
             val res = runReadAction {
-                val injectedManager = InjectedLanguageManager.getInstance(projectService.project)
+                val injectedManager = InjectedLanguageManager.getInstance(project)
                 readInjectionHosts { hosts ->
                     hosts?.flatMap { host ->
                         injectedManager
@@ -213,14 +218,14 @@ class JupyterCompilerPerFileService(
 
     init {
         updateClasspathWithExternalDependencies()
-        Disposer.register(projectService, this)
+        Disposer.register(parent, this)
 
         val doc = runReadAction {
             FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
         }
         if (virtualFile.file.isKotlinNotebook) {
             doc.addDocumentListener(
-                ImpatientNotebookChangeListener(projectService.project, virtualFile),
+                ImpatientNotebookChangeListener(project, virtualFile),
                 this
             )
         }
@@ -229,7 +234,7 @@ class JupyterCompilerPerFileService(
     private fun getSession(): JupyterNotebookSession? {
         return try {
             if (!ApplicationManager.getApplication().isUnitTestMode) {
-                JupyterRuntimeService.getInstance(projectService.project).getOrCreateSession(virtualFile)
+                JupyterRuntimeService.getInstance(project).getOrCreateSession(virtualFile)
             } else null
         } catch (e: Throwable) {
             // TODO: show error for user with asking for configuring Python interpreter for the module
@@ -268,7 +273,7 @@ class JupyterCompilerPerFileService(
 
     private fun updateClasspathWithProjectArtifactsAsync() {
         coroutineScope.async {
-            val buildService = JupyterKotlinProjectArtifactsService.getInstance(projectService.project)
+            val buildService = JupyterKotlinProjectArtifactsService.getInstance(project)
             val artifacts = buildService.buildProject().artifacts + buildService.getLibraries()
             val updated = compileLock.withWriteLock {
                 val oldSize = _currentClasspath.size
@@ -277,7 +282,7 @@ class JupyterCompilerPerFileService(
                 oldSize != newSize
             }
             if (updated) {
-                JupyterKtScriptingSupport.getInstance(projectService.project).update()
+                JupyterKtScriptingSupport.getInstance(project).update()
             }
         }
     }
@@ -300,7 +305,7 @@ class JupyterCompilerPerFileService(
             defaultImports(additionalDefaultImports.getList())
             ide.dependenciesSources(
                 JvmDependency(
-                    projectService.project.allSourceRoots() + _sourceRoots.getList()
+                    project.allSourceRoots() + _sourceRoots.getList()
                 )
             )
         }
@@ -326,7 +331,7 @@ class JupyterCompilerPerFileService(
     }
 
     private fun addAsPermanentLibrary(classpath: List<String>, sourceClasspath: List<String>) {
-        val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(projectService.project)
+        val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
 
         val newLibrary = libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
             ?: invokeAndWaitIfNeeded {
@@ -474,7 +479,7 @@ class JupyterCompilerPerFileService(
                         }
                         is UnsupportedClassVersionError -> {
                             val msg = e.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
-                            NotebookNotificationUtility.showKernelJDKInconsistentError(projectService.project, msg)
+                            NotebookNotificationUtility.showKernelJDKInconsistentError(project, msg)
                         }
                         is ClassNotFoundException -> {
                             implicitListsLoadQueue.removeFirstOrNull()
@@ -506,7 +511,6 @@ class JupyterCompilerPerFileService(
     }
 
     private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell) {
-        val project = projectService.project
         val injectManager = InjectedLanguageManager.getInstance(project)
         val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
         val topLevelFile = if (!psiCell.containingFile.isValid) {
@@ -588,7 +592,7 @@ class JupyterCompilerPerFileService(
 
         ClasspathToVfsConverter.clearCaches()
 
-        val manager = ScriptConfigurationManager.getInstance(projectService.project) as? CompositeScriptConfigurationManager
+        val manager = ScriptConfigurationManager.getInstance(project) as? CompositeScriptConfigurationManager
         manager?.updater?.invalidateAndCommit()
     }
 

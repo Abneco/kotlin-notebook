@@ -91,7 +91,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
     val language = Language.findLanguageByID("kotlin")!!
 
     fun getOrCreate(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
-        return mapping.getOrPut(virtualFile.file) { JupyterCompilerPerFileService(virtualFile, this) }
+        return mapping.getOrPut(virtualFile.file) { JupyterCompilerPerFileService(project, virtualFile, initialClasspath, this) }
     }
 
     fun removeSession(virtualFile: BackedNotebookVirtualFile) {
