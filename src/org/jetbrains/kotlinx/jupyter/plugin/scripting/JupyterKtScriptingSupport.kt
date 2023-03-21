@@ -4,8 +4,6 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -43,7 +41,6 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import kotlin.script.experimental.api.valueOrNull
 
-@Service
 class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport {
     private val compilerService = JupyterCompilerService.getInstance(project)
     private val editorManager: FileEditorManager? get() = FileEditorManager.getInstance(project)
@@ -195,7 +192,10 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
 
     companion object {
-        fun getInstance(project: Project) = project.service<JupyterKtScriptingSupport>()
+        fun getInstance(project: Project): JupyterKtScriptingSupport {
+            return ScriptingSupport.EPN.findExtension(JupyterKtScriptingSupport::class.java, project)
+                ?: error("No ${JupyterKtScriptingSupport::class} instance found")
+        }
 
         private val LOG = logger<JupyterKtScriptingSupport>()
     }

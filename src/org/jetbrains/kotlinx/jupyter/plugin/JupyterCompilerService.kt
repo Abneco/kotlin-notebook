@@ -4,8 +4,6 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -15,13 +13,11 @@ import com.intellij.ultimate.PluginVerifier
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
-import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
-import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
-import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelListener
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
 import kotlin.script.experimental.api.asSuccess
@@ -40,7 +36,7 @@ import kotlin.script.experimental.jvm.jvm
  */
 @Service
 class JupyterCompilerService(val project: Project) : Disposable {
-    private val mapping: MutableMap<VirtualFile, JupyterCompilerPerFileService> = mutableMapOf()
+    private val mapping: MutableMap<VirtualFile, JupyterCompilerPerFileService> = ConcurrentHashMap()
 
     init {
         PluginVerifier.verifyUltimatePlugin()
@@ -99,8 +95,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
     }
 
     fun removeSession(virtualFile: BackedNotebookVirtualFile) {
-        get(virtualFile)?.let { Disposer.dispose(it) }
-        mapping.remove(virtualFile.file)
+        mapping.remove(virtualFile.file)?.let { Disposer.dispose(it) }
     }
 
     fun get(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService? {
@@ -130,7 +125,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
     }
 
     companion object {
-        internal const val scriptDependenciesLibName = "Permanent Script Dependencies"
+        internal const val SCRIPT_DEPENDENCIES_LIBRARY_NAME = "Permanent Script Dependencies"
 
         fun getInstance(project: Project) = project.service<JupyterCompilerService>()
 

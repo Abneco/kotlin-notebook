@@ -53,7 +53,7 @@ data class BuildResult(val artifacts: ProjectArtifacts, val state: DependenciesS
 }
 
 @Service(Service.Level.PROJECT)
-class JupyterKotlinProjectArtifactsService(val project: Project, private val coroutineScope: CoroutineScope) : Disposable {
+class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope: CoroutineScope) : Disposable {
     private val buildResultCache: BaseCache<BuildResult> = BuildResultCache(project, this)
     private val librariesCache: BaseCache<ProjectArtifacts> = LibrariesCache(project, coroutineScope)
 
@@ -192,7 +192,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         override fun loadValue(): Deferred<ProjectArtifacts> {
             return coroutineScope.async {
                 LibraryTablesRegistrar.getInstance().getLibraryTable(project).libraries.filter {
-                    it.name != JupyterCompilerService.scriptDependenciesLibName
+                    it.name != JupyterCompilerService.SCRIPT_DEPENDENCIES_LIBRARY_NAME
                 }.flatMap { library ->
                     library.getFiles(OrderRootType.CLASSES)
                         // nio can't be used here since JarFileSystemImpl#getNioPath returns null for a jar root file

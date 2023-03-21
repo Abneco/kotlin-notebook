@@ -32,7 +32,6 @@ class JupyterKotlinCellExecutionCallback(
     private val project: Project,
     private val virtualFile: BackedNotebookVirtualFile,
     private val psiCell: JupyterPsiCell?,
-    private val cellSource: String,
     private val index: Int,
 ) : JupyterExecutionCallback {
     override val channel: JupyterMessageChannel
@@ -93,7 +92,7 @@ class JupyterKotlinCellExecutionCallback(
              */
             if (snippetMetadata != null) {
                 val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-                compilerService.addCompiledSnippet(snippetMetadata, cellSource, psiCell)
+                compilerService.addCompiledSnippet(snippetMetadata, psiCell)
                 updateScriptingIfNeeded()
             }
         } catch (e: Throwable) {

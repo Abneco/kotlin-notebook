@@ -15,6 +15,7 @@ import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.util.runIf
 import kotlinx.coroutines.CoroutineScope
@@ -26,7 +27,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
-import org.jetbrains.kotlin.idea.refactoring.invokeOnceOnCommandFinish
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
@@ -37,7 +37,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
-import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
@@ -49,13 +48,13 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.math.min
 
-internal enum class DaemonState {
-    Started, Finished, Aborted
-}
 
-
-class NotebookCaretListener(private val project: Project, private val vFile: BackedNotebookVirtualFile,
-                            private val editor: Editor): CaretListener, Disposable {
+class NotebookCaretListener(
+    private val project: Project,
+    private val vFile: BackedNotebookVirtualFile,
+    private val editor: Editor,
+    parentDisposable: Disposable,
+): CaretListener, Disposable {
     companion object {
         private val LOG = thisLogger()
     }
@@ -83,9 +82,10 @@ class NotebookCaretListener(private val project: Project, private val vFile: Bac
 
     init {
         assert(psiFile != null)
+        Disposer.register(parentDisposable, this)
         doc?.putUserData(NotebookCellsUpdatesAllowedToChange, AtomicReference(true))
         editor.putUserData(NotebookEditorCaretListenerReferenceKey, this)
-        project.messageBus.connect().subscribe(DAEMON_EVENT_TOPIC, object : DaemonListener {
+        project.messageBus.connect(this).subscribe(DAEMON_EVENT_TOPIC, object : DaemonListener {
             private val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
 
             override fun daemonCancelEventOccurred(reason: String) {

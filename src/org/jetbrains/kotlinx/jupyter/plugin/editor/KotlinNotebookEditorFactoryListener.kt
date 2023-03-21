@@ -34,37 +34,37 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
 
         project.messageBus.connect(editor.disposable).subscribe(JupyterRuntimeService.Listener.TOPIC, object : JupyterRuntimeService.Listener {
             override fun sessionCreated(session: JupyterNotebookSession) {
-                if (session.isKotlinNotebookSession()) {
-                    val initCode = """
-                        ${KotlinNotebookCodegen.generateSessionOptions(resolveSources = true, serializeScriptData = true)}
-                        ${KotlinNotebookCodegen.generateColorSchemeChangeCode()}
-                    """.trimIndent()
+                if (session.virtualFile?.file != editor.virtualFile) return
+                if (!session.isKotlinNotebookSession()) return
 
-                    val mainExecutionCallback = session.virtualFile?.let { virtualFile ->
-                        JupyterKotlinCellExecutionCallbackFactory.getInstance().createNotBoundCallback(
-                            project,
-                            virtualFile,
-                            initCode
-                        )
-                    }
+                val initCode = """
+                    ${KotlinNotebookCodegen.generateSessionOptions(resolveSources = true, serializeScriptData = true)}
+                    ${KotlinNotebookCodegen.generateColorSchemeChangeCode()}
+                """.trimIndent()
 
-                    session.execute(
-                        initCode,
-                        onMessageCreated = {},
-                        callbacks = listOfNotNull(
-                            object : JupyterExecutionCallbackAdapter() {
-                                override fun onExecuteReply(message: JupyterMessage) {
-                                    LOG.debug(
-                                        "Kotlin session has been initialized with response: ${message.json}"
-                                    )
-                                    EditorSessionInitializationService.getInstance().notifySessionInitialized(editor)
-                                }
-                            },
-                            mainExecutionCallback
-                        ),
-                        silent = true,
+                val mainExecutionCallback = session.virtualFile?.let { virtualFile ->
+                    JupyterKotlinCellExecutionCallbackFactory.getInstance().createNotBoundCallback(
+                        project,
+                        virtualFile
                     )
                 }
+
+                session.execute(
+                    initCode,
+                    onMessageCreated = {},
+                    callbacks = listOfNotNull(
+                        object : JupyterExecutionCallbackAdapter() {
+                            override fun onExecuteReply(message: JupyterMessage) {
+                                LOG.debug(
+                                    "Kotlin session has been initialized with response: ${message.json}"
+                                )
+                                EditorSessionInitializationService.getInstance().notifySessionInitialized(editor)
+                            }
+                        },
+                        mainExecutionCallback
+                    ),
+                    silent = true,
+                )
             }
         })
     }

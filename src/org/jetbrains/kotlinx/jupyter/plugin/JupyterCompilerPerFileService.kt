@@ -45,7 +45,7 @@ import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService.Companion.scriptDependenciesLibName
+import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService.Companion.SCRIPT_DEPENDENCIES_LIBRARY_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scheduleHLUpdate
@@ -328,10 +328,10 @@ class JupyterCompilerPerFileService(
     private fun addAsPermanentLibrary(classpath: List<String>, sourceClasspath: List<String>) {
         val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(projectService.project)
 
-        val newLibrary = libraryTable.getLibraryByName(scriptDependenciesLibName)
+        val newLibrary = libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
             ?: invokeAndWaitIfNeeded {
                 runAsWriteActionIfNeeded {
-                    libraryTable.createLibrary(scriptDependenciesLibName)
+                    libraryTable.createLibrary(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
                 }
             }
 
@@ -365,7 +365,6 @@ class JupyterCompilerPerFileService(
 
     fun addCompiledSnippet(
         snippetMetadata: EvaluatedSnippetMetadata,
-        cellSource: String?,
         psiCell: JupyterPsiCell?,
     ) {
         compileLock.withWriteLock {

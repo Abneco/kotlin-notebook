@@ -4,11 +4,13 @@ package org.jetbrains.kotlinx.jupyter.plugin
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.text.StringUtil
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showAbsentDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showOutdatedDependencies
+import org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookPluginUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.util.SKIP_PROJECT_BUILD_COMMENT
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.PreExecutionSourceModifier
@@ -23,6 +25,7 @@ class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier, Disp
     private val artifactsCacheLock = ReentrantLock()
 
     init {
+        Disposer.register(KotlinNotebookPluginUpdater.getInstance(), this)
         registerSessionDeleteListener()
     }
 
@@ -70,6 +73,9 @@ class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier, Disp
     }
 
     override fun dispose() {
+        artifactsCacheLock.withLock {
+            artifactsCache.clear()
+        }
     }
 
     private fun getOnlyNewArtifacts(sessionId: String, allArtifacts: Collection<String>): Collection<String> {

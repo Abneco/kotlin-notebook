@@ -96,9 +96,7 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
             val cellIndex = task.options.cellPointer?.get()?.ordinal ?: return@runReadAction null
             getCells(cellProject, task.notebookVirtualFile)?.getOrNull(cellIndex) to cellIndex
         }
-        val cell = jupyterPsiCellData?.first
-        if (cell == null) return null // cell is not exists already
-        val cellSource = task.source
+        val cell = jupyterPsiCellData?.first ?: return null
         if (!file.file.isKotlinNotebook) return null
 
         val index = registerNewCallback(file, jupyterPsiCellData.second)
@@ -107,22 +105,19 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
             cellProject,
             file,
             cell,
-            cellSource,
             index,
         )
     }
 
     fun createNotBoundCallback(
         project: Project,
-        virtualFile: BackedNotebookVirtualFile,
-        source: String
+        virtualFile: BackedNotebookVirtualFile
     ): JupyterExecutionCallback {
         val index = registerNewCallback(virtualFile, null)
         return JupyterKotlinCellExecutionCallback(
             project,
             virtualFile,
             null,
-            source,
             index,
         )
     }
