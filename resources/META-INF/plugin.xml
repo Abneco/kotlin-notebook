@@ -16,6 +16,11 @@
                   topic="com.intellij.openapi.editor.colors.EditorColorsListener"/>
     </applicationListeners>
 
+    <projectListeners>
+        <listener class="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinRuntimeServiceListener"
+                  topic="org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService$Listener"/>
+    </projectListeners>
+
     <extensionPoints>
         <extensionPoint qualifiedName="org.jetbrains.kotlinx.jupyter.plugin.session.extensions.kernelVmCommandCustomizer"
                         interface="org.jetbrains.kotlinx.jupyter.plugin.session.extensions.KernelVmCommandCustomizer"
