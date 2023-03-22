@@ -81,7 +81,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
 
     private fun doTest(tester: ReceivedMessagesTester, executionCallback: JupyterExecutionCallback? = null) {
         val notebookFile = configureExecutionTest()
-        executeCells(tester, notebookFile, myFixture.editor, executionCallback)
+        executeCells(tester, notebookFile, executionCallback)
     }
 
     companion object {

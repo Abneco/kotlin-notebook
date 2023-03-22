@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completionWithImport
 
 import com.intellij.openapi.actionSystem.IdeActions
@@ -95,7 +95,7 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
     private fun doTest(executionTester: ReceivedMessagesTester, completionChecker: (CompletionAutoPopupTester) -> Unit) {
         withDisabledJcef {
             val notebookFile = configureExecutionTest(copyNotebookToProject = true)
-            executeCells(executionTester, notebookFile, myFixture.editor)
+            executeCells(executionTester, notebookFile)
 
             runInEdtAndWait {
                 myFixture.project.waitIndexingComplete()

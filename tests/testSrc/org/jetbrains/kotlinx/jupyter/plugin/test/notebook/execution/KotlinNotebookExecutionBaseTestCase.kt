@@ -1,10 +1,9 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
@@ -13,10 +12,8 @@ import com.intellij.testFramework.TestLoggerFactory
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServers
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 import org.junit.jupiter.api.Assertions
@@ -39,9 +36,7 @@ interface ReceivedMessagesTester {
 
     fun assertCellMessages(cellNum: Int, messages: ReceivedMessages)
 
-    fun doAfterCellRun(cellNum: Int, psiCell: JupyterPsiCell, executionManager: JupyterCellExecutionManager, editor: Editor) {
-
-    }
+    fun doAfterCellRun(cellNum: Int) = Unit
 }
 
 val JupyterMessage.messageData get() = messageContent["data"] as ObjectNode

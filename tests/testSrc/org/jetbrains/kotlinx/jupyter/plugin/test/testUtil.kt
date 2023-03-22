@@ -3,7 +3,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.test
 
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.descendantsOfType
@@ -47,7 +46,7 @@ fun PsiFile.getCells(): List<JupyterPsiCell> = descendantsOfType<JupyterPsiCell>
 
 fun PsiFile.isInjectedKtFile(): Boolean = name.endsWith("kts")
 
-fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: Editor, executionCallback: JupyterExecutionCallback? = null) {
+fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executionCallback: JupyterExecutionCallback? = null) {
     val project = notebookFile.project
     val document = PsiDocumentManager.getInstance(project).getDocument(notebookFile)!!
     val executionManager = JupyterCellExecutionManager.getInstance(project)
@@ -106,7 +105,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: 
                 )
             )
         }
-        tester.doAfterCellRun(cellNumber, cell, executionManager, editor)
+        tester.doAfterCellRun(cellNumber)
     }
 
     // Run cells in the order they're defined in the notebook
