@@ -2,13 +2,12 @@
 package org.jetbrains.kotlinx.jupyter.plugin.outputs.tables
 
 import com.fasterxml.jackson.databind.node.ObjectNode
-import org.jetbrains.plugins.notebooks.tables.api.DSTableText
 
 /**
  * Utils for parsing encoded table data produced by Kotlin Dataframe library
  */
 object KotlinDataframeParsing {
-    private const val jsonPayloadField = "application/kotlindataframe+json"
+    const val jsonPayloadField = "application/kotlindataframe+json"
     const val serializedDataframeField = "kotlin_dataframe"
     const val separator = "kotlin_dataframe_sep"
     const val columnsField = "columns"
@@ -21,13 +20,5 @@ object KotlinDataframeParsing {
         val jsonPayload = dataObject[jsonPayloadField].asText() ?: return false
 
         return jsonPayload.contains(serializedDataframeField)
-    }
-
-    fun isKotlinDataFrame(serializedTableData: DSTableText): Boolean {
-        return serializedTableData.plainText?.contains(serializedDataframeField) ?: false
-    }
-
-    fun extractSerializedDataFrame(dataObject: ObjectNode): String {
-        return dataObject[jsonPayloadField].asText()
     }
 }

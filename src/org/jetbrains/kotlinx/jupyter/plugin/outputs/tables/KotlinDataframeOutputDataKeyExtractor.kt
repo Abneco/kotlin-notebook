@@ -74,7 +74,7 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
             return null
         }
 
-        val serializedDataframe = KotlinDataframeParsing.extractSerializedDataFrame(dataObject)
+        val serializedDataframe = dataObject.toString()
 
         val text = DSTableText(truncatedTableText = serializedDataframe, plainText = serializedDataframe)
         val type = DSTableDataType.EXTERNAL

@@ -4,13 +4,11 @@ package org.jetbrains.kotlinx.jupyter.plugin.outputs.tables
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
-import com.fasterxml.jackson.databind.node.ObjectNode
-import com.intellij.lang.Language
 import com.intellij.openapi.util.registry.Registry
 import com.jetbrains.python.debugger.pydev.TableCommandType
 import com.jetbrains.python.debugger.pydev.tables.CommandOutputType
-import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.columnsField
+import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.jsonPayloadField
 import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.nColsField
 import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.nRowsField
 import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.separator
@@ -21,7 +19,6 @@ import org.jetbrains.plugins.notebooks.tables.DataId
 import org.jetbrains.plugins.notebooks.tables.ExternalTableDataProviderFactory
 import org.jetbrains.plugins.notebooks.tables.api.DSDataFrameInfo
 import org.jetbrains.plugins.notebooks.tables.api.DSTableDataProvider
-import org.jetbrains.plugins.notebooks.tables.api.DSTableText
 import org.jetbrains.plugins.notebooks.tables.py.DSTableDataType
 import org.jetbrains.plugins.notebooks.tables.DSTableDataException
 import org.jetbrains.plugins.notebooks.tables.api.DSTableCommandExecutor
@@ -33,21 +30,19 @@ internal val isSwingUiEnabledForKotlinDataframe: Boolean
     get() = Registry.`is`("kotlin.dataframe.swing.outputs.enabled", false)
 
 class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
-    override fun isTableDataFormatSupported(text: DSTableText): Boolean {
-        return isSwingUiEnabledForKotlinDataframe &&
-                KotlinDataframeParsing.isKotlinDataFrame(text)
+    override fun getDataProviderWhichSupportsFormatOrNull(serializedData: String?): DSTableDataProvider? {
+        if (!isSwingUiEnabledForKotlinDataframe) return null
+        if (serializedData == null || !isFormatSupported(serializedData)) return null
+
+        return KotlinDataFrameProvider()
     }
 
-    override fun isTableDataFormatSupported(messageContentData: ObjectNode): Boolean {
-        return isSwingUiEnabledForKotlinDataframe &&
-                KotlinDataframeParsing.isKotlinDataFrame(messageContentData)
+    private fun isFormatSupported(serializedData: String): Boolean {
+        return serializedData.contains(serializedDataframeField) &&
+                serializedData.contains(nColsField) &&
+                serializedData.contains(nRowsField) &&
+                serializedData.contains(columnsField)
     }
-
-    override fun getDataProvider(): DSTableDataProvider = KotlinDataFrameProvider()
-
-    override fun extractSerializedData(messageContentData: ObjectNode): String = KotlinDataframeParsing.extractSerializedDataFrame(messageContentData)
-
-    override fun isLanguageSupported(lang: Language): Boolean = lang == KotlinLanguage.INSTANCE
 }
 
 class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper()) : DSTableDataProvider {
@@ -77,11 +72,11 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         start: Int,
         end: Int
     ): DSTableData {
-        val tableHtml = commandExecutor.executeCommand(
+        val tableText = commandExecutor.executeCommand(
             getSliceCommand(initExpression, commandExecutor.isDisplaySupported(), start, end),
             TableCommandType.SLICE, CommandOutputType.DISPLAY
         )
-        return parseDataFromKotlinDataframeOutput(dataId, tableHtml)
+        return parseDataFromKotlinDataframeOutput(dataId, tableText)
     }
 
     private fun getSliceCommand(initCommand: String, isInteractive: Boolean, start: Int, end: Int): String {
@@ -111,7 +106,8 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     override fun isFallbackToTruncatedSupported(): Boolean = true
 
     private fun parseFrameInfoFromKotlinDataframeOutput(text: String): DSDataFrameInfo {
-        val rawJson = mapper.readTree(text)
+        val data = mapper.readTree(text)
+        val rawJson = mapper.readTree(data[jsonPayloadField].asText())
 
         val nRow = rawJson[nRowsField].asInt()
         val nCol = rawJson[nColsField].asInt()
@@ -125,7 +121,8 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     }
 
     private fun parseDataFromKotlinDataframeOutput(id: DataId, text: String): DSTableData {
-        val rawJson = mapper.readTree(text)
+        val data = mapper.readTree(text)
+        val rawJson = mapper.readTree(data[jsonPayloadField].asText())
 
         val rawRows = asConcatenatedRows(rawJson[serializedDataframeField])
         val rows = rawRows.split(separator)
