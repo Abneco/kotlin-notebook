@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test
 
 import com.intellij.openapi.application.PathManager
@@ -14,6 +14,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMess
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterBackedVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
@@ -46,7 +47,7 @@ fun PsiFile.getCells(): List<JupyterPsiCell> = descendantsOfType<JupyterPsiCell>
 
 fun PsiFile.isInjectedKtFile(): Boolean = name.endsWith("kts")
 
-fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: Editor) {
+fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: Editor, executionCallback: JupyterExecutionCallback? = null) {
     val project = notebookFile.project
     val document = PsiDocumentManager.getInstance(project).getDocument(notebookFile)!!
     val executionManager = JupyterCellExecutionManager.getInstance(project)
@@ -85,7 +86,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: 
                     onError = { ex: Exception ->
                         endExceptionally(AssertionError("Notebook execution was not successful", ex))
                     },
-                    callbacks = listOf(object : JupyterExecutionCallbackAdapter() {
+                    callbacks = listOfNotNull(object : JupyterExecutionCallbackAdapter() {
                         override fun onStatus(message: JupyterStatusMessage) {
                             if (message.executionState == JupyterStatusMessage.JupyterExecutionState.IDLE) {
                                 receivedMessagesFutures[cellExecutionNumber[cellNumber]!!].complete(messages)
@@ -99,7 +100,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, editor: 
                         override fun onUpdateOutput(message: JupyterMessage) {
                             messages.outputs.add(message)
                         }
-                    }),
+                    }, executionCallback),
                     notebookVirtualFile = cell.getJupyterBackedVirtualFile()!!,
                     project = project
                 )
