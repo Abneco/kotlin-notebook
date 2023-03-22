@@ -124,7 +124,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         }
         val dimensionsStr = DSTableBundle.message("ds.table.dimensions.info", nRow, nCol)
 
-        return DSDataFrameInfo(nRow, 0, columnNames, dimensionsStr)
+        return DSDataFrameInfo(nRow, 0, columnNames, List(columnNames.size) { null }, dimensionsStr)
     }
 
     private fun parseDataFromKotlinDataframeOutput(id: DataId, text: String): DSTableData {

@@ -62,8 +62,8 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
         val frameInfo = provider.parseTextToFrameInfo(data.toString())
 
         Assert.assertEquals(frameInfo.rows, 20)
-        Assert.assertEquals(frameInfo.cols, actualColumns)
-        Assert.assertEquals(frameInfo.dim, "${frameInfo.rows} rows × ${frameInfo.cols.size} columns")
+        Assert.assertEquals(frameInfo.columnNames, actualColumns)
+        Assert.assertEquals(frameInfo.dim, "${frameInfo.rows} rows × ${frameInfo.columnNames.size} columns")
     }
 
     @Test
