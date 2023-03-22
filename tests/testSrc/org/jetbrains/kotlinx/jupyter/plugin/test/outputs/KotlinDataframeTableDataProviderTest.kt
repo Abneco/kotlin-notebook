@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.outputs
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.testFramework.UsefulTestCase
 import com.intellij.util.asSafely
 import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing
@@ -25,13 +26,15 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
         Assert.assertTrue(KotlinDataframeParsing.isKotlinDataFrame(data))
     }
 
-
     @Test
     fun `test serialized content extraction`() {
-        val (dataframeProvider, data) = prepareProviderAndData()
-        val serializedDf = dataframeProvider.extractSerializedData(data)
+        val (_, data) = prepareProviderAndData()
 
-        val rawJson = ObjectMapper().readTree(serializedDf)
+        val mapper = ObjectMapper()
+        val serializedDf = data.toString()
+
+        val messageContent = mapper.readTree(serializedDf)[KotlinDataframeParsing.jsonPayloadField]
+        val rawJson = mapper.readTree(messageContent.asText())
 
         val nRow = rawJson[KotlinDataframeParsing.nRowsField].asInt()
         val nCol = rawJson[KotlinDataframeParsing.nColsField].asInt()
@@ -51,10 +54,12 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
     @Test
     fun `test DSDataFrameInfo extraction`() {
         val (dataframeProvider, data) = prepareProviderAndData()
+        Registry.get("kotlin.dataframe.swing.outputs.enabled").setValue(true)
+        val provider = dataframeProvider.getDataProviderWhichSupportsFormatOrNull(data.toString())
 
-        val provider = dataframeProvider.getDataProvider()
+        Assert.assertNotNull(provider!!)
 
-        val frameInfo = provider.parseTextToFrameInfo(dataframeProvider.extractSerializedData(data))
+        val frameInfo = provider.parseTextToFrameInfo(data.toString())
 
         Assert.assertEquals(frameInfo.rows, 20)
         Assert.assertEquals(frameInfo.cols, actualColumns)
@@ -64,10 +69,12 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
     @Test
     fun `test DSTableData extraction`() {
         val (dataframeProvider, data) = prepareProviderAndData()
+        Registry.get("kotlin.dataframe.swing.outputs.enabled").setValue(true)
+        val provider = dataframeProvider.getDataProviderWhichSupportsFormatOrNull(data.toString())
 
-        val provider = dataframeProvider.getDataProvider()
+        Assert.assertNotNull(provider!!)
 
-        val tableData = provider.parseTextToTableData(DataId(19), dataframeProvider.extractSerializedData(data))
+        val tableData = provider.parseTextToTableData(DataId(19), data.toString())
 
         Assert.assertEquals(tableData.cols!!.size, 14)
 

@@ -15,19 +15,26 @@ import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsin
 import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.serializedDataframeField
 import org.jetbrains.plugins.notebooks.tables.DSTableBundle
 import org.jetbrains.plugins.notebooks.tables.DSTableData
+import org.jetbrains.plugins.notebooks.tables.DSTableDataException
 import org.jetbrains.plugins.notebooks.tables.DataId
 import org.jetbrains.plugins.notebooks.tables.ExternalTableDataProviderFactory
 import org.jetbrains.plugins.notebooks.tables.api.DSDataFrameInfo
+import org.jetbrains.plugins.notebooks.tables.api.DSTableCommandExecutor
 import org.jetbrains.plugins.notebooks.tables.api.DSTableDataProvider
 import org.jetbrains.plugins.notebooks.tables.py.DSTableDataType
-import org.jetbrains.plugins.notebooks.tables.DSTableDataException
-import org.jetbrains.plugins.notebooks.tables.api.DSTableCommandExecutor
+import java.util.*
 import javax.swing.RowSorter
 import javax.swing.SortOrder
+import kotlin.collections.ArrayList
 
 
 internal val isSwingUiEnabledForKotlinDataframe: Boolean
-    get() = Registry.`is`("kotlin.dataframe.swing.outputs.enabled", false)
+    // it's implemented this way to make it possible to set the registry key programmatically for tests
+    get() = try {
+        Registry.`is`("kotlin.dataframe.swing.outputs.enabled")
+    } catch (e: MissingResourceException) {
+        false
+    }
 
 class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
     override fun getDataProviderWhichSupportsFormatOrNull(serializedData: String?): DSTableDataProvider? {
