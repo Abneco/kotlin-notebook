@@ -37,7 +37,7 @@ internal val isSwingUiEnabledForKotlinDataframe: Boolean
     }
 
 class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
-    override fun getDataProviderWhichSupportsFormatOrNull(serializedData: String?): DSTableDataProvider? {
+    override fun getDataProviderCapableToParseDataOrNull(serializedData: String?): DSTableDataProvider? {
         if (!isSwingUiEnabledForKotlinDataframe) return null
         if (serializedData == null || !isFormatSupported(serializedData)) return null
 

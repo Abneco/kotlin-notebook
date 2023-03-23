@@ -55,7 +55,7 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
     fun `test DSDataFrameInfo extraction`() {
         val (dataframeProvider, data) = prepareProviderAndData()
         Registry.get("kotlin.dataframe.swing.outputs.enabled").setValue(true)
-        val provider = dataframeProvider.getDataProviderWhichSupportsFormatOrNull(data.toString())
+        val provider = dataframeProvider.getDataProviderCapableToParseDataOrNull(data.toString())
 
         Assert.assertNotNull(provider!!)
 
@@ -70,7 +70,7 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
     fun `test DSTableData extraction`() {
         val (dataframeProvider, data) = prepareProviderAndData()
         Registry.get("kotlin.dataframe.swing.outputs.enabled").setValue(true)
-        val provider = dataframeProvider.getDataProviderWhichSupportsFormatOrNull(data.toString())
+        val provider = dataframeProvider.getDataProviderCapableToParseDataOrNull(data.toString())
 
         Assert.assertNotNull(provider!!)
 

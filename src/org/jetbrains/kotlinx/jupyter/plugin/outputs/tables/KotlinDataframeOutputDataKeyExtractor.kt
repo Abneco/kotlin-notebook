@@ -2,8 +2,10 @@
 package org.jetbrains.kotlinx.jupyter.plugin.outputs.tables
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.intellij.lang.Language
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.util.asSafely
+import org.jetbrains.plugins.notebooks.editor.language
 import org.jetbrains.plugins.notebooks.jupyter.editor.isJupyter
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterTableOutputDataKey
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.getOutputsForIndex
@@ -27,6 +29,7 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
         val res = when {
             !isSwingUiEnabledForKotlinDataframe -> null
             !editor.isJupyter -> null
+            editor.isJupyter && editor.language?.isKindOf(Language.findLanguageByID("Python")) == true -> null
             interval.type != NotebookCellLines.CellType.CODE -> null
             else -> extractImpl(editor, interval)
         }
