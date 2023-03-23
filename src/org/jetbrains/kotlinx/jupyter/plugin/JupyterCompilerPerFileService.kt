@@ -11,6 +11,7 @@ import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
@@ -52,6 +53,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingRestarter.UpdateSteps.postScriptingUpdateStep
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
+import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
@@ -215,6 +217,8 @@ class JupyterCompilerPerFileService(
     }
 
     init {
+        thisLogger().assertTrue(virtualFile.file.isKotlinNotebook) { "$virtualFile is not a Kotlin Jupyter notebook" }
+
         updateClasspathWithExternalDependencies()
         Disposer.register(parent, this)
     }

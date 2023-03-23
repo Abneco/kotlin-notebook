@@ -68,7 +68,10 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         val editors = editorManager?.allEditors ?: return
 
         val openFiles = editors.mapNotNull { (it as? JupyterFileEditor)?.getNotebookFile() }
-        val notebookFiles = openFiles.mapNotNull { if (it.fileType is JupyterFileType) BackedNotebookVirtualFile(it) else null }
+        val notebookFiles = openFiles
+            .filter { it.fileType is JupyterFileType }
+            .mapNotNull { BackedNotebookVirtualFile.takeIfBacked(it) }
+            .filter { it.file.isKotlinNotebook }
         builder.addRootsFromNotebooks(notebookFiles)
     }
 
