@@ -1,12 +1,10 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
-import javax.swing.UIManager
-
 object KotlinNotebookCodegen {
     fun generateColorSchemeChangeCode(): String {
-        val lafName = UIManager.getLookAndFeel()?.name ?: return ""
-        val themeName = if (lafName.contains("Darcula") || lafName.contains("dark", true)) {
+        val isDark = uiFeelsDark() ?: return ""
+        val themeName = if (isDark) {
             "DARK"
         } else {
             "LIGHT"
