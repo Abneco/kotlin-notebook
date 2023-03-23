@@ -7,6 +7,7 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.colors.CodeInsightColors
@@ -64,7 +65,7 @@ internal object NotebookHighlightingUtilityObject {
     private const val notebookDocumentFileExtension: String = "ipynb"
     private val updateScope = CoroutineScope(Dispatchers.Default)
     private val LOG = thisLogger()
-    const val cellToHighlightLimit: Int = 15
+    val cellToHighlightLimit: Int = Runtime.getRuntime().availableProcessors() / 2 - 1
 
     const val scriptingMissingDependencyPrefix = "MISSING"
     const val scriptingMissingClassError = "${scriptingMissingDependencyPrefix}_SCRIPT_RECEIVER_CLASS"
@@ -99,7 +100,9 @@ internal object NotebookHighlightingUtilityObject {
             while (DaemonCodeAnalyzerStatusService.getInstance(file.project).daemonRunning) {
                 delay(200)
             }
-            file.restartAnalyzing()
+            runReadAction {
+                file.restartAnalyzing()
+            }
             afterRequest()
         }
     }
@@ -118,9 +121,9 @@ internal object NotebookHighlightingUtilityObject {
               delay(delayDelta)
                 isReady = manager.isReady()
             }
-          invokeLater {
-            file.restartAnalyzing()
-          }
+            runReadAction {
+                file.restartAnalyzing()
+            }
         }
     }
 
