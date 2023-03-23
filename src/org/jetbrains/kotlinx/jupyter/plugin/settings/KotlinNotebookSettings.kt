@@ -5,7 +5,7 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
 
 private val isBuildProjectProperty = KotlinNotebookProperty("isBuildProject", false)
-private val isAddProjectLibrariesToClasspathProperty = KotlinNotebookProperty("isAddProjectLibrariesToClasspath", false)
+private val isAddProjectLibrariesToClasspathProperty = KotlinNotebookProperty("isAddProjectLibrariesToClasspath", true)
 
 var JupyterNotebook.isBuildProject by isBuildProjectProperty
 var JupyterNotebook.isAddProjectLibrariesToClasspath by isAddProjectLibrariesToClasspathProperty
