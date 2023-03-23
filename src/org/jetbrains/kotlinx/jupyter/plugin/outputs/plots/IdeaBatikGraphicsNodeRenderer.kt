@@ -17,7 +17,7 @@ class IdeaBatikGraphicsNodeRenderer : BatikGraphicsNodeRenderer {
         get() = 100
 
     override fun paint(node: GraphicsNode, g: Graphics2D, size: Dimension) {
-        val img = getRenderedImage(node, size)
+        val img = cacheService.getOrCreateImage(node) { getRenderedImage(node, size) }
         StartupUiUtil.drawImage(g, img)
     }
 
@@ -35,5 +35,9 @@ class IdeaBatikGraphicsNodeRenderer : BatikGraphicsNodeRenderer {
 
         node.paint(g)
         return img
+    }
+
+    companion object {
+        private val cacheService get() = LetsPlotGraphicsNodesRenderingCache.getInstance()
     }
 }
