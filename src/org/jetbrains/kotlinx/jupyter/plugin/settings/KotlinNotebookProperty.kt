@@ -27,8 +27,17 @@ internal class KotlinNotebookProperty(val name: @Nls String, val defaultValue: B
         }
         val metadata = thisRef.getMetadata(METADATA_KEY) as? ObjectNode
             ?: JsonNodeFactory.instance.objectNode().also { thisRef.setMetadata(METADATA_KEY, it) }
-        metadata.set<ObjectNode>(name, if (value) BooleanNode.TRUE else BooleanNode.FALSE)
+        doWriteValue(metadata, value)
         thisRef.notifyListeners()
+    }
+
+    private fun doWriteValue(metadata: ObjectNode, value: Boolean) {
+        metadata.set<ObjectNode>(name, if (value) BooleanNode.TRUE else BooleanNode.FALSE)
+    }
+
+    internal fun writeValue(metadata: ObjectNode, value: Boolean) {
+        if (value == defaultValue) return
+        doWriteValue(metadata, value)
     }
 
     private fun removeValue(thisRef: JupyterNotebook) {

@@ -95,6 +95,13 @@
                              id="kotlinNotebook"
                              instance="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookConfigurable"/>
 
+        <projectConfigurable groupId="tools"
+                             bundle="messages.JupyterKotlinBundle"
+                             key="kotlin.jupyter.settings.new.notebook.title"
+                             id="kotlinNotebook.newNotebook"
+                             parentId="kotlinNotebook"
+                             instance="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookNewNotebookConfigurable"/>
+
         <notificationGroup
                 id="Kotlin Notebook plugin updates"
                 displayType="STICKY_BALLOON"

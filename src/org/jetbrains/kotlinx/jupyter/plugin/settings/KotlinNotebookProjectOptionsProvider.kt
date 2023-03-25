@@ -28,16 +28,19 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
     }
 
     @RequiresEdt
+    internal fun getNewKotlinNotebookSettings(): KotlinNotebookSettings {
+        return KotlinNotebookSettings(state.shouldBuildProject, state.shouldAddProjectLibrariesToClasspath)
+    }
+
+    @RequiresEdt
     internal fun getNotebookSettingsToMigrate() : KotlinNotebookSettings? {
         if (state.isPerNotebookSettingsMigrated) return null
-        return KotlinNotebookSettings(state.shouldBuildProject, state.shouldAddProjectLibrariesToClasspath)
+        return getNewKotlinNotebookSettings()
     }
 
     @RequiresEdt
     internal fun markNotebookSettingsMigrated() {
         state.isPerNotebookSettingsMigrated = true
-        state.shouldBuildProject = false
-        state.shouldAddProjectLibrariesToClasspath = false
     }
 
     class State : BaseState() {

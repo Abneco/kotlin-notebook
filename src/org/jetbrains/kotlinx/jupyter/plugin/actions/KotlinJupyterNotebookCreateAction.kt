@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.actions
 
 import com.intellij.ide.actions.CreateFileFromTemplateAction
@@ -15,6 +15,8 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.config.notebookLanguageInfo
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.asJson
 import org.jetbrains.plugins.notebooks.jupyter.actions.createFileFromTemplateWithProperties
 
 class KotlinJupyterNotebookCreateAction : CreateFileFromTemplateAction(
@@ -33,7 +35,7 @@ class KotlinJupyterNotebookCreateAction : CreateFileFromTemplateAction(
         JupyterKotlinBundle.message("kotlin.jupyter.action.create.notebook.name", templateName)
 
     public override fun createFileFromTemplate(name: String, template: FileTemplate, dir: PsiDirectory): PsiFile? {
-        val templateValues = createTemplateValues()
+        val templateValues = createTemplateValues(dir.project)
         return createFileFromTemplateWithProperties(name, template, dir, defaultTemplateProperty, templateValues, LOG)
     }
 
@@ -42,18 +44,23 @@ class KotlinJupyterNotebookCreateAction : CreateFileFromTemplateAction(
 
         private const val VAR_KERNEL_SPEC = "KERNEL_SPEC"
         private const val VAR_LANGUAGE_SPEC = "LANGUAGE_SPEC"
+        private const val VAR_KTNB_METADATA = "KTNB_METADATA"
 
-        internal fun createTemplateValues(): Map<String, String> {
+        internal fun createTemplateValues(project: Project): Map<String, String> {
             val serializer = Json {
                 prettyPrint = true
             }
             val kernelSpec = serializer.encodeToString(notebookKernelSpec)
             val languageSpec = serializer.encodeToString(notebookLanguageInfo)
+            val notebookSettings = KotlinNotebookProjectOptionsProvider.getInstance(project).getNewKotlinNotebookSettings().asJson()
 
-            return mapOf(
-                VAR_KERNEL_SPEC to kernelSpec,
-                VAR_LANGUAGE_SPEC to languageSpec,
-            )
+            return buildMap {
+                put(VAR_KERNEL_SPEC, kernelSpec)
+                put(VAR_LANGUAGE_SPEC, languageSpec)
+                if (notebookSettings != null) {
+                    put(VAR_KTNB_METADATA, notebookSettings)
+                }
+            }
         }
     }
 }
