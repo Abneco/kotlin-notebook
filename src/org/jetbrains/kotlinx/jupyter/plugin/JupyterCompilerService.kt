@@ -103,6 +103,10 @@ class JupyterCompilerService(val project: Project) : Disposable {
         return mapping[virtualFile.file]
     }
 
+    fun needToUpdateImplicitReceiversIfAny(file: VirtualFile): Boolean {
+        return mapping[file]?.let { it.hasPendingUpdates || it.loadReceiverClassesIfAny() } == true
+    }
+
     val needToUpdateImplicitsReceiversIfAny: Boolean get() {
         var shouldUpdate = false
         mapping.forEach { (_, u) -> if (u.hasPendingUpdates || u.loadReceiverClassesIfAny()) shouldUpdate = true }

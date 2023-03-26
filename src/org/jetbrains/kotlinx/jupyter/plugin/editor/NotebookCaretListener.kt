@@ -6,7 +6,6 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DAEMON_EVENT_TOPIC
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DaemonListener
 import com.intellij.codeInsight.hints.InlayHintsPassFactory
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
@@ -27,13 +26,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
+import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService.Companion.HL_DELAY_DELTA
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookEditorCaretListenerReferenceKey
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
@@ -65,6 +66,8 @@ class NotebookCaretListener(
     private val codeAnalyzer = DaemonCodeAnalyzer.getInstance(project)
     private val codeAnalyzerStatus = DaemonCodeAnalyzerStatusService.getInstance(project)
     private val fastUpdateQueueGuardMark = AtomicReference(false)
+    private val notebookHighlightingManager =
+        psiFile?.virtualFile?.let(BackedNotebookVirtualFile::takeIfBacked)?.let { NotebookHighlightingService.getForFile(project, it) }
 
     private val stateLock = ReentrantReadWriteLock()
 
@@ -78,26 +81,21 @@ class NotebookCaretListener(
     private var isFirstRun = true
     private var isSizeChanged = false
     private var lastCellSize = -1
-    private var lastCancelTime: Long? = null
 
     init {
         assert(psiFile != null)
         Disposer.register(parentDisposable, this)
         doc?.putUserData(NotebookCellsUpdatesAllowedToChange, AtomicReference(true))
-        editor.putUserData(NotebookEditorCaretListenerReferenceKey, this)
+        notebookHighlightingManager?.associateWithNewCaretListener(this)
+
         project.messageBus.connect(this).subscribe(DAEMON_EVENT_TOPIC, object : DaemonListener {
             private val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
-
-            override fun daemonCancelEventOccurred(reason: String) {
-                lastCancelTime = System.currentTimeMillis()
-            }
 
             override fun daemonFinished(fileEditors: MutableCollection<out FileEditor>) {
                 fileEditors.firstOrNull { (it as? TextEditor)?.editor == editor }?.let {
                     if (!scriptDefManager.isReady()) {
                         return
                     }
-                    val savedLastCancelTime = lastCancelTime
                     // for proper cell move up handle
                     val afterNonTrivialChange = doc?.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(true, false) == true
                     if (afterNonTrivialChange) {
@@ -107,6 +105,7 @@ class NotebookCaretListener(
                     stateLock.tryWithWriteLock {
                         if (isFirstRun) isFirstRun = false
                         prevCell = null
+                        val isRunning = codeAnalyzerStatus.daemonRunning
                         if (afterNonTrivialChange) {
                             val toSwap = doc?.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)
                                 ?: editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it).ordinal }
@@ -122,16 +121,26 @@ class NotebookCaretListener(
                         doc?.putUserData(RenamingEnclosedRange, null)
                         doc?.putUserData(NotebookDocumentTargetRanges, listOf(lastCellIndCopy))
                         doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
-                        val dff = System.currentTimeMillis() - (savedLastCancelTime ?: 0)
-                        if (dff > 350) {
-                            val queue = doc?.getUserData(NotebookQueuedTargetRanges)
-                            // we don't want to lose any updates happened during concurrent modification or delay
-                            if ((queue?.size ?: 0) > 2 && !codeAnalyzerStatus.daemonRunning && doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
-                                LOG.debug("Clearing HL queue")
-                                JupyterKotlinCellExecutionCallbackFactory.getInstance().daemonFinished(vFile, project, queue, doc)
+
+                        val queue = doc?.getUserData(NotebookQueuedTargetRanges)
+                        val remainingCells = notebookHighlightingManager?.remainingIndexesToProcess
+                        val finished = notebookHighlightingManager?.finishedHighlighting
+                        val target = notebookHighlightingManager?.completeRangeInd
+                        val isDone = remainingCells?.isEmpty() == true
+                        if (queue != null && !finished.isNullOrEmpty()) {
+                            queue.removeAll(finished)
+                        }
+                        // we don't want to lose any updates happened during concurrent modification or delay
+                        if (!isRunning && doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
+                            JupyterKotlinCellExecutionCallbackFactory.getInstance()
+                                .daemonFinished(vFile, psiFile,
+                                                finished, isDone,
+                                                doc)
+                            if (isDone) {
                                 queue?.clear()
                             }
                         }
+                        queue?.addIfNotNull(target) ?: Unit
                     }
                 }
             }
@@ -224,7 +233,7 @@ class NotebookCaretListener(
             if (projectOptionsProvider.state.shouldLimitTypeHintsByActiveCell) {
                 InlayHintsPassFactory.clearModificationStamp(editor)
             }
-            invokeLater {
+            runReadAction {
                 codeAnalyzer.restart(it)
             }
         }
@@ -233,10 +242,8 @@ class NotebookCaretListener(
     fun resetState() {
         stateLock.withWriteLock {
             deferredFastUpdate?.cancel()
-            lastCellInd = -1
             floatingCellInd = -1
             isFirstRun = true
-            lastCancelTime = null
             lastCell = null
             prevCell = null
             lastTimeCellFocusChanged = 0L

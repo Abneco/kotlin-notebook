@@ -12,6 +12,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.kotlin.js.translate.utils.splitToRanges
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
@@ -144,11 +145,13 @@ class ImpatientNotebookChangeListener(
             val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
             val s = setOfNotNull(neededCellIndex, cellUnderCaret?.ordinal?.minus(1), cellUnderCaret?.ordinal?.plus(1)).also {
                 document.getUserData(NotebookQueuedTargetRanges)?.let { q ->
+                    val curInd = cellUnderCaret?.ordinal
                     synchronized(q) {
                         val v = q.toList()
                         q.clear()
-                        q.addAll(v.map { el -> el.minus(1) })
-                        q.addAll(v.map { el -> el.plus(1) })
+                        val shiftedData = v.splitToRanges { if (it > (curInd ?: 0)) (if (isAddEvent) 1 else -1) else 0 }
+                            .flatMap { range -> range.first.map { it.plus(range.second) } }
+                        q.addAll(shiftedData)
                         q.addAll(it)
                     }
                 }

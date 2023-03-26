@@ -29,6 +29,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.jupyter.NOTEBOOK_LANGUAGE
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
@@ -92,6 +93,9 @@ internal fun List<PsiLanguageInjectionHost>.getInjectedKtFiles(injectedLanguageM
     this.mapNotNull { h ->
         injectedLanguageManager.getInjectedPsiFiles(h)?.firstOrNull { it.first is KtFile }?.first as? KtFile
     }
+
+internal fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
+    takeIfBacked(this)
 
 internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
     PsiManager.getInstance(project).findFile(this)

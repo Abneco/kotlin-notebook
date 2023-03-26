@@ -32,7 +32,7 @@ class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
             ApplicationManager.getApplication().messageBus.connect()
                 .subscribe(EditorColorsManager.TOPIC,
                            EditorColorsListener {
-                               editor.document.reactOnThemeChangedEvent()
+                               editor.document.reactOnThemeChangedEvent(project, virtualFile.file)
                            })
         }
     }
