@@ -38,6 +38,8 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
+        <registryKey key="kotlin.notebook.disable.jupyter.core.actions" defaultValue="false"
+                     description="Disable some of core Jupyter Notebook actions such as creation of Python Jupyter Notebook"/>
         <registryKey key="lets.plot.swing.outputs.enabled" defaultValue="false"
                          description="When enabled, outputs of LetsPlot plotting library in Kotlin Notebooks will be rendered using no-browser approach"/>
 
