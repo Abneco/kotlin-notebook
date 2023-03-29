@@ -172,37 +172,41 @@ internal object NotebookHighlightingUtilityObject {
     }
 
     /**
-     * [require] ReadAction
-     * [require] EDT thread
+     * [get] ReadAction
+     * [get] EDT
      */
     fun resetSessionMetaInformation(document: Document, vFile: VirtualFile, project: Project, wouldShowNotification: Boolean = true) {
-        val cellOrdinal = FileEditorManager.getInstance(project).getSelectedEditor(vFile)?.safeAs<TextEditor>()?.let {
-            val editor = it.editor
-            val pos = editor.caretModel.logicalPosition
-            val cell = editor.getCell(min(pos.line, document.lineCount - 1))
-            cell.ordinal
+        val cellOrdinal = invokeAndWaitIfNeeded {
+            FileEditorManager.getInstance(project).getSelectedEditor(vFile)?.safeAs<TextEditor>()?.let {
+                val editor = it.editor
+                val pos = editor.caretModel.logicalPosition
+                val cell = editor.getCell(min(pos.line, document.lineCount - 1))
+                cell.ordinal
+            }
         }
         LOG.info("Resetting session meta information")
-        val cells = vFile.toPsiFile(project)?.getNotebookCellList()
-        val cell = cellOrdinal?.let { cells?.getOrNull(it) }
-        document.invalidateStateAfterCellExecution(cell, cellOrdinal)
-        val injectedManager = InjectedLanguageManager.getInstance(project)
-        val psiFile = vFile.toPsiFile(project)
-        psiFile?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
-        val cellList = psiFile?.getNotebookCellList()
-        cellList?.forEach {
-            it.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
-            it.putUserData(InjectedHostHasErrors, null)
-            invalidateTypeHintsRegistry(it)
-            injectedManager.getInjectedPsiFiles(it)?.firstOrNull { f ->
-                f.first is KtFile
-            }?.first?.putUserData(NonTargetHostErrorMark, null)
+        val (psiFile, cells) = runReadAction {
+            val psiFile = vFile.toPsiFile(project)
+            val cells = psiFile?.getNotebookCellList()
+
+            val cell = cellOrdinal?.let { cells?.getOrNull(it) }
+            document.invalidateStateAfterCellExecution(cell, cellOrdinal)
+            val injectedManager = InjectedLanguageManager.getInstance(project)
+            psiFile?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
+            cells?.forEach {
+                it.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
+                it.putUserData(InjectedHostHasErrors, null)
+                invalidateTypeHintsRegistry(it)
+                injectedManager.getInjectedPsiFiles(it)?.firstOrNull { f ->
+                    f.first is KtFile
+                }?.first?.putUserData(NonTargetHostErrorMark, null)
+            }
+            psiFile to cells
         }
         val backedFile = vFile.toBackedNotebookFile()
         backedFile?.let {
             JupyterKotlinCellExecutionCallbackFactory.getInstance().resetPreviousData(it)
         }
-
         if (wouldShowNotification) {
           NotebookNotificationUtility.showKernelRestart(project)
         }

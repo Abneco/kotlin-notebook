@@ -2,14 +2,12 @@
 package org.jetbrains.kotlinx.jupyter.plugin.session
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFileManager
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.resetSessionMetaInformation
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
@@ -72,14 +70,13 @@ class KotlinInProcessJupyterClient(
                 val file = VirtualFileManager.getInstance().findFileByNioPath(notebookPath) ?: return@create
                 val notebookFile = BackedNotebookVirtualFile.find(file) ?: return@create
                 if (!project.isDisposed && afterRestart) {
-                    invokeLater {
-                        runReadAction {
-                            FileDocumentManager.getInstance().getDocument(notebookFile.file)?.let {
-                                resetSessionMetaInformation(it, notebookFile.file, project)
-                            }
-                        }
+                    val document = runReadAction {
+                        FileDocumentManager.getInstance().getDocument(notebookFile.file)
                     }
-                    afterRestart = false 
+                    document?.let {
+                        resetSessionMetaInformation(it, notebookFile.file, project)
+                    }
+                    afterRestart = false
                 }
             }
         )
