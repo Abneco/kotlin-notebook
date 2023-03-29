@@ -7,7 +7,8 @@ import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataK
 
 data class LetsPlotOutputDataKey(
     val spec: ObjectNode,
-    override val executionCount: Int?
+    override val executionCount: Int?,
+    val applyColorScheme: Boolean
 ): HasExecutionCount {
     override fun getContentForDiffing(): Any {
         return spec.toPrettyString()
