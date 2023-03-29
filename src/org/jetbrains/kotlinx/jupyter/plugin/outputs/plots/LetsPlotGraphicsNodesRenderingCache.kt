@@ -5,9 +5,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.util.containers.CollectionFactory
 import org.jetbrains.relocated.apache.batik.gvt.GraphicsNode
-import org.jetbrains.relocated.apache.batik.gvt.RootGraphicsNode
-import org.jetbrains.relocated.apache.batik.gvt.event.GraphicsNodeChangeEvent
-import org.jetbrains.relocated.apache.batik.gvt.event.GraphicsNodeChangeListener
 import java.awt.image.BufferedImage
 
 @Service
@@ -15,20 +12,7 @@ class LetsPlotGraphicsNodesRenderingCache {
     private val cache = CollectionFactory.createConcurrentSoftValueMap<GraphicsNode, BufferedImage>()
 
     fun getOrCreateImage(node: GraphicsNode, create: () -> BufferedImage): BufferedImage {
-        return cache.getOrPut(node) {
-            (node as? RootGraphicsNode)?.apply {
-                val listener = object : GraphicsNodeChangeListener {
-                    override fun changeCompleted(e: GraphicsNodeChangeEvent) {
-                        removeTreeGraphicsNodeChangeListener(this)
-                        removeCache(this@apply)
-                    }
-                    override fun changeStarted(e: GraphicsNodeChangeEvent) = Unit
-                }
-
-                addTreeGraphicsNodeChangeListener(listener)
-            }
-            create()
-        }
+        return cache.getOrPut(node, create)
     }
 
     fun removeCache(node: GraphicsNode) = cache.remove(node)

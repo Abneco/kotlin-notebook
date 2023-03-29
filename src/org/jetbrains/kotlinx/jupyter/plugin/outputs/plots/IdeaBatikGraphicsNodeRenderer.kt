@@ -6,6 +6,7 @@ import com.intellij.util.ui.StartupUiUtil
 import jetbrains.datalore.vis.swing.BatikGraphicsNodeRenderer
 import org.jetbrains.relocated.apache.batik.ext.awt.RenderingHintsKeyExt
 import org.jetbrains.relocated.apache.batik.gvt.GraphicsNode
+import java.awt.AlphaComposite
 import java.awt.Dimension
 import java.awt.Graphics2D
 import java.awt.Rectangle
@@ -31,6 +32,9 @@ class IdeaBatikGraphicsNodeRenderer : BatikGraphicsNodeRenderer {
                 WeakReference<Any?>(img)
             )
             clip(Rectangle(0, 0, width, height))
+
+            composite = AlphaComposite.SrcOver
+            setRenderingHint(RenderingHintsKeyExt.KEY_TRANSCODING, RenderingHintsKeyExt.VALUE_TRANSCODING_VECTOR)
         }
 
         node.paint(g)
