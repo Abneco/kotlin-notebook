@@ -92,6 +92,38 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
         """.trimIndent(), actualText)
     }
 
+    @Test
+    fun completionInsertionWithExternalImportInSecondLine() = doTest(
+        object : ReceivedMessagesTester {
+            override val expectedCellsCount: Int = 2
+
+            override val cellsToExecute: List<Int> = listOf(0)
+
+            override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) = Unit
+        }
+    ) { tester ->
+        tester.typeWithPauses("ai")
+        val elements = myFixture?.lookupElements
+
+        assertNoThrowable {
+            invokeAndWaitIfNeeded {
+                elements?.first { it.lookupString == "fail" && it.userDataString.contains("fail  {...}")}.let {
+                    tester.lookup.finishLookup(KotlinNotebookAutoCompletionTest.CompletionMode.ADD.ch, it)
+                }
+            }
+        }
+        tester.joinCommit()
+
+        val actualText = runReadAction { myFixture.editor.document.text }
+
+        TestCase.assertEquals("""
+            import org.junit.jupiter.api.fail
+
+            fail {  }
+            123
+        """.trimIndent(), actualText)
+    }
+
     private fun doTest(executionTester: ReceivedMessagesTester, completionChecker: (CompletionAutoPopupTester) -> Unit) {
         withDisabledJcef {
             val notebookFile = configureExecutionTest(copyNotebookToProject = true)
