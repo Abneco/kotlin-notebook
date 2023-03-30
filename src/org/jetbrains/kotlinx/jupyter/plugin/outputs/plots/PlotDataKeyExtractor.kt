@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.asSafely
+import org.jetbrains.kotlinx.jupyter.plugin.util.convertObject
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutputDataKeyExtractor
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataKey
 
@@ -18,14 +19,16 @@ class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
         if (!dataObject.has(PLOT_KEY)) return null
         val plotValue = dataObject[PLOT_KEY].asSafely<ObjectNode>() ?: return null
         val swingEnabled = plotValue[SWING_ENABLED_KEY].asSafely<BooleanNode>()?.asBoolean() ?: true
-        if (!swingEnabled) {
-            return null
-        }
+        if (!swingEnabled) return null
         val plotType = plotValue[PLOT_TYPE_KEY].asSafely<TextNode>()?.asText() ?: return null
-        val applyColorScheme = plotValue[APPLY_COLOR_SCHEME_KEY].asSafely<BooleanNode>()?.asBoolean() ?: true
         return when(plotType) {
-            "lets_plot_spec" -> plotValue["output"].asSafely<ObjectNode>()?.let {
-                    outputSpec -> LetsPlotOutputDataKey(outputSpec, executionCount, applyColorScheme)
+            "lets_plot_spec" -> plotValue["output"].asSafely<ObjectNode>()?.let { outputSpec ->
+                val applyColorScheme = plotValue[APPLY_COLOR_SCHEME_KEY].asSafely<BooleanNode>()?.asBoolean() ?: true
+                LetsPlotOutputDataKey(
+                    convertObject(outputSpec),
+                    executionCount,
+                    applyColorScheme,
+                )
             }
             else -> null
         }
@@ -36,6 +39,5 @@ class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
         private const val PLOT_TYPE_KEY = "output_type"
         private const val APPLY_COLOR_SCHEME_KEY = "apply_color_scheme"
         private const val SWING_ENABLED_KEY = "swing_enabled"
-
     }
 }

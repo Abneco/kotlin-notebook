@@ -15,7 +15,6 @@ import jetbrains.datalore.plot.config.PlotConfig
 import jetbrains.datalore.plot.config.theme.ThemeConfig
 import jetbrains.datalore.vis.swing.PlotPanel
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
-import org.jetbrains.kotlinx.jupyter.plugin.util.toKotlinSerializationJson
 import org.jetbrains.kotlinx.jupyter.plugin.util.uiFeelsDark
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.createGutterPainter
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.updateGutterPainter
@@ -144,54 +143,52 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
         private fun getSpec(dataKey: LetsPlotOutputDataKey) = getSpec(dataKey, uiFeelsDark())
 
         private fun getSpec(dataKey: LetsPlotOutputDataKey, isDark: Boolean?): MutableLetsPlotSpec {
-            val rawSpec = deserializeSpec(dataKey.spec.toKotlinSerializationJson()).toMutableMap().also {
+            val rawSpec = deserializeSpec(dataKey.spec).toMutableMap().also {
                 if (dataKey.applyColorScheme) {
                     updateFlavor(it, isDark)
                 }
             }
-            //val flavoredSpec = updateFlavorForSinglePlot(rawSpec, isDark)
             val processedSpec = MonolithicCommon.processRawSpecs(rawSpec, false)
             return processedSpec.toMutableMap()
         }
 
-        private val LetsPlotSpec.isGGBunch: Boolean get() = !PlotConfig.isFailure(this)
-                && PlotConfig.figSpecKind(this) == FigKind.GG_BUNCH_SPEC
-
-        private val LetsPlotSpec.isSubPlots: Boolean get() = !PlotConfig.isFailure(this)
-                && PlotConfig.figSpecKind(this) == FigKind.SUBPLOTS_SPEC
-
-        @Suppress("UNCHECKED_CAST")
-        private fun updateFlavorToPlot(spec: MutableLetsPlotSpec, flavorName: String) {
-            val themeMap = spec.compute("theme") { _, prevVal ->
-                if (prevVal == null) {
-                    mutableMapOf<String, Any>()
-                } else {
-                    (prevVal as Map<String, Any>).toMutableMap()
-                }
-            } as MutableMap<String, Any>
-
-            themeMap.putIfAbsent("flavor", flavorName)
-        }
-
+        private val LetsPlotSpec.isGGBunch: Boolean get() = isOfKind(FigKind.GG_BUNCH_SPEC)
+        private val LetsPlotSpec.isSubPlots: Boolean get() = isOfKind(FigKind.SUBPLOTS_SPEC)
+        private fun LetsPlotSpec.isOfKind(kind: FigKind) = !PlotConfig.isFailure(this)
+                && PlotConfig.figSpecKind(this) == kind
 
         @Suppress("UNCHECKED_CAST")
-        private fun updateFlavorToGGBunch(spec: MutableLetsPlotSpec,flavorName: String) {
-            spec["items"] = (spec["items"] as List<MutableMap<String, Any>>).map {
-                it.toMutableMap().also { item ->
-                    item["feature_spec"] = (item["feature_spec"]
-                            as Map<String, Any>).toMutableMap().also { plotSpec ->
-                        updateFlavorToPlot(plotSpec, flavorName)
-                    }
+        private fun updateFlavorForPlot(spec: MutableLetsPlotSpec, flavorName: String) {
+            spec.compute("theme") { _, theme ->
+                ((theme as? LetsPlotSpec)?.toMutableMap() ?: mutableMapOf()).apply {
+                    putIfAbsent("flavor", flavorName)
                 }
             }
         }
 
         @Suppress("UNCHECKED_CAST")
-        private fun updateFlavorToSubPlots(spec: MutableLetsPlotSpec,flavorName: String) {
-            spec["figures"] = (spec["figures"]!! as List<Map<String, Any>>).map {
-                it.toMutableMap().also { figure ->
-                    updateFlavorToPlot(figure, flavorName)
-                }
+        private fun updateFlavorForGGBunch(spec: MutableLetsPlotSpec, flavorName: String) {
+            spec.compute("items") { _, items ->
+                (items as? List<LetsPlotSpec>)?.map {
+                    it.toMutableMap().also { item ->
+                        item.compute("feature_spec") { _, feat ->
+                            (feat as LetsPlotSpec).toMutableMap().also { plotSpec ->
+                                updateFlavorForPlot(plotSpec, flavorName)
+                            }
+                        }
+                    }
+                }.orEmpty()
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun updateFlavorForSubPlots(spec: MutableLetsPlotSpec, flavorName: String) {
+            spec.compute("figures") { _, figures ->
+                (figures as? List<LetsPlotSpec>)?.map {
+                    it.toMutableMap().also { figure ->
+                        updateFlavorForPlot(figure, flavorName)
+                    }
+                }.orEmpty()
             }
         }
 
@@ -199,38 +196,12 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
             if (isDark == null) return
             val flavorName = if (isDark) ThemeOption.Flavor.DARCULA else ThemeOption.Flavor.HIGH_CONTRAST_LIGHT
             when(PlotConfig.figSpecKind(rawSpec)) {
-                FigKind.PLOT_SPEC -> updateFlavorToPlot(rawSpec, flavorName)
-                FigKind.SUBPLOTS_SPEC -> updateFlavorToSubPlots(rawSpec, flavorName)
-                FigKind.GG_BUNCH_SPEC -> updateFlavorToGGBunch(rawSpec, flavorName)
+                FigKind.PLOT_SPEC -> updateFlavorForPlot(rawSpec, flavorName)
+                FigKind.SUBPLOTS_SPEC -> updateFlavorForSubPlots(rawSpec, flavorName)
+                FigKind.GG_BUNCH_SPEC -> updateFlavorForGGBunch(rawSpec, flavorName)
                 else -> return
             }
-           // println(rawSpec.toString())
-            /*val themeMap = rawSpec.compute(Option.Plot.THEME) { _, prevVal ->
-                if (prevVal == null || prevVal !is Map<*, *>) mutableMapOf<String, Any>()
-                else prevVal.toMutableMap()
-            }
-
-            @Suppress("UNCHECKED_CAST")
-            themeMap as MutableLetsPlotSpec
-
-            themeMap[Option.Theme.FLAVOR] = if (isDark) ThemeOption.Flavor.DARCULA else ThemeOption.Flavor.HIGH_CONTRAST_LIGHT
-            return rawSpec*/
         }
-
-        /*private fun updateFlavorForSinglePlot(rawSpec: MutableLetsPlotSpec, isDark: Boolean?) : MutableLetsPlotSpec {
-            if (isDark == null) return rawSpec
-
-            val themeMap = rawSpec.compute(Option.Plot.THEME) { _, prevVal ->
-                if (prevVal == null || prevVal !is Map<*, *>) mutableMapOf<String, Any>()
-                else prevVal.toMutableMap()
-            }
-
-            @Suppress("UNCHECKED_CAST")
-            themeMap as MutableLetsPlotSpec
-
-            themeMap[Option.Theme.FLAVOR] = if (isDark) ThemeOption.Flavor.DARCULA else ThemeOption.Flavor.HIGH_CONTRAST_LIGHT
-            return rawSpec
-        }*/
 
         private fun plotBackground(processedSpec: LetsPlotSpec): Color {
             val themeOptions = themeOptions(processedSpec)
