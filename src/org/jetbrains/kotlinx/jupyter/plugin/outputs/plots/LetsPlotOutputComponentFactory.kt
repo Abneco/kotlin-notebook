@@ -173,18 +173,18 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
             themeMap.putIfAbsent("flavor", flavorName)
         }
 
+
         @Suppress("UNCHECKED_CAST")
         private fun updateFlavorToGGBunch(spec: MutableLetsPlotSpec,flavorName: String) {
             spec["items"] = (spec["items"] as List<MutableMap<String, Any>>).map {
                 it.toMutableMap().also { item ->
                     item["feature_spec"] = (item["feature_spec"]
-                            as Map<String, Any>).toMutableMap().also {
-                        updateFlavorToPlot(item, flavorName)
+                            as Map<String, Any>).toMutableMap().also { plotSpec ->
+                        updateFlavorToPlot(plotSpec, flavorName)
                     }
                 }
             }
         }
-
 
         @Suppress("UNCHECKED_CAST")
         private fun updateFlavorToSubPlots(spec: MutableLetsPlotSpec,flavorName: String) {
@@ -202,7 +202,7 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
                 FigKind.PLOT_SPEC -> updateFlavorToPlot(rawSpec, flavorName)
                 FigKind.SUBPLOTS_SPEC -> updateFlavorToSubPlots(rawSpec, flavorName)
                 FigKind.GG_BUNCH_SPEC -> updateFlavorToGGBunch(rawSpec, flavorName)
-                else -> error("aaaa")
+                else -> return
             }
            // println(rawSpec.toString())
             /*val themeMap = rawSpec.compute(Option.Plot.THEME) { _, prevVal ->
