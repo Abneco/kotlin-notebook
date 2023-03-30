@@ -113,7 +113,7 @@ class JupyterCompilerPerFileService(
     initialClasspath: List<File>,
     parent: Disposable
 ) : Disposable {
-    private val psiFile = runReadAction {
+    private var psiFile = runReadAction {
         virtualFile.file.toPsiFile(project)
     }
     private val compileLock = ReentrantReadWriteLock()
@@ -410,14 +410,16 @@ class JupyterCompilerPerFileService(
 
                 AppExecutorUtil.getAppExecutorService().execute {
                     addAsPermanentLibrary(snippetMetadata.newClasspath, snippetMetadata.newSources)
+                    if (psiCell != null) {
+                        runReadAction {
+                            updateInjectedCellInfo(snippetMetadata, psiCell)
+                        }
+                    }
                 }
 
                 val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
                 implicitListsLoadQueue.addLast(Pair(lineClassesDir, kClassNames))
                 needsToUpdate.set(true)
-                if (psiCell != null) {
-                    updateInjectedCellInfo(snippetMetadata, psiCell)
-                }
             } catch (e: Exception) {
                 LOG.error(e)
             }
@@ -512,36 +514,38 @@ class JupyterCompilerPerFileService(
     private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell) {
         val injectManager = InjectedLanguageManager.getInstance(project)
         val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-        val topLevelFile = if (!psiCell.containingFile.isValid) {
-            InjectedLanguageManager.getInstance(project).getTopLevelFile(psiCell)
-        } else psiCell.containingFile
-        val document = FileDocumentManager.getInstance().getDocument(topLevelFile.virtualFile)
+        val document = when {
+            psiFile?.isValid == true -> psiFile
+            psiCell.containingFile.isValid -> psiCell.containingFile
+            else -> InjectedLanguageManager.getInstance(project).getTopLevelFile(psiCell)
+        }?.let {
+            psiFile = it
+            FileDocumentManager.getInstance().getDocument(it.virtualFile)
+        }
 
-        runAsWriteActionIfNeeded { // maybe synchronized
-            val properCompiledClass = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
-                it.fileName.substringBefore(".kts").let { f -> f + "_jupyter" }
+        val properCompiledClass = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
+            it.fileName.substringBefore(".kts").let { f -> f + "_jupyter" }
+        }
+        var nextCellInd: Int? = null
+        (psiCell.parent as? JupyterNotebook)?.psiCellList?.let { cells ->
+            val executedCellInd = cells.indexOf(psiCell)
+            if (executedCellInd != -1) {
+                compilerService.cellOrdinalToClassName[executedCellInd] = properCompiledClass
+                nextCellInd = if (executedCellInd + 1 != cells.size) executedCellInd + 1 else null
             }
-            var nextCellInd: Int? = null
-            (psiCell.parent as? JupyterNotebook)?.psiCellList?.let { cells ->
-                val executedCellInd = cells.indexOf(psiCell)
-                if (executedCellInd != -1) {
-                    compilerService.cellOrdinalToClassName[executedCellInd] = properCompiledClass
-                    nextCellInd = if (executedCellInd + 1 != cells.size) executedCellInd + 1 else null
-                }
-            }
-            try {
-                (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
-                    ?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
-            } catch (ex: Exception) {
-                LOG.warn("Exception during storing cell-related data", ex)
-            }
-            document
-                ?.invalidateStateAfterCellExecution(executedCellInd = nextCellInd) // need to highlight next cell if ok
-            synchronized(psiCell) {
-                val last = psiCell.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)?.firstOrNull()
-                properCompiledClass.addIfNotNull(last)
-                psiCell.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
-            }
+        }
+        try {
+            (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
+                ?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
+        } catch (ex: Exception) {
+            LOG.warn("Exception during storing cell-related data", ex)
+        }
+        document
+            ?.invalidateStateAfterCellExecution(executedCellInd = nextCellInd) // need to highlight next cell if ok
+        synchronized(psiCell) {
+            val last = psiCell.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)?.firstOrNull()
+            properCompiledClass.addIfNotNull(last)
+            psiCell.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
         }
     }
 
