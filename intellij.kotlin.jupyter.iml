@@ -94,13 +94,13 @@
     <orderEntry type="library" name="commons-io" level="project" />
     <orderEntry type="module-library">
       <library name="jetbrains.lets.plot.shadowed" type="repository">
-        <properties include-transitive-deps="false" maven-id="org.jetbrains.lets-plot:lets-plot-shadowed:3.1.1-alpha3-8" />
+        <properties include-transitive-deps="false" maven-id="org.jetbrains.lets-plot:lets-plot-shadowed:3.1.1-alpha4-8" />
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha3-8/lets-plot-shadowed-3.1.1-alpha3-8.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha4-8/lets-plot-shadowed-3.1.1-alpha4-8.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha3-8/lets-plot-shadowed-3.1.1-alpha3-8-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha4-8/lets-plot-shadowed-3.1.1-alpha4-8-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
