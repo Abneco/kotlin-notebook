@@ -211,6 +211,13 @@ internal object NotebookHighlightingRestarter {
         }
     }
 
+    fun scheduleRegularUpdateNoChecks(file: PsiFile, delayDelta: Long = HL_DELAY_PAUSE) {
+        regularUpdateScope.launch {
+            delay(delayDelta)
+            runReadAction { file.restartAnalyzing() }
+        }
+    }
+
     inline fun scheduleRegularUpdate(document: Document?, file: PsiFile, delayDelta: Long = HL_DELAY_PAUSE,
                                      crossinline afterRequest: () -> Unit = {},
                                      crossinline undoRequest: () -> Unit = {}) {

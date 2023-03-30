@@ -48,11 +48,12 @@ import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService.Companion.SCRIPT_DEPENDENCIES_LIBRARY_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingRestarter
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingRestarter.UpdateSteps.postScriptingUpdateStep
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
-import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.ImpatientNotebookChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
@@ -444,10 +445,12 @@ class JupyterCompilerPerFileService(
     fun afterScriptingUpdate() {
         if (hasPendingUpdates) {
             needsToUpdate.set(false)
-            val doc = virtualFile.file.toDocument()
             val isEmpty = compileLock.withReadLock { implicitListsLoadQueue.isEmpty() }
             if (isEmpty) {
-                postScriptingUpdateStep(doc)
+                postScriptingUpdateStep(NotebookHighlightingService.getForFile(project, virtualFile).document)
+                psiFile?.let { // request restart since callback might be called at any moment
+                    NotebookHighlightingRestarter.scheduleRegularUpdateNoChecks(it, 800)
+                }
             }
         }
     }
