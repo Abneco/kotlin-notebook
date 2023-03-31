@@ -6,7 +6,7 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DAEMON_EVENT_TOPIC
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DaemonListener
 import com.intellij.codeInsight.hints.InlayHintsPassFactory
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
@@ -30,7 +30,6 @@ import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService.Companion.HL_DELAY_DELTA
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
@@ -86,7 +85,7 @@ class NotebookCaretListener(
         assert(psiFile != null)
         Disposer.register(parentDisposable, this)
         doc?.putUserData(NotebookCellsUpdatesAllowedToChange, AtomicReference(true))
-        notebookHighlightingManager?.associateWithNewCaretListener(this)
+        notebookHighlightingManager?.associateWithNewCaretListener(this, editor)
 
         project.messageBus.connect(this).subscribe(DAEMON_EVENT_TOPIC, object : DaemonListener {
             private val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
@@ -123,20 +122,18 @@ class NotebookCaretListener(
                         doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
 
                         val queue = doc?.getUserData(NotebookQueuedTargetRanges)
-                        val remainingCells = notebookHighlightingManager?.remainingIndexesToProcess
                         val finished = notebookHighlightingManager?.finishedHighlighting
                         val target = notebookHighlightingManager?.completeRangeInd
-                        val isDone = remainingCells?.isEmpty() == true
                         if (queue != null && !finished.isNullOrEmpty()) {
                             queue.removeAll(finished)
                         }
                         // we don't want to lose any updates happened during concurrent modification or delay
                         if (!isRunning && doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
-                            JupyterKotlinCellExecutionCallbackFactory.getInstance()
-                                .daemonFinished(vFile, psiFile,
-                                                finished, isDone,
-                                                doc)
-                            if (isDone) {
+                            LOG.debug("Reducing queue by $finished")
+                            val executionRequestsDone
+                                    = JupyterKotlinCellExecutionCallbackFactory
+                                        .getInstance().daemonFinished(vFile, finished)
+                            if (notebookHighlightingManager?.daemonFinished(editor, psiFile, queue, executionRequestsDone) == true) {
                                 queue?.clear()
                             }
                         }
@@ -167,12 +164,12 @@ class NotebookCaretListener(
                 launch {
                     val storedFloating = lastCellInd
                     delay(500)
-                    val newOrd = runReadAction {
+                    val newOrd = readAction {
                         editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it) }
                     }
                     if (newOrd != null && newOrd.ordinal != ord) {
                         floatingCellInd = newOrd.ordinal
-                        performRangedUpdate(setOfNotNull(ord, storedFloating, newOrd.ordinal))
+                        performRangedUpdate(setOfNotNull(ord, storedFloating, newOrd.ordinal), this)
                         return@launch
                     }
                     val storedPrevCell = prevCell
@@ -180,7 +177,7 @@ class NotebookCaretListener(
                     if (storedPrevCell == null) {
                         floatingCellInd = ord
                     }
-                    val cells = runReadAction {
+                    val cells = readAction {
                         psiFile.getNotebookCellList()
                     }
                     lastCell = cells?.get(ord)
@@ -192,7 +189,7 @@ class NotebookCaretListener(
                         storedFloating
                     } else floatingInd // concurrent change occurred
 
-                    performRangedUpdate(setOfNotNull(storedFloating, prevKnownInd, toStore))
+                    performRangedUpdate(setOfNotNull(storedFloating, prevKnownInd, toStore), this)
                 }
             }
         } else {
@@ -223,9 +220,10 @@ class NotebookCaretListener(
     override fun dispose() {
         deferredFastUpdate?.cancel()
         updateScope.cancel()
+        notebookHighlightingManager?.editorPotentiallyDisposed()
     }
 
-    private fun performRangedUpdate(reducedIndexes: Collection<Int>) {
+    private fun performRangedUpdate(reducedIndexes: Collection<Int>, context: CoroutineScope? = null) {
         doc?.putUserData(NotebookDocumentTargetRanges, reducedIndexes)
         doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, reducedIndexes.last())
         doc?.getUserData(NotebookQueuedTargetRanges)?.addAll(reducedIndexes)
@@ -233,9 +231,12 @@ class NotebookCaretListener(
             if (projectOptionsProvider.state.shouldLimitTypeHintsByActiveCell) {
                 InlayHintsPassFactory.clearModificationStamp(editor)
             }
-            runReadAction {
-                codeAnalyzer.restart(it)
-            }
+            context?.launch {
+                readAction {
+                    codeAnalyzer.restart(it)
+                }
+            } // only because it's EDT
+            ?: codeAnalyzer.restart(it)
         }
     }
 

@@ -1,10 +1,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiFile
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingRestarter
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.cellToHighlightLimit
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
@@ -56,16 +53,13 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
         }
     }
 
-    fun daemonFinished(file: BackedNotebookVirtualFile, psiFile: PsiFile?, completedElements: Set<Int>?, otherRequestsDone: Boolean, document: Document? = null) = executionDataLock.write {
+    // true if it has no updates left
+    fun daemonFinished(file: BackedNotebookVirtualFile, completedElements: Set<Int>?): Boolean {
         val remainingData = executionDataLock.withWriteLock {
             lastExecutedIndexes[file]?.removeIf { completedElements?.contains(it) == true }
             lastExecutedIndexes[file]
         }
-        if (remainingData?.isEmpty() == false || !otherRequestsDone) {
-            psiFile?.let {
-                NotebookHighlightingRestarter.scheduleRegularUpdate(document, psiFile)
-            }
-        }
+        return remainingData.isNullOrEmpty()
     }
 
     fun getLastExecutedCellsBatch(file: BackedNotebookVirtualFile): Set<Int>

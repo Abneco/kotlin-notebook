@@ -52,10 +52,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingRestarter.UpdateSteps.postScriptingUpdateStep
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
-import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
-import org.jetbrains.kotlinx.jupyter.plugin.scripting.ImpatientNotebookChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
@@ -219,16 +217,6 @@ class JupyterCompilerPerFileService(
     init {
         updateClasspathWithExternalDependencies()
         Disposer.register(parent, this)
-
-        val doc = runReadAction {
-            FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
-        }
-        if (virtualFile.file.isKotlinNotebook) {
-            doc.addDocumentListener(
-                ImpatientNotebookChangeListener(project, virtualFile),
-                this
-            )
-        }
     }
 
     private fun getSession(): JupyterNotebookSession? {

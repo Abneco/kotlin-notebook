@@ -49,7 +49,6 @@ import org.jetbrains.plugins.notebooks.visualization.getCell
 
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
     private val notebookCodeUtility = NotebookHighlightingUtilityObject
-    private val dummyTextChangeRange = TextRange(0, 0)
 
     override fun reduceRange(file: PsiFile, editor: Editor): Collection<TextRange>? {
         if (!notebookCodeUtility.looksLikeNotebookFile(file)) return null

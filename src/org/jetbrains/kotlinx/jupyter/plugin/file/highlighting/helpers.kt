@@ -8,6 +8,8 @@ import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
+import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
@@ -118,7 +120,7 @@ internal object NotebookHighlightingUtilityObject {
               delay(delayDelta)
                 isReady = manager.isReady()
             }
-            runReadAction {
+            readAction {
                 file.restartAnalyzing()
             }
         }

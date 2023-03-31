@@ -1,8 +1,7 @@
 // Copyright 2000-2022 JetBrains s .r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.scripting
 
-import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -12,6 +11,8 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
+import org.jetbrains.kotlin.idea.actions.internal.refactoringTesting.readAction
 import org.jetbrains.kotlin.js.translate.utils.splitToRanges
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
@@ -27,8 +28,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.visualization.getCell
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.min
 
 
@@ -42,31 +43,34 @@ internal enum class NotebookChangeEventsType {
 class ImpatientNotebookChangeListener(
     private val project: Project,
     private val virtualFile: BackedNotebookVirtualFile
-): DocumentListener {
+) : DocumentListener {
     companion object {
         private val sampleTextRangeRef = TextRange(1, 1)
-    }
-    private val injectedManager = InjectedLanguageManager.getInstance(project)
-    private var lastTimeCellChangeActionPerformed = 0L
-    private var lastAdjustedRange: TextRange? = null
-    private var cellsAffectedByReformat = mutableSetOf<Int>()
-    init {
-        runReadAction {
-            FileDocumentManager.getInstance().getDocument(virtualFile.file)?.let {
-                it.putUserData(NotebookDocumentStructureNontrivialChanged, AtomicReference(false))
-                it.putUserData(NotebookQueuedTargetRanges, mutableSetOf())
+        private inline fun withReadAccess(crossinline block: () -> Unit) {
+            if (ApplicationManager.getApplication().isDispatchThread) {
+                block()
+            } else readAction {
+                block()
             }
         }
     }
 
+    private var lastTimeCellChangeActionPerformed = 0L
+    private var lastAdjustedRange: TextRange? = null
+    private var cellsAffectedByReformat = mutableSetOf<Int>()
+
     private fun handleNotebookChangeEvent(event: DocumentEvent) {
         val file = FileDocumentManager.getInstance().getFile(event.document)?.let(::BackedNotebookVirtualFile) ?: return
 
-        val (document, psiFile, psiCells) = runReadAction {
-            val d = FileDocumentManager.getInstance().getDocument(file.file)
-            val psiFile = file.file.toPsiFile(project)
-            val psiCells = psiFile?.getNotebookCellList()
-            Triple(d, psiFile, psiCells)
+        val (document, psiFile, psiCells) = run {
+            var res: Triple<Document?, PsiFile?, List<JupyterPsiCell>?> = Triple(null, null, null)
+            withReadAccess {
+                val d = FileDocumentManager.getInstance().getDocument(file.file)
+                val psiFile = file.file.toPsiFile(project)
+                val psiCells = psiFile?.getNotebookCellList()
+                res = Triple(d, psiFile, psiCells)
+            }
+            res
         }
         if (document == null || psiFile == null) return
         val lineOfChange = document.getLineNumber(event.offset)
@@ -112,7 +116,7 @@ class ImpatientNotebookChangeListener(
                 val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
                 val ind = cellUnderCaret?.ordinal
                 if (ind != null) {
-                    JupyterCompilerService.getForFile(project, virtualFile).swapCellsData(ind - 1, ind -2, psiCells)
+                    JupyterCompilerService.getForFile(project, virtualFile).swapCellsData(ind - 1, ind - 2, psiCells)
                     val isMoveDown = event.oldFragment.trim().toString() != psiCells.getOrNull(ind - 1)?.text?.trim()
                     if (isMoveDown) {
                         properCellIndexOrNull += 1

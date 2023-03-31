@@ -48,7 +48,7 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
 
             return true
         } finally {
-            highlightingManagerFor(file.project, getTopLevelFile(file).virtualFile)?.finishedAnalysisForFile(file, null)
+            highlightingManagerFor(file.project, getTopLevelFile(file).virtualFile)?.finishedAnalysisForFile(file, holder)
             visitor = null
         }
     }
