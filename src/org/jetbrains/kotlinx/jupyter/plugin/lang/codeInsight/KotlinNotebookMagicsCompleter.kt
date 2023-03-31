@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight
 
 import com.intellij.codeInsight.completion.CompletionResultSet
+import com.intellij.codeInsight.completion.PrioritizedLookupElement
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.openapi.diagnostic.logger
@@ -34,6 +35,19 @@ class KotlinNotebookMagicsCompleter(
         if (metaStatement.isEmpty() || metaStatement[0] != '%') return
         val handler = Handler()
         handler.handle(metaStatement.substring(1), if (cursor > 0) cursor - 1 else cursor)
-        result.addAllElements(handler.completions)
+        val prioritizedLookup = handler.completions.mapIndexed { i, lookupElement ->
+            val lookupString = lookupElement.lookupString
+            val priority = when {
+                lookupString.isEmpty() -> -Double.MAX_VALUE
+                // Library versions should be sorted in the way they're present in the list
+                lookupString[0].isDigit() -> -i.toDouble()
+                // Libraries and library arguments should be placed above versions
+                lookupString[0].isLetter() -> 10.0
+                // Not sure what it can be
+                else -> 0.0
+            }
+            PrioritizedLookupElement.withPriority(lookupElement, priority)
+        }
+        result.addAllElements(prioritizedLookup)
     }
 }

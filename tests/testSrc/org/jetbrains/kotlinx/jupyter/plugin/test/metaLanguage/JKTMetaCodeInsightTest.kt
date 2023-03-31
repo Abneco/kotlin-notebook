@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test.metaLanguage
 
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
+import junit.framework.TestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,5 +25,15 @@ class JKTMetaCodeInsightTest : LightJavaCodeInsightFixtureTestCase() {
     fun `test simple annotator`() {
         myFixture.configureByFile("annotator1.juktm")
         myFixture.checkHighlighting(false, true, false)
+    }
+
+    @Test
+    fun `test versions completion`() {
+        myFixture.configureByFile("completion2.juktm")
+        val variants = myFixture.completeBasic().toList()
+        // Check that the first published version is the last (bottom-most) completion variant
+        TestCase.assertEquals("0.0.2-alpha-1", variants.last().lookupString)
+        // Check that library parameters are placed first
+        TestCase.assertTrue('.' !in variants.first().lookupString)
     }
 }
