@@ -25,6 +25,7 @@ class KotlinNotebookNewNotebookConfigurable(val project: Project) :
                 group(JupyterKotlinBundle.message("kotlin.jupyter.settings.build")) {
                     row {
                         checkBox(JupyterKotlinBundle.message("checkbox.should.build.project"))
+                            .comment(JupyterKotlinBundle.message("checkbox.should.build.project.comment"))
                             .bindSelected(optionsProvider.state::shouldBuildProject)
                     }
                     row {
