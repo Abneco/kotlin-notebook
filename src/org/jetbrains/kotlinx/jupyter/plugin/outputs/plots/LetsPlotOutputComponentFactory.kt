@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.outputs.plots
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.ui.JBColor
 import jetbrains.datalore.base.geometry.DoubleVector
 import jetbrains.datalore.plot.MonolithicCommon
 import jetbrains.datalore.plot.PlotSizeHelper
@@ -22,6 +23,7 @@ import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputCompo
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory.Companion.gutterPainter
 import java.awt.Color
 import java.awt.Component
+import java.awt.Dimension
 import javax.swing.JComponent
 import javax.swing.JPanel
 import kotlin.math.ceil
@@ -90,9 +92,6 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
             val myComponent = jComponent ?: return
             val myData = dataKey ?: return
             val spec = getSpec(myData)
-
-            if (spec.isGGBunch || spec.isSubPlots) return
-
             val (plotWidth, plotHeight) = plotSizeCropped(spec, mySize.width, mySize.height)
             myComponent.setBounds(0, 0, plotWidth, plotHeight)
         }
@@ -114,7 +113,7 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
             val plotPanel: PlotPanel = object : PlotPanel(
                 plotComponentProvider = IdeaPlotComponentProviderBatik(
                     processedSpec = processedSpec,
-                    preserveAspectRatio = true,
+                    preserveAspectRatio = false,
                     executor = IdeaSwingContextBatik.IDEA_EDT_EXECUTOR,
                     computationMessagesHandler = { messages ->
                         for (message in messages) {
@@ -128,9 +127,9 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
             ), Disposable {}
 
             plotPanel.isOpaque = true
-            plotPanel.background = plotBackground(processedSpec)
 
-            alignmentX = Component.LEFT_ALIGNMENT
+            alignmentX = Component.CENTER_ALIGNMENT
+            alignmentY = Component.CENTER_ALIGNMENT
 
             add(plotPanel)
             jComponent = plotPanel
@@ -151,11 +150,6 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
             val processedSpec = MonolithicCommon.processRawSpecs(rawSpec, false)
             return processedSpec.toMutableMap()
         }
-
-        private val LetsPlotSpec.isGGBunch: Boolean get() = isOfKind(FigKind.GG_BUNCH_SPEC)
-        private val LetsPlotSpec.isSubPlots: Boolean get() = isOfKind(FigKind.SUBPLOTS_SPEC)
-        private fun LetsPlotSpec.isOfKind(kind: FigKind) = !PlotConfig.isFailure(this)
-                && PlotConfig.figSpecKind(this) == kind
 
         @Suppress("UNCHECKED_CAST")
         private fun updateFlavorForPlot(spec: MutableLetsPlotSpec, flavorName: String) {
@@ -184,8 +178,8 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
         @Suppress("UNCHECKED_CAST")
         private fun updateFlavorForSubPlots(spec: MutableLetsPlotSpec, flavorName: String) {
             spec.compute("figures") { _, figures ->
-                (figures as? List<LetsPlotSpec>)?.map {
-                    it.toMutableMap().also { figure ->
+                (figures as? List<LetsPlotSpec?>)?.map {
+                    it?.toMutableMap()?.also { figure ->
                         updateFlavorForPlot(figure, flavorName)
                     }
                 }.orEmpty()
@@ -203,52 +197,14 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
             }
         }
 
-        private fun plotBackground(processedSpec: LetsPlotSpec): Color {
-            val themeOptions = themeOptions(processedSpec)
-            val theme = ThemeConfig(themeOptions, DefaultFontFamilyRegistry()).theme
-            val c = theme.plot().backgroundFill()
-            @Suppress("UseJBColor")
-            return Color(c.red, c.green, c.blue)
-        }
-
-        private fun themeOptions(spec: LetsPlotSpec): LetsPlotSpec {
-            val themeOptions = spec[Option.Plot.THEME]?.let {
-                @Suppress("UNCHECKED_CAST")
-                if (it is Map<*, *>) it as LetsPlotSpec
-                else emptyMap()
-            } ?: emptyMap()
-            return themeOptions
-        }
-
         private fun plotSizeCropped(spec: LetsPlotSpec, containerWidth: Int, containerHeight: Int): Pair<Int, Int> {
             return plotSize(spec, (containerWidth - 10).coerceAtLeast(0), (containerHeight - 10).coerceAtLeast(0))
         }
 
 
         private fun plotSize(spec: LetsPlotSpec, containerWidth: Int, containerHeight: Int): Pair<Int, Int> {
-            val userSize = userPlotSize(spec)?.asIntPair()
-            if (userSize != null && userSize.first <= containerWidth && userSize.second <= containerHeight) {
-                return userSize
-            }
-
             return PlotSizeHelper.scaledFigureSize(spec, containerWidth, containerHeight)
         }
 
-        private fun userPlotSize(processedSpec: LetsPlotSpec): DoubleVector? {
-            val sizeOptions = processedSpec[Option.Plot.SIZE]?.let {
-                @Suppress("UNCHECKED_CAST")
-                if (it is Map<*, *>) it as LetsPlotSpec
-                else null
-            } ?: return null
-
-            val width = sizeOptions[Option.Plot.WIDTH] as? Number ?: return null
-            val height = sizeOptions[Option.Plot.HEIGHT] as? Number ?: return null
-
-            return DoubleVector(width.toDouble(), height.toDouble())
-        }
-
-        private fun DoubleVector.asIntPair(): Pair<Int, Int> {
-            return Pair(ceil(x).toInt(), ceil(y).toInt())
-        }
     }
 }
