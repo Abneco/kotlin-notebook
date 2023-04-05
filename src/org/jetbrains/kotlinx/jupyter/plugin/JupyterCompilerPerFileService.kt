@@ -511,13 +511,15 @@ class JupyterCompilerPerFileService(
     private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell) {
         val injectManager = InjectedLanguageManager.getInstance(project)
         val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-        val document = when {
+        val topLevelFile = when {
             psiFile?.isValid == true -> psiFile
             psiCell.containingFile.isValid -> psiCell.containingFile
             else -> InjectedLanguageManager.getInstance(project).getTopLevelFile(psiCell)
-        }?.let {
+        }?.also {
             psiFile = it
-            FileDocumentManager.getInstance().getDocument(it.virtualFile)
+        }
+        val document = topLevelFile?.virtualFile?.let {
+            FileDocumentManager.getInstance().getDocument(it)
         }
 
         val properCompiledClass = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
