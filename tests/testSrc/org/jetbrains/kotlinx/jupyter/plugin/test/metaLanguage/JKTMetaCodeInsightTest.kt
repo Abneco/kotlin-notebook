@@ -32,7 +32,7 @@ class JKTMetaCodeInsightTest : LightJavaCodeInsightFixtureTestCase() {
         myFixture.configureByFile("completion2.juktm")
         val variants = myFixture.completeBasic().toList()
         // Check that the first published version is the last (bottom-most) completion variant
-        TestCase.assertEquals("0.0.2-alpha-1", variants.last().lookupString)
+        TestCase.assertEquals("0.4.0-dev-16", variants.last().lookupString)
         // Check that library parameters are placed first
         TestCase.assertTrue('.' !in variants.first().lookupString)
     }
