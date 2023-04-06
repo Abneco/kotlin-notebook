@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scripting
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -11,8 +12,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFile
-import org.jetbrains.kotlin.idea.actions.internal.refactoringTesting.readAction
 import org.jetbrains.kotlin.js.translate.utils.splitToRanges
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
@@ -28,15 +27,14 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import kotlin.math.min
 
 
 internal enum class NotebookChangeEventsType {
-    CELL_LIST_ADD_EVENT,
-    CELL_LIST_DELETE_EVENT,
-    MARKDOWN_CONVERSION_EVENT,
+    CELL_ADD,
+    CELL_DELETE,
+    MARKDOWN_CONVERSION,
     REGULAR
 }
 
@@ -45,11 +43,12 @@ class ImpatientNotebookChangeListener(
     private val virtualFile: BackedNotebookVirtualFile
 ) : DocumentListener {
     companion object {
+        private const val FAST_INVOCATION_DELTA: Long = 200L
         private val sampleTextRangeRef = TextRange(1, 1)
-        private inline fun withReadAccess(crossinline block: () -> Unit) {
-            if (ApplicationManager.getApplication().isDispatchThread) {
+        private inline fun <T> withReadAccess(crossinline block: () -> T): T {
+            return if (ApplicationManager.getApplication().isDispatchThread) {
                 block()
-            } else readAction {
+            } else runReadAction {
                 block()
             }
         }
@@ -62,64 +61,65 @@ class ImpatientNotebookChangeListener(
     private fun handleNotebookChangeEvent(event: DocumentEvent) {
         val file = FileDocumentManager.getInstance().getFile(event.document)?.let(::BackedNotebookVirtualFile) ?: return
 
-        val (document, psiFile, psiCells) = run {
-            var res: Triple<Document?, PsiFile?, List<JupyterPsiCell>?> = Triple(null, null, null)
-            withReadAccess {
-                val d = FileDocumentManager.getInstance().getDocument(file.file)
-                val psiFile = file.file.toPsiFile(project)
-                val psiCells = psiFile?.getNotebookCellList()
-                res = Triple(d, psiFile, psiCells)
-            }
-            res
+        val (document, psiFile, psiCells) = withReadAccess {
+            val document = FileDocumentManager.getInstance().getDocument(file.file)
+            val psiFile = file.file.toPsiFile(project)
+            val psiCells = psiFile?.getNotebookCellList()
+            Triple(document, psiFile, psiCells)
         }
-        if (document == null || psiFile == null) return
-        val lineOfChange = document.getLineNumber(event.offset)
-        val allLines = document.text.lines()
-        val editor = document.retrieveEditor(file.file, project)
-        val neededCellIndex = editor?.getCell(min(lineOfChange, editor.document.lineCount - 1))?.ordinal?.let { it + 1 }
-            ?: allLines.take(lineOfChange).count {
-                it.contains("#%%")
+        if (document == null || psiFile == null || psiCells == null) return
+
+        val eventType = event.identifyEventChangeType()
+        val isCellListChange = eventType.isCellListChangeEvent()
+        var isSingleDeleteEvent = eventType == NotebookChangeEventsType.CELL_DELETE
+        val isAddEvent = eventType == NotebookChangeEventsType.CELL_ADD
+
+        val changedLineIndex = document.getLineNumber(
+            (if (isCellListChange) event.offset + 1 else event.offset).coerceAtMost(event.document.textLength)
+        )
+
+        val editor = retrieveEditor(file.file, project)
+        val neededCellIndex = editor?.getCell(min(changedLineIndex, editor.document.lineCount - 1))?.ordinal
+            ?: run {
+                val documentLines = document.text.lines()
+                documentLines.take(changedLineIndex).count {
+                    it.contains("#%%")
+                } - 1
             }
 
-        val cellSize = psiCells?.size ?: 0
+        val cellsSize = psiCells.size
+        val maxCellIndex = cellsSize - 1
 
-        val eventsType = event.identifyEventChangeType()
-        val isCellListChange = eventsType.isCellListChangeEvent()
-        var isSingleDeleteEvent = eventsType == NotebookChangeEventsType.CELL_LIST_DELETE_EVENT
-        val isAddEvent = eventsType == NotebookChangeEventsType.CELL_LIST_ADD_EVENT
+        val cellOfChange = psiCells.getOrNull(neededCellIndex)
 
-        val actualCellIndex = if (eventsType
-            == NotebookChangeEventsType.MARKDOWN_CONVERSION_EVENT) neededCellIndex
-            else if (isSingleDeleteEvent) {
-                if (neededCellIndex + 1 < cellSize) neededCellIndex + 1 else neededCellIndex
-            }
-            else if (neededCellIndex > 0) neededCellIndex - 1 else 0
-        val cellOfChange = psiCells?.get(actualCellIndex)
-
-        if (lineOfChange > allLines.size - 1 || cellOfChange == null) return // ignore change of whole document
+        if (changedLineIndex > document.lineCount - 1 || cellOfChange == null) return // ignore change of whole document
         val isInDocumentReformatAction = synchronized(document) {
             document.getUserData(ReformatDocumentActionTargets) != null
         }
         if (isInDocumentReformatAction) {
-            cellsAffectedByReformat.add(actualCellIndex)
+            cellsAffectedByReformat.add(neededCellIndex)
             document.handleWholeRefactorAction(cellsAffectedByReformat)
             return
         } else cellsAffectedByReformat.clear()
 
-        var properCellIndexOrNull = if (isSingleDeleteEvent) actualCellIndex - 1 else if (isAddEvent) neededCellIndex else actualCellIndex
+        var properCellIndexToStore = when {
+            isSingleDeleteEvent -> if (neededCellIndex == maxCellIndex) neededCellIndex - 1 else neededCellIndex
+            isAddEvent -> if (neededCellIndex == maxCellIndex) neededCellIndex + 1 else neededCellIndex
+            else -> neededCellIndex
+        }.coerceAtLeast(0)
 
         // heuristic on cell move event
         if (isCellListChange) {
             val currentTime = System.currentTimeMillis()
             val last = lastAdjustedRange
-            if (currentTime - lastTimeCellChangeActionPerformed < 200 && last != null) {
+            if (currentTime - lastTimeCellChangeActionPerformed < FAST_INVOCATION_DELTA && last != null) {
                 val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
                 val ind = cellUnderCaret?.ordinal
                 if (ind != null) {
                     JupyterCompilerService.getForFile(project, virtualFile).swapCellsData(ind - 1, ind - 2, psiCells)
                     val isMoveDown = event.oldFragment.trim().toString() != psiCells.getOrNull(ind - 1)?.text?.trim()
                     if (isMoveDown) {
-                        properCellIndexOrNull += 1
+                        properCellIndexToStore += 1
                     }
                 }
 
@@ -139,10 +139,10 @@ class ImpatientNotebookChangeListener(
             ?.compareAndSet(false, true)
 
         if (renameRange == null) {
-            document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexOrNull)
+            document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexToStore)
             document.putUserData(CompleteHighlightingRange, null)
-            if (eventsType == NotebookChangeEventsType.REGULAR) {
-                document.getUserData(NotebookQueuedTargetRanges)?.add(properCellIndexOrNull)
+            if (eventType == NotebookChangeEventsType.REGULAR) {
+                document.getUserData(NotebookQueuedTargetRanges)?.add(properCellIndexToStore)
             }
         }
         val targetIndexesAfterAddOrNull = if (isCellListChange) {
@@ -172,39 +172,26 @@ class ImpatientNotebookChangeListener(
         val newFragment = event.newFragment
         val isNewEmpty = newFragment.isEmpty()
         val isOldEmpty = oldFragment.isEmpty()
-        return if ((oldFragment.contains(" md")
-                    || newFragment.contains(" md")) && (isNewEmpty || isOldEmpty))
-            NotebookChangeEventsType.MARKDOWN_CONVERSION_EVENT
-        else if (newFragment.contains("#%%") && isOldEmpty)
-            NotebookChangeEventsType.CELL_LIST_ADD_EVENT
-        else if (oldFragment.contains("#%%") && isNewEmpty)
-            NotebookChangeEventsType.CELL_LIST_DELETE_EVENT
-        else NotebookChangeEventsType.REGULAR
+        return when {
+            ((oldFragment.contains(" md") || newFragment.contains(" md"))
+                    && (isNewEmpty || isOldEmpty)) -> NotebookChangeEventsType.MARKDOWN_CONVERSION
+            newFragment.contains("#%%") && isOldEmpty -> NotebookChangeEventsType.CELL_ADD
+            oldFragment.contains("#%%") && isNewEmpty -> NotebookChangeEventsType.CELL_DELETE
+            else -> NotebookChangeEventsType.REGULAR
+        }
     }
 
     private fun Document.handleWholeRefactorAction(targets: MutableSet<Int>) {
-        //putUserData(NotebookDocumentTargetRanges, getRangesAfterDocumentReformatOrNull(allCells))
         putUserData(ReformatDocumentActionTargets, targets)
     }
 
     private fun NotebookChangeEventsType.isCellListChangeEvent(): Boolean =
-        this == NotebookChangeEventsType.CELL_LIST_ADD_EVENT || this == NotebookChangeEventsType.CELL_LIST_DELETE_EVENT
+        this == NotebookChangeEventsType.CELL_ADD || this == NotebookChangeEventsType.CELL_DELETE
 
     override fun beforeDocumentChange(event: DocumentEvent) {
         handleNotebookChangeEvent(event)
     }
 }
 
-internal fun TextRange.createSafeTextRangeWithDelta(delta: Int): TextRange {
-    val newEnd = endOffset + delta
-    return if (newEnd < startOffset) this else TextRange(startOffset, newEnd)
-}
-
-internal fun Document.retrieveEditor(vFile: VirtualFile, project: Project): Editor?
+private fun retrieveEditor(vFile: VirtualFile, project: Project): Editor?
     = (FileEditorManager.getInstance(project).getSelectedEditor(vFile) as? JupyterFileEditor)?.editor
-
-internal fun Document.retrieveLineNumberUnderCaret(vFile: VirtualFile, project: Project): Int? {
-    val editor = retrieveEditor(vFile, project)
-    val caretOffset = editor?.caretModel?.offset ?: return null
-    return getLineNumber(caretOffset)
-}
