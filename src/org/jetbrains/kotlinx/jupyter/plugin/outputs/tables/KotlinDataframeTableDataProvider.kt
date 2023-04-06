@@ -64,7 +64,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     }
 
     @Throws(DSTableDataException::class)
-    override fun dataFrameInfo(
+    override fun getTableInfo(
         commandExecutor: DSTableCommandExecutor,
         initialCommand: String,
         textTableOutput: String?
