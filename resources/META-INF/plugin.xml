@@ -198,17 +198,19 @@
             <add-to-group group-id="JupyterEditorGutterPopupActions"/>
         </action>
 
-        <group id="KotlinJupyterSettingsActions" popup="true" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterSettingsActions">
+        <group id="KotlinJupyterSettingsActions" popup="true" icon="AllIcons.General.GearPlain"
+               class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterSettingsActions">
             <reference id="ToggleBuildProjectAction"/>
             <reference id="ToggleAddProjectLibrariesAction"/>
             <separator/>
             <reference id="ShowKotlinNotebookPreferencesAction"/>
         </group>
 
-        <group id="KotlinJupyterEditorPopupActions">
+        <group id="KotlinJupyterEditorActions">
             <separator/>
             <reference id="KotlinJupyterSettingsActions"/>
             <add-to-group group-id="JupyterEditorPopupActions"/>
+            <add-to-group group-id="JupyterEditorLeftToolbarActions"/>
         </group>
     </actions>
 </idea-plugin>
