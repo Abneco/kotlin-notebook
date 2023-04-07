@@ -201,7 +201,7 @@
             <reference id="ToggleAddProjectLibrariesAction"/>
         </group>
 
-        <group id="KotlinJupyterEditorPopupActions" compact="true">
+        <group id="KotlinJupyterEditorPopupActions">
             <separator/>
             <reference id="KotlinJupyterSettingsActions"/>
             <add-to-group group-id="JupyterEditorPopupActions"/>
