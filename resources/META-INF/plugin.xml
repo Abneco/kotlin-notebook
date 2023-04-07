@@ -3,7 +3,47 @@
     <id>org.jetbrains.plugins.kotlin.jupyter</id>
     <category>Tools Integration</category>
     <vendor>JetBrains</vendor>
-    <description>Kotlin support for Jupyter notebooks. Code insight, highlighting and so on.</description>
+    <description>
+        <![CDATA[
+            <p>Kotlin Notebook Plugin is a powerful tool that allows you to create
+            and edit notebooks (which are in fact interactive Kotlin worksheets with rich outputs)
+            directly within IntelliJ IDEA. It is a client for Kotlin Jupyter kernel
+            (in addition to other clients such as <a href="https://www.jetbrains.com/datalore/">Datalore</a>,
+            <a href="https://jupyter.org/">classic Jupyter Notebook and Jupyter Lab</a>) that
+            enables you to explore and experiment with your Kotlin code
+            without additional environment setup.</p>
+
+            <p>The plugin comes with various features that are available in ordinary Kotlin files
+            in the IDE as well as additional, Kotlin-notebook specific extensions.
+            These include enhanced syntax highlighting, inlay hints, inspections, finding usages and refactorings,
+            which help you write Kotlin code more efficiently.
+            Many features are state-aware, meaning that finding usages or renaming will consider
+            your current definitions and loaded libraries.</p>
+
+            <p>With the Kotlin Notebook plugin, you can explore data using any
+            library that is published to any Maven repository or locally.
+            <a href="https://github.com/Kotlin/kotlin-jupyter#list-of-supported-libraries">Some libraries</a> have special integration for usage in the notebooks and
+            can be imported with <code>%use</code> magic that comes with code insight
+            helping you to choose correct library version.
+            You can also write library descriptors for your own libraries using
+            <a href="https://github.com/Kotlin/kotlin-jupyter/blob/master/docs/libraries.md">this guide</a> or just import them directly from Maven using <a href="https://github.com/Kotlin/kotlin-jupyter#dependencies-resolving">DependsOn annotation</a>.
+            Integrations allow libraries to have rich outputs, add default imports,
+            provide reflection-based code generation and more.
+            <a href="https://github.com/Kotlin/kotlin-jupyter#dependencies-resolving">Gradle-like syntax</a> makes it even simpler to add dependencies to the notebook,
+            even from private repositories.</p>
+
+            <p>In addition to the standalone mode, you can also use notebooks to explore the code in
+            your current project: sources and binary dependencies of your project could be easily
+            added to the notebook context.</p>
+
+            <p>To learn more about how to use Kotlin Notebooks,
+            check out <a href="https://github.com/Kotlin/kotlin-jupyter">the Kotlin Jupyter kernel documentation</a>.
+            And if you have any questions or want to connect with other
+            Kotlin developers who are using notebooks,
+            join the <a href="https://kotlinlang.slack.com/archives/C4W52CFEZ">#datascience channel in the Kotlin Slack</a>.
+            To file an issue use <a href="https://youtrack.jetbrains.com/issues/KTNB">Kotlin Notebook YouTrack</a>. Stay tuned!</p>
+        ]]>
+    </description>
 
     <depends>org.jetbrains.kotlin</depends>
     <depends>Pythonid</depends>
