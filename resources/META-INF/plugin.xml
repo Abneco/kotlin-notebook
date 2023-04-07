@@ -192,6 +192,8 @@
         </action>
         <action id="ToggleBuildProjectAction" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterToggleBuildProjectAction"/>
         <action id="ToggleAddProjectLibrariesAction" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterToggleAddProjectLibrariesAction"/>
+        <action id="ShowKotlinNotebookPreferencesAction" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterShowPreferencesAction"
+                icon="AllIcons.General.Settings"/>
         <action id="ToggleShowExecutionCount" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterToggleShowExecutionCountAction">
             <add-to-group group-id="JupyterEditorGutterPopupActions"/>
         </action>
@@ -199,6 +201,8 @@
         <group id="KotlinJupyterSettingsActions" popup="true" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterSettingsActions">
             <reference id="ToggleBuildProjectAction"/>
             <reference id="ToggleAddProjectLibrariesAction"/>
+            <separator/>
+            <reference id="ShowKotlinNotebookPreferencesAction"/>
         </group>
 
         <group id="KotlinJupyterEditorPopupActions">
