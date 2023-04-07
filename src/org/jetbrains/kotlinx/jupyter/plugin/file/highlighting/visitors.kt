@@ -17,8 +17,7 @@ import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.AbstractKotlinHighlightingVisitorAdapter
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.HighlightInfoManipulator.convertToShadowedDeclaration
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange
-import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 
 internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlightingVisitorAdapter<KotlinNotebookDummyVisitor>(
@@ -32,6 +31,7 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
         if (file !is KtFile) return true
         prepareForFile(file)
         val helper = highlightingHelper!!
+        if (helper.topLevelFile !is JupyterFile) return true
 
         val isTargetHost = helper.isCurrentFileTarget
 
