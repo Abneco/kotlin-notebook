@@ -35,7 +35,7 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
 
         // default settings for new notebooks
         var shouldBuildProject by property(false)
-        var shouldAddProjectLibrariesToClasspath by property(false)
+        var shouldAddProjectLibrariesToClasspath by property(true)
 
         val jdk: KotlinNotebookJdkOption get() = KotlinNotebookJdkOption.fromName(jdkName)
     }
