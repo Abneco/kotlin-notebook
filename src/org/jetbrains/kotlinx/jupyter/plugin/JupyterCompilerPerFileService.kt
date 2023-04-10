@@ -332,7 +332,7 @@ class JupyterCompilerPerFileService(
         val newLibrary = libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
             ?: invokeAndWaitIfNeeded {
                 runAsWriteActionIfNeeded {
-                    libraryTable.createLibrary(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
+                    libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME) ?: libraryTable.createLibrary(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
                 }
             }
 
