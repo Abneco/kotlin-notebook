@@ -12,6 +12,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelDoesNotExistsException
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterSessionData
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInterruptRequestMessageBuilder
@@ -69,7 +70,8 @@ class KotlinInProcessJupyterClient(
             onKernelTerminated = { _, _ ->
                 val file = VirtualFileManager.getInstance().findFileByNioPath(notebookPath) ?: return@create
                 val notebookFile = BackedNotebookVirtualFile.find(file) ?: return@create
-                if (!project.isDisposed && afterRestart) {
+                val isAfterRestart = afterRestart
+                if (!project.isDisposed && isAfterRestart) {
                     val document = runReadAction {
                         FileDocumentManager.getInstance().getDocument(notebookFile.file)
                     }
@@ -78,14 +80,16 @@ class KotlinInProcessJupyterClient(
                     }
                     afterRestart = false
                 }
+                if (!isAfterRestart && clientSessions.containsKey(id)) {
+                    JupyterRuntimeService.getInstance(project).clearRuntime(file)
+                }
+                clientSessions.remove(id)
             }
         )
         Disposer.register(this, kernel)
         kernels[id] = kernel
         return id
     }
-
-    // private fun startKer
 
     override fun getKernelSpecs(): List<JupyterKernelSpec> {
         return kernelSpecs.values.toList()

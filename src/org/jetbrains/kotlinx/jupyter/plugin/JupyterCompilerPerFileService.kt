@@ -640,6 +640,7 @@ class JupyterCompilerPerFileService(
         _currentClasspath.clear()
         additionalDefaultImports.clear()
         implicitsList.clear()
+        cellOrdinalToClassName.clear()
     }
 
     fun clear() {
