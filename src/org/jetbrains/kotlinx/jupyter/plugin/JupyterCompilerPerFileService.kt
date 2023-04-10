@@ -59,6 +59,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
+import org.jetbrains.kotlinx.jupyter.plugin.scripting.NotebookChangeEventsType
+import org.jetbrains.kotlinx.jupyter.plugin.scripting.NotebookMoveEvent
 import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
 import org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookPluginUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsProvider
@@ -68,7 +70,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.tryWithWriteLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
@@ -86,6 +87,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
+import kotlin.math.abs
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.api.defaultImports
@@ -492,20 +494,78 @@ class JupyterCompilerPerFileService(
         } ?: false
     }
 
-    fun swapCellsData(lhs: Int, rhs: Int, cellList: List<PsiLanguageInjectionHost>) {
-        if (lhs == rhs || lhs < 0 || rhs < 0) return
+    internal fun changeCellsData(effectedIndexes: Collection<Int>,
+                                 eventType: NotebookChangeEventsType,
+                                 moveEvent: NotebookMoveEvent? = null,
+                                 invokedMoveEventInInd: Int? = null) {
+        if (effectedIndexes.isEmpty()
+            || eventType != NotebookChangeEventsType.CELL_ADD && eventType != NotebookChangeEventsType.CELL_DELETE) return
+        val presentRecords = cellOrdinalToClassName.filterKeys { it in effectedIndexes || it == invokedMoveEventInInd }.ifEmpty { return }
+        val isAddEvent = eventType == NotebookChangeEventsType.CELL_ADD
 
-        val lhsWas = cellOrdinalToClassName[lhs]
-        val rhsWas = cellOrdinalToClassName[rhs]
-        if (lhsWas?.isEmpty() == false) {
-            cellOrdinalToClassName[rhs] = lhsWas
-        } else cellOrdinalToClassName.remove(rhs)
-        if (rhsWas?.isEmpty() == false) {
-            cellOrdinalToClassName[lhs] = rhsWas
-        } else cellOrdinalToClassName.remove(lhs)
+        val (indexShift, keys) =
+            if (isAddEvent) // go from last to first, e.g. shifting very last first
+                1 to presentRecords.keys.sortedDescending()
+            else -1 to presentRecords.keys.toList()
 
-        cellList.getOrNull(rhs)?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, lhsWas)
-        cellList.getOrNull(lhs)?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, rhsWas)
+        val separatedByGaps = mutableListOf<MutableSet<Int>>().also {
+            val consecutiveData = mutableSetOf<Int>()
+            var ind = 0
+            if (keys.size == 1) {
+                consecutiveData.add(keys.first())
+                it.add(consecutiveData)
+                return@also
+            }
+            while (ind < keys.size - 1) {
+                val first = keys[ind]
+                val next = keys[ind + 1]
+                if (abs(first - next) > 1) {
+                    consecutiveData.add(first)
+                    it.add(consecutiveData.toMutableSet())
+                    consecutiveData.clear()
+                    consecutiveData.add(next)
+                } else {
+                    consecutiveData.add(first)
+                    if (ind + 1 == keys.size - 1) consecutiveData.add(next)
+                }
+                ind++
+            }
+            it.add(consecutiveData)
+        }
+
+        moveEvent?.let {
+            val invokedInCell = invokedMoveEventInInd ?: return@let
+            val storedData = cellOrdinalToClassName[invokedInCell]
+            val isCellUp = it == NotebookMoveEvent.CELL_UP
+            val anotherAffectedInd = if (isCellUp) invokedInCell - 1 else invokedInCell + 1
+            // skip if it will be processed later
+            separatedByGaps.firstOrNull { set -> invokedInCell in set || anotherAffectedInd in set }?.let { foundContainer ->
+                foundContainer.removeIf { elem -> elem == invokedInCell || elem == anotherAffectedInd }
+            }
+
+            val storedInAnother = cellOrdinalToClassName[anotherAffectedInd]
+            if (storedData != null) {
+                cellOrdinalToClassName[anotherAffectedInd] = storedData
+            } else cellOrdinalToClassName.remove(anotherAffectedInd)
+            if (storedInAnother != null) {
+                cellOrdinalToClassName[invokedInCell] = storedInAnother
+            } else cellOrdinalToClassName.remove(invokedInCell)
+        }
+
+
+        val toRemove = mutableSetOf<Int>()
+        for (consecutiveData in separatedByGaps) {
+            consecutiveData.forEach { ind ->
+                val data = presentRecords[ind] ?: return@forEach
+                val newInd = ind + indexShift
+                if (newInd >= 0) {
+                    cellOrdinalToClassName[newInd] = data
+                }
+            }
+            toRemove.addIfNotNull(consecutiveData.lastOrNull())
+        }
+
+        toRemove.forEach { cellOrdinalToClassName.remove(it) }
     }
 
     private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell) {
