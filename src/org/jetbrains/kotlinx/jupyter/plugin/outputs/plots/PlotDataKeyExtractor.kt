@@ -11,7 +11,7 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutp
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataKey
 
 internal val letsPlotSwingOutputsEnabled: Boolean
-    get() = Registry.`is`("lets.plot.swing.outputs.enabled", false)
+    get() = Registry.`is`("lets.plot.swing.outputs.enabled", true)
 
 class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
     override fun extractKey(dataObject: ObjectNode, executionCount: Int?): NotebookOutputDataKey? {
