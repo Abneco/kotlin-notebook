@@ -4,16 +4,11 @@ package org.jetbrains.kotlinx.jupyter.plugin.outputs.plots
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.impl.EditorImpl
-import com.intellij.ui.JBColor
-import jetbrains.datalore.base.geometry.DoubleVector
 import jetbrains.datalore.plot.MonolithicCommon
 import jetbrains.datalore.plot.PlotSizeHelper
 import jetbrains.datalore.plot.builder.defaultTheme.values.ThemeOption
-import jetbrains.datalore.plot.builder.presentation.DefaultFontFamilyRegistry
 import jetbrains.datalore.plot.config.FigKind
-import jetbrains.datalore.plot.config.Option
 import jetbrains.datalore.plot.config.PlotConfig
-import jetbrains.datalore.plot.config.theme.ThemeConfig
 import jetbrains.datalore.vis.swing.PlotPanel
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
 import org.jetbrains.kotlinx.jupyter.plugin.util.uiFeelsDark
@@ -21,12 +16,9 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.createGutterPainte
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.updateGutterPainter
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory.Companion.gutterPainter
-import java.awt.Color
 import java.awt.Component
-import java.awt.Dimension
 import javax.swing.JComponent
 import javax.swing.JPanel
-import kotlin.math.ceil
 
 class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOutputComponentFactory.LetsPlotComponent, LetsPlotOutputDataKey> {
 
