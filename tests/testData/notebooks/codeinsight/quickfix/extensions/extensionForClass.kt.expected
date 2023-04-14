@@ -1,0 +1,7 @@
+// "Create extension function" "true"
+class Hohoh {}
+Hohoh().foo()
+
+fun Hohoh.foo() {
+TODO("Not yet implemented")
+}
