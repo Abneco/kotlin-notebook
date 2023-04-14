@@ -109,7 +109,6 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
 
         runInEdtAndWait {
             runReadAction {
-                // To make completion work in `kotlin.scripts.as.entities=true` mode it's crucial to load dependencies in advance
                 ScriptConfigurationManager.updateScriptDependenciesSynchronously(myFixture.file)
             }
         }

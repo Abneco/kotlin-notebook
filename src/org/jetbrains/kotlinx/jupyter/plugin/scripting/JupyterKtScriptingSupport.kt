@@ -36,7 +36,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookUsagesContributorFa
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.ReferenceSearchStrategy
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isCompiledCellClassDeclaration
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isItGeneratedNameInsideLambdaCall
-import org.jetbrains.kotlinx.jupyter.plugin.util.switchForScriptsAsEntities
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
@@ -96,19 +95,14 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             addTemplateClassesRoots(notebookService.currentClasspath.map { it.absolutePath })
             addSources(notebookService.currentSourceRoots.map { it.absolutePath })
 
-            switchForScriptsAsEntities(
-                on = {
-                    warnAboutDependenciesExistence(false)
-                    try {
-                        notebookService.scripts().forEach { (file, conf) -> add(file, conf) }
-                    } catch (e: Throwable) {
-                        if (e is ProcessCanceledException) throw e
-                        LOG.error("Notebook injected scripts can't be obtained. Notebook: [$notebook]", e)
-                    }
-                    warnAboutDependenciesExistence(true)
-                },
-                off = {}
-            )
+            warnAboutDependenciesExistence(false)
+            try {
+                notebookService.scripts().forEach { (file, conf) -> add(file, conf) }
+            } catch (e: Throwable) {
+                if (e is ProcessCanceledException) throw e
+                LOG.error("Notebook injected scripts can't be obtained. Notebook: [$notebook]", e)
+            }
+            warnAboutDependenciesExistence(true)
         }
     }
 
