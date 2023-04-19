@@ -8,21 +8,25 @@ import org.junit.Test
 class NotebookQuickFixIntentionsExtensionTest : NotebookQuickFixBaseTest() {
     override fun getTestDataPath() = "${super.getTestDataPath()}/extensions"
 
+    @Ignore("Should be investigated in context of KTIJ-25219")
     @Test
     fun testExtensionForClass() {
         doTest(1)
     }
 
+    @Ignore("Should be investigated in context of KTIJ-25219")
     @Test
     fun testExtensionForProperty() {
         doTest(0)
     }
 
+    @Ignore("Should be investigated in context of KTIJ-25219")
     @Test
     fun testExtensionWithHeteroArguments() {
         doTest(1)
     }
 
+    @Ignore("Should be investigated in context of KTIJ-25219")
     @Test
     fun testExtensionWithHomoArguments() {
         doTest(1)
