@@ -17,11 +17,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Pass
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiNameIdentifierOwner
-import com.intellij.psi.PsiNamedElement
-import com.intellij.psi.PsiReference
+import com.intellij.psi.*
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageEditorUtil
 import com.intellij.psi.search.SearchScope
@@ -36,13 +32,7 @@ import com.intellij.util.ObjectUtils
 import org.jetbrains.kotlin.analysis.decompiler.psi.file.KtClsFile
 import org.jetbrains.kotlin.asJava.namedUnwrappedElement
 import org.jetbrains.kotlin.idea.refactoring.rename.RenameKotlinPropertyProcessor
-import org.jetbrains.kotlin.psi.KtClass
-import org.jetbrains.kotlin.psi.KtFunction
-import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.jetbrains.kotlin.psi.KtParameter
-import org.jetbrains.kotlin.psi.KtPrimaryConstructor
-import org.jetbrains.kotlin.psi.KtProperty
-import org.jetbrains.kotlin.psi.KtScript
+import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showBytecodeRefactoringWarning
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
@@ -131,7 +121,7 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
         } else {
             val parent = tryCastParentToSuitableTarget(element)
             val properElem = adjustedElement ?: parent ?: return
-            renameCallback.pass(properElem)
+            renameCallback.accept(properElem)
         }
     }
 
