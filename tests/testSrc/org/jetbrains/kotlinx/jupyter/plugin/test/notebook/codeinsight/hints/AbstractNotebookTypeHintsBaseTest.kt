@@ -15,9 +15,7 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.SyntaxTraverser
-import com.intellij.refactoring.suggested.startOffset
 import com.intellij.util.containers.isEmpty
-import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.markHostAsCompleteAnalysisTarget
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
@@ -48,10 +46,8 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
 
     open val isLimitTypeHintsByActiveCell: Boolean = false
 
-    protected open val markerShift = KotlinNotebookAbstractInlayTypeHintsProvider.markerShift
-
     @JvmOverloads
-    fun <T : Any> runTestProvider(cellOffset: Int,
+    fun <T : Any> runTestProvider(injectionOffset: Int,
                                   injectedFileContents: String,
                                   expectedText: String,
                                   provider: InlayHintsProvider<T>,
@@ -59,7 +55,7 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
                                   verifyHintPresence: Boolean = false) {
         val sourceText = InlayDumpUtil.removeHints(expectedText)
         val actualText = runReadAction {
-            dumpInlayHints(sourceText, provider, cellOffset, settings)
+            dumpInlayHints(sourceText, provider, injectionOffset, settings)
         }
         assertEquals(expectedText, actualText)
         assertEquals(sourceText.trimEnd(), injectedFileContents.trimEnd())
@@ -74,7 +70,7 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
 
     protected fun <T : Any> dumpInlayHints(sourceText: String,
                                            provider: InlayHintsProvider<T>,
-                                           cellOffset: Int = 0,
+                                           injectionOffset: Int = 0,
                                            settings: T = provider.createSettings()): String {
         val file = myFixture.file!!
         val editor = myFixture.editor
@@ -82,7 +78,7 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
         val collector = provider.getCollectorFor(file, editor, settings, sink) ?: error("Collector is expected")
         val collectorWithSettings = CollectorWithSettings(collector, provider.key, file.language, sink)
         collectorWithSettings.collectTraversingAndApply(editor, file, true)
-        return InlayDumpUtil.dumpHintsInternal(sourceText, filter = {r -> r.widthInPixels > 0 }, offsetShift = -markerShift - cellOffset, renderer = { renderer, _ ->
+        return InlayDumpUtil.dumpHintsInternal(sourceText, filter = {r -> r.widthInPixels > 0 }, offsetShift = -injectionOffset, renderer = { renderer, _ ->
             if (renderer !is PresentationRenderer && renderer !is LinearOrderInlayRenderer<*>) error("renderer not supported")
             renderer.toString()
         }, file = myFixture.file!!, editor = myFixture.editor, document = myFixture.getDocument(myFixture.file!!))
@@ -120,18 +116,20 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
             val doc = myFixture.getDocument(notebookFile) ?: error("Document should not be null")
             markHostAsCompleteAnalysisTarget(doc, completeAnalysis)
         }
+        val injectedLanguageManager = InjectedLanguageManager.getInstance(notebookFile.project)
 
-        val cellShift = neededCell.startOffset
-        val injectedFileContents = runReadAction {
-            (InjectedLanguageManager.getInstance(project)
-                .getInjectedPsiFiles(neededCell)?.firstOrNull { it.first.containingFile.isInjectedKtFile() }?.first as? PsiFile)?.text
+        val injectedFile = runReadAction {
+            (injectedLanguageManager
+                .getInjectedPsiFiles(neededCell)?.firstOrNull { it.first.containingFile.isInjectedKtFile() }?.first as? PsiFile)
         } ?: error("No suitable KtFile found in a host")
+
+        val fileOffset = injectedLanguageManager.injectedToHost(injectedFile, 0)
 
         with(provider) {
             val expectedFileContents = FileUtil.loadFile(File("$testDataPath/${getTestName(true)}.kt"), true)
             val settings = createSettings()
             setupAction(settings)
-            runTestProvider(cellShift, injectedFileContents, expectedFileContents, this, settings, verifyHintPresence = true)
+            runTestProvider(fileOffset, injectedFile.text, expectedFileContents, this, settings, verifyHintPresence = true)
         }
 
         limitedAreaTargetInd?.let {

@@ -19,4 +19,9 @@ class NotebookRangeHintsTest : AbstractNotebookTypeHintsBaseTest() {
         doTest(provider, 1, 1)
     }
 
+    @Test
+    fun testLimitedRangesCombinedWithMagics() {
+        doTest(provider, 1, 1)
+    }
+
 }

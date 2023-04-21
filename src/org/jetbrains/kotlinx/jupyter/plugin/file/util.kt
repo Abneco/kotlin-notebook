@@ -89,10 +89,18 @@ private fun getLanguageFromOriginalFile(file: VirtualFile): Language? {
 internal fun PsiFile?.getNotebookCellList() =
     (this?.children?.first() as? JupyterNotebook)?.psiCellList
 
+internal fun PsiLanguageInjectionHost.getInjectedKtFile(injectedLanguageManager: InjectedLanguageManager) =
+    injectedLanguageManager.getInjectedPsiFiles(this)?.firstOrNull { it.first is KtFile }?.first as? KtFile
+
 internal fun List<PsiLanguageInjectionHost>.getInjectedKtFiles(injectedLanguageManager: InjectedLanguageManager) =
     this.mapNotNull { h ->
-        injectedLanguageManager.getInjectedPsiFiles(h)?.firstOrNull { it.first is KtFile }?.first as? KtFile
+        h.getInjectedKtFile(injectedLanguageManager)
     }
+
+fun PsiLanguageInjectionHost.getKtFileStartOffset(injectedLanguageManager: InjectedLanguageManager): Int? {
+    val ktFile = getInjectedKtFile(injectedLanguageManager) ?: return null
+    return injectedLanguageManager.injectedToHost(ktFile, 0)
+}
 
 internal fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
     takeIfBacked(this)

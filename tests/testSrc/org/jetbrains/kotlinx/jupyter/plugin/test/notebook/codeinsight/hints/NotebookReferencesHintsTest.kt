@@ -8,8 +8,6 @@ import org.junit.Test
 class NotebookReferencesHintsTest : AbstractNotebookTypeHintsBaseTest() {
     override fun getTestDataPath() = "${super.getTestDataPath()}/references"
     override val provider = KotlinNotebookReferencesTypeHintsProvider()
-    override val markerShift: Int
-        get() = super.markerShift //- 1
 
     @Test
     @Ignore("Correct path to type definition differs on TC")

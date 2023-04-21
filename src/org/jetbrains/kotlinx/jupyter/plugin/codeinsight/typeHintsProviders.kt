@@ -31,6 +31,7 @@ import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.getBindingContext
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.psiHostChainHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.putBindingContext
+import org.jetbrains.kotlinx.jupyter.plugin.file.getKtFileStartOffset
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCompleteAnalysisArea
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.isEitherSymmetricallyContainedRange
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
@@ -113,7 +114,6 @@ class NotebookValuesHintProvider: KotlinNotebookAbstractInlayTypeHintsProvider<K
 class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
     companion object {
         private val logger = thisLogger()
-        private const val shiftMargin = KotlinNotebookAbstractInlayTypeHintsProvider.markerShift
     }
 
     override val previewText: String = ""
@@ -130,6 +130,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
         return object : FactoryInlayHintsCollector(editor) {
             private val document = FileDocumentManager.getInstance().getDocument(file.virtualFile)
             private val optionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
+            private val injectedLanguageManager = InjectedLanguageManager.getInstance(file.project)
 
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
                 if (file.project.service<DumbService>().isDumb) return true
@@ -140,6 +141,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 val modificationArea = document?.getNotebookCompleteAnalysisArea()
 
                 val registry = KotlinNotebookAbstractInlayTypeHintsProvider.getOrCreateChainCallTypeHintsRegistry(element)
+                val fileOffset = element.getKtFileStartOffset(injectedLanguageManager) ?: return true
                                                 // lhs.contains(rhs) || rhs.contains(rhs)
                 if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
                     lastShouldLimitOptionValue = optionsProvider.state.shouldLimitTypeHintsByActiveCell
@@ -150,7 +152,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                             val c = el.getBindingContext() ?: return@forEach // getTypeComputationContext(el)
                             val withTypes = data.mapNotNull { it.first.getType(c)?.let { t -> ExpressionWithType(it.first, t)} }
                             // if file is valid
-                            addInlayElementsToSink(c, withTypes, sink, factory, offset = element.textOffset + shiftMargin)
+                            addInlayElementsToSink(c, withTypes, sink, factory, offset = fileOffset)
                         }
                     } catch (e: Throwable) {
                         if (e is ProcessCanceledException) {
@@ -164,7 +166,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
 
                 return KotlinNotebookAbstractInlayTypeHintsProvider.traverseElementsAndApplyAction(ktFile) { elem ->
                     processInlayElements(elem, settings, sink, factory,
-                                         offset = element.textOffset + shiftMargin)
+                                         offset = fileOffset)
                     return@traverseElementsAndApplyAction true
                 }
             }

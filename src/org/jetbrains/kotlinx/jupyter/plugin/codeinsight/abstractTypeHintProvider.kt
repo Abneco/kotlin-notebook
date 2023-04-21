@@ -28,17 +28,15 @@ import org.jetbrains.kotlin.idea.codeInsight.hints.getInlayPresentationForInlayI
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.file.getKtFileStartOffset
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCompleteAnalysisArea
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.isEitherSymmetricallyContainedRange
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 
 typealias PsiHostChainCallTypeHintsRegistry = MutableMap<PsiElement, List<Pair<PsiElement, InlayPresentation>>>
-// more complex version
-//typealias PsiHostTypeHintsRegistry = MutableMap<PsiElement, MutableMap<HintType, MutableCollection<InlayInfoDetails>?>>
 typealias PsiHostTypeHintsRegistry = MutableMap<PsiElement, MutableSet<HintType>>
 
 abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbstractHintsProvider<T>() {
@@ -52,13 +50,14 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
         return object : FactoryInlayHintsCollector(editor) {
             private val document = FileDocumentManager.getInstance().getDocument(file.virtualFile)!!
             private val optionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
+            private val injectedLanguageManager = InjectedLanguageManager.getInstance(file.project)
 
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
                 if (DumbService.isDumb(project) || element !is JupyterPsiCellImpl || !element.isValid) return true
 
                 val modificationArea = document.getNotebookCompleteAnalysisArea()
                 val registry = getOrCreateTypeHintsRegistry(element)
-                val hostOffset = element.textOffset
+                val fileOffset = element.getKtFileStartOffset(injectedLanguageManager) ?: return true
 
                 val shouldLimit = optionsProvider.state.shouldLimitTypeHintsByActiveCell
                 if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
@@ -76,7 +75,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                                 addInlayElementToSink(el, project,
                                                       hintType, sink,
                                                       factory, this@KotlinNotebookAbstractInlayTypeHintsProvider,
-                                                      hintsPriority, hintsArePlacedAtTheEndOfLine, hostOffset,
+                                                      hintsPriority, hintsArePlacedAtTheEndOfLine, fileOffset,
                                                       registry, RegistryMode.Apply)
                             }
                         }
@@ -103,7 +102,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                             addInlayElementToSink(elem, project,
                                                   hintType, sink,
                                                   f, this@KotlinNotebookAbstractInlayTypeHintsProvider,
-                                                  hintsPriority, hintsArePlacedAtTheEndOfLine, hostOffset, registry, RegistryMode.Store)
+                                                  hintsPriority, hintsArePlacedAtTheEndOfLine, fileOffset, registry, RegistryMode.Store)
                         }
                     }
                    return@traverseElementsAndApplyAction true
@@ -168,7 +167,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                                            provider: InlayHintsProvider<*>,
                                            hintsPriority: Int,
                                            isEndOfTheLine: Boolean,
-                                           hostOffset: Int, registry: PsiHostTypeHintsRegistry,
+                                           injectionOffset: Int, registry: PsiHostTypeHintsRegistry,
                                            registryMode: RegistryMode,
                                            inlayPresentation: InlayPresentation? = null) {
             registry[contextElement]?.add(hintType)
@@ -177,7 +176,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
             detailsInfo.forEach { details ->
                 val p = PresentationAndSettings(
                     inlayPresentation ?: getInlayPresentationForInlayInfoDetails(contextElement, hintType, details, factory, project, provider),
-                    details.inlayInfo.offset + hostOffset + markerShift,
+                    details.inlayInfo.offset + injectionOffset,
                     details.inlayInfo.relatesToPrecedingText
                 )
                 val horizontalConstraints = HorizontalConstraints(hintsPriority, p.relatesToPrecedingText, isEndOfTheLine)
@@ -185,7 +184,6 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
             }
         }
 
-        const val markerShift = CELL_MARKER.length + 1
         fun isLanguageSupported(language: Language): Boolean = language == JupyterLanguage
 
         inline fun traverseElementsAndApplyAction(rootElement: PsiElement, crossinline action: (PsiElement) -> Boolean): Boolean {
