@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.configurationStore.runAsWriteActionIfNeeded
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
@@ -124,7 +125,7 @@ class JupyterCompilerPerFileService(
     private val compileLock = ReentrantReadWriteLock()
     private val listLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(1)
-    private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ContainerUtil.newConcurrentSet() // LoggingList()
+    private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ConcurrentCollectionFactory.createConcurrentSet() // LoggingList()
     private val implicitListsLoadQueue = ArrayDeque<Pair<Path, List<String>>>()
     val cellOrdinalToClassName = mutableMapOf<Int, Set<String>>()
 
