@@ -27,5 +27,7 @@
     <orderEntry type="module" module-name="intellij.notebooks.visualization" scope="TEST" />
     <orderEntry type="module" module-name="kotlin.idea" scope="TEST" />
     <orderEntry type="module" module-name="intellij.python.jupyter.tables" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.markdown" scope="TEST" />
+    <orderEntry type="library" scope="TEST" name="kotlinc.kotlin-compiler-common" level="project" />
   </component>
 </module>
