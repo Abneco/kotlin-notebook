@@ -107,5 +107,6 @@
     <orderEntry type="module" module-name="intellij.platform.ide" />
     <orderEntry type="module" module-name="intellij.python.jupyter.tables" />
     <orderEntry type="module" module-name="intellij.python.pydev" />
+    <orderEntry type="module" module-name="intellij.platform.codeStyle.impl" />
   </component>
 </module>

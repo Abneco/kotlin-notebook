@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completionWithImport
 
+import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
@@ -43,19 +44,14 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
         completionTester.typeWithPauses("DASH")
         myFixture.performEditorAction(IdeActions.ACTION_CHOOSE_LOOKUP_ITEM)
         completionTester.joinCommit()
-
-        val doc = myFixture.editor.document
-        val actualText = runReadAction {
-            doc.text
-        }
-        TestCase.assertEquals("""
+        assertActualText("""
             plot {
                 line {
                     type(LineType.DASHED)
                 }
             }
             
-        """.trimIndent(), actualText)
+        """.trimIndent())
     }
 
     @Test
@@ -70,26 +66,13 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
             }
         }
     ) { tester ->
-        tester.typeWithPauses("fail")
-        val elements = myFixture?.lookupElements
-
-        assertNoThrowable {
-            invokeAndWaitIfNeeded {
-                elements?.first { it.lookupString == "fail" && it.userDataString.contains("fail  {...}")}.let {
-                    tester.lookup.finishLookup(KotlinNotebookAutoCompletionTest.CompletionMode.ADD.ch, it)
-                }
-            }
-        }
-        tester.joinCommit()
-
-        val actualText = runReadAction { myFixture.editor.document.text }
-
-        TestCase.assertEquals("""
+        tester.typeAndFinishLookup("fail") { it.lookupString == "fail" && it.userDataString.contains("fail  {...}") }
+        assertActualText("""
             import org.junit.jupiter.api.fail
 
             val someVar = 123 + x
-            fail {  }id (x)
-        """.trimIndent(), actualText)
+            fail {  }id(x)
+        """.trimIndent())
     }
 
     @Test
@@ -102,32 +85,86 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
             override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) = Unit
         }
     ) { tester ->
-        tester.typeWithPauses("ai")
-        val elements = myFixture?.lookupElements
-
-        assertNoThrowable {
-            invokeAndWaitIfNeeded {
-                elements?.first { it.lookupString == "fail" && it.userDataString.contains("fail  {...}")}.let {
-                    tester.lookup.finishLookup(KotlinNotebookAutoCompletionTest.CompletionMode.ADD.ch, it)
-                }
-            }
-        }
-        tester.joinCommit()
-
-        val actualText = runReadAction { myFixture.editor.document.text }
-
-        TestCase.assertEquals("""
+        tester.typeAndFinishLookup("ai") { it.lookupString == "fail" && it.userDataString.contains("fail  {...}") }
+        assertActualText("""
             import org.junit.jupiter.api.fail
-
+            
 
             fail {  }
             123
-        """.trimIndent(), actualText)
+        """.trimIndent())
     }
+
+    @Test
+    fun completionOfRunBlocking() = doTest(
+        object : ReceivedMessagesTester {
+            override val expectedCellsCount: Int = 2
+            override val cellsToExecute: List<Int> = listOf(0)
+            override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) = Unit
+        }
+    ) { tester ->
+        tester.typeAndFinishLookup("n") { it.lookupString == "runBlocking" && it.userDataString.contains("runBlocking  {...}") }
+        assertActualText("""
+            runBlocking {  }
+        """.trimIndent())
+    }
+
+    @Test
+    fun completionOfRunBlockingWithImport() = doTest(
+        object : ReceivedMessagesTester {
+            override val expectedCellsCount: Int = 2
+            override val cellsToExecute: List<Int> = listOf(0)
+            override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) = Unit
+        }
+    ) { tester ->
+        tester.typeAndFinishLookup("n") { it.lookupString == "runBlocking" && it.userDataString.contains("runBlocking  {...}") }
+        assertActualText("""
+            import kotlinx.coroutines.runBlocking
+            
+            runBlocking {  }
+        """.trimIndent())
+    }
+
+    @Test
+    fun completionInsideLambda() = doTest(
+        object : ReceivedMessagesTester {
+            override val expectedCellsCount: Int = 1
+            override val cellsToExecute: List<Int> = emptyList()
+            override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) = Unit
+        }
+    ) { tester ->
+        tester.typeAndFinishLookup("printl") { it.lookupString == "println" }
+        assertActualText("""
+            listOf(1, 2, 42).filter { it % 2 == 0 }.map { println()it.plus() }
+        """.trimIndent())
+    }
+
+    private fun CompletionAutoPopupTester.typeAndFinishLookup(string: String, filter: (LookupElement) -> Boolean) {
+        typeWithPauses(string)
+        finishLookupForElement(filter)
+    }
+
+    private fun CompletionAutoPopupTester.finishLookupForElement(filter: (LookupElement) -> Boolean) {
+        val elements = myFixture?.lookupElements
+        assertNoThrowable {
+            invokeAndWaitIfNeeded {
+                elements?.first(filter).let {
+                    lookup.finishLookup(KotlinNotebookAutoCompletionTest.CompletionMode.ADD.ch, it)
+                }
+            }
+        }
+        joinCommit()
+    }
+
+    private fun assertActualText(expectedText: String) {
+        TestCase.assertEquals(expectedText, actualText())
+    }
+
+    private fun actualText() = runReadAction { myFixture.editor.document.text }
 
     private fun doTest(executionTester: ReceivedMessagesTester, completionChecker: (CompletionAutoPopupTester) -> Unit) {
         withDisabledJcef {
-            val notebookFile = configureExecutionTest(copyNotebookToProject = true)
+            val notebookFile = configureExecutionTest(copyNotebookToProject = false)
             executeCells(executionTester, notebookFile)
 
             runInEdtAndWait {
