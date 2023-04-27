@@ -56,6 +56,9 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
 class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper()) : DSTableDataProvider {
     override val type: DSTableDataType = DSTableDataType.EXTERNAL
 
+    override val pydevdId: String
+        get() = TODO("Makes no sense for Kotlin and should be removed")
+
     override fun parseTextToFrameInfo(text: String): DSDataFrameInfo {
         return parseFrameInfoFromKotlinDataframeOutput(text)
     }
