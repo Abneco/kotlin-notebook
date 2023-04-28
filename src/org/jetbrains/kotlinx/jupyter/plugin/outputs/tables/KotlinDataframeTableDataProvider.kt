@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.intellij.openapi.util.registry.Registry
-import com.intellij.util.containers.JBTreeTraverser
 import com.jetbrains.python.debugger.pydev.TableCommandType
 import com.jetbrains.python.debugger.pydev.tables.CommandOutputType
 import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.columnsField
@@ -121,8 +120,8 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         val rows = rawRows.split(separator)
         val firstRowJson = mapper.readTree(rows[0])
 
-        val columnTreeTraverser = extractHierarchy(firstRowJson)
-        val columnNames = getLeafColumnNames(columnTreeTraverser)
+        val rootColumns = extractHierarchy(firstRowJson)
+        val columnNames = rootColumns.map { it.name }
 
         val nRow = rawJson[nRowsField].asInt()
         val nCol = rawJson[nColsField].asInt()
@@ -135,18 +134,19 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
             columnNames,
             List(columnNames.size) { null },
             dimensionsStr,
-            columnsTreeTraverser = columnTreeTraverser
+            rootColumns = rootColumns
         )
     }
 
-    private fun extractHierarchy(row: JsonNode): JBTreeTraverser<ColumnTreeNode> {
-        val root = ColumnTreeNode("root", -1, mutableListOf())
+    private fun extractHierarchy(row: JsonNode): List<ColumnTreeNode> {
+        val root = ColumnTreeNode("root", -1, 0, mutableListOf())
 
         var index = 0
         fun extractColumnsHelper(jsonNode: JsonNode, columnsNode: ColumnTreeNode, path: List<String>) {
+            var childIdx = 0
             if (jsonNode.isObject) {
                 jsonNode.fields().forEach { (key, value) ->
-                    val child = ColumnTreeNode(key, index++, mutableListOf())
+                    val child = ColumnTreeNode(key, index++, childIdx++, mutableListOf())
                     columnsNode.children.add(child)
                     extractColumnsHelper(value, child, path + listOf(key))
                 }
@@ -155,48 +155,28 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
 
         extractColumnsHelper(row, root, emptyList())
 
-        return JBTreeTraverser
-            .from<ColumnTreeNode?> { node -> node.children }
-            .withRoots(root.children)
+        return root.children
     }
 
-    private fun getColumnPathsToValues(traverser: JBTreeTraverser<ColumnTreeNode>): List<List<String>> {
-        val paths = mutableListOf<List<String>>()
-        val stack = mutableListOf<ColumnTreeNode>()
+    fun extractValues(jsonNode: JsonNode, columns: List<ColumnTreeNode>): List<Any> {
+        val resultList = mutableListOf<Any>()
 
-        for (node in traverser.preOrderDfsTraversal()) {
-            while (stack.isNotEmpty() && !stack.last().isParent(node)) {
-                stack.removeLast()
-            }
+        for (column in columns) {
+            val columnName = column.name
+            val value = jsonNode.get(columnName)
 
-            stack.add(node)
-
-            if (isLeaf(node)) {
-                paths.add(stack.map { it.name })
-            }
-        }
-
-        return paths
-    }
-
-    private fun ColumnTreeNode.isParent(node: ColumnTreeNode): Boolean {
-        return children.contains(node)
-    }
-
-    private fun isLeaf(node: ColumnTreeNode): Boolean {
-        return node.children.isEmpty()
-    }
-
-    private fun getLeafColumnNames(traverser: JBTreeTraverser<ColumnTreeNode>): List<String> {
-        val leafColumnNames = mutableListOf<String>()
-
-        for (node in traverser.preOrderDfsTraversal()) {
-            if (node.children.isEmpty()) {
-                leafColumnNames.add(node.name)
+            if (value != null) {
+                if (value.isValueNode) {
+                    resultList.add(value.asText())
+                } else if (value.isObject) {
+                    resultList.add(extractValues(value, column.children))
+                } else {
+                    resultList.add("")
+                }
             }
         }
 
-        return leafColumnNames
+        return resultList
     }
 
     private fun parseDataFromKotlinDataframeOutput(id: DataId, text: String): DSTableData {
@@ -207,30 +187,17 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         val rows = rawRows.split(separator)
         val firstRowJson = mapper.readTree(rows[0])
 
-        val columnTreeTraverser = extractHierarchy(firstRowJson)
-        val columnPaths = getColumnPathsToValues(columnTreeTraverser)
+        val rootColumns = extractHierarchy(firstRowJson)
 
-        val columnValues = List(columnPaths.size) { mutableListOf<String>() }
+        val columnValues = List(rootColumns.size) { mutableListOf<Any>() }
 
         for (row in rows) {
             val json = mapper.readTree(row)
-            columnPaths.forEachIndexed { idx, path ->
-                val columnValue = extractNestedValue(json, path)
-                columnValues[idx].add(columnValue?.asText() ?: "")
-            }
+            val values = extractValues(json, rootColumns)
+            values.forEachIndexed { index, any -> columnValues[index].add(any) }
         }
 
         return DSTableData(id, columnValues)
-    }
-
-    private fun extractNestedValue(node: JsonNode, keys: List<String>): JsonNode? {
-        var current = node
-
-        for (key in keys) {
-            current = current[key] ?: return null
-        }
-
-        return current
     }
 
     private fun asConcatenatedRows(text: JsonNode): String {
