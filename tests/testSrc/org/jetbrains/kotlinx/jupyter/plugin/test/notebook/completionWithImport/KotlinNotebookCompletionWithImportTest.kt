@@ -119,6 +119,7 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
         TestCase.assertEquals("""
             import org.junit.jupiter.api.fail
 
+
             fail {  }
             123
         """.trimIndent(), actualText)
