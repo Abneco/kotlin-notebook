@@ -56,9 +56,6 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
 class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper()) : DSTableDataProvider {
     override val type: DSTableDataType = DSTableDataType.EXTERNAL
 
-    override val pydevdId: String
-        get() = TODO("Makes no sense for Kotlin and should be removed")
-
     override fun parseTextToFrameInfo(text: String): DSDataFrameInfo {
         return parseFrameInfoFromKotlinDataframeOutput(text)
     }
@@ -70,7 +67,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     @Throws(DSTableDataException::class)
     override fun getTableInfo(
         commandExecutor: DSTableCommandExecutor,
-        initialCommand: String,
+        tableVariable: String,
         textTableOutput: String?
     ): DSDataFrameInfo {
         return parseFrameInfoFromKotlinDataframeOutput(textTableOutput!!)
@@ -79,12 +76,12 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     override fun dataFrameGetData(
         commandExecutor: DSTableCommandExecutor,
         dataId: DataId,
-        initExpression: String,
+        tableVariable: String,
         start: Int,
         end: Int
     ): DSTableData {
         val tableText = commandExecutor.executeCommand(
-            getSliceCommand(initExpression, commandExecutor.isDisplaySupported(), start, end),
+            getSliceCommand(tableVariable, commandExecutor.isDisplaySupported(), start, end),
             TableCommandType.SLICE, CommandOutputType.DISPLAY
         )
         return parseDataFromKotlinDataframeOutput(dataId, tableText)
@@ -100,8 +97,8 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         }
     }
 
-    override fun getSortingCommand(initCommand: String, sortKeys: List<RowSorter.SortKey>, columns: List<String>): String {
-        if (columns.isEmpty()) return initCommand
+    override fun getSortingCommand(tableVariable: String, sortKeys: List<RowSorter.SortKey>, columns: List<String>): String {
+        if (columns.isEmpty()) return tableVariable
 
         val kotlinDataframeSortKeys = sortKeys
             .map { "\"${columns[it.column]}\"${if (it.sortOrder == SortOrder.DESCENDING) ".desc()" else ""}" }
@@ -111,7 +108,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
             kotlinDataframeSortKeys.add(kotlinDataframeSortKeys[0])
         }
 
-        return "(($initCommand as DataFrame<*>).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} })"
+        return "(($tableVariable as DataFrame<*>).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} })"
     }
 
     override fun isFallbackToTruncatedSupported(): Boolean = true
