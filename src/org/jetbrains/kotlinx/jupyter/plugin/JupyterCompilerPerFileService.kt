@@ -7,12 +7,14 @@ import com.intellij.configurationStore.runAsWriteActionIfNeeded
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
@@ -27,14 +29,15 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.concurrency.AppExecutorUtil
-import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.containers.nullize
 import com.intellij.util.io.delete
 import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.core.script.ClasspathToVfsConverter
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
@@ -51,9 +54,9 @@ import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService.Companion.SCRIPT_DEPENDENCIES_LIBRARY_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingRestarter
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingRestarter.UpdateSteps.postScriptingUpdateStep
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
@@ -271,7 +274,7 @@ class JupyterCompilerPerFileService(
     private fun updateClasspathWithProjectArtifactsAsync() {
         coroutineScope.async {
             val buildService = JupyterKotlinProjectArtifactsService.getInstance(project)
-            val artifacts = buildService.buildProjectAndGetLibraries(virtualFile)
+            val artifacts = buildService.buildProjectAndGetLibraries(virtualFile).ifEmpty { return@async }
             val updated = compileLock.withWriteLock {
                 val oldSize = _currentClasspath.size
                 _currentClasspath.addSnippet(artifacts.map { File(it) })
@@ -440,28 +443,26 @@ class JupyterCompilerPerFileService(
     private val needsToUpdate = AtomicBoolean(false)
 
     fun afterScriptingUpdate() {
-        if (hasPendingUpdates) {
-            needsToUpdate.set(false)
-            val isEmpty = compileLock.withReadLock { implicitListsLoadQueue.isEmpty() }
-            if (isEmpty) {
-                postScriptingUpdateStep(NotebookHighlightingService.getForFile(project, virtualFile).document)
-                psiFile?.let { // request restart since callback might be called at any moment
-                    NotebookHighlightingRestarter.scheduleRegularUpdateNoChecks(it, 800)
-                }
-            }
+        needsToUpdate.set(false)
+        val isEmpty = compileLock.withReadLock { implicitListsLoadQueue.isEmpty() }
+        if (isEmpty) {
+            postScriptingUpdateStep(NotebookHighlightingService.getForFile(project, virtualFile).document)
         }
     }
 
-    fun loadReceiverClassesIfAny(): Boolean {
-        return compileLock.tryWithWriteLock<Boolean> {
+    fun loadReceiverClassesIfAny(document: Document? = null, shouldUpdateImmediately: Boolean = false): Boolean {
+        var loadedSize: Int = 0
+        return compileLock.tryWithWriteLock {
             if (implicitListsLoadQueue.isEmpty()) {
                 needsToUpdate.compareAndSet(true, false)
                 return false
             }
+            loadedSize = implicitListsLoadQueue.size
+
             while (implicitListsLoadQueue.isNotEmpty()) {
                 val firstElem = implicitListsLoadQueue.firstOrNull()
                 if (firstElem == null) {
-                    return needsToUpdate.get()
+                    return@tryWithWriteLock needsToUpdate.get()
                 }
                 val (lineDir, classes) = firstElem
                 try {
@@ -488,10 +489,25 @@ class JupyterCompilerPerFileService(
                         }
                         else -> LOG.error(e)
                     }
-                    return true
+                    return@tryWithWriteLock true
                 }
             }
-            return true
+            return@tryWithWriteLock true
+        }.apply {
+            if (this == true && shouldUpdateImmediately) {
+                coroutineScope.async {
+                    if (loadedSize > 3) {
+                        LOG.debug("Requesting update of scripting after loading new classes in ${psiFile?.name}, loaded: $loadedSize")
+                        document?.getUserData(NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange)?.compareAndSet(true, false)
+                        withContext(Dispatchers.EDT) {
+                            JupyterKtScriptingSupport.update(project)
+                        }
+                    } else {
+                        LOG.debug("Invoking post step, cell updates allowed to change")
+                        postScriptingUpdateStep(NotebookHighlightingService.getForFile(project, virtualFile).document)
+                    }
+                }
+            }
         } ?: false
     }
 

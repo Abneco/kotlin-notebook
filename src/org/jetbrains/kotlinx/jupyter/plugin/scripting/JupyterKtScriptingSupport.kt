@@ -15,6 +15,11 @@ import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import com.intellij.util.runIf
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
@@ -108,6 +113,8 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
     companion object {
         private val LOG = logger<JupyterKtScriptingSupport>()
+        private val updateScope = CoroutineScope(Dispatchers.Default)
+        private var updateJob: Deferred<*>? = null
 
         private fun getUpdater(project: Project): ScriptClassRootsUpdater {
             return (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
@@ -116,7 +123,17 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         fun update(project: Project) {
             // cache.clear()
             val updater = getUpdater(project)
-            if (updater.isInTransaction()) return
+            if (updater.isInTransaction()) {
+                LOG.debug("In the transaction, aborting")
+                updateJob?.cancel()
+                updateJob = updateScope.async {
+                    delay(700)
+                    LOG.debug("Scripting coroutine dispatched")
+                    update(project)
+                }
+                return
+            }
+            updateJob?.cancel()
             LOG.info("Running scripting support update")
             RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
                 updater.invalidateAndCommit()

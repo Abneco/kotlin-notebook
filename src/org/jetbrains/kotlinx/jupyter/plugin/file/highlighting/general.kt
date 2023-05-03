@@ -7,7 +7,6 @@ import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeRed
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -19,6 +18,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.ProjectScope
+import com.intellij.util.concurrency.AppExecutorUtil
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
@@ -30,7 +30,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
@@ -45,6 +44,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.getCell
+import java.util.concurrent.TimeUnit
 
 
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
@@ -189,13 +189,10 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
 
         if (scriptDefManager.isReady()) {
-            if (JupyterCompilerService.getInstance(project).needToUpdateImplicitReceiversIfAny(virtualFile)) {
-                invokeLater {
-                    LOG.info("Requesting update of scripting after loading new classes in ${this.name}")
-                    doc.getUserData(NotebookCellsUpdatesAllowedToChange)?.compareAndSet(true, false)
-                    JupyterKtScriptingSupport.update(project)
-                }
-                throw ProcessCanceledException()
+            if (JupyterCompilerService.getInstance(project).needToUpdateImplicitReceiversIfAny(virtualFile, doc, true)) {
+                //LOG.warn("${Thread.currentThread().id} requested loading of classes")
+                //throw ProcessCanceledException()
+                return
             }
             return
         }
@@ -242,7 +239,9 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
             LOG.warn("Faced ${highlightInfo.description} error, will try to update scripting")
             if (found && !reloadState) {
                 LOG.info("Requesting reload of scripting...")
-                invokeLater { JupyterKtScriptingSupport.update(file.project) }
+                AppExecutorUtil.getAppScheduledExecutorService().schedule(
+                    { JupyterKtScriptingSupport.update(project) }
+                    , 600, TimeUnit.MILLISECONDS)
                 reloadRequested = true
                 return false
             }

@@ -30,6 +30,7 @@ import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
@@ -124,15 +125,25 @@ class NotebookCaretListener(
                         val queue = doc?.getUserData(NotebookQueuedTargetRanges)
                         val finished = notebookHighlightingManager?.finishedHighlighting
                         val target = notebookHighlightingManager?.completeRangeInd
-                        if (queue != null && !finished.isNullOrEmpty()) {
-                            queue.removeAll(finished)
-                        }
                         // we don't want to lose any updates happened during concurrent modification or delay
-                        if (!isRunning && doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true) {
-                            LOG.debug("Reducing queue by $finished")
+                        val isCanModifyHLRequests = doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true
+                        if (queue != null && !finished.isNullOrEmpty()) {
+                            when {
+                                // there are probably more requests to come
+                                finished.size >= NotebookHighlightingUtilityObject.cellToHighlightLimit
+                                        && isCanModifyHLRequests
+                                            -> queue.removeAll(finished)
+                                finished.size < NotebookHighlightingUtilityObject.cellToHighlightLimit
+                                            -> queue.removeAll(finished)
+                            }
+                        }
+                        if (!isRunning) {
                             val executionRequestsDone
-                                    = JupyterKotlinCellExecutionCallbackFactory
-                                        .getInstance().daemonFinished(vFile, finished)
+                                    = if (isCanModifyHLRequests)
+                                        JupyterKotlinCellExecutionCallbackFactory
+                                            .getInstance().daemonFinished(vFile, finished)
+                                    else false
+                            LOG.debug("Reducing queue by $finished, exec requests done: $executionRequestsDone")
                             if (notebookHighlightingManager?.daemonFinished(editor, psiFile, queue, executionRequestsDone) == true) {
                                 queue?.clear()
                             }

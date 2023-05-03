@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
@@ -35,7 +36,7 @@ import kotlin.script.experimental.jvm.jvm
  *
  * @property project This service project
  */
-@Service
+@Service(Service.Level.PROJECT)
 class JupyterCompilerService(val project: Project) : Disposable {
     private val mapping: MutableMap<VirtualFile, JupyterCompilerPerFileService> = ConcurrentHashMap()
 
@@ -103,8 +104,11 @@ class JupyterCompilerService(val project: Project) : Disposable {
         return mapping[virtualFile.file]
     }
 
-    fun needToUpdateImplicitReceiversIfAny(file: VirtualFile): Boolean {
-        return mapping[file]?.let { it.hasPendingUpdates || it.loadReceiverClassesIfAny() } == true
+    fun needToUpdateImplicitReceiversIfAny(file: VirtualFile, document: Document, shouldUpdateImmediately: Boolean): Boolean {
+        return mapping[file]?.let {
+            (!shouldUpdateImmediately && it.hasPendingUpdates) ||
+                    it.loadReceiverClassesIfAny(document, shouldUpdateImmediately)
+        } == true
     }
 
     val needToUpdateImplicitsReceiversIfAny: Boolean get() {

@@ -26,7 +26,11 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.NotebookCaretListener
@@ -43,7 +47,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
-@Service
+@Service(Service.Level.PROJECT)
 class NotebookHighlightingService(val project: Project): Disposable {
     private val mapping: MutableMap<VirtualFile, NotebookHighlightingManager> = ConcurrentHashMap()
 
@@ -96,7 +100,8 @@ class NotebookHighlightingManager(
         activeMarkupModelListener = object : MarkupModelListener {
             override fun afterAdded(highlighter: RangeHighlighterEx) {
                 val info = highlighter.errorStripeTooltip as? HighlightInfo ?: return
-                if (info.severity == HighlightSeverity.ERROR) {
+                // ignore parsing errors for now, only from KT factories
+                if (info.severity == HighlightSeverity.ERROR && info.description.startsWith('[')) {
                     targetErrorHighlighters.add(highlighter)
                 }
             }
@@ -119,7 +124,7 @@ class NotebookHighlightingManager(
 
     private val finishedFiles = mutableSetOf<Int>()
     private val targetErrorHighlighters = ConcurrentCollectionFactory.createConcurrentSet<RangeHighlighter>()
-    private val knownErrorInd = mutableMapOf<Int, MutableSet<RangeHighlighter>>()
+    private val knownErrorInd = ConcurrentHashMap<Int, MutableSet<RangeHighlighter>>()
     private val targetIndexes: Set<Int>
         get() = fileToInjectionData.values.mapTo(mutableSetOf()) { it.second }
     val finishedHighlighting: Set<Int>
@@ -160,7 +165,7 @@ class NotebookHighlightingManager(
                         fileToInjectionData[ktFile as KtFile] = it to ind
                         if (ind == completeRangeInd) targetPsiFile = ktFile
                     }
-                }
+                } ?: finishedFiles.add(ind)
             }
         }
         this.completeRangeInd = completeRangeInd
@@ -175,7 +180,9 @@ class NotebookHighlightingManager(
             knownErrorInd.clear()
             targetPsiFile = null
         } else {
-            knownErrorInd[completeRangeInd]?.addAll(targetErrorHighlighters)
+            completeRangeInd?.let {
+                knownErrorInd[it]?.addAll(targetErrorHighlighters)
+            }
             targetErrorHighlighters.clear()
         }
     }
