@@ -1,13 +1,8 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.editor
 
-import com.intellij.codeInsight.daemon.impl.AnnotationHolderImpl
-import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
-import com.intellij.lang.annotation.Annotation
-import com.intellij.lang.annotation.AnnotationHolder
-import com.intellij.lang.annotation.AnnotationSession
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -18,7 +13,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.InjectedFileHighli
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.highlightingManagerFor
 
 abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingVisitor>(
-    protected val visitorFactory: (AnnotationHolder) -> T,
+    protected val visitorFactory: (HighlightInfoHolder) -> T,
     private val isShouldUseNewHighlighting: Boolean = true // 0 if default
 ) : HighlightVisitor {
     private var visitor: T? = null
@@ -34,17 +29,8 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
 
     override fun analyze(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, action: Runnable): Boolean {
         try {
-            val annotationHolder = object : AnnotationHolderImpl(AnnotationSession(file), false) {
-                override fun add(element: Annotation?): Boolean {
-                    if (element != null) holder.add(HighlightInfo.fromAnnotation(element))
-                    return true
-                }
-            }
-
-            annotationHolder.runAnnotatorWithContext(file) { element, annoHolder ->
-                visitor = visitorFactory(annoHolder)
-                action.run()
-            }
+            visitor = visitorFactory(holder)
+            action.run()
 
             return true
         } finally {

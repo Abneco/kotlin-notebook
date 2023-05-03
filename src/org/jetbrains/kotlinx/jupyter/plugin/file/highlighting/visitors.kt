@@ -4,7 +4,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.file.highlighting
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
-import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.psi.PsiFile
@@ -71,8 +70,7 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
     }
 }
 
-internal class KotlinNotebookDummyVisitor(holder: AnnotationHolder) : AbstractAnnotationHolderHighlightingVisitor(holder) {
+internal class KotlinNotebookDummyVisitor(holder: HighlightInfoHolder) : AbstractAnnotationHolderHighlightingVisitor(holder) {
     override fun visitFile(file: PsiFile) {
-        return
     }
 }
