@@ -212,7 +212,9 @@ class NotebookHighlightingManager(
             if (data?.isEmpty() == true) toRemove.add(entry.key)
         }
 
-        knownErrorInd[completeInd]?.addAll(targetErrorHighlighters)
+        completeInd?.let {
+            knownErrorInd[it]?.addAll(targetErrorHighlighters)
+        }
         toRemove.forEach { knownErrorInd.remove(it) }
         val targetPassed = completeInd in finishedFiles
 
