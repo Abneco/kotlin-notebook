@@ -1,5 +1,6 @@
 // "Create extension function" "true"
-class Hohoh() { }
+class Hohoh() {}
+
 val l = listOf(1, 2, 3)
 val h = Hohoh()
 h.foo(l, listOf("a, b, c"))

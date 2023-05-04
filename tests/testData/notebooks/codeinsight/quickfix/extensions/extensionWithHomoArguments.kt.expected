@@ -1,5 +1,6 @@
 // "Create extension function" "true"
-class Hohoh() { }
+class Hohoh() {}
+
 val str = "42"
 val h = Hohoh()
 h.foo(str, "some", "")
