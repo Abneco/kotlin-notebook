@@ -7,6 +7,7 @@ import com.intellij.find.findUsages.FindUsagesOptions
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.openapi.application.ReadActionProcessor
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.AbstractElementManipulator
 import com.intellij.psi.PsiElement
@@ -41,8 +42,10 @@ internal fun isFromJVMDeclaration(element: PsiElement?): Boolean = element?.cont
 
 internal class NotebookFindUsagesHandlerFactory : FindUsagesHandlerFactory() {
     override fun canFindUsages(element: PsiElement): Boolean {
+        val openEditor = FileEditorManager.getInstance(element.project).selectedEditor
         val fileWindow = element.containingFile?.virtualFile as? VirtualFileWindow ?:
-                        return isCompiledCellClassDeclaration(element) || isFromJVMDeclaration(element)
+                        return isCompiledCellClassDeclaration(element)
+                                || openEditor?.file.isKotlinNotebook && isFromJVMDeclaration(element)
 
         val notebookFile = fileWindow.delegate
         val isProperNotebook = BackedNotebookVirtualFile.isBacked(notebookFile) && notebookFile.isKotlinNotebook
