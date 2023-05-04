@@ -8,7 +8,7 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.diagnostics.Severity
-import org.jetbrains.kotlin.idea.base.highlighting.visitor.AbstractAnnotationHolderHighlightingVisitor
+import org.jetbrains.kotlin.idea.base.highlighting.visitor.AbstractHighlightingVisitor
 import org.jetbrains.kotlin.idea.caches.resolve.analyzeWithAllCompilerChecks
 import org.jetbrains.kotlin.idea.highlighter.AbstractKotlinHighlightVisitor.Companion.suppressHighlight
 import org.jetbrains.kotlin.idea.highlighter.AbstractKotlinHighlightVisitor.Companion.unsuppressHighlight
@@ -70,7 +70,7 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
     }
 }
 
-internal class KotlinNotebookDummyVisitor(holder: HighlightInfoHolder) : AbstractAnnotationHolderHighlightingVisitor(holder) {
+internal class KotlinNotebookDummyVisitor(holder: HighlightInfoHolder) : AbstractHighlightingVisitor(holder) {
     override fun visitFile(file: PsiFile) {
     }
 }
