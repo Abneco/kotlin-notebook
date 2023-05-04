@@ -76,7 +76,10 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.codeInsight.daemon.impl">
-        <injectedLanguageHighlightingRangeReducer implementation="org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.KotlinNotebookInjectedRangeReducer" order="first"/>
+        <injectedLanguageHighlightingRangeReducer
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.KotlinNotebookInjectedRangeReducer"
+                id="kotlinNotebookRangeReducer"
+                order="first"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -94,7 +97,9 @@
         <fileIconPatcher implementation="org.jetbrains.kotlinx.jupyter.plugin.file.JupyterKotlinIconPatcher"/>
         <iconProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.file.KotlinNotebookIconProvider"/>
         <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.BeforeResolveHighlightingVisitorAdapter"/>
-        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.KotlinNotebookBeforeHighlightingVisitor" order="first"/>
+        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.KotlinNotebookBeforeHighlightingVisitor"
+                          id="kotlinNotebookBeforeHighlightingVisitor"
+                          order="first"/>
         <daemon.highlightInfoFilter implementation="org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.KotlinNotebookHighlightingErrorFilter"/>
         <formatting.injectedOptions implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinInjectedFormattingOptionsProvider"/>
 
@@ -120,9 +125,12 @@
         <!--<searcher forClass="com.intellij.psi.search.searches.ReferencesSearch$SearchParameters"-->
         <!--          implementationClass="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferencesProvider"/>-->
         <renamePsiElementProcessor implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookPropertyRenameProcessor"
+                                   id="kotlinNotebookRenamePsiElementProcessor"
                                    order="first"/>
         <!--<renameHandler implementation= />-->
-        <findUsagesHandlerFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookFindUsagesHandlerFactory" order="first" />
+        <findUsagesHandlerFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookFindUsagesHandlerFactory"
+                                  id="kotlinNotebookFindUsagesHandlerFactory"
+                                  order="before kotlinFindUsagesHandlerFactory"/>
         <!--<lang.elementManipulator forClass="com.intellij.lang.elementManipulator" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementManipulator"/>-->
         <formattingService implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.KotlinNotebookFileFormattingService"/>
 
