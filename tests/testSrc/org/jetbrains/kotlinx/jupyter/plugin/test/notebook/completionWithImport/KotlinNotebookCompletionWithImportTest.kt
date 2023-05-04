@@ -88,7 +88,6 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
         tester.typeAndFinishLookup("ai") { it.lookupString == "fail" && it.userDataString.contains("fail  {...}") }
         assertActualText("""
             import org.junit.jupiter.api.fail
-            
 
             fail {  }
             123
