@@ -17,13 +17,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.util.runIf
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.utils.addIfNotNull
@@ -91,7 +85,7 @@ class NotebookCaretListener(
         project.messageBus.connect(this).subscribe(DAEMON_EVENT_TOPIC, object : DaemonListener {
             private val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
 
-            override fun daemonFinished(fileEditors: MutableCollection<out FileEditor>) {
+            override fun daemonFinished(fileEditors: Collection<FileEditor>) {
                 fileEditors.firstOrNull { (it as? TextEditor)?.editor == editor }?.let {
                     if (!scriptDefManager.isReady()) {
                         return
