@@ -16,6 +16,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion.KotlinNoteb
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
+import org.jetbrains.kotlinx.jupyter.plugin.test.withDisabledJcef
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory
 import org.junit.Test
@@ -177,15 +178,6 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
             completionTester.runWithAutoPopupEnabled {
                 completionChecker(completionTester)
             }
-        }
-    }
-
-    private fun <R> withDisabledJcef(action:() -> R): R {
-        return try {
-            NotebookOutputComponentFactory.EP_NAME.point.unregisterExtension(JupyterBrowserOutputComponentFactory::class.java)
-            action()
-        } finally {
-            // register extension again?
         }
     }
 }

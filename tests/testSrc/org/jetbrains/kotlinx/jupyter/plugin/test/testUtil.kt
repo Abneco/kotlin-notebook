@@ -17,11 +17,13 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.Jupyte
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointerFactory
+import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory
 import org.junit.Rule
 import org.junit.jupiter.api.Assertions
 import org.junit.runner.RunWith
@@ -118,5 +120,14 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
 
     for (i in cellsToExecute.indices) {
         tester.assertCellMessages(cellsToExecute[i], receivedMessagesFutures[i].get())
+    }
+}
+
+fun <R> withDisabledJcef(action:() -> R): R {
+    return try {
+        NotebookOutputComponentFactory.EP_NAME.point.unregisterExtension(JupyterBrowserOutputComponentFactory::class.java)
+        action()
+    } finally {
+        // register extension again?
     }
 }
