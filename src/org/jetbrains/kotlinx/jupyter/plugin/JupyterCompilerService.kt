@@ -15,6 +15,7 @@ import com.intellij.ultimate.PluginVerifier
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
+import org.jetbrains.kotlinx.jupyter.plugin.serialization.serializationPluginEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelListener
@@ -52,6 +53,10 @@ class JupyterCompilerService(val project: Project) : Disposable {
             scriptClasspath = initialClasspath,
             compilerArgsConfigurator = DefaultCompilerArgsConfigurator(),
         ) {
+            ide {
+                serializationPluginEnabled(true)
+            }
+
             refineConfiguration {
                 beforeCompiling { (sourceCode, config, _) ->
                     val virtualFile = (sourceCode as? KtFileScriptSource)?.virtualFile
