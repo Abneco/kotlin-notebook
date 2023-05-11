@@ -101,6 +101,8 @@
         <registryKey key="kotlin.dataframe.swing.outputs.enabled" defaultValue="false"
                      description="When enabled, outputs of Kotlin Dataframe library will be rendered using JVM stack."/>
 
+        <registryKey key="grid.tables.hierarchical.enabled" defaultValue="false"
+                     description="When enabled, table output will support hierarchical columns."/>
 
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinIntoCellsInjector"/>
         <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.notifications.NotebookLocationNotificationProvider"/>

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.intellij.openapi.util.registry.Registry
+import com.intellij.util.containers.tail
 import com.jetbrains.python.debugger.pydev.TableCommandType
 import com.jetbrains.python.debugger.pydev.tables.CommandOutputType
 import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing.columnsField
@@ -99,8 +100,18 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     override fun getSortingCommand(tableVariable: String, sortKeys: List<RowSorter.SortKey>, columns: List<String>): String {
         if (columns.isEmpty()) return tableVariable
 
+        require(columns.all { it.isNotBlank() })
+
         val kotlinDataframeSortKeys = sortKeys
-            .map { "\"${columns[it.column]}\"${if (it.sortOrder == SortOrder.DESCENDING) ".desc()" else ""}" }
+            .map {
+                val name = columns[it.column]
+                val nestedNames = name.split(".")
+                var sortName = "\"${nestedNames.first()}\""
+                for (nestedName in nestedNames.tail()) {
+                    sortName += "[\"$nestedName\"]"
+                }
+                "$sortName${if (it.sortOrder == SortOrder.DESCENDING) ".desc()" else ""}"
+            }
             .toMutableList()
 
         if (sortKeys.size == 1 && sortKeys[0].sortOrder != SortOrder.DESCENDING) {
@@ -120,8 +131,8 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         val rows = rawRows.split(separator)
         val firstRowJson = mapper.readTree(rows[0])
 
-        val rootColumns = extractHierarchy(firstRowJson)
-        val columnNames = rootColumns.map { it.name }
+        val root = extractHierarchy(firstRowJson)
+        val columnNames = root.columnChildren.map { it.columnName }
 
         val nRow = rawJson[nRowsField].asInt()
         val nCol = rawJson[nColsField].asInt()
@@ -134,11 +145,11 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
             columnNames,
             List(columnNames.size) { null },
             dimensionsStr,
-            rootColumns = rootColumns
+            hierarchyRoot = root
         )
     }
 
-    private fun extractHierarchy(row: JsonNode): List<ColumnTreeNode> {
+    private fun extractHierarchy(row: JsonNode): ColumnTreeNode {
         val root = ColumnTreeNode("root", -1, 0, mutableListOf())
 
         var index = 0
@@ -147,7 +158,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
             if (jsonNode.isObject) {
                 jsonNode.fields().forEach { (key, value) ->
                     val child = ColumnTreeNode(key, index++, childIdx++, mutableListOf())
-                    columnsNode.children.add(child)
+                    columnsNode.columnChildren.add(child)
                     extractColumnsHelper(value, child, path + listOf(key))
                 }
             }
@@ -155,7 +166,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
 
         extractColumnsHelper(row, root, emptyList())
 
-        return root.children
+        return root
     }
 
     fun extractValues(jsonNode: JsonNode, columns: List<ColumnTreeNode>): List<Any> {
@@ -169,7 +180,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
                 if (value.isValueNode) {
                     resultList.add(value.asText())
                 } else if (value.isObject) {
-                    resultList.add(extractValues(value, column.children))
+                    resultList.add(extractValues(value, column.columnChildren))
                 } else {
                     resultList.add("")
                 }
@@ -187,13 +198,13 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         val rows = rawRows.split(separator)
         val firstRowJson = mapper.readTree(rows[0])
 
-        val rootColumns = extractHierarchy(firstRowJson)
+        val root = extractHierarchy(firstRowJson)
 
-        val columnValues = List(rootColumns.size) { mutableListOf<Any>() }
+        val columnValues = List(root.columnChildren.size) { mutableListOf<Any>() }
 
         for (row in rows) {
             val json = mapper.readTree(row)
-            val values = extractValues(json, rootColumns)
+            val values = extractValues(json, root.columnChildren)
             values.forEachIndexed { index, any -> columnValues[index].add(any) }
         }
 
