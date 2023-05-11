@@ -4,12 +4,13 @@ import com.intellij.ide.FileIconPatcher
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.containers.ContainerUtil
 import icons.KotlinJupyterIcons
 import java.util.*
 import javax.swing.Icon
 
 class JupyterKotlinIconPatcher : FileIconPatcher, DumbAware {
-    private val cache: MutableSet<VirtualFile> = Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap()))
+    private val cache: MutableSet<VirtualFile> = Collections.synchronizedSet(ContainerUtil.createWeakSet())
 
     private fun shouldPatch(virtualFile: VirtualFile?): Boolean {
         if (virtualFile == null || virtualFile.extension != "ipynb") return false
