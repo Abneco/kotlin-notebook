@@ -15,7 +15,6 @@ class KotlinNotebookConfigurable(private val project: Project) :
 
     override fun createPanel(): DialogPanel {
         val optionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
-        optionsProvider.state.migrateJdkPath()
         return KotlinNotebookSettingsPanel.createPanel(project, optionsProvider, service(), disposable!!)
     }
 

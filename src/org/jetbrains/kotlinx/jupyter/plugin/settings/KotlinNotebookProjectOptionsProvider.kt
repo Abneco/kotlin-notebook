@@ -8,8 +8,6 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.projectRoots.JavaSdk
-import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 
@@ -33,7 +31,7 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
     }
 
     @RequiresEdt
-    internal fun getNotebookSettingsToMigrate() : KotlinNotebookSettings? {
+    internal fun getNotebookSettingsToMigrate(): KotlinNotebookSettings? {
         if (state.isPerNotebookSettingsMigrated) return null
         return getNewKotlinNotebookSettings()
     }
@@ -44,7 +42,6 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
     }
 
     class State : BaseState() {
-        var jdkPath by string(null)
         var jdkName by string(null)
         var heapMaxLimitInMib by property(DEFAULT_HEAP_MAX_LIMIT_MIB)
         var extraJvmArguments by list<String>()
@@ -55,22 +52,7 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
         var shouldAddProjectLibrariesToClasspath by property(false)
         var isPerNotebookSettingsMigrated by property(false)
 
-        val jdk: KotlinNotebookJdkOption
-            get() {
-                migrateJdkPath()
-                return KotlinNotebookJdkOption.fromName(jdkName)
-            }
-
-        internal fun migrateJdkPath() {
-            if (jdkName == null && jdkPath != null) {
-                // migration from jdkPath to jdkName
-                val jdk = ProjectJdkTable.getInstance().getSdksOfType(JavaSdk.getInstance()).firstOrNull {
-                    it.homePath == jdkPath
-                }
-                jdkName = jdk?.name
-                jdkPath = null
-            }
-        }
+        val jdk: KotlinNotebookJdkOption get() = KotlinNotebookJdkOption.fromName(jdkName)
     }
 
     class PresentableNameGetter : com.intellij.openapi.components.State.NameGetter() {
