@@ -19,12 +19,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 )
 class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<KotlinNotebookProjectOptionsProvider.State>(State()) {
 
-    companion object {
-        fun getInstance(project: Project): KotlinNotebookProjectOptionsProvider = project.service()
-
-        const val DEFAULT_HEAP_MAX_LIMIT_MIB = 3256
-    }
-
     @RequiresEdt
     internal fun getNewKotlinNotebookSettings(): KotlinNotebookSettings {
         return KotlinNotebookSettings(state.shouldBuildProject, state.shouldAddProjectLibrariesToClasspath)
@@ -57,5 +51,11 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
 
     class PresentableNameGetter : com.intellij.openapi.components.State.NameGetter() {
         override fun get(): String = JupyterKotlinBundle.message("kotlin.jupyter.settings.title")
+    }
+
+    companion object {
+        fun getInstance(project: Project): KotlinNotebookProjectOptionsProvider = project.service()
+
+        const val DEFAULT_HEAP_MAX_LIMIT_MIB = 3256
     }
 }
