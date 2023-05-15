@@ -36,7 +36,7 @@ fun createKernelProcess(
 
     val classpathSeparator = System.getProperty("path.separator")
 
-    val options = KotlinNotebookProjectOptionsProvider.getInstance(project).state
+    val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
     val javaExecutable = options.jdk.getPath(project)?.let { javaHome ->
         val binDir = File(javaHome).absoluteFile.resolve("bin")
         val javaExec = if (SystemInfo.isWindows) binDir.resolve("java.exe")

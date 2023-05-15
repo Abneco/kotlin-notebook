@@ -17,12 +17,19 @@ import org.jetbrains.plugins.notebooks.editor.JupyterNotebookGutterManager
     name = "KotlinNotebookApplicationOptions", storages = [Storage("kotlinNotebook.xml")], category = SettingsCategory.PLUGINS
 )
 class KotlinNotebookApplicationOptionsProvider : SimplePersistentStateComponent<KotlinNotebookApplicationOptionsProvider.State>(State()) {
+    var shouldShowExecutionCount
+        get() = state.shouldShowExecutionCount
+        internal set(value) {
+            state.shouldShowExecutionCount = value
+            refreshEditors()
+        }
+
     class State : BaseState() {
         var shouldShowExecutionCount by property(true)
     }
 
     companion object {
-        internal fun refreshEditors() {
+        private fun refreshEditors() {
             EditorFactory.getInstance().allEditors.forEach {
                 if (it.isKotlinNotebook) {
                     JupyterNotebookGutterManager.putHighlighters(it as EditorEx)

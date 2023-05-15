@@ -25,30 +25,29 @@ object KotlinNotebookSettingsPanel {
     ): DialogPanel {
         return panel {
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.build")) {
-                createJdkComboBox(project, projectOptions.state, parentDisposable)
-                createMaxHeapSizeSpinner(projectOptions.state)
-                createExtraJvmArgumentsField(projectOptions.state)
+                createJdkComboBox(project, projectOptions, parentDisposable)
+                createMaxHeapSizeSpinner(projectOptions)
+                createExtraJvmArgumentsField(projectOptions)
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.typeHints")) {
                 row(null) {
                     checkBox(KotlinNotebookBundle.message("checkbox.should.typehint.only.active.cell"))
-                        .bindSelected(projectOptions.state::shouldLimitTypeHintsByActiveCell)
+                        .bindSelected(projectOptions::shouldLimitTypeHintsByActiveCell)
                 }
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.appearance")) {
                 row(null) {
                     checkBox(KotlinNotebookBundle.message("checkbox.should.show.execution.count"))
-                        .bindSelected(applicationOptions.state::shouldShowExecutionCount)
-                        .onApply { KotlinNotebookApplicationOptionsProvider.refreshEditors() }
+                        .bindSelected(applicationOptions::shouldShowExecutionCount)
                 }
             }
         }
     }
 
-    private fun Panel.createMaxHeapSizeSpinner(state: KotlinNotebookProjectOptionsProvider.State): Row {
+    private fun Panel.createMaxHeapSizeSpinner(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.max.heap")) {
             spinner(0..99999, 100)
-                .bindIntValue(state::heapMaxLimitInMib)
+                .bindIntValue(optionsProvider::heapMaxLimitInMib)
                 .also {
                     it.validationRequestor { callback -> it.onChanged { callback() } }
                 }
@@ -56,7 +55,7 @@ object KotlinNotebookSettingsPanel {
         }
     }
 
-    private fun Panel.createExtraJvmArgumentsField(state: KotlinNotebookProjectOptionsProvider.State): Row {
+    private fun Panel.createExtraJvmArgumentsField(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.extra.args")) {
             expandableTextField()
                 .columns(48)
@@ -64,13 +63,13 @@ object KotlinNotebookSettingsPanel {
                     setMonospaced(true)
                 }
                 .bindText(
-                    { ParametersListUtil.DEFAULT_LINE_JOINER.`fun`(state.extraJvmArguments) },
-                    { text -> state.extraJvmArguments = ParametersListUtil.parse(text) }
+                    { ParametersListUtil.DEFAULT_LINE_JOINER.`fun`(optionsProvider.extraJvmArguments) },
+                    { text -> optionsProvider.extraJvmArguments = ParametersListUtil.parse(text) }
                 )
         }
     }
 
-    private fun Panel.createJdkComboBox(project: Project, state: KotlinNotebookProjectOptionsProvider.State, disposable: Disposable): Row {
+    private fun Panel.createJdkComboBox(project: Project, optionsProvider: KotlinNotebookProjectOptionsProvider, disposable: Disposable): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.JDK.path")) {
             val sdkComboBox = SdkComboBox(
                 SdkComboBoxModel.createProjectJdkComboBoxModel(
@@ -91,7 +90,7 @@ object KotlinNotebookSettingsPanel {
                     )
                 )
                 .onReset {
-                    val jdkName = state.jdkName
+                    val jdkName = optionsProvider.jdkName
                     if (jdkName != null) {
                         sdkComboBox.setSelectedSdk(jdkName)
                     } else {
@@ -99,13 +98,13 @@ object KotlinNotebookSettingsPanel {
                     }
                 }
                 .onIsModified {
-                    sdkModel.isModified || state.jdkName != sdkComboBox.selectedSdkName
+                    sdkModel.isModified || optionsProvider.jdkName != sdkComboBox.selectedSdkName
                 }
                 .onApply {
                     if (sdkModel.isModified) {
                         sdkModel.apply()
                     }
-                    state.jdkName = sdkComboBox.selectedSdkName
+                    optionsProvider.jdkName = sdkComboBox.selectedSdkName
                 }
         }
     }

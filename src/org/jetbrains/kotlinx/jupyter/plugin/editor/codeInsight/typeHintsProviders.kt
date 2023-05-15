@@ -151,7 +151,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 val fileOffset = element.getKtFileStartOffset(injectedLanguageManager) ?: return true
                                                 // lhs.contains(rhs) || rhs.contains(rhs)
                 if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
-                    lastShouldLimitOptionValue = optionsProvider.state.shouldLimitTypeHintsByActiveCell
+                    lastShouldLimitOptionValue = optionsProvider.shouldLimitTypeHintsByActiveCell
                     if (lastShouldLimitOptionValue) return true
                     try {
                         registry.entries.forEach { (el, data) ->

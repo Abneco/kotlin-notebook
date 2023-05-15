@@ -26,11 +26,11 @@ class KotlinNotebookNewNotebookConfigurable(val project: Project) :
                     row {
                         checkBox(KotlinNotebookBundle.message("checkbox.should.build.project"))
                             .comment(KotlinNotebookBundle.message("checkbox.should.build.project.comment"))
-                            .bindSelected(optionsProvider.state::shouldBuildProject)
+                            .bindSelected(optionsProvider::shouldBuildProject)
                     }
                     row {
                         checkBox(KotlinNotebookBundle.message("checkbox.should.add.libraries"))
-                            .bindSelected(optionsProvider.state::shouldAddProjectLibrariesToClasspath)
+                            .bindSelected(optionsProvider::shouldAddProjectLibrariesToClasspath)
                     }
                 }
             }

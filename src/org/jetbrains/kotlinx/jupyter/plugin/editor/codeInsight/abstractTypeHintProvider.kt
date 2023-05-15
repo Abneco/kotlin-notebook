@@ -64,7 +64,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                 val registry = getOrCreateTypeHintsRegistry(element)
                 val fileOffset = element.getKtFileStartOffset(injectedLanguageManager) ?: return true
 
-                val shouldLimit = optionsProvider.state.shouldLimitTypeHintsByActiveCell
+                val shouldLimit = optionsProvider.shouldLimitTypeHintsByActiveCell
                 if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
                     if (shouldLimit) return true
 

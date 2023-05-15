@@ -19,11 +19,25 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 )
 class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<KotlinNotebookProjectOptionsProvider.State>(State()) {
 
+    val jdk get() = KotlinNotebookJdkOption.fromName(jdkName)
+    internal var jdkName by state::jdkName
+
+    var heapMaxLimitInMib by state::heapMaxLimitInMib
+        internal set
+    var extraJvmArguments by state::extraJvmArguments
+        internal set
+    var shouldLimitTypeHintsByActiveCell by state::shouldLimitTypeHintsByActiveCell
+        internal set
+    var shouldBuildProject by state::shouldBuildProject
+        internal set
+    var shouldAddProjectLibrariesToClasspath by state::shouldAddProjectLibrariesToClasspath
+        internal set
+
     @RequiresEdt
     internal fun getNewKotlinNotebookSettings(): KotlinNotebookSettings {
         return KotlinNotebookSettings(
-            if (state.shouldBuildProject) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None,
-            if (state.shouldAddProjectLibrariesToClasspath)  KotlinNotebookDependencies.All else KotlinNotebookDependencies.None
+            if (shouldBuildProject) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None,
+            if (shouldAddProjectLibrariesToClasspath) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None
         )
     }
 
@@ -36,8 +50,6 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
         // default settings for new notebooks
         var shouldBuildProject by property(false)
         var shouldAddProjectLibrariesToClasspath by property(true)
-
-        val jdk: KotlinNotebookJdkOption get() = KotlinNotebookJdkOption.fromName(jdkName)
     }
 
     class PresentableNameGetter : com.intellij.openapi.components.State.NameGetter() {

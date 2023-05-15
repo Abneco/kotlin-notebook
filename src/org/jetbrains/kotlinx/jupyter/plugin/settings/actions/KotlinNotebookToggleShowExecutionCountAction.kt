@@ -10,14 +10,13 @@ import com.intellij.openapi.project.DumbAware
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptionsProvider
 
-class KotlinNotebookToggleShowExecutionCountAction: ToggleAction(), DumbAware {
+class KotlinNotebookToggleShowExecutionCountAction : ToggleAction(), DumbAware {
     override fun isSelected(e: AnActionEvent): Boolean {
-        return service<KotlinNotebookApplicationOptionsProvider>().state.shouldShowExecutionCount
+        return service<KotlinNotebookApplicationOptionsProvider>().shouldShowExecutionCount
     }
 
     override fun setSelected(e: AnActionEvent, state: Boolean) {
-        service<KotlinNotebookApplicationOptionsProvider>().state.shouldShowExecutionCount = state
-        KotlinNotebookApplicationOptionsProvider.refreshEditors()
+        service<KotlinNotebookApplicationOptionsProvider>().shouldShowExecutionCount = state
     }
 
     override fun update(e: AnActionEvent) {

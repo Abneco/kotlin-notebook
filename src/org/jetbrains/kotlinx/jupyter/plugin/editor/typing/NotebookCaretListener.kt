@@ -230,7 +230,7 @@ class NotebookCaretListener(
             notebookRangesQueuedForHL?.addAll(reducedIndexes)
         }
         psiFile?.let {
-            if (projectOptionsProvider.state.shouldLimitTypeHintsByActiveCell) {
+            if (projectOptionsProvider.shouldLimitTypeHintsByActiveCell) {
                 InlayHintsPassFactory.clearModificationStamp(editor)
             }
             context?.launch {
