@@ -185,6 +185,7 @@
         />
 
         <statistics.counterUsagesCollector implementationClass="org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector"/>
+        <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookMissingJdkEditorNotification"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">

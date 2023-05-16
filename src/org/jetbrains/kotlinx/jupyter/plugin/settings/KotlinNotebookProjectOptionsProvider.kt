@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.settings
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.SimplePersistentStateComponent
@@ -8,8 +9,10 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.util.EventDispatcher
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import java.util.EventListener
 
 @Service(Service.Level.PROJECT)
 @State(
@@ -18,9 +21,15 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
     storages = [Storage("kotlinNotebook.xml")]
 )
 class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<KotlinNotebookProjectOptionsProvider.State>(State()) {
+    private val eventDispatcher = EventDispatcher.create(Listener::class.java)
 
     val jdk get() = KotlinNotebookJdkOption.fromName(jdkName)
-    internal var jdkName by state::jdkName
+    internal var jdkName
+        get() = state.jdkName
+        set(value) {
+            state.jdkName = value
+            eventDispatcher.multicaster.onJdkChanged()
+        }
 
     var heapMaxLimitInMib by state::heapMaxLimitInMib
         internal set
@@ -32,6 +41,10 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
         internal set
     var shouldAddProjectLibrariesToClasspath by state::shouldAddProjectLibrariesToClasspath
         internal set
+
+    fun addListener(listener: Listener, disposable: Disposable) {
+        eventDispatcher.addListener(listener, disposable)
+    }
 
     @RequiresEdt
     internal fun getNewKotlinNotebookSettings(): KotlinNotebookSettings {
@@ -54,6 +67,10 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
 
     class PresentableNameGetter : com.intellij.openapi.components.State.NameGetter() {
         override fun get(): String = KotlinNotebookBundle.message("kotlin.jupyter.settings.title")
+    }
+
+    fun interface Listener : EventListener {
+        fun onJdkChanged()
     }
 
     companion object {
