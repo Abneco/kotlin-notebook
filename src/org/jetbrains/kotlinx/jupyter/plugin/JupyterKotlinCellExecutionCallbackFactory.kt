@@ -6,6 +6,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.cellToHighlightLimit
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
+import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
@@ -50,15 +51,25 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
         executionDataLock.withWriteLock {
             lastExecutedIndexes[file]?.clear()
             highlightOrder[file]?.clear()
+            callbacksCounters.remove(file)
         }
     }
 
     // true if it has no updates left
-    fun daemonFinished(file: BackedNotebookVirtualFile, completedElements: Set<Int>?): Boolean {
-        val remainingData = executionDataLock.withWriteLock {
-            lastExecutedIndexes[file]?.removeIf { completedElements?.contains(it) == true }
-            lastExecutedIndexes[file]
-        }
+    fun daemonFinished(file: BackedNotebookVirtualFile,
+                       completedElements: Set<Int>?,
+                       currentToHLQueue: MutableSet<Int>?,
+                       canModifyRequests: Boolean): Boolean {
+        val remainingData = if (canModifyRequests) {
+            executionDataLock.withWriteLock {
+                lastExecutedIndexes[file]?.removeIf { completedElements?.contains(it) == true }
+                lastExecutedIndexes[file]
+            }
+        } else executionDataLock.withReadLock { lastExecutedIndexes[file] }
+            .also { execRequests ->
+                currentToHLQueue?.removeIf { execRequests?.contains(it) == false }
+            }
+
         return remainingData.isNullOrEmpty()
     }
 

@@ -238,10 +238,13 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
                 }
             LOG.warn("Faced ${highlightInfo.description} error, will try to update scripting")
             if (found && !reloadState) {
-                LOG.info("Requesting reload of scripting...")
-                AppExecutorUtil.getAppScheduledExecutorService().schedule(
-                    { JupyterKtScriptingSupport.update(project) }
-                    , 600, TimeUnit.MILLISECONDS)
+                val alreadyUpdating = JupyterKtScriptingSupport.isInTheTransaction(project)
+                if (!alreadyUpdating) {
+                    LOG.info("Requesting reload of scripting...")
+                    AppExecutorUtil.getAppScheduledExecutorService().schedule(
+                        { JupyterKtScriptingSupport.update(project) }
+                        , 600, TimeUnit.MILLISECONDS)
+                }
                 reloadRequested = true
                 return false
             }

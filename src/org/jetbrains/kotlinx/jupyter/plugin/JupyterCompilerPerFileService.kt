@@ -56,10 +56,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingRestarter.UpdateSteps.postScriptingUpdateStep
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.invalidateStateAfterCellExecution
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
+import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
@@ -430,6 +431,9 @@ class JupyterCompilerPerFileService(
     fun updateScripting() {
         compileLock.withWriteLock {
             //updateCellsAnalysis()
+            virtualFile.file.toDocument()
+                ?.getUserData(NotebookCellsUpdatesAllowedToChange)
+                ?.compareAndSet(true, false)
             JupyterKtScriptingSupport.update(project)
         }
     }
@@ -454,7 +458,7 @@ class JupyterCompilerPerFileService(
         var loadedSize: Int = 0
         return compileLock.tryWithWriteLock {
             if (implicitListsLoadQueue.isEmpty()) {
-                needsToUpdate.compareAndSet(true, false)
+                //needsToUpdate.compareAndSet(true, false)
                 return false
             }
             loadedSize = implicitListsLoadQueue.size
@@ -496,15 +500,10 @@ class JupyterCompilerPerFileService(
         }.apply {
             if (this == true && shouldUpdateImmediately) {
                 coroutineScope.async {
-                    if (loadedSize > 3) {
-                        LOG.debug("Requesting update of scripting after loading new classes in ${psiFile?.name}, loaded: $loadedSize")
-                        document?.getUserData(NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange)?.compareAndSet(true, false)
-                        withContext(Dispatchers.EDT) {
-                            JupyterKtScriptingSupport.update(project)
-                        }
-                    } else {
-                        LOG.debug("Invoking post step, cell updates allowed to change")
-                        postScriptingUpdateStep(NotebookHighlightingService.getForFile(project, virtualFile).document)
+                    LOG.debug("Requesting update of scripting after loading new classes in ${psiFile?.name}, loaded: $loadedSize")
+                    document?.getUserData(NotebookCellsUpdatesAllowedToChange)?.compareAndSet(true, false)
+                    withContext(Dispatchers.EDT) {
+                        JupyterKtScriptingSupport.update(project)
                     }
                 }
             }

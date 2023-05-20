@@ -9,6 +9,7 @@ import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -191,6 +192,13 @@ class NotebookHighlightingManager(
         val ind = fileToInjectionData[psiFile]?.second
         finishedFiles.addIfNotNull(ind)
         if (psiFile != targetPsiFile || !holder.hasErrorResults()) {
+            invokeLater {
+                ind?.let {
+                    knownErrorInd[it]?.forEach { oldError ->
+                        oldError.dispose()
+                    }
+                }
+            }
             return
         }
         ind?.let {

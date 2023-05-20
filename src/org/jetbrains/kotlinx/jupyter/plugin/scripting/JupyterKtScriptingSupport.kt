@@ -120,21 +120,25 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             return (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
         }
 
+        fun isInTheTransaction(project: Project) = getUpdater(project).isInTransaction()
+
         fun update(project: Project) {
             // cache.clear()
             val updater = getUpdater(project)
+            updateJob?.cancel()
             if (updater.isInTransaction()) {
                 LOG.debug("In the transaction, aborting")
                 updateJob?.cancel()
                 updateJob = updateScope.async {
-                    delay(700)
+                    delay(1000)
                     LOG.debug("Scripting coroutine dispatched")
                     update(project)
                 }
                 return
             }
             updateJob?.cancel()
-            LOG.info("Running scripting support update")
+            updateJob = null
+            LOG.debug("Running scripting support update")
             RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
                 updater.invalidateAndCommit()
             }

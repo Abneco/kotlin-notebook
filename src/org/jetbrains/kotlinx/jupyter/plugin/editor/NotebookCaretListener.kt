@@ -121,23 +121,14 @@ class NotebookCaretListener(
                         val target = notebookHighlightingManager?.completeRangeInd
                         // we don't want to lose any updates happened during concurrent modification or delay
                         val isCanModifyHLRequests = doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true
-                        if (queue != null && !finished.isNullOrEmpty()) {
-                            when {
-                                // there are probably more requests to come
-                                finished.size >= NotebookHighlightingUtilityObject.cellToHighlightLimit
-                                        && isCanModifyHLRequests
-                                            -> queue.removeAll(finished)
-                                finished.size < NotebookHighlightingUtilityObject.cellToHighlightLimit
-                                            -> queue.removeAll(finished)
-                            }
+                        if (queue != null && !finished.isNullOrEmpty() && isCanModifyHLRequests) {
+                            queue.removeAll(finished)
                         }
                         if (!isRunning) {
-                            val executionRequestsDone
-                                    = if (isCanModifyHLRequests)
-                                        JupyterKotlinCellExecutionCallbackFactory
-                                            .getInstance().daemonFinished(vFile, finished)
-                                    else false
-                            LOG.debug("Reducing queue by $finished, exec requests done: $executionRequestsDone")
+                            val executionRequestsDone =
+                                JupyterKotlinCellExecutionCallbackFactory.getInstance()
+                                    .daemonFinished(vFile, finished, queue, isCanModifyHLRequests)
+                            LOG.debug("Reducing queue by $finished, canModify: ${isCanModifyHLRequests}, exec requests done: $executionRequestsDone")
                             if (notebookHighlightingManager?.daemonFinished(editor, psiFile, queue, executionRequestsDone) == true) {
                                 queue?.clear()
                             }
