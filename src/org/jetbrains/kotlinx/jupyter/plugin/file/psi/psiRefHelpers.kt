@@ -122,7 +122,7 @@ internal data class ProvidedReferenceInfo(val resolvedTo: PsiElement) {
     val type = resolvedTo.elementType
 }
 
-internal val IN_EDITOR_ELEM_REF_KEY: Key<PsiElement> = Key.create<PsiElement>("notebook.psi.resolved.ref")
+internal val IN_EDITOR_ELEM_REF_KEY: Key<PsiElement> = Key.create("notebook.psi.resolved.ref")
 
 internal fun isItGeneratedNameInsideLambdaCall(targetElement: PsiElement, underCaret: PsiElement?): Boolean {
     if (targetElement !is KtProperty) return false
