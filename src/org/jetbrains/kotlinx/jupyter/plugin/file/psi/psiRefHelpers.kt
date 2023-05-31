@@ -27,7 +27,7 @@ internal class NotebookReferenceWrapper(
     private val range: TextRange,
     private val soft: Boolean
 ): PsiReferenceBase<PsiElement>(element) {
-    override fun resolve(): PsiElement? {
+    override fun resolve(): PsiElement {
         return resolvedTo
     }
 
@@ -66,12 +66,6 @@ internal class ScriptDeclarationsCollectingVisitor : PsiRecursiveElementVisitor(
         elements.forEach {
             it.accept(this)
         }
-        return seenDeclarations
-    }
-
-    fun collectAllNestedDeclarationsPresent(element: PsiElement): Collection<KtDeclaration> {
-        seenDeclarations.clear()
-        element.acceptChildren(this)
         return seenDeclarations
     }
 
@@ -129,7 +123,7 @@ internal fun isItGeneratedNameInsideLambdaCall(targetElement: PsiElement, underC
     underCaret ?: return false
 
     val typeRef = targetElement.typeReference ?: return false
-    if (!typeRef.text.contains(NotebookUsagesContributorFactory.dfPrefix)) return false
+    if (!typeRef.text.contains(NotebookUsagesContributorFactory.DATAFRAME_PREFIX)) return false
 
     return underCaret.parentOfType<KtLambdaExpression>() != null
 }

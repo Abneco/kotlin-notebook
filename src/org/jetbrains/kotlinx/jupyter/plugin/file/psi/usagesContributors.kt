@@ -21,7 +21,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.isInsideKotlinNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.retrieveElementUnderCaret
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
-import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
+import org.jetbrains.kotlinx.jupyter.plugin.resolve.searchForElementDeclarationOrUsages
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
@@ -41,18 +41,18 @@ internal typealias TargetElementInfo = Triple<PsiElement, Boolean, Boolean>
 
 sealed class NotebookUsagesContributor {
     private fun findUsageForElement(scope: VirtualFile, targetElement: PsiElement): MutableSet<PsiElement>? {
-        return JupyterKtScriptingSupport.searchForElementDeclarationOrUsages(
+        return searchForElementDeclarationOrUsages(
             targetElement.project, adjustElement(targetElement), scope,
             searchStrategy = ReferenceSearchStrategy.REFERENCES
         )
     }
 
-    protected fun searchInSourcesScope(scope: VirtualFile, targetElement: PsiElement, isFromDSLibs: Boolean): Array<PsiElement>? {
+    protected fun searchInSourcesScope(scope: VirtualFile, targetElement: PsiElement, @Suppress("UNUSED_PARAMETER") isFromDSLibs: Boolean): Array<PsiElement>? {
         if (!targetElement.isInsideKotlinNotebookFile()) return null
         return findUsageForElement(scope, targetElement)?.toTypedArray()
     }
 
-    protected fun searchWithCompiledCellScope(scope: VirtualFile, targetElement: PsiElement, isFromDSLibs: Boolean): Array<PsiElement>? {
+    protected fun searchWithCompiledCellScope(scope: VirtualFile, targetElement: PsiElement, @Suppress("UNUSED_PARAMETER") isFromDSLibs: Boolean): Array<PsiElement>? {
         var adjustedElement = targetElement
         val asPsiFile = scope.toPsiFile(targetElement.project) as? JupyterFile ?: return null
         tryResolveCompiledDeclarationInNotebook(targetElement, asPsiFile)?.let {
@@ -112,11 +112,10 @@ internal object NotebookUsagesContributorFactory : NotebookUsagesContributor() {
         SearchPattern.ProvidedLibrariesOrJVMDeclaration to ::searchProvidedLibrariesUsagesInNotebook
     )
 
-    const val dfPrefix = ".kotlinx.dataframe." // dataFrame
-    private val dfLibCallsRegex = Regex(".+$dfPrefix^(DataFrame).+")
+    const val DATAFRAME_PREFIX = ".kotlinx.dataframe." // dataFrame
     // search through ".kotlinx.dataframe.^DataFrame" package
     private fun isFromDataFrameLibInternals(element: PsiElement): Boolean = element.text?.let {
-        it.contains(dfPrefix) && !it.contains("${dfPrefix}DataFrame")
+        it.contains(DATAFRAME_PREFIX) && !it.contains("${DATAFRAME_PREFIX}DataFrame")
     } ?: false
 
     private fun extractNotebookFileFromScope(element: PsiElement, scope: SearchScope): VirtualFile? {
@@ -133,7 +132,6 @@ internal object NotebookUsagesContributorFactory : NotebookUsagesContributor() {
         if (!BackedNotebookVirtualFile.isBacked(notebookFile) || !notebookFile.isKotlinNotebook) return null
 
         val isFromDSLibs = isFromDataFrameLibInternals(element)
-        //println("Would try to resolve! $element")
         val properKey = if (isFromDSLibs || isFromByteCode) SearchPattern.ProvidedLibrariesOrJVMDeclaration
                         else if (isFromCompiledCellClass) SearchPattern.CompiledCellClass
                         else SearchPattern.Sources

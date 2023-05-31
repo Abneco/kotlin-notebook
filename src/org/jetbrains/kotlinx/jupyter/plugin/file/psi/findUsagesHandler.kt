@@ -30,7 +30,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookGotoDeclarationProvider.Companion.tryGetPreviousValidResolvedResult
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.tryResolveCompiledDeclaration
-import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
+import org.jetbrains.kotlinx.jupyter.plugin.resolve.searchForElementDeclarationOrUsages
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
@@ -52,7 +52,7 @@ internal class NotebookFindUsagesHandlerFactory : FindUsagesHandlerFactory() {
         return isProperNotebook && PsiTreeUtil.getParentOfType(element, KtReferenceExpression::class.java) == null
     }
 
-    override fun createFindUsagesHandler(element: PsiElement, forHighlightUsages: Boolean): FindUsagesHandler? {
+    override fun createFindUsagesHandler(element: PsiElement, forHighlightUsages: Boolean): FindUsagesHandler {
         return KotlinNotebookElementFindUsagesHandler(element, isCompiledCellClassDeclaration(element), isFromJVMDeclaration(element))
     }
 
@@ -85,16 +85,16 @@ internal class KotlinNotebookElementFindUsagesHandler(
                                                       !searchWithAdditionalCellDeclarationResolve && isJVMCompliedDeclaration)
 
     override fun getPrimaryElements(): Array<PsiElement> {
-        //if (!isBackedNotebook(notebookFile) || !notebookFile.isKotlinNotebook) return emptyArray()
+        // if (!isBackedNotebook(notebookFile) || !notebookFile.isKotlinNotebook) return emptyArray()
         return arrayOf(super.myPsiElement.navigationElement)
     }
 
     override fun findReferencesToHighlight(target: PsiElement, searchScope: SearchScope): MutableCollection<PsiReference> {
-        val time = System.currentTimeMillis()
+        // val time = System.currentTimeMillis()
         val foundRefs = NotebookUsagesContributorFactory
             .invokeElementUsagesContributor(targetElementInfo, searchScope)
 
-        //println("Found refs of size: ${foundRefs?.size} in ${System.currentTimeMillis() - time} ms")
+        // println("Found refs of size: ${foundRefs?.size} in ${System.currentTimeMillis() - time} ms")
         return foundRefs?.map {// mapTo ?
             val properFileRange = ensureProperTextRangeShiftInFile(it)
             NotebookReferenceWrapper(target, it, properFileRange, true)
@@ -141,7 +141,7 @@ internal class KotlinNotebookElementFindUsagesHandler(
 
     private fun findUsageForElement(targetElement: PsiElement): Set<PsiElement>? {
         val notebookFileState = notebookFile ?: return null
-        return JupyterKtScriptingSupport.searchForElementDeclarationOrUsages(
+        return searchForElementDeclarationOrUsages(
             project, adjustElement(targetElement), notebookFileState,
             searchStrategy = ReferenceSearchStrategy.REFERENCES
         )

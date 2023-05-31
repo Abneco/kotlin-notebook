@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
-import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
+import org.jetbrains.kotlinx.jupyter.plugin.resolve.searchForElementDeclarationOrUsages
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.originFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
@@ -52,7 +52,7 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
         }
 
         // try exhaustive search
-        return JupyterKtScriptingSupport.searchForElementDeclarationOrUsages(
+        return searchForElementDeclarationOrUsages(
             project, sourceElement, notebookFile,
             ReferenceSearchStrategy.DECLARATION
         )?.firstOrNull()?.let {
