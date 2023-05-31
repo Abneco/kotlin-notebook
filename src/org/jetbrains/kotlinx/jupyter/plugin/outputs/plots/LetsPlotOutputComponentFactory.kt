@@ -1,6 +1,8 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.outputs.plots
 
+import kotlin.math.floor
+import kotlin.math.ceil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.impl.EditorImpl
@@ -195,7 +197,58 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
 
 
         private fun plotSize(spec: LetsPlotSpec, containerWidth: Int, containerHeight: Int): Pair<Int, Int> {
-            return PlotSizeHelper.scaledFigureSize(spec, containerWidth, containerHeight)
+            return scaledFigureSize(spec, containerWidth, containerHeight)
+        }
+
+        private fun scaledFigureSize(
+            aspectRatio: Double,
+            containerWidth: Int,
+            containerHeight: Int
+        ): Pair<Int, Int> {
+            return if (aspectRatio >= 1.0) {
+                val plotHeight = containerWidth / aspectRatio
+                val scaling = if (plotHeight > containerHeight) containerHeight / plotHeight else 1.0
+                Pair(floor(containerWidth * scaling).toInt(), floor(plotHeight * scaling).toInt())
+            } else {
+                val plotWidth = containerHeight * aspectRatio
+                val scaling = if (plotWidth > containerWidth) containerWidth / plotWidth else 1.0
+                Pair(floor(plotWidth * scaling).toInt(), floor(containerHeight * scaling).toInt())
+            }
+        }
+
+        private fun scaledFigureSize(
+            figureSpec: Map<String, Any>,
+            containerWidth: Int,
+            containerHeight: Int
+        ): Pair<Int, Int> {
+
+            if (PlotConfig.isFailure(figureSpec)) {
+                // just keep given size
+                return Pair(containerWidth, containerHeight)
+            }
+
+            return when (val kind = PlotConfig.figSpecKind(figureSpec)) {
+                FigKind.GG_BUNCH_SPEC -> {
+                    // don't scale GGBunch size
+                    val bunchSize = PlotSizeHelper.plotBunchSize(figureSpec)
+                    Pair(ceil(bunchSize.x).toInt(), ceil(bunchSize.y).toInt())
+                }
+
+                FigKind.PLOT_SPEC -> {
+                    // for single plot: scale component to fit in requested size
+                    val aspectRatio = PlotSizeHelper.figureAspectRatio(figureSpec)
+                    scaledFigureSize(aspectRatio, containerWidth, containerHeight)
+                }
+
+                FigKind.SUBPLOTS_SPEC -> {
+                    val (nCol, nRow) = (figureSpec["layout"]!! as Map<*, *>).let {
+                        (it["ncol"]!! as Double) to (it["nrow"] as Double)
+                    }
+                    val aspectRatio = (nCol * 600.0) / (nRow * 400.0)
+                    scaledFigureSize(aspectRatio, containerWidth, containerHeight)
+                }
+
+            }
         }
 
     }
