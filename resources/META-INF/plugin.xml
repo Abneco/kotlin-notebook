@@ -20,6 +20,16 @@
             Many features are state-aware, meaning that finding usages or renaming
             will consider your current definitions and loaded libraries.</p>
 
+            <p>Notebooks have two key distinguishing features compared to regular REPLs.
+            Firstly, they allow you to save the entire session to a file, preserving both the code and the execution results.
+            Secondly, the execution results can include more than just plain text;
+            they can also encompass images in various formats, arbitrary HTML (including JavaScript and CSS),
+            and even specifications for Swing outputs that are rendered directly within the IntelliJ IDE.
+            To learn more about the diverse range of outputs and their rendering, please refer to
+            <a href="https://github.com/Kotlin/kotlin-jupyter/tree/master/docs#rich-output">this link</a>.
+            Additionally, there is <a href="https://github.com/Kotlin/kotlin-jupyter/tree/master/samples/outputs.ipynb">a sample notebook</a>,
+            showcasing different types of outputs.</p>
+
             <p>With the Kotlin Notebook plugin, you can easily add binary dependencies from a remote
             Maven repository or a local one. For this, use
             <a href="https://github.com/Kotlin/kotlin-jupyter#dependencies-resolving"><code>@file:DependsOn</code> annotation or Gradle-like syntax</a>.
