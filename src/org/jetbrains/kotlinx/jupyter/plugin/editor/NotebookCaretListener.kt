@@ -17,14 +17,19 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.util.runIf
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
@@ -120,7 +125,7 @@ class NotebookCaretListener(
                         val finished = notebookHighlightingManager?.finishedHighlighting
                         val target = notebookHighlightingManager?.completeRangeInd
                         // we don't want to lose any updates happened during concurrent modification or delay
-                        val isCanModifyHLRequests = doc?.getUserData(NotebookCellsUpdatesAllowedToChange)?.get() == true
+                        val isCanModifyHLRequests = notebookHighlightingManager?.isCanModifyHLRequestAfterExecution(project) == true
                         if (queue != null && !finished.isNullOrEmpty() && isCanModifyHLRequests) {
                             queue.removeAll(finished)
                         }

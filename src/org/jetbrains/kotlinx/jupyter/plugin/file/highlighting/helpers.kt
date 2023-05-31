@@ -8,7 +8,6 @@ import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.thisLogger
@@ -214,7 +213,11 @@ internal object NotebookHighlightingUtilityObject {
         }
         invokeAndWaitIfNeeded { // we want to ensure that this part will be executed on the dispatch thread
             LOG.info("Requesting restart of scripting support after session restart")
-            document.getUserData(NotebookCellsUpdatesAllowedToChange)?.compareAndSet(true, false)
+            backedFile?.let {
+                NotebookHighlightingService.getForFile(project, backedFile).beforeScriptingUpdate()
+            } ?: document
+                .getUserData(NotebookCellsUpdatesAllowedToChange)
+                ?.compareAndSet(true, false)
             JupyterKtScriptingSupport.update(project)
         }
         runReadAction {

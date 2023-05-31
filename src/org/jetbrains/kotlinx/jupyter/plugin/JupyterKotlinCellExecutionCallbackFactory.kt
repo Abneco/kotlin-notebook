@@ -1,7 +1,10 @@
 package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.cellToHighlightLimit
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
@@ -66,8 +69,14 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
                 lastExecutedIndexes[file]
             }
         } else executionDataLock.withReadLock { lastExecutedIndexes[file] }
-            .also { execRequests ->
+            .let { execRequests ->
                 currentToHLQueue?.removeIf { execRequests?.contains(it) == false }
+                val updated = completedElements?.let { executionDataLock.withWriteLock {
+                    lastExecutedIndexes[file]?.addAll(completedElements)
+                    lastExecutedIndexes[file]}
+                }
+                LOG.debug("Completed elements: $completedElements, after execution data: ${updated}")
+                updated
             }
 
         return remainingData.isNullOrEmpty()
@@ -86,15 +95,26 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
             val isAfterSeriesRuns = pq.size == 1 && pq.contains(-1)
             if (isAfterSeriesRuns) pq.remove(-1)
             val singleErrorRun = onError && !isAfterSeriesRuns
-            if (isAfterSeriesRuns) {
+            if (isAfterSeriesRuns || !singleErrorRun && pq.size < cellToHighlightLimit) {
+                file.file.toDocument()?.getUserData(NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange)
+                    ?.compareAndSet(true, false)
                 if (lastExecutedIndexes[file].isNullOrEmpty()) { // ensure additive operation
                     lastExecutedIndexes[file] = highlightOrder[file]?.toMutableSet() ?: mutableSetOf()
                 } else highlightOrder[file]?.toMutableSet()?.let {
                     lastExecutedIndexes[file]?.addAll(it)
                 }
                 highlightOrder[file]?.clear()
-                file.file.toDocument()?.getUserData(NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange)
-                    ?.compareAndSet(true, false)
+                lastExecutedIndexes[file]?.addAll(highlightOrder[file] ?: emptyList())
+            } else if (pq.size > cellToHighlightLimit) {
+                ProjectManager.getInstance().openProjects.firstOrNull { it.isOpen }?.let {
+                    val highlightingManager = NotebookHighlightingService.getForFile(it, file)
+                    // add current cell
+                    if (highlightingManager.completeRangeInd == index) {
+                        if (lastExecutedIndexes[file].isNullOrEmpty())
+                            lastExecutedIndexes[file] = mutableSetOf(index)
+                        else lastExecutedIndexes[file]?.add(index)
+                    }
+                }
             }
             if (singleErrorRun && !pq.contains(-1)) highlightOrder[file]?.clear()
 
@@ -136,6 +156,7 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
     }
 
     companion object {
+        private val LOG = logger<JupyterKotlinCellExecutionCallbackFactory>()
         fun getInstance() = JupyterCellExecutionCallbackFactory.EP_NAME.findExtensionOrFail(JupyterKotlinCellExecutionCallbackFactory::class.java)
     }
 }

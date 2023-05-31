@@ -37,6 +37,7 @@ import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.NotebookCaretListener
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingRestarter.UpdateSteps.performHLStartupTemplate
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingRestarter.UpdateSteps.postScriptingUpdateStep
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService.Companion.HL_DELAY_PAUSE
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.shouldStartAfterPreChecks
@@ -44,8 +45,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.ImpatientNotebookChangeListener
+import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 @Service(Service.Level.PROJECT)
@@ -134,6 +137,13 @@ class NotebookHighlightingManager(
     val remainingIndexesToProcess: Set<Int>
         get() = targetIndexes - finishedHighlighting
 
+    fun isCanModifyHLRequestAfterExecution(project: Project): Boolean =
+        document
+            .getUserData(NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange)?.get() == true
+                && !JupyterKtScriptingSupport.isInTheTransaction(project)
+
+    private val canModifyAfterExecutionRequests = AtomicBoolean(false)
+
     fun tryGetKnownHostFor(file: PsiFile): PsiLanguageInjectionHost? {
         if (file !is KtFile) return null
         return fileToInjectionData.getOrElse(file, defaultValue = { null })?.first
@@ -188,6 +198,34 @@ class NotebookHighlightingManager(
         }
     }
 
+    /**
+     * Semantic of following 3 methods are to ensure no requests are lost after 'afterUpdate()' of scripting.
+     * It's achieved by:
+     *  1. All calls 'scriptingSupport.update()' happens after storing the key
+     *  'NotebookCellsUpdatesAllowedToChange' to false
+     *  2. After 'afterUpdate' call, HL would be restarted automatically. We need to react on 'afterUpdate'
+     *  and be ready that actually **following** pass after restart is the one we should be ready for.
+     *
+     *  Otherwise, we might get inconsistent state if HL restart was triggered during applying of HL tokens,
+     *  but **after** 'afterUpdate()' call
+     *
+     */
+    fun handleEmptyClassQueue() {
+        if (!canModifyAfterExecutionRequests.get()) return
+
+        postScriptingUpdateStep(document)
+    }
+
+    fun beforeScriptingUpdate() {
+        document.getUserData(NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange)
+            ?.compareAndSet(true, false)
+        canModifyAfterExecutionRequests.set(false)
+    }
+
+    fun afterScriptingUpdate() {
+        canModifyAfterExecutionRequests.set(true)
+    }
+
     fun finishedAnalysisForFile(psiFile: PsiFile, holder: HighlightInfoHolder) {
         val ind = fileToInjectionData[psiFile]?.second
         finishedFiles.addIfNotNull(ind)
@@ -230,7 +268,7 @@ class NotebookHighlightingManager(
                 if (it.key != completeInd) it.value.isNotEmpty() else !targetPassed
         }.keys.also { // not yet counted
            finishedFiles.removeAll(it)
-           LOG.debug("Daemon finished, knownErrorInd: ${knownErrorInd.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
+           LOG.warn("Daemon finished, knownErrorInd: ${knownErrorInd.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
         }
 
         val remaining = remainingIndexesToProcess
