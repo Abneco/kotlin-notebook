@@ -60,8 +60,8 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         return parseFrameInfoFromKotlinDataframeOutput(text)
     }
 
-    override fun parseTextToTableData(id: DataId, tableHtml: String): DSTableData {
-        return parseDataFromKotlinDataframeOutput(id, tableHtml)
+    override fun parseTextToTableData(id: DataId, table: String): DSTableData {
+        return parseDataFromKotlinDataframeOutput(id, table)
     }
 
     @Throws(DSTableDataException::class)
