@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.actions
 
 import com.intellij.codeInsight.folding.impl.FoldingUpdate
@@ -29,7 +29,7 @@ class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
                 NotebookCaretListener(project, virtualFile, editor, parentDisposable),
                 parentDisposable
             )
-            ApplicationManager.getApplication().messageBus.connect()
+            ApplicationManager.getApplication().messageBus.connect(parentDisposable)
                 .subscribe(EditorColorsManager.TOPIC,
                            EditorColorsListener {
                                editor.document.reactOnThemeChangedEvent(project, virtualFile.file)
