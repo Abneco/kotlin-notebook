@@ -393,32 +393,32 @@ class JupyterCompilerPerFileService(
                 val lineSourcesDir = classesDir.resolve("sources_$nextCounter")
                 // TODO: compare text in snippet metadata with cell source and add a source file to directory and to the container
 
-                _currentClasspath.addSnippet(ArrayList<File>(snippetMetadata.newClasspath.size + 1).apply {
-                    add(lineClassesDirAsFile)
-                    snippetMetadata.newClasspath.forEach {
-                        add(File(it))
-                    }
-                })
-                _sourceRoots.addSnippet(ArrayList<File>(snippetMetadata.newSources.size + 1).apply {
-                    add(lineSourcesDir.toFile())
-                    snippetMetadata.newSources.forEach {
-                        add(File(it))
-                    }
-                })
-                additionalDefaultImports.addSnippet(snippetMetadata.newImports)
-
                 AppExecutorUtil.getAppExecutorService().execute {
                     addAsPermanentLibrary(snippetMetadata.newClasspath, snippetMetadata.newSources)
+                    _currentClasspath.addSnippet(ArrayList<File>(snippetMetadata.newClasspath.size + 1).apply {
+                        add(lineClassesDirAsFile)
+                        snippetMetadata.newClasspath.forEach {
+                            add(File(it))
+                        }
+                    })
+                    _sourceRoots.addSnippet(ArrayList<File>(snippetMetadata.newSources.size + 1).apply {
+                        add(lineSourcesDir.toFile())
+                        snippetMetadata.newSources.forEach {
+                            add(File(it))
+                        }
+                    })
+                    additionalDefaultImports.addSnippet(snippetMetadata.newImports)
                     if (psiCell != null) {
                         runReadAction {
                             updateInjectedCellInfo(snippetMetadata, psiCell)
                         }
                     }
+                    val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
+                    implicitListsLoadQueue.addLast(Pair(lineClassesDir, kClassNames))
+                    needsToUpdate.set(true)
+                    //LOG.warn("Added new classes to load: $kClassNames")
                 }
 
-                val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
-                implicitListsLoadQueue.addLast(Pair(lineClassesDir, kClassNames))
-                needsToUpdate.set(true)
             } catch (e: Exception) {
                 LOG.error(e)
             }
