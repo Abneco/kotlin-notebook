@@ -7,8 +7,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
@@ -22,17 +20,6 @@ import org.jetbrains.plugins.notebooks.jupyter.nbformat.NotebookChanged
 @Service(Service.Level.PROJECT)
 class KotlinNotebookPerFileSettingsCache(val project: Project) : Disposable {
     private val cache = CollectionFactory.createConcurrentWeakMap<VirtualFile, KotlinNotebookSettings>()
-    private val projectOptionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
-
-    init {
-        project.messageBus.connect(this).subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
-            override fun projectClosingBeforeSave(eventProject: Project) {
-                if (eventProject == project) {
-                    projectOptionsProvider.markNotebookSettingsMigrated()
-                }
-            }
-        })
-    }
 
     fun notebookEditorCreated(file: VirtualFile) {
         if (cache.contains(file)) return
@@ -45,16 +32,7 @@ class KotlinNotebookPerFileSettingsCache(val project: Project) : Disposable {
         }
         notebookFile.notebook.addJupyterChangeListener(jupyterChangeListener)
         Disposer.register(this, Disposable { notebookFile.notebook.removeJupyterChangeListener(jupyterChangeListener) })
-        refreshAndMigrateSettings(notebookFile)
-    }
-
-    private fun refreshAndMigrateSettings(notebookFile: BackedNotebookVirtualFile) {
-        val notebookSettings = refreshSettings(notebookFile)
-        if (notebookSettings != KotlinNotebookSettings.DEFAULT) return
-
-        projectOptionsProvider.getNotebookSettingsToMigrate()?.let { projectSettings ->
-            notebookFile.notebook.writeSettings(projectSettings)
-        }
+        refreshSettings(notebookFile)
     }
 
     @RequiresEdt

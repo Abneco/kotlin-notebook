@@ -29,9 +29,3 @@ fun KotlinNotebookSettings.asJson(): String? {
 fun JupyterNotebook.readSettings(): KotlinNotebookSettings {
     return KotlinNotebookSettings(isBuildProject, isAddProjectLibrariesToClasspath)
 }
-
-@RequiresEdt
-fun JupyterNotebook.writeSettings(settings: KotlinNotebookSettings) {
-    isBuildProject = settings.isBuildProject
-    isAddProjectLibrariesToClasspath = settings.isAddProjectLibrariesToClasspath
-}

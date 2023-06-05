@@ -24,27 +24,15 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
         return KotlinNotebookSettings(state.shouldBuildProject, state.shouldAddProjectLibrariesToClasspath)
     }
 
-    @RequiresEdt
-    internal fun getNotebookSettingsToMigrate(): KotlinNotebookSettings? {
-        if (state.isPerNotebookSettingsMigrated) return null
-        return getNewKotlinNotebookSettings()
-    }
-
-    @RequiresEdt
-    internal fun markNotebookSettingsMigrated() {
-        state.isPerNotebookSettingsMigrated = true
-    }
-
     class State : BaseState() {
         var jdkName by string(null)
         var heapMaxLimitInMib by property(DEFAULT_HEAP_MAX_LIMIT_MIB)
         var extraJvmArguments by list<String>()
         var shouldLimitTypeHintsByActiveCell by property(false)
 
-        // these properties are migrated to per-notebook properties
+        // default settings for new notebooks
         var shouldBuildProject by property(false)
         var shouldAddProjectLibrariesToClasspath by property(false)
-        var isPerNotebookSettingsMigrated by property(false)
 
         val jdk: KotlinNotebookJdkOption get() = KotlinNotebookJdkOption.fromName(jdkName)
     }
