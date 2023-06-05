@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
 
-private val isBuildProjectProperty = KotlinNotebookProperty("isBuildProject", false)
-private val isAddProjectLibrariesToClasspathProperty = KotlinNotebookProperty("isAddProjectLibrariesToClasspath", true)
+private val isBuildProjectProperty = KotlinNotebookBooleanProperty("isBuildProject", false)
+private val isAddProjectLibrariesToClasspathProperty = KotlinNotebookBooleanProperty("isAddProjectLibrariesToClasspath", true)
 
 var JupyterNotebook.isBuildProject by isBuildProjectProperty
 var JupyterNotebook.isAddProjectLibrariesToClasspath by isAddProjectLibrariesToClasspathProperty
