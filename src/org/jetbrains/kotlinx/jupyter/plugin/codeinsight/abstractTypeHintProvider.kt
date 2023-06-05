@@ -15,6 +15,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
@@ -190,6 +191,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
             val traverser = SyntaxTraverser.psiTraverser(rootElement)
             try {
                 for (element in traverser.preOrderDfsTraversal()) {
+                    ProgressManager.checkCanceled()
                     if (!action(element)) return false
                 }
             } catch (e: Throwable) { // ignore any

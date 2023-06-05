@@ -15,6 +15,7 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -136,6 +137,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 if (file.project.service<DumbService>().isDumb) return true
                 if (element is KtFile) return defaultCollector?.collect(element, editor, sink) ?: true
                 if (element !is JupyterPsiCellImpl) return true
+                ProgressManager.checkCanceled()
                 val ktFile = tryGetInjectedKtFileIfPossibleOrProvided(element, project) as? PsiFile ?: return true
 
                 val modificationArea = document?.getNotebookCompleteAnalysisArea()
