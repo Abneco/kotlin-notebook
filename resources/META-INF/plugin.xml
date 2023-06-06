@@ -189,7 +189,7 @@
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
         <jupyterCellExecutionCallbackFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory"/>
         <connections.execution.preExecutionSourceModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinPreExecutionSourceModifier"/>
-        <editorCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinJupyterEditorCustomizer"/>
+        <editorCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterEditorCustomizer"/>
         <jupyterActionPresentationModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterActionPresentationModifier"/>
         <connections.execution.core.jupyterServersFactory
                 order="before default"
