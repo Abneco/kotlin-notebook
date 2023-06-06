@@ -108,5 +108,6 @@
     <orderEntry type="module" module-name="intellij.python.jupyter.tables" />
     <orderEntry type="module" module-name="intellij.python.pydev" />
     <orderEntry type="module" module-name="intellij.platform.codeStyle.impl" />
+    <orderEntry type="module" module-name="kotlin.code-insight.live-templates-shared" />
   </component>
 </module>

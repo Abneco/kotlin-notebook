@@ -126,6 +126,13 @@
         <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.NotebookValuesHintProvider" language="Jupyter"/>
         <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.NotebookChainCallHintProvider" language="Jupyter"/>
 
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$Generic"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_STATEMENT" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$Statement"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_CLASS" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$Class"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_EXPRESSION" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$Expression"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_COMMENT" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$Comment"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_OBJECT_DECLARATION" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$ObjectDeclaration"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_META" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$Meta"/>
 
         <completion.contributor language="JKTMeta" id="JKTMetaBasic" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaCompletionContributor" />
         <!--<completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.KotlinMagicsRuntimeCompletionContributor" order="first"/>-->
