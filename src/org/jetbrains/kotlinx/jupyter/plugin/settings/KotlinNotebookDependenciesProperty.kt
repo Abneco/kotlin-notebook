@@ -11,7 +11,6 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkType
-import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
@@ -75,7 +74,7 @@ fun KotlinNotebookDependencies.findModules(project: Project): List<Module> {
  * @param project the project to get the modules for.
  * @return a `List` of suitable `Module` objects for the given project.
  */
-private fun getSuitableModules(project: Project): List<Module> {
+internal fun getSuitableModules(project: Project): List<Module> {
     fun Module.isProbablyBuildSrc() = name.split(".").any { it == "buildSrc" }
 
     return ModuleManager.getInstance(project).modules.filter {
