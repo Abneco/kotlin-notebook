@@ -12,22 +12,16 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.reactOnThemeChangedEvent
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
-import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettingsCache
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterEditorCustomizer
 import org.jetbrains.plugins.notebooks.jupyter.editor.isJupyter
 
 class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
     override fun onEditorCreated(project: Project, editor: Editor, virtualFile: BackedNotebookVirtualFile) {
-        val file = virtualFile.file
-        if (!file.isKotlinNotebook) return
+        if (!virtualFile.file.isKotlinNotebook) return
 
         editor.putUserData(FoldingUpdate.INJECTED_CODE_FOLDING_ENABLED, false)
         if (editor.isJupyter) {
-            JupyterKtScriptingSupport.update(project)
-            KotlinNotebookPerFileSettingsCache.getInstance(project).notebookEditorCreated(file)
-
             val compilerService = JupyterCompilerService.getInstance(project)
             val parentDisposable: Disposable = (editor as? EditorImpl)?.disposable ?: compilerService
             editor.caretModel.addCaretListener(
@@ -37,7 +31,7 @@ class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
             ApplicationManager.getApplication().messageBus.connect(parentDisposable)
                 .subscribe(EditorColorsManager.TOPIC,
                            EditorColorsListener {
-                               editor.document.reactOnThemeChangedEvent(project, file)
+                               editor.document.reactOnThemeChangedEvent(project, virtualFile.file)
                            })
         }
     }
