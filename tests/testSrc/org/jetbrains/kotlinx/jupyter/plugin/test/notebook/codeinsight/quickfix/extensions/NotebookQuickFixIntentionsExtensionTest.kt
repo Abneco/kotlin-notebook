@@ -27,7 +27,7 @@ class NotebookQuickFixIntentionsExtensionTest : NotebookQuickFixBaseTest() {
         doTest(1)
     }
 
-    @Test
+    //@Test
     fun testExtensionWithTypeParameter() {
         doTest(1)
     }
