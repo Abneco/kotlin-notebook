@@ -127,13 +127,13 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
         project.messageBus.connect(this).subscribe(JupyterRuntimeService.Listener.TOPIC, sessionListener)
     }
 
-    private suspend fun JupyterKotlinProjectArtifactsService.buildProject(settings: KotlinNotebookSettings): BuildResult {
+    private suspend fun buildProject(settings: KotlinNotebookSettings): BuildResult {
         if (!settings.isBuildProject) return BuildResult.EMPTY
 
         return buildResultCache.getValue()
     }
 
-    private suspend fun JupyterKotlinProjectArtifactsService.getLibraries(settings: KotlinNotebookSettings): ProjectArtifacts {
+    private suspend fun getLibraries(settings: KotlinNotebookSettings): ProjectArtifacts {
         if (!settings.isAddProjectLibrariesToClasspath) return emptyList()
 
         return librariesCache.getValue()
