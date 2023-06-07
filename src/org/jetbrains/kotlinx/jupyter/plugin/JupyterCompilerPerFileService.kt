@@ -334,7 +334,8 @@ class JupyterCompilerPerFileService(
         val newLibrary = libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
             ?: invokeAndWaitIfNeeded {
                 runAsWriteActionIfNeeded {
-                    libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME) ?: libraryTable.createLibrary(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
+                    libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME) ?:
+                    libraryTable.createLibrary(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
                 }
             }
 
@@ -370,57 +371,18 @@ class JupyterCompilerPerFileService(
         snippetMetadata: EvaluatedSnippetMetadata,
         psiCell: JupyterPsiCell?,
     ) {
-        compileLock.withWriteLock {
-            try {
-                KotlinNotebookPluginUpdater.getInstance().pluginUsed()
-
-                val sessionId = ApplicationManager.getApplication().executeOnPooledThread<String?> {
-                    getSession()?.sessionId
-                }.get()
-
-                if (sessionId != previousSessionId) {
-                    LOG.info("Clearing Kotlin snippets. Previous session ID: $previousSessionId")
-                    clearPreviousSnippets()
-                    previousSessionId = sessionId
-                }
-
-                val nextCounter = directoryCounter.incrementAndGet()
-
-                val lineClassesDir = classesDir.resolve("line_$nextCounter")
-                val lineClassesDirAsFile = lineClassesDir.toFile()
-                lineClassesDirAsFile.mkdirs()
-
-                val lineSourcesDir = classesDir.resolve("sources_$nextCounter")
-                // TODO: compare text in snippet metadata with cell source and add a source file to directory and to the container
-
-                AppExecutorUtil.getAppExecutorService().execute {
-                    addAsPermanentLibrary(snippetMetadata.newClasspath, snippetMetadata.newSources)
-                    _currentClasspath.addSnippet(ArrayList<File>(snippetMetadata.newClasspath.size + 1).apply {
-                        add(lineClassesDirAsFile)
-                        snippetMetadata.newClasspath.forEach {
-                            add(File(it))
-                        }
-                    })
-                    _sourceRoots.addSnippet(ArrayList<File>(snippetMetadata.newSources.size + 1).apply {
-                        add(lineSourcesDir.toFile())
-                        snippetMetadata.newSources.forEach {
-                            add(File(it))
-                        }
-                    })
-                    additionalDefaultImports.addSnippet(snippetMetadata.newImports)
-                    if (psiCell != null) {
-                        runReadAction {
-                            updateInjectedCellInfo(snippetMetadata, psiCell)
-                        }
+        KotlinNotebookPluginUpdater.getInstance().pluginUsed()
+        // execute not on EDT
+        AppExecutorUtil.getAppExecutorService().execute {
+            compileLock.withWriteLock {
+                try {
+                    addNewDependencies(snippetMetadata, psiCell)
+                } catch (e: Exception) {
+                    if (e is ProcessCanceledException) {
+                        throw e
                     }
-                    val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
-                    implicitListsLoadQueue.addLast(Pair(lineClassesDir, kClassNames))
-                    needsToUpdate.set(true)
-                    //LOG.warn("Added new classes to load: $kClassNames")
+                    LOG.error(e)
                 }
-
-            } catch (e: Exception) {
-                LOG.error(e)
             }
         }
     }
@@ -432,6 +394,51 @@ class JupyterCompilerPerFileService(
                 .beforeScriptingUpdate()
             JupyterKtScriptingSupport.update(project)
         }
+    }
+
+    private fun addNewDependencies(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell?) {
+        val sessionId = getSession()?.sessionId
+
+        if (sessionId != previousSessionId) {
+            LOG.info("Clearing Kotlin snippets. Previous session ID: $previousSessionId")
+            clearPreviousSnippets()
+            previousSessionId = sessionId
+        }
+
+        // TODO: compare text in snippet metadata with cell source and add a source file to directory and to the container
+        val nextCounter = directoryCounter.incrementAndGet()
+
+        val lineClassesDir = classesDir.resolve("line_$nextCounter")
+        val lineClassesDirAsFile = lineClassesDir.toFile()
+        lineClassesDirAsFile.mkdirs()
+
+        val lineSourcesDir = classesDir.resolve("sources_$nextCounter")
+
+        addAsPermanentLibrary(snippetMetadata.newClasspath, snippetMetadata.newSources)
+        _currentClasspath.addSnippet(ArrayList<File>(snippetMetadata.newClasspath.size + 1).apply {
+            add(lineClassesDirAsFile)
+            snippetMetadata.newClasspath.forEach {
+                add(File(it))
+            }
+        })
+        _sourceRoots.addSnippet(ArrayList<File>(snippetMetadata.newSources.size + 1).apply {
+            add(lineSourcesDir.toFile())
+            snippetMetadata.newSources.forEach {
+                add(File(it))
+            }
+        })
+        additionalDefaultImports.addSnippet(snippetMetadata.newImports)
+
+        if (psiCell != null) {
+            runReadAction {
+                updateInjectedCellInfo(snippetMetadata, psiCell)
+            }
+        }
+
+        val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
+        implicitListsLoadQueue.addLast(Pair(lineClassesDir, kClassNames))
+        needsToUpdate.set(true)
+        //LOG.warn("Added new classes to load: $kClassNames")
     }
 
     private fun createNextClassLoader(classesDirPath: Path): ClassLoader = URLClassLoader(
