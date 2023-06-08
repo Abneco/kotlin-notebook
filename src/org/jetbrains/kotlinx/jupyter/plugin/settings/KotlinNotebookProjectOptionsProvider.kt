@@ -21,7 +21,10 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
 
     @RequiresEdt
     internal fun getNewKotlinNotebookSettings(): KotlinNotebookSettings {
-        return KotlinNotebookSettings(state.shouldBuildProject, state.shouldAddProjectLibrariesToClasspath)
+        return KotlinNotebookSettings(
+            if (state.shouldBuildProject) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None,
+            if (state.shouldAddProjectLibrariesToClasspath)  KotlinNotebookDependencies.All else KotlinNotebookDependencies.None
+        )
     }
 
     class State : BaseState() {

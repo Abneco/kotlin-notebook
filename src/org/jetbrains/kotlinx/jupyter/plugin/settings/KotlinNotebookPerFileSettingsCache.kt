@@ -32,6 +32,8 @@ class KotlinNotebookPerFileSettingsCache(val project: Project) : Disposable {
         }
         notebookFile.notebook.addJupyterChangeListener(jupyterChangeListener)
         Disposer.register(this, Disposable { notebookFile.notebook.removeJupyterChangeListener(jupyterChangeListener) })
+
+        notebookFile.notebook.migrateSettings()
         refreshSettings(notebookFile)
     }
 

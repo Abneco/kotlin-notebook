@@ -8,14 +8,11 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleManager
+import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectLocator
-import com.intellij.openapi.projectRoots.JavaSdkType
-import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.OrderRootType
-import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -31,11 +28,13 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.concurrency.asDeferred
-import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
-import org.jetbrains.kotlinx.jupyter.plugin.index.KotlinNotebookPermanentIndexService
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettingsCache
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSettings
+import org.jetbrains.kotlinx.jupyter.plugin.settings.findLibraries
+import org.jetbrains.kotlinx.jupyter.plugin.settings.findModules
+import org.jetbrains.kotlinx.jupyter.plugin.settings.isEmpty
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
 import org.jetbrains.kotlinx.jupyter.plugin.util.parentsWithSelf
@@ -62,8 +61,8 @@ private data class BuildResult(val artifacts: ProjectArtifacts, val state: Depen
 
 @Service(Service.Level.PROJECT)
 class JupyterKotlinProjectArtifactsService(val project: Project, private val coroutineScope: CoroutineScope) : Disposable {
-    private val buildResultCache: ConcurrentHashMap<VirtualFile, BaseCache<BuildResult>> = ConcurrentHashMap()
-    private val librariesCache: ConcurrentHashMap<VirtualFile, BaseCache<ProjectArtifacts>> = ConcurrentHashMap()
+    private val buildResultCache: ConcurrentHashMap<VirtualFile, BaseCache<BuildResult, KotlinNotebookDependencies>> = ConcurrentHashMap()
+    private val librariesCache: ConcurrentHashMap<VirtualFile, BaseCache<ProjectArtifacts, KotlinNotebookDependencies>> = ConcurrentHashMap()
 
     private val sessionData = mutableMapOf<String, SessionData>()
     private val sessionDataLock = ReentrantLock()
@@ -134,17 +133,17 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private suspend fun buildProject(file: BackedNotebookVirtualFile, settings: KotlinNotebookSettings): BuildResult {
-        if (!settings.isBuildProject) return BuildResult.EMPTY
+        if (settings.projectDependencies.isEmpty()) return BuildResult.EMPTY
 
         val cache = buildResultCache.computeIfAbsent(file.file) { BuildResultCache(project, this) }
-        return cache.getValue()
+        return cache.getValue(settings.projectDependencies)
     }
 
     private suspend fun getLibraries(file: BackedNotebookVirtualFile, settings: KotlinNotebookSettings): ProjectArtifacts {
-        if (!settings.isAddProjectLibrariesToClasspath) return emptyList()
+        if (settings.projectLibraries.isEmpty()) return emptyList()
 
         val cache = librariesCache.computeIfAbsent(file.file) { LibrariesCache(project, coroutineScope) }
-        return cache.getValue()
+        return cache.getValue(settings.projectLibraries)
     }
 
     fun registerSession(session: JupyterNotebookSession) {
@@ -190,25 +189,29 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
 
     private data class SessionData(val file: BackedNotebookVirtualFile, val artifactsCache: MutableSet<String>)
 
-    private class BuildResultCache(private val project: Project, parent: Disposable) : BaseCache<BuildResult>(BuildResult.EMPTY),
-                                                                                       Disposable {
+    private class BuildResultCache(
+        private val project: Project,
+        parent: Disposable
+    ) : BaseCache<BuildResult, KotlinNotebookDependencies>(BuildResult.EMPTY, KotlinNotebookDependencies.None), Disposable {
         init {
             Disposer.register(parent, this)
         }
 
-        override fun loadValue(): Deferred<BuildResult> {
+        override fun loadValue(setting: KotlinNotebookDependencies): Deferred<BuildResult> {
+            return buildModules(setting.findModules(project))
+        }
+
+        private fun buildModules(modules: Collection<Module>): Deferred<BuildResult> {
+            if (modules.isEmpty()) return CompletableDeferred(BuildResult.EMPTY)
+
             val taskManager = ProjectTaskManager.getInstance(project)
-
-            val modulesToBuild = mainModules(project)
-            if (modulesToBuild.isEmpty()) return CompletableDeferred(BuildResult.EMPTY)
-
-            val buildTask = taskManager.createModulesBuildTask(modulesToBuild.toTypedArray(), true, true, false)
+            val buildTask = taskManager.createModulesBuildTask(modules.toTypedArray(), true, true, false)
             val buildTaskContext = ProjectTaskContext().apply {
                 enableCollectionOfGeneratedFiles()
             }
 
             val deferredResult = taskManager.run(buildTaskContext, buildTask).then { buildResult ->
-                val allModules = ModuleManager.getInstance(project).modules
+                val allModules = getDependencies(modules)
 
                 val projectClasspath = allModules.flatMap {
                     ModuleRootManager.getInstance(it).orderEntries().withoutSdk().classes().pathsList.pathList
@@ -224,20 +227,11 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
             return deferredResult
         }
 
-        private fun mainModules(project: Project): List<Module> {
-            fun Module.isProbablyBuildSrc() = name.split(".").any { it == "buildSrc" }
-
-            val graph = ModuleManager.getInstance(project).moduleGraph(false)
-            return mutableListOf<Module>().also { result ->
-                for (node in graph.nodes) {
-                    if (graph.getIn(node).hasNext() || node.isProbablyBuildSrc()) continue
-
-                    val moduleRootManager = ModuleRootManager.getInstance(node)
-                    val sdk: Sdk? = moduleRootManager.sdk
-                    if (sdk == null) continue
-                    if (sdk.sdkType == KotlinSdkType.INSTANCE || sdk.sdkType is JavaSdkType) result.add(node)
-                }
-            }
+        private fun getDependencies(modules: Collection<Module>): Array<Module> {
+            val result = mutableSetOf<Module>()
+            result.addAll(modules)
+            for (m in modules) ModuleUtilCore.getDependencies(m, result)
+            return result.toTypedArray()
         }
 
         override fun dispose() {
@@ -246,12 +240,11 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private class LibrariesCache(private val project: Project, val coroutineScope: CoroutineScope) :
-        BaseCache<ProjectArtifacts>(emptyList()) {
-        override fun loadValue(): Deferred<ProjectArtifacts> {
+        BaseCache<ProjectArtifacts, KotlinNotebookDependencies>(emptyList(), KotlinNotebookDependencies.All) {
+        override fun loadValue(setting: KotlinNotebookDependencies): Deferred<ProjectArtifacts> {
+            if (setting.isEmpty()) return CompletableDeferred(emptyList())
             return coroutineScope.async {
-                LibraryTablesRegistrar.getInstance().getLibraryTable(project).libraries.filter {
-                    it.name != KotlinNotebookPermanentIndexService.SCRIPT_DEPENDENCIES_LIBRARY_NAME
-                }.flatMap { library ->
+                setting.findLibraries(project).flatMap { library ->
                     library.getFiles(OrderRootType.CLASSES)
                         // nio can't be used here since JarFileSystemImpl#getNioPath returns null for a jar root file
                         .map { VfsUtilCore.virtualToIoFile(it) }
@@ -268,16 +261,16 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         }
     }
 
-    private data class ResultCache<T>(val deferredResult: Deferred<T>, val isUpToDate: Boolean)
+    private data class ResultCache<Value, Setting>(val deferredResult: Deferred<Value>, val setting: Setting, val isUpToDate: Boolean)
 
-    private abstract class BaseCache<T>(private val initialValue: T) {
-        private var resultCache = ResultCache(CompletableDeferred(initialValue), false)
+    private abstract class BaseCache<Value, Setting>(private val initialValue: Value, private val initialSetting: Setting) {
+        private var resultCache = ResultCache(CompletableDeferred(initialValue), initialSetting, false)
         private val lock = ReentrantLock()
 
-        suspend fun getValue(): T {
+        suspend fun getValue(setting: Setting): Value {
             val resultCache = lock.withLock {
-                if (resultCache.deferredResult.isCompleted && !resultCache.isUpToDate) {
-                    resultCache = ResultCache(loadValue(), true)
+                if ((resultCache.deferredResult.isCompleted && !resultCache.isUpToDate) || resultCache.setting != setting) {
+                    resultCache = ResultCache(loadValue(setting), setting, true)
                 }
                 resultCache
             }
@@ -287,17 +280,17 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
 
         fun markOutdated() {
             lock.withLock {
-                resultCache = ResultCache(resultCache.deferredResult, false)
+                resultCache = ResultCache(resultCache.deferredResult, resultCache.setting, false)
             }
         }
 
         protected fun clear() {
             lock.withLock {
-                resultCache = ResultCache(CompletableDeferred(initialValue), true)
+                resultCache = ResultCache(CompletableDeferred(initialValue), initialSetting, true)
             }
         }
 
-        abstract fun loadValue(): Deferred<T>
+        abstract fun loadValue(setting: Setting): Deferred<Value>
     }
 
     companion object {
