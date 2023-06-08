@@ -18,6 +18,7 @@ import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
@@ -42,6 +43,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -59,9 +61,9 @@ private data class BuildResult(val artifacts: ProjectArtifacts, val state: Depen
 }
 
 @Service(Service.Level.PROJECT)
-class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope: CoroutineScope) : Disposable {
-    private val buildResultCache: BaseCache<BuildResult> = BuildResultCache(project, this)
-    private val librariesCache: BaseCache<ProjectArtifacts> = LibrariesCache(project, coroutineScope)
+class JupyterKotlinProjectArtifactsService(val project: Project, private val coroutineScope: CoroutineScope) : Disposable {
+    private val buildResultCache: ConcurrentHashMap<VirtualFile, BaseCache<BuildResult>> = ConcurrentHashMap()
+    private val librariesCache: ConcurrentHashMap<VirtualFile, BaseCache<ProjectArtifacts>> = ConcurrentHashMap()
 
     private val sessionData = mutableMapOf<String, SessionData>()
     private val sessionDataLock = ReentrantLock()
@@ -108,8 +110,8 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
 
             override fun after(events: List<VFileEvent>) {
                 if (events.any { isChangingEvent(it) }) {
-                    buildResultCache.markOutdated()
-                    librariesCache.markOutdated()
+                    buildResultCache.values.forEach { it.markOutdated() }
+                    librariesCache.values.forEach { it.markOutdated() }
                 }
             }
         }
@@ -120,23 +122,29 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
         val sessionListener = object : JupyterRuntimeService.Listener {
             override fun sessionDeleted(session: JupyterNotebookSession) {
                 sessionDataLock.withLock {
-                    sessionData.remove(session.sessionId)
+                    val (notebookFile, _) = sessionData.remove(session.sessionId) ?: return@withLock
+                    if (sessionData.values.none { notebookFile.file == it.file.file }) {
+                        buildResultCache.remove(notebookFile.file)
+                        librariesCache.remove(notebookFile.file)
+                    }
                 }
             }
         }
         project.messageBus.connect(this).subscribe(JupyterRuntimeService.Listener.TOPIC, sessionListener)
     }
 
-    private suspend fun buildProject(settings: KotlinNotebookSettings): BuildResult {
+    private suspend fun buildProject(file: BackedNotebookVirtualFile, settings: KotlinNotebookSettings): BuildResult {
         if (!settings.isBuildProject) return BuildResult.EMPTY
 
-        return buildResultCache.getValue()
+        val cache = buildResultCache.computeIfAbsent(file.file) { BuildResultCache(project, this) }
+        return cache.getValue()
     }
 
-    private suspend fun getLibraries(settings: KotlinNotebookSettings): ProjectArtifacts {
+    private suspend fun getLibraries(file: BackedNotebookVirtualFile, settings: KotlinNotebookSettings): ProjectArtifacts {
         if (!settings.isAddProjectLibrariesToClasspath) return emptyList()
 
-        return librariesCache.getValue()
+        val cache = librariesCache.computeIfAbsent(file.file) { LibrariesCache(project, coroutineScope) }
+        return cache.getValue()
     }
 
     fun registerSession(session: JupyterNotebookSession) {
@@ -147,12 +155,12 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
     }
 
     fun getNewArtifactsForSession(sessionId: String): Collection<String> {
-        val (virtualFile, oldArtifacts) = sessionDataLock.withLock { sessionData[sessionId] } ?: return emptyList()
+        val (notebookFile, oldArtifacts) = sessionDataLock.withLock { sessionData[sessionId] } ?: return emptyList()
 
-        val notebookSettings = KotlinNotebookPerFileSettingsCache.getInstance(project).getSettings(virtualFile)
+        val notebookSettings = KotlinNotebookPerFileSettingsCache.getInstance(project).getSettings(notebookFile)
 
         val (buildProjectResult, libraries) = runBlocking {
-            Pair(buildProject(notebookSettings), getLibraries(notebookSettings))
+            Pair(buildProject(notebookFile, notebookSettings), getLibraries(notebookFile, notebookSettings))
         }
         val allArtifacts = buildProjectResult.artifacts + libraries
         val newArtifacts = sessionDataLock.withLock {
@@ -301,7 +309,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
 
         suspend fun JupyterKotlinProjectArtifactsService.buildProjectAndGetLibraries(notebookFile: BackedNotebookVirtualFile): ProjectArtifacts {
             val settings = KotlinNotebookPerFileSettingsCache.getInstance(project).getSettings(notebookFile)
-            return buildProject(settings).artifacts + getLibraries(settings)
+            return buildProject(notebookFile, settings).artifacts + getLibraries(notebookFile, settings)
         }
     }
 }
