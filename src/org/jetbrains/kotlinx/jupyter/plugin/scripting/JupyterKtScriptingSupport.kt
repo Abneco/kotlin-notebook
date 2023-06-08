@@ -79,7 +79,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     }
 
     override fun isConfigurationLoadingInProgress(file: KtFile): Boolean {
-        return getUpdater(project).isInTransaction()
+        return getUpdater(project).isTransactionAboutToHappen()
     }
 
     private fun ScriptClassRootsBuilder.addRootsFromNotebooks(notebooks: Collection<BackedNotebookVirtualFile>) {
@@ -108,13 +108,13 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             return (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
         }
 
-        fun isInTheTransaction(project: Project) = getUpdater(project).isInTransaction()
+        fun isInTheTransaction(project: Project) = getUpdater(project).isTransactionAboutToHappen()
 
         fun update(project: Project) {
             // cache.clear()
             val updater = getUpdater(project)
             updateJob?.cancel()
-            if (updater.isInTransaction()) {
+            if (updater.isTransactionAboutToHappen()) {
                 LOG.debug("In the transaction, aborting")
                 updateJob?.cancel()
                 updateJob = updateScope.async {
