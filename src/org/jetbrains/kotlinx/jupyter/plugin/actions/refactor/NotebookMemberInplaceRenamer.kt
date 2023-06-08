@@ -145,9 +145,8 @@ class NotebookMemberInplaceRenamer(
                         }
                         if (targetHostRanges.isNotEmpty()) {
                             adjustmentTextRange = targetHostRanges
-                            topLevelDocument.getUserData(NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges)?.let {
-                                it.addAll(targetHostIndxs)
-                            }
+                            topLevelDocument.getUserData(NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges)
+                                ?.addAll(targetHostIndxs)
                         }
                         return ans.toTypedArray()
                     }
