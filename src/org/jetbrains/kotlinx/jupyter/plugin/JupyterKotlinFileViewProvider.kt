@@ -9,6 +9,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.source.PsiFileImpl
 import com.intellij.psi.templateLanguages.TemplateLanguageFileViewProvider
+import com.intellij.util.InjectionUtils
 import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage
 import org.jetbrains.plugins.notebooks.jupyter.getMarkdownLanguage
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterTemplateTypes
@@ -23,6 +24,10 @@ class JupyterKotlinFileViewProvider(
         file,
         eventSystemEnabled
     ), TemplateLanguageFileViewProvider {
+
+    init {
+        InjectionUtils.setFormatOnlyInjectedCode(this, true)
+    }
 
     override fun getLanguages(): MutableSet<Language> = hashSetOf(baseLanguage, getMarkdownLanguage())
     override fun getTemplateDataLanguage(): Language = Language.ANY

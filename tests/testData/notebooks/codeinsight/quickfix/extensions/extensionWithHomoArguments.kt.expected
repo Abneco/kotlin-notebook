@@ -1,10 +1,9 @@
 // "Create extension function" "true"
-class Hohoh() {}
-
+class Hohoh() { }
 val str = "42"
 val h = Hohoh()
 h.foo(str, "some", "")
 
 fun Hohoh.foo(str: String, s: String, s1: String) {
-TODO("Not yet implemented")
+    TODO("Not yet implemented")
 }

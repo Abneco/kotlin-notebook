@@ -6,6 +6,7 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.testFramework.runInEdtAndWait
+import junit.framework.TestCase
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
@@ -90,6 +91,29 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
 
         val t = runReadAction { myFixture.editor.document.text }
         assertTrue(t, t.contains("id()listOf(x)") )
+    }
+
+    @Test
+    fun testKotlinCompletionOverrideMethod() = doTest { tester ->
+        tester.typeWithPauses("de")
+        val elements = myFixture?.lookupElements
+
+        invokeAndWaitIfNeeded {
+            elements?.first { it.allLookupStrings.contains("hashCode") }.let {
+                tester.lookup.finishLookup(CompletionMode.ADD.ch, it)
+            }
+        }
+
+        val text = runReadAction { myFixture.editor.document.text }
+        TestCase.assertEquals("""
+            class Clazz {
+                override fun hashCode(): Int {
+                    return super.hashCode()
+                }
+            }
+            
+            
+        """.trimIndent(), text)
     }
 
     @Test

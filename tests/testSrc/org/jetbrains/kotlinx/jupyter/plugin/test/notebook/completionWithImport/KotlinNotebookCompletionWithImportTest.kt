@@ -135,7 +135,7 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
     ) { tester ->
         tester.typeAndFinishLookup("printl") { it.lookupString == "println" }
         assertActualText("""
-            listOf(1, 2, 42).filter { it % 2 == 0 }.map { println()it.plus() }
+            listOf(1, 2, 42).filter { it % 2 == 0 }.map { println() it.plus() }
         """.trimIndent())
     }
 
