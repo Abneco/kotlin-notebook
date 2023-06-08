@@ -33,6 +33,7 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.concurrency.asDeferred
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.index.KotlinNotebookPermanentIndexService
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettingsCache
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSettings
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
@@ -252,7 +253,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
         override fun loadValue(): Deferred<ProjectArtifacts> {
             return coroutineScope.async {
                 LibraryTablesRegistrar.getInstance().getLibraryTable(project).libraries.filter {
-                    it.name != JupyterCompilerService.SCRIPT_DEPENDENCIES_LIBRARY_NAME
+                    it.name != KotlinNotebookPermanentIndexService.SCRIPT_DEPENDENCIES_LIBRARY_NAME
                 }.flatMap { library ->
                     library.getFiles(OrderRootType.CLASSES)
                         // nio can't be used here since JarFileSystemImpl#getNioPath returns null for a jar root file

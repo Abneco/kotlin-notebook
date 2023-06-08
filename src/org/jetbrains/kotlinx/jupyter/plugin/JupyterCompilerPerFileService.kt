@@ -3,23 +3,15 @@ package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.intellij.concurrency.ConcurrentCollectionFactory
-import com.intellij.configurationStore.runAsWriteActionIfNeeded
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.EDT
-import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.application.invokeLater
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.*
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.OrderRootType
-import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
@@ -32,12 +24,7 @@ import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.containers.nullize
 import com.intellij.util.io.delete
 import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import org.jetbrains.kotlin.idea.core.script.ClasspathToVfsConverter
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
@@ -51,7 +38,6 @@ import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService.Companion.SCRIPT_DEPENDENCIES_LIBRARY_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
@@ -59,18 +45,14 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
+import org.jetbrains.kotlinx.jupyter.plugin.index.KotlinNotebookPermanentIndexService
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKotlinPluginScriptClassGetter
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.NotebookChangeEventsType
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.NotebookMoveEvent
 import org.jetbrains.kotlinx.jupyter.plugin.session.KotlinKernelProcessService
 import org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookPluginUpdater
-import org.jetbrains.kotlinx.jupyter.plugin.util.KernelJarsProvider
-import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
-import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
-import org.jetbrains.kotlinx.jupyter.plugin.util.tryWithWriteLock
-import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
-import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
+import org.jetbrains.kotlinx.jupyter.plugin.util.*
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
@@ -90,14 +72,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
 import kotlin.math.abs
-import kotlin.script.experimental.api.ScriptCompilationConfiguration
-import kotlin.script.experimental.api.SourceCode
-import kotlin.script.experimental.api.defaultImports
-import kotlin.script.experimental.api.dependenciesSources
-import kotlin.script.experimental.api.hostConfiguration
-import kotlin.script.experimental.api.ide
-import kotlin.script.experimental.api.implicitReceivers
-import kotlin.script.experimental.api.valueOrNull
+import kotlin.script.experimental.api.*
 import kotlin.script.experimental.host.getScriptingClass
 import kotlin.script.experimental.host.with
 import kotlin.script.experimental.jvm.JvmDependency
@@ -258,12 +233,7 @@ class JupyterCompilerPerFileService(
                 val sourcesJars = KotlinKernelProcessService.getInstance().libSourcesJars
                 _currentClasspath.addInitial(jars)
                 _sourceRoots.addInitial(sourcesJars)
-                val application = ApplicationManager.getApplication()
-                if (!application.isUnitTestMode) {
-                    application.invokeLaterOnWriteThread {
-                        addAsPermanentLibrary(jars.map { it.absolutePath }, sourcesJars.map { it.absolutePath })
-                    }
-                }
+                KotlinNotebookPermanentIndexService.getInstance(project).addToPermanentIndex(jars.map { it.absolutePath }, sourcesJars.map { it.absolutePath })
                 kernelJarsAdded = true
             }
         }
@@ -328,45 +298,6 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private fun addAsPermanentLibrary(classpath: List<String>, sourceClasspath: List<String>) {
-        val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
-
-        val newLibrary = libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
-            ?: invokeAndWaitIfNeeded {
-                runAsWriteActionIfNeeded {
-                    libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME) ?:
-                    libraryTable.createLibrary(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
-                }
-            }
-
-        val model = newLibrary.modifiableModel
-        val existingRoots = buildMap<OrderRootType, Set<String>> {
-            for (rootType in listOf(OrderRootType.CLASSES, OrderRootType.SOURCES)) {
-                put(rootType, newLibrary.rootProvider.getUrls(rootType).toSet())
-            }
-        }
-
-        fun addPath(path: String, rootType: OrderRootType) {
-            if (path.endsWith(".jar")) {
-                val rootPath = "file://${File(path).invariantSeparatorsPath}"
-                if (existingRoots[rootType]!!.contains(rootPath)) return
-                model.addRoot(rootPath, rootType)
-            }
-        }
-
-        for (path in classpath) {
-            addPath(path, OrderRootType.CLASSES)
-        }
-        for (path in sourceClasspath) {
-            addPath(path, OrderRootType.SOURCES)
-        }
-        invokeLater {
-            runAsWriteActionIfNeeded {
-                model.commit()
-            }
-        }
-    }
-
     fun addCompiledSnippet(
         snippetMetadata: EvaluatedSnippetMetadata,
         psiCell: JupyterPsiCell?,
@@ -414,7 +345,7 @@ class JupyterCompilerPerFileService(
 
         val lineSourcesDir = classesDir.resolve("sources_$nextCounter")
 
-        addAsPermanentLibrary(snippetMetadata.newClasspath, snippetMetadata.newSources)
+        KotlinNotebookPermanentIndexService.getInstance(project).addToPermanentIndex(snippetMetadata.newClasspath, snippetMetadata.newSources)
         _currentClasspath.addSnippet(ArrayList<File>(snippetMetadata.newClasspath.size + 1).apply {
             add(lineClassesDirAsFile)
             snippetMetadata.newClasspath.forEach {

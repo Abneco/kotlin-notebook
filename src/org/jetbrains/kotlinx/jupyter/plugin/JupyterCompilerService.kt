@@ -20,11 +20,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelListener
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.script.experimental.api.ScriptCompilationConfiguration
-import kotlin.script.experimental.api.ScriptEvaluationConfiguration
-import kotlin.script.experimental.api.asSuccess
-import kotlin.script.experimental.api.fileExtension
-import kotlin.script.experimental.api.refineConfiguration
+import kotlin.script.experimental.api.*
 import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
@@ -134,8 +130,6 @@ class JupyterCompilerService(val project: Project) : Disposable {
     }
 
     companion object {
-        internal const val SCRIPT_DEPENDENCIES_LIBRARY_NAME = "Permanent Script Dependencies"
-
         fun getInstance(project: Project) = project.service<JupyterCompilerService>()
 
         fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
