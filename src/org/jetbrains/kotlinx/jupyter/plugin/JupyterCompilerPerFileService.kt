@@ -180,7 +180,7 @@ class JupyterCompilerPerFileService(
             val commitNotifier = CountDownLatch(1)
             // We commit document here and hope that Jupyter file will be reparsed,
             // and injection hosts will be recollected on this reparse
-            invokeLater(ModalityState.NON_MODAL) {
+            invokeLater(ModalityState.nonModal()) {
                 try {
                     psiDocumentManager.commitDocument(document)
                 } finally {
