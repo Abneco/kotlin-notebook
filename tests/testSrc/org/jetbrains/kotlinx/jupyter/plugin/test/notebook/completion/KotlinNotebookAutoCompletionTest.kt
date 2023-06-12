@@ -43,7 +43,7 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
 
     @Test
     fun testKotlinCompletionInsertionCorrectStd() = doTest { tester ->
-        tester.typeWithPauses("li")
+        tester.typeWithPauses("lis")
         val elements = myFixture?.lookupElements
 
         assertNoThrowable {
@@ -55,7 +55,7 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
         }
 
         val t = runReadAction { myFixture.editor.document.text }
-        assert(t.contains("listOf<>(x)") )
+        assertTrue(t, t.contains("listOf(x)") )
     }
 
     @Test
@@ -72,7 +72,7 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
         }
 
         val t = runReadAction { myFixture.editor.document.text }
-        assert(t.contains("id(x)") )
+        assertTrue(t, t.contains("id(x)") )
     }
 
     @Test
@@ -89,7 +89,7 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
         }
 
         val t = runReadAction { myFixture.editor.document.text }
-        assert(t.contains("id()listOf(x)") )
+        assertTrue(t, t.contains("id()listOf(x)") )
     }
 
     @Test
