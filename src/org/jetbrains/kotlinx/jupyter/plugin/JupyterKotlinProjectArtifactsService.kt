@@ -4,7 +4,6 @@ package org.jetbrains.kotlinx.jupyter.plugin
 import com.intellij.build.BuildProgressListener
 import com.intellij.build.BuildViewManager
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.compiler.CompilerPaths
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
@@ -203,25 +202,15 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
             val deferredResult = taskManager.run(buildTaskContext, buildTask).then { buildResult ->
                 val allModules = ModuleManager.getInstance(project).modules
 
-                val projectJarPaths = mutableListOf<String>()
-                    .also { paths ->
-                        CompilerPaths.getOutputPaths(allModules).forEach { path ->
-                            paths.add(path)
-                            val javaOutput = "classes${File.separatorChar}java"
-                            val kotlinOutput = "classes${File.separatorChar}kotlin"
-                            if (path.contains(javaOutput)) {
-                                paths.add(path.replace(javaOutput, kotlinOutput))
-                            }
-                        }
-                    }
-                    .distinct()
-                    .filter { File(it).exists() }
+                val projectClasspath = allModules.flatMap {
+                    ModuleRootManager.getInstance(it).orderEntries().withoutSdk().withoutLibraries().classes().pathsList.pathList
+                }.distinct()
 
                 val state = if (!buildResult.hasErrors()) DependenciesState.PROVIDED
-                else if (projectJarPaths.any { File(it).isNotEmptyDirectory }) DependenciesState.OUTDATED
+                else if (projectClasspath.any { File(it).isNotEmptyDirectory }) DependenciesState.OUTDATED
                 else DependenciesState.ABSENT
 
-                BuildResult(projectJarPaths, state)
+                BuildResult(projectClasspath, state)
             }.asDeferred()
             deferredResult.cancelOnDispose(this)
             return deferredResult
