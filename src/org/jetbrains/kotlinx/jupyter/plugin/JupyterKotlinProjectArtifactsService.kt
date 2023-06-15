@@ -203,7 +203,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, coroutineScope:
                 val allModules = ModuleManager.getInstance(project).modules
 
                 val projectClasspath = allModules.flatMap {
-                    ModuleRootManager.getInstance(it).orderEntries().withoutSdk().withoutLibraries().classes().pathsList.pathList
+                    ModuleRootManager.getInstance(it).orderEntries().withoutSdk().classes().pathsList.pathList
                 }.distinct()
 
                 val state = if (!buildResult.hasErrors()) DependenciesState.PROVIDED
