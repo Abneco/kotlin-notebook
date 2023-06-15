@@ -2,10 +2,11 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test
 
 import com.intellij.openapi.application.PathManager
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.readAction
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.descendantsOfType
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionTest
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
@@ -72,14 +73,14 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
         }
     }
 
-    fun executeCell(cellNumber: Int) {
+    fun executeCell(cellNumber: Int): Unit = runBlocking {
         KotlinNotebookExecutionTest.log.debug("Executing cell #$cellNumber...")
         val messages = ReceivedMessagesBuilder()
         val cell = notebookCells[cellNumber]
-        runReadAction {
+        executionManager.submitTask(readAction {
             val cellPointer = NotebookIntervalPointerFactory.get(project, document)
                 .create(NotebookCellLines.get(document).intervals[cellNumber])
-            executionManager.submitTask(
+            val task =
                 JupyterExecutionTask(
                     code = cell.source.text,
                     options = JupyterExecutionTask.Options.cellExecution(cellPointer),
@@ -104,8 +105,8 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
                     notebookVirtualFile = cell.getJupyterBackedVirtualFile()!!,
                     project = project
                 )
-            )
-        }
+            task
+        })
         tester.doAfterCellRun(cellNumber)
     }
 
