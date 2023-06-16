@@ -207,7 +207,7 @@ class JupyterCompilerPerFileService(
     private fun getSession(): JupyterNotebookSession? {
         return try {
             if (!ApplicationManager.getApplication().isUnitTestMode) {
-                JupyterRuntimeService.getInstance(project).getOrCreateSession(virtualFile)
+                runBlocking { JupyterRuntimeService.getInstance(project).getOrCreateSession(virtualFile) }
             } else null
         } catch (e: Throwable) {
             // TODO: show error for user with asking for configuring Python interpreter for the module
