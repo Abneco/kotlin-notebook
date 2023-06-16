@@ -6,6 +6,7 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.Version
 import com.intellij.openapi.vfs.VirtualFileManager
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.resetSessionMetaInformation
@@ -161,4 +162,6 @@ class KotlinInProcessJupyterClient(
         sessionsByKernelId.clear()
         clientSessions.clear()
     }
+
+    override suspend fun getServerVersion(): Version? = null
 }
