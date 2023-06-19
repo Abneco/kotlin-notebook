@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnAction
@@ -12,7 +12,7 @@ import org.jetbrains.plugins.notebooks.jupyter.debugger.JupyterDebugAction
 import org.jetbrains.plugins.notebooks.jupyter.editor.actions.JupyterActionPresentationModifier
 import kotlin.reflect.KClass
 
-class KotlinJupyterActionPresentationModifier : JupyterActionPresentationModifier {
+class KotlinNotebookActionPresentationModifier : JupyterActionPresentationModifier {
     private val disableJupyterCoreActions get() = Registry.`is`("kotlin.notebook.disable.jupyter.core.actions", false)
 
     private val coreActionsToDisable: List<KClass<out AnAction>> = listOf(

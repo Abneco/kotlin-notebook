@@ -19,7 +19,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOption
 import org.jetbrains.kotlinx.jupyter.plugin.settings.asJson
 import org.jetbrains.plugins.notebooks.jupyter.actions.createFileFromTemplateWithProperties
 
-class KotlinJupyterNotebookCreateAction : CreateFileFromTemplateAction(
+class KotlinNotebookCreateAction : CreateFileFromTemplateAction(
     JupyterKotlinBundle.messagePointer("kotlin.jupyter.action.create.notebook.text"),
     JupyterKotlinBundle.messagePointer("kotlin.jupyter.action.create.notebook.description"),
     KotlinJupyterIcons.FileIcon
@@ -40,7 +40,7 @@ class KotlinJupyterNotebookCreateAction : CreateFileFromTemplateAction(
     }
 
     companion object {
-        private val LOG = logger<KotlinJupyterNotebookCreateAction>()
+        private val LOG = logger<KotlinNotebookCreateAction>()
 
         private const val VAR_KERNEL_SPEC = "KERNEL_SPEC"
         private const val VAR_LANGUAGE_SPEC = "LANGUAGE_SPEC"

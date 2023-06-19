@@ -28,7 +28,7 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.getJupyterVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
 import javax.swing.JComponent
 
-abstract class KotlinJupyterSelectDependenciesAction : DumbAwareAction() {
+abstract class KotlinNotebookSelectDependenciesAction : DumbAwareAction() {
     abstract var JupyterNotebook.property: KotlinNotebookDependencies
 
     abstract fun selectDependencies(
@@ -60,7 +60,7 @@ abstract class KotlinJupyterSelectDependenciesAction : DumbAwareAction() {
     }
 }
 
-class KotlinJupyterSelectModulesAction : KotlinJupyterSelectDependenciesAction() {
+class KotlinNotebookSelectModulesAction : KotlinNotebookSelectDependenciesAction() {
 
     override var JupyterNotebook.property: KotlinNotebookDependencies
         get() = projectDependencies
@@ -86,7 +86,7 @@ class KotlinJupyterSelectModulesAction : KotlinJupyterSelectDependenciesAction()
     }
 }
 
-class KotlinJupyterSelectLibrariesAction : KotlinJupyterSelectDependenciesAction() {
+class KotlinNotebookSelectLibrariesAction : KotlinNotebookSelectDependenciesAction() {
 
     override var JupyterNotebook.property: KotlinNotebookDependencies
         get() = projectLibraries

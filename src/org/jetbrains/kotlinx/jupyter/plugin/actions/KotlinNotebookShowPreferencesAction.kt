@@ -9,7 +9,7 @@ import com.intellij.openapi.project.DumbAwareAction
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookConfigurable
 
-class KotlinJupyterShowPreferencesAction : DumbAwareAction() {
+class KotlinNotebookShowPreferencesAction : DumbAwareAction() {
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 

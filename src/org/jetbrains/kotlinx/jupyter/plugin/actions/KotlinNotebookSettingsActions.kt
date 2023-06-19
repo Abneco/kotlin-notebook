@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.actions
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 
 
-class KotlinJupyterSettingsActions : DefaultActionGroup() {
+class KotlinNotebookSettingsActions : DefaultActionGroup() {
     init {
         templatePresentation.isHideGroupIfEmpty = true
     }

@@ -203,7 +203,7 @@
         <jupyterCellExecutionCallbackFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory"/>
         <connections.execution.preExecutionSourceModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinPreExecutionSourceModifier"/>
         <editorCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterEditorCustomizer"/>
-        <jupyterActionPresentationModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterActionPresentationModifier"/>
+        <jupyterActionPresentationModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookActionPresentationModifier"/>
         <connections.execution.core.jupyterServersFactory
                 order="before default"
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.session.KotlinServersFactory"/>
@@ -218,28 +218,28 @@
     </extensions>
 
     <actions resource-bundle="messages/JupyterKotlinBundle">
-        <action id="CreateNewKotlinNotebook" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterNotebookCreateAction">
+        <action id="CreateNewKotlinNotebook" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookCreateAction">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="JupyterCreateFileAction"/>
         </action>
-        <action id="SelectKotlinNotebookModuleDependencies" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterSelectModulesAction"/>
-        <action id="SelectKotlinNotebookProjectLibraries" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterSelectLibrariesAction"/>
-        <action id="ShowKotlinNotebookPreferencesAction" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterShowPreferencesAction"
+        <action id="SelectKotlinNotebookModuleDependencies" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookSelectModulesAction"/>
+        <action id="SelectKotlinNotebookProjectLibraries" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookSelectLibrariesAction"/>
+        <action id="ShowKotlinNotebookPreferencesAction" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookShowPreferencesAction"
                 icon="AllIcons.General.Settings"/>
-        <action id="ToggleShowExecutionCount" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterToggleShowExecutionCountAction">
+        <action id="ToggleShowExecutionCount" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookToggleShowExecutionCountAction">
             <add-to-group group-id="JupyterEditorGutterPopupActions"/>
         </action>
 
-        <group id="KotlinJupyterSettingsActions" popup="true" icon="AllIcons.General.GearPlain"
-               class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterSettingsActions">
+        <group id="KotlinNotebookSettingsActions" popup="true" icon="AllIcons.General.GearPlain"
+               class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookSettingsActions">
             <reference id="SelectKotlinNotebookModuleDependencies"/>
             <reference id="SelectKotlinNotebookProjectLibraries"/>
             <separator/>
             <reference id="ShowKotlinNotebookPreferencesAction"/>
         </group>
 
-        <group id="KotlinJupyterEditorActions">
+        <group id="KotlinNotebookEditorActions">
             <separator/>
-            <reference id="KotlinJupyterSettingsActions"/>
+            <reference id="KotlinNotebookSettingsActions"/>
             <add-to-group group-id="JupyterEditorPopupActions"/>
             <add-to-group group-id="JupyterEditorLeftToolbarActions"/>
         </group>
