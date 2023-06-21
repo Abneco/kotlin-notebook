@@ -4,6 +4,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.actions
 import com.intellij.ide.actions.CreateFileFromTemplateAction
 import com.intellij.ide.actions.CreateFileFromTemplateDialog
 import com.intellij.ide.fileTemplates.FileTemplate
+import com.intellij.ide.fileTemplates.FileTemplateManager
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -28,7 +30,11 @@ class KotlinNotebookCreateAction : CreateFileFromTemplateAction(
     override fun buildDialog(project: Project, directory: PsiDirectory, builder: CreateFileFromTemplateDialog.Builder) {
         builder
             .setTitle(JupyterKotlinBundle.message("kotlin.jupyter.action.create.notebook.dialog.title"))
-            .addKind(JupyterKotlinBundle.message("kotlin.jupyter.action.create.notebook.dialog.kind"), KotlinJupyterIcons.FileIcon, "Kotlin Jupyter Notebook")
+            .addKind(
+                JupyterKotlinBundle.message("kotlin.jupyter.action.create.notebook.dialog.kind"),
+                KotlinJupyterIcons.FileIcon,
+                KOTLIN_JUPYTER_NOTEBOOK
+            )
     }
 
     override fun getActionName(directory: PsiDirectory, newName: String, templateName: String) =
@@ -41,6 +47,8 @@ class KotlinNotebookCreateAction : CreateFileFromTemplateAction(
 
     companion object {
         private val LOG = logger<KotlinNotebookCreateAction>()
+
+        private const val KOTLIN_JUPYTER_NOTEBOOK = "Kotlin Jupyter Notebook"
 
         private const val VAR_KERNEL_SPEC = "KERNEL_SPEC"
         private const val VAR_LANGUAGE_SPEC = "LANGUAGE_SPEC"
@@ -61,6 +69,12 @@ class KotlinNotebookCreateAction : CreateFileFromTemplateAction(
                     put(VAR_KTNB_METADATA, notebookSettings)
                 }
             }
+        }
+
+        fun createNotebook(name: String, directory: PsiDirectory, logger: Logger = LOG): PsiFile? {
+            val notebookTemplateValues = createTemplateValues(directory.project)
+            val notebookTemplate = FileTemplateManager.getInstance(directory.project).getInternalTemplate(KOTLIN_JUPYTER_NOTEBOOK)
+            return createFileFromTemplateWithProperties(name, notebookTemplate, directory, null, notebookTemplateValues, logger)
         }
     }
 }

@@ -3,14 +3,22 @@ package org.jetbrains.kotlinx.jupyter.plugin.test
 
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiManager
 import com.intellij.psi.util.descendantsOfType
+import com.intellij.testFramework.HeavyTestHelper
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookCreateAction
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionTest
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.originFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterBackedVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
@@ -134,4 +142,16 @@ fun <R> withDisabledJcef(action:() -> R): R {
     } finally {
         // register extension again?
     }
+}
+
+fun Project.createEmptyNotebook(name: String): BackedNotebookVirtualFile {
+    val projectBaseDir = HeavyTestHelper.getOrCreateProjectBaseDir(this)
+    val directoryPsiFile = runReadAction { PsiManager.getInstance(this).findDirectory(projectBaseDir)!! }
+
+    val psiFile = KotlinNotebookCreateAction.createNotebook(name, directoryPsiFile)
+    return BackedNotebookVirtualFile.find(psiFile!!.virtualFile)!!
+}
+
+fun BackedNotebookVirtualFile.delete() {
+    originFile.let { runWriteAction { it.delete("test") } }
 }
