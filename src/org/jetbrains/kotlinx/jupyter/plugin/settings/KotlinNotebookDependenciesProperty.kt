@@ -21,7 +21,7 @@ import java.util.*
 
 sealed interface KotlinNotebookDependencies {
     object All : KotlinNotebookDependencies
-    class Selection(val values: Set<String>) : KotlinNotebookDependencies
+    data class Selection(val values: Set<String>) : KotlinNotebookDependencies
 
     companion object {
         val None = Selection(emptySet())
