@@ -27,6 +27,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.jupyter.editor.getJupyterVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
 import javax.swing.JComponent
+import javax.swing.ListSelectionModel
 
 abstract class KotlinNotebookSelectDependenciesAction : DumbAwareAction() {
     abstract var JupyterNotebook.property: KotlinNotebookDependencies
@@ -103,6 +104,7 @@ class KotlinNotebookSelectLibrariesAction : KotlinNotebookSelectDependenciesActi
         val initialLibraries = initialSettings.findLibraries(project).toSet()
 
         val list = CheckBoxList<Library>()
+        list.selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
         list.setItems(allLibraries, Library::getPresentableName)
         initialLibraries.forEach { list.setItemSelected(it, true) }
 
