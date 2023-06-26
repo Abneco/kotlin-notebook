@@ -112,3 +112,9 @@ fun KotlinNotebookDependencies.isEmpty(): Boolean {
     if (this is KotlinNotebookDependencies.Selection) return values.isEmpty()
     return false
 }
+
+fun KotlinNotebookDependencies.isAffectedBy(dependencies: KotlinNotebookDependencies): Boolean {
+    if (this == KotlinNotebookDependencies.None || dependencies == KotlinNotebookDependencies.None) return false
+    if (this == KotlinNotebookDependencies.All || dependencies == KotlinNotebookDependencies.All) return true
+    return (this as KotlinNotebookDependencies.Selection).values.any { (dependencies as KotlinNotebookDependencies.Selection).values.contains(it) }
+}

@@ -28,9 +28,11 @@ import com.intellij.platform.backend.workspace.WorkspaceModelChangeListener
 import com.intellij.platform.backend.workspace.WorkspaceModelTopics
 import com.intellij.platform.workspace.jps.entities.ModuleEntity
 import com.intellij.platform.workspace.storage.VersionedStorageChange
+import com.intellij.platform.workspace.storage.WorkspaceEntity
 import com.intellij.task.ProjectTaskContext
 import com.intellij.task.ProjectTaskManager
 import com.intellij.util.cancelOnDispose
+import com.intellij.workspaceModel.ide.impl.legacyBridge.module.findModule
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -43,6 +45,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettin
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSettings
 import org.jetbrains.kotlinx.jupyter.plugin.settings.findLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.settings.findModules
+import org.jetbrains.kotlinx.jupyter.plugin.settings.isAffectedBy
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isEmpty
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
@@ -90,17 +93,32 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     private fun addProjectStructureListeners() {
         project.messageBus.connect(this).subscribe(WorkspaceModelTopics.CHANGED, object : WorkspaceModelChangeListener {
             override fun changed(event: VersionedStorageChange) {
-                if (event.getChanges(JavaSourceRootPropertiesEntity::class.java).isNotEmpty() ||
-                    event.getChanges(JavaModuleSettingsEntity::class.java).isNotEmpty() ||
-                    event.getChanges(ModuleEntity::class.java).isNotEmpty()
-                ) {
-                    invalidateBuildResultCaches()
+                val changedModules = buildSet<Module> {
+                    for (isBefore in listOf(true, false)) {
+                        val moduleEntities = event.getChangedEntities(JavaSourceRootPropertiesEntity::class.java, isBefore).map {
+                            it.sourceRoot.contentRoot.module
+                        } + event.getChangedEntities(JavaModuleSettingsEntity::class.java, isBefore).map {
+                            it.module
+                        } + event.getChangedEntities(ModuleEntity::class.java, isBefore)
+
+                        val storage = if (isBefore) event.storageBefore else event.storageAfter
+                        addAll(moduleEntities.mapNotNull { it.findModule(storage) })
+                    }
                 }
+
+                invalidateBuildResultCaches(changedModules)
+            }
+
+            private fun <T : WorkspaceEntity> VersionedStorageChange.getChangedEntities(
+                entityClass: Class<T>,
+                isBefore: Boolean
+            ): Collection<T> {
+                return getChanges(entityClass).mapNotNull { if (isBefore) it.oldEntity else it.newEntity }
             }
         })
         LibraryTablesRegistrar.getInstance().getLibraryTable(project).addListener(object : LibraryTable.Listener {
-            override fun afterLibraryAdded(newLibrary: Library) = invalidateLibrariesCaches()
-            override fun afterLibraryRemoved(library: Library) = invalidateLibrariesCaches()
+            override fun afterLibraryAdded(newLibrary: Library) = invalidateLibrariesCaches(newLibrary)
+            override fun afterLibraryRemoved(library: Library) = invalidateLibrariesCaches(library)
         }, this)
     }
 
@@ -115,32 +133,62 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
 
     private fun addVFSChangesListener() {
         val listener = object : BulkFileListener {
-            private fun isChangingEvent(event: VFileEvent): Boolean {
-                val vFile = event.file ?: return false
-
-                val fileProjects = ProjectLocator.getInstance().getProjectsForFile(vFile)
+            private fun isFileOfInterest(file: VirtualFile): Boolean {
+                val fileProjects = ProjectLocator.getInstance().getProjectsForFile(file)
                 if (project !in fileProjects) return false
 
                 // TODO: reconsider this approach, maybe create extra option
-                if (vFile.parentsWithSelf.any { it.isDirectory && it.name == "generated" }) return false
-                return vFile.extension in sourceFileExtensionsOfInterest
+                if (file.parentsWithSelf.any { it.isDirectory && it.name == "generated" }) return false
+                return file.extension in sourceFileExtensionsOfInterest
             }
 
             override fun after(events: List<VFileEvent>) {
-                if (events.any { isChangingEvent(it) }) {
-                    invalidateBuildResultCaches()
+                val affectedFiles = events.mapNotNull { it.file }.filter(::isFileOfInterest)
+                if (affectedFiles.isEmpty()) return
+
+                val changedModules = affectedFiles.mapNotNull {
+                    ModuleUtilCore.findModuleForFile(it, project)
                 }
+
+                invalidateBuildResultCaches(changedModules)
             }
         }
         project.messageBus.connect(this).subscribe(VirtualFileManager.VFS_CHANGES, listener)
     }
 
-    private fun invalidateLibrariesCaches() {
-        librariesCache.values.forEach { it.markOutdated() }
+    private fun <T> invalidateCaches(
+        cache: ConcurrentHashMap<VirtualFile, BaseCache<T, KotlinNotebookDependencies>>,
+        settingGetter: KotlinNotebookSettings.() -> KotlinNotebookDependencies,
+        changedDependencies: KotlinNotebookDependencies
+    ) {
+        if (changedDependencies == KotlinNotebookDependencies.None) return
+        val fileSettingsCache = KotlinNotebookPerFileSettingsCache.getInstance(project)
+        cache.forEach { (file, cache) ->
+            val settings = fileSettingsCache.getCachedSettings(file)
+            if (settings == null || settings.settingGetter().isAffectedBy(changedDependencies)) {
+                cache.markOutdated()
+            }
+        }
     }
 
-    private fun invalidateBuildResultCaches() {
-        buildResultCache.values.forEach { it.markOutdated() }
+    private fun invalidateLibrariesCaches(changedLibrary: Library) {
+        invalidateCaches(
+            librariesCache,
+            KotlinNotebookSettings::projectLibraries,
+            KotlinNotebookDependencies.fromLibraries(listOf(changedLibrary))
+        )
+    }
+
+    private fun invalidateBuildResultCaches(changedModules: Collection<Module>) {
+        val allAffectedModules = buildSet {
+            addAll(changedModules)
+            changedModules.forEach { ModuleUtilCore.collectModulesDependsOn(it, this@buildSet) }
+        }
+        invalidateCaches(
+            buildResultCache,
+            KotlinNotebookSettings::projectDependencies,
+            KotlinNotebookDependencies.fromModules(allAffectedModules)
+        )
     }
 
     private fun addSessionListener() {

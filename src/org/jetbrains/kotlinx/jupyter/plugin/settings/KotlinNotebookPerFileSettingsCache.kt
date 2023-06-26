@@ -71,7 +71,7 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
 
     @CalledInAny
     fun getSettings(notebookFile: BackedNotebookVirtualFile): KotlinNotebookSettings {
-        val cachedSettings = cache[notebookFile.file]
+        val cachedSettings = getCachedSettings(notebookFile.file)
         if (cachedSettings == null) {
             thisLogger().error("Cached settings unavailable for $notebookFile")
             if (ApplicationManager.getApplication().isDispatchThread) {
@@ -81,6 +81,9 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
         }
         return cachedSettings
     }
+
+    @CalledInAny
+    fun getCachedSettings(file: VirtualFile) = cache[file]
 
     internal fun onLibrariesRenamed(oldToNewNames: Map<String, String>) = performRefactoring {
         onDependenciesRenamed(this::projectLibraries, oldToNewNames)
