@@ -71,6 +71,10 @@
     <projectListeners>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinRuntimeServiceListener"
                   topic="org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService$Listener"/>
+        <listener class="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookModuleRenameListener"
+                  topic="com.intellij.openapi.project.ModuleListener"/>
+        <listener class="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookLibraryRenameListener"
+                  topic="com.intellij.platform.backend.workspace.WorkspaceModelChangeListener"/>
     </projectListeners>
 
     <extensionPoints>

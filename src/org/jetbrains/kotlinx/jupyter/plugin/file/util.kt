@@ -35,8 +35,10 @@ import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 
+const val JUPYTER_NOTEBOOK_EXTENSION = "ipynb"
+
 val VirtualFile?.isKotlinNotebook: Boolean get() {
-    if (this == null || extension != "ipynb") return false
+    if (this == null || extension != JUPYTER_NOTEBOOK_EXTENSION) return false
     return notebookLanguage === KotlinLanguage.INSTANCE
 }
 

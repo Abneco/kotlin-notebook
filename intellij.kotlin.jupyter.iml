@@ -147,5 +147,7 @@
     <orderEntry type="module" module-name="kotlin.compiler-plugins.kotlinx-serialization.common" />
     <orderEntry type="module" module-name="kotlin.code-insight.live-templates-shared" />
     <orderEntry type="module" module-name="intellij.grid.impl" />
+    <orderEntry type="module" module-name="intellij.platform.backend.workspace" />
+    <orderEntry type="module" module-name="intellij.platform.workspace.jps" />
   </component>
 </module>
