@@ -3,6 +3,8 @@ package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.build.BuildProgressListener
 import com.intellij.build.BuildViewManager
+import com.intellij.java.workspace.entities.JavaModuleSettingsEntity
+import com.intellij.java.workspace.entities.JavaSourceRootPropertiesEntity
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -19,6 +21,10 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import com.intellij.platform.backend.workspace.WorkspaceModelChangeListener
+import com.intellij.platform.backend.workspace.WorkspaceModelTopics
+import com.intellij.platform.workspace.jps.entities.ModuleEntity
+import com.intellij.platform.workspace.storage.VersionedStorageChange
 import com.intellij.task.ProjectTaskContext
 import com.intellij.task.ProjectTaskManager
 import com.intellij.util.cancelOnDispose
@@ -83,6 +89,20 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         addBuildListener()
         addVFSChangesListener()
         addSessionListener()
+        addProjectStructureListeners()
+    }
+
+    private fun addProjectStructureListeners() {
+        project.messageBus.connect(this).subscribe(WorkspaceModelTopics.CHANGED, object : WorkspaceModelChangeListener {
+            override fun changed(event: VersionedStorageChange) {
+                if (event.getChanges(JavaSourceRootPropertiesEntity::class.java).isNotEmpty() ||
+                    event.getChanges(JavaModuleSettingsEntity::class.java).isNotEmpty() ||
+                    event.getChanges(ModuleEntity::class.java).isNotEmpty()
+                ) {
+                    invalidateBuildResultCaches()
+                }
+            }
+        })
     }
 
     private fun addBuildListener() {
@@ -109,12 +129,20 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
 
             override fun after(events: List<VFileEvent>) {
                 if (events.any { isChangingEvent(it) }) {
-                    buildResultCache.values.forEach { it.markOutdated() }
-                    librariesCache.values.forEach { it.markOutdated() }
+                    invalidateBuildResultCaches()
+                    invalidateLibrariesCaches()
                 }
             }
         }
         project.messageBus.connect(this).subscribe(VirtualFileManager.VFS_CHANGES, listener)
+    }
+
+    private fun invalidateLibrariesCaches() {
+        librariesCache.values.forEach { it.markOutdated() }
+    }
+
+    private fun invalidateBuildResultCaches() {
+        buildResultCache.values.forEach { it.markOutdated() }
     }
 
     private fun addSessionListener() {
