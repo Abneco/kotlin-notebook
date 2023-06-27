@@ -15,6 +15,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectLocator
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.OrderRootType
+import com.intellij.openapi.roots.libraries.Library
+import com.intellij.openapi.roots.libraries.LibraryTable
+import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -75,15 +78,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
 
     private var firstRun: Boolean = true
 
-    private val fileExtensionsOfInterest = setOf(
-        // source files
-        "kt",
-        "java",
-
-        // build script files
-        "kts",
-        "gradle",
-    )
+    private val sourceFileExtensionsOfInterest = setOf("kt", "java")
 
     init {
         addBuildListener()
@@ -103,6 +98,10 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
                 }
             }
         })
+        LibraryTablesRegistrar.getInstance().getLibraryTable(project).addListener(object : LibraryTable.Listener {
+            override fun afterLibraryAdded(newLibrary: Library) = invalidateLibrariesCaches()
+            override fun afterLibraryRemoved(library: Library) = invalidateLibrariesCaches()
+        }, this)
     }
 
     private fun addBuildListener() {
@@ -124,13 +123,12 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
 
                 // TODO: reconsider this approach, maybe create extra option
                 if (vFile.parentsWithSelf.any { it.isDirectory && it.name == "generated" }) return false
-                return vFile.extension in fileExtensionsOfInterest
+                return vFile.extension in sourceFileExtensionsOfInterest
             }
 
             override fun after(events: List<VFileEvent>) {
                 if (events.any { isChangingEvent(it) }) {
                     invalidateBuildResultCaches()
-                    invalidateLibrariesCaches()
                 }
             }
         }
