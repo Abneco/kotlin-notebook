@@ -49,11 +49,16 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Service(Service.Level.PROJECT)
-class NotebookHighlightingService(val project: Project): Disposable {
+class NotebookHighlightingService(val project: Project, private val serviceScope: CoroutineScope): Disposable {
     private val mapping: MutableMap<VirtualFile, NotebookHighlightingManager> = ConcurrentHashMap()
 
     fun getOrCreate(virtualFile: BackedNotebookVirtualFile): NotebookHighlightingManager {
-        return mapping.getOrPut(virtualFile.file) { NotebookHighlightingManager(virtualFile, this, null) }
+        return mapping.getOrPut(virtualFile.file) {
+            val document = withReadAccess {
+                FileDocumentManager.getInstance().getDocument(virtualFile.file)
+            }!!
+            NotebookHighlightingManager(virtualFile, document, this@NotebookHighlightingService, null)
+        }
     }
 
     override fun dispose() {
@@ -73,6 +78,7 @@ class NotebookHighlightingService(val project: Project): Disposable {
 
 class NotebookHighlightingManager(
     val virtualFile: BackedNotebookVirtualFile,
+    private val document: Document,
     projectService: NotebookHighlightingService,
     var completeRangeInd: Int?
 ): Disposable {
@@ -80,7 +86,6 @@ class NotebookHighlightingManager(
         private val LOG = thisLogger()
     }
 
-    val document = FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
     val dataController = NotebookPerFileHighlightingMetaDataController(virtualFile, this)
 
     private fun initialiseData(project: Project) {

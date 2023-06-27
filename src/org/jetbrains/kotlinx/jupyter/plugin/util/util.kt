@@ -5,12 +5,15 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
+import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
@@ -123,6 +126,15 @@ internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
     return (injectInfo as? PsiFile)?.findElementAt(caretOffSet - host.startOffsetInParent - 5)
 }
 
+internal inline fun <T> withReadAccess(crossinline block: () -> T): T {
+    return if (ApplicationManager.getApplication().isDispatchThread) {
+        block()
+    } else runBlockingCancellable {
+        readAction {
+            block()
+        }
+    }
+}
 
 internal fun PsiFile.restartAnalyzing() {
     DaemonCodeAnalyzer.getInstance(this.project).restart(this)
