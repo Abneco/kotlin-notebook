@@ -5,8 +5,11 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.file.toBackedNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettingsCache
+import org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookFusLogger
+import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.editor.NotebookEditorCreatedCallback
 import org.jetbrains.plugins.notebooks.jupyter.editor.isJupyter
 
@@ -20,6 +23,10 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
             if (file.isKotlinNotebook) {
                 JupyterKtScriptingSupport.update(project)
                 KotlinNotebookPerFileSettingsCache.getInstance(project).notebookEditorCreated(file)
+
+                val backedNotebookVirtualFile = file.toBackedNotebookFile() ?: return
+                val notebook = backedNotebookVirtualFile.notebook
+                KotlinNotebookFusLogger.registerOpenNotebook(notebook)
             }
         }
     }

@@ -177,6 +177,8 @@
                 bundle="messages.JupyterKotlinBundle"
                 key="plugin.updater.notification.group"
         />
+
+        <statistics.counterUsagesCollector implementationClass="org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookFeatureUsagesCollector"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">
