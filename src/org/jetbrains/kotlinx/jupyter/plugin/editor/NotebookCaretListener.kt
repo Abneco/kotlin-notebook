@@ -30,12 +30,6 @@ import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
@@ -67,6 +61,7 @@ class NotebookCaretListener(
     private val fastUpdateQueueGuardMark = AtomicReference(false)
     private val notebookHighlightingManager =
         psiFile?.virtualFile?.let(BackedNotebookVirtualFile::takeIfBacked)?.let { NotebookHighlightingService.getForFile(project, it) }
+    private val dataController = notebookHighlightingManager?.dataController
 
     private val stateLock = ReentrantReadWriteLock()
 
@@ -84,7 +79,9 @@ class NotebookCaretListener(
     init {
         assert(psiFile != null)
         Disposer.register(parentDisposable, this)
-        doc?.putUserData(NotebookCellsUpdatesAllowedToChange, AtomicReference(true))
+        if (dataController == null) {
+            LOG.warn("Data controller is null during init, manager: $notebookHighlightingManager")
+        }
         notebookHighlightingManager?.associateWithNewCaretListener(this, editor)
 
         project.messageBus.connect(this).subscribe(DAEMON_EVENT_TOPIC, object : DaemonListener {
@@ -96,7 +93,7 @@ class NotebookCaretListener(
                         return
                     }
                     // for proper cell move up handle
-                    val afterNonTrivialChange = doc?.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(true, false) == true
+                    val afterNonTrivialChange = dataController?.notebookDocumentStructureNontrivialChanged?.compareAndSet(true, false) == true
                     if (afterNonTrivialChange) {
                         isSizeChanged = true
                     }
@@ -106,7 +103,7 @@ class NotebookCaretListener(
                         prevCell = null
                         val isRunning = codeAnalyzerStatus.daemonRunning
                         if (afterNonTrivialChange) {
-                            val toSwap = doc?.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)
+                            val toSwap = dataController?.notebookChangedCellIndex
                                 ?: editor.caretModel.offset.let { doc?.getLineNumber(it) }?.let { editor.getCell(it).ordinal }
                             if (toSwap != null) lastCellInd = toSwap
                             floatingCellInd = -1
@@ -117,11 +114,13 @@ class NotebookCaretListener(
                         val lastCellIndCopy = lastCellInd
 
 
-                        doc?.putUserData(RenamingEnclosedRange, null)
-                        doc?.putUserData(NotebookDocumentTargetRanges, listOf(lastCellIndCopy))
-                        doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
+                        dataController?.update {
+                            renamingEnclosedRange = null
+                            notebookDocumentTargetRanges = listOf(lastCellIndCopy)
+                            notebookChangedCellIndex = null
+                        }
 
-                        val queue = doc?.getUserData(NotebookQueuedTargetRanges)
+                        val queue = dataController?.notebookRangesQueuedForHL
                         val finished = notebookHighlightingManager?.finishedHighlighting
                         val target = notebookHighlightingManager?.completeRangeInd
                         // we don't want to lose any updates happened during concurrent modification or delay
@@ -225,9 +224,11 @@ class NotebookCaretListener(
     }
 
     private fun performRangedUpdate(reducedIndexes: Collection<Int>, context: CoroutineScope? = null) {
-        doc?.putUserData(NotebookDocumentTargetRanges, reducedIndexes)
-        doc?.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, reducedIndexes.last())
-        doc?.getUserData(NotebookQueuedTargetRanges)?.addAll(reducedIndexes)
+        dataController?.update {
+            notebookDocumentTargetRanges = reducedIndexes
+            notebookChangedCellIndex = reducedIndexes.last()
+            notebookRangesQueuedForHL?.addAll(reducedIndexes)
+        }
         psiFile?.let {
             if (projectOptionsProvider.state.shouldLimitTypeHintsByActiveCell) {
                 InlayHintsPassFactory.clearModificationStamp(editor)

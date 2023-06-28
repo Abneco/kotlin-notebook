@@ -29,7 +29,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.diagnostics.Severity
@@ -46,7 +45,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlighti
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.file.toBackedNotebookFile
-import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -57,10 +55,6 @@ import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.min
 
-@TestOnly
-fun markHostAsCompleteAnalysisTarget(document: Document, host: PsiLanguageInjectionHost) {
-    document.putUserData(NotebookHighlightingUtilityObject.CompleteHighlightingRange, host.textRange)
-}
 
 internal object NotebookHighlightingUtilityObject {
     const val notebookInjectedFileExtension: String = "jupyter.kts"
@@ -75,25 +69,8 @@ internal object NotebookHighlightingUtilityObject {
     @NlsSafe
     const val scriptingMissingBaseClassError = "[${scriptingMissingDependencyPrefix}_SCRIPT_BASE_CLASS]"
 
-    // to unify
-    val NotebookDocumentTargetRanges = Key.create<Collection<Int>>("notebook.document.target.ranges")
-
-    /**
-     * Used to determine which ranges are scheduled for HL.
-     * This is needed to invalidate old ones
-     */
-    internal val NotebookQueuedTargetRanges = Key.create<MutableSet<Int>>("notebook.document.target.queued")
-    internal val NotebookDocumentStructureNontrivialChanged = Key.create<AtomicReference<Boolean>>("notebook.document.structure.changed")
-    internal val NotebookCellsUpdatesAllowedToChange = Key.create<AtomicReference<Boolean>>("notebook.cells.updates.allowed.to.change")
-
     internal val InjectedHostHasErrors = Key.create<AtomicReference<Boolean>>("injected.element.errors.found")
-    internal val RenamingEnclosedRange: Key<Collection<TextRange>> = Key.create("notebook.after.rename.changed.range")
-    internal val CompleteHighlightingRange: Key<TextRange> = Key.create("notebook.document.errors.analysis.range")
     internal val NonTargetHostErrorMark: Key<Boolean> = Key.create("injected.element.actual.errors.registry")
-
-    internal val ReformatDocumentActionTargets: Key<MutableSet<Int>> = Key.create("notebook.refactor.action.triggered")
-
-    internal val NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX: Key<Int> = Key.create("notebook.document.target.cell.ind")
 
     inline fun shouldStartAfterPreChecks(file: PsiFile, associatedJob: Job?,
                                          crossinline afterRequest: () -> Unit = {},
@@ -129,10 +106,9 @@ internal object NotebookHighlightingUtilityObject {
         val project = injectedFile.project
         val manager = InjectedLanguageManager.getInstance(project)
         val topLevelFile = manager.getTopLevelFile(injectedFile)
-        return topLevelFile.toDocument(project)?.let {
-            synchronized(it) {
-                it.getUserData(CompleteHighlightingRange)
-            }
+        topLevelFile.virtualFile.toBackedNotebookFile()
+        return topLevelFile.virtualFile.toBackedNotebookFile()?.let {
+            NotebookHighlightingService.getForFile(project, it).dataController.completeHighlightingRange
         }
     }
 
@@ -142,25 +118,20 @@ internal object NotebookHighlightingUtilityObject {
     fun looksLikeNotebookFile(file: PsiFile): Boolean =
         file.fileType.defaultExtension == notebookDocumentFileExtension
 
-    fun Document.invalidateStateAfterCellExecution(executedCell: PsiLanguageInjectionHost? = null, executedCellInd: Int? = null) {
-        putUserData(RenamingEnclosedRange, null)
-        putUserData(NotebookDocumentTargetRanges, null)
-        putUserData(CompleteHighlightingRange, null)
-        putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, executedCellInd)
-    }
-
     fun getCellRangesInDocumentOrNull(notebookCells: List<JupyterPsiCell>, targets: Collection<Int>?): List<TextRange>? = if (targets?.isNotEmpty() == true) {
         targets.mapNotNull { notebookCells.getOrNull(it)?.textRange }
     } else null
 
-    fun Document.reactOnThemeChangedEvent(project: Project, virtualFile: VirtualFile) {
-        putUserData(NotebookDocumentTargetRanges, null)
-        putUserData(CompleteHighlightingRange, null)
-        putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, null)
-        putUserData(RenamingEnclosedRange, null)
-        getUserData(NotebookQueuedTargetRanges)?.addAll(
-            virtualFile.toPsiFile(project)?.getNotebookCellList()?.indices?.toList() ?: emptyList()
-        )
+    fun BackedNotebookVirtualFile.reactOnThemeChangedEvent(project: Project) {
+        NotebookHighlightingService.getForFile(project, this).dataController.update {
+            completeHighlightingRange = null
+            notebookDocumentTargetRanges = null
+            notebookChangedCellIndex = null
+            renamingEnclosedRange = null
+            notebookRangesQueuedForHL?.addAll(
+                file.toPsiFile(project)?.getNotebookCellList()?.indices?.toList() ?: emptyList()
+            )
+        }
     }
 
     fun PsiLanguageInjectionHost.getErrorPresenceIndicator() = getUserData(InjectedHostHasErrors)
@@ -186,12 +157,15 @@ internal object NotebookHighlightingUtilityObject {
             }
         }
         LOG.info("Resetting session meta information")
+        val backedFile = vFile.toBackedNotebookFile()
+
+        val hlManager = highlightingManagerFor(project, vFile)
+
         val (psiFile, cells) = runReadAction {
             val psiFile = vFile.toPsiFile(project)
             val cells = psiFile?.getNotebookCellList()
 
-            val cell = cellOrdinal?.let { cells?.getOrNull(it) }
-            document.invalidateStateAfterCellExecution(cell, cellOrdinal)
+            hlManager?.dataController?.invalidateStateAfterCellExecution(cellOrdinal)
             val injectedManager = InjectedLanguageManager.getInstance(project)
             psiFile?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
             cells?.forEach {
@@ -204,28 +178,26 @@ internal object NotebookHighlightingUtilityObject {
             }
             psiFile to cells
         }
-        val backedFile = vFile.toBackedNotebookFile()
         backedFile?.let {
             JupyterKotlinCellExecutionCallbackFactory.getInstance().resetPreviousData(it)
         }
         if (wouldShowNotification) {
           NotebookNotificationUtility.showKernelRestart(project)
         }
+
         invokeAndWaitIfNeeded { // we want to ensure that this part will be executed on the dispatch thread
             LOG.info("Requesting restart of scripting support after session restart")
-            backedFile?.let {
-                NotebookHighlightingService.getForFile(project, backedFile).beforeScriptingUpdate()
-            } ?: document
-                .getUserData(NotebookCellsUpdatesAllowedToChange)
-                ?.compareAndSet(true, false)
+            hlManager?.beforeScriptingUpdate()
+                ?:
             JupyterKtScriptingSupport.update(project)
         }
         runReadAction {
-            backedFile?.let { NotebookHighlightingService.getForFile(project, it) }
-                ?.caretListener?.resetState()
-            document.getUserData(NotebookQueuedTargetRanges)?.addAll(
-                cells?.indices?.toList() ?: listOf()
-            )
+            hlManager?.let { manager ->
+                manager.caretListener.resetState()
+                manager.dataController.notebookRangesQueuedForHL?.addAll(
+                    cells?.indices?.toList() ?: listOf()
+                )
+            }
             psiFile?.restartAnalyzing()
         }
     }

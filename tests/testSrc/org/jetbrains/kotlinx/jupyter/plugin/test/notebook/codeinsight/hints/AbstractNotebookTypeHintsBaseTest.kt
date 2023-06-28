@@ -16,12 +16,13 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.SyntaxTraverser
 import com.intellij.util.containers.isEmpty
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.markHostAsCompleteAnalysisTarget
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.getCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.isInjectedKtFile
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import java.io.File
 
@@ -110,11 +111,15 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
         val notebookFile = configureExecutionTest()
         val cells = notebookFile.getCells()
         val neededCell = cells.getOrNull(cellInd) ?: error("Invalid cell index provided")
+        val backedNotebook = BackedNotebookVirtualFile.takeIfBacked(originalVirtualFile)
+            ?: error("Couldn't find BackedNotebookFile for $originalVirtualFile")
+        val hlManager = NotebookHighlightingService.getForFile(project, backedNotebook)
         limitedAreaTargetInd?.let {
             enableLimitByActiveCell()
             val completeAnalysis = cells.getOrNull(limitedAreaTargetInd) ?: error("Provided complete highlighting area is invalid")
-            val doc = myFixture.getDocument(notebookFile) ?: error("Document should not be null")
-            markHostAsCompleteAnalysisTarget(doc, completeAnalysis)
+            hlManager.dataController.update {
+                completeHighlightingRange = completeAnalysis.textRange
+            }
         }
         val injectedLanguageManager = InjectedLanguageManager.getInstance(notebookFile.project)
 

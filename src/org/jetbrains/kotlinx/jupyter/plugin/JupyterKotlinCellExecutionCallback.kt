@@ -2,11 +2,10 @@ package org.jetbrains.kotlinx.jupyter.plugin
 
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListInfo
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -70,9 +69,8 @@ class JupyterKotlinCellExecutionCallback(
         try {
             val snippetMetadataObject = message.getMetadata("eval_metadata")
             if (snippetMetadataObject == null) {
-                FileDocumentManager.getInstance().getDocument(virtualFile.file)?.let {
-                    it.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(false, true)
-                }
+                NotebookHighlightingService.getForFile(project, virtualFile)
+                    .dataController.notebookDocumentStructureNontrivialChanged.compareAndSet(false, true)
                 updateScriptingIfNeeded(true)
                 return@invokeLater
             }
@@ -119,7 +117,7 @@ class JupyterKotlinCellExecutionCallback(
 
     private fun updateScriptingIfNeeded(onError: Boolean = false) {
         val factory = JupyterKotlinCellExecutionCallbackFactory.getInstance()
-        val shouldUpdateDependencies = factory.unregisterCallback(virtualFile, index, onError)
+        val shouldUpdateDependencies = factory.unregisterCallback(project, virtualFile, index, onError)
 
         if (shouldUpdateDependencies) {
             val compilerService = JupyterCompilerService.getForFile(project, virtualFile)

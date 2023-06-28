@@ -37,9 +37,7 @@ import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.NotebookCaretListener
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingRestarter.UpdateSteps.performHLStartupTemplate
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingRestarter.UpdateSteps.postScriptingUpdateStep
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService.Companion.HL_DELAY_PAUSE
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.shouldStartAfterPreChecks
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
@@ -49,7 +47,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 
 @Service(Service.Level.PROJECT)
 class NotebookHighlightingService(val project: Project): Disposable {
@@ -84,14 +81,17 @@ class NotebookHighlightingManager(
     }
 
     val document = FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
+    val dataController = NotebookPerFileHighlightingMetaDataController(virtualFile, this)
 
     private fun initialiseData(project: Project) {
         val targetData = mutableSetOf<Int>()
         targetData.addAll(
             virtualFile.file.toPsiFile(project)?.getNotebookCellList()?.indices?.toList() ?: emptyList()
         )
-        document.putUserData(NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges, targetData)
-        document.putUserData(NotebookDocumentStructureNontrivialChanged, AtomicReference(false))
+        dataController.update {
+            notebookRangesQueuedForHL = targetData
+            notebookDocumentStructureNontrivialChanged.set(false)
+        }
         if (virtualFile.file.isKotlinNotebook) {
             document.addDocumentListener(
                 ImpatientNotebookChangeListener(project, virtualFile),
@@ -138,8 +138,7 @@ class NotebookHighlightingManager(
         get() = targetIndexes - finishedHighlighting
 
     fun isCanModifyHLRequestAfterExecution(project: Project): Boolean =
-        document
-            .getUserData(NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange)?.get() == true
+        dataController.notebookCellsUpdatesAllowedToChange.get() == true
                 && !JupyterKtScriptingSupport.isInTheTransaction(project)
 
     private val canModifyAfterExecutionRequests = AtomicBoolean(false)
@@ -156,6 +155,9 @@ class NotebookHighlightingManager(
     fun associateWithNewCaretListener(listener: NotebookCaretListener, editor: Editor) {
         activeCaretListener = listener
         addNewMarkupListener(editor)
+        dataController.update {
+            canModifyAfterExecutionRequests.set(true)
+        }
     }
 
     fun passCreated(project: Project, targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
@@ -201,29 +203,32 @@ class NotebookHighlightingManager(
     /**
      * Semantic of following 3 methods are to ensure no requests are lost after 'afterUpdate()' of scripting.
      * It's achieved by:
-     *  1. All calls 'scriptingSupport.update()' happens after storing the key
-     *  'NotebookCellsUpdatesAllowedToChange' to false
+     *  1. All calls 'scriptingSupport.update()' happens after setting the key
+     *  '[NotebookFileHighlightingDataProvider.notebookCellsUpdatesAllowedToChange]' to false
      *  2. After 'afterUpdate' call, HL would be restarted automatically. We need to react on 'afterUpdate'
      *  and be ready that actually **following** pass after restart is the one we should be ready for.
      *
      *  Otherwise, we might get inconsistent state if HL restart was triggered during applying of HL tokens,
-     *  but **after** 'afterUpdate()' call
+     *  but **after** `afterUpdate` call
      *
      */
     fun handleEmptyClassQueue() {
         if (!canModifyAfterExecutionRequests.get()) return
 
-        postScriptingUpdateStep(document)
+        dataController.notebookCellsUpdatesAllowedToChange.compareAndSet(false, true)
     }
 
     fun beforeScriptingUpdate() {
-        document.getUserData(NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange)
-            ?.compareAndSet(true, false)
+        dataController.notebookCellsUpdatesAllowedToChange.compareAndSet(true, false)
         canModifyAfterExecutionRequests.set(false)
     }
 
     fun afterScriptingUpdate() {
         canModifyAfterExecutionRequests.set(true)
+    }
+
+    fun onSuccessfulCellExecutionCallback(index: Int) {
+        dataController.notebookCellsUpdatesAllowedToChange.compareAndSet(true, false)
     }
 
     fun finishedAnalysisForFile(psiFile: PsiFile, holder: HighlightInfoHolder) {
@@ -268,7 +273,7 @@ class NotebookHighlightingManager(
                 if (it.key != completeInd) it.value.isNotEmpty() else !targetPassed
         }.keys.also { // not yet counted
            finishedFiles.removeAll(it)
-           LOG.warn("Daemon finished, knownErrorInd: ${knownErrorInd.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
+           LOG.debug("Daemon finished, knownErrorInd: ${knownErrorInd.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
         }
 
         val remaining = remainingIndexesToProcess
@@ -301,9 +306,6 @@ internal object NotebookHighlightingRestarter {
     private val regularUpdateScope = CoroutineScope(Dispatchers.Default)
 
     object UpdateSteps {
-        internal val postScriptingUpdateStep: (Document?) -> Unit = {
-            it?.getUserData(NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange)?.compareAndSet(false, true)
-        }
 
         suspend inline fun performHLStartupTemplate(
             file: PsiFile, delayDelta: Long,

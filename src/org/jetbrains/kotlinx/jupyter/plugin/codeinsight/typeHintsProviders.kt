@@ -33,8 +33,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractIn
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.psiHostChainHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.putBindingContext
 import org.jetbrains.kotlinx.jupyter.plugin.file.getKtFileStartOffset
-import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCompleteAnalysisArea
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.isEitherSymmetricallyContainedRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.toBackedNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 
@@ -140,7 +141,10 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 ProgressManager.checkCanceled()
                 val ktFile = tryGetInjectedKtFileIfPossibleOrProvided(element, project) as? PsiFile ?: return true
 
-                val modificationArea = document?.getNotebookCompleteAnalysisArea()
+                val notebookHighlightingService = editor.virtualFile.toBackedNotebookFile()?.let {
+                    NotebookHighlightingService.getForFile(project, it)
+                }
+                val modificationArea = notebookHighlightingService?.dataController?.completeHighlightingRange
 
                 val registry = KotlinNotebookAbstractInlayTypeHintsProvider.getOrCreateChainCallTypeHintsRegistry(element)
                 val fileOffset = element.getKtFileStartOffset(injectedLanguageManager) ?: return true

@@ -30,8 +30,9 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
 import org.jetbrains.kotlinx.jupyter.plugin.file.getKtFileStartOffset
-import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCompleteAnalysisArea
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.isEitherSymmetricallyContainedRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.toBackedNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
@@ -56,7 +57,10 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
                 if (DumbService.isDumb(project) || element !is JupyterPsiCellImpl || !element.isValid) return true
 
-                val modificationArea = document.getNotebookCompleteAnalysisArea()
+                val highlightingManager = editor.virtualFile.toBackedNotebookFile()?.let {
+                    NotebookHighlightingService.getForFile(project, it)
+                }
+                val modificationArea = highlightingManager?.dataController?.completeHighlightingRange
                 val registry = getOrCreateTypeHintsRegistry(element)
                 val fileOffset = element.getKtFileStartOffset(injectedLanguageManager) ?: return true
 

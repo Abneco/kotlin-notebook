@@ -27,12 +27,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showAbsentInitialBaseDependenciesInfo
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getCellRangesInDocumentOrNull
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.scheduleUpdateLater
@@ -71,17 +66,18 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         cells?.ensureScriptConfigurations(ScriptConfigurationManager.getInstance(project),
                                                                InjectedLanguageManager.getInstance(project))
         jupyterFile.ensureScriptManagerReady(document)
-        val highlightingService = backedNotebook?.let { NotebookHighlightingService.getForFile(project, it) }
+        val highlightingManager = backedNotebook?.let { NotebookHighlightingService.getForFile(project, it) }
+        val dataController = highlightingManager?.dataController
 
         return synchronized(document) {
-            val cellIndx = document.getUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX)
+            val cellIndx = dataController?.notebookChangedCellIndex
             val cellOfChange = cellIndx?.let { // notebook file is already rebuild
                 cells?.getOrNull(it)
             }
             val cellChangeRange = cellOfChange?.textRange
-            val completeHLRange = document.getUserData(CompleteHighlightingRange)
-            var severalUpdates = document.getUserData(NotebookDocumentTargetRanges)
-            val highlightingQueue = document.getUserData(NotebookQueuedTargetRanges)
+            val completeHLRange = dataController?.completeHighlightingRange
+            var severalUpdates = dataController?.notebookDocumentTargetRanges
+            val highlightingQueue = dataController?.notebookRangesQueuedForHL
             backedNotebook?.let {
                 highlightingQueue?.addAll(JupyterKotlinCellExecutionCallbackFactory.getInstance().getLastExecutedCellsBatch(it))
             }
@@ -94,15 +90,17 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                 if (nothingMatches) {
                     val toPut = cells?.get(correctUnderEditorInd)?.textRange
                     val structureChangeIndicator =
-                        document.getUserData(NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged)
-                    document.putUserData(CompleteHighlightingRange, toPut)
-                    document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, correctUnderEditorInd)
+                        dataController.notebookDocumentStructureNontrivialChanged
+                    dataController.update {
+                        completeHighlightingRange = toPut
+                        notebookChangedCellIndex = correctUnderEditorInd
+                    }
                     // clear only if nothing structural was done
-                    if (structureChangeIndicator?.get() == false) {
+                    if (structureChangeIndicator.get() == false) {
                         highlightingQueue?.clear()
                     }
                     highlightingQueue?.addIfNotNull(correctUnderEditorInd)
-                    highlightingService?.passCreated(
+                    highlightingManager.passCreated(
                         project,
                         highlightingQueue ?: setOf(correctUnderEditorInd),
                         cells,
@@ -110,10 +108,12 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                     )
                     return listOfNotNull(toPut)
                 }
-                document.putUserData(CompleteHighlightingRange, cellChangeRange)
-                if (severalUpdates?.size == 1) {
-                    highlightingQueue?.add(cellIndx)
-                    document.putUserData(NotebookDocumentTargetRanges, highlightingQueue)
+                dataController.update {
+                    completeHighlightingRange = cellChangeRange
+                    if (severalUpdates?.size == 1) {
+                        highlightingQueue?.add(cellIndx)
+                        notebookDocumentTargetRanges = highlightingQueue
+                    }
                 }
             }
             if (cellIndx != null && completeHLRange != null) {
@@ -121,26 +121,30 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                     highlightingQueue?.add(cellIndx)
                     cells?.get(cellUnderEditor.ordinal)?.textRange
                 } else cellChangeRange
-                document.putUserData(CompleteHighlightingRange, newCompleteRange)
+                dataController.update {
+                    completeHighlightingRange = newCompleteRange
+                }
             }
             if (cellIndx == null && severalUpdates?.size == 1) { // converge
                 if (severalUpdates.first() != 0) {
-                    severalUpdates = setOfNotNull(cellUnderEditor.ordinal).union(severalUpdates)
-                    document.putUserData(NotebookDocumentTargetRanges, severalUpdates)
-                    document.putUserData(CompleteHighlightingRange, cells?.get(cellUnderEditor.ordinal)?.textRange)
+                    severalUpdates = setOfNotNull(cellUnderEditor.ordinal).union(severalUpdates).toMutableSet()
+                    dataController?.update {
+                        completeHighlightingRange = cells?.get(cellUnderEditor.ordinal)?.textRange
+                        notebookDocumentTargetRanges = severalUpdates
+                    }
                 } else if (highlightingQueue?.size == 0) return null
             }
 
             if (highlightingQueue != null && cells != null) {
                 highlightingQueue.addIfNotNull(cellIndx)
                 if (severalUpdates == null) {
-                    highlightingService?.passCreated(project, highlightingQueue, cells, cellUnderEditor.ordinal)
+                    highlightingManager.passCreated(project, highlightingQueue, cells, cellUnderEditor.ordinal)
                     return getCellRangesInDocumentOrNull(cells, highlightingQueue)
                 }
                 highlightingQueue.addAll(severalUpdates)
             }
 
-            val afterRenaming = document.getUserData(RenamingEnclosedRange)
+            val afterRenaming = dataController?.renamingRanges
             if (afterRenaming?.isNotEmpty() == true) {
                 return afterRenaming
             }
@@ -153,14 +157,18 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                     }
                     highlightingQueue?.addAll(it)
                 }
-                document.putUserData(NotebookDocumentTargetRanges, mergedUpdates)
-                if (cellIndx == null && document.getUserData(CompleteHighlightingRange) == null && cellUnderEditor.ordinal != 0) {
+                dataController?.update {
+                    notebookDocumentTargetRanges = mergedUpdates
+                }
+                if (cellIndx == null && dataController?.completeHighlightingRange == null && cellUnderEditor.ordinal != 0) {
                     highlightingQueue?.add(cellUnderEditor.ordinal)
-                    document.putUserData(CompleteHighlightingRange, cells[cellUnderEditor.ordinal]?.textRange)
+                    dataController?.update {
+                        completeHighlightingRange = cells[cellUnderEditor.ordinal]?.textRange
+                    }
                 }
                 highlightingQueue?.add(cellUnderEditor.ordinal)
                 //LOG.warn("Run on ind: ${mergedUpdates}, targetIndKey: $cellIndx, underCaret: ${cellUnderEditor}")
-                highlightingService?.passCreated(
+                highlightingManager?.passCreated(
                     project,
                     highlightingQueue ?: setOf(cellUnderEditor.ordinal),
                     cells,
@@ -169,7 +177,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                 return getCellRangesInDocumentOrNull(cells, highlightingQueue)
             }
 
-            document.getUserData(CompleteHighlightingRange)
+            dataController?.completeHighlightingRange
         }?.let {
             listOf(it)
         }

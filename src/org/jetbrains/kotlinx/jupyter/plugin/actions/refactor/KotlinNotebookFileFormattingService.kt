@@ -22,13 +22,11 @@ import org.jetbrains.kotlin.idea.editor.fixers.start
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.getInjectedKtFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.ReformatDocumentActionTargets
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.retrieveCellIntervalUnderCaret
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.restartAnalyzing
+import org.jetbrains.kotlinx.jupyter.plugin.file.toBackedNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
@@ -52,7 +50,10 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
         val project = formattingContext.project
         val injectedManager = InjectedLanguageManager.getInstance(project)
         if (!jupyterPsiFile.isValid) return
-        if (document.getUserData(RenamingEnclosedRange) != null) return
+        val highlightingDataProvider = jupyterPsiFile.virtualFile.toBackedNotebookFile()?.let {
+            NotebookHighlightingService.getForFile(project, it).dataController
+        }
+        if (highlightingDataProvider?.renamingRanges != null) return
 
         val cellList = jupyterPsiFile.getNotebookCellList() ?: return
 
@@ -61,7 +62,10 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
             .takeIf { it.isNotEmpty() } ?: return
 
         val invokedInCell = document.retrieveCellIntervalUnderCaret(jupyterPsiFile.virtualFile, project)
-        document.putUserData(ReformatDocumentActionTargets, mutableSetOf())
+
+        highlightingDataProvider?.update {
+            reformatDocumentTargets = mutableSetOf()
+        }
 
         if (filesToProcess.any { !it.file.isValid }) {
             runAsWriteActionIfNeeded {
@@ -84,14 +88,14 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
             }
             thisLogger().warn("Error occurred during reformatting of Kotlin Notebook", e)
         } finally {
-            val targets = synchronized(document) {
-                document.getUserData(ReformatDocumentActionTargets)
+            val targets = highlightingDataProvider?.reformatDocumentTargets
+            highlightingDataProvider?.update {
+                reformatDocumentTargets = null
+                invokedInCell?.ordinal?.let {
+                    notebookChangedCellIndex = it
+                }
+                notebookDocumentTargetRanges = targets
             }
-            document.putUserData(ReformatDocumentActionTargets, null)
-            if (invokedInCell?.ordinal != null) {
-                document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, invokedInCell.ordinal)
-            }
-            document.putUserData(NotebookDocumentTargetRanges, targets)
 
             if (!DaemonCodeAnalyzerStatusService.getInstance(project).daemonRunning) {
                 invokeLater {

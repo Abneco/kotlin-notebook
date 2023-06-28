@@ -3,7 +3,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.scripting
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
@@ -14,13 +13,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.js.translate.utils.splitToRanges
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.CompleteHighlightingRange
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentStructureNontrivialChanged
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookDocumentTargetRanges
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.ReformatDocumentActionTargets
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.file.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.file.toPsiFile
@@ -96,16 +89,16 @@ class ImpatientNotebookChangeListener(
         val cellOfChange = psiCells.getOrNull(targetCellIndex)
 
         if (documentChangedLineIndex > document.lineCount - 1 || cellOfChange == null) return // ignore change of whole document
-        val isInDocumentReformatAction = synchronized(document) {
-            document.getUserData(ReformatDocumentActionTargets) != null
-        }
+        val notebookDataHolder = NotebookHighlightingService.getForFile(project, virtualFile).dataController
+        val isInDocumentReformatAction = notebookDataHolder.reformatDocumentTargets != null
         if (isInDocumentReformatAction) {
             cellsAffectedByReformat.add(targetCellIndex)
-            document.handleWholeRefactorAction(cellsAffectedByReformat)
+            notebookDataHolder.update { reformatDocumentTargets = cellsAffectedByReformat }
+            //document.handleWholeRefactorAction(cellsAffectedByReformat)
             return
         } else cellsAffectedByReformat.clear()
 
-        var properCellIndexToStore = when {
+        var cellIndexToStore = when {
             isSingleDeleteEvent -> if (targetCellIndex == maxCellIndex) targetCellIndex - 1 else targetCellIndex
             isAddEvent -> if (targetCellIndex == maxCellIndex) targetCellIndex + 1 else targetCellIndex
             else -> targetCellIndex
@@ -127,8 +120,8 @@ class ImpatientNotebookChangeListener(
                     val isMoveDown = event.oldFragment.trim().toString() != psiCells.getOrNull(ind - 1)?.text?.trim()
                     if (isMoveDown) { // special case
                         moveEvent = NotebookMoveEvent.CELL_DOWN
-                        moveEventInvokedInCell = properCellIndexToStore
-                        properCellIndexToStore += 1
+                        moveEventInvokedInCell = cellIndexToStore
+                        cellIndexToStore += 1
                     } else {
                         moveEvent = NotebookMoveEvent.CELL_UP
                         moveEventInvokedInCell = ind
@@ -139,31 +132,33 @@ class ImpatientNotebookChangeListener(
             } else {
                 lastTimeCellChangeActionPerformed = System.currentTimeMillis()
             }
-            val affected = psiCells.indices.filterTo(mutableSetOf()) { it >= properCellIndexToStore }
+            val affected = psiCells.indices.filterTo(mutableSetOf()) { it >= cellIndexToStore }
             compilerService.changeCellsData(affected, eventType, moveEvent, moveEventInvokedInCell)
             // no other way to indicate size changed in CaretListener
-            document.getUserData(NotebookDocumentStructureNontrivialChanged)?.compareAndSet(false, true)
+            notebookDataHolder.notebookDocumentStructureNontrivialChanged.compareAndSet(false, true)
 
             lastStructureChangeEvent = eventType
         } else lastStructureChangeEvent = null
 
-        val renameRange = synchronized(document) { document.getUserData(RenamingEnclosedRange) }
+        val renameRanges = notebookDataHolder.renamingRanges
 
         cellOfChange.getErrorPresenceIndicator()
             ?.compareAndSet(false, true)
         cellOfChange.invalidateTypeHintsRegistry()
 
-        if (renameRange == null) {
-            document.putUserData(NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX, properCellIndexToStore)
-            document.putUserData(CompleteHighlightingRange, null)
-            if (eventType == NotebookChangeEventsType.REGULAR) {
-                document.getUserData(NotebookQueuedTargetRanges)?.add(properCellIndexToStore)
+        if (renameRanges == null) {
+            notebookDataHolder.update {
+                completeHighlightingRange = null
+                notebookChangedCellIndex = cellIndexToStore
+                if (eventType == NotebookChangeEventsType.REGULAR) {
+                    notebookRangesQueuedForHL?.add(cellIndexToStore)
+                }
             }
         }
         val targetIndexesAfterAddOrNull = if (isCellListChange) {
             val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
             val s = setOfNotNull(targetCellIndex, cellUnderCaret?.ordinal?.minus(1), cellUnderCaret?.ordinal?.plus(1)).also {
-                document.getUserData(NotebookQueuedTargetRanges)?.let { q ->
+                notebookDataHolder.notebookRangesQueuedForHL?.let { q ->
                     val curInd = cellUnderCaret?.ordinal
                     synchronized(q) {
                         val v = q.toList()
@@ -177,7 +172,9 @@ class ImpatientNotebookChangeListener(
             }
             if (isSingleDeleteEvent) null else s
         } else null
-        document.putUserData(NotebookDocumentTargetRanges, targetIndexesAfterAddOrNull)
+        notebookDataHolder.update {
+            notebookDocumentTargetRanges = targetIndexesAfterAddOrNull
+        }
     }
 
     private fun DocumentEvent.identifyEventChangeType(): NotebookChangeEventsType {
@@ -193,10 +190,6 @@ class ImpatientNotebookChangeListener(
             oldFragment.contains("#%%") && isNewEmpty -> NotebookChangeEventsType.CELL_DELETE
             else -> NotebookChangeEventsType.REGULAR
         }
-    }
-
-    private fun Document.handleWholeRefactorAction(targets: MutableSet<Int>) {
-        putUserData(ReformatDocumentActionTargets, targets)
     }
 
     private fun NotebookChangeEventsType.isCellListChangeEvent(): Boolean =

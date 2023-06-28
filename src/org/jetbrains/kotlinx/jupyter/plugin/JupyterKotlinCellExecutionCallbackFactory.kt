@@ -3,12 +3,9 @@ package org.jetbrains.kotlinx.jupyter.plugin
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.cellToHighlightLimit
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
-import org.jetbrains.kotlinx.jupyter.plugin.file.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -88,7 +85,7 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
         } ?: mutableSetOf()  }
 
     // returns true if it was the last registered callback and was not after single run with error
-    fun unregisterCallback(file: BackedNotebookVirtualFile, index: Int, onError: Boolean = false): Boolean {
+    fun unregisterCallback(project: Project, file: BackedNotebookVirtualFile, index: Int, onError: Boolean = false): Boolean {
         return executionDataLock.write {
             val (_, pq) = callbacksCounters[file] ?: return@write false
             pq.remove(index)
@@ -96,29 +93,37 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
             if (isAfterSeriesRuns) pq.remove(-1)
             val singleErrorRun = onError && !isAfterSeriesRuns
             if (isAfterSeriesRuns || !singleErrorRun && pq.size < cellToHighlightLimit) {
-                file.file.toDocument()?.getUserData(NotebookHighlightingUtilityObject.NotebookCellsUpdatesAllowedToChange)
-                    ?.compareAndSet(true, false)
-                if (lastExecutedIndexes[file].isNullOrEmpty()) { // ensure additive operation
-                    lastExecutedIndexes[file] = highlightOrder[file]?.toMutableSet() ?: mutableSetOf()
-                } else highlightOrder[file]?.toMutableSet()?.let {
-                    lastExecutedIndexes[file]?.addAll(it)
-                }
-                highlightOrder[file]?.clear()
-                lastExecutedIndexes[file]?.addAll(highlightOrder[file] ?: emptyList())
+                updateMetaStorageForHL(project, file, index)
             } else if (pq.size > cellToHighlightLimit) {
-                ProjectManager.getInstance().openProjects.firstOrNull { it.isOpen }?.let {
-                    val highlightingManager = NotebookHighlightingService.getForFile(it, file)
-                    // add current cell
-                    if (highlightingManager.completeRangeInd == index) {
-                        if (lastExecutedIndexes[file].isNullOrEmpty())
-                            lastExecutedIndexes[file] = mutableSetOf(index)
-                        else lastExecutedIndexes[file]?.add(index)
-                    }
-                }
+                queueCellHLIfUnderCaret(project, file, index)
             }
+
             if (singleErrorRun && !pq.contains(-1)) highlightOrder[file]?.clear()
 
             pq.isEmpty() && !singleErrorRun
+        }
+    }
+
+    private fun updateMetaStorageForHL(project: Project, file: BackedNotebookVirtualFile, index: Int) {
+        NotebookHighlightingService.getForFile(project, file)
+            .onSuccessfulCellExecutionCallback(index)
+
+        if (lastExecutedIndexes[file].isNullOrEmpty()) { // ensure additive operation
+            lastExecutedIndexes[file] = highlightOrder[file]?.toMutableSet() ?: mutableSetOf()
+        } else highlightOrder[file]?.toMutableSet()?.let {
+            lastExecutedIndexes[file]?.addAll(it)
+        }
+        highlightOrder[file]?.clear()
+        lastExecutedIndexes[file]?.addAll(highlightOrder[file] ?: emptyList())
+    }
+
+    private fun queueCellHLIfUnderCaret(project: Project, file: BackedNotebookVirtualFile, index: Int) {
+        val highlightingManager = NotebookHighlightingService.getForFile(project, file)
+        // add current cell
+        if (highlightingManager.completeRangeInd == index) {
+            if (lastExecutedIndexes[file].isNullOrEmpty())
+                lastExecutedIndexes[file] = mutableSetOf(index)
+            else lastExecutedIndexes[file]?.add(index)
         }
     }
 

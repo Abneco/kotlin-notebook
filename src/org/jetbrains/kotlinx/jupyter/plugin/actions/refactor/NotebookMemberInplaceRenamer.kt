@@ -39,11 +39,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificatio
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookNotificationUtility.showRerunActionNeeded
 import org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.file.getNotebookCellList
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject
-import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingUtilityObject.RenamingEnclosedRange
+import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementFindUsagesHandler
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.file.psi.isIdentifier
+import org.jetbrains.kotlinx.jupyter.plugin.file.toBackedNotebookFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
 
 
@@ -95,16 +95,18 @@ class NotebookMemberInplaceRenamer(
                 is EditorWindow -> (myEditor as EditorWindow).delegate
                 else -> myEditor
             }
+            private val notebookHighlightingService = topLevelEditor.virtualFile.toBackedNotebookFile()?.let {
+                NotebookHighlightingService.getForFile(element.project, it)
+            }
 
             override fun performRefactoring(usages: Array<out UsageInfo>) {
                 if (foundRefsSize > 0) {
                     showRerunActionNeeded(myProject)
                     val hostFile = injectedManager.getTopLevelFile(element)
                     if (adjustmentTextRange != null) {
-                        topLevelDocument.let {
-                            it.putUserData(NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_CELL_CHANGE_INDEX,
-                                           hostFile?.getNotebookCellList()?.indexOf(originalHostInvocation))
-                            it.putUserData(RenamingEnclosedRange, adjustmentTextRange)
+                        notebookHighlightingService?.dataController?.update {
+                            notebookChangedCellIndex = hostFile?.getNotebookCellList()?.indexOf(originalHostInvocation)
+                            renamingEnclosedRange = adjustmentTextRange
                         }
                     }
                 }
@@ -145,8 +147,9 @@ class NotebookMemberInplaceRenamer(
                         }
                         if (targetHostRanges.isNotEmpty()) {
                             adjustmentTextRange = targetHostRanges
-                            topLevelDocument.getUserData(NotebookHighlightingUtilityObject.NotebookQueuedTargetRanges)
-                                ?.addAll(targetHostIndxs)
+                            notebookHighlightingService?.dataController?.notebookRangesQueuedForHL?.addAll(
+                                targetHostIndxs
+                            )
                         }
                         return ans.toTypedArray()
                     }
