@@ -17,6 +17,8 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 import org.junit.jupiter.api.Assertions
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 interface ReceivedMessages {
     val reply: JupyterMessage?
@@ -45,6 +47,7 @@ fun textPlainOutput(content: String): ObjectNode = jackson.createObjectNode().ap
     put("text/plain", content)
 }
 
+@RunWith(JUnit4::class)
 abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile
 

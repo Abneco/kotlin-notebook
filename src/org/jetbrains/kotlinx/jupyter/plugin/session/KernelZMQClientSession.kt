@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.session
 import com.fasterxml.jackson.databind.JsonNode
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.util.containers.ContainerUtil
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
@@ -71,7 +72,7 @@ class KernelZMQClientSession(
     private val sockets = JupyterSocketInfo.values().associate { it.type to openSocket(it).apply { connect() } }
     private val messageBytePrefix = listOf(byteArrayOf(1))
 
-    private val clientThreads: MutableList<Thread> = mutableListOf()
+    private val clientThreads: MutableList<Thread> = ContainerUtil.createConcurrentList()
 
     init {
         initSockets()
@@ -97,7 +98,6 @@ class KernelZMQClientSession(
     private fun initSockets() {
         fun socketLoop(
             interruptedMessage: String,
-            vararg threadsToInterrupt: Thread,
             loopBody: () -> Unit
         ) {
             while (true) {
@@ -105,7 +105,6 @@ class KernelZMQClientSession(
                     loopBody()
                 } catch (e: InterruptedException) {
                     LOG.debug(interruptedMessage)
-                    threadsToInterrupt.forEach { it.interrupt() }
                     break
                 }
             }
@@ -146,8 +145,8 @@ class KernelZMQClientSession(
                 }
             }
 
-            childThreads.forEach { it.join() }
             clientThreads.addAll(childThreads)
+            childThreads.forEach { it.join() }
         }
         clientThreads.add(mainClientThread)
     }

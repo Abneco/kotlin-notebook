@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 val baseTestDataPath = PathManager.getHomePath() + "/plugins/kotlin/jupyter/tests/testData"
 
@@ -63,7 +64,9 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
             put(num, i)
         }
     }
-    val receivedMessagesFutures = List(cellsToExecute.size) { CompletableFuture<ReceivedMessages>() }
+    val receivedMessagesFutures = List(cellsToExecute.size) {
+        CompletableFuture<ReceivedMessages>().orTimeout(3, TimeUnit.MINUTES)
+    }
 
     fun endExceptionally(throwable: Throwable) {
         for (future in receivedMessagesFutures) {
