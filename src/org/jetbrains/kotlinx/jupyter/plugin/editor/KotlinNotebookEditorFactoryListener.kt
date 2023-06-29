@@ -8,7 +8,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.file.toBackedNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettingsCache
-import org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookFusLogger
+import org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookFeatureUsagesCollector
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.editor.NotebookEditorCreatedCallback
 import org.jetbrains.plugins.notebooks.jupyter.editor.isJupyter
@@ -26,7 +26,7 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
 
                 val backedNotebookVirtualFile = file.toBackedNotebookFile() ?: return
                 val notebook = backedNotebookVirtualFile.notebook
-                KotlinNotebookFusLogger.registerOpenNotebook(notebook)
+                KotlinNotebookFeatureUsagesCollector.registerOpenNotebook(notebook)
             }
         }
     }
