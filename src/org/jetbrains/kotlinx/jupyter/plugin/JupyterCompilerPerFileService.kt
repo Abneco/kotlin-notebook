@@ -33,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.core.script.ClasspathToVfsConverter
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
