@@ -35,7 +35,7 @@ class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
     }
 
     companion object {
-        private const val PLOT_KEY = "application/plot+json"
+        const val PLOT_KEY = "application/plot+json"
         private const val PLOT_TYPE_KEY = "output_type"
         private const val APPLY_COLOR_SCHEME_KEY = "apply_color_scheme"
         private const val SWING_ENABLED_KEY = "swing_enabled"

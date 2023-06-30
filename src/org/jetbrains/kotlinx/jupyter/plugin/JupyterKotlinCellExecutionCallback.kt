@@ -6,6 +6,7 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.NotebookHighlightingService
+import org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookFeatureUsagesCollector
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListInfo
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -14,6 +15,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutputsBase
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import kotlin.system.measureTimeMillis
 
@@ -32,6 +34,7 @@ class JupyterKotlinCellExecutionCallback(
     private val virtualFile: BackedNotebookVirtualFile,
     private val psiCell: JupyterPsiCell?,
     private val index: Int,
+    private val executionStartedMs: Long,
 ) : JupyterExecutionCallback {
     override val channel: JupyterMessageChannel
         get() = JupyterMessageChannel.ANY
@@ -67,31 +70,41 @@ class JupyterKotlinCellExecutionCallback(
 
     override fun onExecuteReply(message: JupyterMessage) = invokeLater {
         try {
-            val snippetMetadataObject = message.getMetadata("eval_metadata")
-            if (snippetMetadataObject == null) {
+            val executionFinishedMs = System.currentTimeMillis()
+            val snippetMetadata = message.getMetadata("eval_metadata").let { metadataObject ->
+                var snippetMetadata: EvaluatedSnippetMetadata? = null
+
+                if (metadataObject != null) {
+                    val deserializationTime = measureTimeMillis {
+                        snippetMetadata = metadataObject.deserialize()
+                    }
+                    LOG.logListInfo(
+                        "Cell executed. Deserialization took $deserializationTime ms. New classpath received",
+                        snippetMetadata?.newClasspath.orEmpty()
+                    )
+                }
+
+                KotlinNotebookFeatureUsagesCollector.registerCellExecuted(
+                    message,
+                    executionFinishedMs - executionStartedMs,
+                    snippetMetadata ?: EvaluatedSnippetMetadata.EMPTY
+                )
+
+                snippetMetadata
+            }
+
+            if (snippetMetadata != null) {
+                /**
+                 * Acquire an instance of [JupyterCompilerPerFileService] for this notebook
+                 * and pass the metadata we received to it.
+                 */
+                val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
+                compilerService.addCompiledSnippet(snippetMetadata, psiCell)
+                updateScriptingIfNeeded(false)
+            } else {
                 NotebookHighlightingService.getForFile(project, virtualFile)
                     .dataController.notebookDocumentStructureNontrivialChanged.compareAndSet(false, true)
                 updateScriptingIfNeeded(true)
-                return@invokeLater
-            }
-            val snippetMetadata: EvaluatedSnippetMetadata?
-            val deserializationTime = measureTimeMillis {
-                snippetMetadata = snippetMetadataObject.deserialize()
-            }
-
-            LOG.logListInfo(
-                "Cell executed. Deserialization took $deserializationTime ms. New classpath received",
-                snippetMetadata?.newClasspath.orEmpty()
-            )
-
-            /**
-             * Acquire an instance of [JupyterCompilerPerFileService] for this notebook
-             * and pass the metadata we received to it.
-             */
-            if (snippetMetadata != null) {
-                val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-                compilerService.addCompiledSnippet(snippetMetadata, psiCell)
-                updateScriptingIfNeeded()
             }
         } catch (e: Throwable) {
             if (e is ProcessCanceledException) {
@@ -113,6 +126,8 @@ class JupyterKotlinCellExecutionCallback(
     }
 
     override fun onUpdateOutput(message: JupyterMessage) {
+        val output = JupyterOutputsBase.fromMessage(message) ?: return
+        KotlinNotebookFeatureUsagesCollector.registerOutputUpdated(output)
     }
 
     private fun updateScriptingIfNeeded(onError: Boolean = false) {

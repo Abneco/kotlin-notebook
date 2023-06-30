@@ -144,6 +144,7 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
             file,
             cell,
             index,
+            System.currentTimeMillis(),
         )
     }
 
@@ -157,6 +158,7 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
             virtualFile,
             null,
             index,
+            System.currentTimeMillis(),
         )
     }
 
