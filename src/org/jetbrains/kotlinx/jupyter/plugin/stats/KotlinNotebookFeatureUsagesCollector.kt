@@ -6,6 +6,7 @@ import com.intellij.internal.statistic.eventLog.EventLogGroup
 import com.intellij.internal.statistic.eventLog.events.EventFields
 import com.intellij.internal.statistic.libraryUsage.LibraryUsageDescriptors
 import com.intellij.internal.statistic.service.fus.collectors.FeatureUsagesCollector
+import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.exceptions.ReplCompilerException
 import org.jetbrains.kotlinx.jupyter.plugin.outputs.plots.PlotDataKeyExtractor
@@ -24,7 +25,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
 
     @Suppress("CompanionObjectInExtension")
     companion object {
-        @JvmStatic private val GROUP = EventLogGroup("kotlin.notebook", 2)
+        @JvmStatic private val GROUP = EventLogGroup("kotlin.notebook", 3)
 
         @JvmStatic private val CELLS_COUNT = EventFields.RoundedInt("cells_count")
         @JvmStatic private val CODE_CELLS_COUNT = EventFields.RoundedInt("cells_code_count")
@@ -32,10 +33,10 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
 
         @JvmStatic private val NOTEBOOK_LANGUAGE = EventFields.Language
 
-        @JvmStatic private val INCLUDED_PROJECT_MODULES_COUNT = EventFields.RoundedInt("project_sources_count_v2")
-        @JvmStatic private val INCLUDED_PROJECT_LIBRARIES_COUNT = EventFields.RoundedInt("project_libraries_count_v2")
-        @JvmStatic private val ARE_PROJECT_SOURCE_DEPENDENCIES_INCLUDED = EventFields.Boolean("project_sources_included_v1")
-        @JvmStatic private val ARE_PROJECT_LIBRARY_DEPENDENCIES_INCLUDED = EventFields.Boolean("project_libraries_included_v1")
+        @JvmStatic private val INCLUDED_PROJECT_MODULES_COUNT = EventFields.RoundedInt("project_sources_v2_count")
+        @JvmStatic private val INCLUDED_PROJECT_LIBRARIES_COUNT = EventFields.RoundedInt("project_libraries_v2_count")
+        @JvmStatic private val ARE_PROJECT_SOURCE_DEPENDENCIES_INCLUDED = EventFields.Boolean("project_sources_v1_included")
+        @JvmStatic private val ARE_PROJECT_LIBRARY_DEPENDENCIES_INCLUDED = EventFields.Boolean("project_libraries_v1_included")
 
         @JvmStatic private val NOTEBOOK_OPEN_EVENT = GROUP.registerVarargEvent(
             "notebook.opened",
@@ -49,7 +50,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             ARE_PROJECT_LIBRARY_DEPENDENCIES_INCLUDED,
         )
 
-        fun registerOpenNotebook(file: JupyterNotebook) {
+        fun registerOpenNotebook(project: Project, file: JupyterNotebook) {
             val cellsCount = file.cells.size
 
             var markdownCellsCount = 0
@@ -66,6 +67,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
                 }
             }
             NOTEBOOK_OPEN_EVENT.log(
+                project,
                 CELLS_COUNT.with(cellsCount),
                 CODE_CELLS_COUNT.with(codeCellsCount),
                 MARKDOWN_CELLS_COUNT.with(markdownCellsCount),
@@ -81,10 +83,10 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             OK, COMPILATION_ERROR, RUNTIME_ERROR, ABORTED
         }
 
-        @JvmStatic private val EXECUTION_STATUS = EventFields.Enum("cell_execution_status", ExecutionStatus::class.java)
+        @JvmStatic private val EXECUTION_STATUS = EventFields.Enum<ExecutionStatus>("cell_execution_status")
         @JvmStatic private val CELL_CLASSPATH_COUNT = EventFields.RoundedInt("cell_classpath_count")
         @JvmStatic private val EXECUTION_TIME = EventFields.DurationMs
-        @JvmStatic private val EXECUTION_COUNT = EventFields.Int("executed_cells_count")
+        @JvmStatic private val EXECUTION_COUNT = EventFields.RoundedInt("executed_cells_count")
 
         @JvmStatic private val EXECUTION_RESULT_EVENT = GROUP.registerVarargEvent(
             "cell.result.received",
@@ -94,11 +96,13 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             EXECUTION_COUNT,
         )
 
-        @JvmStatic private val LIBRARY_NAME = EventFields.StringValidatedByCustomRule("library_name", LibraryNameValidationRule::class.java)
-
-        @JvmStatic private val LIBRARY_USED_EVENT = GROUP.registerEvent("library.used", LIBRARY_NAME)
+        @JvmStatic private val LIBRARY_USED_EVENT = GROUP.registerEvent(
+            "library.used",
+            EventFields.StringValidatedByCustomRule("library_name", LibraryNameValidationRule::class.java)
+        )
 
         fun registerCellExecuted(
+            project: Project,
             message: JupyterMessage,
             executionDurationMs: Long,
             metadata: EvaluatedSnippetMetadata
@@ -121,16 +125,19 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             val classpathEntriesCount = metadata.newClasspath.size
 
             EXECUTION_RESULT_EVENT.log(
-                EXECUTION_STATUS.with(status),
-                CELL_CLASSPATH_COUNT.with(classpathEntriesCount),
-                EXECUTION_TIME.with(executionDurationMs),
-                EXECUTION_COUNT.with(message.executionCount ?: -1)
+                project,
+                listOfNotNull(
+                    EXECUTION_STATUS.with(status),
+                    CELL_CLASSPATH_COUNT.with(classpathEntriesCount),
+                    EXECUTION_TIME.with(executionDurationMs),
+                    message.executionCount?.let { EXECUTION_COUNT.with(it) }
+                )
             )
 
             metadata.newImports.mapNotNullTo(mutableSetOf()) { import ->
                 LibraryUsageDescriptors.findSuitableLibrary(import)
             }.forEach { libraryName ->
-                LIBRARY_USED_EVENT.log(libraryName)
+                LIBRARY_USED_EVENT.log(project, libraryName)
             }
         }
 
@@ -164,10 +171,12 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             KotlinDataframeParsing.jsonPayloadField to OutputType.SWING_DATAFRAME,
         )
 
-        @JvmStatic private val OUTPUT_TYPES = EventFields.StringList("output_types", OutputType.values().map { it.toString() })
-        @JvmStatic private val OUTPUT_UPDATED_EVENT = GROUP.registerEvent("output.updated", OUTPUT_TYPES)
+        @JvmStatic private val OUTPUT_UPDATED_EVENT = GROUP.registerEvent(
+            "output.updated",
+            EventFields.StringList("output_types", OutputType.values().map { it.toString() })
+        )
 
-        fun registerOutputUpdated(output: JupyterOutput) {
+        fun registerOutputUpdated(project: Project, output: JupyterOutput) {
             val outputTypes: List<OutputType> = when(output) {
                 is JupyterErrorOutput -> { listOf(OutputType.ERROR) }
                 is JupyterStreamOutput -> {
@@ -188,7 +197,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
                 else -> emptyList()
             }
 
-            OUTPUT_UPDATED_EVENT.log(outputTypes.map { it.toString() })
+            OUTPUT_UPDATED_EVENT.log(project, outputTypes.map { it.toString() })
         }
 
         private fun KotlinNotebookDependencies.count() = when(this) {

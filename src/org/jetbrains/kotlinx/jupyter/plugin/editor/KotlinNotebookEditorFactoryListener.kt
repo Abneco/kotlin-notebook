@@ -26,7 +26,7 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
 
                 val backedNotebookVirtualFile = file.toBackedNotebookFile() ?: return
                 val notebook = backedNotebookVirtualFile.notebook
-                KotlinNotebookFeatureUsagesCollector.registerOpenNotebook(notebook)
+                KotlinNotebookFeatureUsagesCollector.registerOpenNotebook(project, notebook)
             }
         }
     }

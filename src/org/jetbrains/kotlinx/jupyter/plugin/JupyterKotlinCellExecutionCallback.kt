@@ -85,6 +85,7 @@ class JupyterKotlinCellExecutionCallback(
                 }
 
                 KotlinNotebookFeatureUsagesCollector.registerCellExecuted(
+                    project,
                     message,
                     executionFinishedMs - executionStartedMs,
                     snippetMetadata ?: EvaluatedSnippetMetadata.EMPTY
@@ -127,7 +128,7 @@ class JupyterKotlinCellExecutionCallback(
 
     override fun onUpdateOutput(message: JupyterMessage) {
         val output = JupyterOutputsBase.fromMessage(message) ?: return
-        KotlinNotebookFeatureUsagesCollector.registerOutputUpdated(output)
+        KotlinNotebookFeatureUsagesCollector.registerOutputUpdated(project, output)
     }
 
     private fun updateScriptingIfNeeded(onError: Boolean = false) {
