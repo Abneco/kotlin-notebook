@@ -18,7 +18,31 @@
     <orderEntry type="library" name="kotlinx-serialization-core" level="project" />
     <orderEntry type="module-library">
       <library name="jetbrains.kotlin-jupyter-shared-compiler" type="repository">
-        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler:0.11.0-381" />
+        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler:0.11.0-381">
+          <verification>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.11.0-381/kotlin-jupyter-shared-compiler-0.11.0-381.jar">
+              <sha256sum>774c79c58acd4d20ce2bca80dd74ad97b2ffbfc257abaeeff11eae99904d17cb</sha256sum>
+            </artifact>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.11.0-381/kotlin-jupyter-api-0.11.0-381.jar">
+              <sha256sum>0a87dd3af7b39dcf3456a7e2bf2614217f29ccfd5cf166ab1011035017aa92c9</sha256sum>
+            </artifact>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.11.0-381/kotlin-jupyter-lib-0.11.0-381.jar">
+              <sha256sum>fe3b3069a56901433eab025b4148aee613ec8e155004f11390e403ca23a91d99</sha256sum>
+            </artifact>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.11.0-381/kotlin-jupyter-common-dependencies-0.11.0-381.jar">
+              <sha256sum>22144eb9578095153585b402b1e9cf9072514ab45abfa4113feb5a04d1a0b212</sha256sum>
+            </artifact>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/zeromq/jeromq/0.5.3/jeromq-0.5.3.jar">
+              <sha256sum>a0973309aa2c3c6e1ea0d102acd4a5ba61c8e38bae0ba88c5ac5391ab88a8206</sha256sum>
+            </artifact>
+            <artifact url="file://$MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0.jar">
+              <sha256sum>4accc9d2a56a6dd5198ec5e1c5c05a091da563bccd346fd6578edc083152beaa</sha256sum>
+            </artifact>
+            <artifact url="file://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0.jar">
+              <sha256sum>31e7e890bec03af28228a1b56a44b2bc1ec2bb9ef058c928880016d19994869c</sha256sum>
+            </artifact>
+          </verification>
+        </properties>
         <CLASSES>
           <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.11.0-381/kotlin-jupyter-shared-compiler-0.11.0-381.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.11.0-381/kotlin-jupyter-api-0.11.0-381.jar!/" />
@@ -81,7 +105,13 @@
     <orderEntry type="library" name="xml-apis-ext" level="project" />
     <orderEntry type="module-library">
       <library name="ggdsl-util" type="repository">
-        <properties include-transitive-deps="false" maven-id="org.jetbrains.kotlinx:ggdsl-util:0.4.0-dev-10" />
+        <properties include-transitive-deps="false" maven-id="org.jetbrains.kotlinx:ggdsl-util:0.4.0-dev-10">
+          <verification>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10.jar">
+              <sha256sum>17fb93d3a94f2384865dcd0c8cb157c6659bd9cb4e9a4a6c8f213317c7ca285a</sha256sum>
+            </artifact>
+          </verification>
+        </properties>
         <CLASSES>
           <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10.jar!/" />
         </CLASSES>
@@ -94,7 +124,13 @@
     <orderEntry type="library" name="commons-io" level="project" />
     <orderEntry type="module-library">
       <library name="jetbrains.lets.plot.shadowed" type="repository">
-        <properties include-transitive-deps="false" maven-id="org.jetbrains.lets-plot:lets-plot-shadowed:3.1.1-alpha4-8" />
+        <properties include-transitive-deps="false" maven-id="org.jetbrains.lets-plot:lets-plot-shadowed:3.1.1-alpha4-8">
+          <verification>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha4-8/lets-plot-shadowed-3.1.1-alpha4-8.jar">
+              <sha256sum>57ad1f648a43c8f1d9dd88731ec526f5b131ec0de31d14bd49e1554f6db1f87c</sha256sum>
+            </artifact>
+          </verification>
+        </properties>
         <CLASSES>
           <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha4-8/lets-plot-shadowed-3.1.1-alpha4-8.jar!/" />
         </CLASSES>
