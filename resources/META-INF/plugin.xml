@@ -66,6 +66,8 @@
     <applicationListeners>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinNotebookEditorColorsListener"
                   topic="com.intellij.openapi.editor.colors.EditorColorsListener"/>
+        <listener class="org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookActionListener"
+                  topic="com.intellij.openapi.actionSystem.ex.AnActionListener"/>
     </applicationListeners>
 
     <projectListeners>

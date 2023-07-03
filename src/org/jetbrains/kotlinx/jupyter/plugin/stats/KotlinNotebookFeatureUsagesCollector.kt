@@ -11,12 +11,21 @@ import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.exceptions.ReplCompilerException
 import org.jetbrains.kotlinx.jupyter.plugin.outputs.plots.PlotDataKeyExtractor
 import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing
-import org.jetbrains.kotlinx.jupyter.plugin.settings.*
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
+import org.jetbrains.kotlinx.jupyter.plugin.settings.isAddProjectLibrariesToClasspath
+import org.jetbrains.kotlinx.jupyter.plugin.settings.isBuildProject
+import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
+import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionStatus
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.executionCount
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.status
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.*
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterCellType
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterDisplayDataOutput
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterErrorOutput
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutput
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterStreamOutput
 
 class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
     override fun getGroup(): EventLogGroup {
@@ -25,7 +34,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
 
     @Suppress("CompanionObjectInExtension")
     companion object {
-        @JvmStatic private val GROUP = EventLogGroup("kotlin.notebook", 3)
+        @JvmStatic private val GROUP = EventLogGroup("kotlin.notebook", 4)
 
         @JvmStatic private val CELLS_COUNT = EventFields.RoundedInt("cells_count")
         @JvmStatic private val CODE_CELLS_COUNT = EventFields.RoundedInt("cells_code_count")
@@ -84,14 +93,14 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
         }
 
         @JvmStatic private val EXECUTION_STATUS = EventFields.Enum<ExecutionStatus>("cell_execution_status")
-        @JvmStatic private val CELL_CLASSPATH_COUNT = EventFields.RoundedInt("cell_classpath_count")
+        @JvmStatic private val CLASSPATH_ENTRIES_COUNT = EventFields.RoundedInt("classpath_entries_count")
         @JvmStatic private val EXECUTION_TIME = EventFields.DurationMs
         @JvmStatic private val EXECUTION_COUNT = EventFields.RoundedInt("executed_cells_count")
 
         @JvmStatic private val EXECUTION_RESULT_EVENT = GROUP.registerVarargEvent(
             "cell.result.received",
             EXECUTION_STATUS,
-            CELL_CLASSPATH_COUNT,
+            CLASSPATH_ENTRIES_COUNT,
             EXECUTION_TIME,
             EXECUTION_COUNT,
         )
@@ -128,7 +137,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
                 project,
                 listOfNotNull(
                     EXECUTION_STATUS.with(status),
-                    CELL_CLASSPATH_COUNT.with(classpathEntriesCount),
+                    CLASSPATH_ENTRIES_COUNT.with(classpathEntriesCount),
                     EXECUTION_TIME.with(executionDurationMs),
                     message.executionCount?.let { EXECUTION_COUNT.with(it) }
                 )
@@ -198,6 +207,29 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             }
 
             OUTPUT_UPDATED_EVENT.log(project, outputTypes.map { it.toString() })
+        }
+
+        @JvmStatic private val KERNEL_RESTARTED_EVENT = GROUP.registerEvent(
+            "kernel.restarted",
+            CELLS_COUNT,
+            CLASSPATH_ENTRIES_COUNT,
+        )
+
+        fun registerKernelRestart(
+            project: Project,
+            cellCountBeforeRestart: Int,
+            classpathSizeBeforeRestart: Int,
+        ) {
+            KERNEL_RESTARTED_EVENT.log(project, cellCountBeforeRestart, classpathSizeBeforeRestart)
+        }
+
+        @JvmStatic private val ALL_CELLS_RUN_EVENT = GROUP.registerEvent(
+            "notebook.cells.all.run",
+            CELLS_COUNT,
+        )
+
+        fun registerRunAllCells(project: Project, cellCountToRun: Int) {
+            ALL_CELLS_RUN_EVENT.log(project, cellCountToRun)
         }
 
         private fun KotlinNotebookDependencies.count() = when(this) {

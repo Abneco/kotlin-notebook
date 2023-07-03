@@ -121,7 +121,7 @@ class JupyterCompilerPerFileService(
     }
     private val compileLock = ReentrantReadWriteLock()
     private val listLock = ReentrantReadWriteLock()
-    private val directoryCounter = AtomicInteger(1)
+    private val directoryCounter = AtomicInteger(0)
     private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ConcurrentCollectionFactory.createConcurrentSet() // LoggingList()
     private val implicitListsLoadQueue = ArrayDeque<Pair<Path, List<String>>>()
     val cellOrdinalToClassName = mutableMapOf<Int, Set<String>>()
@@ -171,6 +171,8 @@ class JupyterCompilerPerFileService(
 
     private val coroutineScope = CoroutineScope(Job())
     private var previousSessionId: String? = null
+
+    val executedCellsCount: Int get() = directoryCounter.get()
 
     fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
         val psiDocumentManager = PsiDocumentManager.getInstance(project)
