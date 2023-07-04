@@ -34,7 +34,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
 
     @Suppress("CompanionObjectInExtension")
     companion object {
-        @JvmStatic private val GROUP = EventLogGroup("kotlin.notebook", 4)
+        @JvmStatic private val GROUP = EventLogGroup("kotlin.notebook", 5)
 
         @JvmStatic private val CELLS_COUNT = EventFields.RoundedInt("cells_count")
         @JvmStatic private val CODE_CELLS_COUNT = EventFields.RoundedInt("cells_code_count")
@@ -105,9 +105,12 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             EXECUTION_COUNT,
         )
 
-        @JvmStatic private val LIBRARY_USED_EVENT = GROUP.registerEvent(
+        @JvmStatic private val LIBRARY_NAME = EventFields.StringValidatedByCustomRule("library_name", LibraryNameValidationRule::class.java)
+
+        @JvmStatic private val LIBRARY_USED_EVENT = GROUP.registerVarargEvent(
             "library.used",
-            EventFields.StringValidatedByCustomRule("library_name", LibraryNameValidationRule::class.java)
+            LIBRARY_NAME,
+            EXECUTION_COUNT,
         )
 
         fun registerCellExecuted(
@@ -132,6 +135,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
                 }
             }
             val classpathEntriesCount = metadata.newClasspath.size
+            val executionCountPair = message.executionCount?.let { EXECUTION_COUNT.with(it) }
 
             EXECUTION_RESULT_EVENT.log(
                 project,
@@ -139,14 +143,20 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
                     EXECUTION_STATUS.with(status),
                     CLASSPATH_ENTRIES_COUNT.with(classpathEntriesCount),
                     EXECUTION_TIME.with(executionDurationMs),
-                    message.executionCount?.let { EXECUTION_COUNT.with(it) }
+                    executionCountPair
                 )
             )
 
             metadata.newImports.mapNotNullTo(mutableSetOf()) { import ->
                 LibraryUsageDescriptors.findSuitableLibrary(import)
             }.forEach { libraryName ->
-                LIBRARY_USED_EVENT.log(project, libraryName)
+                LIBRARY_USED_EVENT.log(
+                    project,
+                    listOfNotNull(
+                        LIBRARY_NAME.with(libraryName),
+                        executionCountPair,
+                    )
+                )
             }
         }
 
