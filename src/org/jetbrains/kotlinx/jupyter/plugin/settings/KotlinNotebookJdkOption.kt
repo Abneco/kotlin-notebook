@@ -32,13 +32,16 @@ private val runtimeJavaSdkVersion: JavaSdkVersion? by lazy {
     JavaSdkVersion.fromVersionString(runtimeVersion.toString())
 }
 
+internal val minJdkVersion get() = JavaSdkVersion.JDK_11
+internal val maxJdkVersion get() = runtimeJavaSdkVersion
+
 @OptIn(ExperimentalContracts::class)
 internal fun isSuitableForStartingKernel(sdk: Sdk?): Boolean {
     contract { returns(true) implies (sdk != null) }
     if (sdk == null) return false
     if (sdk.sdkType !is JavaSdk) return false
     val version = JavaSdk.getInstance().getVersion(sdk) ?: return false
-    return JavaSdkVersion.JDK_11 <= version && (runtimeJavaSdkVersion == null || version <= runtimeJavaSdkVersion)
+    return minJdkVersion <= version && (maxJdkVersion == null || version <= maxJdkVersion)
 }
 
 object ProjectJdkOption : KotlinNotebookJdkOption {

@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.settings
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ui.configuration.SdkComboBox
 import com.intellij.openapi.roots.ui.configuration.SdkComboBoxModel
@@ -79,6 +80,16 @@ object KotlinNotebookSettingsPanel {
             )
             val sdkModel = sdkComboBox.model.sdksModel
             cell(sdkComboBox)
+                .comment(
+                    JupyterKotlinBundle.message(
+                        "kotlin.jupyter.settings.JDK.comment",
+                        minJdkVersion.description,
+                        maxJdkVersion?.description ?: JupyterKotlinBundle.message(
+                            "kotlin.jupyter.settings.JDK.comment.empty.runtime",
+                            ApplicationNamesInfo.getInstance().productName
+                        )
+                    )
+                )
                 .onReset {
                     val jdkName = state.jdkName
                     if (jdkName != null) {
