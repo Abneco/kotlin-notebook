@@ -88,7 +88,13 @@ class KotlinKernelProcessService {
             if (pluginResourcePath != null) {
                 Files.copy(pluginResourcePath, zipPath, StandardCopyOption.REPLACE_EXISTING)
             } else {
-                throw RuntimeException("There is no resource $resourceZipPath neither in JAR resources nor in plugin resources")
+                val errorMessage = buildString {
+                    append("There is no resource $resourceZipPath neither in JAR resources nor in plugin resources.")
+                    if (ApplicationManager.getApplication().isUnitTestMode) {
+                        append(" Execute `Prepare Kotlin Notebook resources` run configuration to download required files.")
+                    }
+                }
+                throw RuntimeException(errorMessage)
             }
         }
 
