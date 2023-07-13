@@ -23,7 +23,6 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
-import com.intellij.psi.impl.source.tree.injected.changesHandler.range
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -33,8 +32,6 @@ import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
-import org.jetbrains.kotlin.idea.editor.fixers.end
-import org.jetbrains.kotlin.idea.editor.fixers.start
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory
@@ -255,7 +252,7 @@ class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
         else errorRef.compareAndSet(true, false)
 
         for (el in foundData) {
-            if (seenInfosOffsets.add(el.range.start) && seenInfosOffsets.add(el.range.end)) {
+            if (seenInfosOffsets.add(el.startOffset) && seenInfosOffsets.add(el.endOffset)) {
                 holder.add(el)
             }
         }
@@ -291,19 +288,6 @@ internal object HighlightInfoManipulator {
             .group(0)
             .fillInProperDescription(diagnostic)
             .createUnconditionally()
-    }
-
-    fun convertToShadowedDeclaration(info: HighlightInfo): HighlightInfo {
-        val n = HighlightInfo.newHighlightInfo(shadowedSymbolSeverity)
-            .range(info.range)
-            .textAttributes(CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES)
-            .needsUpdateOnTyping(info.needUpdateOnTyping())
-            .fillInProperDescription(info)
-            .group(0)
-
-        return if (info.isAfterEndOfLine)
-            n.endOfLine().createUnconditionally()
-        else n.createUnconditionally()
     }
 
     private fun HighlightInfo.Builder.fillInProperDescription(diagnostic: Diagnostic): HighlightInfo.Builder {
