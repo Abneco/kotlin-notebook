@@ -5,20 +5,22 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptionsProvider
-import org.jetbrains.plugins.notebooks.ui.editor.DefaultNotebookEditorAppearance
+import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterNotebookEditorAppearanceProvider
 import org.jetbrains.plugins.notebooks.ui.visualization.NotebookEditorAppearance
 import org.jetbrains.plugins.notebooks.visualization.NotebookEditorAppearanceProvider
 
 class KotlinNotebookEditorAppearanceProvider : NotebookEditorAppearanceProvider {
     override fun create(editor: Editor): NotebookEditorAppearance? {
         if (editor.isKotlinNotebook) {
-            return KotlinNotebookEditorAppearance()
+            val appearanceProvider = NotebookEditorAppearanceProvider.EP_NAME.findExtensionOrFail(JupyterNotebookEditorAppearanceProvider::class.java)
+            val appearance = appearanceProvider.create(editor) ?: return null
+            return KotlinNotebookEditorAppearance(appearance)
         }
         return null
     }
 }
 
-class KotlinNotebookEditorAppearance : NotebookEditorAppearance by DefaultNotebookEditorAppearance {
+class KotlinNotebookEditorAppearance(delegate: NotebookEditorAppearance) : NotebookEditorAppearance by delegate {
     private val applicationOptionsProvider get() = service<KotlinNotebookApplicationOptionsProvider>()
 
     override fun shouldShowExecutionCounts(): Boolean = applicationOptionsProvider.state.shouldShowExecutionCount
