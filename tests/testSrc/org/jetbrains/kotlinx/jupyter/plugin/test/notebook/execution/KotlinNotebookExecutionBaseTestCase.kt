@@ -26,9 +26,9 @@ interface ReceivedMessages {
 }
 
 data class ReceivedMessagesBuilder(
-    override var reply: JupyterMessage? = null,
-    override val outputs: MutableList<JupyterMessage> = mutableListOf(),
-): ReceivedMessages
+        override var reply: JupyterMessage? = null,
+        override val outputs: MutableList<JupyterMessage> = mutableListOf(),
+) : ReceivedMessages
 
 interface ReceivedMessagesTester {
     val expectedCellsCount: Int
@@ -57,27 +57,26 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
     }
 
     protected fun configureExecutionTest(
-        copyNotebookToProject: Boolean = false,
+            copyNotebookToProject: Boolean = false,
     ): PsiFile {
-      TestLoggerFactory.enableDebugLogging(myFixture.projectDisposable, javaClass)
+        TestLoggerFactory.enableDebugLogging(myFixture.projectDisposable, javaClass)
         myFixture.setCaresAboutInjection(true)
         myFixture.configureByJupyterFile(
-            jupyterFileName = "${getTestName(true)}.ipynb",
-            testDataPath = testDataPath,
-            isCopyToProject = copyNotebookToProject,
+                jupyterFileName = "${getTestName(true)}.ipynb",
+                testDataPath = testDataPath,
+                isCopyToProject = copyNotebookToProject,
         )
-      invokeAndWaitIfNeeded {
-        setMode(NotebookEditorMode.EDIT)
-      }
-        originalVirtualFile = myFixture.file.virtualFile
-        // `myFixture.file` may return the file which is injected inside one of the cells
+        invokeAndWaitIfNeeded {
+            setMode(NotebookEditorMode.EDIT)
+        }
+        originalVirtualFile = myFixture.file.virtualFile // `myFixture.file` may return the file which is injected inside one of the cells
         val notebookFile = runReadAction {
-          FileContextUtil.getFileContext(myFixture.file)?.containingFile ?: myFixture.file
+            FileContextUtil.getFileContext(myFixture.file)?.containingFile ?: myFixture.file
         }
         return notebookFile
     }
 
-    class OutputsTester(private val cellOutputs: List<List<ObjectNode>>): ReceivedMessagesTester {
+    class OutputsTester(private val cellOutputs: List<List<ObjectNode>>) : ReceivedMessagesTester {
         override val expectedCellsCount: Int
             get() = cellOutputs.size
 
@@ -85,7 +84,7 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
             KotlinNotebookExecutionTest.log.debug("Checking outputs for cell #$cellNum")
             val expectedOutputs = cellOutputs[cellNum]
             val actualOutputs = messages.outputs.map { it.messageContent["data"] }
-          Assertions.assertIterableEquals(expectedOutputs, actualOutputs)
+            Assertions.assertIterableEquals(expectedOutputs, actualOutputs)
         }
     }
 }
