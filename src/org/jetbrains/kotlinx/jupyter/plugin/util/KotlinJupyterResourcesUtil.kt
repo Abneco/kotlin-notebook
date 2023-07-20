@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor
@@ -16,7 +16,7 @@ object KotlinJupyterResourcesUtil {
 
     private fun pluginDescriptor(): IdeaPluginDescriptor {
         return PluginManagerCore.getPlugin(KOTLIN_JUPYTER_PLUGIN_ID)
-            ?: error("Kotlin Notebook plugin not found: " + PluginManagerCore.getPlugins().contentToString())
+            ?: error("Kotlin Notebook plugin not found: " + PluginManagerCore.plugins.contentToString())
     }
 
     private class PluginInfo(
