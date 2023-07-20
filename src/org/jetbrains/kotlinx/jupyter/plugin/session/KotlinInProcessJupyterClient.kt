@@ -163,5 +163,5 @@ class KotlinInProcessJupyterClient(
         clientSessions.clear()
     }
 
-    override suspend fun getServerVersion(): Version? = null
+    override suspend fun getServerVersions(): Iterable<Pair<JupyterClient.VersionKind, Version>> = emptyList()
 }
