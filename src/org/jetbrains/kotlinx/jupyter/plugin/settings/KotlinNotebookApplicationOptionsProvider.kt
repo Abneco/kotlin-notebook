@@ -9,7 +9,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEx
-import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.editor.JupyterNotebookGutterManager
 
 @Service

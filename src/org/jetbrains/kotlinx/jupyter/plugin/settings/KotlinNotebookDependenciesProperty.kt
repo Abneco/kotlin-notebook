@@ -16,7 +16,7 @@ import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
 import com.intellij.util.alsoIfNull
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
-import org.jetbrains.kotlinx.jupyter.plugin.index.KotlinNotebookPermanentIndexService
+import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanentIndexService
 import java.util.*
 
 sealed interface KotlinNotebookDependencies {

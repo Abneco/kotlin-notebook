@@ -2,7 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.codeinsight.hints
 
 
-import org.jetbrains.kotlinx.jupyter.plugin.codeinsight.NotebookValuesHintProvider
+import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookValuesHintProvider
 import org.junit.Test
 
 class NotebookRangeHintsTest : AbstractNotebookTypeHintsBaseTest() {

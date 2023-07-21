@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
 
 class KotlinNotebookNewNotebookConfigurable(val project: Project) :
     BoundConfigurable(JupyterKotlinBundle.getMessage("kotlin.jupyter.settings.new.notebook.title")),

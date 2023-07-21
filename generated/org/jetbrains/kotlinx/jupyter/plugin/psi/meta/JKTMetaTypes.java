@@ -4,8 +4,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.psi.meta;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.PsiElement;
 import com.intellij.lang.ASTNode;
-import org.jetbrains.kotlinx.jupyter.plugin.lang.psi.JKTMetaElementType;
-import org.jetbrains.kotlinx.jupyter.plugin.lang.psi.JKTMetaTokenType;
+import org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaElementType;
+import org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaTokenType;
 import org.jetbrains.kotlinx.jupyter.plugin.psi.meta.impl.*;
 
 public interface JKTMetaTypes {

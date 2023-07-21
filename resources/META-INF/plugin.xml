@@ -64,14 +64,14 @@
     <depends>com.intellij.modules.ultimate</depends>
 
     <applicationListeners>
-        <listener class="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinNotebookEditorColorsListener"
+        <listener class="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorColorsListener"
                   topic="com.intellij.openapi.editor.colors.EditorColorsListener"/>
-        <listener class="org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookActionListener"
+        <listener class="org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookActionListener"
                   topic="com.intellij.openapi.actionSystem.ex.AnActionListener"/>
     </applicationListeners>
 
     <projectListeners>
-        <listener class="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinRuntimeServiceListener"
+        <listener class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.JupyterKotlinRuntimeServiceListener"
                   topic="org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService$Listener"/>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookModuleRenameListener"
                   topic="com.intellij.openapi.project.ModuleListener"/>
@@ -81,19 +81,19 @@
 
     <extensionPoints>
         <extensionPoint qualifiedName="org.jetbrains.kotlinx.jupyter.plugin.session.extensions.kernelVmCommandCustomizer"
-                        interface="org.jetbrains.kotlinx.jupyter.plugin.session.extensions.KernelVmCommandCustomizer"
+                        interface="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelVmCommandCustomizer"
                         dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
-        <renameHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.KotlinNotebookPropertiesRenameHandler" />
-        <scriptDefinitionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterScriptDefinitionProvider"/>
-        <idea.caches.resolve.resolveOptimizingOptionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.resolve.KotlinNotebookOptimizingOptionsProvider"/>
+        <renameHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.KotlinNotebookPropertiesRenameHandler" />
+        <scriptDefinitionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterScriptDefinitionProvider"/>
+        <idea.caches.resolve.resolveOptimizingOptionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.resolve.KotlinNotebookOptimizingOptionsProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.codeInsight.daemon.impl">
         <injectedLanguageHighlightingRangeReducer
-                implementation="org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.KotlinNotebookInjectedRangeReducer"
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.KotlinNotebookInjectedRangeReducer"
                 id="kotlinNotebookRangeReducer"
                 order="first"/>
     </extensions>
@@ -110,59 +110,59 @@
         <registryKey key="grid.tables.hierarchical.enabled" defaultValue="false"
                      description="When enabled, table output will support hierarchical columns."/>
 
-        <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinIntoCellsInjector"/>
-        <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.notifications.NotebookLocationNotificationProvider"/>
-        <fileIconPatcher implementation="org.jetbrains.kotlinx.jupyter.plugin.file.JupyterKotlinIconPatcher"/>
-        <iconProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.file.KotlinNotebookIconProvider"/>
-        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.BeforeResolveHighlightingVisitorAdapter"/>
-        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.KotlinNotebookBeforeHighlightingVisitor"
+        <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.inject.JupyterKotlinIntoCellsInjector"/>
+        <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookLocationNotificationProvider"/>
+        <fileIconPatcher implementation="org.jetbrains.kotlinx.jupyter.plugin.ide.JupyterKotlinIconPatcher"/>
+        <iconProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.ide.KotlinNotebookIconProvider"/>
+        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.BeforeResolveHighlightingVisitorAdapter"/>
+        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.KotlinNotebookBeforeHighlightingVisitor"
                           id="kotlinNotebookBeforeHighlightingVisitor"
                           order="first"/>
-        <daemon.highlightInfoFilter implementation="org.jetbrains.kotlinx.jupyter.plugin.file.highlighting.KotlinNotebookHighlightingErrorFilter"/>
-        <formatting.injectedOptions implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinInjectedFormattingOptionsProvider"/>
+        <daemon.highlightInfoFilter implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.KotlinNotebookHighlightingErrorFilter"/>
+        <formatting.injectedOptions implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.formatting.KotlinInjectedFormattingOptionsProvider"/>
 
         <fileType name="Jupyter Kotlin meta language"
                   language="JKTMeta"
                   extensions="juktm"
-                  implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaFileType"
+                  implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.meta.JKTMetaFileType"
                   fieldName="INSTANCE"/>
 
-        <lang.parserDefinition language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.grammar.JKTMetaParserDefinition"/>
+        <lang.parserDefinition language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.meta.grammar.JKTMetaParserDefinition"/>
 
-        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookReferencesTypeHintsProvider" language="Jupyter"/>
-        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.NotebookLambdaTypeHintsProvider" language="Jupyter"/>
-        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.NotebookValuesHintProvider" language="Jupyter"/>
-        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.NotebookChainCallHintProvider" language="Jupyter"/>
+        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookReferencesTypeHintsProvider" language="Jupyter"/>
+        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookLambdaTypeHintsProvider" language="Jupyter"/>
+        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookValuesHintProvider" language="Jupyter"/>
+        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookChainCallHintProvider" language="Jupyter"/>
 
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$Generic"/>
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_STATEMENT" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$Statement"/>
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_CLASS" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$Class"/>
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_EXPRESSION" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$Expression"/>
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_COMMENT" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$Comment"/>
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_OBJECT_DECLARATION" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$ObjectDeclaration"/>
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_META" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.liveTemplates.KotlinNotebookTemplateContextType$Meta"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Generic"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_STATEMENT" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Statement"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_CLASS" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Class"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_EXPRESSION" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Expression"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_COMMENT" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Comment"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_OBJECT_DECLARATION" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$ObjectDeclaration"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_META" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Meta"/>
 
-        <completion.contributor language="JKTMeta" id="JKTMetaBasic" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaCompletionContributor" />
+        <completion.contributor language="JKTMeta" id="JKTMetaBasic" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.meta.codeInsight.JKTMetaCompletionContributor" />
         <!--<completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.KotlinMagicsRuntimeCompletionContributor" order="first"/>-->
-        <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaAnnotator"/>
-        <typedHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.JKTMetaTypedHandlerDelegate"/>
-        <gotoDeclarationHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookGotoDeclarationProvider"/>
+        <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.meta.codeInsight.JKTMetaAnnotator"/>
+        <typedHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.language.meta.codeInsight.JKTMetaTypedHandlerDelegate"/>
+        <gotoDeclarationHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookGotoDeclarationProvider"/>
         <!--<searcher forClass="com.intellij.psi.search.searches.ReferencesSearch$SearchParameters"-->
         <!--          implementationClass="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferencesProvider"/>-->
-        <renamePsiElementProcessor implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.NotebookPropertyRenameProcessor"
+        <renamePsiElementProcessor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookPropertyRenameProcessor"
                                    id="kotlinNotebookRenamePsiElementProcessor"
                                    order="first"/>
         <!--<renameHandler implementation= />-->
-        <findUsagesHandlerFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookFindUsagesHandlerFactory"
+        <findUsagesHandlerFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookFindUsagesHandlerFactory"
                                   id="kotlinNotebookFindUsagesHandlerFactory"
                                   order="before kotlinFindUsagesHandlerFactory"/>
         <!--<lang.elementManipulator forClass="com.intellij.lang.elementManipulator" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.file.psi.KotlinNotebookElementManipulator"/>-->
-        <formattingService implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.refactor.KotlinNotebookFileFormattingService"/>
+        <formattingService implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.formatting.KotlinNotebookFileFormattingService"/>
 
         <psi.referenceContributor
                 id="kotlinNotebookFilePathReferenceContributor"
                 language="kotlin"
-                implementation="org.jetbrains.kotlinx.jupyter.plugin.codeinsight.KotlinNotebookFilePathReferenceProvider"/>
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookFilePathReferenceProvider"/>
 
         <projectConfigurable groupId="tools"
                              bundle="messages.JupyterKotlinBundle"
@@ -184,61 +184,61 @@
                 key="plugin.updater.notification.group"
         />
 
-        <statistics.counterUsagesCollector implementationClass="org.jetbrains.kotlinx.jupyter.plugin.stats.KotlinNotebookFeatureUsagesCollector"/>
+        <statistics.counterUsagesCollector implementationClass="org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">
-        <listener implementation="org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptChangeListener"/>
-        <scriptingSupport implementation="org.jetbrains.kotlinx.jupyter.plugin.scripting.JupyterKtScriptingSupport"/>
+        <listener implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptChangeListener"/>
+        <scriptingSupport implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.idea.compilerPlugin.kotlinxSerialization">
-        <kotlinSerializationEnabledChecker implementation="org.jetbrains.kotlinx.jupyter.plugin.serialization.KotlinScriptingSerializationEnabledChecker"/>
+        <kotlinSerializationEnabledChecker implementation="org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.serialization.KotlinScriptingSerializationEnabledChecker"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">
-        <jupyterLanguageBasedFileViewProviderChooser implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinFileViewProviderChooser"/>
-        <editor.notebookEditorCreatedCallback implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinNotebookEditorFactoryListener"/>
-        <editor.outputs.notebookObjectOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.outputs.plots.PlotDataKeyExtractor"/>
-        <editor.outputs.notebookOutputComponentFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.outputs.plots.LetsPlotOutputComponentFactory"/>
-        <editor.notebookEditorAppearanceProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.KotlinNotebookEditorAppearanceProvider"
+        <jupyterLanguageBasedFileViewProviderChooser implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.psi.JupyterKotlinFileViewProviderChooser"/>
+        <editor.notebookEditorCreatedCallback implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.creating.KotlinNotebookEditorFactoryListener"/>
+        <editor.outputs.notebookObjectOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.PlotDataKeyExtractor"/>
+        <editor.outputs.notebookOutputComponentFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputComponentFactory"/>
+        <editor.notebookEditorAppearanceProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorAppearanceProvider"
                 order="before JupyterNotebookEditorAppearanceProvider"/>
-        <editor.outputs.notebookOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeOutputDataKeyExtractor" order="first"/>
-        <tables.externalPluginsTableDataProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeTableDataProvider"/>
+        <editor.outputs.notebookOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeOutputDataKeyExtractor" order="first"/>
+        <tables.externalPluginsTableDataProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeTableDataProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
-        <jupyterCellExecutionCallbackFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinCellExecutionCallbackFactory"/>
-        <connections.execution.preExecutionSourceModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinPreExecutionSourceModifier"/>
-        <editorCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinJupyterEditorCustomizer"/>
-        <jupyterActionPresentationModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookActionPresentationModifier"/>
+        <jupyterCellExecutionCallbackFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.JupyterKotlinCellExecutionCallbackFactory"/>
+        <connections.execution.preExecutionSourceModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.JupyterKotlinPreExecutionSourceModifier"/>
+        <editorCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.creating.KotlinJupyterEditorCustomizer"/>
+        <jupyterActionPresentationModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookActionPresentationModifier"/>
         <connections.execution.core.jupyterServersFactory
                 order="before default"
-                implementation="org.jetbrains.kotlinx.jupyter.plugin.session.KotlinServersFactory"/>
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinServersFactory"/>
         <connections.execution.core.managedJupyterServerRunner
                 order="before default"
-                implementation="org.jetbrains.kotlinx.jupyter.plugin.session.ManagedKotlinNotebookServerRunner"/>
-        <connections.execution.notebookPathProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.session.KotlinNotebookPathProvider"/>
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.ManagedKotlinNotebookServerRunner"/>
+        <connections.execution.notebookPathProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinNotebookPathProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlinx.jupyter.plugin">
-        <session.extensions.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.extensions.spark.SparkKernelVmCommandCustomizer"/>
+        <session.extensions.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>
     </extensions>
 
     <actions resource-bundle="messages/JupyterKotlinBundle">
-        <action id="CreateNewKotlinNotebook" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookCreateAction">
+        <action id="CreateNewKotlinNotebook" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookCreateAction">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="JupyterCreateFileAction"/>
         </action>
-        <action id="SelectKotlinNotebookModuleDependencies" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookSelectModulesAction"/>
-        <action id="SelectKotlinNotebookProjectLibraries" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookSelectLibrariesAction"/>
-        <action id="ShowKotlinNotebookPreferencesAction" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookShowPreferencesAction"
+        <action id="SelectKotlinNotebookModuleDependencies" class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookSelectModulesAction"/>
+        <action id="SelectKotlinNotebookProjectLibraries" class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookSelectLibrariesAction"/>
+        <action id="ShowKotlinNotebookPreferencesAction" class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookShowPreferencesAction"
                 icon="AllIcons.General.Settings"/>
-        <action id="ToggleShowExecutionCount" class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookToggleShowExecutionCountAction">
+        <action id="ToggleShowExecutionCount" class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookToggleShowExecutionCountAction">
             <add-to-group group-id="JupyterEditorGutterPopupActions"/>
         </action>
 
         <group id="KotlinNotebookSettingsActions" popup="true" icon="AllIcons.General.GearPlain"
-               class="org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookSettingsActions">
+               class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookSettingsActions">
             <reference id="SelectKotlinNotebookModuleDependencies"/>
             <reference id="SelectKotlinNotebookProjectLibraries"/>
             <separator/>

@@ -15,8 +15,8 @@ import com.intellij.testFramework.fixtures.IdeaProjectTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.utils.io.deleteRecursively
 import com.intellij.util.containers.forEachGuaranteed
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinProjectArtifactsService
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
+import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
+import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
@@ -59,7 +59,10 @@ class KotlinNotebookLibraryDependenciesTest : UsefulTestCase() {
         val classpath = runWithModalProgressBlocking(project, "building dependencies for ${notebookVirtualFile.file.name}") {
             JupyterKotlinProjectArtifactsService.getInstance(project).buildProjectAndGetLibraries(notebookVirtualFile)
         }
-        assertEquals(libraries.flatMap { it.getFiles(OrderRootType.CLASSES).toList() }.map { it.path }, classpath)
+        assertEquals(
+            libraries.flatMap { it.getFiles(OrderRootType.CLASSES).toList() }.map { it.path },
+            classpath.map { it.replace('\\', '/') }
+        )
     }
 
     override fun setUp() {

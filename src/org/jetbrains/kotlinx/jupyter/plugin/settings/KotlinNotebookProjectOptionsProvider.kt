@@ -9,7 +9,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
 
 @Service(Service.Level.PROJECT)
 @State(

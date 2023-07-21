@@ -18,8 +18,8 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.testFramework.utils.io.deleteRecursively
 import com.intellij.util.containers.forEachGuaranteed
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinProjectArtifactsService
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
+import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
+import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries

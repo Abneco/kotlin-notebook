@@ -2,7 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test.common
 
 import com.intellij.testFramework.UsefulTestCase
-import org.jetbrains.kotlinx.jupyter.plugin.KernelSpecDetector
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.spec.KernelSpecDetector
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith

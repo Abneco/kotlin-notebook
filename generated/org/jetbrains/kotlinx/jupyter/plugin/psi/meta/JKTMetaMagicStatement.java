@@ -5,7 +5,7 @@ import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElement;
 
-public interface JKTMetaMagicStatement extends org.jetbrains.kotlinx.jupyter.plugin.lang.psi.JKTMetaMagicStatement {
+public interface JKTMetaMagicStatement extends org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaMagicStatement {
 
   @NotNull
   JKTMetaArgs getArgs();

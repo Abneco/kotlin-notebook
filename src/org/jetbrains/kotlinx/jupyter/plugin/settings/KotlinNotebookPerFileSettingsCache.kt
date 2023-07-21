@@ -31,9 +31,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.CalledInAny
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
-import org.jetbrains.kotlinx.jupyter.plugin.file.JUPYTER_NOTEBOOK_EXTENSION
-import org.jetbrains.kotlinx.jupyter.plugin.file.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.util.JUPYTER_NOTEBOOK_EXTENSION
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.core.impl.file.originFile

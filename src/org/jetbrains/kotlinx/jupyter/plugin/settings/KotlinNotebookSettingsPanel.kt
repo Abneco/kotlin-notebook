@@ -16,7 +16,7 @@ import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.execution.ParametersListUtil
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
 
 object KotlinNotebookSettingsPanel {
     fun createPanel(

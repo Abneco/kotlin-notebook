@@ -6,7 +6,7 @@ import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
-import org.jetbrains.kotlinx.jupyter.plugin.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
 
 class KotlinNotebookConfigurable(private val project: Project) :
     BoundConfigurable(JupyterKotlinBundle.getMessage("kotlin.jupyter.settings.title")), SearchableConfigurable {

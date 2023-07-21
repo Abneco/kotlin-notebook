@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.testFramework.UsefulTestCase
 import com.intellij.util.asSafely
-import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeParsing
-import org.jetbrains.kotlinx.jupyter.plugin.outputs.tables.KotlinDataframeTableDataProvider
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeTableDataProvider
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.plugins.notebooks.tables.DataId
 import org.junit.Assert

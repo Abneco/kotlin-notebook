@@ -2,8 +2,8 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test.metaLanguage
 
 import com.intellij.testFramework.ParsingTestCase
-import org.jetbrains.kotlinx.jupyter.plugin.lang.JKTMetaFileType
-import org.jetbrains.kotlinx.jupyter.plugin.lang.grammar.JKTMetaParserDefinition
+import org.jetbrains.kotlinx.jupyter.plugin.language.meta.JKTMetaFileType
+import org.jetbrains.kotlinx.jupyter.plugin.language.meta.grammar.JKTMetaParserDefinition
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.junit.Test
 import org.junit.runner.RunWith

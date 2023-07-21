@@ -12,7 +12,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.util.descendantsOfType
 import com.intellij.testFramework.HeavyTestHelper
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.kotlinx.jupyter.plugin.actions.KotlinNotebookCreateAction
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookCreateAction
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionTest
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
