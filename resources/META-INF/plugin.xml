@@ -142,10 +142,10 @@
         <liveTemplateContext contextId="KOTLIN_NOTEBOOK_OBJECT_DECLARATION" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$ObjectDeclaration"/>
         <liveTemplateContext contextId="KOTLIN_NOTEBOOK_META" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Meta"/>
 
-        <completion.contributor language="JKTMeta" id="JKTMetaBasic" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.meta.codeInsight.JKTMetaCompletionContributor" />
+        <completion.contributor language="JKTMeta" id="JKTMetaBasic" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.metaLanguage.JKTMetaCompletionContributor" />
         <!--<completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.KotlinMagicsRuntimeCompletionContributor" order="first"/>-->
-        <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.meta.codeInsight.JKTMetaAnnotator"/>
-        <typedHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.language.meta.codeInsight.JKTMetaTypedHandlerDelegate"/>
+        <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.metaLanguage.JKTMetaAnnotator"/>
+        <typedHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.metaLanguage.JKTMetaTypedHandlerDelegate"/>
         <gotoDeclarationHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookGotoDeclarationProvider"/>
         <!--<searcher forClass="com.intellij.psi.search.searches.ReferencesSearch$SearchParameters"-->
         <!--          implementationClass="org.jetbrains.kotlinx.jupyter.plugin.file.psi.NotebookReferencesProvider"/>-->

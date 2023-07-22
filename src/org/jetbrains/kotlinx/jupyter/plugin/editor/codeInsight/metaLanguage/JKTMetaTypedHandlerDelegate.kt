@@ -1,4 +1,4 @@
-package org.jetbrains.kotlinx.jupyter.plugin.language.meta.codeInsight
+package org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.metaLanguage
 
 import com.intellij.codeInsight.AutoPopupController
 import com.intellij.codeInsight.editorActions.TypedHandlerDelegate

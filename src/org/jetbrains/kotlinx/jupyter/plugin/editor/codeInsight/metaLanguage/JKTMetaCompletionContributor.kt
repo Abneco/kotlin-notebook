@@ -1,4 +1,5 @@
-package org.jetbrains.kotlinx.jupyter.plugin.language.meta.codeInsight
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.metaLanguage
 
 import com.intellij.codeInsight.completion.CompletionContributor
 import com.intellij.codeInsight.completion.CompletionParameters
@@ -14,7 +15,6 @@ import org.jetbrains.kotlinx.jupyter.common.ReplEnum
 import org.jetbrains.kotlinx.jupyter.common.ReplLineMagic
 import org.jetbrains.kotlinx.jupyter.libraries.ResourceLibraryDescriptorsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaStatement
-import org.jetbrains.kotlinx.jupyter.plugin.language.meta.util.replEnum
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 

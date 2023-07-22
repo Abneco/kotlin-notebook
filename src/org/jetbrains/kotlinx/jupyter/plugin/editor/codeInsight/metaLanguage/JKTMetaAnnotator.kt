@@ -1,4 +1,4 @@
-package org.jetbrains.kotlinx.jupyter.plugin.language.meta.codeInsight
+package org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.metaLanguage
 
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.Annotator
@@ -8,7 +8,6 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
 import org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaStatement
-import org.jetbrains.kotlinx.jupyter.plugin.language.meta.util.replEnum
 
 class JKTMetaAnnotator : Annotator {
     override fun annotate(element: PsiElement, holder: AnnotationHolder) {
