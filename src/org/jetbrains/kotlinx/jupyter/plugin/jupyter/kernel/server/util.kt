@@ -7,3 +7,15 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.Jupyte
 fun JupyterNotebookSession.isKotlinNotebookSession(): Boolean {
     return kernelName.toLowerCaseAsciiOnly() == "kotlin"
 }
+
+fun rethrowAsInterrupted(e: Throwable) {
+    val message = buildString {
+        append("Kernel interrupted with exception: ")
+        try {
+            append(e.stackTraceToString())
+        } catch (t: Throwable) {
+            append(e::class.toString())
+        }
+    }
+    throw InterruptedException(message)
+}

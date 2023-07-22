@@ -15,9 +15,7 @@ import com.intellij.util.io.systemIndependentPath
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelVmCommandCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinJupyterResourcesUtil
-import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
-import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
+import org.jetbrains.kotlinx.jupyter.startup.*
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -36,7 +34,6 @@ class KotlinKernelProcessService {
         private val LOG = logger<KotlinKernelProcessService>()
     }
 
-    private val portsGenerator = KernelPortsGenerator(32768, 65536)
     private val homeDirectory by lazy {
         PathManager.getSystemDir().resolve("kotlin-jupyter").resolve("kernelProcess").toFile()
     }
@@ -116,7 +113,7 @@ class KotlinKernelProcessService {
         onKernelTerminated: (ProcessEvent, KotlinKernelProcessHandler) -> Unit
     ): KotlinKernelProcessHandler {
         val kernelConfig = KernelConfig(
-            createKernelPorts { portsGenerator.randomPort() },
+            createRandomKernelPorts(),
             "tcp",
             "HmacSHA256",
             "x-x-x",

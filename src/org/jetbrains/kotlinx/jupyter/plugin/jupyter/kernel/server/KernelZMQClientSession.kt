@@ -12,11 +12,7 @@ import org.jetbrains.kotlinx.jupyter.api.libraries.rawMessageCallback
 import org.jetbrains.kotlinx.jupyter.plugin.util.toJacksonJson
 import org.jetbrains.kotlinx.jupyter.plugin.util.toKotlinSerializationJson
 import org.jetbrains.kotlinx.jupyter.protocol.AbstractJupyterConnection
-import org.jetbrains.kotlinx.jupyter.protocol.HMAC
-import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocket
-import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketInfo
 import org.jetbrains.kotlinx.jupyter.protocol.RawMessageImpl
-import org.jetbrains.kotlinx.jupyter.protocol.SocketWrapper
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
@@ -24,8 +20,6 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageBase
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterProtocolSchemaFactory
-import org.zeromq.SocketType
-import org.zeromq.ZMQ
 import org.zeromq.ZMQException
 import java.nio.channels.ClosedSelectorException
 import java.util.concurrent.locks.ReentrantLock
@@ -34,54 +28,24 @@ import kotlin.concurrent.withLock
 
 class KernelZMQClientSession(
     val sessionId: String,
-    private val kernelConfig: KernelConfig,
+    kernelConfig: KernelConfig,
     private val onMessageCallback: (JupyterMessage) -> Unit
 ): AbstractJupyterConnection(), JupyterKernelCommunicationClient, Disposable {
     private val receiveMessageLock = ReentrantLock(true)
 
-    private val context = ZMQ.context(1)
-
-    private val hmac = HMAC(kernelConfig.signatureScheme, kernelConfig.signatureKey)
-
-    private fun JupyterSocketInfo.forClient(): SocketType {
-        return when(this) {
-            JupyterSocketInfo.HB -> SocketType.DEALER // ??
-            JupyterSocketInfo.SHELL -> SocketType.DEALER
-            JupyterSocketInfo.CONTROL -> SocketType.DEALER
-            JupyterSocketInfo.STDIN -> SocketType.DEALER // ??
-            JupyterSocketInfo.IOPUB -> SocketType.SUB
-        }
-    }
-
-    private fun openSocket(info: JupyterSocketInfo): JupyterSocket {
-        val socket = SocketWrapper(
-            info,
-            context.socket(info.forClient()),
-            hmac,
-            kernelConfig
-        )
-        if (info.type == JupyterSocketType.IOPUB) {
-            socket.socket.subscribe(byteArrayOf())
-        }
-        return socket
-    }
-
-    private val sockets = JupyterSocketInfo.values().associate { it.type to openSocket(it).apply { connect() } }
     private val messageBytePrefix = listOf(byteArrayOf(1))
 
     private val clientThreads: MutableList<Thread> = ContainerUtil.createConcurrentList()
+
+    override val socketManager = IdeaJupyterSocketManager(kernelConfig)
 
     init {
         initSockets()
     }
 
-    override fun fromSocketType(type: JupyterSocketType): JupyterSocket {
-        return sockets[type] ?: throw IllegalArgumentException("Unsupported socket type: $type")
-    }
-
     override fun send(content: JupyterMessage) {
         val socketType = content.channel.socketType ?: return
-        val socket = fromSocketType(socketType)
+        val socket = socketManager.fromSocketType(socketType)
 
         socket.sendRawMessage(RawMessageImpl(
             messageBytePrefix,
@@ -110,7 +74,7 @@ class KernelZMQClientSession(
         val mainClientThread = thread(name = "Main Kernel ZMQ client thread") {
             val childThreads = buildList {
                 JupyterSocketType.values().forEach { socketType ->
-                    val socket = fromSocketType(socketType)
+                    val socket = socketManager.fromSocketType(socketType)
 
                     addMessageCallback(
                         rawMessageCallback(socketType, null) { rawMessage ->
@@ -123,10 +87,6 @@ class KernelZMQClientSession(
                     add(
                         thread(name = "$socketType's socket thread") {
                             socketLoop("Socket $socketType: Interrupted") {
-                                fun rethrowAsInterrupted(e: Throwable) {
-                                    throw InterruptedException("Kernel interrupted with exception: $e")
-                                }
-
                                 try {
                                     socket.runCallbacksOnMessage()
                                 } catch (e: ClosedSelectorException) {
@@ -155,10 +115,8 @@ class KernelZMQClientSession(
 
 
     override fun close() {
-        @Suppress("DEPRECATION")
-        clientThreads.forEach { it.stop() }
+        socketManager.close()
         clientThreads.clear()
-        sockets.values.forEach { it.close() }
     }
 
     override fun dispose() {
