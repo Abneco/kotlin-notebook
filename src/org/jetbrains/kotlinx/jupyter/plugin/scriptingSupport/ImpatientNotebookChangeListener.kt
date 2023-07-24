@@ -11,10 +11,11 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.js.translate.utils.splitToRanges
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
+import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.visualization.getCell
@@ -39,13 +40,6 @@ class ImpatientNotebookChangeListener(
 ) : DocumentListener {
     companion object {
         private const val FAST_INVOCATION_DELTA: Long = 100L
-        private inline fun <T> withReadAccess(crossinline block: () -> T): T {
-            return if (ApplicationManager.getApplication().isDispatchThread) {
-                block()
-            } else runReadAction {
-                block()
-            }
-        }
     }
 
     private var lastTimeCellChangeActionPerformed = 0L

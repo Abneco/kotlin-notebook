@@ -34,16 +34,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
-import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingRestarter.UpdateSteps.performHLStartupTemplate
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService.Companion.HL_DELAY_PAUSE
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.shouldStartAfterPreChecks
+import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.ImpatientNotebookChangeListener
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.ImpatientNotebookChangeListener
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
+import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -54,7 +55,7 @@ class NotebookHighlightingService(val project: Project, private val serviceScope
 
     fun getOrCreate(virtualFile: BackedNotebookVirtualFile): NotebookHighlightingManager {
         return mapping.getOrPut(virtualFile.file) {
-            val document = withReadAccess {
+            val document = withReadAccess(serviceScope) {
                 FileDocumentManager.getInstance().getDocument(virtualFile.file)
             }!!
             NotebookHighlightingManager(virtualFile, document, this@NotebookHighlightingService, null)
