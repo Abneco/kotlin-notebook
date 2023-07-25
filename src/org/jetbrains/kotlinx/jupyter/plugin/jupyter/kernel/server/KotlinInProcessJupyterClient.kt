@@ -15,6 +15,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKern
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelDoesNotExistsException
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterSessionData
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInterruptRequestMessageBuilder
@@ -28,7 +29,7 @@ import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpecBase
 import java.io.File
 import java.nio.file.Path
 
-typealias KernelId = String
+typealias KernelId = JupyterKernelId
 typealias KernelName = String
 typealias SessionId = JupyterNotebookSessionId
 
@@ -62,9 +63,9 @@ class KotlinInProcessJupyterClient(
     override val fileContentsApi: CachingFileContentsApi
         get() = TreeCachingFileContentsApi(JavaIoFileContentsApi(rootDir))
 
-    override fun startKernel(project: Project, kernelName: String, notebookPath: Path): String? {
+    override fun startKernel(project: Project, kernelName: String, notebookPath: Path): KernelId? {
         if (kernelName !in kernelSpecs) return null
-        val id = idGen.generate()
+        val id = KernelId(idGen.generate())
         val kernel = processService.create(
             project,
             notebookPath,
