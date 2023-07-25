@@ -48,18 +48,18 @@ import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
+import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
+import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelProcessService
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
-import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
-import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanentIndexService
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelProcessService
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.usages.KotlinNotebookPluginUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.tryWithWriteLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
@@ -549,20 +549,20 @@ class JupyterCompilerPerFileService(
             psiFile = it
         }
 
-        val properCompiledClass = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
-            it.fileName.substringBefore(".kts").let { f -> f + "jupyter" }
+        val compiledClassName = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
+            it.fileName.substringBefore(".kts").let { f -> f + "_jupyter" }
         }
         var nextCellInd: Int? = null
         (psiCell.parent as? JupyterNotebook)?.psiCellList?.let { cells ->
             val executedCellInd = cells.indexOf(psiCell)
             if (executedCellInd != -1) {
-                compilerService.cellOrdinalToClassName[executedCellInd] = properCompiledClass
+                compilerService.cellOrdinalToClassName[executedCellInd] = compiledClassName
                 nextCellInd = if (executedCellInd + 1 != cells.size) executedCellInd + 1 else null
             }
         }
         try {
             (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
-                ?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
+                ?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, compiledClassName)
         } catch (ex: Exception) {
             LOG.warn("Exception during storing cell-related data", ex)
         }
@@ -570,8 +570,8 @@ class JupyterCompilerPerFileService(
             .dataController.invalidateStateAfterCellExecution(executedCellInd = nextCellInd)
         synchronized(psiCell) {
             val last = psiCell.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)?.firstOrNull()
-            properCompiledClass.addIfNotNull(last)
-            psiCell.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, properCompiledClass)
+            compiledClassName.addIfNotNull(last)
+            psiCell.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, compiledClassName)
         }
     }
 
