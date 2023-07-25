@@ -18,19 +18,19 @@
     <orderEntry type="library" name="kotlinx-serialization-core" level="project" />
     <orderEntry type="module-library">
       <library name="jetbrains.kotlin-jupyter-shared-compiler" type="repository">
-        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler:0.12.0-32-1">
+        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler:0.12.0-31">
           <verification>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.12.0-32-1/kotlin-jupyter-shared-compiler-0.12.0-32-1.jar">
-              <sha256sum>71cdfdc6d9acc13f94f6ab5625fe18dacb2cc5a3be83b3f2a0a96e2f94701016</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.12.0-31/kotlin-jupyter-shared-compiler-0.12.0-31.jar">
+              <sha256sum>0202650f5464940d149d3dff8782f88fab5ab52351b78b5f78a0649332387f17</sha256sum>
             </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.12.0-32-1/kotlin-jupyter-api-0.12.0-32-1.jar">
-              <sha256sum>9bd35f3bac2d66d38f93adf8fd69f8ccca561b0abc358332ce927eb925181302</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.12.0-31/kotlin-jupyter-api-0.12.0-31.jar">
+              <sha256sum>6278f84302cf454cd256d841c4883f9694df5e26802e98a7682139416312c653</sha256sum>
             </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.12.0-32-1/kotlin-jupyter-lib-0.12.0-32-1.jar">
-              <sha256sum>07509a738956ed8ea00b00c10cf2499222b3b233f8d346f7d0579b0f22bd28de</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.12.0-31/kotlin-jupyter-lib-0.12.0-31.jar">
+              <sha256sum>1d41eab07b0108a97e70f7738aadd12eda19a065ae9617dd7e856801140cdf8b</sha256sum>
             </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.12.0-32-1/kotlin-jupyter-common-dependencies-0.12.0-32-1.jar">
-              <sha256sum>0d955d6cd2f67a259427efea1b0763815027b99f944a0ba7c9a77f5ac2f48c42</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.12.0-31/kotlin-jupyter-common-dependencies-0.12.0-31.jar">
+              <sha256sum>978a2278e5564b140e5b4c2e6f77e14f3e3c02719f7583436189bb78c2e11059</sha256sum>
             </artifact>
             <artifact url="file://$MAVEN_REPOSITORY$/org/zeromq/jeromq/0.5.3/jeromq-0.5.3.jar">
               <sha256sum>a0973309aa2c3c6e1ea0d102acd4a5ba61c8e38bae0ba88c5ac5391ab88a8206</sha256sum>
@@ -44,20 +44,20 @@
           </verification>
         </properties>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.12.0-32-1/kotlin-jupyter-shared-compiler-0.12.0-32-1.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.12.0-32-1/kotlin-jupyter-api-0.12.0-32-1.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.12.0-32-1/kotlin-jupyter-lib-0.12.0-32-1.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.12.0-32-1/kotlin-jupyter-common-dependencies-0.12.0-32-1.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.12.0-31/kotlin-jupyter-shared-compiler-0.12.0-31.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.12.0-31/kotlin-jupyter-api-0.12.0-31.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.12.0-31/kotlin-jupyter-lib-0.12.0-31.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.12.0-31/kotlin-jupyter-common-dependencies-0.12.0-31.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/org/zeromq/jeromq/0.5.3/jeromq-0.5.3.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.12.0-32-1/kotlin-jupyter-shared-compiler-0.12.0-32-1-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.12.0-32-1/kotlin-jupyter-api-0.12.0-32-1-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.12.0-32-1/kotlin-jupyter-lib-0.12.0-32-1-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.12.0-32-1/kotlin-jupyter-common-dependencies-0.12.0-32-1-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.12.0-31/kotlin-jupyter-shared-compiler-0.12.0-31-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.12.0-31/kotlin-jupyter-api-0.12.0-31-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.12.0-31/kotlin-jupyter-lib-0.12.0-31-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.12.0-31/kotlin-jupyter-common-dependencies-0.12.0-31-sources.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/org/zeromq/jeromq/0.5.3/jeromq-0.5.3-sources.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0-sources.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0-sources.jar!/" />
