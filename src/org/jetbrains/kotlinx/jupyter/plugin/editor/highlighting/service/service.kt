@@ -50,12 +50,12 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Service(Service.Level.PROJECT)
-class NotebookHighlightingService(val project: Project, private val serviceScope: CoroutineScope): Disposable {
+class NotebookHighlightingService(val project: Project): Disposable {
     private val mapping: MutableMap<VirtualFile, NotebookHighlightingManager> = ConcurrentHashMap()
 
     fun getOrCreate(virtualFile: BackedNotebookVirtualFile): NotebookHighlightingManager {
         return mapping.getOrPut(virtualFile.file) {
-            val document = withReadAccess(serviceScope) {
+            val document = withReadAccess {
                 FileDocumentManager.getInstance().getDocument(virtualFile.file)
             }!!
             NotebookHighlightingManager(virtualFile, document, this@NotebookHighlightingService, null)

@@ -24,8 +24,6 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.util.parentOfType
 import com.intellij.testFramework.LightVirtualFile
 import com.intellij.util.concurrency.AppExecutorUtil
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
@@ -128,21 +126,12 @@ internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
     return (injectInfo as? PsiFile)?.findElementAt(caretOffSet - host.startOffsetInParent - 5)
 }
 
-internal inline fun <T> withReadAccess(scope: CoroutineScope? = null, crossinline block: () -> T): T {
+internal inline fun <T> withReadAccess(crossinline block: () -> T): T {
     return if (ApplicationManager.getApplication().isDispatchThread) {
         block()
     } else runBlockingCancellable {
-        when {
-            scope != null -> {
-                scope.async {
-                    readAction {
-                        block()
-                    }
-                }.await()
-            }
-            else -> readAction {
-                block()
-            }
+        readAction {
+            block()
         }
     }
 }
