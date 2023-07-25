@@ -16,6 +16,7 @@ import org.jetbrains.kotlinx.jupyter.protocol.RawMessageImpl
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageBase
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
@@ -27,9 +28,9 @@ import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 
 class KernelZMQClientSession(
-    val sessionId: String,
-    kernelConfig: KernelConfig,
-    private val onMessageCallback: (JupyterMessage) -> Unit
+  val sessionId: JupyterNotebookSessionId,
+  kernelConfig: KernelConfig,
+  private val onMessageCallback: (JupyterMessage) -> Unit
 ): AbstractJupyterConnection(), JupyterKernelCommunicationClient, Disposable {
     private val receiveMessageLock = ReentrantLock(true)
 

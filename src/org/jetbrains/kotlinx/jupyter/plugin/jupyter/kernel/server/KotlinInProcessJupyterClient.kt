@@ -16,6 +16,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKern
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterSessionData
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInterruptRequestMessageBuilder
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.filecontentsapi.CachingFileContentsApi
@@ -29,7 +30,7 @@ import java.nio.file.Path
 
 typealias KernelId = String
 typealias KernelName = String
-typealias SessionId = String
+typealias SessionId = JupyterNotebookSessionId
 
 class KotlinInProcessJupyterClient(
     private val rootDir: File
@@ -112,7 +113,7 @@ class KotlinInProcessJupyterClient(
         val notebookFile = File(notebookPath).absoluteFile
         val kernelId = startKernel(project, kernelName, notebookFile.toPath()) ?: throw RuntimeException("Unknown kernel: $kernelName")
 
-        val sessionId = idGen.generate()
+        val sessionId = SessionId(idGen.generate())
         val data = JupyterSessionData(
             sessionId,
             kernelId,

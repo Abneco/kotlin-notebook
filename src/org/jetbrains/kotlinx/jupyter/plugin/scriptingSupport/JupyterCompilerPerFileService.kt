@@ -66,6 +66,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterSource
@@ -166,7 +167,7 @@ class JupyterCompilerPerFileService(
     }
 
     private val coroutineScope = CoroutineScope(Job())
-    private var previousSessionId: String? = null
+    private var previousSessionId: JupyterNotebookSessionId? = null
 
     val executedCellsCount: Int get() = directoryCounter.get()
 
@@ -350,7 +351,7 @@ class JupyterCompilerPerFileService(
         val sessionId = getSession()?.sessionId
 
         if (sessionId != previousSessionId) {
-            LOG.info("Clearing Kotlin snippets. Previous session ID: $previousSessionId")
+            LOG.info("Clearing Kotlin snippets. Previous session ID: ${previousSessionId?.id}")
             clearPreviousSnippets()
             previousSessionId = sessionId
         }

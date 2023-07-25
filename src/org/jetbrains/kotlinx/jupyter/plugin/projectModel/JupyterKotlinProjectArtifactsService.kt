@@ -54,6 +54,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.parentsWithSelf
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
@@ -77,7 +78,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     private val buildResultCache: ConcurrentHashMap<VirtualFile, BaseCache<BuildResult, KotlinNotebookDependencies>> = ConcurrentHashMap()
     private val librariesCache: ConcurrentHashMap<VirtualFile, BaseCache<ProjectArtifacts, KotlinNotebookDependencies>> = ConcurrentHashMap()
 
-    private val sessionData = mutableMapOf<String, SessionData>()
+    private val sessionData = mutableMapOf<JupyterNotebookSessionId, SessionData>()
     private val sessionDataLock = ReentrantLock()
 
     private var firstRun: Boolean = true
@@ -228,7 +229,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         }
     }
 
-    fun getNewArtifactsForSession(sessionId: String): Collection<String> {
+    fun getNewArtifactsForSession(sessionId: JupyterNotebookSessionId): Collection<String> {
         val (notebookFile, oldArtifacts) = sessionDataLock.withLock { sessionData[sessionId] } ?: return emptyList()
 
         val notebookSettings = KotlinNotebookPerFileSettingsCache.getInstance(project).getSettings(notebookFile)

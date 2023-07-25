@@ -6,10 +6,11 @@ import com.intellij.openapi.util.text.StringUtil
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.PreExecutionSourceModifier
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpec
 
 class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier {
-    override fun amendSource(project: Project, sessionId: String, kernelSpec: JupyterKernelSpec, source: String): String? {
+    override fun amendSource(project: Project, sessionId: JupyterNotebookSessionId, kernelSpec: JupyterKernelSpec, source: String): String? {
         if (kernelSpec.language != "kotlin") return null
 
         if (source.contains(SKIP_PROJECT_BUILD_COMMENT)) return null
