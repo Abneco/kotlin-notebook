@@ -34,7 +34,7 @@ import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.JupyterKotlinCellExecutionCallbackFactory
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
@@ -176,7 +176,7 @@ internal object NotebookHighlightingUtilityObject {
             psiFile to cells
         }
         backedFile?.let {
-            JupyterKotlinCellExecutionCallbackFactory.getInstance().resetPreviousData(it)
+            KotlinNotebookCellExecutionCallbackFactory.getInstance().resetPreviousData(it)
         }
         if (wouldShowNotification) {
           NotebookNotificationUtility.showKernelRestart(project)

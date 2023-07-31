@@ -66,7 +66,7 @@
     <applicationListeners>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorColorsListener"
                   topic="com.intellij.openapi.editor.colors.EditorColorsListener"/>
-        <listener class="org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookActionListener"
+        <listener class="org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFusActionListener"
                   topic="com.intellij.openapi.actionSystem.ex.AnActionListener"/>
     </applicationListeners>
 
@@ -208,7 +208,7 @@
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
-        <jupyterCellExecutionCallbackFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.JupyterKotlinCellExecutionCallbackFactory"/>
+        <jupyterCellExecutionCallbackFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory"/>
         <connections.execution.preExecutionSourceModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.JupyterKotlinPreExecutionSourceModifier"/>
         <editorCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.creating.KotlinJupyterEditorCustomizer"/>
         <jupyterActionPresentationModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookActionPresentationModifier"/>

@@ -23,7 +23,7 @@ import kotlin.concurrent.write
  * This factory [create] method is called on each cell execution
  * and should return the callback for the actions related to this cell.
  */
-class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFactory {
+class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackFactory {
 
     private val callbacksCounters = mutableMapOf<BackedNotebookVirtualFile, Pair<Int, PriorityQueue<Int>>>()
     private val highlightOrder = mutableMapOf<BackedNotebookVirtualFile, MutableSet<Int>>()
@@ -140,7 +140,7 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
 
         val index = registerNewCallback(file, jupyterPsiCellData.second)
 
-        return JupyterKotlinCellExecutionCallback(
+        return KotlinNotebookCellExecutionCallback(
             cellProject,
             file,
             cell,
@@ -154,7 +154,7 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
         virtualFile: BackedNotebookVirtualFile
     ): JupyterExecutionCallback {
         val index = registerNewCallback(virtualFile, null)
-        return JupyterKotlinCellExecutionCallback(
+        return KotlinNotebookCellExecutionCallback(
             project,
             virtualFile,
             null,
@@ -164,7 +164,7 @@ class JupyterKotlinCellExecutionCallbackFactory : JupyterCellExecutionCallbackFa
     }
 
     companion object {
-        private val LOG = logger<JupyterKotlinCellExecutionCallbackFactory>()
-        fun getInstance() = JupyterCellExecutionCallbackFactory.EP_NAME.findExtensionOrFail(JupyterKotlinCellExecutionCallbackFactory::class.java)
+        private val LOG = logger<KotlinNotebookCellExecutionCallbackFactory>()
+        fun getInstance() = JupyterCellExecutionCallbackFactory.EP_NAME.findExtensionOrFail(KotlinNotebookCellExecutionCallbackFactory::class.java)
     }
 }

@@ -24,8 +24,8 @@ class JupyterKotlinRuntimeServiceListener : JupyterRuntimeService.Listener {
         val callbacks = session.virtualFile?.let { virtualFile ->
             val project = session.project
             listOf(
-                JupyterKotlinCellExecutionCallbackFactory.getInstance().createNotBoundCallback(project, virtualFile),
-                object : JupyterExecutionCallbackAdapter() {
+              KotlinNotebookCellExecutionCallbackFactory.getInstance().createNotBoundCallback(project, virtualFile),
+              object : JupyterExecutionCallbackAdapter() {
                     override fun onExecuteReply(message: JupyterMessage) {
                         logger<JupyterKotlinRuntimeServiceListener>().debug("Kotlin session has been initialized with response: ${message.json}")
                     }

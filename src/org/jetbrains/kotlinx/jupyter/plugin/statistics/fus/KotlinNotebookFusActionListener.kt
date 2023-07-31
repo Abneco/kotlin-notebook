@@ -13,25 +13,24 @@ import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelClear
 import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelRunAllAction
 import org.jetbrains.plugins.notebooks.jupyter.editor.getJupyterVirtualFile
 
-class KotlinNotebookActionListener: AnActionListener {
+class KotlinNotebookFusActionListener: AnActionListener {
     override fun beforeActionPerformed(action: AnAction, event: AnActionEvent) {
         val project = event.project ?: return
         val backedFile = getJupyterVirtualFile(event) ?: return
+        if (!backedFile.file.isKotlinNotebook) return
 
-        if (backedFile.file.isKotlinNotebook) {
-            when(action) {
-                is JupyterRestartKernelAction,
-                is JupyterRestartKernelRunAllAction,
-                is JupyterRestartKernelClearOutputsAction -> {
-                    val service = JupyterCompilerService.getForFile(project, backedFile)
-                    val cellCountBeforeRestart = service.executedCellsCount
-                    val classpathSizeBeforeRestart = service.currentClasspath.size
-                    KotlinNotebookFeatureUsagesCollector.registerKernelRestart(project, cellCountBeforeRestart, classpathSizeBeforeRestart)
-                }
-                is NotebookRunAllAction -> {
-                    val cellCountToRun = backedFile.notebook.cells.size
-                    KotlinNotebookFeatureUsagesCollector.registerRunAllCells(project, cellCountToRun)
-                }
+        when(action) {
+            is JupyterRestartKernelAction,
+            is JupyterRestartKernelRunAllAction,
+            is JupyterRestartKernelClearOutputsAction -> {
+                val compilerService = JupyterCompilerService.getForFile(project, backedFile)
+                val cellCountBeforeRestart = compilerService.executedCellsCount
+                val classpathSizeBeforeRestart = compilerService.currentClasspath.size
+                KotlinNotebookFeatureUsagesCollector.registerKernelRestart(project, cellCountBeforeRestart, classpathSizeBeforeRestart)
+            }
+            is NotebookRunAllAction -> {
+                val cellCountToRun = backedFile.notebook.cells.size
+                KotlinNotebookFeatureUsagesCollector.registerRunAllCells(project, cellCountToRun)
             }
         }
     }

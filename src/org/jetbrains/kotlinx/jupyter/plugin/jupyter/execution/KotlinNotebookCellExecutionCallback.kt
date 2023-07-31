@@ -12,17 +12,15 @@ import org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeature
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListInfo
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInputRequestMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutputsBase
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import kotlin.system.measureTimeMillis
 
 /**
- * Methods of [JupyterKotlinCellExecutionCallback] are triggered on
+ * Methods of [KotlinNotebookCellExecutionCallback] are triggered on
  * corresponding actions performed with the cells in Jupyter notebook.
  *
  * Note that this is not the only callback triggered for cell actions.
@@ -31,43 +29,19 @@ import kotlin.system.measureTimeMillis
  * language-specific features. If you want to change rendering or other
  * language-agnostic features, contribute to the Jupyter plugin directly.
  */
-class JupyterKotlinCellExecutionCallback(
+class KotlinNotebookCellExecutionCallback(
     private val project: Project,
     private val virtualFile: BackedNotebookVirtualFile,
     private val psiCell: JupyterPsiCell?,
     private val index: Int,
     private val executionStartedMs: Long,
-) : JupyterExecutionCallback {
+) : JupyterExecutionCallbackAdapter() {
     override val channel: JupyterMessageChannel
         get() = JupyterMessageChannel.ANY
     override var finalizeCallback = {}
 
     override fun expire() {
         updateScriptingIfNeeded()
-    }
-
-    override fun onCommInfoReply(message: JupyterMessage) {
-    }
-
-    override fun onClearOutput(message: JupyterMessage) {
-    }
-
-    override fun onCompleteReply(message: JupyterMessage) {
-    }
-
-    override fun onDebugRequest(message: JupyterMessage) {
-    }
-
-    override fun onDebugReply(message: JupyterMessage) {
-    }
-
-    override fun onDebugEvent(message: JupyterMessage) {
-    }
-
-    override fun onDisplayData(message: JupyterMessage) {
-    }
-
-    override fun onExecuteInput(message: JupyterMessage) {
     }
 
     override fun onExecuteReply(message: JupyterMessage) = invokeLater {
@@ -119,22 +93,13 @@ class JupyterKotlinCellExecutionCallback(
         }
     }
 
-    override fun onInputRequest(message: JupyterInputRequestMessage) {
-    }
-
-    override fun onInspectReply(message: JupyterMessage) {
-    }
-
-    override fun onStatus(message: JupyterStatusMessage) {
-    }
-
     override fun onUpdateOutput(message: JupyterMessage) {
         val output = JupyterOutputsBase.fromMessage(message) ?: return
         KotlinNotebookFeatureUsagesCollector.registerOutputUpdated(project, output)
     }
 
     private fun updateScriptingIfNeeded(onError: Boolean = false) {
-        val factory = JupyterKotlinCellExecutionCallbackFactory.getInstance()
+        val factory = KotlinNotebookCellExecutionCallbackFactory.getInstance()
         val shouldUpdateDependencies = factory.unregisterCallback(project, virtualFile, index, onError)
 
         if (shouldUpdateDependencies) {

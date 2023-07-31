@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.utils.addIfNotNull
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.JupyterKotlinCellExecutionCallbackFactory
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
@@ -130,7 +130,7 @@ class NotebookCaretListener(
                         }
                         if (!isRunning) {
                             val executionRequestsDone =
-                                JupyterKotlinCellExecutionCallbackFactory.getInstance()
+                                KotlinNotebookCellExecutionCallbackFactory.getInstance()
                                     .daemonFinished(vFile, finished, queue, isCanModifyHLRequests)
                             LOG.debug("Reducing queue by $finished, canModify: ${isCanModifyHLRequests}, exec requests done: $executionRequestsDone")
                             if (notebookHighlightingManager?.daemonFinished(editor, psiFile, queue, executionRequestsDone) == true) {

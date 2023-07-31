@@ -242,8 +242,12 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             ALL_CELLS_RUN_EVENT.log(project, cellCountToRun)
         }
 
+        // We need some negative special value for "all" dependencies to avoid requesting them
+        // Note that all the special values should be negative powers of 2
+        private const val ALL_DEPENDENCIES_COUNT = -2
+
         private fun KotlinNotebookDependencies.count() = when(this) {
-            is KotlinNotebookDependencies.All -> -2
+            is KotlinNotebookDependencies.All -> ALL_DEPENDENCIES_COUNT
             is KotlinNotebookDependencies.Selection -> this.values.size
         }
     }
