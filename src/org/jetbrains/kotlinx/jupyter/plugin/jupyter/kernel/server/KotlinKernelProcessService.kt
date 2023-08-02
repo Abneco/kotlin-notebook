@@ -155,12 +155,12 @@ class KotlinKernelProcessService {
             extraJavaArgs
         )
 
-        val cmd = GeneralCommandLine(cmdArgs).apply {
+        val commandLine = GeneralCommandLine(cmdArgs).apply {
             workingDir?.let { withWorkDirectory(it.toFile()) }
         }
 
         return KotlinKernelProcessHandler(
-            cmd, kernelConfig, notebookPath,
+            commandLine, kernelConfig, notebookPath,
             onKernelTerminated
         ).also { processHandler ->
             val application = ApplicationManager.getApplication()

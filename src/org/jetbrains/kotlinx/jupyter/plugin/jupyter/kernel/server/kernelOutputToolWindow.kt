@@ -62,7 +62,7 @@ fun showKotlinNotebookServerManagementToolWindow(
     )
 }
 
-fun getOrCreateKotlinNotebookToolWindow(project: Project): ToolWindow {
+private fun getOrCreateKotlinNotebookToolWindow(project: Project): ToolWindow {
     val toolWindowManager = ToolWindowManager.getInstance(project)
     val toolWindow = toolWindowManager.getToolWindow(KOTLIN_NOTEBOOK_TOOL_WINDOW_ID)
         ?: toolWindowManager.registerToolWindow(
