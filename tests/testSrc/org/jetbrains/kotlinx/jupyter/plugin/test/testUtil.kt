@@ -24,6 +24,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCell
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterExecutionState
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
@@ -100,7 +101,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
                     },
                     callbacks = listOfNotNull(object : JupyterExecutionCallbackAdapter() {
                         override fun onStatus(message: JupyterStatusMessage) {
-                            if (message.executionState == JupyterStatusMessage.JupyterExecutionState.IDLE) {
+                            if (message.executionState == JupyterExecutionState.IDLE) {
                                 receivedMessagesFutures[cellExecutionNumber[cellNumber]!!].complete(messages)
                             }
                         }

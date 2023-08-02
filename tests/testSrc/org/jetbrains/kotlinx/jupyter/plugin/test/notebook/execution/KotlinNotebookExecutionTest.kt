@@ -13,6 +13,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRunt
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterExecutionState
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
 import org.junit.Ignore
 import org.junit.Test
@@ -67,7 +68,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
             }
         }, object : JupyterExecutionCallbackAdapter() {
             override fun onStatus(message: JupyterStatusMessage) {
-                if (message.executionState == JupyterStatusMessage.JupyterExecutionState.BUSY) {
+                if (message.executionState == JupyterExecutionState.BUSY) {
                     ApplicationManager.getApplication().executeOnPooledThread {
                         Thread.sleep(1000)
                         val session = futureSession.get(5, TimeUnit.SECONDS)
