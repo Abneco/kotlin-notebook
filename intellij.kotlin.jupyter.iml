@@ -98,7 +98,6 @@
     <orderEntry type="module" module-name="intellij.java.impl" />
     <orderEntry type="module" module-name="intellij.notebooks.visualization" />
     <orderEntry type="module" module-name="kotlin.refactorings.common" />
-    <orderEntry type="module" module-name="kotlin.base.fe10.highlighting" />
     <orderEntry type="module" module-name="intellij.java" />
     <orderEntry type="library" name="Slf4j" level="project" />
     <orderEntry type="library" name="kotlinx-html-jvm" level="project" />
