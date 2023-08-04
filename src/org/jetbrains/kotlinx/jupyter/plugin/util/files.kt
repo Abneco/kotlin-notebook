@@ -4,18 +4,17 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.io.isFile
 import org.jetbrains.kotlin.idea.util.sourceRoots
 import java.io.File
 import java.nio.file.Files
-import kotlin.streams.toList
+import kotlin.io.path.isRegularFile
 
 val File.isNotEmptyDirectory: Boolean
     get() = exists() && isDirectory && (list()?.isNotEmpty() ?: false)
 
 fun File.allJarsFromDir(): List<File> {
     return Files.walk(this.toPath()).filter { path ->
-        path.isFile() && !path.fileName.toString().contains("kotlin-jupyter-kernel")
+      path.isRegularFile() && !path.fileName.toString().contains("kotlin-jupyter-kernel")
     }.map {
         it.toFile()
     }.toList()
