@@ -11,20 +11,12 @@ import java.io.File
 class KotlinJupyterServer(
     override val connectionParameters: JupyterConnectionParameters
 ): JupyterServer {
-    private val lock: Any = Object()
-
-    /**
-     * Guarded by [lock].
-     */
-    private var _client: JupyterClient? = null
-
-    override val client: JupyterClient
-        get() = synchronized(lock) {
-            _client ?: KotlinInProcessJupyterClient(File("")).also {
-                _client = it
-                Disposer.register(this, it)
-            }
+    override val client: JupyterClient by lazy {
+        KotlinInProcessJupyterClient(File("")).also {
+            Disposer.register(this, it)
         }
+    }
+
     override val kernelSpecs: List<JupyterKernelSpec>
         get() = client.getKernelSpecs()
 
