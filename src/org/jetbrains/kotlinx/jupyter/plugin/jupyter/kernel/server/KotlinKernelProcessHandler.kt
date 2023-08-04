@@ -25,10 +25,11 @@ class KotlinKernelProcessHandler(
 
         addProcessListener(object : ProcessAdapter() {
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                LOG.debug (event.text.trimEnd().trimStart('\r', '\n'))
+                LOG.debug(event.text.trimEnd().trimStart('\r', '\n'))
             }
 
             override fun processTerminated(event: ProcessEvent) {
+                LOG.debug("Kernel process terminated with code ${event.exitCode} (${event.text})")
                 onKernelTerminated(event, handler)
             }
         })
