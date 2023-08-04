@@ -73,6 +73,9 @@ class NotebookHighlightingService(val project: Project): Disposable {
         fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): NotebookHighlightingManager {
             return getInstance(project).getOrCreate(virtualFile)
         }
+
+        fun VirtualFile?.getHighlightingManagerForFile(project: Project) =
+            this?.let(BackedNotebookVirtualFile::takeIfBacked)?.let { getForFile(project, it) }
     }
 }
 
