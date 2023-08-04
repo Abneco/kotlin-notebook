@@ -6,12 +6,10 @@ import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingManager
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.state.NotebookCaretStateProcessor
 
 class NotebookHighlightingDaemonListener(
     project: Project,
-    private val notebookHighlightingManager: NotebookHighlightingManager?,
     private val stateProcessor: NotebookCaretStateProcessor
 ) : DaemonListener {
     private val scriptDefManager = ScriptDefinitionsManager.getInstance(project)

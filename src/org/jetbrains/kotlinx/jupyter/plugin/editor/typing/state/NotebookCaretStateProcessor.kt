@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingManager
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
-import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretHighlightingStarter
+import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCellHighlightingTrigger
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.util.toDocument
@@ -70,7 +70,7 @@ class NotebookCaretStateProcessor(
     private val project: Project,
     private val backedNotebookVFile: BackedNotebookVirtualFile,
     private val notebookHighlightingManager: NotebookHighlightingManager?,
-    private val highlightingStarter: NotebookCaretHighlightingStarter
+    private val highlightingStarter: NotebookCellHighlightingTrigger
 ) : NotebookCaretMovementProcessor {
     companion object {
         private val LOG = thisLogger()
