@@ -34,15 +34,14 @@ import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlin.utils.addIfNotNull
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility.showExistingUsagesMessage
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility.showRerunActionNeeded
-import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.KotlinNotebookElementFindUsagesHandler
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.isIdentifier
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
+import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
 
@@ -101,7 +100,7 @@ class NotebookMemberInplaceRenamer(
 
             override fun performRefactoring(usages: Array<out UsageInfo>) {
                 if (foundRefsSize > 0) {
-                    showRerunActionNeeded(myProject)
+                    NotebookNotificationUtility.usageRelatedFactory.showRerunActionNeeded(myProject)
                     val hostFile = injectedManager.getTopLevelFile(element)
                     if (adjustmentTextRange != null) {
                         notebookHighlightingService?.dataController?.update {
@@ -122,11 +121,13 @@ class NotebookMemberInplaceRenamer(
                         it.toMoveUsageInfo()
                     }
                     if (ans.isEmpty()) {
-                        showExistingUsagesMessage(myProject, size)
+                        NotebookNotificationUtility
+                            .usageRelatedFactory.showRefactoringExistingUsagesMessage(myProject, size)
                         return ans.toTypedArray()
                     }
                     if (size == ans.size) {
-                        showRerunActionNeeded(myProject)
+                        NotebookNotificationUtility
+                            .usageRelatedFactory.showRerunActionNeeded(myProject)
                         val targetHostRanges = mutableSetOf<TextRange>()
                         val targetHostIndxs = mutableSetOf<Int>()
                         elementHost?.textRange?.let {

@@ -179,7 +179,8 @@ internal object NotebookHighlightingUtilityObject {
             hlManager?.sessionRestarted()
         }
         if (wouldShowNotification) {
-          NotebookNotificationUtility.showKernelRestart(project)
+            NotebookNotificationUtility.kernelRelatedFactory
+                .showKernelRestart(project)
         }
 
         invokeAndWaitIfNeeded { // we want to ensure that this part will be executed on the dispatch thread
@@ -261,7 +262,7 @@ class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
     fun isShouldAcceptDiagnostic(elem: Diagnostic): Boolean {
         val info = elem.factory.name
         if (info.startsWith(NotebookHighlightingUtilityObject.scriptingMissingBaseClassError)) {
-            NotebookNotificationUtility.showAbsentInitialBaseDependenciesInfo(elem.psiFile.project)
+            NotebookNotificationUtility.kernelRelatedFactory.showAbsentInitialBaseDependenciesInfo(elem.psiFile.project)
             return false
         }
         return info != NotebookHighlightingUtilityObject.scriptingMissingClassError

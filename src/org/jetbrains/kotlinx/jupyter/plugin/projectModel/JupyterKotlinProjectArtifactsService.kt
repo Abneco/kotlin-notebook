@@ -39,8 +39,8 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.concurrency.asDeferred
-import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettingsCache
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSettings
@@ -245,9 +245,12 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         }
 
         when (buildProjectResult.state) {
-            DependenciesState.OUTDATED -> NotebookNotificationUtility.showOutdatedDependencies(project)
+            DependenciesState.OUTDATED -> NotebookNotificationUtility
+                .kernelRelatedFactory
+                .showOutdatedDependencies(project)
             DependenciesState.ABSENT -> {
-                NotebookNotificationUtility.showAbsentDependencies(project)
+                NotebookNotificationUtility.kernelRelatedFactory
+                    .showAbsentDependencies(project)
                 if (firstRun) {
                     firstRun = false
                     throw RuntimeException(KotlinNotebookBundle.message("kotlin.jupyter.dependencies.build.error.throwable"))

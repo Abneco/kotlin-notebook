@@ -28,7 +28,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scheduleUpdateLater
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingBaseClassError
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingDependencyPrefix
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility.showAbsentInitialBaseDependenciesInfo
+import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
@@ -224,7 +224,7 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
         val description = highlightInfo.description ?: return true
         if (highlightInfo.severity == HighlightSeverity.ERROR
             && description.isLikeMissingDependencyClassError(true) && !reloadRequested) {
-            showAbsentInitialBaseDependenciesInfo(file.project)
+            NotebookNotificationUtility.kernelRelatedFactory.showAbsentInitialBaseDependenciesInfo(file.project)
             reloadRequested = true
             return false
         }

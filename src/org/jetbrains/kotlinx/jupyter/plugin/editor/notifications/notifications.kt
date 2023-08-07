@@ -14,92 +14,164 @@ import com.intellij.openapi.util.NlsSafe
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookConfigurable
 
-internal object NotebookNotificationUtility {
-    private fun prepareNotificationGroupTemplate() =
+
+internal interface NotebookNotificationShower {
+    sealed class NotificationTarget
+    fun showNotification(project: Project?, mark: NotificationTarget, @NlsSafe additionalMsg: String = "")
+}
+
+abstract class NotebookNotificationFactoryBase : NotebookNotificationShower {
+    protected fun prepareNotificationGroupTemplate(): NotificationGroup =
         NotificationGroupManager.getInstance().getNotificationGroup("Find Problems")
 
-    private val informSessionSingletonManager = SingletonNotificationManager("Kotlin Notebook plugin updates", NotificationType.INFORMATION)
-    private val informSingletonManager = SingletonNotificationManager("Find Problems", NotificationType.INFORMATION)
-    private val informSingletonManagerWarning = SingletonNotificationManager("Find Problems", NotificationType.WARNING)
-
-    private inline fun NotificationGroup.wrapActionInNotify(project: Project?, crossinline action: NotificationGroup.() -> Notification) =
+    protected inline fun NotificationGroup.wrapActionInNotify(project: Project?, crossinline action: NotificationGroup.() -> Notification) =
         this.action().notify(project)
 
-    fun showBytecodeRefactoringWarning(project: Project?) {
-        prepareNotificationGroupTemplate().wrapActionInNotify(project) {
-            createNotification(KotlinNotebookBundle.message("kotlin.jupyter.refactor.compiled.script"), NotificationType.WARNING)
-            .setTitle(KotlinNotebookBundle.message("kotlin.jupyter.settings.title"))
+    protected val informSingletonManager = SingletonNotificationManager("Find Problems", NotificationType.INFORMATION)
+    protected val informSingletonManagerWarning = SingletonNotificationManager("Find Problems", NotificationType.WARNING)
+    protected val informSessionSingletonManager = SingletonNotificationManager("Kotlin Notebook plugin updates", NotificationType.INFORMATION)
+
+}
+
+
+internal class NotebookKernelRelatedNotificationFactory() : NotebookNotificationFactoryBase() {
+    sealed class DependencyStatus : NotebookNotificationShower.NotificationTarget() {
+        object Outdated : DependencyStatus()
+        object Absent : DependencyStatus()
+        object AbsentInitial : DependencyStatus()
+        object InconsistentJDK : DependencyStatus()
+    }
+
+    sealed class KernelStatus : NotebookNotificationShower.NotificationTarget() {
+        object SessionRestart : DependencyStatus()
+    }
+
+
+    override fun showNotification(project: Project?, mark: NotebookNotificationShower.NotificationTarget, @NlsSafe additionalMsg: String) {
+        if ((mark !is DependencyStatus && mark !is KernelStatus) || project == null) return
+
+        when (mark) {
+            is DependencyStatus.Outdated -> {
+                informSingletonManagerWarning.notify(
+                    KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
+                    KotlinNotebookBundle.message("kotlin.jupyter.dependencies.build.error.outdated"),
+                        project
+                )
+            }
+            is DependencyStatus.Absent -> {
+                prepareNotificationGroupTemplate().wrapActionInNotify(project) {
+                    createNotification(KotlinNotebookBundle.message("kotlin.jupyter.dependencies.build.error.severe"), NotificationType.WARNING)
+                        .setTitle(KotlinNotebookBundle.message("kotlin.jupyter.settings.title"))
+                }
+            }
+            is DependencyStatus.AbsentInitial -> {
+                informSingletonManager.notify(
+                    KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
+                    KotlinNotebookBundle.message("kotlin.jupyter.session.initial.setup"),
+                        project
+                )
+            }
+            is DependencyStatus.InconsistentJDK -> {
+                informSingletonManagerWarning.notify(
+                    KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
+                    KotlinNotebookBundle.message("kotlin.jupyter.session.classloader.error") +
+                            "\n" + additionalMsg, project
+                ) { notification ->
+                    notification.addAction(object : NotificationAction(KotlinNotebookBundle.message("kotlin.jupyter.settings.JDK.action.preview")) {
+                        override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+                            ShowSettingsUtil.getInstance().showSettingsDialog(project, KotlinNotebookConfigurable::class.java) {
+                                it.focusOn(KotlinNotebookBundle.message("kotlin.jupyter.settings.JDK.path"))
+                            }
+                        }
+                    })
+                }
+            }
+            is KernelStatus.SessionRestart -> {
+                informSessionSingletonManager
+                    .notify(
+                        KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
+                        KotlinNotebookBundle.message("kotlin.jupyter.session.restart"),
+                        project)
+            }
+            else -> Unit
         }
     }
 
-    fun showExistingUsagesMessage(project: Project?, usagesCount: Int) {
-        if (usagesCount == 0 || project == null) return
-        informSingletonManager
-            .notify(
-                KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
-                KotlinNotebookBundle.message("kotlin.jupyter.refactor.changed.definition", usagesCount),
-                project
-            )
-    }
-
-    fun showRerunActionNeeded(project: Project?) {
-        if (project == null) return
-        informSingletonManager
-            .notify(
-                KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
-                KotlinNotebookBundle.message("kotlin.jupyter.refactor.changed.definition.rerun"),
-                project)
-    }
-
+    // convenience methods
     fun showOutdatedDependencies(project: Project?) {
-        if (project == null) return
-        informSingletonManagerWarning
-            .notify(
-                KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
-                KotlinNotebookBundle.message("kotlin.jupyter.dependencies.build.error.outdated"),
-                project)
+        showNotification(project, DependencyStatus.Outdated)
     }
 
     fun showAbsentDependencies(project: Project?) {
-        if (project == null) return
-        prepareNotificationGroupTemplate().wrapActionInNotify(project) {
-            createNotification(KotlinNotebookBundle.message("kotlin.jupyter.dependencies.build.error.severe"), NotificationType.WARNING)
-                .setTitle(KotlinNotebookBundle.message("kotlin.jupyter.settings.title"))
-        }
+        showNotification(project, DependencyStatus.Absent)
     }
 
-    fun showKernelRestart(project: Project?) {
-        if (project == null) return
-        informSessionSingletonManager
-            .notify(
-                KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
-                KotlinNotebookBundle.message("kotlin.jupyter.session.restart"),
-                project)
-    }
-
-    fun showAbsentInitialBaseDependenciesInfo(project: Project) {
-        informSingletonManager
-          .notify(
-              KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
-              KotlinNotebookBundle.message("kotlin.jupyter.session.initial.setup"),
-              project)
+    fun showAbsentInitialBaseDependenciesInfo(project: Project?) {
+        showNotification(project, DependencyStatus.AbsentInitial)
     }
 
     fun showKernelJDKInconsistentError(project: Project, @NlsSafe loaderError: String = "") {
-        informSingletonManagerWarning.notify(
-            KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
-            KotlinNotebookBundle.message("kotlin.jupyter.session.classloader.error") +
-          "\n" + loaderError, project
-        ) { notification ->
-            notification.addAction(object : NotificationAction(KotlinNotebookBundle.message("kotlin.jupyter.settings.JDK.action.preview")) {
-                override fun actionPerformed(e: AnActionEvent, notification: Notification) {
-                    ShowSettingsUtil.getInstance().showSettingsDialog(project, KotlinNotebookConfigurable::class.java) {
-                        it.focusOn(KotlinNotebookBundle.message("kotlin.jupyter.settings.JDK.path"))
-                    }
+        showNotification(project, DependencyStatus.InconsistentJDK, loaderError)
+    }
+
+    fun showKernelRestart(project: Project?) =
+        showNotification(project, KernelStatus.SessionRestart)
+}
+
+
+internal class NotebookUsageRelatedNotificationFactory() : NotebookNotificationFactoryBase() {
+    sealed class ActionRelated : NotebookNotificationShower.NotificationTarget() {
+        object ByteCodeRefactoring : ActionRelated()
+        object RerunActionNeeded : ActionRelated()
+        object UsagesRefactoring : ActionRelated()
+    }
+
+    override fun showNotification(project: Project?, mark: NotebookNotificationShower.NotificationTarget, @NlsSafe additionalMsg: String) {
+        if (mark !is ActionRelated || project == null) return
+
+        when (mark) {
+            is ActionRelated.ByteCodeRefactoring -> {
+                prepareNotificationGroupTemplate().wrapActionInNotify(project) {
+                    createNotification(KotlinNotebookBundle.message("kotlin.jupyter.refactor.compiled.script"), NotificationType.WARNING)
+                        .setTitle(KotlinNotebookBundle.message("kotlin.jupyter.settings.title"))
                 }
-            })
+            }
+            is ActionRelated.RerunActionNeeded -> {
+                informSingletonManager.notify(
+                    KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
+                    KotlinNotebookBundle.message("kotlin.jupyter.refactor.changed.definition.rerun"),
+                        project
+                )
+            }
+            is ActionRelated.UsagesRefactoring -> {
+                informSingletonManager
+                    .notify(
+                        KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
+                        KotlinNotebookBundle.message("kotlin.jupyter.refactor.changed.definition", additionalMsg.toIntOrNull() ?: 0),
+                        project
+                    )
+            }
         }
     }
+
+    fun showRerunActionNeeded(project: Project?) =
+        showNotification(project, ActionRelated.RerunActionNeeded)
+
+    fun showBytecodeRefactoringWarning(project: Project?) {
+        showNotification(project, ActionRelated.ByteCodeRefactoring)
+    }
+
+    fun showRefactoringExistingUsagesMessage(project: Project?, usagesCount: Int) {
+        showNotification(project, ActionRelated.UsagesRefactoring, usagesCount.toString())
+    }
+}
+
+
+
+internal object NotebookNotificationUtility {
+    val kernelRelatedFactory = NotebookKernelRelatedNotificationFactory()
+    val usageRelatedFactory = NotebookUsageRelatedNotificationFactory()
+
 
     //fun showErrorHint(project: Project, editor: Editor, @NlsContexts.DialogMessage message: String, @NlsContexts.DialogTitle title: String) {
     //    KotlinSurrounderUtils.showErrorHint(project, editor, message, title, null)

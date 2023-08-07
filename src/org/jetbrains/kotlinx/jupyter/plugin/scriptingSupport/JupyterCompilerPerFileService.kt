@@ -412,7 +412,7 @@ class JupyterCompilerPerFileService(
                         }
                         is UnsupportedClassVersionError -> {
                             val msg = e.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
-                            NotebookNotificationUtility.showKernelJDKInconsistentError(project, msg)
+                            NotebookNotificationUtility.kernelRelatedFactory.showKernelJDKInconsistentError(project, msg)
                         }
                         is ClassNotFoundException -> {
                             implicitListsLoadQueue.removeFirstOrNull()
