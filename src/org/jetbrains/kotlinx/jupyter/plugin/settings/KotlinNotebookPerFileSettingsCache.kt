@@ -31,7 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.CalledInAny
-import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.JUPYTER_NOTEBOOK_EXTENSION
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -95,7 +95,7 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
 
     private fun performRefactoring(operation: JupyterNotebook.() -> Unit) {
         coroutineScope.async {
-            withBackgroundProgress(project, JupyterKotlinBundle.message("kotlin.jupyter.settings.refactoring.progress")) {
+            withBackgroundProgress(project, KotlinNotebookBundle.message("kotlin.jupyter.settings.refactoring.progress")) {
                 val openNotebookFiles = withContext(Dispatchers.EDT) {
                     val openNotebookFiles = cache.toMap().keys.mapNotNull { BackedNotebookVirtualFile.takeIfBacked(it) }
                     openNotebookFiles.forEach { it.notebook.operation() }

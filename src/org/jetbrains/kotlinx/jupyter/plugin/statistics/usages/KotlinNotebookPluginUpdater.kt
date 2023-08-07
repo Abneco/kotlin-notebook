@@ -6,20 +6,20 @@ import com.intellij.notification.NotificationGroupManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import icons.KotlinJupyterIcons
-import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinJupyterResourcesUtil
+import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookResourcesUtil
 
 @Service(Service.Level.APP)
 class KotlinNotebookPluginUpdater : StandalonePluginUpdateChecker(
-    KotlinJupyterResourcesUtil.pluginId,
+    KotlinNotebookResourcesUtil.pluginId,
     "kotlin.notebook.lastRequestTime",
     NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook plugin updates"),
     KotlinJupyterIcons.FileIcon,
 ) {
     override val currentVersion: String
-        get() = KotlinJupyterResourcesUtil.pluginVersion
+        get() = KotlinNotebookResourcesUtil.pluginVersion
 
     override fun skipUpdateCheck(): Boolean {
-        return KotlinJupyterResourcesUtil.isDevVersion
+        return KotlinNotebookResourcesUtil.isDevVersion
     }
 
     companion object {

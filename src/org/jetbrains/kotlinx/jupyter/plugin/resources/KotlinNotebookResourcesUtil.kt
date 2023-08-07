@@ -1,18 +1,19 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.util
+package org.jetbrains.kotlinx.jupyter.plugin.resources
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.extensions.PluginId
+import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
 import java.io.File
 import java.nio.file.Path
 
-object KotlinJupyterResourcesUtil {
+object KotlinNotebookResourcesUtil {
     private val KOTLIN_JUPYTER_PLUGIN_ID = PluginId.getId("org.jetbrains.plugins.kotlin.jupyter")
 
-    private val LOG = logger<KotlinJupyterResourcesUtil>()
+    private val LOG = logger<KotlinNotebookResourcesUtil>()
 
     private fun pluginDescriptor(): IdeaPluginDescriptor {
         return PluginManagerCore.getPlugin(KOTLIN_JUPYTER_PLUGIN_ID)

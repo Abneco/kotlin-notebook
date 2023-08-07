@@ -51,7 +51,7 @@ import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelProcessService
+import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookResources
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanentIndexService
@@ -153,7 +153,7 @@ class JupyterCompilerPerFileService(
     private var kernelJarsAdded: Boolean = false
     private val kernelJarsProviders: Collection<KernelJarsProvider> = listOf(
         KernelJarsProvider {
-            KotlinKernelProcessService.getInstance().ideJars
+            KotlinNotebookResources.getInstance().ideJars
         },
         KernelJarsProvider {
             LOG.warn("Kernel jars were requested from running Jupyter session...")
@@ -250,7 +250,7 @@ class JupyterCompilerPerFileService(
             kernelJarsProviders.firstNotNullOfOrNull { provider ->
                 provider.getKernelJars()
             }?.let { jars ->
-                val sourcesJars = KotlinKernelProcessService.getInstance().libSourcesJars
+                val sourcesJars = KotlinNotebookResources.getInstance().libSourcesJars
                 _currentClasspath.addInitial(jars)
                 _sourceRoots.addInitial(sourcesJars)
                 KotlinNotebookPermanentIndexService.getInstance(project).addToPermanentIndex(jars.map { it.absolutePath }, sourcesJars.map { it.absolutePath })

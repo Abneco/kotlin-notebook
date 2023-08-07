@@ -6,7 +6,7 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
-import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaStatement
 
 class JKTMetaAnnotator : Annotator {
@@ -17,7 +17,7 @@ class JKTMetaAnnotator : Annotator {
         // TODO: to be addressed with i18n of ReplLineMagic / ReplCommand
         @Suppress("HardCodedStringLiteral")
         val description =
-            JupyterKotlinBundle.messageWithDefaultValue("jkt.meta.description.${insightValue.name}", insightValue.description)
+            KotlinNotebookBundle.messageWithDefaultValue("jkt.meta.description.${insightValue.name}", insightValue.description)
         holder
             .newAnnotation(HighlightSeverity.INFORMATION, description)
             .tooltip(description)

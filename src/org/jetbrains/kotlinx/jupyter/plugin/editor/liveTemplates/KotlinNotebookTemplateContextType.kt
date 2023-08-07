@@ -9,7 +9,7 @@ import com.intellij.openapi.fileTypes.SyntaxHighlighter
 import com.intellij.openapi.util.NlsContexts
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.liveTemplates.KotlinTemplateContextType
-import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 
 sealed class KotlinNotebookTemplateContextType private constructor(
@@ -28,7 +28,7 @@ sealed class KotlinNotebookTemplateContextType private constructor(
     }
 
     @Suppress("DialogTitleCapitalization")
-    class Generic : KotlinNotebookTemplateContextType(EverywhereContextType(), JupyterKotlinBundle.message("kotlin.jupyter.template.context.type.generic"))
+    class Generic : KotlinNotebookTemplateContextType(EverywhereContextType(), KotlinNotebookBundle.message("kotlin.jupyter.template.context.type.generic"))
     class Class : KotlinNotebookTemplateContextType(KotlinTemplateContextType.Class())
     class Comment : KotlinNotebookTemplateContextType(KotlinTemplateContextType.Comment())
     class Expression : KotlinNotebookTemplateContextType(KotlinTemplateContextType.Expression())

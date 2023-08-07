@@ -13,7 +13,7 @@ import com.intellij.ui.CheckBoxList
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.util.ui.components.BorderLayoutPanel
-import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.buildModuleTree
 import org.jetbrains.kotlinx.jupyter.plugin.settings.findLibraries
@@ -78,8 +78,8 @@ class KotlinNotebookSelectModulesAction : KotlinNotebookSelectDependenciesAction
 
         return showSelectionDialog(
             tree, initialSettings,
-            JupyterKotlinBundle.message("kotlin.jupyter.dialog.select.modules.title", notebookName),
-            JupyterKotlinBundle.message("kotlin.jupyter.dialog.select.all.modules.checkbox"),
+            KotlinNotebookBundle.message("kotlin.jupyter.dialog.select.modules.title", notebookName),
+            KotlinNotebookBundle.message("kotlin.jupyter.dialog.select.all.modules.checkbox"),
             "kotlin.jupyter.select.modules.dialog"
         ) {
             KotlinNotebookDependencies.fromModules(tree.getSelectedItems())
@@ -110,8 +110,8 @@ class KotlinNotebookSelectLibrariesAction : KotlinNotebookSelectDependenciesActi
 
         return showSelectionDialog(
             list, initialSettings,
-            JupyterKotlinBundle.message("kotlin.jupyter.dialog.select.libraries.title", notebookName),
-            JupyterKotlinBundle.message("kotlin.jupyter.dialog.select.all.libraries.checkbox"),
+            KotlinNotebookBundle.message("kotlin.jupyter.dialog.select.libraries.title", notebookName),
+            KotlinNotebookBundle.message("kotlin.jupyter.dialog.select.all.libraries.checkbox"),
             "kotlin.jupyter.select.libraries.dialog"
         ) {
             KotlinNotebookDependencies.fromLibraries(allLibraries.filter { list.isItemSelected(it) })

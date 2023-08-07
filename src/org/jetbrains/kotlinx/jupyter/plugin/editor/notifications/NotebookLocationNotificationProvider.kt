@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.EditorNotificationProvider
-import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.isInsideSourceRoot
 import java.util.function.Function
@@ -20,7 +20,7 @@ private class NotebookLocationNotificationProvider : EditorNotificationProvider,
 
         return Function { editor ->
             EditorNotificationPanel(editor, EditorNotificationPanel.Status.Warning).apply {
-                text(JupyterKotlinBundle.message("kotlin.jupyter.text.move.notebook.out.of.source.root"))
+                text(KotlinNotebookBundle.message("kotlin.jupyter.text.move.notebook.out.of.source.root"))
                 icon(AllIcons.General.Warning)
             }
         }

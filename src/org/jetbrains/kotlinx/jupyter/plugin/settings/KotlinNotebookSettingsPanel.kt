@@ -16,7 +16,7 @@ import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.execution.ParametersListUtil
-import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 
 object KotlinNotebookSettingsPanel {
     fun createPanel(
@@ -24,20 +24,20 @@ object KotlinNotebookSettingsPanel {
         applicationOptions: KotlinNotebookApplicationOptionsProvider, parentDisposable: Disposable
     ): DialogPanel {
         return panel {
-            group(JupyterKotlinBundle.message("kotlin.jupyter.settings.build")) {
+            group(KotlinNotebookBundle.message("kotlin.jupyter.settings.build")) {
                 createJdkComboBox(project, projectOptions.state, parentDisposable)
                 createMaxHeapSizeSpinner(projectOptions.state)
                 createExtraJvmArgumentsField(projectOptions.state)
             }
-            group(JupyterKotlinBundle.message("kotlin.jupyter.settings.typeHints")) {
+            group(KotlinNotebookBundle.message("kotlin.jupyter.settings.typeHints")) {
                 row(null) {
-                    checkBox(JupyterKotlinBundle.message("checkbox.should.typehint.only.active.cell"))
+                    checkBox(KotlinNotebookBundle.message("checkbox.should.typehint.only.active.cell"))
                         .bindSelected(projectOptions.state::shouldLimitTypeHintsByActiveCell)
                 }
             }
-            group(JupyterKotlinBundle.message("kotlin.jupyter.settings.appearance")) {
+            group(KotlinNotebookBundle.message("kotlin.jupyter.settings.appearance")) {
                 row(null) {
-                    checkBox(JupyterKotlinBundle.message("checkbox.should.show.execution.count"))
+                    checkBox(KotlinNotebookBundle.message("checkbox.should.show.execution.count"))
                         .bindSelected(applicationOptions.state::shouldShowExecutionCount)
                         .onApply { KotlinNotebookApplicationOptionsProvider.refreshEditors() }
                 }
@@ -46,18 +46,18 @@ object KotlinNotebookSettingsPanel {
     }
 
     private fun Panel.createMaxHeapSizeSpinner(state: KotlinNotebookProjectOptionsProvider.State): Row {
-        return row(JupyterKotlinBundle.message("kotlin.jupyter.settings.jvm.max.heap")) {
+        return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.max.heap")) {
             spinner(0..99999, 100)
                 .bindIntValue(state::heapMaxLimitInMib)
                 .also {
                     it.validationRequestor { callback -> it.onChanged { callback() } }
                 }
-            label(JupyterKotlinBundle.message("kotlin.jupyter.settings.jvm.max.heap.units"))
+            label(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.max.heap.units"))
         }
     }
 
     private fun Panel.createExtraJvmArgumentsField(state: KotlinNotebookProjectOptionsProvider.State): Row {
-        return row(JupyterKotlinBundle.message("kotlin.jupyter.settings.jvm.extra.args")) {
+        return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.extra.args")) {
             expandableTextField()
                 .columns(48)
                 .applyToComponent {
@@ -71,7 +71,7 @@ object KotlinNotebookSettingsPanel {
     }
 
     private fun Panel.createJdkComboBox(project: Project, state: KotlinNotebookProjectOptionsProvider.State, disposable: Disposable): Row {
-        return row(JupyterKotlinBundle.message("kotlin.jupyter.settings.JDK.path")) {
+        return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.JDK.path")) {
             val sdkComboBox = SdkComboBox(
                 SdkComboBoxModel.createProjectJdkComboBoxModel(
                     project, disposable,
@@ -81,10 +81,10 @@ object KotlinNotebookSettingsPanel {
             val sdkModel = sdkComboBox.model.sdksModel
             cell(sdkComboBox)
                 .comment(
-                    JupyterKotlinBundle.message(
+                    KotlinNotebookBundle.message(
                         "kotlin.jupyter.settings.JDK.comment",
                         minJdkVersion.description,
-                        maxJdkVersion?.description ?: JupyterKotlinBundle.message(
+                        maxJdkVersion?.description ?: KotlinNotebookBundle.message(
                             "kotlin.jupyter.settings.JDK.comment.empty.runtime",
                             ApplicationNamesInfo.getInstance().productName
                         )

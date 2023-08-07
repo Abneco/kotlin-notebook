@@ -59,13 +59,13 @@ class KotlinInProcessJupyterClient(
     override fun startKernel(project: Project, kernelName: String, notebookPath: Path): KernelId? {
         if (kernelName !in kernelSpecs) return null
         val id = KernelId(idGenerator.generate())
-        val kernel = KotlinKernelProcessService.getInstance().create(
+        val kernel = createKernelProcess(
             project,
             notebookPath,
             onBeforeStartNotify = { showKotlinNotebookServerManagementToolWindow(project, it) },
             onKernelTerminated = { _, _ ->
-                val file = VirtualFileManager.getInstance().findFileByNioPath(notebookPath) ?: return@create
-                val notebookFile = BackedNotebookVirtualFile.find(file) ?: return@create
+                val file = VirtualFileManager.getInstance().findFileByNioPath(notebookPath) ?: return@createKernelProcess
+                val notebookFile = BackedNotebookVirtualFile.find(file) ?: return@createKernelProcess
                 val isAfterRestart = afterRestart.get()
                 if (!project.isDisposed && isAfterRestart) {
                     val document = runReadAction {

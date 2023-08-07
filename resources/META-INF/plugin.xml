@@ -165,13 +165,13 @@
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookFilePathReferenceProvider"/>
 
         <projectConfigurable groupId="tools"
-                             bundle="messages.JupyterKotlinBundle"
+                             bundle="messages.KotlinNotebookBundle"
                              key="kotlin.jupyter.settings.title"
                              id="kotlinNotebook"
                              instance="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookConfigurable"/>
 
         <projectConfigurable groupId="tools"
-                             bundle="messages.JupyterKotlinBundle"
+                             bundle="messages.KotlinNotebookBundle"
                              key="kotlin.jupyter.settings.new.notebook.title"
                              id="kotlinNotebook.newNotebook"
                              parentId="kotlinNotebook"
@@ -180,7 +180,7 @@
         <notificationGroup
                 id="Kotlin Notebook plugin updates"
                 displayType="STICKY_BALLOON"
-                bundle="messages.JupyterKotlinBundle"
+                bundle="messages.KotlinNotebookBundle"
                 key="plugin.updater.notification.group"
         />
 
@@ -225,7 +225,7 @@
         <session.extensions.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>
     </extensions>
 
-    <actions resource-bundle="messages/JupyterKotlinBundle">
+    <actions resource-bundle="messages/KotlinNotebookBundle">
         <action id="CreateNewKotlinNotebook" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookCreateAction">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="JupyterCreateFileAction"/>
         </action>

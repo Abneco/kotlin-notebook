@@ -13,7 +13,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.ui.content.ContentFactory
 import icons.KotlinJupyterIcons
-import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.StopKotlinKernelAction
 import org.jetbrains.plugins.notebooks.jupyter.server.ui.attachJupyterServerContentCloseListener
 
@@ -24,8 +24,8 @@ fun showKotlinNotebookServerManagementToolWindow(
     project: Project,
     handler: KotlinKernelProcessHandler,
 ) {
-    val kernelContentTitle = JupyterKotlinBundle.message("kotlin.jupyter.toolbar.title", handler.notebookPath.fileName)
-    val logContentTitle = JupyterKotlinBundle.message("kotlin.jupyter.toolbar.tabs.log", handler.notebookPath)
+    val kernelContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.title", handler.notebookPath.fileName)
+    val logContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.tabs.log", handler.notebookPath)
 
     val toolWindow: ToolWindow = getOrCreateKotlinNotebookToolWindow(project)
 
@@ -57,7 +57,7 @@ fun showKotlinNotebookServerManagementToolWindow(
     attachJupyterServerContentCloseListener(
         newContent,
         project,
-        JupyterKotlinBundle.message("kotlin.jupyter.toolbar.session.name"),
+        KotlinNotebookBundle.message("kotlin.jupyter.toolbar.session.name"),
         handler
     )
 }

@@ -28,7 +28,7 @@ import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
 import org.jetbrains.kotlin.idea.codeInsight.hints.getInlayPresentationForInlayInfoDetails
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.BindingContext
-import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.getKtFileStartOffset
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.isEitherSymmetricallyContainedRange
@@ -121,7 +121,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
     abstract val properTarget: String
 
     override val description: String?
-        get() = JupyterKotlinBundle.message("inlay.hint.description.prefix", properTarget)
+        get() = KotlinNotebookBundle.message("inlay.hint.description.prefix", properTarget)
 
     companion object {
         private val logger = logger<KotlinNotebookAbstractInlayTypeHintsProvider<*>>()

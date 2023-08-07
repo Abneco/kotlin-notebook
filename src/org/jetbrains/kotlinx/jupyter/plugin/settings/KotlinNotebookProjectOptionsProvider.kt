@@ -9,7 +9,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 
 @Service(Service.Level.PROJECT)
 @State(
@@ -41,7 +41,7 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
     }
 
     class PresentableNameGetter : com.intellij.openapi.components.State.NameGetter() {
-        override fun get(): String = JupyterKotlinBundle.message("kotlin.jupyter.settings.title")
+        override fun get(): String = KotlinNotebookBundle.message("kotlin.jupyter.settings.title")
     }
 
     companion object {

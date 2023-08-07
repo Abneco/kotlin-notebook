@@ -16,29 +16,29 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.config.notebookLanguageInfo
-import org.jetbrains.kotlinx.jupyter.plugin.i18n.JupyterKotlinBundle
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.asJson
 import org.jetbrains.plugins.notebooks.jupyter.actions.createFileFromTemplateWithProperties
 
 class KotlinNotebookCreateAction : CreateFileFromTemplateAction(
-    JupyterKotlinBundle.messagePointer("kotlin.jupyter.action.create.notebook.text"),
-    JupyterKotlinBundle.messagePointer("kotlin.jupyter.action.create.notebook.description"),
+    KotlinNotebookBundle.messagePointer("kotlin.jupyter.action.create.notebook.text"),
+    KotlinNotebookBundle.messagePointer("kotlin.jupyter.action.create.notebook.description"),
     KotlinJupyterIcons.FileIcon
 ), DumbAware {
 
     override fun buildDialog(project: Project, directory: PsiDirectory, builder: CreateFileFromTemplateDialog.Builder) {
         builder
-            .setTitle(JupyterKotlinBundle.message("kotlin.jupyter.action.create.notebook.dialog.title"))
+            .setTitle(KotlinNotebookBundle.message("kotlin.jupyter.action.create.notebook.dialog.title"))
             .addKind(
-                JupyterKotlinBundle.message("kotlin.jupyter.action.create.notebook.dialog.kind"),
+                KotlinNotebookBundle.message("kotlin.jupyter.action.create.notebook.dialog.kind"),
                 KotlinJupyterIcons.FileIcon,
                 KOTLIN_JUPYTER_NOTEBOOK
             )
     }
 
     override fun getActionName(directory: PsiDirectory, newName: String, templateName: String) =
-        JupyterKotlinBundle.message("kotlin.jupyter.action.create.notebook.name", templateName)
+        KotlinNotebookBundle.message("kotlin.jupyter.action.create.notebook.name", templateName)
 
     public override fun createFileFromTemplate(name: String, template: FileTemplate, dir: PsiDirectory): PsiFile? {
         val templateValues = createTemplateValues(dir.project)

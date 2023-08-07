@@ -1,5 +1,5 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.i18n
+package org.jetbrains.kotlinx.jupyter.plugin.resources.i18n
 
 import com.intellij.DynamicBundle
 import org.jetbrains.annotations.Nls
@@ -8,9 +8,9 @@ import org.jetbrains.annotations.PropertyKey
 import java.util.function.Supplier
 
 @NonNls
-private const val BUNDLE = "messages.JupyterKotlinBundle"
+private const val BUNDLE = "messages.KotlinNotebookBundle"
 
-object JupyterKotlinBundle : DynamicBundle(BUNDLE) {
+object KotlinNotebookBundle : DynamicBundle(BUNDLE) {
     @JvmStatic
     @Nls
     fun message(
