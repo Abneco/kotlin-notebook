@@ -14,6 +14,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookCaretMovementEvent
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService.Companion.getHighlightingManagerForFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.daemon.NotebookHighlightingDaemonListener
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.state.NotebookCaretStateProcessor
@@ -57,7 +58,9 @@ class NotebookCaretListener(
     }
 
     override fun caretPositionChanged(event: CaretEvent) {
-        caretStateProcessor.processEvent(event)
+        with(caretStateProcessor) {
+            onEventHappened(NotebookCaretMovementEvent(event, event.getCellOrdinal()))
+        }
     }
 
     override fun dispose() {

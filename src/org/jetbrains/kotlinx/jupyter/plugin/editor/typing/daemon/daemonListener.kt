@@ -6,6 +6,7 @@ import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookDaemonFinishedEvent
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.state.NotebookCaretStateProcessor
 
 class NotebookHighlightingDaemonListener(
@@ -19,7 +20,10 @@ class NotebookHighlightingDaemonListener(
             if (!scriptDefManager.isReady()) {
                 return
             }
-            stateProcessor.onDaemonFinishEvent()
+
+            with(stateProcessor) {
+                onEventHappened(NotebookDaemonFinishedEvent)
+            }
         }
     }
 }

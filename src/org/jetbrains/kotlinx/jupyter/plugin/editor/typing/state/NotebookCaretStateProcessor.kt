@@ -4,7 +4,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.typing.state
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.util.runIf
@@ -16,6 +15,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.utils.addIfNotNull
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookCaretMovementEvent
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookCaretMovementProcessor
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookDaemonFinishedEvent
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookDaemonFinishedEventProcessor
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookHighlightingEvent
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingManager
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCellHighlightingTrigger
@@ -26,14 +30,13 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.tryWithWriteLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.math.min
 
 
-interface NotebookCaretMovementProcessor {
+/*interface NotebookCaretMovementProcessor {
     data class EventRelatedData(val event: CaretEvent, val cellInterval: NotebookCellLines.Interval) {
         val timeHappened = System.currentTimeMillis()
     }
@@ -62,7 +65,7 @@ interface NotebookCaretMovementProcessor {
     fun processFastCaretMovement(event: EventRelatedData)
 
     fun processRegularCaretMovement(event: EventRelatedData)
-}
+}*/
 
 
 class NotebookCaretStateProcessor(
@@ -71,7 +74,7 @@ class NotebookCaretStateProcessor(
     private val backedNotebookVFile: BackedNotebookVirtualFile,
     private val notebookHighlightingManager: NotebookHighlightingManager?,
     private val highlightingStarter: NotebookCellHighlightingTrigger
-) : NotebookCaretMovementProcessor {
+) : NotebookCaretMovementProcessor, NotebookDaemonFinishedEventProcessor {
     companion object {
         private val LOG = thisLogger()
     }
@@ -96,23 +99,33 @@ class NotebookCaretStateProcessor(
     private var isSizeChanged = false
     private var lastCellSize = -1
 
-    override fun NotebookCaretMovementProcessor.EventRelatedData.isFastMovement(): Boolean =
+    override fun NotebookCaretMovementEvent.isFastMovement(): Boolean =
         timeHappened - lastTimeCellFocusChanged < fastMovementThreshold
 
-    override fun isShouldProcess(event: CaretEvent): Boolean {
+    override fun processEventAdapter(event: NotebookHighlightingEvent) {
+        if (event is NotebookDaemonFinishedEvent) {
+            onDaemonFinishEvent()
+        }
+    }
+
+    override fun isShouldProcess(event: NotebookHighlightingEvent): Boolean {
+        if (event is NotebookDaemonFinishedEvent) return true
+        if (event !is NotebookCaretMovementEvent) return false
+
+        val caretEvent = event.event
         if (lastCellInd == -1) {
             lastCellInd = 0
             isSizeChanged = true
             lastTimeCellFocusChanged = System.currentTimeMillis()
             return false
         }
-        val cell = editor.getCell(min(event.newPosition.line, editor.document.lineCount - 1))
+        val cell = editor.getCell(min(caretEvent.newPosition.line, editor.document.lineCount - 1))
         val ord = cell.ordinal
         val isGoodState = !isSizeChanged
         return !((ord == lastCellInd && isGoodState) || isFirstRun)
     }
 
-    override fun processFastCaretMovement(event: NotebookCaretMovementProcessor.EventRelatedData) {
+    override fun processFastCaretMovement(event: NotebookCaretMovementEvent) {
         // might be reworked
         fastUpdateQueueGuardMark.compareAndSet(false, true)
         deferredFastUpdate?.cancel()
@@ -151,7 +164,7 @@ class NotebookCaretStateProcessor(
         }
     }
 
-    override fun processRegularCaretMovement(event: NotebookCaretMovementProcessor.EventRelatedData) {
+    override fun processRegularCaretMovement(event: NotebookCaretMovementEvent) {
         val knownPrevInd = lastCellInd
         val ordinal = event.cellInterval.ordinal
         lastCellInd = ordinal
@@ -192,7 +205,7 @@ class NotebookCaretStateProcessor(
         }
     }
 
-    internal fun onDaemonFinishEvent() {
+    private fun onDaemonFinishEvent() {
         // for proper cell move up handle
         val afterNonTrivialChange = dataController?.notebookDocumentStructureNontrivialChanged?.compareAndSet(true, false) == true
         val isRunning = codeAnalyzerStatusService.daemonRunning
