@@ -23,7 +23,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookH
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingManager
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCellHighlightingTrigger
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.JupyterKotlinCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.util.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
@@ -34,38 +33,6 @@ import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.math.min
-
-
-/*interface NotebookCaretMovementProcessor {
-    data class EventRelatedData(val event: CaretEvent, val cellInterval: NotebookCellLines.Interval) {
-        val timeHappened = System.currentTimeMillis()
-    }
-
-    val fastMovementThreshold: Long
-        get() = 500
-
-    fun EventRelatedData.isFastMovement(): Boolean
-
-    fun isShouldProcess(event: CaretEvent): Boolean
-
-    fun CaretEvent.getCellOrdinal(): NotebookCellLines.Interval {
-        return editor.getCell(min(newPosition.line, editor.document.lineCount - 1))
-    }
-
-    fun processEvent(event: CaretEvent) {
-        if (!isShouldProcess(event)) return
-
-        val eventRelatedData = EventRelatedData(event, event.getCellOrdinal())
-
-        if (eventRelatedData.isFastMovement()) {
-            processFastCaretMovement(eventRelatedData)
-        } else processRegularCaretMovement(eventRelatedData)
-    }
-
-    fun processFastCaretMovement(event: EventRelatedData)
-
-    fun processRegularCaretMovement(event: EventRelatedData)
-}*/
 
 
 class NotebookCaretStateProcessor(
@@ -246,11 +213,11 @@ class NotebookCaretStateProcessor(
                 queue.removeAll(finished)
             }
             if (!isRunning) {
-                val executionRequestsDone =
-                    JupyterKotlinCellExecutionCallbackFactory.getInstance()
-                        .daemonFinished(backedNotebookVFile, finished, queue, isCanModifyHLRequests)
-                LOG.debug("Reducing queue by $finished, canModify: ${isCanModifyHLRequests}, exec requests done: $executionRequestsDone")
-                if (notebookHighlightingManager?.daemonFinished(editor, psiFile, queue, executionRequestsDone) == true) {
+                //val executionRequestsDone =
+                //    JupyterKotlinCellExecutionCallbackFactory.getInstance()
+                //        .daemonFinished(backedNotebookVFile, finished, queue, isCanModifyHLRequests)
+                //LOG.debug("Reducing queue by $finished, canModify: ${isCanModifyHLRequests}, exec requests done: $executionRequestsDone")
+                if (notebookHighlightingManager?.daemonFinished(editor, psiFile, queue, isCanModifyHLRequests) == true) {
                     queue?.clear()
                 }
             }

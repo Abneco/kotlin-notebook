@@ -90,7 +90,11 @@ class NotebookHighlightingManager(
         private val LOG = thisLogger()
     }
 
-    val dataController = NotebookPerFileHighlightingMetaDataController(virtualFile, this)
+    val dataController = NotebookPerFileHighlightingMetaDataController(
+        virtualFile,
+        NotebookCellExecutionHighlightingHelper(projectService.project, virtualFile),
+        this
+    )
 
     private fun initialiseData(project: Project) {
         val targetData = mutableSetOf<Int>()
@@ -214,7 +218,7 @@ class NotebookHighlightingManager(
     }
 
     /**
-     * Semantic of following 3 methods are to ensure no requests are lost after 'afterUpdate()' of scripting.
+     * Semantic of the following 3 methods is to ensure no requests are lost after 'afterUpdate()' of scripting.
      * It's achieved by:
      *  1. All calls 'scriptingSupport.update()' happens after setting the key
      *  '[NotebookFileHighlightingDataProvider.notebookCellsUpdatesAllowedToChange]' to false
@@ -263,8 +267,13 @@ class NotebookHighlightingManager(
     }
 
     // returns true if all updates are processed
-    fun daemonFinished(editor: Editor, psiFile: PsiFile?, queue: MutableSet<Int>?, executionRequestsDone: Boolean): Boolean {
+    fun daemonFinished(editor: Editor, psiFile: PsiFile?, queue: MutableSet<Int>?, canModifyRequests: Boolean): Boolean {
         val markup = (editor as? EditorEx)?.filteredDocumentMarkupModel ?: return true
+        val completedIndexes = finishedHighlighting
+        val executionRequestsDone = dataController
+            .executionHighlightingHelper
+            .daemonFinished(completedIndexes, queue, canModifyRequests)
+
         val completeInd = completeRangeInd
         val keys = knownErrorInd.filterKeys { it != completeInd }
         val toRemove = mutableSetOf<Int>()
@@ -300,12 +309,17 @@ class NotebookHighlightingManager(
         if (isLeft) {
             queue?.addAll(remaining)
         }
+        LOG.debug("Reducing queue by $completedIndexes, canModify: ${canModifyRequests}, exec requests done: $executionRequestsDone")
 
         return !isLeft
     }
 
     fun editorPotentiallyDisposed() {
         clearState()
+    }
+
+    fun sessionRestarted() {
+        dataController.executionHighlightingHelper.onSessionRestarted()
     }
 
     override fun dispose() {

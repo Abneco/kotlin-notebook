@@ -25,6 +25,7 @@ internal interface NotebookFileHighlightingDataProvider {
     val notebookRangesQueuedForHL: MutableSet<Int>?
     val notebookDocumentTargetRanges: MutableSet<Int>?
     val reformatDocumentTargets: MutableSet<Int>?
+    val lastExecutedCellsBatch: Set<Int>?
     val notebookDocumentStructureNontrivialChanged: AtomicReference<Boolean>
     val notebookCellsUpdatesAllowedToChange: AtomicReference<Boolean>
 }
@@ -32,6 +33,7 @@ internal interface NotebookFileHighlightingDataProvider {
 
 class NotebookPerFileHighlightingMetaDataController(
     private val notebookFile: BackedNotebookVirtualFile,
+    val executionHighlightingHelper: NotebookCellExecutionHighlightingHelper,
     parentDisposable: Disposable
 ): NotebookFileHighlightingDataProvider, Disposable {
     private enum class KeysValues {
@@ -158,6 +160,9 @@ class NotebookPerFileHighlightingMetaDataController(
     @Suppress("UNCHECKED_CAST")
     override val reformatDocumentTargets: MutableSet<Int>?
         get() = (dataStorage[KeysValues.ReformatTargets] as? MutableSet<Int>)?.ifEmpty { return null }
+
+    override val lastExecutedCellsBatch: Set<Int>
+        get() = executionHighlightingHelper.getLastExecutedCellsBatch()
 
     @Suppress("UNCHECKED_CAST")
     override val notebookDocumentStructureNontrivialChanged: AtomicReference<Boolean>

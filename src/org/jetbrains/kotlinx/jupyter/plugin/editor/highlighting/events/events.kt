@@ -2,17 +2,30 @@
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events
 
 import com.intellij.openapi.editor.event.CaretEvent
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 
 sealed class NotebookHighlightingEvent
 
 object NotebookDaemonFinishedEvent : NotebookHighlightingEvent()
 
+sealed class NotebookExecutionRelatedEvent(val isAfterSeriesOfRuns: Boolean = false) : NotebookHighlightingEvent()
+
+class ExecutionCallbackRegistered(
+    val cellOrd: Int?
+) : NotebookExecutionRelatedEvent()
+
+class ExecutionCallbackUnregistered(
+    val cellOrd: Int,
+    isAfterSeriesOfRuns: Boolean,
+    val isSingleErrorRun: Boolean,
+    val remainingExecutions: Collection<Int>
+) : NotebookExecutionRelatedEvent(isAfterSeriesOfRuns)
+
+data class NotebookSessionRestarted(val notebookFile: BackedNotebookVirtualFile) : NotebookExecutionRelatedEvent()
+
+
 data class NotebookCaretMovementEvent(val event: CaretEvent, val cellInterval: NotebookCellLines.Interval) : NotebookHighlightingEvent() {
     val timeHappened = System.currentTimeMillis()
 }
-
-data class ExecutionCallbackRegistered(val cellOrd: Int?) : NotebookHighlightingEvent()
-
-data class ExecutionCallbackUnregistered(val cellOrd: Int?) : NotebookHighlightingEvent()
 

@@ -29,7 +29,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingBaseClassError
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingDependencyPrefix
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility.showAbsentInitialBaseDependenciesInfo
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
@@ -76,7 +75,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             var severalUpdates = dataController?.notebookDocumentTargetRanges
             val highlightingQueue = dataController?.notebookRangesQueuedForHL
             backedNotebook?.let {
-                highlightingQueue?.addAll(KotlinNotebookCellExecutionCallbackFactory.getInstance().getLastExecutedCellsBatch(it))
+                highlightingQueue?.addAll(dataController.lastExecutedCellsBatch)
             }
 
             if (cellChangeRange != null && (completeHLRange == null || completeHLRange.startOffset == cellChangeRange.startOffset)) { // converge

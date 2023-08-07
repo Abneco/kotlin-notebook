@@ -12,7 +12,10 @@ interface NotebookEventProcessor {
 
     fun process(event: NotebookHighlightingEvent)
 
+    fun processEventAdapter(event: NotebookHighlightingEvent) = Unit
+
     fun onEventHappened(event: NotebookHighlightingEvent) {
+        processEventAdapter(event)
         if (!isShouldProcess(event)) return
 
         process(event)
@@ -35,8 +38,6 @@ interface NotebookCaretMovementProcessor : NotebookEventProcessor {
         return editor.getCell(min(newPosition.line, editor.document.lineCount - 1))
     }
 
-    fun processEventAdapter(event: NotebookHighlightingEvent) = Unit
-
     override fun process(event: NotebookHighlightingEvent) {
         processEventAdapter(event)
         if (event !is NotebookCaretMovementEvent) return
@@ -49,4 +50,26 @@ interface NotebookCaretMovementProcessor : NotebookEventProcessor {
     fun processFastCaretMovement(event: NotebookCaretMovementEvent)
 
     fun processRegularCaretMovement(event: NotebookCaretMovementEvent)
+}
+
+
+
+interface NotebookExecutionRelatedEventsProcessor : NotebookEventProcessor {
+    override fun isShouldProcess(event: NotebookHighlightingEvent): Boolean =
+        event is NotebookExecutionRelatedEvent
+
+    override fun process(event: NotebookHighlightingEvent) {
+        when (event) {
+            is ExecutionCallbackRegistered -> { registerNewCallback(event) }
+            is ExecutionCallbackUnregistered -> { unregisterCallback(event) }
+            is NotebookSessionRestarted -> { onSessionRestarted() }
+            else -> {}
+        }
+    }
+
+    fun onSessionRestarted()
+    fun registerNewCallback(event: ExecutionCallbackRegistered)
+
+    fun unregisterCallback(event: ExecutionCallbackUnregistered)
+
 }
