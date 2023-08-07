@@ -27,7 +27,7 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
     private val callbacksCounters = mutableMapOf<BackedNotebookVirtualFile, Pair<Int, PriorityQueue<Int>>>()
     private val executionDataLock = ReentrantReadWriteLock()
 
-    private fun registerNewCallbackForCell(project: Project, file: BackedNotebookVirtualFile, cellOrd: Int?): Int {
+    private fun registerNextIndexForCallback(project: Project, file: BackedNotebookVirtualFile, cellOrd: Int?): Int {
         return executionDataLock.write {
             val (cnt, pq) = callbacksCounters[file] ?: (0 to PriorityQueue<Int>())
             if (pq.size > 1 && !pq.contains(-1)) {
@@ -79,7 +79,7 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
         val cell = jupyterPsiCellData?.first ?: return null
         if (!file.file.isKotlinNotebook) return null
 
-        val index = registerNewCallbackForCell(cellProject, file, jupyterPsiCellData.second)
+        val index = registerNextIndexForCallback(cellProject, file, jupyterPsiCellData.second)
 
         return KotlinNotebookCellExecutionCallback(
             cellProject,
@@ -90,11 +90,11 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
         )
     }
 
-    fun createNotBoundCallback(
+    fun createUnboundCallback(
         project: Project,
         virtualFile: BackedNotebookVirtualFile
     ): JupyterExecutionCallback {
-        val index = registerNewCallbackForCell(project, virtualFile, null)
+        val index = registerNextIndexForCallback(project, virtualFile, null)
         return KotlinNotebookCellExecutionCallback(
             project,
             virtualFile,

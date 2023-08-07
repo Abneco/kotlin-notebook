@@ -3,8 +3,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
-import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.isKotlinNotebookSession
+import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.settings.SessionOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.generateSnippet
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookCodegen
@@ -27,7 +27,7 @@ class JupyterKotlinRuntimeServiceListener : JupyterRuntimeService.Listener {
         val callbacks = session.virtualFile?.let { virtualFile ->
             val project = session.project
             listOf(
-              KotlinNotebookCellExecutionCallbackFactory.getInstance().createNotBoundCallback(project, virtualFile),
+              KotlinNotebookCellExecutionCallbackFactory.getInstance().createUnboundCallback(project, virtualFile),
               object : JupyterExecutionCallbackAdapter() {
                     override fun onExecuteReply(message: JupyterMessage) {
                         logger<JupyterKotlinRuntimeServiceListener>().debug("Kotlin session has been initialized with response: ${message.json}")
