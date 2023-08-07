@@ -68,9 +68,9 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     override fun getTableInfo(
         commandExecutor: DSTableCommandExecutor,
         tableVariable: String,
-        textTableOutput: String?
+        textTableOutput: String
     ): DSDataFrameInfo {
-        return parseFrameInfoFromKotlinDataframeOutput(textTableOutput!!)
+        return parseFrameInfoFromKotlinDataframeOutput(textTableOutput)
     }
 
     override fun dataFrameGetData(
