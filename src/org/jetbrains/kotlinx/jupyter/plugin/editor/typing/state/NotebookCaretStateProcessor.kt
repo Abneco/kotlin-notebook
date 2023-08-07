@@ -212,14 +212,8 @@ class NotebookCaretStateProcessor(
             if (queue != null && !finished.isNullOrEmpty() && isCanModifyHLRequests) {
                 queue.removeAll(finished)
             }
-            if (!isRunning) {
-                //val executionRequestsDone =
-                //    JupyterKotlinCellExecutionCallbackFactory.getInstance()
-                //        .daemonFinished(backedNotebookVFile, finished, queue, isCanModifyHLRequests)
-                //LOG.debug("Reducing queue by $finished, canModify: ${isCanModifyHLRequests}, exec requests done: $executionRequestsDone")
-                if (notebookHighlightingManager?.daemonFinished(editor, psiFile, queue, isCanModifyHLRequests) == true) {
-                    queue?.clear()
-                }
+            if (!isRunning && notebookHighlightingManager?.daemonFinished(editor, psiFile, queue, isCanModifyHLRequests) == true) {
+                queue?.clear()
             }
             queue?.addIfNotNull(target) ?: Unit
         }
