@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.intellij.database.datagrid.ArrayBackedNestedTable
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.containers.tail
 import com.jetbrains.python.debugger.pydev.TableCommandType
@@ -155,7 +156,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     }
 
     private fun extractHierarchy(row: JsonNode): ColumnTreeNode {
-        val root = ColumnTreeNode("root", -1, 0, mutableListOf())
+        val root = createRoot()
 
         var index = 0
         fun extractColumnsHelper(jsonNode: JsonNode, columnsNode: ColumnTreeNode, path: List<String>) {
@@ -174,6 +175,8 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         return root
     }
 
+    private fun createRoot() = ColumnTreeNode("root", -1, 0, mutableListOf())
+
     private fun extractValues(jsonNode: JsonNode, columns: List<ColumnTreeNode>): List<Any> {
         val resultList = mutableListOf<Any>()
 
@@ -181,13 +184,25 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
             val columnName = column.name
             val value = jsonNode.get(columnName)
 
-            if (value != null) {
-                if (value.isValueNode) {
+            if (value == null) continue
+
+            when {
+                value.isValueNode -> {
                     resultList.add(value.asText())
-                } else if (value.isObject) {
+                }
+                value.isObject -> {
                     resultList.add(extractValues(value, column.columnChildren))
-                } else {
-                    resultList.add("")
+                }
+                value.isArray -> {
+                    var nestedTableHierarchy: ColumnTreeNode? = null
+                    val nestedRows: Array<Array<Any>> = value.map { arrayNode ->
+                        if (!arrayNode.isObject) return@map arrayOf<Any>()
+                        if (nestedTableHierarchy == null) {
+                            nestedTableHierarchy = extractHierarchy(arrayNode)
+                        }
+                        extractValues(arrayNode, nestedTableHierarchy!!.columnChildren).toTypedArray()
+                    }.toTypedArray()
+                    resultList.add(ArrayBackedNestedTable(nestedRows, nestedTableHierarchy ?: createRoot()))
                 }
             }
         }
