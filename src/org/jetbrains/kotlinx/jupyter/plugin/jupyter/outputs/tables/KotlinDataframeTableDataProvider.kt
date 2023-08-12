@@ -169,7 +169,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         return root
     }
 
-    fun extractValues(jsonNode: JsonNode, columns: List<ColumnTreeNode>): List<Any> {
+    private fun extractValues(jsonNode: JsonNode, columns: List<ColumnTreeNode>): List<Any> {
         val resultList = mutableListOf<Any>()
 
         for (column in columns) {

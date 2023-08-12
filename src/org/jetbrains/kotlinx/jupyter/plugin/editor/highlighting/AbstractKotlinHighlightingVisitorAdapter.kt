@@ -39,7 +39,7 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
         }
     }
 
-    protected fun getTopLevelFile(file: PsiFile) = InjectedLanguageManager.getInstance(file.project).getTopLevelFile(file)
+    private fun getTopLevelFile(file: PsiFile) = InjectedLanguageManager.getInstance(file.project).getTopLevelFile(file)
 
     protected fun prepareForFile(injectedFile: PsiFile) {
         highlightingHelper = InjectedFileHighlightingHelper(injectedFile)

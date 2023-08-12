@@ -128,7 +128,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
 
         internal val psiHostChainHintsRegistry = Key.create<PsiHostChainCallTypeHintsRegistry>("jupyter.kotlin.inlay.hints.chain.call.registry")
         internal val psiHostHintsRegistry = Key.create<PsiHostTypeHintsRegistry>("jupyter.kotlin.inlay.hints.registry")
-        internal val psiBindingContext = Key.create<BindingContext>("jupyter.kotlin.inlay.hints.binding.context")
+        private val psiBindingContext = Key.create<BindingContext>("jupyter.kotlin.inlay.hints.binding.context")
         internal enum class RegistryMode {
             Apply,
             Store

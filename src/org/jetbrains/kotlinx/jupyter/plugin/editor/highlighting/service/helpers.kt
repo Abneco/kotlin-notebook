@@ -208,7 +208,7 @@ internal object NotebookHighlightingUtilityObject {
 
 
 
-class InjectedFileHighlightingHelper(val injectedFile: PsiFile) {
+class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
     private val project = injectedFile.project
     private lateinit var targetHost: PsiLanguageInjectionHost
     private val injectedManager = InjectedLanguageManager.getInstance(project)

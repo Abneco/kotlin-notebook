@@ -140,7 +140,7 @@ class NotebookHighlightingManager(
     val finishedHighlighting: Set<Int>
         get() = finishedFiles - (knownErrorInd.keys - (completeRangeInd ?: -1))
 
-    val remainingIndexesToProcess: Set<Int>
+    private val remainingIndexesToProcess: Set<Int>
         get() = targetIndexes - finishedHighlighting
 
     fun isCanModifyHLRequestAfterExecution(project: Project): Boolean =
