@@ -11,6 +11,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.EventDispatcher
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import java.util.EventListener
 
@@ -22,6 +23,13 @@ import java.util.EventListener
 )
 class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<KotlinNotebookProjectOptionsProvider.State>(State()) {
     private val eventDispatcher = EventDispatcher.create(Listener::class.java)
+
+    var kernelVersion
+        get() = state.kernelVersion
+        set(value) {
+            state.kernelVersion = value
+            eventDispatcher.multicaster.onKernelVersionChanged()
+        }
 
     val jdk get() = KotlinNotebookJdkOption.fromName(jdkName)
     internal var jdkName
@@ -55,6 +63,7 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
     }
 
     class State : BaseState() {
+        var kernelVersion by string(currentKernelVersion.toMavenVersion())
         var jdkName by string(null)
         var heapMaxLimitInMib by property(DEFAULT_HEAP_MAX_LIMIT_MIB)
         var extraJvmArguments by list<String>()
@@ -69,8 +78,9 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
         override fun get(): String = KotlinNotebookBundle.message("kotlin.jupyter.settings.title")
     }
 
-    fun interface Listener : EventListener {
-        fun onJdkChanged()
+    interface Listener : EventListener {
+        fun onJdkChanged() {}
+        fun onKernelVersionChanged() {}
     }
 
     companion object {

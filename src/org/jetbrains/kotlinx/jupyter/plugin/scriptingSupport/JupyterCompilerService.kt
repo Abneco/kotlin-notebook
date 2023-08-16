@@ -16,7 +16,6 @@ import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.serialization.serializationPluginEnabled
-import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookResources
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelListener
 import java.io.File
@@ -43,9 +42,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
     }
 
     val initialClasspath: List<File> by lazy {
-        if (ApplicationManager.getApplication().isUnitTestMode) {
-            KotlinNotebookResources.getInstance().ideJars
-        } else emptyList()
+       emptyList()
     }
 
     private val initialCompileConfiguration by lazy {

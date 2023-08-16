@@ -20,6 +20,7 @@ import org.junit.Test
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
@@ -55,6 +56,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
     @Test
     fun testInterruption() {
         val futureSession = getFutureSession(project, testRootDisposable)
+        val alreadyInterrupted = AtomicBoolean(false)
         doTest(object : ReceivedMessagesTester {
             override val expectedCellsCount: Int
                 get() = 2
@@ -64,11 +66,12 @@ class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
                     val output = messages.outputs.single().messageContent
                     TestCase.assertEquals("stderr", output["name"].asText())
                     TestCase.assertEquals("The execution was interrupted", output["text"].asText())
+                    log.debug("Execution was successfully interrupted")
                 }
             }
         }, object : JupyterExecutionCallbackAdapter() {
             override fun onStatus(message: JupyterStatusMessage) {
-                if (message.executionState == JupyterExecutionState.BUSY) {
+                if (message.executionState == JupyterExecutionState.BUSY && alreadyInterrupted.compareAndSet(false, true)) {
                     ApplicationManager.getApplication().executeOnPooledThread {
                         Thread.sleep(1000)
                         val session = futureSession.get(5, TimeUnit.SECONDS)

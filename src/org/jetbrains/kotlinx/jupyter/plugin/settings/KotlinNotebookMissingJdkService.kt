@@ -13,7 +13,11 @@ import com.intellij.ui.EditorNotifications
 @Service(Service.Level.PROJECT)
 class KotlinNotebookMissingJdkService(private val project: Project) : Disposable {
     private val projectJdkListener = ProjectRootManagerEx.ProjectJdkListener { updateNotifications() }
-    private val kotlinNotebookOptionsListener = KotlinNotebookProjectOptionsProvider.Listener { updateNotifications() }
+    private val kotlinNotebookOptionsListener = object : KotlinNotebookProjectOptionsProvider.Listener {
+        override fun onJdkChanged() {
+            updateNotifications()
+        }
+    }
     private val jdkTableListener = object : ProjectJdkTable.Listener {
         override fun jdkAdded(jdk: Sdk) = updateNotifications()
         override fun jdkRemoved(jdk: Sdk) = updateNotifications()

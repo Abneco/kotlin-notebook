@@ -12,6 +12,8 @@ import org.junit.Test
 class NotebookBaseHighlightingTest : AbstractNotebookHighlightingTest() {
     override val canChangeDocumentDuringHighlighting: Boolean = false
 
+    override fun runInDispatchThread() = true
+
     @Test
     fun testSimpleNotebook() {
         doTest(ResultCheckStrategy.OnlyValidSyntax)

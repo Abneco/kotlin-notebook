@@ -6,28 +6,32 @@ import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.systemIndependentPath
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelVmCommandCustomizer
+import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
+import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
-import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookResources
 import org.jetbrains.kotlinx.jupyter.startup.*
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolute
 import kotlin.io.path.exists
 
+@RequiresBackgroundThread
 fun createKernelProcess(
     project: Project,
     notebookPath: Path,
     onBeforeStartNotify: (KotlinKernelProcessHandler) -> Unit,
     onKernelTerminated: (ProcessEvent, KotlinKernelProcessHandler) -> Unit
 ): KotlinKernelProcessHandler {
+    val mavenArtifactsDownloader = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
     val kernelConfig = KernelConfig(
         createRandomKernelPorts(),
         "tcp",
         "HmacSHA256",
         "x-x-x",
-        KotlinNotebookResources.getInstance().scriptJars,
+        mavenArtifactsDownloader.downloadArtifactBlocking(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED),
         null,
         null,
         "kotlin_notebook", // TODO: make it an option
@@ -60,7 +64,7 @@ fun createKernelProcess(
     val cmdArgs = kernelConfig.javaCmdLine(
         javaExecutable,
         "kernelProcessConnection",
-        KotlinNotebookResources.getInstance().kernelJars.joinToString(classpathSeparator) { it.absolutePath },
+        mavenArtifactsDownloader.downloadArtifactBlocking(KotlinNotebookMavenArtifacts.KERNEL_SHADOWED).joinToString(classpathSeparator) { it.absolutePath },
         extraJavaArgs
     )
 

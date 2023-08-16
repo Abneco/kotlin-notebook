@@ -51,12 +51,12 @@ import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
-import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookResources
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanentIndexService
+import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
+import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.usages.KotlinNotebookPluginUpdater
-import org.jetbrains.kotlinx.jupyter.plugin.util.allJarsFromDir
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
@@ -113,6 +113,8 @@ class JupyterCompilerPerFileService(
     initialClasspath: List<File>,
     parent: Disposable
 ) : Disposable {
+    private var isDisposed = false
+
     private var psiFile = runReadAction {
         virtualFile.file.toPsiFile(project)
     }
@@ -150,16 +152,7 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private var kernelJarsAdded: Boolean = false
-    private val kernelJarsProviders: Collection<KernelJarsProvider> = listOf(
-        KernelJarsProvider {
-            KotlinNotebookResources.getInstance().ideJars
-        },
-        KernelJarsProvider {
-            LOG.warn("Kernel jars were requested from running Jupyter session...")
-            getSession()?.detectKotlinKernelJarsDir()?.allJarsFromDir().orEmpty()
-        },
-    )
+    private val kernelJarsAdded = AtomicBoolean(false)
 
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterKotlinPluginScriptClassGetter(ScriptTemplateWithDisplayHelpers::class) {
@@ -243,19 +236,20 @@ class JupyterCompilerPerFileService(
     }
 
     private fun updateClasspathWithKernelJars() {
-        if (kernelJarsAdded) return
+        if (!kernelJarsAdded.compareAndSet(false, true)) return
 
-        compileLock.write {
-            if (kernelJarsAdded) return
-            kernelJarsProviders.firstNotNullOfOrNull { provider ->
-                provider.getKernelJars()
-            }?.let { jars ->
-                val sourcesJars = KotlinNotebookResources.getInstance().libSourcesJars
+        coroutineScope.async {
+            val mavenArtifactsDownloader = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
+            val jars = mavenArtifactsDownloader.downloadArtifactAsync(KotlinNotebookMavenArtifacts.IDE_CLASSPATH_SHADOWED)
+            val sourcesJars = mavenArtifactsDownloader.downloadArtifactAsync(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED_SOURCES)
+
+            compileLock.write {
                 _currentClasspath.addInitial(jars)
                 _sourceRoots.addInitial(sourcesJars)
-                KotlinNotebookPermanentIndexService.getInstance(project).addToPermanentIndex(jars.map { it.absolutePath }, sourcesJars.map { it.absolutePath })
-                kernelJarsAdded = true
             }
+
+            KotlinNotebookPermanentIndexService.getInstance(project)
+                    .addToPermanentIndex(jars.map { it.absolutePath }, sourcesJars.map { it.absolutePath })
         }
     }
 
@@ -622,11 +616,14 @@ class JupyterCompilerPerFileService(
 
         ClasspathToVfsConverter.clearCaches()
 
-        val manager = ScriptConfigurationManager.getInstance(project) as? CompositeScriptConfigurationManager
-        manager?.updater?.invalidateAndCommit()
+        if (!isDisposed) {
+            val manager = ScriptConfigurationManager.getInstance(project) as? CompositeScriptConfigurationManager
+            manager?.updater?.invalidateAndCommit()
+        }
     }
 
     override fun dispose() {
+        isDisposed = true
         clear()
     }
 

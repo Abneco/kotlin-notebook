@@ -52,6 +52,8 @@ fun textPlainOutput(content: String): ObjectNode = jackson.createObjectNode().ap
 abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile
 
+    override fun runInDispatchThread() = false
+
     override fun setUp() {
         super.setUp()
         Disposer.register(testRootDisposable, JupyterServers.getInstance())

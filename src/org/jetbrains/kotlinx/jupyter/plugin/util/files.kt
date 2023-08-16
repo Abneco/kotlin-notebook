@@ -6,19 +6,9 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.idea.util.sourceRoots
 import java.io.File
-import java.nio.file.Files
-import kotlin.io.path.isRegularFile
 
 val File.isNotEmptyDirectory: Boolean
     get() = exists() && isDirectory && (list()?.isNotEmpty() ?: false)
-
-fun File.allJarsFromDir(): List<File> {
-    return Files.walk(this.toPath()).filter { path ->
-      path.isRegularFile() && !path.fileName.toString().contains("kotlin-jupyter-kernel")
-    }.map {
-        it.toFile()
-    }.toList()
-}
 
 fun Project.allSourceRoots(): List<File> {
     val moduleManager = ModuleManager.getInstance(this)

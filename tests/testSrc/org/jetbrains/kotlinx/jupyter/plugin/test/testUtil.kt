@@ -59,6 +59,16 @@ fun PsiFile.getCells(): List<JupyterPsiCell> = descendantsOfType<JupyterPsiCell>
 
 fun PsiFile.isInjectedKtFile(): Boolean = name.endsWith("kts")
 
+data class TestDuration(
+    val value: Long,
+    val unit: TimeUnit,
+)
+
+@Suppress("unused")
+fun TestDuration.millis() = unit.toMillis(value)
+
+val defaultTestDuration = TestDuration(3, TimeUnit.MINUTES)
+
 fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executionCallback: JupyterExecutionCallback? = null) {
     val project = notebookFile.project
     val document = PsiDocumentManager.getInstance(project).getDocument(notebookFile)!!
@@ -67,6 +77,8 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
     val cellsCount = notebookCells.size
     Assertions.assertEquals(tester.expectedCellsCount, cellsCount)
 
+    val testTimeout = defaultTestDuration
+
     val cellsToExecute = tester.cellsToExecute
     val cellExecutionNumber = buildMap {
         for ((i, num) in cellsToExecute.withIndex()) {
@@ -74,7 +86,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
         }
     }
     val receivedMessagesFutures = List(cellsToExecute.size) {
-        CompletableFuture<ReceivedMessages>().orTimeout(3, TimeUnit.MINUTES)
+        CompletableFuture<ReceivedMessages>().orTimeout(testTimeout.value, testTimeout.unit)
     }
 
     fun endExceptionally(throwable: Throwable) {
