@@ -14,6 +14,8 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import java.util.EventListener
+import kotlin.reflect.KMutableProperty0
+import kotlin.reflect.KProperty
 
 @Service(Service.Level.PROJECT)
 @State(
@@ -24,20 +26,10 @@ import java.util.EventListener
 class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<KotlinNotebookProjectOptionsProvider.State>(State()) {
     private val eventDispatcher = EventDispatcher.create(Listener::class.java)
 
-    var kernelVersion
-        get() = state.kernelVersion
-        set(value) {
-            state.kernelVersion = value
-            eventDispatcher.multicaster.onKernelVersionChanged()
-        }
+    var kernelVersion: String by PropertyDelegate({ it.orEmpty() }, state::kernelVersion, Listener::onKernelVersionChanged)
 
     val jdk get() = KotlinNotebookJdkOption.fromName(jdkName)
-    internal var jdkName
-        get() = state.jdkName
-        set(value) {
-            state.jdkName = value
-            eventDispatcher.multicaster.onJdkChanged()
-        }
+    internal var jdkName: String? by PropertyDelegate({ it }, state::jdkName, Listener::onJdkChanged)
 
     var heapMaxLimitInMib by state::heapMaxLimitInMib
         internal set
@@ -81,6 +73,24 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
     interface Listener : EventListener {
         fun onJdkChanged() {}
         fun onKernelVersionChanged() {}
+    }
+
+    private inner class PropertyDelegate<P, T: P>(
+        private val modifier: (P) -> T,
+        private val stateProperty: KMutableProperty0<P>,
+        private val onChange: Listener.() -> Unit,
+    ) {
+        operator fun getValue(thisRef: KotlinNotebookProjectOptionsProvider, property: KProperty<*>): T {
+            return modifier(stateProperty.get())
+        }
+
+        operator fun setValue(thisRef: KotlinNotebookProjectOptionsProvider, property: KProperty<*>, value: T) {
+            val oldValue = getValue(thisRef, property)
+            stateProperty.set(value)
+            if (oldValue != value) {
+                eventDispatcher.multicaster.onChange()
+            }
+        }
     }
 
     companion object {

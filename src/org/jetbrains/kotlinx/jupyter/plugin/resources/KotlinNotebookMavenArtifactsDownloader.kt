@@ -4,13 +4,11 @@ package org.jetbrains.kotlinx.jupyter.plugin.resources
 import com.intellij.jarRepository.JarRepositoryManager
 import com.intellij.jarRepository.RemoteRepositoryDescription
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import com.intellij.util.concurrency.annotations.RequiresEdt
 import kotlinx.coroutines.*
 import org.jetbrains.idea.maven.aether.ArtifactKind
 import org.jetbrains.jps.model.library.JpsMavenRepositoryLibraryDescriptor
@@ -30,7 +28,7 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
 
     private val downloadJobs = mutableMapOf<ArtifactDescriptionWithVersion, Deferred<List<File>>>()
     private val cacheSearchLock = ReentrantLock()
-    private val downloadJobsScope = CoroutineScope(Dispatchers.EDT)
+    private val downloadJobsScope = CoroutineScope(Dispatchers.Default)
     private val preloadJobScope = CoroutineScope(Dispatchers.Default)
 
     init {
@@ -72,7 +70,7 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
     }
 
     private fun getSelectedKernelVersion(): String {
-        return KotlinNotebookProjectOptionsProvider.getInstance(project).kernelVersion.orEmpty()
+        return KotlinNotebookProjectOptionsProvider.getInstance(project).kernelVersion
     }
 
     private fun preloadArtifacts() {
@@ -86,19 +84,16 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
     /**
      * Downloads the artifact with the specified version and saves it to the given directory.
      *
-     * Note that this method requires EDT: it may hang if run in BGT
-     *
      * @param artifactWithVersion The artifact description with the version to download.
      * @param directory The directory to save the downloaded artifact.
      * @return True if the download and save operation was successful, false otherwise.
      */
-    @RequiresEdt
     private fun downloadAndSaveToDirectory(
         artifactWithVersion: ArtifactDescriptionWithVersion,
         directory: File,
     ): Boolean {
         val (artifact, version) = artifactWithVersion
-        val resolvedLibraryRoots = JarRepositoryManager.loadDependenciesModal(
+        val resolvedLibraryRoots = JarRepositoryManager.loadDependenciesSync(
             project,
             JpsMavenRepositoryLibraryDescriptor(artifact.group, artifact.artifact, version, false, emptyList()),
             artifact.selectKinds(),

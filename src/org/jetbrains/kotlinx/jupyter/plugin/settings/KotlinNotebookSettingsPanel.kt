@@ -16,7 +16,7 @@ import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.execution.ParametersListUtil
-import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
+import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 
@@ -49,27 +49,12 @@ object KotlinNotebookSettingsPanel {
 
     private fun Panel.createKernelVersionSelector(project: Project, optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.version")) {
-            val comboBox = MavenVersionComboBox(
+            mavenVersionComboBox(
                 project,
-                KotlinNotebookMavenArtifacts.KERNEL_SHADOWED
+                KotlinNotebookMavenArtifacts.KERNEL_SHADOWED,
+                optionsProvider::kernelVersion,
+                KotlinKernelVersion.STRING_VERSION_COMPARATOR.reversed(),
             )
-            cell(comboBox)
-                .onReset {
-                    val kernelVersion = optionsProvider.kernelVersion
-                    if (kernelVersion != null) {
-                        comboBox.version = kernelVersion
-                    } else {
-                        comboBox.version = currentKernelVersion.toMavenVersion()
-                    }
-                }
-                .onIsModified {
-                    comboBox.isLoaded && optionsProvider.kernelVersion != comboBox.version
-                }
-                .onApply {
-                    if (comboBox.isLoaded) {
-                        optionsProvider.kernelVersion = comboBox.version
-                    }
-                }
         }
     }
 

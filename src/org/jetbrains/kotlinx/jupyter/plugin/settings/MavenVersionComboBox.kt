@@ -6,19 +6,32 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.ui.CollectionComboBoxModel
-import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
+import com.intellij.ui.dsl.builder.Cell
+import com.intellij.ui.dsl.builder.Row
 import org.jetbrains.kotlinx.jupyter.plugin.resources.ArtifactDescription
 import org.jetbrains.kotlinx.jupyter.plugin.resources.toIntellijModelDescription
+import javax.swing.ComboBoxModel
+import kotlin.reflect.KMutableProperty0
 
-class MavenVersionComboBox(
+private fun interface MavenVersionModelProvider {
+    fun provideModel(versions: Collection<String>): ComboBoxModel<String>
+}
+
+abstract class MavenVersionComboBox : ComboBox<String>() {
+    abstract var version: String
+    abstract val isReady: Boolean
+}
+
+private class MavenVersionComboBoxImpl(
     private val project: Project,
-    private val libraryDescription: ArtifactDescription,
-) : ComboBox<String>() {
+    private val artifactDescription: ArtifactDescription,
+    private val modelProvider: MavenVersionModelProvider,
+) : MavenVersionComboBox() {
     private var state = State.NOT_LOADED
 
-    var version: String
+    override var version: String
         get() {
-            return when(state) {
+            return when (state) {
                 State.NOT_LOADED -> ""
                 State.LOADED -> (selectedItem as String?).orEmpty()
             }
@@ -29,34 +42,19 @@ class MavenVersionComboBox(
             }
         }
 
-    val isLoaded get() = state == State.LOADED
+    override val isReady get() = state == State.LOADED
 
     init {
         reloadVersionsAsync()
     }
 
     private fun reloadVersionsAsync() {
-        val promise = JarRepositoryManager.getAvailableVersions(project, libraryDescription.toIntellijModelDescription())
+        val promise = JarRepositoryManager.getAvailableVersions(project, artifactDescription.toIntellijModelDescription())
         promise.onSuccess(::initializeComboBox)
     }
 
     private fun initializeComboBox(versions: Collection<String>) {
-        val currentVersion = KotlinNotebookProjectOptionsProvider.getInstance(project).kernelVersion
-        val allVersions = buildSet {
-            addAll(versions)
-            add(currentVersion)
-        }.toMutableList().apply {
-            sortByDescending { versionString ->
-                if (versionString != null) KotlinKernelVersion.fromMavenVersion(versionString) ?: EMPTY_VERSION
-                else EMPTY_VERSION
-            }
-        }
-
-        val versionSelectorModel = CollectionComboBoxModel<String>()
-        versionSelectorModel.add(allVersions)
-        versionSelectorModel.selectedItem = currentVersion
-
-        setModel(versionSelectorModel)
+        setModel(modelProvider.provideModel(versions))
         state = State.LOADED
     }
 
@@ -65,28 +63,40 @@ class MavenVersionComboBox(
     }
 }
 
-private val EMPTY_VERSION = KotlinKernelVersion.from(0, 0, 0)
+private class MavenVersionModelProviderImpl(
+    private val initialVersion: String,
+    private val versionComparator: Comparator<String>,
+) : MavenVersionModelProvider {
+    override fun provideModel(versions: Collection<String>): ComboBoxModel<String> {
+        val allVersions = buildSet {
+            addAll(versions)
+            add(initialVersion)
+        }.sortedWith(versionComparator)
 
-fun KotlinKernelVersion.Companion.fromMavenVersion(string: String): KotlinKernelVersion? {
-    val components = string.split(SEP)
-    if (components.size != 3) return null
-
-    val intComponents = mutableListOf<Int>()
-    for (i in 0..1) {
-        intComponents.add(components[i].toIntOrNull() ?: return null)
+        return CollectionComboBoxModel<String>().apply {
+            add(allVersions)
+            selectedItem = initialVersion
+        }
     }
+}
 
-    val lastComponent = components[2]
-    val lastIntComponents = lastComponent.split(DEV_SEP)
-    for (component in lastIntComponents) {
-        intComponents.add(component.toIntOrNull() ?: return null)
-    }
+fun Row.mavenVersionComboBox(
+    project: Project,
+    artifactDescription: ArtifactDescription,
+    versionProperty: KMutableProperty0<String>,
+    versionComparator: Comparator<String> = Comparator.naturalOrder(),
+): Cell<MavenVersionComboBox> {
+    val initialVersion = versionProperty.get()
 
-    val major = intComponents[0]
-    val minor = intComponents[1]
-    val micro = intComponents[2]
-    val build = intComponents.elementAtOrNull(3)
-    val dev = intComponents.elementAtOrNull(4)
-
-    return from(major, minor, micro, build, dev)
+    val comboBox = MavenVersionComboBoxImpl(project, artifactDescription, MavenVersionModelProviderImpl(initialVersion, versionComparator))
+    return cell(comboBox)
+        .onReset {
+            comboBox.version = versionProperty.get()
+        }.onIsModified {
+            comboBox.isReady && versionProperty.get() != comboBox.version
+        }.onApply {
+            if (comboBox.isReady) {
+                versionProperty.set(comboBox.version)
+            }
+        }
 }
