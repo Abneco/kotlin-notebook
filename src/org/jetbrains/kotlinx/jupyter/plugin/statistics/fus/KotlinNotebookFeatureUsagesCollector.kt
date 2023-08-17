@@ -70,7 +70,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
                     JupyterCellType.MARKDOWN -> {
                         ++markdownCellsCount
                     }
-                    JupyterCellType.CODE_OR_MAGIC, JupyterCellType.CODE, JupyterCellType.MAGIC -> {
+                    JupyterCellType.CODE_OR_MAGIC, JupyterCellType.CODE, JupyterCellType.MAGIC, JupyterCellType.SQL -> {
                         ++codeCellsCount
                     }
                 }
