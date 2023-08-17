@@ -116,7 +116,7 @@ class KernelZMQClientSession(
 
 
     override fun close() {
-        socketManager.close()
+        socketManager.closeSafely()
         clientThreads.clear()
     }
 
