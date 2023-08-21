@@ -80,8 +80,11 @@
     </projectListeners>
 
     <extensionPoints>
-        <extensionPoint qualifiedName="org.jetbrains.kotlinx.jupyter.plugin.session.extensions.kernelVmCommandCustomizer"
+        <extensionPoint qualifiedName="org.jetbrains.kotlinx.jupyter.plugin.kernel.kernelVmCommandCustomizer"
                         interface="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelVmCommandCustomizer"
+                        dynamic="true"/>
+        <extensionPoint qualifiedName="org.jetbrains.kotlinx.jupyter.plugin.kernel.kernelProcessCommandLineCustomizer"
+                        interface="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer"
                         dynamic="true"/>
     </extensionPoints>
 
@@ -92,6 +95,7 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.codeInsight.daemon.impl">
+        <!--suppress PluginXmlDynamicPlugin, PluginXmlValidity -->
         <injectedLanguageHighlightingRangeReducer
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.KotlinNotebookInjectedRangeReducer"
                 id="kotlinNotebookRangeReducer"
@@ -190,6 +194,7 @@
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">
         <listener implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptChangeListener"/>
+        <!--suppress PluginXmlDynamicPlugin -->
         <scriptingSupport implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport"/>
     </extensions>
 
@@ -223,7 +228,7 @@
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlinx.jupyter.plugin">
-        <session.extensions.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>
+        <kernel.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>
     </extensions>
 
     <actions resource-bundle="messages/KotlinNotebookBundle">

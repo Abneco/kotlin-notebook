@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.systemIndependentPath
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelVmCommandCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
@@ -70,6 +71,7 @@ fun createKernelProcess(
 
     val commandLine = GeneralCommandLine(cmdArgs).apply {
         workingDir?.let { withWorkDirectory(it.toFile()) }
+        KernelProcessCommandLineCustomizer.customize(this)
     }
 
     return KotlinKernelProcessHandler(

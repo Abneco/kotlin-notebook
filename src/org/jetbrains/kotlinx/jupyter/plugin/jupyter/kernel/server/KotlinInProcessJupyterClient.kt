@@ -118,12 +118,15 @@ class KotlinInProcessJupyterClient(
     }
 
     override fun deleteSession(sessionId: SessionId) {
+        val sessionData = sessions.getByFirstKey(sessionId) ?: return
+        killKernel(sessionData.kernelId)
         sessions.removeByFirstKey(sessionId)
     }
 
     private fun killKernel(kernelId: KernelId) {
         // Maybe we should send shutdown request here
-        kernels[kernelId]?.destroyProcess()
+        val kernelProcess = kernels.remove(kernelId) ?: return
+        Disposer.dispose(kernelProcess)
     }
 
     override fun interrupt(kernelId: KernelId) {

@@ -11,14 +11,13 @@ import junit.framework.TestCase
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
+import org.jetbrains.kotlinx.jupyter.plugin.test.runWithJupyterSession
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion.KotlinNotebookAutoCompletionTest
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
 import org.jetbrains.kotlinx.jupyter.plugin.test.withDisabledJcef
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
-import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory
 import org.junit.Test
 
 class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCase() {
@@ -165,18 +164,20 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
     private fun doTest(executionTester: ReceivedMessagesTester, completionChecker: (CompletionAutoPopupTester) -> Unit) {
         withDisabledJcef {
             val notebookFile = configureExecutionTest(copyNotebookToProject = false)
-            executeCells(executionTester, notebookFile)
+            runWithJupyterSession(notebookFile) {
+                executeCells(executionTester, notebookFile)
 
-            runInEdtAndWait {
-                myFixture.project.waitIndexingComplete()
-                runReadAction {
-                    ScriptConfigurationManager.updateScriptDependenciesSynchronously(myFixture.file)
+                runInEdtAndWait {
+                    myFixture.project.waitIndexingComplete()
+                    runReadAction {
+                        ScriptConfigurationManager.updateScriptDependenciesSynchronously(myFixture.file)
+                    }
                 }
-            }
 
-            val completionTester = CompletionAutoPopupTester(myFixture)
-            completionTester.runWithAutoPopupEnabled {
-                completionChecker(completionTester)
+                val completionTester = CompletionAutoPopupTester(myFixture)
+                completionTester.runWithAutoPopupEnabled {
+                    completionChecker(completionTester)
+                }
             }
         }
     }

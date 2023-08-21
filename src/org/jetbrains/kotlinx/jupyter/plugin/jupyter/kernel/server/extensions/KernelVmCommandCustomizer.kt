@@ -7,7 +7,7 @@ interface KernelVmCommandCustomizer {
     fun addVmArguments(arguments: MutableList<String>)
 
     companion object {
-        private val EP = ExtensionPointName.create<KernelVmCommandCustomizer>("org.jetbrains.kotlinx.jupyter.plugin.session.extensions.kernelVmCommandCustomizer")
+        private val EP = ExtensionPointName.create<KernelVmCommandCustomizer>("org.jetbrains.kotlinx.jupyter.plugin.kernel.kernelVmCommandCustomizer")
 
         fun addVmArguments(arguments: MutableList<String>) {
             EP.extensions.forEach { it.addVmArguments(arguments) }

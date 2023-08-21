@@ -7,7 +7,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import junit.framework.TestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
-import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
+import org.jetbrains.kotlinx.jupyter.plugin.test.executeCellsAndShutdownKernel
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
@@ -85,7 +85,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
 
     private fun doTest(tester: ReceivedMessagesTester, executionCallback: JupyterExecutionCallback? = null) {
         val notebookFile = configureExecutionTest()
-        executeCells(tester, notebookFile, executionCallback)
+        executeCellsAndShutdownKernel(tester, notebookFile, executionCallback)
     }
 
     companion object {

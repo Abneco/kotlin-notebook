@@ -3,7 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.highlighting
 
 import com.intellij.refactoring.suggested.startOffset
 import org.jetbrains.kotlin.idea.core.moveCaret
-import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
+import org.jetbrains.kotlinx.jupyter.plugin.test.executeCellsAndShutdownKernel
 import org.jetbrains.kotlinx.jupyter.plugin.test.getCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
@@ -27,7 +27,7 @@ class NotebookBaseHighlightingTest : AbstractNotebookHighlightingTest() {
     //@Test
     fun testResolvedAfterExecution() {
         doTest(ResultCheckStrategy.ShadowedErrors) {
-            executeCells(object : ReceivedMessagesTester {
+            executeCellsAndShutdownKernel(object : ReceivedMessagesTester {
                 override val cellsToExecute: List<Int> = listOf(0)
                 override val expectedCellsCount: Int = 2
 

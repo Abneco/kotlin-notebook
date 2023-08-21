@@ -9,6 +9,7 @@ import com.intellij.testFramework.runInEdtAndWait
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
+import org.jetbrains.kotlinx.jupyter.plugin.test.runWithJupyterSession
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
@@ -38,15 +39,18 @@ class NotebookHighlightingAfterExecutionTest: KotlinNotebookExecutionBaseTestCas
     private fun doTest(executionTester: ReceivedMessagesTester, hlChecker: (List<HighlightInfo>) -> Unit) {
         withDisabledJcef {
             val notebookFile = configureExecutionTest(copyNotebookToProject = false)
-            executeCells(executionTester, notebookFile)
 
-            runInEdtAndWait {
-                myFixture.project.waitIndexingComplete()
-                runReadAction {
-                    ScriptConfigurationManager.updateScriptDependenciesSynchronously(myFixture.file)
+            runWithJupyterSession(notebookFile) {
+                executeCells(executionTester, notebookFile)
+
+                runInEdtAndWait {
+                    myFixture.project.waitIndexingComplete()
+                    runReadAction {
+                        ScriptConfigurationManager.updateScriptDependenciesSynchronously(myFixture.file)
+                    }
+                    val hl = myFixture.doHighlighting()
+                    hlChecker(hl)
                 }
-                val hl = myFixture.doHighlighting()
-                hlChecker(hl)
             }
         }
     }

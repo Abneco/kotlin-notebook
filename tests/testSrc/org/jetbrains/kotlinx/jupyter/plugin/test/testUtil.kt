@@ -22,6 +22,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.originFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterBackedVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterExecutionState
@@ -68,6 +69,25 @@ data class TestDuration(
 fun TestDuration.millis() = unit.toMillis(value)
 
 val defaultTestDuration = TestDuration(3, TimeUnit.MINUTES)
+
+fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
+    val project = notebookFile.project
+    val backedFile = BackedNotebookVirtualFile.takeIfBacked(notebookFile.virtualFile)!!
+    val session = runBlocking {
+        JupyterRuntimeService.getInstance(project).getOrCreateSession(backedFile)
+    }
+    return try {
+        action()
+    } finally {
+        session.deleteSession()
+    }
+}
+
+fun executeCellsAndShutdownKernel(tester: ReceivedMessagesTester, notebookFile: PsiFile, executionCallback: JupyterExecutionCallback? = null) {
+    runWithJupyterSession(notebookFile) {
+        executeCells(tester, notebookFile, executionCallback)
+    }
+}
 
 fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executionCallback: JupyterExecutionCallback? = null) {
     val project = notebookFile.project

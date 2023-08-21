@@ -32,6 +32,10 @@ class KotlinKernelProcessHandler(
                 LOG.debug("Kernel process terminated with code ${event.exitCode} (${event.text})")
                 onKernelTerminated(event, handler)
             }
+
+            override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
+                LOG.debug("Kernel process is going to be terminated (will ${if (willBeDestroyed) "" else "not "}be destroyed): $event")
+            }
         })
     }
 
