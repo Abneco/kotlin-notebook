@@ -97,7 +97,12 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         }
     }
 
-    override fun getSortingCommand(tableVariable: String, sortKeys: List<RowSorter.SortKey>, columns: List<String>): String {
+    override fun getSortingCommand(
+        tableVariable: String,
+        sortKeys: List<RowSorter.SortKey>,
+        columns: List<String>,
+        indexColumnWidth: Int
+    ): String {
         if (columns.isEmpty()) return tableVariable
 
         require(columns.all { it.isNotBlank() })
