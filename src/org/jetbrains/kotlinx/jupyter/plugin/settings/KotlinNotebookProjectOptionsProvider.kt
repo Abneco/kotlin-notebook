@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.settings
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.SettingsCategory
 import com.intellij.openapi.components.SimplePersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
@@ -15,39 +16,53 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import java.util.EventListener
-import kotlin.reflect.KMutableProperty0
+import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty
 
 @Service(Service.Level.PROJECT)
 @State(
     name = "KotlinNotebookOptionsProvider",
     presentableName = KotlinNotebookProjectOptionsProvider.PresentableNameGetter::class,
-    storages = [Storage("kotlinNotebook.xml")]
+    storages = [Storage("kotlinNotebook.xml")],
+    category = SettingsCategory.PLUGINS
 )
 class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<KotlinNotebookProjectOptionsProvider.State>(State()) {
     private val eventDispatcher = EventDispatcher.create(Listener::class.java)
 
-    var kernelVersion: String by PropertyDelegate({ it.orEmpty() }, { it }, state::kernelVersion, Listener::onKernelVersionChanged)
+    var kernelVersion: String by PropertyDelegate(
+        State::kernelVersion,
+        { it.orEmpty() },
+        { it },
+        Listener::onKernelVersionChanged
+    )
 
     val jdk get() = KotlinNotebookJdkOption.fromName(jdkName)
-    internal var jdkName: String? by PropertyDelegate({ it }, { it }, state::jdkName, Listener::onJdkChanged)
+    internal var jdkName: String? by PropertyDelegate(
+        State::jdkName,
+        { it },
+        { it },
+        Listener::onJdkChanged
+    )
 
     var jvmTargetForSnippets: LanguageLevel? by PropertyDelegate(
+        State::jvmTargetForSnippets,
         { it?.let { LanguageLevel.parse(it) } },
         { it?.toJavaVersion()?.toFeatureString() },
-        state::jvmTargetForSnippets,
         Listener::onJvmTargetForSnippetsChanged
     )
 
-    var heapMaxLimitInMib by state::heapMaxLimitInMib
+    var heapMaxLimitInMib by stateProp(State::heapMaxLimitInMib)
         internal set
-    var extraJvmArguments by state::extraJvmArguments
+    var extraJvmArguments by stateProp(State::extraJvmArguments)
         internal set
-    var shouldLimitTypeHintsByActiveCell by state::shouldLimitTypeHintsByActiveCell
+    var extraEnvironmentVariables by stateProp(State::extraEnvironmentVariables)
         internal set
-    var shouldBuildProject by state::shouldBuildProject
+
+    var shouldLimitTypeHintsByActiveCell by stateProp(State::shouldLimitTypeHintsByActiveCell)
         internal set
-    var shouldAddProjectLibrariesToClasspath by state::shouldAddProjectLibrariesToClasspath
+    var shouldBuildProject by stateProp(State::shouldBuildProject)
+        internal set
+    var shouldAddProjectLibrariesToClasspath by stateProp(State::shouldAddProjectLibrariesToClasspath)
         internal set
 
     fun addListener(listener: Listener, disposable: Disposable) {
@@ -68,6 +83,7 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
         var jvmTargetForSnippets by string(null)
         var heapMaxLimitInMib by property(DEFAULT_HEAP_MAX_LIMIT_MIB)
         var extraJvmArguments by list<String>()
+        var extraEnvironmentVariables by linkedMap<String, String>()
         var shouldLimitTypeHintsByActiveCell by property(false)
 
         // default settings for new notebooks
@@ -86,23 +102,25 @@ class KotlinNotebookProjectOptionsProvider : SimplePersistentStateComponent<Kotl
     }
 
     private inner class PropertyDelegate<InternalT, ExternalT>(
+        private val stateProperty: KMutableProperty1<State, InternalT>,
         private val internalToExternal: (InternalT) -> ExternalT,
         private val externalToInternal: (ExternalT) -> InternalT,
-        private val stateProperty: KMutableProperty0<InternalT>,
-        private val onChange: Listener.() -> Unit,
+        private val onChange: Listener.() -> Unit = {},
     ) {
         operator fun getValue(thisRef: KotlinNotebookProjectOptionsProvider, property: KProperty<*>): ExternalT {
-            return internalToExternal(stateProperty.get())
+            return internalToExternal(stateProperty.get(state))
         }
 
         operator fun setValue(thisRef: KotlinNotebookProjectOptionsProvider, property: KProperty<*>, value: ExternalT) {
             val oldValue = getValue(thisRef, property)
-            stateProperty.set(externalToInternal(value))
+            stateProperty.set(state, externalToInternal(value))
             if (oldValue != value) {
                 eventDispatcher.multicaster.onChange()
             }
         }
     }
+
+    private fun <V> stateProp(property: KMutableProperty1<State, V>) = PropertyDelegate(property, { it }, { it })
 
     companion object {
         fun getInstance(project: Project): KotlinNotebookProjectOptionsProvider = project.service()

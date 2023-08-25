@@ -14,7 +14,9 @@ import org.jetbrains.plugins.notebooks.editor.JupyterNotebookGutterManager
 
 @Service
 @State(
-    name = "KotlinNotebookApplicationOptions", storages = [Storage("kotlinNotebook.xml")], category = SettingsCategory.PLUGINS
+    name = "KotlinNotebookApplicationOptions",
+    storages = [Storage("kotlinNotebookApp.xml")],
+    category = SettingsCategory.PLUGINS
 )
 class KotlinNotebookApplicationOptionsProvider : SimplePersistentStateComponent<KotlinNotebookApplicationOptionsProvider.State>(State()) {
     var shouldShowExecutionCount

@@ -1,8 +1,9 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.settings
 
+import com.intellij.execution.ExecutionBundle
+import com.intellij.execution.configuration.EnvironmentVariablesTextFieldWithBrowseButton
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ui.configuration.SdkComboBox
 import com.intellij.openapi.roots.ui.configuration.SdkComboBoxModel
@@ -15,6 +16,7 @@ import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.util.execution.ParametersListUtil
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
@@ -32,6 +34,7 @@ object KotlinNotebookSettingsPanel {
                 createJvmTargetForSnippetsComboBox(projectOptions)
                 createMaxHeapSizeSpinner(projectOptions)
                 createExtraJvmArgumentsField(projectOptions)
+                createEnvironmentVariablesField(projectOptions)
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.typeHints")) {
                 row(null) {
@@ -73,13 +76,27 @@ object KotlinNotebookSettingsPanel {
     private fun Panel.createExtraJvmArgumentsField(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.extra.args")) {
             expandableTextField()
-                .columns(48)
+                .columns(DEFAULT_COLUMNS_COUNT)
+                .widthGroup(BUILD_WIDTH_GROUP)
                 .applyToComponent {
                     setMonospaced(true)
                 }
                 .bindText(
                     { ParametersListUtil.DEFAULT_LINE_JOINER.`fun`(optionsProvider.extraJvmArguments) },
                     { text -> optionsProvider.extraJvmArguments = ParametersListUtil.parse(text) }
+                )
+        }
+    }
+
+    private fun Panel.createEnvironmentVariablesField(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
+        return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.environment.variables")) {
+            cell(EnvironmentVariablesTextFieldWithBrowseButton())
+                .widthGroup(BUILD_WIDTH_GROUP)
+                .comment(ExecutionBundle.message("environment.variables.fragment.hint"))
+                .bind(
+                    { component -> component.envs },
+                    { component, value ->  component.envs = value },
+                    optionsProvider::extraEnvironmentVariables.toMutableProperty()
                 )
         }
     }
@@ -94,6 +111,7 @@ object KotlinNotebookSettingsPanel {
             )
             val sdkModel = sdkComboBox.model.sdksModel
             cell(sdkComboBox)
+                .widthGroup(BUILD_WIDTH_GROUP)
                 .comment(
                     KotlinNotebookBundle.message(
                         "kotlin.jupyter.settings.JDK.comment",
@@ -123,6 +141,7 @@ object KotlinNotebookSettingsPanel {
     private fun Panel.createJvmTargetForSnippetsComboBox(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.target.for.snippets")) {
             snippetsLanguageLevelComboBox(optionsProvider::jvmTargetForSnippets)
+                .widthGroup(BUILD_WIDTH_GROUP)
         }
     }
 
@@ -131,4 +150,7 @@ object KotlinNotebookSettingsPanel {
             if (selectedItem is SdkListItem.ProjectSdkItem) return null
             return getSelectedSdk()?.name
         }
+
+    private const val DEFAULT_COLUMNS_COUNT = 48
+    private const val BUILD_WIDTH_GROUP = "kotlin.notebook.build"
 }

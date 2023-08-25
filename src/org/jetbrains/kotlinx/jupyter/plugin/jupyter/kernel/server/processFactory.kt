@@ -72,6 +72,7 @@ fun createKernelProcess(
 
     val commandLine = GeneralCommandLine(cmdArgs).apply {
         workingDir?.let { withWorkDirectory(it.toFile()) }
+        withEnvironment(options.extraEnvironmentVariables)
         KernelProcessCommandLineCustomizer.customize(this)
     }
 
