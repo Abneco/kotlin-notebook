@@ -13,6 +13,8 @@ import kotlin.contracts.contract
 sealed interface KotlinNotebookJdkOption {
     fun getPath(project: Project): String?
 
+    fun getVersion(project: Project): JavaSdkVersion?
+
     companion object {
         fun fromName(name: String?): KotlinNotebookJdkOption {
             if (name == null) return ProjectJdkOption
@@ -21,38 +23,50 @@ sealed interface KotlinNotebookJdkOption {
     }
 }
 
-class NamedJdkOption(private val name: String): KotlinNotebookJdkOption {
+abstract class AbstractKotlinNotebookJdkOption: KotlinNotebookJdkOption {
+    abstract fun getSdk(project: Project): Sdk?
+
     override fun getPath(project: Project): String? {
-        return ProjectJdkTable.getInstance().findJdk(name, JavaSdk.getInstance().name)?.homePath
+        return getSdk(project)?.homePath
+    }
+
+    override fun getVersion(project: Project): JavaSdkVersion? {
+        return getSdk(project)?.jdkVersion()
     }
 }
 
-private val runtimeJavaSdkVersion: JavaSdkVersion? by lazy {
-    val runtimeVersion = Runtime.version()
-    JavaSdkVersion.fromVersionString(runtimeVersion.toString())
+class NamedJdkOption(private val name: String): AbstractKotlinNotebookJdkOption() {
+    private val mySdk by lazy {
+        ProjectJdkTable.getInstance().findJdk(name, JavaSdk.getInstance().name)
+    }
+
+    override fun getSdk(project: Project): Sdk? = mySdk
 }
 
 internal val minJdkVersion get() = JavaSdkVersion.JDK_11
-internal val maxJdkVersion get() = runtimeJavaSdkVersion
 
 @OptIn(ExperimentalContracts::class)
 internal fun isSuitableForStartingKernel(sdk: Sdk?): Boolean {
     contract { returns(true) implies (sdk != null) }
     if (sdk == null) return false
-    if (sdk.sdkType !is JavaSdk) return false
-    val version = JavaSdk.getInstance().getVersion(sdk) ?: return false
-    return minJdkVersion <= version && (maxJdkVersion == null || version <= maxJdkVersion)
+    val version = sdk.jdkVersion() ?: return false
+    return minJdkVersion <= version
 }
 
-object ProjectJdkOption : KotlinNotebookJdkOption {
-    override fun getPath(project: Project): String? {
+internal fun Sdk.jdkVersion(): JavaSdkVersion? {
+    if (sdkType !is JavaSdk) return null
+    return JavaSdk.getInstance().getVersion(this)
+}
+
+object ProjectJdkOption : AbstractKotlinNotebookJdkOption() {
+    override fun getSdk(project: Project): Sdk? {
         val rootManager = ProjectRootManager.getInstance(project)
         val projectSdk = rootManager.projectSdk
-        if (isSuitableForStartingKernel(projectSdk)) return projectSdk.homePath
+        if (isSuitableForStartingKernel(projectSdk)) return projectSdk
 
         val suitableJdk = ProjectJdkTable.getInstance().getSdksOfType(JavaSdk.getInstance()).firstOrNull {
             isSuitableForStartingKernel(it)
         } ?: return null
-        return suitableJdk.homePath
+        return suitableJdk
     }
 }

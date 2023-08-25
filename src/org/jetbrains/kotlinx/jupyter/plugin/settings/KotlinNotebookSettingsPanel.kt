@@ -29,6 +29,7 @@ object KotlinNotebookSettingsPanel {
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.build")) {
                 createKernelVersionSelector(project, projectOptions)
                 createJdkComboBox(project, projectOptions, parentDisposable)
+                createJvmTargetForSnippetsComboBox(projectOptions)
                 createMaxHeapSizeSpinner(projectOptions)
                 createExtraJvmArgumentsField(projectOptions)
             }
@@ -97,10 +98,6 @@ object KotlinNotebookSettingsPanel {
                     KotlinNotebookBundle.message(
                         "kotlin.jupyter.settings.JDK.comment",
                         minJdkVersion.description,
-                        maxJdkVersion?.description ?: KotlinNotebookBundle.message(
-                            "kotlin.jupyter.settings.JDK.comment.empty.runtime",
-                            ApplicationNamesInfo.getInstance().productName
-                        )
                     )
                 )
                 .onReset {
@@ -120,6 +117,12 @@ object KotlinNotebookSettingsPanel {
                     }
                     optionsProvider.jdkName = sdkComboBox.selectedSdkName
                 }
+        }
+    }
+
+    private fun Panel.createJvmTargetForSnippetsComboBox(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
+        return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.target.for.snippets")) {
+            snippetsLanguageLevelComboBox(optionsProvider::jvmTargetForSnippets)
         }
     }
 

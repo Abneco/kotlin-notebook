@@ -6,6 +6,7 @@ import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.pom.java.LanguageLevel
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.systemIndependentPath
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
@@ -13,6 +14,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.Ker
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.maxBytecodeVersion
 import org.jetbrains.kotlinx.jupyter.startup.*
 import java.io.File
 import java.nio.file.Path
@@ -35,11 +37,9 @@ fun createKernelProcess(
         mavenArtifactsDownloader.downloadArtifactBlocking(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED),
         null,
         null,
-        "kotlin_notebook", // TODO: make it an option
-        jvmTargetForSnippets = null,
+        "kotlin_notebook",
+        jvmTargetForSnippets = chooseJvmTargetForSnippets(project)?.toJavaVersion()?.toFeatureString(),
     )
-
-    val classpathSeparator = System.getProperty("path.separator")
 
     val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
     val javaExecutable = options.jdk.getPath(project)?.let { javaHome ->
@@ -62,6 +62,7 @@ fun createKernelProcess(
         KernelVmCommandCustomizer.addVmArguments(this)
     }
 
+    val classpathSeparator = System.getProperty("path.separator")
     val cmdArgs = kernelConfig.javaCmdLine(
         javaExecutable,
         "kernelProcessConnection",
@@ -88,4 +89,25 @@ fun createKernelProcess(
             }
         }
     }
+}
+
+private fun chooseJvmTargetForSnippets(project: Project): LanguageLevel? {
+    val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
+
+    val selectedTarget = options.jvmTargetForSnippets
+    val myMaxBytecodeVersion = maxBytecodeVersion
+
+    if (selectedTarget != null) {
+        return if (myMaxBytecodeVersion != null) selectedTarget.coerceAtMost(myMaxBytecodeVersion)
+        else selectedTarget
+    }
+
+    val jdkVersion = options.jdk.getVersion(project)
+    if (jdkVersion == null) return null
+
+    if (myMaxBytecodeVersion == null) return null
+
+    if (jdkVersion.maxLanguageLevel <= myMaxBytecodeVersion) return null
+
+    return myMaxBytecodeVersion
 }

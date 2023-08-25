@@ -26,6 +26,6 @@ internal fun Closeable.closeSafely() {
     try {
         close()
     } catch (e: Throwable) {
-        logger<Closeable>().warn("Close failed", e)
+        logger<Closeable>().info("Close failed", e)
     }
 }
