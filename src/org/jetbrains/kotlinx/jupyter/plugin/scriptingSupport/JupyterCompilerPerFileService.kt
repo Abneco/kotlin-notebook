@@ -238,19 +238,17 @@ class JupyterCompilerPerFileService(
     private fun updateClasspathWithKernelJars() {
         if (!kernelJarsAdded.compareAndSet(false, true)) return
 
-        coroutineScope.async {
-            val mavenArtifactsDownloader = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
-            val jars = mavenArtifactsDownloader.downloadArtifactAsync(KotlinNotebookMavenArtifacts.IDE_CLASSPATH_SHADOWED)
-            val sourcesJars = mavenArtifactsDownloader.downloadArtifactAsync(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED_SOURCES)
+        val mavenArtifactsDownloader = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
+        val jars = mavenArtifactsDownloader.downloadArtifactBlocking(KotlinNotebookMavenArtifacts.IDE_CLASSPATH_SHADOWED)
+        val sourcesJars = mavenArtifactsDownloader.downloadArtifactBlocking(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED_SOURCES)
 
-            compileLock.write {
-                _currentClasspath.addInitial(jars)
-                _sourceRoots.addInitial(sourcesJars)
-            }
-
-            KotlinNotebookPermanentIndexService.getInstance(project)
-                    .addToPermanentIndex(jars.map { it.absolutePath }, sourcesJars.map { it.absolutePath })
+        compileLock.write {
+            _currentClasspath.addInitial(jars)
+            _sourceRoots.addInitial(sourcesJars)
         }
+
+        KotlinNotebookPermanentIndexService.getInstance(project)
+                .addToPermanentIndex(jars.map { it.absolutePath }, sourcesJars.map { it.absolutePath })
     }
 
     private fun updateClasspathWithProjectArtifactsAsync() {
