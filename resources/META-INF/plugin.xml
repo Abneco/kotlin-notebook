@@ -172,14 +172,14 @@
                              bundle="messages.KotlinNotebookBundle"
                              key="kotlin.jupyter.settings.title"
                              id="kotlinNotebook"
-                             instance="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookConfigurable"/>
+                             instance="org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookConfigurable"/>
 
         <projectConfigurable groupId="tools"
                              bundle="messages.KotlinNotebookBundle"
                              key="kotlin.jupyter.settings.new.notebook.title"
                              id="kotlinNotebook.newNotebook"
                              parentId="kotlinNotebook"
-                             instance="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookNewNotebookConfigurable"/>
+                             instance="org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookNewNotebookConfigurable"/>
 
         <notificationGroup
                 id="Kotlin Notebook plugin updates"
@@ -189,7 +189,7 @@
         />
 
         <statistics.counterUsagesCollector implementationClass="org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector"/>
-        <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookMissingJdkEditorNotification"/>
+        <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookMissingJdkEditorNotification"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">

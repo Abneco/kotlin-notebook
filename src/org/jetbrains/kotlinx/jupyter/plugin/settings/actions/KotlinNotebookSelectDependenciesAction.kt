@@ -15,10 +15,8 @@ import com.intellij.ui.components.JBCheckBox
 import com.intellij.util.ui.components.BorderLayoutPanel
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
-import org.jetbrains.kotlinx.jupyter.plugin.settings.buildModuleTree
 import org.jetbrains.kotlinx.jupyter.plugin.settings.findLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.settings.findModules
-import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedItems
 import org.jetbrains.kotlinx.jupyter.plugin.settings.getSuitableLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries

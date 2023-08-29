@@ -14,7 +14,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.Ker
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
-import org.jetbrains.kotlinx.jupyter.plugin.settings.maxBytecodeVersion
+import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.maxBytecodeVersion
 import org.jetbrains.kotlinx.jupyter.startup.*
 import java.io.File
 import java.nio.file.Path

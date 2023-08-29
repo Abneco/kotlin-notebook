@@ -1,5 +1,5 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.settings
+package org.jetbrains.kotlinx.jupyter.plugin.settings.ui
 
 import com.intellij.codeInsight.hint.HintUtil
 import com.intellij.openapi.components.service
@@ -9,6 +9,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.EditorNotificationProvider
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookMissingJdkService
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import java.util.function.Function
 import javax.swing.JComponent

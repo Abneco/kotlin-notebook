@@ -6,7 +6,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.DumbAwareAction
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookConfigurable
+import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookConfigurable
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 
 class KotlinNotebookShowPreferencesAction : DumbAwareAction() {

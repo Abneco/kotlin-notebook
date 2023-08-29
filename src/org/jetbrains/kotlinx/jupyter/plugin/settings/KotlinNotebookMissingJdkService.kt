@@ -9,6 +9,7 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ex.ProjectRootManagerEx
 import com.intellij.ui.EditorNotificationProvider
 import com.intellij.ui.EditorNotifications
+import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookMissingJdkEditorNotification
 
 @Service(Service.Level.PROJECT)
 class KotlinNotebookMissingJdkService(private val project: Project) : Disposable {

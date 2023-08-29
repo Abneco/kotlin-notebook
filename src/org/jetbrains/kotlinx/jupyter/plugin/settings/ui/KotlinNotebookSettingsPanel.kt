@@ -1,5 +1,5 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.settings
+package org.jetbrains.kotlinx.jupyter.plugin.settings.ui
 
 import com.intellij.execution.ExecutionBundle
 import com.intellij.execution.configuration.EnvironmentVariablesTextFieldWithBrowseButton
@@ -21,6 +21,10 @@ import com.intellij.util.execution.ParametersListUtil
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.isSuitableForStartingKernel
+import org.jetbrains.kotlinx.jupyter.plugin.settings.minJdkVersion
 
 object KotlinNotebookSettingsPanel {
     fun createPanel(

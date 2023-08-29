@@ -12,7 +12,7 @@ import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookConfigurable
+import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookConfigurable
 
 internal object NotebookNotificationUtility {
     private fun prepareNotificationGroupTemplate() =
