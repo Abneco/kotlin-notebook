@@ -1,9 +1,12 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution
 
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.isKotlinNotebookSession
+import org.jetbrains.kotlinx.jupyter.plugin.settings.SessionOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.generateSnippet
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookCodegen
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
@@ -17,9 +20,9 @@ class JupyterKotlinRuntimeServiceListener : JupyterRuntimeService.Listener {
         JupyterKotlinProjectArtifactsService.getInstance(session.project).registerSession(session)
 
         val initCode = """
-                        ${KotlinNotebookCodegen.generateSessionOptions(resolveSources = true, serializeScriptData = true)}
-                        ${KotlinNotebookCodegen.generateColorSchemeChangeCode()}
-                    """.trimIndent()
+            ${service<SessionOptionsProvider>().generateSnippet()}
+            ${KotlinNotebookCodegen.generateColorSchemeChangeCode()}
+        """.trimIndent()
 
         val callbacks = session.virtualFile?.let { virtualFile ->
             val project = session.project

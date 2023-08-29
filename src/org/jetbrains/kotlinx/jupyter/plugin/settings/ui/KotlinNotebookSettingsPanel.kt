@@ -4,11 +4,13 @@ package org.jetbrains.kotlinx.jupyter.plugin.settings.ui
 import com.intellij.execution.ExecutionBundle
 import com.intellij.execution.configuration.EnvironmentVariablesTextFieldWithBrowseButton
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ui.configuration.SdkComboBox
 import com.intellij.openapi.roots.ui.configuration.SdkComboBoxModel
 import com.intellij.openapi.roots.ui.configuration.SdkListItem
 import com.intellij.openapi.ui.DialogPanel
+import com.intellij.openapi.util.NlsContexts
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.builder.bindIntValue
@@ -23,14 +25,20 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifac
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.SessionOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isSuitableForStartingKernel
 import org.jetbrains.kotlinx.jupyter.plugin.settings.minJdkVersion
+import kotlin.reflect.KMutableProperty0
 
 object KotlinNotebookSettingsPanel {
     fun createPanel(
-        project: Project, projectOptions: KotlinNotebookProjectOptionsProvider,
-        applicationOptions: KotlinNotebookApplicationOptionsProvider, parentDisposable: Disposable
+        project: Project,
+        parentDisposable: Disposable,
     ): DialogPanel {
+        val applicationOptions = service<KotlinNotebookApplicationOptionsProvider>()
+        val sessionOptions = service<SessionOptionsProvider>()
+        val projectOptions = KotlinNotebookProjectOptionsProvider.getInstance(project)
+
         return panel {
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.build")) {
                 createKernelVersionSelector(project, projectOptions)
@@ -40,17 +48,15 @@ object KotlinNotebookSettingsPanel {
                 createExtraJvmArgumentsField(projectOptions)
                 createEnvironmentVariablesField(projectOptions)
             }
+            group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session")) {
+                singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.sources"), sessionOptions::resolveSources)
+                singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.multiplatform"), sessionOptions::resolveMpp)
+            }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.typeHints")) {
-                row(null) {
-                    checkBox(KotlinNotebookBundle.message("checkbox.should.typehint.only.active.cell"))
-                        .bindSelected(projectOptions::shouldLimitTypeHintsByActiveCell)
-                }
+                singleRowCheckBox(KotlinNotebookBundle.message("checkbox.should.typehint.only.active.cell"), projectOptions::shouldLimitTypeHintsByActiveCell)
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.appearance")) {
-                row(null) {
-                    checkBox(KotlinNotebookBundle.message("checkbox.should.show.execution.count"))
-                        .bindSelected(applicationOptions::shouldShowExecutionCount)
-                }
+                singleRowCheckBox(KotlinNotebookBundle.message("checkbox.should.show.execution.count"), applicationOptions::shouldShowExecutionCount)
             }
         }
     }
@@ -146,6 +152,12 @@ object KotlinNotebookSettingsPanel {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.target.for.snippets")) {
             snippetsLanguageLevelComboBox(optionsProvider::jvmTargetForSnippets)
                 .widthGroup(BUILD_WIDTH_GROUP)
+        }
+    }
+
+    private fun Panel.singleRowCheckBox(@NlsContexts.Checkbox checkBoxTitle: String, property: KMutableProperty0<Boolean>) {
+        row(null) {
+            checkBox(checkBoxTitle).bindSelected(property)
         }
     }
 

@@ -15,8 +15,7 @@ class KotlinNotebookConfigurable(private val project: Project) :
     override fun getId(): String = ID
 
     override fun createPanel(): DialogPanel {
-        val optionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
-        return KotlinNotebookSettingsPanel.createPanel(project, optionsProvider, service(), disposable!!)
+        return KotlinNotebookSettingsPanel.createPanel(project, disposable!!)
     }
 
     companion object {

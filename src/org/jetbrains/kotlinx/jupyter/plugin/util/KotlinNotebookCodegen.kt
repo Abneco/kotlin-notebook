@@ -11,21 +11,4 @@ object KotlinNotebookCodegen {
         }
         return "notebook.changeColorScheme(ColorScheme.$themeName)"
     }
-
-    fun generateSessionOptions(
-        resolveSources: Boolean? = null,
-        serializeScriptData: Boolean? = null,
-        resolveMpp: Boolean? = null
-    ): String {
-        fun gen(key: String, value: Boolean?): String? {
-            if (value == null) return null
-            return "SessionOptions.$key = $value"
-        }
-
-        return listOfNotNull(
-            gen("resolveSources", resolveSources),
-            gen("serializeScriptData", serializeScriptData),
-            gen("resolveMpp", resolveMpp)
-        ).joinToString("\n")
-    }
 }
