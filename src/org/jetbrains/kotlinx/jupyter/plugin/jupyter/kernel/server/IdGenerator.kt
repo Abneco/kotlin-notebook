@@ -1,16 +1,12 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
-import com.intellij.concurrency.ConcurrentCollectionFactory
-import java.util.UUID
+import org.jetbrains.kotlinx.jupyter.plugin.util.UniqueGenerator
+import java.util.*
 
-class IdGenerator {
-    private val ids = ConcurrentCollectionFactory.createConcurrentSet<UUID>()
+class IdGenerator : UniqueGenerator<UUID, String>() {
+    override fun next(): UUID = UUID.randomUUID()
 
-    fun generate(): String {
-        while (true) {
-            val uuid = UUID.randomUUID()
-            if(ids.add(uuid)) return uuid.toString()
-        }
-    }
+    override fun UUID.asResult(): String =
+        this.toString()
 }

@@ -211,7 +211,8 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
                 && isNotebookRefactoringSupported(psiElement)
                 && (isCompiledElem
                 || cell?.getUserData(CELL_CLASS_NAME) != null
-                || JupyterCompilerService.getForFile(psiFile.project, BackedNotebookVirtualFile(notebookFile)).cellOrdinalToClassName[ind] != null)
+                || JupyterCompilerService.getForFile(psiFile.project, BackedNotebookVirtualFile(notebookFile))
+                    .notebookStructureClassTracker.cellOrdinalToClassNameStructure[ind] != null)
                 //|| cell?.getUserData(CELL_CLASS_NAME) != null)
     }
 

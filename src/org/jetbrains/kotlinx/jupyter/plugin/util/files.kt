@@ -4,8 +4,11 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
 import org.jetbrains.kotlin.idea.util.sourceRoots
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.io.File
+import java.nio.file.Path
 
 val File.isNotEmptyDirectory: Boolean
     get() = exists() && isDirectory && (list()?.isNotEmpty() ?: false)
@@ -26,6 +29,11 @@ fun Project.isInsideSourceRoot(vFile: VirtualFile): Boolean {
     return sourceRoots.any { root ->
         file.startsWith(root)
     }
+}
+
+fun Path.findNotebookVirtualFileOrNull(): BackedNotebookVirtualFile? {
+    val virtualFile = VirtualFileManager.getInstance().findFileByNioPath(this) ?: return null
+    return BackedNotebookVirtualFile.find(virtualFile)
 }
 
 val VirtualFile.parentsWithSelf: Sequence<VirtualFile> get() = generateSequence(this) { it.parent }

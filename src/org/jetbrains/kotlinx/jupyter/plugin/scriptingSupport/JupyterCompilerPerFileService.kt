@@ -1,7 +1,6 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
-import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
@@ -14,7 +13,6 @@ import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
@@ -31,21 +29,16 @@ import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfig
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
-import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
-import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanentIndexService
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookChangeEventsType
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookMoveEvent
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ScriptingSupportAfterUpdateListener
 import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
@@ -63,7 +56,6 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import java.io.File
 import java.net.URLClassLoader
@@ -74,7 +66,6 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
-import kotlin.math.abs
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.api.asSuccess
@@ -152,7 +143,7 @@ class JupyterCompilerPerFileService(
 
     private val compileLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(0)
-    val cellOrdinalToClassName = mutableMapOf<Int, Set<String>>()
+    val notebookStructureClassTracker = NotebookStructureClassTracker(project, virtualFile, coroutineScope, this)
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -403,7 +394,7 @@ class JupyterCompilerPerFileService(
         if (psiCell != null) {
             coroutineScope.async {
                 smartReadAction(project) {
-                    updateInjectedCellInfo(snippetMetadata, psiCell)
+                    notebookStructureClassTracker.storeCompliedDataInCell(snippetMetadata, psiCell)
                 }
             }
         }
@@ -464,123 +455,11 @@ class JupyterCompilerPerFileService(
         return classesLoaded
     }
 
-    internal fun changeCellsData(effectedIndexes: Collection<Int>,
-                                 eventType: NotebookChangeEventsType,
-                                 moveEvent: NotebookMoveEvent? = null,
-                                 invokedMoveEventInInd: Int? = null) {
-        if (effectedIndexes.isEmpty()
-            || eventType != NotebookChangeEventsType.CELL_ADD && eventType != NotebookChangeEventsType.CELL_DELETE) return
-        val presentRecords = cellOrdinalToClassName.filterKeys { it in effectedIndexes || it == invokedMoveEventInInd }.ifEmpty { return }
-        val isAddEvent = eventType == NotebookChangeEventsType.CELL_ADD
-
-        val (indexShift, keys) =
-            if (isAddEvent) // go from last to first, e.g. shifting very last first
-                1 to presentRecords.keys.sortedDescending()
-            else -1 to presentRecords.keys.toList()
-
-        val separatedByGaps = mutableListOf<MutableSet<Int>>().also {
-            val consecutiveData = mutableSetOf<Int>()
-            var ind = 0
-            if (keys.size == 1) {
-                consecutiveData.add(keys.first())
-                it.add(consecutiveData)
-                return@also
-            }
-            while (ind < keys.size - 1) {
-                val first = keys[ind]
-                val next = keys[ind + 1]
-                if (abs(first - next) > 1) {
-                    consecutiveData.add(first)
-                    it.add(consecutiveData.toMutableSet())
-                    consecutiveData.clear()
-                    consecutiveData.add(next)
-                } else {
-                    consecutiveData.add(first)
-                    if (ind + 1 == keys.size - 1) consecutiveData.add(next)
-                }
-                ind++
-            }
-            it.add(consecutiveData)
-        }
-
-        moveEvent?.let {
-            val invokedInCell = invokedMoveEventInInd ?: return@let
-            val storedData = cellOrdinalToClassName[invokedInCell]
-            val isCellUp = it == NotebookMoveEvent.CELL_UP
-            val anotherAffectedInd = if (isCellUp) invokedInCell - 1 else invokedInCell + 1
-            // skip if it will be processed later
-            separatedByGaps.firstOrNull { set -> invokedInCell in set || anotherAffectedInd in set }?.let { foundContainer ->
-                foundContainer.removeIf { elem -> elem == invokedInCell || elem == anotherAffectedInd }
-            }
-
-            val storedInAnother = cellOrdinalToClassName[anotherAffectedInd]
-            if (storedData != null) {
-                cellOrdinalToClassName[anotherAffectedInd] = storedData
-            } else cellOrdinalToClassName.remove(anotherAffectedInd)
-            if (storedInAnother != null) {
-                cellOrdinalToClassName[invokedInCell] = storedInAnother
-            } else cellOrdinalToClassName.remove(invokedInCell)
-        }
-
-
-        val toRemove = mutableSetOf<Int>()
-        for (consecutiveData in separatedByGaps) {
-            consecutiveData.forEach { ind ->
-                val data = presentRecords[ind] ?: return@forEach
-                val newInd = ind + indexShift
-                if (newInd >= 0) {
-                    cellOrdinalToClassName[newInd] = data
-                }
-            }
-            toRemove.addIfNotNull(consecutiveData.lastOrNull())
-        }
-
-        toRemove.forEach { cellOrdinalToClassName.remove(it) }
-    }
-
-    private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell) {
-        fun storeReferenceInfo(compiledClassName: MutableSet<String>, cellInd: Int?) {
-            NotebookHighlightingService.getForFile(project, virtualFile)
-                .dataController.invalidateStateAfterCellExecution(executedCellInd = cellInd)
-            synchronized(psiCell) {
-                val last = psiCell.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)?.firstOrNull()
-                compiledClassName.addIfNotNull(last)
-                psiCell.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, compiledClassName)
-            }
-        }
-        val injectManager = InjectedLanguageManager.getInstance(project)
-        val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-
-        val compiledClassName = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
-            it.fileName.substringBefore(".kts").let { f -> f + "_jupyter" }
-        }
-        var nextCellInd: Int? = null
-        (psiCell.parent as? JupyterNotebook)?.psiCellList?.let { cells ->
-            val executedCellInd = cells.indexOf(psiCell)
-            if (executedCellInd != -1) {
-                compilerService.cellOrdinalToClassName[executedCellInd] = compiledClassName
-                nextCellInd = if (executedCellInd + 1 != cells.size) executedCellInd + 1 else null
-            }
-        }
-        try {
-            (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
-                ?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, compiledClassName)
-        } catch (ex: Exception) {
-            if (ex is ProcessCanceledException) {
-                coroutineScope.async {
-                    storeReferenceInfo(compiledClassName, nextCellInd)
-                }
-                return
-            } else LOG.warn("Exception during storing cell-related data", ex)
-        }
-        storeReferenceInfo(compiledClassName, nextCellInd)
-    }
-
     private fun clearPreviousSnippets() {
         _currentClasspath.clear()
         additionalDefaultImports.clear()
         implicitsList.clear()
-        cellOrdinalToClassName.clear()
+        notebookStructureClassTracker.notebookDataCleared()
         lastStableConfiguration.set(project.baseScriptingCompilationConfiguration)
     }
 

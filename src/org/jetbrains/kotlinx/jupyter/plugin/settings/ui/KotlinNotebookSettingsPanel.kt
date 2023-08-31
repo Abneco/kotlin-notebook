@@ -64,6 +64,7 @@ object KotlinNotebookSettingsPanel {
                 createMaxHeapSizeSpinner(projectOptions).showForSeparateProcess()
                 createExtraJvmArgumentsField(projectOptions).showForSeparateProcess()
                 createEnvironmentVariablesField(projectOptions).showForSeparateProcess()
+                createDebugPortSelector(projectOptions)
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session")) {
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.sources"), sessionOptions::resolveSources)
@@ -198,6 +199,15 @@ object KotlinNotebookSettingsPanel {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.target.for.snippets")) {
             snippetsLanguageLevelComboBox(optionsProvider::jvmTargetForSnippets)
                 .widthGroup(BUILD_WIDTH_GROUP)
+        }
+    }
+
+    private fun Panel.createDebugPortSelector(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
+        return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port")) {
+            checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.check.box")).run {
+                accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.check.box.description"))
+                bindSelected(optionsProvider::shouldOpenDebugPort)
+            }
         }
     }
 

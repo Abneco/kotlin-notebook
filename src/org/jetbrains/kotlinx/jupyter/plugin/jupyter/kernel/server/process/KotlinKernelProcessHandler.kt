@@ -9,16 +9,15 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.EventDispatcher
 import com.intellij.util.io.BaseOutputReader
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelState
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
+import org.jetbrains.kotlinx.jupyter.plugin.util.findNotebookVirtualFileOrNull
 import org.jetbrains.kotlinx.jupyter.plugin.util.warnInTests
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
@@ -43,8 +42,7 @@ class KotlinKernelProcessHandler(
     private val eventDispatcher = EventDispatcher.create(KotlinKernelProcessListener::class.java)
 
     override val notebookVirtualFile by lazy {
-        val file = VirtualFileManager.getInstance().findFileByNioPath(notebookPath) ?: return@lazy null
-        BackedNotebookVirtualFile.find(file)
+        notebookPath.findNotebookVirtualFileOrNull()
     }
 
     init {

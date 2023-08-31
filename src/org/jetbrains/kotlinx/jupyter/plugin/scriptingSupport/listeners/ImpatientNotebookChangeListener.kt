@@ -23,14 +23,14 @@ import org.jetbrains.plugins.notebooks.visualization.getCell
 import kotlin.math.min
 
 
-internal enum class NotebookChangeEventsType {
+enum class NotebookChangeEventsType {
     CELL_ADD,
     CELL_DELETE,
     MARKDOWN_CONVERSION,
     REGULAR
 }
 
-internal enum class NotebookMoveEvent {
+enum class NotebookMoveEvent {
     CELL_UP,
     CELL_DOWN
 }
@@ -125,7 +125,7 @@ class ImpatientNotebookChangeListener(
                 lastTimeCellChangeActionPerformed = System.currentTimeMillis()
             }
             val affected = psiCells.indices.filterTo(mutableSetOf()) { it >= cellIndexToStore }
-            compilerService.changeCellsData(affected, eventType, moveEvent, moveEventInvokedInCell)
+            compilerService.notebookStructureClassTracker.changeCellsData(affected, eventType, moveEvent, moveEventInvokedInCell)
             // no other way to indicate size changed in CaretListener
             notebookDataHolder.notebookDocumentStructureNontrivialChanged.compareAndSet(false, true)
 

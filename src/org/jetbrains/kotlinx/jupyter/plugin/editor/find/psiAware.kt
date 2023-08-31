@@ -29,7 +29,7 @@ fun searchForElementDeclarationOrUsages(
     val foundData = mutableSetOf<PsiElement>()
     val asPsiFile = PsiManager.getInstance(project).findFile(virtualFile)
     val notebookCells = (asPsiFile?.children?.first() as? JupyterNotebook)?.psiCellList ?: return null
-    val ordinalMap = JupyterCompilerService.getForFile(project, BackedNotebookVirtualFile(virtualFile)).cellOrdinalToClassName
+    val ordinalMap = JupyterCompilerService.getForFile(project, BackedNotebookVirtualFile(virtualFile)).notebookStructureClassTracker.cellOrdinalToClassNameStructure
     val injectionManager = InjectedLanguageManager.getInstance(project)
     val targetHost = injectionManager.getInjectionHost(target.containingFile)
     val targetClassName = runIf(searchStrategy == ReferenceSearchStrategy.REFERENCES) {

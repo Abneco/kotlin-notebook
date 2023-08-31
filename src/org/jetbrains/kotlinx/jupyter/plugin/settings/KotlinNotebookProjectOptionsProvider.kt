@@ -61,6 +61,8 @@ class KotlinNotebookProjectOptionsProvider :
         internal set
     var shouldAddProjectLibrariesToClasspath by prop(State::shouldAddProjectLibrariesToClasspath)
         internal set
+    var shouldOpenDebugPort by prop(State::shouldOpenDebugPort)
+        internal set
 
     @RequiresEdt
     internal fun getNewKotlinNotebookSettings(): KotlinNotebookSettings {
@@ -86,6 +88,8 @@ class KotlinNotebookProjectOptionsProvider :
         // default settings for new notebooks
         var shouldBuildProject by property(false)
         var shouldAddProjectLibrariesToClasspath by property(true)
+        var openedDebugPort by property(DEFAULT_OPENED_DEBUG_PORT)
+        var shouldOpenDebugPort by property(false)
     }
 
     class PresentableNameGetter : com.intellij.openapi.components.State.NameGetter() {
@@ -104,5 +108,6 @@ class KotlinNotebookProjectOptionsProvider :
         fun getInstance(project: Project): KotlinNotebookProjectOptionsProvider = project.service()
 
         const val DEFAULT_HEAP_MAX_LIMIT_MIB = 3256
+        const val DEFAULT_OPENED_DEBUG_PORT = 1044
     }
 }

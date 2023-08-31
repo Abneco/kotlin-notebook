@@ -6,6 +6,7 @@ import com.intellij.lang.Language
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -105,7 +106,9 @@ class JupyterCompilerService(val project: Project, private val coroutineScope: C
 
     fun getOrCreate(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
         return mapping.getOrPut(virtualFile.file) {
-            JupyterCompilerPerFileService(project, virtualFile, initialClasspath,this)
+            runReadAction {
+                JupyterCompilerPerFileService(project, virtualFile, initialClasspath,this)
+            }
         }
     }
 
