@@ -128,9 +128,8 @@ class NotebookHighlightingManager(
     private val fileToInjectionData: MutableMap<KtFile, Pair<PsiLanguageInjectionHost, Int>> = mutableMapOf()
     private var targetPsiFile: PsiFile? = null
 
-    private lateinit var activeCaretListener: NotebookCaretListener
+    private var activeCaretListener: NotebookCaretListener? = null
     private lateinit var activeMarkupModelListener: MarkupModelListener
-    val caretListener: NotebookCaretListener get() = activeCaretListener
 
     private val finishedFiles = mutableSetOf<Int>()
     private val targetErrorHighlighters = ConcurrentCollectionFactory.createConcurrentSet<RangeHighlighter>()
@@ -194,6 +193,7 @@ class NotebookHighlightingManager(
         targetPsiFile = null
         fileToInjectionData.clear()
         finishedFiles.clear()
+        activeCaretListener = null
         if (complete) {
             targetErrorHighlighters.clear()
             knownErrorInd.clear()
@@ -204,6 +204,10 @@ class NotebookHighlightingManager(
             }
             targetErrorHighlighters.clear()
         }
+    }
+
+    fun resetCaretListenerState() {
+        activeCaretListener?.resetState()
     }
 
     /**

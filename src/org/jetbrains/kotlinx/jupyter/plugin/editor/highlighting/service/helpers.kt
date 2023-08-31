@@ -190,7 +190,7 @@ internal object NotebookHighlightingUtilityObject {
         }
         runReadAction {
             hlManager?.let { manager ->
-                manager.caretListener.resetState()
+                manager.resetCaretListenerState()
                 manager.dataController.notebookRangesQueuedForHL?.addAll(
                     cells?.indices?.toList() ?: listOf()
                 )
