@@ -2,7 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots
 
 import com.intellij.openapi.application.ApplicationManager
-import jetbrains.datalore.vis.swing.ApplicationContext
+import org.jetbrains.letsPlot.awt.plot.component.ApplicationContext
 
 object IdeaSwingContextBatik : ApplicationContext {
     override fun runWriteAction(action: Runnable) {

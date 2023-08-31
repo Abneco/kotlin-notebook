@@ -75,24 +75,6 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="commons-io" level="project" />
-    <orderEntry type="module-library">
-      <library name="jetbrains.lets.plot.shadowed" type="repository">
-        <properties include-transitive-deps="false" maven-id="org.jetbrains.lets-plot:lets-plot-shadowed:3.1.1-alpha4-8">
-          <verification>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha4-8/lets-plot-shadowed-3.1.1-alpha4-8.jar">
-              <sha256sum>57ad1f648a43c8f1d9dd88731ec526f5b131ec0de31d14bd49e1554f6db1f87c</sha256sum>
-            </artifact>
-          </verification>
-        </properties>
-        <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha4-8/lets-plot-shadowed-3.1.1-alpha4-8.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/3.1.1-alpha4-8/lets-plot-shadowed-3.1.1-alpha4-8-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
     <orderEntry type="module" module-name="intellij.platform.ide" />
     <orderEntry type="module" module-name="intellij.python.jupyter.tables" />
     <orderEntry type="module" module-name="intellij.python.pydev" />
@@ -104,5 +86,6 @@
     <orderEntry type="module" module-name="intellij.platform.workspace.jps" />
     <orderEntry type="module" module-name="intellij.java.ui" />
     <orderEntry type="module" module-name="intellij.java.aetherDependencyResolver" />
+    <orderEntry type="library" name="jetbrains.lets.plot.shadowed" level="project" />
   </component>
 </module>

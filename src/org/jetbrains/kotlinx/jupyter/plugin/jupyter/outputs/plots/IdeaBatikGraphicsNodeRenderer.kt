@@ -3,7 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots
 
 import com.intellij.util.ui.ImageUtil
 import com.intellij.util.ui.StartupUiUtil
-import jetbrains.datalore.vis.swing.BatikGraphicsNodeRenderer
+import org.jetbrains.letsPlot.batik.plot.util.BatikGraphicsNodeRenderer
 import org.jetbrains.relocated.apache.batik.ext.awt.RenderingHintsKeyExt
 import org.jetbrains.relocated.apache.batik.gvt.GraphicsNode
 import java.awt.AlphaComposite

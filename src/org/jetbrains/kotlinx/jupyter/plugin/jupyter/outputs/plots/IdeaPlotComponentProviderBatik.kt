@@ -2,7 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots
 
 import com.intellij.ui.components.JBScrollPane
-import jetbrains.datalore.vis.swing.batik.DefaultPlotComponentProviderBatik
+import org.jetbrains.letsPlot.batik.plot.component.DefaultPlotComponentProviderBatik
 import javax.swing.JComponent
 import javax.swing.JScrollPane
 

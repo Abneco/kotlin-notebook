@@ -6,14 +6,15 @@ import kotlin.math.ceil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.impl.EditorImpl
-import jetbrains.datalore.plot.MonolithicCommon
-import jetbrains.datalore.plot.PlotSizeHelper
-import jetbrains.datalore.plot.builder.defaultTheme.values.ThemeOption
-import jetbrains.datalore.plot.config.FigKind
-import jetbrains.datalore.plot.config.PlotConfig
-import jetbrains.datalore.vis.swing.PlotPanel
+import org.jetbrains.letsPlot.core.util.MonolithicCommon
+import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
 import org.jetbrains.kotlinx.jupyter.plugin.util.uiFeelsDark
+import org.jetbrains.letsPlot.batik.plot.util.ServiceLoaderHelper
+import org.jetbrains.letsPlot.core.plot.builder.defaultTheme.values.ThemeOption
+import org.jetbrains.letsPlot.core.spec.FigKind
+import org.jetbrains.letsPlot.core.spec.config.PlotConfig
+import org.jetbrains.letsPlot.core.util.PlotSizeHelper
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.createGutterPainter
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.updateGutterPainter
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory
@@ -33,6 +34,7 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
         editor: EditorImpl,
         output: LetsPlotOutputDataKey
     ): NotebookOutputComponentFactory.CreatedComponent<LetsPlotComponent> {
+        ServiceLoaderHelper.addClassLoader(LetsPlotOutputComponentFactory::class.java.classLoader)
         val component = LetsPlotComponent()
         component.initialize(output)
         return NotebookOutputComponentFactory.CreatedComponent(
@@ -227,7 +229,7 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
                 return Pair(containerWidth, containerHeight)
             }
 
-            return when (val kind = PlotConfig.figSpecKind(figureSpec)) {
+            return when (PlotConfig.figSpecKind(figureSpec)) {
                 FigKind.GG_BUNCH_SPEC -> {
                     // don't scale GGBunch size
                     val bunchSize = PlotSizeHelper.plotBunchSize(figureSpec)
