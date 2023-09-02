@@ -12,6 +12,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerServ
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.language.meta.JKTMetaFileType
 import org.jetbrains.kotlinx.jupyter.plugin.language.meta.JupyterKtMetaLanguage
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.KotlinCodeRangesProcessor
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
@@ -20,6 +21,9 @@ import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 import java.util.concurrent.atomic.AtomicInteger
+
+private val ELEMENTS_TO_INJECT = mutableListOf(JupyterPsiCellImpl::class.java)
+private val NON_CODE_CELL_REGEX = Regex("""$CELL_MARKER($MARKDOWN_CELL_SUFFIX|$RAW_CELL_SUFFIX)\n?""")
 
 class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
     private val injectedCounter = AtomicInteger()
@@ -52,7 +56,7 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
             hosts.removeIf { it !in actualNotebookCells }
             hosts.add(element)
 
-            val (ranges, isCommand) = compilerService.codeRanges(element)
+            val (ranges, isCommand) = KotlinCodeRangesProcessor.codeRanges(element)
 
             fun List<TextRange>.inject(language: Language, extension: String) {
                 registrar.startInjecting(
@@ -82,10 +86,5 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
 
     override fun elementsToInjectIn(): List<Class<out PsiElement>> {
         return ELEMENTS_TO_INJECT
-    }
-
-    companion object {
-        private val ELEMENTS_TO_INJECT = mutableListOf(JupyterPsiCellImpl::class.java)
-        private val NON_CODE_CELL_REGEX = Regex("""$CELL_MARKER($MARKDOWN_CELL_SUFFIX|$RAW_CELL_SUFFIX)\n?""")
     }
 }

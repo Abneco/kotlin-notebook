@@ -16,15 +16,11 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.concurrency.AppExecutorUtil
-import com.intellij.util.containers.nullize
 import com.intellij.util.io.delete
 import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
@@ -40,13 +36,9 @@ import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfig
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.utils.addIfNotNull
-import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
-import org.jetbrains.kotlinx.jupyter.compiler.util.CodeInterval
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
-import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
-import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
@@ -68,7 +60,6 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.Jupyte
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterSource
 import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
@@ -125,11 +116,6 @@ class JupyterCompilerPerFileService(
     }
 
     private val deserializer = CompiledScriptsSerializer()
-
-    private val magicsProcessor = MagicsProcessor(
-        handler = NoopMagicsHandler,
-        parseOutCellMarker = true
-    )
 
     private val _currentClasspath: TwoPartsList<File> by lazy {
         TwoPartsList<File>().apply {
@@ -558,34 +544,6 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private fun getCellCode(cell: PsiElement): String {
-        val sourceElement = PsiTreeUtil.getChildOfType(cell, JupyterSource::class.java)
-        val source = sourceElement?.text.orEmpty()
-        return source.trimStart()
-    }
-
-    fun codeRanges(cell: JupyterPsiCell): CodeRangesResult {
-        val code = getCellCode(cell)
-        if (looksLikeReplCommand(code)) return CodeRangesResult(CellRanges(null, listOf(TextRange(0, cell.textLength))), true)
-
-        val text = cell.text
-        val magicIntervals = magicsProcessor.magicsIntervals(text)
-
-        fun Sequence<CodeInterval>.toRanges() = mapTo(mutableListOf()) {
-            TextRange(it.from, it.to)
-        }.nullize()
-
-        val codeRanges = magicsProcessor.codeIntervals(text, magicIntervals).toRanges()
-        val magicRanges = magicIntervals.toRanges()
-
-        return CodeRangesResult(CellRanges(codeRanges, magicRanges), false)
-    }
-
-    data class CodeRangesResult(
-        val ranges: CellRanges,
-        val isCommand: Boolean,
-    )
-
     private fun clearPreviousSnippets() {
         _currentClasspath.clear()
         additionalDefaultImports.clear()
@@ -617,33 +575,6 @@ class JupyterCompilerPerFileService(
     override fun dispose() {
         isDisposed = true
         clear()
-    }
-
-    data class CellRanges(val codeRanges: List<TextRange>?, val magicRanges: List<TextRange>?)
-
-    class TwoPartsList<T>(
-        private val initialPart: MutableSet<T> = mutableSetOf(),
-        private val snippetsPart: MutableSet<T> = mutableSetOf(),
-    ) {
-        private val lock = ReentrantReadWriteLock()
-
-        val size: Int get() = initialPart.size + snippetsPart.size
-
-        fun clear() {
-            lock.withWriteLock { snippetsPart.clear() }
-        }
-
-        fun addInitial(items: Collection<T>) {
-            lock.withWriteLock { initialPart.addAll(items) }
-        }
-
-        fun addSnippet(items: Collection<T>) {
-            lock.withWriteLock { snippetsPart.addAll(items) }
-        }
-
-        fun getList(): List<T> {
-            return lock.withReadLock { (initialPart + snippetsPart).distinct() }
-        }
     }
 
     companion object {
