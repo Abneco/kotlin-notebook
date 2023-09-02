@@ -7,7 +7,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
@@ -102,17 +101,11 @@ class JupyterCompilerService(val project: Project) : Disposable {
         return mapping[virtualFile.file]
     }
 
-    fun needToUpdateImplicitReceiversIfAny(file: VirtualFile, document: Document, shouldUpdateImmediately: Boolean): Boolean {
+    fun needToUpdateImplicitReceiversIfAny(file: VirtualFile, shouldUpdateImmediately: Boolean): Boolean {
         return mapping[file]?.let {
             (!shouldUpdateImmediately && it.hasPendingUpdates) ||
-                    it.loadReceiverClassesIfAny(document, shouldUpdateImmediately)
+                    it.loadReceiverClassesIfAny(shouldUpdateImmediately)
         } == true
-    }
-
-    val needToUpdateImplicitsReceiversIfAny: Boolean get() {
-        var shouldUpdate = false
-        mapping.forEach { (_, u) -> if (u.hasPendingUpdates || u.loadReceiverClassesIfAny()) shouldUpdate = true }
-        return shouldUpdate
     }
 
     fun afterScriptingUpdate() {

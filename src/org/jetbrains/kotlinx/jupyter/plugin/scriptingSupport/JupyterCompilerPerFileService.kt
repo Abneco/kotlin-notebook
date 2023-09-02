@@ -1,7 +1,6 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
-import com.fasterxml.jackson.databind.node.ArrayNode
 import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
@@ -9,10 +8,10 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.thisLogger
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
@@ -72,7 +71,6 @@ import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterSource
 import java.io.File
 import java.net.URLClassLoader
-import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CountDownLatch
@@ -115,9 +113,6 @@ class JupyterCompilerPerFileService(
 ) : Disposable {
     private var isDisposed = false
 
-    private var psiFile = runReadAction {
-        virtualFile.file.toPsiFile(project)
-    }
     private val compileLock = ReentrantReadWriteLock()
     private val listLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(0)
@@ -400,8 +395,8 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    fun loadReceiverClassesIfAny(document: Document? = null, shouldUpdateImmediately: Boolean = false): Boolean {
-        var loadedSize: Int = 0
+    fun loadReceiverClassesIfAny(shouldUpdateImmediately: Boolean = false): Boolean {
+        var loadedSize = 0
         return compileLock.tryWithWriteLock {
             if (implicitListsLoadQueue.isEmpty()) {
                 NotebookHighlightingService.getForFile(project, virtualFile).handleEmptyClassQueue()
@@ -446,6 +441,9 @@ class JupyterCompilerPerFileService(
         }.apply {
             if (this == true && shouldUpdateImmediately) {
                 coroutineScope.async {
+                    val psiFile = readAction {
+                        virtualFile.file.toPsiFile(project)
+                    }
                     LOG.debug("Requesting update of scripting after loading new classes in ${psiFile?.name}, loaded: $loadedSize")
                     NotebookHighlightingService.getForFile(project, virtualFile).beforeScriptingUpdate()
                     withContext(Dispatchers.EDT) {
@@ -533,13 +531,6 @@ class JupyterCompilerPerFileService(
     private fun updateInjectedCellInfo(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell) {
         val injectManager = InjectedLanguageManager.getInstance(project)
         val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-        val topLevelFile = when {
-            psiFile?.isValid == true -> psiFile
-            psiCell.containingFile.isValid -> psiCell.containingFile
-            else -> InjectedLanguageManager.getInstance(project).getTopLevelFile(psiCell)
-        }?.also {
-            psiFile = it
-        }
 
         val compiledClassName = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
             it.fileName.substringBefore(".kts").let { f -> f + "_jupyter" }
@@ -606,10 +597,13 @@ class JupyterCompilerPerFileService(
         compileLock.write {
             clearPreviousSnippets()
 
-            nbInjectionHosts.clear()
             classesDir.delete(true)
             coroutineScope.cancel()
             implicitListsLoadQueue.clear()
+        }
+
+        listLock.write {
+            nbInjectionHosts.clear()
         }
 
         ClasspathToVfsConverter.clearCaches()
@@ -654,41 +648,5 @@ class JupyterCompilerPerFileService(
 
     companion object {
         private val LOG = Logger.getInstance(JupyterCompilerPerFileService::class.java)
-
-        private fun JupyterNotebookSession.detectKotlinKernelJarsDir(): File? {
-            val specs = jupyterServer.client.getKernelSpecs()
-            val kotlinSpec = specs.firstOrNull { it.displayName == "Kotlin" } ?: return null
-            val command = kotlinSpec.metadata?.get("jar_path_detect_command") as? ArrayNode ?: return null
-            val commandArgs: List<String> = mutableListOf<String>().apply {
-                command.elements().forEachRemaining {
-                    add(it.asText())
-                }
-            }
-
-            val p: Process = try {
-                Runtime.getRuntime().exec(commandArgs.toTypedArray())
-            } catch (e: Exception) {
-                LOG.warn(e)
-                return null
-            }
-
-            val exitCode = try {
-                p.waitFor()
-            } catch (e: InterruptedException) {
-                LOG.warn(e)
-                return null
-            }
-
-            if (exitCode != 0) {
-                val errorOutput = String(p.errorStream.readAllBytes(), StandardCharsets.UTF_8)
-                LOG.warn("Unable to detect kernel JARs location")
-                LOG.warn(errorOutput)
-                return null
-            }
-
-            val processOutput = p.inputStream.readAllBytes()
-            val filePath = String(processOutput, StandardCharsets.UTF_8).trim()
-            return File(filePath)
-        }
     }
 }

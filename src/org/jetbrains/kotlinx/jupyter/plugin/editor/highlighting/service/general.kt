@@ -8,7 +8,6 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.thisLogger
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -23,18 +22,17 @@ import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility.showAbsentInitialBaseDependenciesInfo
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getCellRangesInDocumentOrNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scheduleUpdateLater
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingBaseClassError
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingClassError
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingDependencyPrefix
+import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility.showAbsentInitialBaseDependenciesInfo
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
@@ -43,7 +41,6 @@ import java.util.concurrent.TimeUnit
 
 
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
-    private val notebookCodeUtility = NotebookHighlightingUtilityObject
 
     override fun reduceRange(file: PsiFile, editor: Editor): Collection<TextRange>? {
         if (!NotebookHighlightingUtilityObject.looksLikeNotebookFile(file)) return null
@@ -65,7 +62,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         val cellUnderEditor = editor.getCell(document.getLineNumber(caretOffSet))
         cells?.ensureScriptConfigurations(ScriptConfigurationManager.getInstance(project),
                                                                InjectedLanguageManager.getInstance(project))
-        jupyterFile.ensureScriptManagerReady(document)
+        jupyterFile.ensureScriptManagerReady()
         val highlightingManager = backedNotebook?.let { NotebookHighlightingService.getForFile(project, it) }
         val dataController = highlightingManager?.dataController
 
@@ -193,11 +190,11 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         }
     }
 
-    private fun PsiFile.ensureScriptManagerReady(doc: Document) {
+    private fun PsiFile.ensureScriptManagerReady() {
         val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
 
         if (scriptDefManager.isReady()) {
-            if (JupyterCompilerService.getInstance(project).needToUpdateImplicitReceiversIfAny(virtualFile, doc, true)) {
+            if (JupyterCompilerService.getInstance(project).needToUpdateImplicitReceiversIfAny(virtualFile, true)) {
                 //LOG.warn("${Thread.currentThread().id} requested loading of classes")
                 throw ProcessCanceledException()
                 //return
@@ -245,7 +242,7 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
                     FilenameIndex.getFilesByName(project, properClass, ProjectScope.getLibrariesScope(project)).isNotEmpty()
                 }
             LOG.warn("Faced ${highlightInfo.description} error, will try to update scripting")
-            if (found && !reloadState) {
+            if (found) {
                 val alreadyUpdating = JupyterKtScriptingSupport.isInTheTransaction(project)
                 if (!alreadyUpdating) {
                     LOG.info("Requesting reload of scripting...")
@@ -266,21 +263,15 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
 
         internal val classRegex = Regex("Line_.+jupyter")
         internal fun String.isKTNBClass(): Boolean = matches(classRegex)
-        internal fun HighlightInfo.checkIfMissingBaseClassError(): Boolean {
-            val description = description ?: return false
-            return description.startsWith(scriptingMissingBaseClassError)
-        }
 
         internal fun String.isLikeMissingDependencyClassError(baseClassCheck: Boolean) =
-            if (baseClassCheck) startsWith(scriptingMissingBaseClassError) || startsWith(scriptBaseClassAccessFailure)
+            if (baseClassCheck) startsWith(scriptingMissingBaseClassError) || startsWith(SCRIPT_BASE_CLASS_ACCESS_ERROR)
             else startsWith("[${scriptingMissingDependencyPrefix}")
-                    || startsWith(scriptingMissingDependencyPrefix) || startsWith(scriptClassAccessFailure)
+                    || startsWith(scriptingMissingDependencyPrefix) || startsWith(SCRIPT_CLASS_ACCESS_ERROR)
 
         @NlsSafe
-        internal const val scriptReceiverErrorMsg = "[$scriptingMissingClassError]"
+        internal const val SCRIPT_CLASS_ACCESS_ERROR  = "Cannot access "
         @NlsSafe
-        internal const val scriptClassAccessFailure  = "Cannot access "
-        @NlsSafe
-        internal const val scriptBaseClassAccessFailure  = "Cannot access script base class"
+        internal const val SCRIPT_BASE_CLASS_ACCESS_ERROR  = "Cannot access script base class"
     }
 }
