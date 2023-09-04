@@ -13,7 +13,7 @@ import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
-import com.intellij.openapi.progress.runBlockingCancellable
+import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
@@ -129,7 +129,7 @@ internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
 internal inline fun <T> withReadAccess(crossinline block: () -> T): T {
     return if (ApplicationManager.getApplication().isDispatchThread) {
         block()
-    } else runBlockingCancellable {
+    } else runBlockingMaybeCancellable {
         readAction {
             block()
         }

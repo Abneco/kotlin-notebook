@@ -55,10 +55,10 @@ class NotebookHighlightingService(val project: Project): Disposable {
 
     fun getOrCreate(virtualFile: BackedNotebookVirtualFile): NotebookHighlightingManager {
         return mapping.getOrPut(virtualFile.file) {
-            val document = withReadAccess {
-                FileDocumentManager.getInstance().getDocument(virtualFile.file)
-            }!!
-            NotebookHighlightingManager(virtualFile, document, this@NotebookHighlightingService, null)
+            withReadAccess {
+                val document = FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
+                NotebookHighlightingManager(virtualFile, document, this@NotebookHighlightingService, null)
+            }
         }
     }
 
