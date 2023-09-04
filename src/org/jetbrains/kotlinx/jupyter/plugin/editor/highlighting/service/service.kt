@@ -95,6 +95,8 @@ class NotebookHighlightingManager(
         NotebookCellExecutionHighlightingHelper(projectService.project, virtualFile),
         this
     )
+    private var _jupyterFile: PsiFile? = null
+    val jupyterPsiFile: PsiFile? get() = _jupyterFile
 
     private fun initialiseData(project: Project) {
         val targetData = mutableSetOf<Int>()
@@ -106,6 +108,7 @@ class NotebookHighlightingManager(
             notebookDocumentStructureNontrivialChanged.set(false)
         }
         if (virtualFile.file.isKotlinNotebook) {
+            _jupyterFile = virtualFile.file.toPsiFile(project)
             document.addDocumentListener(
                 ImpatientNotebookChangeListener(project, virtualFile),
                 this
@@ -205,6 +208,7 @@ class NotebookHighlightingManager(
             targetErrorHighlighters.clear()
             knownErrorInd.clear()
             targetPsiFile = null
+            _jupyterFile = null
         } else {
             completeRangeInd?.let {
                 knownErrorInd[it]?.addAll(targetErrorHighlighters)

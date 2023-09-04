@@ -19,7 +19,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.daemon.NotebookHighlightingDaemonListener
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.state.NotebookCaretStateProcessor
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
-import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 interface NotebookCellHighlightingTrigger {
@@ -29,22 +28,21 @@ interface NotebookCellHighlightingTrigger {
 
 class NotebookCaretListener(
     private val project: Project,
-    private val vFile: BackedNotebookVirtualFile,
+    vFile: BackedNotebookVirtualFile,
     private val editor: Editor,
     parentDisposable: Disposable,
 ): CaretListener, NotebookCellHighlightingTrigger, Disposable {
     companion object {
         private val LOG = thisLogger()
     }
-    private val psiFile = vFile.file.toPsiFile(project)
     private val projectOptionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
     private val codeAnalyzer = DaemonCodeAnalyzer.getInstance(project)
-    private val notebookHighlightingManager = psiFile?.virtualFile?.getHighlightingManagerForFile(project)
+    private val notebookHighlightingManager = vFile.file.getHighlightingManagerForFile(project)
     private val dataController = notebookHighlightingManager?.dataController
-    private val caretStateProcessor = NotebookCaretStateProcessor(editor, project, vFile, notebookHighlightingManager, this)
+    private val caretStateProcessor = NotebookCaretStateProcessor(editor, project, notebookHighlightingManager, this)
 
     init {
-        assert(psiFile != null)
+        assert(notebookHighlightingManager != null)
         Disposer.register(parentDisposable, this)
         if (dataController == null) {
             LOG.warn("Data controller is null during init, manager: $notebookHighlightingManager")
@@ -73,7 +71,7 @@ class NotebookCaretListener(
             notebookChangedCellIndex = reducedIndexes.last()
             notebookRangesQueuedForHL?.addAll(reducedIndexes)
         }
-        psiFile?.let {
+        notebookHighlightingManager?.jupyterPsiFile?.let {
             if (projectOptionsProvider.shouldLimitTypeHintsByActiveCell) {
                 InlayHintsPassFactory.clearModificationStamp(editor)
             }

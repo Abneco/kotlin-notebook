@@ -28,7 +28,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.tryWithWriteLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -38,7 +37,6 @@ import kotlin.math.min
 class NotebookCaretStateProcessor(
     val editor: Editor,
     private val project: Project,
-    private val backedNotebookVFile: BackedNotebookVirtualFile,
     private val notebookHighlightingManager: NotebookHighlightingManager?,
     private val highlightingStarter: NotebookCellHighlightingTrigger
 ) : NotebookCaretMovementProcessor, NotebookDaemonFinishedEventProcessor {
