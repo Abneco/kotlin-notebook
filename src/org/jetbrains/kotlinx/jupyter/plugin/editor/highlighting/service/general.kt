@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit
 
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
 
-    override fun reduceRange(file: PsiFile, editor: Editor): Collection<TextRange>? {
+    override fun reduceRange(file: PsiFile, editor: Editor): List<TextRange>? {
         if (!NotebookHighlightingUtilityObject.looksLikeNotebookFile(file)) return null
 
         val jupyterFile = file as? JupyterFile ?: return null
@@ -142,7 +142,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
             val afterRenaming = dataController?.renamingRanges
             if (afterRenaming?.isNotEmpty() == true) {
-                return afterRenaming
+                return afterRenaming.toList()
             }
 
             if (severalUpdates?.isNotEmpty() == true && cells != null) { // updates U queue
