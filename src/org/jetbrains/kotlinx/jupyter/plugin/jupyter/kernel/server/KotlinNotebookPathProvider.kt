@@ -3,11 +3,12 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinKernelName
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.NotebookPathProvider
 
 class KotlinNotebookPathProvider: NotebookPathProvider {
     override fun getNotebookPath(project: Project, file: VirtualFile, kernelName: String?): String? {
-        if (kernelName != "kotlin") return null
+        if (!isKotlinKernelName(kernelName)) return null
 
         return file.path
     }

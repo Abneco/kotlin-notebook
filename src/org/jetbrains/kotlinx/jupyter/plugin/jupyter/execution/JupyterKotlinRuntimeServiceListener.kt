@@ -3,11 +3,11 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.isKotlinNotebookSession
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.settings.SessionOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.generateSnippet
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookCodegen
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession

@@ -1,14 +1,15 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
+package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.util.containers.ContainerUtil
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.api.libraries.rawMessageCallback
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.IdeaJupyterSocketManager
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
 import org.jetbrains.kotlinx.jupyter.plugin.util.toJacksonJson
 import org.jetbrains.kotlinx.jupyter.plugin.util.toKotlinSerializationJson
 import org.jetbrains.kotlinx.jupyter.protocol.AbstractJupyterConnection
@@ -28,10 +29,10 @@ import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 
 class KernelZMQClientSession(
-  val sessionId: JupyterNotebookSessionId,
+  override val sessionId: JupyterNotebookSessionId,
   kernelConfig: KernelConfig,
   private val onMessageCallback: (JupyterMessage) -> Unit
-): AbstractJupyterConnection(), JupyterKernelCommunicationClient, Disposable {
+): AbstractJupyterConnection(), JupyterKernelCommunicationClient, KotlinKernelSession {
     private val receiveMessageLock = ReentrantLock(true)
 
     private val messageBytePrefix = listOf(byteArrayOf(1))

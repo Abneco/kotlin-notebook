@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
+import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
 import org.jetbrains.plugins.notebooks.jupyter.connections.JupyterConnectionParameters
 import org.jetbrains.plugins.notebooks.jupyter.connections.JupyterConnectionParameters.Location.Direct
 import org.jetbrains.plugins.notebooks.jupyter.server.JupyterServerExecution
@@ -13,7 +14,7 @@ import java.util.concurrent.Future
 
 private val emptyKotlinConnectionParameters = JupyterConnectionParameters(
     location = Direct(URI.create("")),
-    kernelName = "kotlin",
+    kernelName = DEFAULT_KOTLIN_KERNEL_NAME,
     serverPath = null,
 )
 

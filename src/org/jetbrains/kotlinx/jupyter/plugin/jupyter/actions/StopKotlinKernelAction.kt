@@ -5,8 +5,8 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelProcessHandler
 
 abstract class StopKotlinKernelActionBase : DumbAwareAction(
     KotlinNotebookBundle.message("kotlin.jupyter.toolbar.actions.stop"),
@@ -14,13 +14,13 @@ abstract class StopKotlinKernelActionBase : DumbAwareAction(
     AllIcons.Actions.Suspend
 )
 
-class StopKotlinKernelAction(private val handler: KotlinKernelProcessHandler): StopKotlinKernelActionBase() {
+class StopKotlinKernelAction(private val handler: KotlinKernelRunnableHandler): StopKotlinKernelActionBase() {
     override fun actionPerformed(e: AnActionEvent) {
-        handler.destroyProcess()
+        handler.stopKernel()
     }
 
     override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = !handler.isProcessTerminated && !handler.isProcessTerminating
+        e.presentation.isEnabled = handler.canStopKernel()
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread {

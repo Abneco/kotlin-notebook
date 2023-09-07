@@ -11,6 +11,9 @@ import com.intellij.openapi.util.Version
 import com.intellij.openapi.vfs.VirtualFileManager
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.resetSessionMetaInformation
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.createKernelProcess
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.showKotlinNotebookServerManagementToolWindow
+import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.createConcurrentDoubleKeyMap
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
@@ -41,14 +44,14 @@ class KotlinInProcessJupyterClient(
 ): JupyterClient, Disposable {
     private val idGenerator = IdGenerator()
 
-    private val kernels = ConcurrentCollectionFactory.createConcurrentMap<KernelId, KotlinKernelProcessHandler>()
+    private val kernels = ConcurrentCollectionFactory.createConcurrentMap<KernelId, KotlinKernelRunnableHandler>()
 
     private val sessions = createConcurrentDoubleKeyMap(
         JupyterSessionData::sessionId,
         JupyterSessionData::kernelId,
     )
 
-    private val clientSessions = ConcurrentCollectionFactory.createConcurrentMap<KernelId, KernelZMQClientSession>()
+    private val clientSessions = ConcurrentCollectionFactory.createConcurrentMap<KernelId, KotlinKernelSession>()
 
     private val afterRestart = AtomicBoolean(false)
 
@@ -58,7 +61,9 @@ class KotlinInProcessJupyterClient(
 
     override fun startKernel(project: Project, kernelName: String, notebookPath: Path): KernelId? {
         if (kernelName !in kernelSpecs) return null
-        val id = KernelId(idGenerator.generate())
+        val kernelId = KernelId(idGenerator.generate())
+
+        // TODO: make this constructing extendable in the future
         val kernel = createKernelProcess(
             project,
             notebookPath,
@@ -76,15 +81,15 @@ class KotlinInProcessJupyterClient(
                     }
                     afterRestart.compareAndSet(true, false)
                 }
-                if (!isAfterRestart && clientSessions.containsKey(id)) {
+                if (!isAfterRestart && clientSessions.containsKey(kernelId)) {
                     JupyterRuntimeService.getInstance(project).clearRuntime(file)
                 }
-                clientSessions.remove(id)
+                clientSessions.remove(kernelId)
             }
         )
         Disposer.register(this, kernel)
-        kernels[id] = kernel
-        return id
+        kernels[kernelId] = kernel
+        return kernelId
     }
 
     override fun getKernelSpecs(): List<JupyterKernelSpec> {
@@ -96,7 +101,7 @@ class KotlinInProcessJupyterClient(
     }
 
     override fun getDefaultKernelSpec(): KernelName {
-        return DEFAULT_KERNEL_NAME
+        return DEFAULT_KOTLIN_KERNEL_NAME
     }
 
     override suspend fun listSessionsAsync(context: HttpSession.Request.Context): List<JupyterSessionData> {
@@ -148,8 +153,7 @@ class KotlinInProcessJupyterClient(
         onMessage: (JupyterMessage) -> Unit
     ): JupyterKernelCommunicationClient {
         val processHandler = kernels[kernelId] ?: throw RuntimeException("No kernel with id $kernelId")
-        val config = processHandler.kernelConfig
-        val session = KernelZMQClientSession(sessionId, config, onMessage)
+        val session = processHandler.createSession(sessionId, onMessage)
         clientSessions[kernelId] = session
         Disposer.register(this, session)
         return session
@@ -164,10 +168,8 @@ class KotlinInProcessJupyterClient(
     override suspend fun getServerVersions(): Iterable<Pair<JupyterClient.VersionKind, Version>> = emptyList()
 
     companion object {
-        private const val DEFAULT_KERNEL_NAME = "kotlin"
-
         private val kernelSpecs: Map<KernelName, JupyterKernelSpec> = mapOf(
-            DEFAULT_KERNEL_NAME to JupyterKernelSpecBase(
+            DEFAULT_KOTLIN_KERNEL_NAME to JupyterKernelSpecBase(
                 notebookKernelSpec.displayName,
                 notebookKernelSpec.language,
                 notebookKernelSpec.name

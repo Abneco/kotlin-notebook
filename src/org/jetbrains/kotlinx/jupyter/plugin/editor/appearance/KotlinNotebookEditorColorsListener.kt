@@ -5,8 +5,8 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.colors.EditorColorsListener
 import com.intellij.openapi.editor.colors.EditorColorsScheme
 import com.intellij.openapi.project.ProjectManager
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.isKotlinNotebookSession
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookCodegen
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage

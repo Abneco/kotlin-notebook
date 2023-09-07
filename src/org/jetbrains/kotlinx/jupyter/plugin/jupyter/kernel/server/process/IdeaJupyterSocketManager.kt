@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.closeSafely
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocket
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketInfo
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketManagerBase

@@ -23,19 +23,20 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.PsiManager
 import com.intellij.psi.util.parentOfType
 import com.intellij.testFramework.LightVirtualFile
-import com.intellij.util.concurrency.AppExecutorUtil
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.jupyter.NOTEBOOK_LANGUAGE
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 
 const val JUPYTER_NOTEBOOK_EXTENSION = "ipynb"
+const val DEFAULT_KOTLIN_KERNEL_NAME = "kotlin"
 
 val VirtualFile?.isKotlinNotebook: Boolean get() {
     if (this == null || extension != JUPYTER_NOTEBOOK_EXTENSION) return false
@@ -47,9 +48,16 @@ val Editor.isKotlinNotebook: Boolean get() {
     return FileDocumentManager.getInstance().getFile(document).isKotlinNotebook
 }
 
+fun isKotlinKernelName(kernelName: String?): Boolean {
+    return kernelName?.toLowerCaseAsciiOnly() == DEFAULT_KOTLIN_KERNEL_NAME
+}
+
+fun JupyterNotebookSession.isKotlinNotebookSession(): Boolean {
+    return isKotlinKernelName(kernelName)
+}
 
 private val VirtualFile.notebookLanguage: Language? get(){
-    BackedNotebookVirtualFile.takeIfBacked(this)?.let {
+    takeIfBacked(this)?.let {
         return it.notebook.language
     }
 
@@ -85,11 +93,6 @@ internal fun PsiFile?.getNotebookCellList() =
 internal fun PsiLanguageInjectionHost.getInjectedKtFile(injectedLanguageManager: InjectedLanguageManager) =
     injectedLanguageManager.getInjectedPsiFiles(this)?.firstOrNull { it.first is KtFile }?.first as? KtFile
 
-internal fun List<PsiLanguageInjectionHost>.getInjectedKtFiles(injectedLanguageManager: InjectedLanguageManager) =
-    this.mapNotNull { h ->
-        h.getInjectedKtFile(injectedLanguageManager)
-    }
-
 fun PsiLanguageInjectionHost.getKtFileStartOffset(injectedLanguageManager: InjectedLanguageManager): Int? {
     val ktFile = getInjectedKtFile(injectedLanguageManager) ?: return null
     return injectedLanguageManager.injectedToHost(ktFile, 0)
@@ -100,12 +103,6 @@ internal fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
 
 internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
     PsiManager.getInstance(project).findFile(this)
-
-internal fun VirtualFile.toDocument(): Document? =
-    FileDocumentManager.getInstance().getCachedDocument(this)
-
-internal fun Document.toPsiFile(project: Project): PsiFile? =
-    PsiDocumentManager.getInstance(project).getPsiFile(this)
 
 internal fun PsiFile.toDocument(project: Project): Document? =
     PsiDocumentManager.getInstance(project).getDocument(this)
@@ -139,9 +136,3 @@ internal inline fun <T> withReadAccess(crossinline block: () -> T): T {
 internal fun PsiFile.restartAnalyzing() {
     DaemonCodeAnalyzer.getInstance(this.project).restart(this)
 }
-
-
-internal fun Project.scheduleScriptDefinitionsManagerUpdate() =
-    AppExecutorUtil.getAppExecutorService().execute {
-        ScriptDefinitionsManager.getInstance(this).reloadScriptDefinitions()
-    }

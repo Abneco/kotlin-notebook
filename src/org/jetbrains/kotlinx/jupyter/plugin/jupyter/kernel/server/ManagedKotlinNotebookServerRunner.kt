@@ -3,6 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinKernelName
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.jupyter.connections.ManagedServerJupyterModuleConnectionSettings
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.ManagedJupyterServerRunner
@@ -15,7 +16,7 @@ class ManagedKotlinNotebookServerRunner : ManagedJupyterServerRunner {
         kernelName: String?,
         settings: ManagedServerJupyterModuleConnectionSettings?
     ): JupyterServerExecution? {
-        if (kernelName == "kotlin" || virtualFile.isKotlinNotebook) {
+        if (isKotlinKernelName(kernelName) || virtualFile.isKotlinNotebook) {
             return KotlinNotebookServerExecution()
         }
         return null
