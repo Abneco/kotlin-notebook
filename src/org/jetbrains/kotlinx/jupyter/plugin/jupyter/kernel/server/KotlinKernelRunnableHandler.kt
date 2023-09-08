@@ -2,10 +2,19 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.Project
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 
 interface KotlinKernelRunnableHandler: Disposable {
+    val project: Project
+    val kernelId: JupyterKernelId
+    val notebookVirtualFile: BackedNotebookVirtualFile?
+
+    fun addKernelListener(listener: KotlinKernelListener)
+
     fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession
 
     fun canStopKernel(): Boolean

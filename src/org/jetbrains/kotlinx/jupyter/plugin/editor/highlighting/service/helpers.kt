@@ -143,10 +143,13 @@ internal object NotebookHighlightingUtilityObject {
      * [get] ReadAction
      * [get] EDT
      */
-    fun resetSessionMetaInformation(document: Document, vFile: VirtualFile, project: Project, wouldShowNotification: Boolean = true) {
+    fun resetSessionMetaInformation(vFile: VirtualFile, project: Project, wouldShowNotification: Boolean = true) {
+        if (project.isDisposed) return
+
         val cellOrdinal = invokeAndWaitIfNeeded {
             FileEditorManager.getInstance(project).getSelectedEditor(vFile)?.safeAs<TextEditor>()?.let {
                 val editor = it.editor
+                val document = editor.document
                 val pos = editor.caretModel.logicalPosition
                 val cell = editor.getCell(min(pos.line, document.lineCount - 1))
                 cell.ordinal

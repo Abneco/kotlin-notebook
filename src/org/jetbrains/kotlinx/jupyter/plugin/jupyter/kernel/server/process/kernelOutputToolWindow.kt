@@ -12,21 +12,24 @@ import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.ui.content.ContentFactory
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import icons.KotlinJupyterIcons
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.StopKotlinKernelAction
+import org.jetbrains.plugins.notebooks.core.api.NotebookDisposable
 import org.jetbrains.plugins.notebooks.jupyter.server.ui.attachJupyterServerContentCloseListener
 
 private const val KOTLIN_NOTEBOOK_TOOL_WINDOW_ID = "Kotlin Notebook"
 private const val KOTLIN_NOTEBOOK_RUNNER_ID = "Kotlin Notebook Runner"
 
+@RequiresEdt
 fun showKotlinNotebookServerManagementToolWindow(
-    project: Project,
     handler: KotlinKernelProcessHandler,
 ) {
     val kernelContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.title", handler.notebookPath.fileName)
     val logContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.tabs.log", handler.notebookPath)
 
+    val project = handler.project
     val toolWindow: ToolWindow = getOrCreateKotlinNotebookToolWindow(project)
 
     val console = ConsoleViewImpl(project, GlobalSearchScope.allScope(project), true, true)
@@ -34,7 +37,7 @@ fun showKotlinNotebookServerManagementToolWindow(
     console.attachToProcess(handler)
 
     val id = KOTLIN_NOTEBOOK_RUNNER_ID + handler.notebookPath.toString()
-    val ui = RunnerLayoutUi.Factory.getInstance(project).create(id, kernelContentTitle, kernelContentTitle, project)
+    val ui = RunnerLayoutUi.Factory.getInstance(project).create(id, kernelContentTitle, kernelContentTitle, NotebookDisposable.forProject(project))
     val consoleContent = ui.createContent(id, console.component, logContentTitle, null, console.preferredFocusableComponent)
     consoleContent.isCloseable = false
     ui.addContent(consoleContent)

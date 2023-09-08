@@ -2,7 +2,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
@@ -16,6 +15,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifac
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.maxBytecodeVersion
 import org.jetbrains.kotlinx.jupyter.startup.*
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolute
@@ -24,9 +24,8 @@ import kotlin.io.path.exists
 @RequiresBackgroundThread
 fun createKernelProcess(
     project: Project,
+    kernelId: JupyterKernelId,
     notebookPath: Path,
-    onBeforeStartNotify: (KotlinKernelProcessHandler) -> Unit,
-    onKernelTerminated: (ProcessEvent, KotlinKernelProcessHandler) -> Unit
 ): KotlinKernelProcessHandler {
     val mavenArtifactsDownloader = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
     val kernelConfig = KernelConfig(
@@ -77,18 +76,19 @@ fun createKernelProcess(
     }
 
     return KotlinKernelProcessHandler(
-        commandLine, kernelConfig, notebookPath, onKernelTerminated
-    ).also { processHandler ->
-        val application = ApplicationManager.getApplication()
-        if (application.isUnitTestMode) {
-            processHandler.startNotify()
-        } else {
-            ApplicationManager.getApplication().invokeLater {
-                onBeforeStartNotify(processHandler)
-
-                processHandler.startNotify()
+        project, kernelId, commandLine, kernelConfig, notebookPath
+    ).apply {
+        addKernelProcessListener(object : KotlinKernelProcessListener {
+            override fun beforeNotificationStarted(event: KotlinKernelNotificationStartedEvent) {
+                val application = ApplicationManager.getApplication()
+                if (!application.isUnitTestMode) {
+                    application.invokeLater {
+                        showKotlinNotebookServerManagementToolWindow(event.source)
+                    }
+                }
             }
-        }
+        })
+        startNotify()
     }
 }
 

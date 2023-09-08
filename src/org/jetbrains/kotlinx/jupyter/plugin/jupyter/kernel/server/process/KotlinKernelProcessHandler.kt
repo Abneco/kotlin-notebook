@@ -6,26 +6,37 @@ import com.intellij.execution.process.KillableColoredProcessHandler
 import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.util.EventDispatcher
 import com.intellij.util.io.BaseOutputReader
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import java.nio.file.Path
 
 class KotlinKernelProcessHandler(
+    override val project: Project,
+    override val kernelId: JupyterKernelId,
     commandLine: GeneralCommandLine,
     private val kernelConfig: KernelConfig,
     val notebookPath: Path,
-
-    private val onKernelTerminated: (ProcessEvent, KotlinKernelProcessHandler) -> Unit,
 ): KillableColoredProcessHandler(commandLine), KotlinKernelRunnableHandler {
 
-    init {
-        val handler = this
+    private val eventDispatcher = EventDispatcher.create(KotlinKernelProcessListener::class.java)
 
+    override val notebookVirtualFile by lazy {
+        val file = VirtualFileManager.getInstance().findFileByNioPath(notebookPath) ?: return@lazy null
+        BackedNotebookVirtualFile.find(file)
+    }
+
+    init {
         addProcessListener(object : ProcessAdapter() {
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                 LOG.debug(event.text.trimEnd().trimStart('\r', '\n'))
@@ -33,7 +44,7 @@ class KotlinKernelProcessHandler(
 
             override fun processTerminated(event: ProcessEvent) {
                 LOG.debug("Kernel process terminated with code ${event.exitCode} (${event.text})")
-                onKernelTerminated(event, handler)
+                eventDispatcher.multicaster.kernelTerminated(KotlinKernelProcessEventImpl(event))
             }
 
             override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
@@ -42,12 +53,30 @@ class KotlinKernelProcessHandler(
         })
     }
 
+    override fun addKernelListener(listener: KotlinKernelListener) {
+        addKernelProcessListener(listener.toProcessListener())
+    }
+
+    fun addKernelProcessListener(listener: KotlinKernelProcessListener) {
+        eventDispatcher.addListener(listener)
+    }
+
+    override fun startNotify() {
+        eventDispatcher.multicaster.beforeNotificationStarted(KotlinKernelNotificationStartedEvent(this))
+        super.startNotify()
+    }
+
     override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession {
         return KernelZMQClientSession(sessionId, kernelConfig, onMessage)
     }
 
     override fun canStopKernel(): Boolean {
         return !isProcessTerminated && !isProcessTerminating
+    }
+
+    override fun destroyProcessImpl() {
+        super.destroyProcessImpl()
+        eventDispatcher.listeners.clear()
     }
 
     override fun stopKernel() {

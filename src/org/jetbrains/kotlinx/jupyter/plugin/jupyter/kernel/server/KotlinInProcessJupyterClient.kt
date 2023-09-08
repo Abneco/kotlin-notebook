@@ -3,26 +3,21 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Version
-import com.intellij.openapi.vfs.VirtualFileManager
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.resetSessionMetaInformation
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.createKernelProcess
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.showKotlinNotebookServerManagementToolWindow
 import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.createConcurrentDoubleKeyMap
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelDoesNotExistsException
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterSessionData
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterSessionData
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInterruptRequestMessageBuilder
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.filecontentsapi.CachingFileContentsApi
@@ -33,60 +28,43 @@ import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpec
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpecBase
 import java.io.File
 import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicBoolean
 
-typealias KernelId = JupyterKernelId
 typealias KernelName = String
-typealias SessionId = JupyterNotebookSessionId
 
 class KotlinInProcessJupyterClient(
     private val rootDir: File
 ): JupyterClient, Disposable {
     private val idGenerator = IdGenerator()
 
-    private val kernels = ConcurrentCollectionFactory.createConcurrentMap<KernelId, KotlinKernelRunnableHandler>()
+    private val kernels = ConcurrentCollectionFactory.createConcurrentMap<JupyterKernelId, KotlinKernelRunnableHandler>()
 
     private val sessions = createConcurrentDoubleKeyMap(
         JupyterSessionData::sessionId,
         JupyterSessionData::kernelId,
     )
 
-    private val clientSessions = ConcurrentCollectionFactory.createConcurrentMap<KernelId, KotlinKernelSession>()
-
-    private val afterRestart = AtomicBoolean(false)
+    private val clientSessions = ConcurrentCollectionFactory.createConcurrentMap<JupyterKernelId, KotlinKernelSession>()
 
     override val fileContentsApi: CachingFileContentsApi by lazy {
         TreeCachingFileContentsApi(JavaIoFileContentsApi(rootDir))
     }
 
-    override fun startKernel(project: Project, kernelName: String, notebookPath: Path): KernelId? {
+    override fun startKernel(
+        project: Project,
+        kernelName: String,
+        notebookPath: Path
+    ): JupyterKernelId? {
         if (kernelName !in kernelSpecs) return null
-        val kernelId = KernelId(idGenerator.generate())
+        val kernelId = JupyterKernelId(idGenerator.generate())
 
         // TODO: make this constructing extendable in the future
-        val kernel = createKernelProcess(
+        val kernel: KotlinKernelRunnableHandler = createKernelProcess(
             project,
+            kernelId,
             notebookPath,
-            onBeforeStartNotify = { showKotlinNotebookServerManagementToolWindow(project, it) },
-            onKernelTerminated = { _, _ ->
-                val file = VirtualFileManager.getInstance().findFileByNioPath(notebookPath) ?: return@createKernelProcess
-                val notebookFile = BackedNotebookVirtualFile.find(file) ?: return@createKernelProcess
-                val isAfterRestart = afterRestart.get()
-                if (!project.isDisposed && isAfterRestart) {
-                    val document = runReadAction {
-                        FileDocumentManager.getInstance().getDocument(notebookFile.file)
-                    }
-                    document?.let {
-                        resetSessionMetaInformation(it, notebookFile.file, project)
-                    }
-                    afterRestart.compareAndSet(true, false)
-                }
-                if (!isAfterRestart && clientSessions.containsKey(kernelId)) {
-                    JupyterRuntimeService.getInstance(project).clearRuntime(file)
-                }
-                clientSessions.remove(kernelId)
-            }
         )
+        kernel.addKernelListener(MyKernelListener())
+
         Disposer.register(this, kernel)
         kernels[kernelId] = kernel
         return kernelId
@@ -112,7 +90,7 @@ class KotlinInProcessJupyterClient(
         val notebookFile = File(notebookPath).absoluteFile
         val kernelId = startKernel(project, kernelName, notebookFile.toPath()) ?: throw RuntimeException("Unknown kernel: $kernelName")
 
-        val sessionId = SessionId(idGenerator.generate())
+        val sessionId = JupyterNotebookSessionId(idGenerator.generate())
         val data = JupyterSessionData(
             sessionId,
             kernelId,
@@ -122,34 +100,33 @@ class KotlinInProcessJupyterClient(
         return data
     }
 
-    override fun deleteSession(sessionId: SessionId) {
+    override fun deleteSession(sessionId: JupyterNotebookSessionId) {
         val sessionData = sessions.getByFirstKey(sessionId) ?: return
         killKernel(sessionData.kernelId)
         sessions.removeByFirstKey(sessionId)
     }
 
-    private fun killKernel(kernelId: KernelId) {
+    private fun killKernel(kernelId: JupyterKernelId) {
         // Maybe we should send shutdown request here
         val kernelProcess = kernels.remove(kernelId) ?: return
         Disposer.dispose(kernelProcess)
     }
 
-    override fun interrupt(kernelId: KernelId) {
+    override fun interrupt(kernelId: JupyterKernelId) {
         val clientSession = clientSessions[kernelId] ?: return
         val interruptMessage = JupyterInterruptRequestMessageBuilder(clientSession.sessionId).build()
         clientSession.send(interruptMessage)
     }
 
-    override fun restart(kernelId: KernelId) {
+    override fun restart(kernelId: JupyterKernelId) {
         val sessionData = sessions.getBySecondKey(kernelId) ?: return
         killKernel(kernelId)
         sessions.removeByValue(sessionData)
-        afterRestart.compareAndSet(false, true)
     }
 
     override fun createWebSocketClientForKernel(
-        kernelId: KernelId,
-        sessionId: SessionId,
+        kernelId: JupyterKernelId,
+        sessionId: JupyterNotebookSessionId,
         onMessage: (JupyterMessage) -> Unit
     ): JupyterKernelCommunicationClient {
         val processHandler = kernels[kernelId] ?: throw RuntimeException("No kernel with id $kernelId")
@@ -166,6 +143,27 @@ class KotlinInProcessJupyterClient(
     }
 
     override suspend fun getServerVersions(): Iterable<Pair<JupyterClient.VersionKind, Version>> = emptyList()
+
+    private fun removeSessionAndRelatedState(kernelHandler: KotlinKernelRunnableHandler) {
+        val notebookFile = kernelHandler.notebookVirtualFile ?: return
+        val project = kernelHandler.project
+
+        resetSessionMetaInformation(notebookFile.file, project)
+        JupyterRuntimeService.getInstance(project).clearRuntime(notebookFile.file)
+        removeSession(kernelHandler.kernelId)
+    }
+
+    private fun removeSession(kernelId: JupyterKernelId) {
+        clientSessions.remove(kernelId)?.let { session ->
+            Disposer.dispose(session)
+        }
+    }
+
+    private inner class MyKernelListener: KotlinKernelListener {
+        override fun kernelTerminated(event: KotlinKernelEvent) {
+            removeSessionAndRelatedState(event.source)
+        }
+    }
 
     companion object {
         private val kernelSpecs: Map<KernelName, JupyterKernelSpec> = mapOf(
