@@ -11,12 +11,12 @@ import junit.framework.TestCase
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
-import org.jetbrains.kotlinx.jupyter.plugin.test.runWithJupyterSession
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion.KotlinNotebookAutoCompletionTest
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
+import org.jetbrains.kotlinx.jupyter.plugin.test.runWithJupyterSession
 import org.jetbrains.kotlinx.jupyter.plugin.test.withDisabledJcef
 import org.junit.Test
 
@@ -27,7 +27,7 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
         return false
     }
 
-    @Test
+    @Test(timeout = 300_000)
     fun testCompletionWithImport() = doTest(
         object : ReceivedMessagesTester {
             override val expectedCellsCount: Int
@@ -54,7 +54,7 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
         """.trimIndent())
     }
 
-    @Test
+    @Test(timeout = 300_000)
     fun completionInsertionCorrectWithExternalImport() = doTest(
         object : ReceivedMessagesTester {
             override val expectedCellsCount: Int = 2
@@ -75,7 +75,7 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
         """.trimIndent())
     }
 
-    @Test
+    @Test(timeout = 300_000)
     fun completionInsertionWithExternalImportInSecondLine() = doTest(
         object : ReceivedMessagesTester {
             override val expectedCellsCount: Int = 2
@@ -94,7 +94,7 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
         """.trimIndent())
     }
 
-    @Test
+    @Test(timeout = 300_000)
     fun completionOfRunBlocking() = doTest(
         object : ReceivedMessagesTester {
             override val expectedCellsCount: Int = 2
@@ -108,7 +108,7 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
         """.trimIndent())
     }
 
-    @Test
+    @Test(timeout = 300_000)
     fun completionOfRunBlockingWithImport() = doTest(
         object : ReceivedMessagesTester {
             override val expectedCellsCount: Int = 2
@@ -124,7 +124,7 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
         """.trimIndent())
     }
 
-    @Test
+    @Test(timeout = 300_000)
     fun completionInsideLambda() = doTest(
         object : ReceivedMessagesTester {
             override val expectedCellsCount: Int = 1
