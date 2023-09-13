@@ -119,7 +119,7 @@ class NotebookHighlightingManager(
     private fun addNewMarkupListener(editor: Editor) {
         activeMarkupModelListener = object : MarkupModelListener {
             override fun afterAdded(highlighter: RangeHighlighterEx) {
-                val info = highlighter.errorStripeTooltip as? HighlightInfo ?: return
+                val info = HighlightInfo.fromRangeHighlighter(highlighter) ?: return
                 // ignore parsing errors for now, only from KT factories
                 if (info.severity == HighlightSeverity.ERROR && info.description.startsWith('[')) {
                     targetErrorHighlighters.add(highlighter)
