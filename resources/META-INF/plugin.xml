@@ -58,7 +58,6 @@
     </description>
 
     <depends>org.jetbrains.kotlin</depends>
-    <depends>Pythonid</depends>
     <depends>intellij.jupyter</depends>
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
