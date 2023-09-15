@@ -12,7 +12,7 @@ import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterExecuteResultOutp
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutputType
 import org.jetbrains.plugins.notebooks.jupyter.tables.newapi.createTableOutputDataKey
 import org.jetbrains.plugins.notebooks.tables.api.DSTableText
-import org.jetbrains.plugins.notebooks.tables.py.DSTableDataType
+import org.jetbrains.plugins.notebooks.tables.api.DSTableDataType
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointerFactory

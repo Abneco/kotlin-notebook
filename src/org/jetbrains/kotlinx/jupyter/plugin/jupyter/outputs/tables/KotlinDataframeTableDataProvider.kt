@@ -24,7 +24,7 @@ import org.jetbrains.plugins.notebooks.tables.ExternalTableDataProviderFactory
 import org.jetbrains.plugins.notebooks.tables.api.DSDataFrameInfo
 import org.jetbrains.plugins.notebooks.tables.api.DSTableCommandExecutor
 import org.jetbrains.plugins.notebooks.tables.api.DSTableDataProvider
-import org.jetbrains.plugins.notebooks.tables.py.DSTableDataType
+import org.jetbrains.plugins.notebooks.tables.api.DSTableDataType
 import java.util.*
 import javax.swing.RowSorter
 import javax.swing.SortOrder
