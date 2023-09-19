@@ -127,7 +127,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         return "(($tableVariable as DataFrame<*>).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} })"
     }
 
-    override fun isFallbackToTruncatedSupported(): Boolean = true
+    override fun isFallbackToStaticTableSupported(): Boolean = true
 
     private fun parseFrameInfoFromKotlinDataframeOutput(text: String): DSDataFrameInfo {
         val data = mapper.readTree(text)
