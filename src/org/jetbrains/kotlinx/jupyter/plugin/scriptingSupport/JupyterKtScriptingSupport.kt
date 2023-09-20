@@ -131,6 +131,13 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             }
         }
 
+        fun updateSynchronously(project: Project) {
+            val updater = getUpdater(project)
+            updater.update {
+                updater.invalidate(true)
+            }
+        }
+
         fun getConfiguration(project: Project, psiFile: KtFile): ScriptCompilationConfigurationResult? {
             return runReadAction {
                 if (!psiFile.isScript()) return@runReadAction null

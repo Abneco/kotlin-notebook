@@ -136,3 +136,13 @@ internal inline fun <T> withReadAccess(crossinline block: () -> T): T {
 internal fun PsiFile.restartAnalyzing() {
     DaemonCodeAnalyzer.getInstance(this.project).restart(this)
 }
+
+suspend fun anyOf(vararg actions: suspend () -> Boolean): Boolean {
+    var result = false
+    for (action in actions) {
+        if (action()) {
+            result = true
+        }
+    }
+    return result
+}

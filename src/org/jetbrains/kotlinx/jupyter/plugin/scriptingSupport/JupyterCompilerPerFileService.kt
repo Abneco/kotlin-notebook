@@ -14,6 +14,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
@@ -21,11 +22,12 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.util.concurrency.AppExecutorUtil
+import com.intellij.util.concurrency.ThreadingAssertions
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.delete
 import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
@@ -48,7 +50,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanent
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.usages.KotlinNotebookPluginUpdater
+import org.jetbrains.kotlinx.jupyter.plugin.util.ComputableWithName
+import org.jetbrains.kotlinx.jupyter.plugin.util.ExecutedOnceBackgroundTask
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
+import org.jetbrains.kotlinx.jupyter.plugin.util.anyOf
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.tryWithWriteLock
@@ -133,14 +138,18 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private val kernelJarsAdded = AtomicBoolean(false)
+    private val externalDependenciesProvider = ExecutedOnceBackgroundTask.create(
+        3,
+        this,
+        ComputableWithName("Updating of Kotlin notebook dependencies", ::updateClasspathWithExternalDependencies)
+    )
 
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterKotlinPluginScriptClassGetter(ScriptTemplateWithDisplayHelpers::class) {
         implicitsList
     }
 
-    private val coroutineScope = CoroutineScope(Job())
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private var previousSessionId: JupyterNotebookSessionId? = null
 
     val executedCellsCount: Int get() = directoryCounter.get()
@@ -193,9 +202,13 @@ class JupyterCompilerPerFileService(
 
     init {
         thisLogger().assertTrue(virtualFile.file.isKotlinNotebook) { "$virtualFile is not a Kotlin Jupyter notebook" }
-
-        updateClasspathWithExternalDependencies()
         Disposer.register(parent, this)
+
+        externalDependenciesProvider.startIfNotStarted()
+        // We need to ensure we have all dependencies before the test started
+        if (ApplicationManager.getApplication().isUnitTestMode) {
+            externalDependenciesProvider.join()
+        }
     }
 
     private fun getSession(): JupyterNotebookSession? {
@@ -211,17 +224,24 @@ class JupyterCompilerPerFileService(
         }
     }
 
+    @RequiresBackgroundThread
     private fun updateClasspathWithExternalDependencies() {
-        updateClasspathWithKernelJars()
-        updateClasspathWithProjectArtifactsAsync()
+        ThreadingAssertions.assertBackgroundThread()
+
+        runBlockingCancellable {
+            if (anyOf(
+                ::updateClasspathWithKernelJars,
+                ::updateClasspathWithProjectArtifactsAsync,
+            )) {
+                JupyterKtScriptingSupport.updateSynchronously(project)
+            }
+        }
     }
 
-    private fun updateClasspathWithKernelJars() {
-        if (!kernelJarsAdded.compareAndSet(false, true)) return
-
+    private suspend fun updateClasspathWithKernelJars(): Boolean {
         val mavenArtifactsDownloader = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
-        val jars = mavenArtifactsDownloader.downloadArtifactBlocking(KotlinNotebookMavenArtifacts.IDE_CLASSPATH_SHADOWED)
-        val sourcesJars = mavenArtifactsDownloader.downloadArtifactBlocking(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED_SOURCES)
+        val jars = mavenArtifactsDownloader.downloadArtifactAsync(KotlinNotebookMavenArtifacts.IDE_CLASSPATH_SHADOWED)
+        val sourcesJars = mavenArtifactsDownloader.downloadArtifactAsync(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED_SOURCES)
 
         compileLock.write {
             _currentClasspath.addInitial(jars)
@@ -230,21 +250,18 @@ class JupyterCompilerPerFileService(
 
         KotlinNotebookPermanentIndexService.getInstance(project)
                 .addToPermanentIndex(jars.map { it.absolutePath }, sourcesJars.map { it.absolutePath })
+
+        return jars.isNotEmpty() || sourcesJars.isNotEmpty()
     }
 
-    private fun updateClasspathWithProjectArtifactsAsync() {
-        coroutineScope.async {
-            val buildService = JupyterKotlinProjectArtifactsService.getInstance(project)
-            val artifacts = buildService.buildProjectAndGetLibraries(virtualFile).ifEmpty { return@async }
-            val updated = compileLock.withWriteLock {
-                val oldSize = _currentClasspath.size
-                _currentClasspath.addSnippet(artifacts.map { File(it) })
-                val newSize = _currentClasspath.size
-                oldSize != newSize
-            }
-            if (updated) {
-                JupyterKtScriptingSupport.update(project)
-            }
+    private suspend fun updateClasspathWithProjectArtifactsAsync(): Boolean {
+        val buildService = JupyterKotlinProjectArtifactsService.getInstance(project)
+        val artifacts = buildService.buildProjectAndGetLibraries(virtualFile).ifEmpty { return false }
+        return compileLock.write {
+            val oldSize = _currentClasspath.size
+            _currentClasspath.addSnippet(artifacts.map { File(it) })
+            val newSize = _currentClasspath.size
+            oldSize != newSize
         }
     }
 
@@ -254,7 +271,8 @@ class JupyterCompilerPerFileService(
     ): ScriptCompilationConfiguration {
         val sourceText = runReadAction { sourceCode.text }
         LOG.debug("Before-compiling callback for script: $sourceText")
-        updateClasspathWithExternalDependencies()
+        if (!externalDependenciesProvider.isCompletedSuccessfully) return config
+
         val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
         return ScriptCompilationConfiguration(withNewClasspath) {
             hostConfiguration.update {

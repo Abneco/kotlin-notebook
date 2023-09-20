@@ -21,7 +21,6 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
             editor as EditorImpl
             val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return
             if (file.isKotlinNotebook) {
-                JupyterKtScriptingSupport.update(project)
                 KotlinNotebookPerFileSettingsCache.getInstance(project).notebookEditorCreated(file)
 
                 val backedNotebookVirtualFile = file.toBackedNotebookFile() ?: return

@@ -47,11 +47,9 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
         tester.typeWithPauses("lis")
         val elements = myFixture?.lookupElements
 
-        assertNoThrowable {
-            invokeAndWaitIfNeeded {
-                elements?.first { it.lookupString == "listOf" }.let {
-                    tester.lookup.finishLookup(CompletionMode.REPLACE.ch, it)
-                }
+        invokeAndWaitIfNeeded {
+            elements?.first { it.lookupString == "listOf" }.let {
+                tester.lookup.finishLookup(CompletionMode.REPLACE.ch, it)
             }
         }
 
@@ -64,11 +62,9 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
         tester.typeWithPauses("i")
         val elements = myFixture?.lookupElements
 
-        assertNoThrowable {
-            invokeAndWaitIfNeeded {
-                elements?.first { it.lookupString == "id" }.let {
-                    tester.lookup.finishLookup(CompletionMode.REPLACE.ch, it)
-                }
+        invokeAndWaitIfNeeded {
+            elements?.first { it.lookupString == "id" }.let {
+                tester.lookup.finishLookup(CompletionMode.REPLACE.ch, it)
             }
         }
 
@@ -81,11 +77,9 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
         tester.typeWithPauses("i")
         val elements = myFixture?.lookupElements
 
-        assertNoThrowable {
-            invokeAndWaitIfNeeded {
-                elements?.first { it.lookupString == "id" }.let {
-                    tester.lookup.finishLookup(CompletionMode.ADD.ch, it)
-                }
+        invokeAndWaitIfNeeded {
+            elements?.first { it.lookupString == "id" }.let {
+                tester.lookup.finishLookup(CompletionMode.ADD.ch, it)
             }
         }
 
