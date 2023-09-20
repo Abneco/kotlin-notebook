@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.intellij.openapi.application.runInEdt
 import org.jetbrains.annotations.Nls
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.NotebookChanged
@@ -59,7 +58,7 @@ internal abstract class KotlinNotebookProperty<T>(val name: String, val defaultV
     }
 
     private fun JupyterNotebook.notifyListeners() {
-        runInEdt { changeListeners.listeners.forEach { it.onEvent(NotebookChanged(this)) } }
+        changeListeners.notify(NotebookChanged(this))
     }
 }
 
