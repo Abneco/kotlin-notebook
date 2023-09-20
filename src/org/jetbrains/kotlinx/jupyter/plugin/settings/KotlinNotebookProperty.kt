@@ -59,7 +59,7 @@ internal abstract class KotlinNotebookProperty<T>(val name: String, val defaultV
     }
 
     private fun JupyterNotebook.notifyListeners() {
-        runInEdt { getJupyterChangeListeners().forEach { it.onEvent(NotebookChanged(this)) } }
+        runInEdt { changeListeners.listeners.forEach { it.onEvent(NotebookChanged(this)) } }
     }
 }
 

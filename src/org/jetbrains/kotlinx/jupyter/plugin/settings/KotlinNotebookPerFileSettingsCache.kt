@@ -13,7 +13,6 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.progress.withBackgroundProgress
 import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.backend.workspace.WorkspaceModelChangeListener
 import com.intellij.platform.workspace.jps.entities.LibraryEntity
@@ -55,8 +54,7 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
                 refreshSettings(notebookFile)
             }
         }
-        notebookFile.notebook.addJupyterChangeListener(jupyterChangeListener)
-        Disposer.register(this, Disposable { notebookFile.notebook.removeJupyterChangeListener(jupyterChangeListener) })
+        notebookFile.notebook.changeListeners.add(jupyterChangeListener, parentDisposable = this)
 
         notebookFile.notebook.migrateSettings()
         refreshSettings(notebookFile)
