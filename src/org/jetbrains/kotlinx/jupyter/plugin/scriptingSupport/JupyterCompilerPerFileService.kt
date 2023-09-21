@@ -55,6 +55,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.ExecutedOnceBackgroundTask
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
 import org.jetbrains.kotlinx.jupyter.plugin.util.anyOf
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.tryWithWriteLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
@@ -234,6 +235,7 @@ class JupyterCompilerPerFileService(
                 ::updateClasspathWithProjectArtifactsAsync,
             )) {
                 JupyterKtScriptingSupport.updateSynchronously(project)
+                restartAnalyzing(project, virtualFile.file)
             }
         }
     }

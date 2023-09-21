@@ -6,6 +6,7 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -23,6 +24,7 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.PsiManager
 import com.intellij.psi.util.parentOfType
 import com.intellij.testFramework.LightVirtualFile
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
@@ -101,6 +103,7 @@ fun PsiLanguageInjectionHost.getKtFileStartOffset(injectedLanguageManager: Injec
 internal fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
     takeIfBacked(this)
 
+@RequiresReadLock
 internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
     PsiManager.getInstance(project).findFile(this)
 
@@ -135,6 +138,12 @@ internal inline fun <T> withReadAccess(crossinline block: () -> T): T {
 
 internal fun PsiFile.restartAnalyzing() {
     DaemonCodeAnalyzer.getInstance(this.project).restart(this)
+}
+
+internal fun restartAnalyzing(project: Project, virtualFile: VirtualFile) {
+    ReadAction.compute<PsiFile?, Throwable> {
+        virtualFile.toPsiFile(project)
+    }?.restartAnalyzing()
 }
 
 suspend fun anyOf(vararg actions: suspend () -> Boolean): Boolean {
