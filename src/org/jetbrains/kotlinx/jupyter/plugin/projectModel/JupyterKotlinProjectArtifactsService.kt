@@ -40,7 +40,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.concurrency.asDeferred
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
-import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettingsCache
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSettings
@@ -80,8 +79,6 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
 
     private val sessionData = mutableMapOf<JupyterNotebookSessionId, SessionData>()
     private val sessionDataLock = ReentrantLock()
-
-    private var firstRun: Boolean = true
 
     private val sourceFileExtensionsOfInterest = setOf("kt", "java")
 
@@ -249,17 +246,13 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
                 .kernelRelatedFactory
                 .showOutdatedDependencies(project)
             DependenciesState.ABSENT -> {
-                NotebookNotificationUtility.kernelRelatedFactory
+                NotebookNotificationUtility
+                    .kernelRelatedFactory
                     .showAbsentDependencies(project)
-                if (firstRun) {
-                    firstRun = false
-                    throw RuntimeException(KotlinNotebookBundle.message("kotlin.jupyter.dependencies.build.error.throwable"))
-                }
                 return emptyList()
             }
             else -> {}
         }
-        firstRun = false
 
         return newArtifacts
     }
