@@ -58,7 +58,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     override val type: DSTableDataType = DSTableDataType.EXTERNAL
 
     override fun parseTextToFrameInfo(text: String): DSDataFrameInfo {
-        return parseFrameInfoFromKotlinDataframeOutput(text)
+        return parseFrameInfoFromKotlinDataframeOutput(text, isPreview = true)
     }
 
     override fun parseTextToTableData(id: DataId, table: String): DSTableData {
@@ -71,7 +71,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         tableVariable: String,
         textTableOutput: String
     ): DSDataFrameInfo {
-        return parseFrameInfoFromKotlinDataframeOutput(textTableOutput)
+        return parseFrameInfoFromKotlinDataframeOutput(textTableOutput, isPreview = false)
     }
 
     override fun dataFrameGetData(
@@ -129,18 +129,16 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
 
     override fun isFallbackToStaticTableSupported(): Boolean = true
 
-    private fun parseFrameInfoFromKotlinDataframeOutput(text: String): DSDataFrameInfo {
-        val data = mapper.readTree(text)
-        val rawJson = mapper.readTree(data[jsonPayloadField].asText())
+    private fun parseFrameInfoFromKotlinDataframeOutput(text: String, isPreview: Boolean): DSDataFrameInfo {
+        val rawJson = extractRawJson(text)
 
-        val rawRows = asConcatenatedRows(rawJson[serializedDataframeField])
-        val rows = rawRows.split(separator)
+        val rows = extractDatasetRows(rawJson)
         val firstRowJson = mapper.readTree(rows[0])
 
         val root = extractHierarchy(firstRowJson)
         val columnNames = root.columnChildren.map { it.columnName }
 
-        val nRow = rawJson[nRowsField].asInt()
+        val nRow = if (isPreview) rows.size else rawJson[nRowsField].asInt()
         val nCol = rawJson[nColsField].asInt()
 
         val dimensionsStr = DSTableBundle.message("ds.table.dimensions.info", nRow, nCol)
@@ -153,6 +151,16 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
             dimensionsStr,
             hierarchyRoot = root
         )
+    }
+
+    private fun extractRawJson(text: String): JsonNode {
+        val data = mapper.readTree(text)
+        return mapper.readTree(data[jsonPayloadField].asText())
+    }
+
+    private fun extractDatasetRows(rawJson: JsonNode): List<String> {
+        val rawRows = asConcatenatedRows(rawJson[serializedDataframeField])
+        return rawRows.split(separator)
     }
 
     private fun extractHierarchy(row: JsonNode): ColumnTreeNode {
@@ -211,11 +219,9 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     }
 
     private fun parseDataFromKotlinDataframeOutput(id: DataId, text: String): DSTableData {
-        val data = mapper.readTree(text)
-        val rawJson = mapper.readTree(data[jsonPayloadField].asText())
+        val rawJson = extractRawJson(text)
 
-        val rawRows = asConcatenatedRows(rawJson[serializedDataframeField])
-        val rows = rawRows.split(separator)
+        val rows = extractDatasetRows(rawJson)
         val firstRowJson = mapper.readTree(rows[0])
 
         val root = extractHierarchy(firstRowJson)
