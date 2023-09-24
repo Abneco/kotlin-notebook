@@ -1,0 +1,12 @@
+public class TestBase {
+    protected void tearDown() throws Exception;
+}
+
+public class Clazz extends TestBase {
+    protected void tearDown() throws Exception {
+        RunAll.runAll(
+                () -> myTempFiles.deleteAll(),
+                () -> super.tearDown()
+        );
+    }
+}
