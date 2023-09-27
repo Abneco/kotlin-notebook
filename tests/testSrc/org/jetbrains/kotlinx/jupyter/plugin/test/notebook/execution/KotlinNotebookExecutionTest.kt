@@ -76,7 +76,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
                         Thread.sleep(1000)
                         val session = futureSession.get(5, TimeUnit.SECONDS)
                         val file = session.virtualFile ?: return@executeOnPooledThread
-                        JupyterCellExecutionManager.getInstance(project).interrupt(file)
+                        JupyterCellExecutionManager.getInstance(project).interruptJupyterKernel(file)
                     }
                 }
             }
