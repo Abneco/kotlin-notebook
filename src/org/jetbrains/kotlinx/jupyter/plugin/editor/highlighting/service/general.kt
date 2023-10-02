@@ -112,7 +112,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                     }
                 }
             }
-            if (cellIndx != null && completeHLRange != null) {
+            if (cellIndx != null && dataController.completeHighlightingRange != null) {
                 val newCompleteRange = if (cellUnderEditor.ordinal != cellIndx) {
                     highlightingQueue?.add(cellIndx)
                     cells?.get(cellUnderEditor.ordinal)?.textRange
