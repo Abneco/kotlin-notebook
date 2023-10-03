@@ -7,8 +7,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.jetbrains.annotations.Nls
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.NotebookChanged
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.notify
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.notifyNotebookChanged
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -32,7 +31,7 @@ internal abstract class KotlinNotebookProperty<T>(val name: String, val defaultV
         val metadata = thisRef.getMetadata(METADATA_KEY) as? ObjectNode
             ?: JsonNodeFactory.instance.objectNode().also { thisRef.setMetadata(METADATA_KEY, it) }
         doWriteValue(metadata, value)
-        thisRef.notifyListeners()
+        thisRef.notifyNotebookChanged()
     }
 
     private fun doWriteValue(metadata: ObjectNode, value: T) {
@@ -54,12 +53,8 @@ internal abstract class KotlinNotebookProperty<T>(val name: String, val defaultV
         if (metadata.isEmpty) {
             thisRef.removeMetadata(METADATA_KEY)
         } else {
-            thisRef.notifyListeners()
+            thisRef.notifyNotebookChanged()
         }
-    }
-
-    private fun JupyterNotebook.notifyListeners() {
-        notify(NotebookChanged(this))
     }
 }
 
