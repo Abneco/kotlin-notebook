@@ -54,7 +54,7 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
                 refreshSettings(notebookFile)
             }
         }
-        notebookFile.notebook.changeListeners.add(jupyterChangeListener, parentDisposable = this)
+        notebookFile.notebook.listeners.add(jupyterChangeListener, parentDisposable = this)
 
         notebookFile.notebook.migrateSettings()
         refreshSettings(notebookFile)

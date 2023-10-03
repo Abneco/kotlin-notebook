@@ -58,7 +58,7 @@ internal abstract class KotlinNotebookProperty<T>(val name: String, val defaultV
     }
 
     private fun JupyterNotebook.notifyListeners() {
-        changeListeners.notify(NotebookChanged(this))
+        listeners.notify(NotebookChanged(this))
     }
 }
 
