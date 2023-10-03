@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import org.jetbrains.annotations.Nls
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.NotebookChanged
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.notify
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -58,7 +59,7 @@ internal abstract class KotlinNotebookProperty<T>(val name: String, val defaultV
     }
 
     private fun JupyterNotebook.notifyListeners() {
-        listeners.notify(NotebookChanged(this))
+        notify(NotebookChanged(this))
     }
 }
 
