@@ -21,15 +21,15 @@ class ArtifactsDownloaderTest: BasePlatformTestCase() {
 
     override fun setUp() {
         super.setUp()
-        setKernelVersion("0.12.0-41")
+        setKernelVersion("0.12.0-72")
     }
 
     override fun runInDispatchThread() = false
 
     @Test
-    fun `there should be 4 artifacts`() {
+    fun `there should be 5 artifacts`() {
         val artifacts = KotlinNotebookMavenArtifacts.all()
-        UsefulTestCase.assertSize(4, artifacts)
+        UsefulTestCase.assertSize(5, artifacts)
     }
 
     @Test

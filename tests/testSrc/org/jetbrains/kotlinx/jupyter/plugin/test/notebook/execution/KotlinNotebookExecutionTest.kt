@@ -39,6 +39,15 @@ class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
         listOf()
     )))
 
+    @Test
+    fun testSerialization() = doTest(OutputsTester(listOf(
+        listOf(),
+        listOf(
+            textPlainOutput("{\"x\":3}")
+        ),
+        listOf()
+    )))
+
     @Ignore("Ignored because of some JCEF problems with project SDK")
     @Test
     fun testDataframe() = doTest(object: ReceivedMessagesTester {

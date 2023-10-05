@@ -90,8 +90,8 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
 
         override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) {
             KotlinNotebookExecutionTest.log.debug("Checking outputs for cell #$cellNum")
-            val expectedOutputs = cellOutputs[cellNum]
-            val actualOutputs = messages.outputs.map { it.messageContent["data"] }
+            val expectedOutputs = cellOutputs[cellNum].map { it.toPrettyString() }
+            val actualOutputs = messages.outputs.map { it.messageContent["data"].toPrettyString() }
             Assertions.assertIterableEquals(expectedOutputs, actualOutputs)
         }
     }

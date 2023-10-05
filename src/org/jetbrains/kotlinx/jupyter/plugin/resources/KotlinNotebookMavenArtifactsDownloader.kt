@@ -9,6 +9,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import com.intellij.util.io.ZipUtil
 import kotlinx.coroutines.*
 import org.jetbrains.idea.maven.aether.ArtifactKind
 import org.jetbrains.jps.model.library.JpsMavenRepositoryLibraryDescriptor
@@ -25,6 +26,7 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
 
     private val onlyJars = setOf(ArtifactKind.ARTIFACT)
     private val onlySources = setOf(ArtifactKind.SOURCES)
+    private val onlyZip = setOf(ArtifactKind.ZIP)
 
     private val downloadJobs = mutableMapOf<ArtifactDescriptionWithVersion, Deferred<List<File>>>()
     private val cacheSearchLock = ReentrantLock()
@@ -61,6 +63,40 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
         return downloadWithCache(artifactWithVersion) { cacheDirectory ->
             downloadAndSaveToDirectory(artifactWithVersion, cacheDirectory)
         }.await()
+    }
+
+    @RequiresBackgroundThread
+    fun downloadAndUnzipBlocking(
+        artifact: ArtifactDescriptionWithKind,
+        version: String = getSelectedKernelVersion(),
+    ): List<File> {
+        return runBlocking {
+            downloadAndUnzipAsync(artifact, version)
+        }
+    }
+
+    private suspend fun downloadAndUnzipAsync(
+        artifact: ArtifactDescriptionWithKind,
+        version: String = getSelectedKernelVersion(),
+    ): List<File> {
+        assert(artifact.kind.extension == "zip")
+        val zipFiles = downloadArtifactAsync(artifact, version)
+        val outputDirectory = locateDirectoryForArtifactInCache(ArtifactDescriptionWithVersion(artifact, version), "_extracted")
+        val artifacts = outputDirectory.files()
+        if (artifacts.isNotEmpty()) {
+            return artifacts
+        } else {
+            val outputDirPath = outputDirectory.toPath()
+            for (zipFile in zipFiles) {
+                ZipUtil.extract(
+                    zipFile.toPath(),
+                    outputDirPath,
+                    null,
+                    true
+                )
+            }
+            return outputDirectory.files()
+        }
     }
 
     override fun dispose() {
@@ -112,6 +148,7 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
     private fun ArtifactDescriptionWithKind.selectKinds() = when (kind) {
         ArtifactKind.ARTIFACT -> onlyJars
         ArtifactKind.SOURCES -> onlySources
+        ArtifactKind.ZIP -> onlyZip
         else -> setOf(kind)
     }
 
@@ -148,6 +185,7 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
 
     private fun locateDirectoryForArtifactInCache(
         artifactWithVersion: ArtifactDescriptionWithVersion,
+        directorySuffix: String = "",
     ): File {
         val (artifact, version) = artifactWithVersion
         val versionDirectory = project.getKotlinNotebookCacheDirectory().resolve("kernels").resolve(version)
@@ -157,8 +195,12 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
                 append('-')
                 append(classifier)
             }
+            artifact.kind.extension.takeIf { it.isNotEmpty() }?.let { extension ->
+                append('-')
+                append(extension)
+            }
         }
-        val artifactDirectory = versionDirectory.resolve(artifactDirectoryName)
+        val artifactDirectory = versionDirectory.resolve(artifactDirectoryName + directorySuffix)
         artifactDirectory.toFile().mkdirs()
         return artifactDirectory.toFile()
     }

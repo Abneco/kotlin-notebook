@@ -3,6 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.pom.java.LanguageLevel
@@ -33,7 +34,7 @@ fun createKernelProcess(
         "tcp",
         "HmacSHA256",
         "x-x-x",
-        mavenArtifactsDownloader.downloadArtifactBlocking(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED),
+        mavenArtifactsDownloader.getClasspathArtifacts(),
         null,
         null,
         "kotlin_notebook",
@@ -61,7 +62,7 @@ fun createKernelProcess(
         KernelVmCommandCustomizer.addVmArguments(this)
     }
 
-    val classpathSeparator = System.getProperty("path.separator")
+    val classpathSeparator = File.pathSeparator
     val cmdArgs = kernelConfig.javaCmdLine(
         javaExecutable,
         "kernelProcessConnection",
@@ -89,6 +90,15 @@ fun createKernelProcess(
             }
         })
         startNotify()
+    }
+}
+
+private fun KotlinNotebookMavenArtifactsDownloader.getClasspathArtifacts(): List<File> {
+    return try {
+        downloadAndUnzipBlocking(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED_ZIP)
+    } catch (e: Exception) {
+        logger<KotlinNotebookMavenArtifactsDownloader>().warn("Unable to download artifacts zip", e)
+        downloadArtifactBlocking(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED)
     }
 }
 
