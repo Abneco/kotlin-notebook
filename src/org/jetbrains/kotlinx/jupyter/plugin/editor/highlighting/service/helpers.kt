@@ -7,15 +7,14 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.colors.CodeInsightColors
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.NlsSafe
@@ -33,7 +32,6 @@ import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
@@ -50,7 +48,6 @@ import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.math.min
 
 
 internal object NotebookHighlightingUtilityObject {
@@ -146,25 +143,16 @@ internal object NotebookHighlightingUtilityObject {
     fun resetSessionMetaInformation(vFile: VirtualFile, project: Project, wouldShowNotification: Boolean = true) {
         if (project.isDisposed) return
 
-        val cellOrdinal = invokeAndWaitIfNeeded {
-            FileEditorManager.getInstance(project).getSelectedEditor(vFile)?.safeAs<TextEditor>()?.let {
-                val editor = it.editor
-                val document = editor.document
-                val pos = editor.caretModel.logicalPosition
-                val cell = editor.getCell(min(pos.line, document.lineCount - 1))
-                cell.ordinal
-            }
-        }
         LOG.info("Resetting session meta information")
         val backedFile = vFile.toBackedNotebookFile()
 
         val hlManager = highlightingManagerFor(project, vFile)
 
+        if (project.isDisposed) return
         val (psiFile, cells) = runReadAction {
             val psiFile = vFile.toPsiFile(project)
             val cells = psiFile?.getNotebookCellList()
-
-            hlManager?.dataController?.invalidateStateAfterCellExecution(cellOrdinal)
+            hlManager?.dataController?.invalidateStateAfterCellExecution(null)
             val injectedManager = InjectedLanguageManager.getInstance(project)
             psiFile?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
             cells?.forEach {
@@ -186,12 +174,14 @@ internal object NotebookHighlightingUtilityObject {
                 .showKernelRestart(project)
         }
 
-        invokeAndWaitIfNeeded { // we want to ensure that this part will be executed on the dispatch thread
+        runInEdt { // we want to ensure that this part will be executed on the dispatch thread
+            if (project.isDisposed) return@runInEdt
+
             LOG.info("Requesting restart of scripting support after session restart")
             hlManager?.beforeScriptingUpdate()
-                ?:
             JupyterKtScriptingSupport.update(project)
         }
+        if (project.isDisposed) return
         runReadAction {
             hlManager?.let { manager ->
                 manager.resetCaretListenerState()
@@ -199,7 +189,9 @@ internal object NotebookHighlightingUtilityObject {
                     cells?.indices?.toList() ?: listOf()
                 )
             }
-            psiFile?.restartAnalyzing()
+            if (psiFile != null) {
+                NotebookHighlightingRestarter.scheduleRegularUpdateNoChecks(psiFile, delayDelta = 2000)
+            }
         }
     }
 

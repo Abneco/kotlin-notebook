@@ -149,6 +149,7 @@ class KotlinInProcessJupyterClient(
         val project = kernelHandler.project
 
         resetSessionMetaInformation(notebookFile.file, project)
+        if (project.isDisposed) return
         JupyterRuntimeService.getInstance(project).clearRuntime(notebookFile.file)
         removeSession(kernelHandler.kernelId)
     }
