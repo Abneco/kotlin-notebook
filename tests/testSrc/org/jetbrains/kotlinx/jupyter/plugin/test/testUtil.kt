@@ -126,7 +126,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
                 .create(NotebookCellLines.get(document).intervals[cellNumber])
             val task =
                 JupyterExecutionTask(
-                    code = cell.source.text,
+                    source = cell.source.text,
                     options = JupyterExecutionTask.Options.cellExecution(cellPointer),
                     onError = { ex: Exception ->
                         endExceptionally(AssertionError("Notebook execution was not successful", ex))
