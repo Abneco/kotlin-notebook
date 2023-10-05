@@ -45,6 +45,7 @@ class KotlinKernelProcessHandler(
             override fun processTerminated(event: ProcessEvent) {
                 LOG.debug("Kernel process terminated with code ${event.exitCode} (${event.text})")
                 eventDispatcher.multicaster.kernelTerminated(KotlinKernelProcessEventImpl(event))
+                eventDispatcher.listeners.clear()
             }
 
             override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
@@ -72,11 +73,6 @@ class KotlinKernelProcessHandler(
 
     override fun canStopKernel(): Boolean {
         return !isProcessTerminated && !isProcessTerminating
-    }
-
-    override fun destroyProcessImpl() {
-        super.destroyProcessImpl()
-        eventDispatcher.listeners.clear()
     }
 
     override fun stopKernel() {
