@@ -10,6 +10,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookE
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterExecutionState
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 
@@ -22,36 +25,48 @@ class NotebookCellExecutionHighlightingHelper(
         private val cellToHighlightLimit: Int = Runtime.getRuntime().availableProcessors() / 2 - 1
     }
 
+    private val jupyterNotebookSession get() = JupyterRuntimeService.getInstance(project).getSession(notebookFile.file)
     private val dataLock = ReentrantReadWriteLock()
-    // nullable?
+
     private val lastExecutedIndexes = mutableSetOf<Int>()
     private val highlightingOrder = mutableSetOf<Int>()
 
-    fun getLastExecutedCellsBatch(): Set<Int>
-            = dataLock.read { lastExecutedIndexes.let { set ->
-                set.ifEmpty { return@read mutableSetOf() }
-        if (set.size < cellToHighlightLimit) set else set.take(cellToHighlightLimit).toSet()
-    } }
+    fun getLastExecutedCellsBatch(): Set<Int> = dataLock.read { lastExecutedIndexes.let { set ->
+        set.ifEmpty { return@read mutableSetOf() }
+        if (set.size < cellToHighlightLimit)
+            set
+        else
+            set.take(cellToHighlightLimit).toSet()
+      }
+    }
 
+    private fun reduceAfterExecutionTargets(completedElements: Set<Int>?): MutableSet<Int> =
+        dataLock.withWriteLock {
+            lastExecutedIndexes.removeIf { completedElements?.contains(it) == true }
+            lastExecutedIndexes
+        }
+
+    private fun expandAfterExecutionTargets(completedElements: Set<Int>?,
+                                            currentToHLQueue: MutableSet<Int>?): MutableSet<Int>? {
+        val currentTargets = dataLock.withReadLock { lastExecutedIndexes }
+        currentToHLQueue?.removeIf { !currentTargets.contains(it) }
+        val updated = completedElements?.let {
+            dataLock.withWriteLock {
+                lastExecutedIndexes.addAll(completedElements)
+                lastExecutedIndexes
+            }
+        }
+
+        LOG.debug("Completed elements: $completedElements, after execution data: ${updated}")
+        return updated
+    }
 
     fun daemonFinished(completedElements: Set<Int>?,
                        currentToHLQueue: MutableSet<Int>?,
                        canModifyRequests: Boolean): Boolean {
-        val remainingData = if (canModifyRequests) {
-            dataLock.withWriteLock {
-                lastExecutedIndexes.removeIf { completedElements?.contains(it) == true }
-                lastExecutedIndexes
-            }
-        } else dataLock.withReadLock { lastExecutedIndexes }
-            .let { execRequests ->
-                currentToHLQueue?.removeIf { !execRequests.contains(it) }
-                val updated = completedElements?.let { dataLock.withWriteLock {
-                    lastExecutedIndexes.addAll(completedElements)
-                    lastExecutedIndexes}
-                }
-                LOG.debug("Completed elements: $completedElements, after execution data: ${updated}")
-                updated
-            }
+        val remainingData = if (canModifyRequests && !jupyterNotebookSession.isKernelBusy()) {
+            reduceAfterExecutionTargets(completedElements)
+        } else expandAfterExecutionTargets(completedElements, currentToHLQueue)
 
         return remainingData.isNullOrEmpty()
     }
@@ -82,6 +97,8 @@ class NotebookCellExecutionHighlightingHelper(
 
     }
 
+    private fun JupyterNotebookSession?.isKernelBusy(): Boolean =
+        if (this == null) false else kernelClient.executionState == JupyterExecutionState.BUSY
 
     private fun updateMetaStorageForHL(project: Project, file: BackedNotebookVirtualFile, index: Int) {
         NotebookHighlightingService.getForFile(project, file)

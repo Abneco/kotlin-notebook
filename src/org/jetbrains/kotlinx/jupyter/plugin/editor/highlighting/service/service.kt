@@ -9,8 +9,8 @@ import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
@@ -47,6 +47,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Service(Service.Level.PROJECT)
@@ -152,9 +153,7 @@ class NotebookHighlightingManager(
     private val remainingIndexesToProcess: Set<Int>
         get() = targetIndexes - finishedHighlighting
 
-    fun isCanModifyHLRequestAfterExecution(project: Project): Boolean =
-        dataController.notebookCellsUpdatesAllowedToChange.get() == true
-                && !JupyterKtScriptingSupport.isInTheTransaction(project)
+    private val unrecognizedFiles: ConcurrentLinkedDeque<PsiFile> = ConcurrentLinkedDeque()
 
     private val canModifyAfterExecutionRequests = AtomicBoolean(false)
 
@@ -196,6 +195,7 @@ class NotebookHighlightingManager(
                 } ?: finishedFiles.add(ind)
             }
         }
+        unrecognizedFiles.clear()
         this.completeRangeInd = completeRangeInd
     }
 
@@ -216,6 +216,11 @@ class NotebookHighlightingManager(
             targetErrorHighlighters.clear()
         }
     }
+
+    private fun Collection<PsiFile>.toCellsIndexes(manager: InjectedLanguageManager) =
+        jupyterPsiFile?.getNotebookCellList()?.let { cells ->
+            mapNotNull { injected -> cells.indexOf(manager.getInjectionHost(injected)) }
+        }
 
     fun resetCaretListenerState() {
         activeCaretListener?.resetState()
@@ -254,20 +259,22 @@ class NotebookHighlightingManager(
 
     fun finishedAnalysisForFile(psiFile: PsiFile, holder: HighlightInfoHolder) {
         val ind = fileToInjectionData[psiFile]?.second
+        if (ind == null) {
+            unrecognizedFiles.add(psiFile)
+            finishedFiles.clear()
+            LOG.warn("Seen unrecognized file, will redo")
+            return
+        }
         finishedFiles.addIfNotNull(ind)
         if (psiFile != targetPsiFile || !holder.hasErrorResults()) {
-            invokeLater {
-                ind?.let {
-                    knownErrorInd[it]?.forEach { oldError ->
-                        oldError.dispose()
-                    }
+            runInEdt {
+                knownErrorInd[ind]?.forEach { oldError ->
+                    oldError.dispose()
                 }
             }
             return
         }
-        ind?.let {
-            knownErrorInd.putIfAbsent(it, mutableSetOf())
-        }
+        knownErrorInd.putIfAbsent(ind, mutableSetOf())
     }
 
     // returns true if all updates are processed
@@ -302,8 +309,13 @@ class NotebookHighlightingManager(
            LOG.debug("Daemon finished, knownErrorInd: ${knownErrorInd.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
         }
 
+        val manager = InjectedLanguageManager.getInstance(editor.project!!)
+        val seenNewFiles = unrecognizedFiles.isNotEmpty()
+        if (seenNewFiles) {
+            queue?.addAll(unrecognizedFiles.toCellsIndexes(manager) ?: emptyList())
+        }
         val remaining = remainingIndexesToProcess
-        val isLeft = remaining.isNotEmpty()
+        val isLeft = remaining.isNotEmpty() || seenNewFiles
 
         if (isLeft || !executionRequestsDone) {
             psiFile?.let {
