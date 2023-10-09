@@ -24,6 +24,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.jupyter.editor.getJupyterVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
+import java.awt.event.ActionEvent
+import javax.swing.AbstractAction
+import javax.swing.Action
 import javax.swing.JComponent
 import javax.swing.ListSelectionModel
 
@@ -78,10 +81,16 @@ class KotlinNotebookSelectModulesAction : KotlinNotebookSelectDependenciesAction
             tree, initialSettings,
             KotlinNotebookBundle.message("kotlin.jupyter.dialog.select.modules.title", notebookName),
             KotlinNotebookBundle.message("kotlin.jupyter.dialog.select.all.modules.checkbox"),
-            "kotlin.jupyter.select.modules.dialog"
-        ) {
-            KotlinNotebookDependencies.fromModules(tree.getSelectedItems())
-        }
+            "kotlin.jupyter.select.modules.dialog",
+            tree.allNodesChecked(),
+            {
+                KotlinNotebookDependencies.fromModules(tree.getSelectedItems())
+            },
+            { checked ->
+                tree.setChecked(checked)
+                tree.repaint()
+            }
+        )
     }
 }
 
@@ -110,10 +119,16 @@ class KotlinNotebookSelectLibrariesAction : KotlinNotebookSelectDependenciesActi
             list, initialSettings,
             KotlinNotebookBundle.message("kotlin.jupyter.dialog.select.libraries.title", notebookName),
             KotlinNotebookBundle.message("kotlin.jupyter.dialog.select.all.libraries.checkbox"),
-            "kotlin.jupyter.select.libraries.dialog"
-        ) {
-            KotlinNotebookDependencies.fromLibraries(allLibraries.filter { list.isItemSelected(it) })
-        }
+            "kotlin.jupyter.select.libraries.dialog",
+            initialLibraries.size == allLibraries.size,
+            {
+                KotlinNotebookDependencies.fromLibraries(allLibraries.filter { list.isItemSelected(it) })
+            },
+            { checked ->
+                allLibraries.forEach { list.setItemSelected(it, checked) }
+                list.repaint()
+            }
+        )
     }
 }
 
@@ -123,7 +138,9 @@ private fun showSelectionDialog(
     @NlsContexts.DialogTitle dialogTitle: String,
     @NlsContexts.Checkbox checkboxText: String,
     dimensionKey: String,
-    getSelectedDependencies: () -> KotlinNotebookDependencies
+    allCheckBoxesSelected: Boolean,
+    getSelectedDependencies: () -> KotlinNotebookDependencies,
+    selectAll: (Boolean) -> Unit,
 ): KotlinNotebookDependencies? {
     component.isEnabled = initialSettings != KotlinNotebookDependencies.All
 
@@ -140,6 +157,7 @@ private fun showSelectionDialog(
                 .addToCenter(ScrollPaneFactory.createScrollPane(component))
                 .addToBottom(allCheckbox)
         )
+        .addLeftSideAction(ToggleCheckBoxesAction(!allCheckBoxesSelected, selectAll))
         .dimensionKey(dimensionKey)
         .showAndGet()
 
@@ -147,4 +165,32 @@ private fun showSelectionDialog(
         return if (allCheckbox.isSelected) KotlinNotebookDependencies.All else getSelectedDependencies()
     }
     return null
+}
+
+class ToggleCheckBoxesAction(
+    initialState: Boolean = false,
+    private val selector: (Boolean) -> Unit
+): AbstractAction() {
+    private var shouldSelect = initialState
+
+    init {
+        updateName()
+    }
+
+    override fun actionPerformed(e: ActionEvent?) {
+        selector(shouldSelect)
+        shouldSelect = !shouldSelect
+        updateName()
+    }
+
+    private fun updateName() {
+        putValue(
+            Action.NAME,
+            if (shouldSelect) {
+                KotlinNotebookBundle.message("kotlin.jupyter.settings.dependencies.select.all")
+            } else {
+                KotlinNotebookBundle.message("kotlin.jupyter.settings.dependencies.deselect.all")
+            }
+        )
+    }
 }

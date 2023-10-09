@@ -21,21 +21,39 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.getSuitableModules
 import javax.swing.JTree
 import javax.swing.tree.DefaultTreeModel
 
-internal fun buildModuleTree(project: Project, initialModules: Set<Module>): CheckboxTree {
-    val moduleGrouper = ModuleGrouper.instanceFor(project)
-    val rootNode = CheckedTreeNode(null)
-
-    val tree = object : CheckboxTree(
-        ModuleCheckboxRenderer(moduleGrouper), rootNode,
-        CheckPolicy(true, true, false, false)
-    ) {
-        override fun setEnabled(enabled: Boolean) {
-            super.setEnabled(enabled)
-            TreeUtil.treeNodeTraverser(rootNode).traverse().forEach {
-                (it as? CheckedTreeNode)?.isEnabled = enabled
-            }
+class ModuleTree(
+    moduleGrouper: ModuleGrouper,
+    val rootNode: CheckedTreeNode = CheckedTreeNode(null),
+): CheckboxTree(
+    ModuleCheckboxRenderer(moduleGrouper), rootNode,
+    CheckPolicy(true, true, false, false)
+) {
+    override fun setEnabled(enabled: Boolean) {
+        super.setEnabled(enabled)
+        TreeUtil.treeNodeTraverser(rootNode).traverse().forEach {
+            (it as? CheckedTreeNode)?.isEnabled = enabled
         }
     }
+
+    fun setChecked(checked: Boolean) {
+        TreeUtil.treeNodeTraverser(rootNode).traverse().forEach {
+            (it as? CheckedTreeNode)?.isChecked = checked
+        }
+    }
+
+    fun allNodesChecked(): Boolean {
+        return TreeUtil.treeNodeTraverser(rootNode).traverse().all {
+            val node = it as? CheckedTreeNode ?: return@all true
+            // All leaf nodes should be checked
+            node.childCount > 0 || node.isChecked
+        }
+    }
+}
+
+internal fun buildModuleTree(project: Project, initialModules: Set<Module>): ModuleTree {
+    val moduleGrouper = ModuleGrouper.instanceFor(project)
+
+    val tree = ModuleTree(moduleGrouper)
 
     val grouping = ModuleGroupingTreeHelper.createDefaultGrouping(moduleGrouper)
     val treeHelper = ModuleGroupingTreeHelper.forEmptyTree(true,
@@ -47,7 +65,7 @@ internal fun buildModuleTree(project: Project, initialModules: Set<Module>): Che
                                                                }
                                                            },
                                                            compareBy(NaturalComparator.INSTANCE) { it.userObject.toString() })
-    treeHelper.createModuleNodes(getSuitableModules(project), rootNode, tree.model as DefaultTreeModel)
+    treeHelper.createModuleNodes(getSuitableModules(project), tree.rootNode, tree.model as DefaultTreeModel)
 
     return tree
 }
