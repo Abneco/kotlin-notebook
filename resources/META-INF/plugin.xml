@@ -225,6 +225,9 @@
                 order="before default"
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.ManagedKotlinNotebookServerRunner"/>
         <connections.execution.notebookPathProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinNotebookPathProvider"/>
+        <csvDropHandler
+                id="KotlinCsvDropHandler"
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.dnd.KotlinCsvDropHandler"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlinx.jupyter.plugin">
