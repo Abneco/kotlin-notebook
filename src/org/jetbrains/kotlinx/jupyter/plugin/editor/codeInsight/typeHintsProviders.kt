@@ -136,7 +136,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
             private val injectedLanguageManager = InjectedLanguageManager.getInstance(file.project)
 
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
-                if (file.project.service<DumbService>().isDumb) return true
+                if (DumbService.getInstance(file.project).isDumb) return true
                 if (element is KtFile) return defaultCollector?.collect(element, editor, sink) ?: true
                 if (element !is JupyterPsiCellImpl) return true
                 ProgressManager.checkCanceled()
