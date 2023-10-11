@@ -7,10 +7,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.SettingsCategory
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.openapi.editor.EditorFactory
-import com.intellij.openapi.editor.ex.EditorEx
-import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.editor.JupyterNotebookGutterManager
 import java.util.EventListener
 
 @Service
@@ -25,35 +21,21 @@ class KotlinNotebookApplicationOptionsProvider :
         Listener::class.java
     ), Disposable
 {
-    init {
-        addListener(object : Listener {
-            override fun onShowExecutionCountChanged() {
-                refreshEditors()
-            }
-        }, this)
-    }
 
     var shouldShowExecutionCount by prop(State::shouldShowExecutionCount).onChange(Listener::onShowExecutionCountChanged)
+    var shouldShowFoldings by prop(State::shouldShowFoldings).onChange(Listener::onShowFoldings)
 
     class State : BaseState() {
         var shouldShowExecutionCount by property(true)
+        var shouldShowFoldings by property(true)
     }
 
     interface Listener : EventListener {
         fun onShowExecutionCountChanged() {}
+
+        fun onShowFoldings(oldValue: Boolean, newValue: Boolean) {}
     }
 
     override fun dispose() {
-    }
-
-    companion object {
-        private fun refreshEditors() {
-            EditorFactory.getInstance().allEditors.forEach {
-                if (it.isKotlinNotebook) {
-                    JupyterNotebookGutterManager.putHighlighters(it as EditorEx)
-                    it.component.repaint()
-                }
-            }
-        }
     }
 }

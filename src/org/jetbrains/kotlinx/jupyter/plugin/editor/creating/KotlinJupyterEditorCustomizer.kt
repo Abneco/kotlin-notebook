@@ -9,9 +9,10 @@ import com.intellij.openapi.editor.colors.EditorColorsListener
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.reactOnThemeChangedEvent
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterEditorCustomizer
@@ -21,7 +22,9 @@ class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
     override fun onEditorCreated(project: Project, editor: Editor, virtualFile: BackedNotebookVirtualFile) {
         if (!virtualFile.file.isKotlinNotebook) return
 
-        editor.putUserData(FoldingUpdate.INJECTED_CODE_FOLDING_ENABLED, false)
+        val options = KotlinNotebookApplicationOptions.get()
+        editor.putUserData(FoldingUpdate.INJECTED_CODE_FOLDING_ENABLED, options.shouldShowFoldings)
+
         if (editor.isJupyter) {
             val compilerService = JupyterCompilerService.getInstance(project)
             val parentDisposable: Disposable = (editor as? EditorImpl)?.disposable ?: compilerService

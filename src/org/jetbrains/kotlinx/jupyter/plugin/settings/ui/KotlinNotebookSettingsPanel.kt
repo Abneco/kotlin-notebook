@@ -23,7 +23,7 @@ import com.intellij.util.execution.ParametersListUtil
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.SessionOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isSuitableForStartingKernel
@@ -35,7 +35,7 @@ object KotlinNotebookSettingsPanel {
         project: Project,
         parentDisposable: Disposable,
     ): DialogPanel {
-        val applicationOptions = service<KotlinNotebookApplicationOptionsProvider>()
+        val applicationOptions = KotlinNotebookApplicationOptions.get()
         val sessionOptions = service<SessionOptionsProvider>()
         val projectOptions = KotlinNotebookProjectOptionsProvider.getInstance(project)
 
@@ -57,6 +57,7 @@ object KotlinNotebookSettingsPanel {
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.appearance")) {
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.should.show.execution.count"), applicationOptions::shouldShowExecutionCount)
+                singleRowCheckBox(KotlinNotebookBundle.message("checkbox.should.show.foldable.regions"), applicationOptions::shouldShowFoldings)
             }
         }
     }

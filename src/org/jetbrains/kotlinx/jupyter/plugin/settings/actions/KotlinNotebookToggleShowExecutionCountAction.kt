@@ -5,18 +5,17 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.ToggleAction
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAware
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptionsProvider
 
 class KotlinNotebookToggleShowExecutionCountAction : ToggleAction(), DumbAware {
     override fun isSelected(e: AnActionEvent): Boolean {
-        return service<KotlinNotebookApplicationOptionsProvider>().shouldShowExecutionCount
+        return KotlinNotebookApplicationOptions.get().shouldShowExecutionCount
     }
 
     override fun setSelected(e: AnActionEvent, state: Boolean) {
-        service<KotlinNotebookApplicationOptionsProvider>().shouldShowExecutionCount = state
+        KotlinNotebookApplicationOptions.get().shouldShowExecutionCount = state
     }
 
     override fun update(e: AnActionEvent) {
