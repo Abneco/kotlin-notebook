@@ -98,8 +98,10 @@ class NotebookHighlightingManager(
         private val LOG = thisLogger()
 
         data class InjectedFileData(
+            val notebookCellIndex: Int,
             val file: KtFile,
             val ktFileRange: TextRange,
+            val injectionHost: PsiLanguageInjectionHost,
             val injectionHostOffset: Int,
             val injectedTokens: Collection<TokenInfo>
         ) {
@@ -153,8 +155,7 @@ class NotebookHighlightingManager(
         initialiseData(projectService.project)
     }
 
-    private val fileToInjectionData: MutableMap<KtFile, Pair<PsiLanguageInjectionHost, Int>> = mutableMapOf()
-    private val fileToTotalInjectedTokensData = ConcurrentHashMap<KtFile, InjectedFileData>()
+    private val fileToInjectionData = ConcurrentHashMap<KtFile, InjectedFileData>()
 
     private var targetPsiFile: PsiFile? = null
     private var activeCaretListener: NotebookCaretListener? = null
@@ -163,7 +164,7 @@ class NotebookHighlightingManager(
     private val targetErrorHighlighters = ConcurrentCollectionFactory.createConcurrentSet<RangeHighlighter>()
     private val knownErrorInd = ConcurrentHashMap<Int, MutableSet<RangeHighlighter>>()
     private val targetIndexes: Set<Int>
-        get() = fileToInjectionData.values.mapTo(mutableSetOf()) { it.second }
+        get() = fileToInjectionData.mapTo(mutableSetOf()) { it.value.notebookCellIndex }
     val finishedHighlighting: Set<Int>
         get() = finishedFiles - (knownErrorInd.keys - (completeRangeInd ?: -1))
 
@@ -180,7 +181,7 @@ class NotebookHighlightingManager(
 
     fun tryGetKnownHostFor(file: PsiFile): PsiLanguageInjectionHost? {
         if (file !is KtFile) return null
-        return fileToInjectionData.getOrElse(file, defaultValue = { null })?.first
+        return fileToInjectionData.getOrElse(file, defaultValue = { null })?.injectionHost
     }
 
     fun isFileTarget(file: PsiFile): Boolean {
@@ -210,11 +211,12 @@ class NotebookHighlightingManager(
                         return@forEach
                     }
                     injected.firstOrNull { f -> f.first is KtFile }?.first?.let { ktFile ->
-                        fileToInjectionData[ktFile as KtFile] = it to ind
                         val ktFileRange = manager.injectedToHost(ktFile, ktFile.textRange)
-                        fileToTotalInjectedTokensData[ktFile] = InjectedFileData(
+                        fileToInjectionData[ktFile as KtFile] = InjectedFileData(
+                            ind,
                             ktFile,
                             ktFileRange,
+                            it,
                             it.startOffset,
                             InjectedLanguageUtilBase.getHighlightTokens(ktFile).filter {
                                 it.type != WHITE_SPACE
@@ -232,7 +234,6 @@ class NotebookHighlightingManager(
     private fun clearState(complete: Boolean = false) {
         targetPsiFile = null
         fileToInjectionData.clear()
-        fileToTotalInjectedTokensData.clear()
         finishedFiles.clear()
         activeCaretListener = null
         if (complete) {
@@ -291,16 +292,17 @@ class NotebookHighlightingManager(
     }
 
     fun finishedAnalysisForFile(psiFile: PsiFile, holder: HighlightInfoHolder) {
-        val ind = fileToInjectionData[psiFile]?.second
+        val ind = fileToInjectionData[psiFile]?.notebookCellIndex
         if (ind == null) {
             unrecognizedFiles.add(psiFile)
-            finishedFiles.clear()
-            LOG.warn("Seen unrecognized file, will redo")
+            //finishedFiles.clear()
+            //dataController.notebookRangesQueuedForHL?.addAll(targetIndexes)
+            LOG.debug("Seen unrecognized file, will redo")
             return
         }
 
         if (!isCanModifyHLRequests(psiFile.project)) {
-            LOG.warn("Not allowed to change $ind, will redo")
+            LOG.debug("Not allowed to change $ind, will redo")
             return
         }
         finishedFiles.addIfNotNull(ind)
@@ -341,22 +343,21 @@ class NotebookHighlightingManager(
     }
 
     private fun determineHighlightedFiles(markupModel: MarkupModelEx) {
-        fileToTotalInjectedTokensData.forEach { (ktFile, data) ->
+        fileToInjectionData.forEach { (ktFile, data) ->
             val range = data.ktFileRange
-            val hostOffset = data.injectionHostOffset
             if (ktFile.text.isBlank()) return@forEach
             data.processedTokens.set(0)
             val seenHighlighters = mutableSetOf<RangeHighlighter>()
-            // need to filter quotes
+
             markupModel.processRangeHighlightersOverlappingWith(range.startOffset, range.endOffset) {
                 if (it.layer == 1998 && (it.errorStripeTooltip as? HighlightInfo)?.text?.isNotBlank() == true && seenHighlighters.add(it)) {
                     data.processedTokens.incrementAndGet()
                 }
                 true
             }
-            // comment if not needed
+
             if (data.processedTokens.get() /2 < data.totalTokens) {
-                finishedFiles.remove(fileToInjectionData[ktFile]!!.second)
+                finishedFiles.remove(data.notebookCellIndex)
             }
         }
     }
