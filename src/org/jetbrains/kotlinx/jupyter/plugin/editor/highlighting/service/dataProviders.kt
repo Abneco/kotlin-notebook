@@ -151,7 +151,7 @@ class NotebookPerFileHighlightingMetaDataController(
 
     @Suppress("UNCHECKED_CAST")
     override val notebookRangesQueuedForHL: MutableSet<Int>?
-        get() = (dataStorage[KeysValues.RangesQueuedForHL] as? MutableSet<Int>)?.ifEmpty { return null }
+        get() = (dataStorage[KeysValues.RangesQueuedForHL] as? MutableSet<Int>)
 
     @Suppress("UNCHECKED_CAST")
     override val notebookDocumentTargetRanges: MutableSet<Int>?

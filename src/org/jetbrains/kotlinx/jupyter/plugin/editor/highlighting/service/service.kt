@@ -17,6 +17,7 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
+import com.intellij.openapi.editor.ex.MarkupModelEx
 import com.intellij.openapi.editor.ex.RangeHighlighterEx
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.editor.impl.event.MarkupModelListener
@@ -24,9 +25,14 @@ import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
+import com.intellij.psi.TokenType.WHITE_SPACE
+import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtilBase
+import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtilBase.TokenInfo
+import com.intellij.refactoring.suggested.startOffset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -49,6 +55,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 @Service(Service.Level.PROJECT)
 class NotebookHighlightingService(val project: Project): Disposable {
@@ -89,6 +96,16 @@ class NotebookHighlightingManager(
 ): Disposable {
     companion object {
         private val LOG = thisLogger()
+
+        data class InjectedFileData(
+            val file: KtFile,
+            val ktFileRange: TextRange,
+            val injectionHostOffset: Int,
+            val injectedTokens: Collection<TokenInfo>
+        ) {
+            val totalTokens = injectedTokens.size
+            val processedTokens = AtomicInteger(0)
+        }
     }
 
     val dataController = NotebookPerFileHighlightingMetaDataController(
@@ -137,11 +154,11 @@ class NotebookHighlightingManager(
     }
 
     private val fileToInjectionData: MutableMap<KtFile, Pair<PsiLanguageInjectionHost, Int>> = mutableMapOf()
-    private var targetPsiFile: PsiFile? = null
+    private val fileToTotalInjectedTokensData = ConcurrentHashMap<KtFile, InjectedFileData>()
 
+    private var targetPsiFile: PsiFile? = null
     private var activeCaretListener: NotebookCaretListener? = null
     private lateinit var activeMarkupModelListener: MarkupModelListener
-
     private val finishedFiles = mutableSetOf<Int>()
     private val targetErrorHighlighters = ConcurrentCollectionFactory.createConcurrentSet<RangeHighlighter>()
     private val knownErrorInd = ConcurrentHashMap<Int, MutableSet<RangeHighlighter>>()
@@ -155,6 +172,10 @@ class NotebookHighlightingManager(
 
     private val unrecognizedFiles: ConcurrentLinkedDeque<PsiFile> = ConcurrentLinkedDeque()
 
+    fun isCanModifyHLRequests(project: Project): Boolean =
+        !JupyterKtScriptingSupport.isInTheTransaction(project)
+
+    // Basically, that's just a replication of what isInTransaction can yield
     private val canModifyAfterExecutionRequests = AtomicBoolean(false)
 
     fun tryGetKnownHostFor(file: PsiFile): PsiLanguageInjectionHost? {
@@ -163,7 +184,7 @@ class NotebookHighlightingManager(
     }
 
     fun isFileTarget(file: PsiFile): Boolean {
-       return file == targetPsiFile
+        return file == targetPsiFile
     }
 
     fun associateWithNewCaretListener(listener: NotebookCaretListener, editor: Editor) {
@@ -190,6 +211,15 @@ class NotebookHighlightingManager(
                     }
                     injected.firstOrNull { f -> f.first is KtFile }?.first?.let { ktFile ->
                         fileToInjectionData[ktFile as KtFile] = it to ind
+                        val ktFileRange = manager.injectedToHost(ktFile, ktFile.textRange)
+                        fileToTotalInjectedTokensData[ktFile] = InjectedFileData(
+                            ktFile,
+                            ktFileRange,
+                            it.startOffset,
+                            InjectedLanguageUtilBase.getHighlightTokens(ktFile).filter {
+                                it.type != WHITE_SPACE
+                            }
+                        )
                         if (ind == completeRangeInd) targetPsiFile = ktFile
                     }
                 } ?: finishedFiles.add(ind)
@@ -202,6 +232,7 @@ class NotebookHighlightingManager(
     private fun clearState(complete: Boolean = false) {
         targetPsiFile = null
         fileToInjectionData.clear()
+        fileToTotalInjectedTokensData.clear()
         finishedFiles.clear()
         activeCaretListener = null
         if (complete) {
@@ -245,7 +276,9 @@ class NotebookHighlightingManager(
     }
 
     fun beforeScriptingUpdate() {
-        dataController.notebookCellsUpdatesAllowedToChange.compareAndSet(true, false)
+        if (canModifyAfterExecutionRequests.get()) {
+            finishedFiles.clear()
+        }
         canModifyAfterExecutionRequests.set(false)
     }
 
@@ -265,6 +298,11 @@ class NotebookHighlightingManager(
             LOG.warn("Seen unrecognized file, will redo")
             return
         }
+
+        if (!isCanModifyHLRequests(psiFile.project)) {
+            LOG.warn("Not allowed to change $ind, will redo")
+            return
+        }
         finishedFiles.addIfNotNull(ind)
         if (psiFile != targetPsiFile || !holder.hasErrorResults()) {
             runInEdt {
@@ -277,6 +315,52 @@ class NotebookHighlightingManager(
         knownErrorInd.putIfAbsent(ind, mutableSetOf())
     }
 
+    private fun determineFilesWithLeftErrors(markupModel: MarkupModelEx, completeIndexTarget: Int?) {
+        val keys = knownErrorInd.filterKeys { it != completeIndexTarget }
+        val toRemove = mutableSetOf<Int>()
+        keys.forEach { entry ->
+            val data = knownErrorInd[entry.key]
+            data?.removeIf {
+                it.layer == -1 || !it.isValid || !markupModel.containsHighlighter(it)
+            }
+            if (data?.isEmpty() == true) toRemove.add(entry.key)
+        }
+
+        completeIndexTarget?.let {
+            knownErrorInd[it]?.addAll(targetErrorHighlighters)
+        }
+        toRemove.forEach { knownErrorInd.remove(it) }
+        val targetPassed = completeIndexTarget in finishedFiles
+
+        knownErrorInd.filter {
+            if (it.key != completeIndexTarget) it.value.isNotEmpty() else !targetPassed
+        }.keys.also { // not yet counted
+            finishedFiles.removeAll(it)
+            LOG.debug("Daemon finished, knownErrorInd: ${knownErrorInd.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
+        }
+    }
+
+    private fun determineHighlightedFiles(markupModel: MarkupModelEx) {
+        fileToTotalInjectedTokensData.forEach { (ktFile, data) ->
+            val range = data.ktFileRange
+            val hostOffset = data.injectionHostOffset
+            if (ktFile.text.isBlank()) return@forEach
+            data.processedTokens.set(0)
+            val seenHighlighters = mutableSetOf<RangeHighlighter>()
+            // need to filter quotes
+            markupModel.processRangeHighlightersOverlappingWith(range.startOffset, range.endOffset) {
+                if (it.layer == 1998 && (it.errorStripeTooltip as? HighlightInfo)?.text?.isNotBlank() == true && seenHighlighters.add(it)) {
+                    data.processedTokens.incrementAndGet()
+                }
+                true
+            }
+            // comment if not needed
+            if (data.processedTokens.get() /2 < data.totalTokens) {
+                finishedFiles.remove(fileToInjectionData[ktFile]!!.second)
+            }
+        }
+    }
+
     // returns true if all updates are processed
     fun daemonFinished(editor: Editor, psiFile: PsiFile?, queue: MutableSet<Int>?, canModifyRequests: Boolean): Boolean {
         val markup = (editor as? EditorEx)?.filteredDocumentMarkupModel ?: return true
@@ -285,29 +369,8 @@ class NotebookHighlightingManager(
             .executionHighlightingHelper
             .daemonFinished(completedIndexes, queue, canModifyRequests)
 
-        val completeInd = completeRangeInd
-        val keys = knownErrorInd.filterKeys { it != completeInd }
-        val toRemove = mutableSetOf<Int>()
-        keys.forEach { entry ->
-            val data = knownErrorInd[entry.key]
-            data?.removeIf {
-                it.layer == -1 || !it.isValid || !markup.containsHighlighter(it)
-            }
-            if (data?.isEmpty() == true) toRemove.add(entry.key)
-        }
-
-        completeInd?.let {
-            knownErrorInd[it]?.addAll(targetErrorHighlighters)
-        }
-        toRemove.forEach { knownErrorInd.remove(it) }
-        val targetPassed = completeInd in finishedFiles
-
-        knownErrorInd.filter {
-                if (it.key != completeInd) it.value.isNotEmpty() else !targetPassed
-        }.keys.also { // not yet counted
-           finishedFiles.removeAll(it)
-           LOG.debug("Daemon finished, knownErrorInd: ${knownErrorInd.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
-        }
+        determineFilesWithLeftErrors(markup, completeRangeInd)
+        determineHighlightedFiles(markup)
 
         val manager = InjectedLanguageManager.getInstance(editor.project!!)
         val seenNewFiles = unrecognizedFiles.isNotEmpty()

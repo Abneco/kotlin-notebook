@@ -86,7 +86,7 @@ internal object NotebookHighlightingUtilityObject {
             val manager = ScriptDefinitionsManager.getInstance(file.project)
             var isReady = manager.isReady()
             while (!isReady) {
-              delay(delayDelta)
+                delay(delayDelta)
                 isReady = manager.isReady()
             }
             readAction {
@@ -223,14 +223,16 @@ class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
             ?: injectedManager.getInjectionHost(injectedFile) ?: return false
 
         isShouldHighlightErrors = highlightingManager?.isFileTarget(injectedFile)
-            ?: run { // a bit heavy, avoid, if possible
-                completeAnalysisRange = NotebookHighlightingUtilityObject.getCompleteAnalysisRangeForWholeNotebook(injectedFile)
-                completeAnalysisRange?.contains(targetHost.textRange) ?:
-                (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange!!, targetHost.textRange))
-            }
-
+            ?: checkIfHostIsTargetManually()
 
         return true
+    }
+
+    private fun checkIfHostIsTargetManually(): Boolean {
+        completeAnalysisRange = NotebookHighlightingUtilityObject.getCompleteAnalysisRangeForWholeNotebook(injectedFile)
+        return completeAnalysisRange?.contains(targetHost.textRange)
+                ?:
+            (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange!!, targetHost.textRange))
     }
 
     val isCurrentFileTarget: Boolean get() = isShouldHighlightErrors

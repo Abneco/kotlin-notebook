@@ -206,7 +206,7 @@ class NotebookCaretStateProcessor(
             val finished = notebookHighlightingManager?.finishedHighlighting
             val target = notebookHighlightingManager?.completeRangeInd
             // we don't want to lose any updates happened during concurrent modification or delay
-            val isCanModifyHLRequests = notebookHighlightingManager?.isCanModifyHLRequestAfterExecution(project) == true
+            val isCanModifyHLRequests = notebookHighlightingManager?.isCanModifyHLRequests(project) == true
             if (queue != null && !finished.isNullOrEmpty() && isCanModifyHLRequests) {
                 queue.removeAll(finished)
             }
