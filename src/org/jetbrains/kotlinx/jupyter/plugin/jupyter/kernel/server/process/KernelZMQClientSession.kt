@@ -8,7 +8,6 @@ import kotlinx.serialization.json.jsonObject
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.api.libraries.rawMessageCallback
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.IdeaJupyterSocketManager
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
 import org.jetbrains.kotlinx.jupyter.plugin.util.toJacksonJson
 import org.jetbrains.kotlinx.jupyter.plugin.util.toKotlinSerializationJson
@@ -75,7 +74,7 @@ class KernelZMQClientSession(
 
         val mainClientThread = thread(name = "Main Kernel ZMQ client thread") {
             val childThreads = buildList {
-                JupyterSocketType.values().forEach { socketType ->
+                JupyterSocketType.entries.forEach { socketType ->
                     val socket = socketManager.fromSocketType(socketType)
 
                     addMessageCallback(

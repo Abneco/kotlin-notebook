@@ -1,8 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
+package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.closeSafely
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocket
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketInfo
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketManagerBase
@@ -23,7 +22,7 @@ class IdeaJupyterSocketManager(private val kernelConfig: KernelConfig): JupyterS
         return socket
     }
 
-    private val sockets = JupyterSocketInfo.values().associate { it.type to openSocket(it).apply { connect() } }
+    private val sockets = JupyterSocketInfo.entries.associate { it.type to openSocket(it).apply { connect() } }
 
     override fun fromSocketType(type: JupyterSocketType): JupyterSocket {
         return sockets[type] ?: throw IllegalArgumentException("Unsupported socket type: $type")

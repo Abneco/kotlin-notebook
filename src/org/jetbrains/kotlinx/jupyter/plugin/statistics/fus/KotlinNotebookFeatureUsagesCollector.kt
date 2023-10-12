@@ -192,7 +192,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
 
         @JvmStatic private val OUTPUT_UPDATED_EVENT = GROUP.registerEvent(
             "output.updated",
-            EventFields.StringList("output_types", OutputType.values().map { it.toString() })
+            EventFields.StringList("output_types", OutputType.entries.map { it.toString() })
         )
 
         fun registerOutputUpdated(project: Project, output: JupyterOutput) {
