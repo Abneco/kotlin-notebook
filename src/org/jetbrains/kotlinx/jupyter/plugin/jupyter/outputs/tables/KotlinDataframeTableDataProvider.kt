@@ -1,6 +1,8 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables
 
+import com.fasterxml.jackson.core.JsonFactory
+import com.fasterxml.jackson.core.StreamReadConstraints
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
@@ -43,7 +45,15 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
         if (!isSwingUiEnabledForKotlinDataframe) return null
         if (serializedData == null || !isFormatSupported(serializedData)) return null
 
-        return KotlinDataFrameProvider()
+        val jsonFactory = JsonFactory()
+        jsonFactory.setStreamReadConstraints(
+            StreamReadConstraints.builder()
+                .maxStringLength(Int.MAX_VALUE)
+                .build()
+        )
+        val mapper = ObjectMapper(jsonFactory)
+
+        return KotlinDataFrameProvider(mapper)
     }
 
     private fun isFormatSupported(serializedData: String): Boolean {
