@@ -108,7 +108,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     ): String {
         if (columns.isEmpty()) return tableVariable
 
-        require(columns.all { it.isNotBlank() })
+        if (columns.all { it.isBlank() }) return tableVariable
 
         val kotlinDataframeSortKeys = sortKeys
             .map {
@@ -135,6 +135,18 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         val rawJson = extractRawJson(text)
 
         val rows = extractDatasetRows(rawJson)
+        if (rows.isEmpty()) {
+            val columnNames = rawJson[columnsField].map { it.asText() }.ifEmpty { listOf(" ") }
+            return DSDataFrameInfo(
+                0,
+                0,
+                columnNames,
+                emptyList(),
+                DSTableBundle.message("ds.table.dimensions.info", 0, 0),
+                hierarchyRoot = createRoot(columnNames)
+            )
+        }
+
         val firstRowJson = mapper.readTree(rows[0])
 
         val root = extractHierarchy(firstRowJson)
@@ -161,7 +173,9 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     }
 
     private fun extractDatasetRows(rawJson: JsonNode): List<String> {
-        val rawRows = asConcatenatedRows(rawJson[serializedDataframeField])
+        val dataframeNode = rawJson[serializedDataframeField]
+        if (dataframeNode.isEmpty) return emptyList()
+        val rawRows = asConcatenatedRows(dataframeNode)
         return rawRows.split(separator)
     }
 
@@ -186,6 +200,15 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     }
 
     private fun createRoot() = ColumnTreeNode("root", -1, 0, mutableListOf())
+
+    private fun createRoot(childrenNames: List<String>): ColumnTreeNode {
+        val root = createRoot()
+        for ((index, column) in childrenNames.withIndex()) {
+            root.columnChildren.add(ColumnTreeNode(column, index, index, mutableListOf()))
+        }
+
+        return root
+    }
 
     private fun extractValues(jsonNode: JsonNode, columns: List<ColumnTreeNode>): List<Any> {
         return columns.map { column ->
@@ -270,6 +293,8 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         val rawJson = extractRawJson(text)
 
         val rows = extractDatasetRows(rawJson)
+        if (rows.isEmpty()) return DSTableData(id, emptyList())
+
         val firstRowJson = mapper.readTree(rows[0])
 
         val root = extractHierarchy(firstRowJson)
