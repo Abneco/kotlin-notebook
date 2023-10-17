@@ -39,8 +39,8 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
         val nRow = rawJson[KotlinDataframeParsing.nRowsField].asInt()
         val nCol = rawJson[KotlinDataframeParsing.nColsField].asInt()
 
-        Assert.assertEquals(nRow, 20);
-        Assert.assertEquals(nCol, 14);
+        Assert.assertEquals(nRow, 20)
+        Assert.assertEquals(nCol, 14)
         val columnNames = mutableListOf<String>()
         (rawJson[KotlinDataframeParsing.columnsField] as ArrayNode).elements().forEach {
             columnNames.add(it.asText())
@@ -83,15 +83,15 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
         Assert.assertEquals(
             firstRow,
             listOf(
-                "1",
-                "1",
+                1,
+                1,
                 "Allen, Miss. Elisabeth Walton",
                 "null",
-                "29.0",
+                29.0,
                 "null",
                 "null",
                 "24160",
-                "211.3375",
+                211.3375,
                 "B5",
                 "null",
                 "2",
