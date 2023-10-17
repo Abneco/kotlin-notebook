@@ -50,6 +50,13 @@ val Editor.isKotlinNotebook: Boolean get() {
     return FileDocumentManager.getInstance().getFile(document).isKotlinNotebook
 }
 
+val KtFile.isInsideKotlinNotebook: Boolean get() {
+    val vFile = virtualFile ?: return false
+    if (vFile !is VirtualFileWindow) return false
+
+    return vFile.delegate.isKotlinNotebook
+}
+
 fun isKotlinKernelName(kernelName: String?): Boolean {
     return kernelName?.toLowerCaseAsciiOnly() == DEFAULT_KOTLIN_KERNEL_NAME
 }

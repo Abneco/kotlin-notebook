@@ -92,6 +92,7 @@
         <renameHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.KotlinNotebookPropertiesRenameHandler" />
         <scriptDefinitionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterScriptDefinitionProvider"/>
         <idea.caches.resolve.resolveOptimizingOptionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.resolve.KotlinNotebookOptimizingOptionsProvider"/>
+        <postInsertDeclarationCallback implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.KotlinNotebookPostInsertDeclarationCallback"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.codeInsight.daemon.impl">
