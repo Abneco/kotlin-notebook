@@ -234,8 +234,10 @@ class JupyterCompilerPerFileService(
                 ::updateClasspathWithKernelJars,
                 ::updateClasspathWithProjectArtifactsAsync,
             )) {
-                JupyterKtScriptingSupport.updateSynchronously(project)
-                restartAnalyzing(project, virtualFile.file)
+                if (!ApplicationManager.getApplication().isUnitTestMode) {
+                    JupyterKtScriptingSupport.updateSynchronously(project)
+                    restartAnalyzing(project, virtualFile.file)
+                }
             }
         }
     }

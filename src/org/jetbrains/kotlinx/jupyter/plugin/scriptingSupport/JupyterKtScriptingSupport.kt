@@ -2,7 +2,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -52,10 +51,6 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     }
 
     override fun collectConfigurations(builder: ScriptClassRootsBuilder) {
-        if (ApplicationManager.getApplication().isUnitTestMode) {
-            builder.addTemplateClassesRoots(compilerService.initialClasspath.map { it.absolutePath })
-        }
-
         val editors = editorManager?.allEditors ?: return
 
         val openFiles = editors.mapNotNull { (it as? JupyterFileEditor)?.getNotebookFile() }
