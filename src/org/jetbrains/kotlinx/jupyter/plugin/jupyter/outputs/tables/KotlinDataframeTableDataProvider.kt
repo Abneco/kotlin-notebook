@@ -111,14 +111,17 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
             if (isNonComparableColumnSortingError(response)) {
                 NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
                     .createNotification(
-                        KotlinNotebookBundle.message("kotlin.jupyter.table.output.sort_column_not_comparable.error"),
+                        KotlinNotebookBundle.message(
+                            "kotlin.jupyter.table.output.sort_column_not_comparable.error",
+                            extractColumnNameFromSortErrorMessage(response)
+                        ),
                         response,
                         NotificationType.WARNING
                     )
                     .notify(null)
             }
 
-            throw RuntimeException(e)
+            throw DataFrameParseException("Error parsing data from Kotlin DataFrame output", e)
         }
     }
 
@@ -127,6 +130,12 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         errorIndicators: List<String> = listOf("Column", "has type", "that is not Comparable")
     ): Boolean {
         return errorIndicators.all { indicator -> response.contains(indicator) }
+    }
+
+    private fun extractColumnNameFromSortErrorMessage(errorMsg: String): String {
+        val regex = "Column '+(.*?)'+".toRegex()
+        val matchResult = regex.find(errorMsg)
+        return matchResult?.groupValues?.get(1) ?: ""
     }
 
     private fun getSliceCommand(initCommand: String, isInteractive: Boolean, start: Int, end: Int): String {
@@ -138,6 +147,8 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
             initCommand
         }
     }
+
+    class DataFrameParseException(message: String?, cause: Throwable?) : RuntimeException(message, cause)
 
     override fun getSortingCommand(
         tableVariable: String,

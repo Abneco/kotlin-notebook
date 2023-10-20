@@ -192,7 +192,7 @@
                 id="Kotlin Notebook output error"
                 displayType="BALLOON"
                 bundle="messages.KotlinNotebookBundle"
-                key="plugin.updater.notification.group"
+                key="kotlin.jupyter.output.error.notification.group"
         />
 
         <statistics.counterUsagesCollector implementationClass="org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector"/>
