@@ -188,6 +188,13 @@
                 key="plugin.updater.notification.group"
         />
 
+        <notificationGroup
+                id="Kotlin Notebook output error"
+                displayType="BALLOON"
+                bundle="messages.KotlinNotebookBundle"
+                key="plugin.updater.notification.group"
+        />
+
         <statistics.counterUsagesCollector implementationClass="org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector"/>
         <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookMissingJdkEditorNotification"/>
     </extensions>

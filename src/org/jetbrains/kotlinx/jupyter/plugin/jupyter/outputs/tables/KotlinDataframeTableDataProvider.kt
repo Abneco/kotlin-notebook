@@ -2,11 +2,15 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables
 
 import com.fasterxml.jackson.core.JsonFactory
+import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.core.StreamReadConstraints
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.intellij.database.datagrid.ArrayBackedNestedTable
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
+import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.containers.tail
 import com.jetbrains.python.debugger.pydev.TableCommandType
@@ -17,6 +21,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDatafra
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.nRowsField
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.separator
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.serializedDataframeField
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.plugins.notebooks.tables.ColumnTreeNode
 import org.jetbrains.plugins.notebooks.tables.DSTableBundle
 import org.jetbrains.plugins.notebooks.tables.DSTableData
@@ -93,11 +98,35 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         start: Int,
         end: Int
     ): DSTableData {
-        val tableText = commandExecutor.executeCommand(
+        @NlsSafe
+        val response = commandExecutor.executeCommand(
             getSliceCommand(tableVariable, commandExecutor.isDisplaySupported(), start, end),
             TableCommandType.SLICE, CommandOutputType.DISPLAY
         )
-        return parseDataFromKotlinDataframeOutput(dataId, tableText)
+
+        return try {
+            parseDataFromKotlinDataframeOutput(dataId, response)
+        } catch (e: JsonParseException) {
+            // should be removed after KTNB-385 and KTNB-384
+            if (isNonComparableColumnSortingError(response)) {
+                NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
+                    .createNotification(
+                        KotlinNotebookBundle.message("kotlin.jupyter.table.output.sort_column_not_comparable.error"),
+                        response,
+                        NotificationType.WARNING
+                    )
+                    .notify(null)
+            }
+
+            throw RuntimeException(e)
+        }
+    }
+
+    private fun isNonComparableColumnSortingError(
+        response: String,
+        errorIndicators: List<String> = listOf("Column", "has type", "that is not Comparable")
+    ): Boolean {
+        return errorIndicators.all { indicator -> response.contains(indicator) }
     }
 
     private fun getSliceCommand(initCommand: String, isInteractive: Boolean, start: Int, end: Int): String {
