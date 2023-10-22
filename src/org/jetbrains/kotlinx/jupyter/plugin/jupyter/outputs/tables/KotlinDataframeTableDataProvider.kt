@@ -176,7 +176,38 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
             kotlinDataframeSortKeys.add(kotlinDataframeSortKeys[0])
         }
 
-        return "(($tableVariable as DataFrame<*>).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} })"
+        // This is a workaround to fix the issue KTNB-382.
+        // There is no alternative solution that won’t compromise compatibility with dataframe versions <= 0.12.1.
+        // This temporary code should be removed once the majority of users have upgraded to 0.12.1 or a higher version.
+        return """
+            try{
+                (($tableVariable as DataFrame<*>).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} })
+            } catch (e: Exception) {
+                val dataframeLike = ($tableVariable) as Any
+                val df = when (dataframeLike) {
+                    is Pivot<*> -> dataframeLike.frames().toDataFrame()
+                    is ReducedPivot<*> -> dataframeLike.values().toDataFrame()
+                    is PivotGroupBy<*> -> dataframeLike.frames()
+                    is ReducedPivotGroupBy<*> -> dataframeLike.values()
+                    is SplitWithTransform<*, *, *> -> dataframeLike.into()
+                    is Merge<*, *, *> -> dataframeLike.into("merged")
+                    is Gather<*, *, *, *> -> dataframeLike.into("key", "value")
+                    is Update<*, *> -> dataframeLike.df
+                    is Convert<*, *> -> dataframeLike.df
+                    is AnyCol -> dataFrameOf(dataframeLike)
+                    is AnyRow -> dataframeLike.toDataFrame()
+                    is GroupBy<*, *> -> dataframeLike.toDataFrame()
+                    is AnyFrame -> dataframeLike
+                    is RenameClause<*, *> -> dataframeLike.df
+                    is ReplaceClause<*, *> -> dataframeLike.df
+                    is GroupClause<*, *> -> dataframeLike.into("untitled")
+                    is InsertClause<*> -> dataframeLike.at(0)
+                    is FormatClause<*, *> -> dataframeLike.df
+                    else -> throw IllegalArgumentException("Unsupported type")
+                }
+                ((df as DataFrame<*>).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} })
+            }
+        """.trimIndent()
     }
 
     override fun isFallbackToStaticTableSupported(): Boolean = true
