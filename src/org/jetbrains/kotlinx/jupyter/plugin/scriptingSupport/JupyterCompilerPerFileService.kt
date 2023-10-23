@@ -405,7 +405,6 @@ class JupyterCompilerPerFileService(
         var loadedSize = 0
         return compileLock.tryWithWriteLock {
             if (implicitListsLoadQueue.isEmpty()) {
-                NotebookHighlightingService.getForFile(project, virtualFile).handleEmptyClassQueue()
                 return false
             }
             loadedSize = implicitListsLoadQueue.size

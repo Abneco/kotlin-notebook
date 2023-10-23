@@ -13,6 +13,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterExecutionState
+import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 
@@ -23,20 +24,26 @@ class NotebookCellExecutionHighlightingHelper(
     companion object {
         private val LOG = thisLogger()
         private val cellToHighlightLimit: Int = Runtime.getRuntime().availableProcessors() / 2 - 1
+
+        private enum class ExecutionState {
+            PENDING_REQUEST,
+            IDLE
+        }
     }
 
     private val jupyterNotebookSession get() = JupyterRuntimeService.getInstance(project).getSession(notebookFile.file)
     private val dataLock = ReentrantReadWriteLock()
+    private val executionState = AtomicReference(ExecutionState.IDLE)
 
     private val lastExecutedIndexes = mutableSetOf<Int>()
     private val highlightingOrder = mutableSetOf<Int>()
 
-    fun getLastExecutedCellsBatch(): Set<Int> = dataLock.read { lastExecutedIndexes.let { set ->
-        set.ifEmpty { return@read mutableSetOf() }
-        if (set.size < cellToHighlightLimit)
-            set
+    fun getLastExecutedCellsBatch(): Set<Int> = dataLock.read { lastExecutedIndexes.let { indexes ->
+        indexes.ifEmpty { return@read mutableSetOf() }
+        if (indexes.size < cellToHighlightLimit)
+            indexes
         else
-            set.take(cellToHighlightLimit).toSet()
+            indexes.take(cellToHighlightLimit).toSet()
       }
     }
 
@@ -61,12 +68,18 @@ class NotebookCellExecutionHighlightingHelper(
         return updated
     }
 
+    private fun isCanModifyRequestData(scriptingStateFlag: Boolean): Boolean =
+        scriptingStateFlag &&
+                !jupyterNotebookSession.isKernelBusy() &&
+                executionState.get() != ExecutionState.PENDING_REQUEST
+
     fun daemonFinished(completedElements: Set<Int>?,
                        currentToHLQueue: MutableSet<Int>?,
                        canModifyRequests: Boolean): Boolean {
-        val remainingData = if (canModifyRequests && !jupyterNotebookSession.isKernelBusy()) {
+        val remainingData = if (isCanModifyRequestData(canModifyRequests)) {
             reduceAfterExecutionTargets(completedElements)
         } else expandAfterExecutionTargets(completedElements, currentToHLQueue)
+        remainingData?.let { currentToHLQueue?.addAll(it) }
 
         return remainingData.isNullOrEmpty()
     }
@@ -75,22 +88,31 @@ class NotebookCellExecutionHighlightingHelper(
     override fun onSessionRestarted() {
         dataLock.withWriteLock {
             lastExecutedIndexes.clear()
-            highlightingOrder.clear()
         }
     }
 
     override fun registerNewCallback(event: ExecutionCallbackRegistered) {
         event.cellOrd?.let {
-            highlightingOrder.add(it)
+            if (executionState.compareAndSet(ExecutionState.IDLE, ExecutionState.PENDING_REQUEST)) {
+                LOG.info("Set execution state to PENDING_REQUEST")
+            }
+            lastExecutedIndexes.add(it)
          }
     }
 
     override fun unregisterCallback(event: ExecutionCallbackUnregistered) {
+        fun ifKernelDoneProcessingRequests() =
+            !jupyterNotebookSession.isKernelBusy() && executionState.compareAndSet(ExecutionState.PENDING_REQUEST, ExecutionState.IDLE)
+
         val size = event.remainingExecutions.size
-        if (event.isAfterSeriesOfRuns || !event.isSingleErrorRun && size < cellToHighlightLimit) {
+        /*if (event.isAfterSeriesOfRuns || !event.isSingleErrorRun && size < cellToHighlightLimit) {
             updateMetaStorageForHL(project, notebookFile, event.cellOrd)
-        } else if (size > cellToHighlightLimit) {
+        } else*/
+        if (!event.isAfterSeriesOfRuns || size > cellToHighlightLimit) {
             queueCurrentCell(project, notebookFile, event.cellOrd)
+        }
+        if (size == 0 && ifKernelDoneProcessingRequests()) {
+            LOG.info("Set execution state to IDLE")
         }
 
         if (event.isSingleErrorRun && !event.remainingExecutions.contains(-1)) highlightingOrder.clear()
@@ -100,17 +122,11 @@ class NotebookCellExecutionHighlightingHelper(
     private fun JupyterNotebookSession?.isKernelBusy(): Boolean =
         if (this == null) false else kernelClient.executionState == JupyterExecutionState.BUSY
 
+    @Deprecated("Unused logic, to be removed")
     private fun updateMetaStorageForHL(project: Project, file: BackedNotebookVirtualFile, index: Int) {
         NotebookHighlightingService.getForFile(project, file)
             .onSuccessfulCellExecutionCallback(index)
 
-        if (lastExecutedIndexes.isEmpty()) { // ensure additive operation
-            lastExecutedIndexes.addAll(highlightingOrder)
-        } else lastExecutedIndexes.let {
-            lastExecutedIndexes.addAll(it)
-        }
-        highlightingOrder.clear()
-        lastExecutedIndexes.addAll(highlightingOrder ?: emptyList())
     }
 
 
@@ -118,7 +134,7 @@ class NotebookCellExecutionHighlightingHelper(
         val highlightingManager = NotebookHighlightingService.getForFile(project, file)
         // add current cell
         if (highlightingManager.completeRangeInd == index) {
-            lastExecutedIndexes?.add(index)
+            lastExecutedIndexes.add(index)
         }
     }
 }

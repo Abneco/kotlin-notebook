@@ -166,7 +166,9 @@ class NotebookHighlightingManager(
     private val targetIndexes: Set<Int>
         get() = fileToInjectionData.mapTo(mutableSetOf()) { it.value.notebookCellIndex }
     val finishedHighlighting: Set<Int>
-        get() = finishedFiles - (knownErrorInd.keys - (completeRangeInd ?: -1))
+        get() = try {
+            finishedFiles - (knownErrorInd.keys - (completeRangeInd ?: -1))
+        } catch (ex: Exception) { emptySet() }
 
     private val remainingIndexesToProcess: Set<Int>
         get() = targetIndexes - finishedHighlighting
@@ -177,6 +179,7 @@ class NotebookHighlightingManager(
         !JupyterKtScriptingSupport.isInTheTransaction(project)
 
     // Basically, that's just a replication of what isInTransaction can yield
+    // todo: remove
     private val canModifyAfterExecutionRequests = AtomicBoolean(false)
 
     fun tryGetKnownHostFor(file: PsiFile): PsiLanguageInjectionHost? {
@@ -259,36 +262,24 @@ class NotebookHighlightingManager(
     }
 
     /**
-     * Semantic of the following 3 methods is to ensure no requests are lost after 'afterUpdate()' of scripting.
-     * It's achieved by:
-     *  1. All calls 'scriptingSupport.update()' happens after setting the key
-     *  '[NotebookFileHighlightingDataProvider.notebookCellsUpdatesAllowedToChange]' to false
-     *  2. After 'afterUpdate' call, HL would be restarted automatically. We need to react on 'afterUpdate'
-     *  and be ready that actually **following** pass after restart is the one we should be ready for.
+     * OUTDATED, to be removed
+     * Semantic of the following 2 methods is to ensure no requests are lost after 'afterUpdate()' of scripting.
+     * It was done by disallowing any modifications to the queue of HL during scripting updates via indicators.
+     * Basically, that indicator was designed to determine an interval of update by providing an API to call
+     * 'before' and 'after' update.
      *
-     *  Otherwise, we might get inconsistent state if HL restart was triggered during applying of HL tokens,
-     *  but **after** `afterUpdate` call
+     * Which is basically, not needed. We can do same by just asking by request if right now some update going.
      *
      */
-    fun handleEmptyClassQueue() {
-        if (!canModifyAfterExecutionRequests.get()) return
-
-        dataController.notebookCellsUpdatesAllowedToChange.compareAndSet(false, true)
-    }
-
-    fun beforeScriptingUpdate() {
-        if (canModifyAfterExecutionRequests.get()) {
-            finishedFiles.clear()
-        }
-        canModifyAfterExecutionRequests.set(false)
-    }
+    // todo: to be removed
+    fun beforeScriptingUpdate() = Unit
 
     fun afterScriptingUpdate() {
         canModifyAfterExecutionRequests.set(true)
     }
 
     fun onSuccessfulCellExecutionCallback(index: Int) {
-        dataController.notebookCellsUpdatesAllowedToChange.compareAndSet(true, false)
+        //dataController.notebookCellsUpdatesAllowedToChange.compareAndSet(true, false)
     }
 
     fun finishedAnalysisForFile(psiFile: PsiFile, holder: HighlightInfoHolder) {
@@ -356,7 +347,7 @@ class NotebookHighlightingManager(
                 true
             }
 
-            if (data.processedTokens.get() /2 < data.totalTokens) {
+            if (data.processedTokens.get() / 2 < data.totalTokens) {
                 finishedFiles.remove(data.notebookCellIndex)
             }
         }
@@ -373,7 +364,13 @@ class NotebookHighlightingManager(
         determineFilesWithLeftErrors(markup, completeRangeInd)
         determineHighlightedFiles(markup)
 
-        val manager = InjectedLanguageManager.getInstance(editor.project!!)
+        val project = editor.project
+        if (project == null) {
+            LOG.warn("Project is null for editor $editor in file: $psiFile")
+            return true
+        }
+
+        val manager = InjectedLanguageManager.getInstance(project)
         val seenNewFiles = unrecognizedFiles.isNotEmpty()
         if (seenNewFiles) {
             queue?.addAll(unrecognizedFiles.toCellsIndexes(manager) ?: emptyList())
