@@ -36,7 +36,6 @@ class NotebookCellExecutionHighlightingHelper(
     private val executionState = AtomicReference(ExecutionState.IDLE)
 
     private val lastExecutedIndexes = mutableSetOf<Int>()
-    private val highlightingOrder = mutableSetOf<Int>()
 
     fun getLastExecutedCellsBatch(): Set<Int> = dataLock.read { lastExecutedIndexes.let { indexes ->
         indexes.ifEmpty { return@read mutableSetOf() }
@@ -114,20 +113,13 @@ class NotebookCellExecutionHighlightingHelper(
         if (size == 0 && ifKernelDoneProcessingRequests()) {
             LOG.info("Set execution state to IDLE")
         }
-
-        if (event.isSingleErrorRun && !event.remainingExecutions.contains(-1)) highlightingOrder.clear()
-
     }
 
     private fun JupyterNotebookSession?.isKernelBusy(): Boolean =
         if (this == null) false else kernelClient.executionState == JupyterExecutionState.BUSY
 
     @Deprecated("Unused logic, to be removed")
-    private fun updateMetaStorageForHL(project: Project, file: BackedNotebookVirtualFile, index: Int) {
-        NotebookHighlightingService.getForFile(project, file)
-            .onSuccessfulCellExecutionCallback(index)
-
-    }
+    private fun updateMetaStorageForHL(project: Project, file: BackedNotebookVirtualFile, index: Int) = Unit
 
 
     private fun queueCurrentCell(project: Project, file: BackedNotebookVirtualFile, index: Int) {

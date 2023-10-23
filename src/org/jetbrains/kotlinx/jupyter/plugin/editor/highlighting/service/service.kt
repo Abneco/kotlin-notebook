@@ -278,10 +278,6 @@ class NotebookHighlightingManager(
         canModifyAfterExecutionRequests.set(true)
     }
 
-    fun onSuccessfulCellExecutionCallback(index: Int) {
-        //dataController.notebookCellsUpdatesAllowedToChange.compareAndSet(true, false)
-    }
-
     fun finishedAnalysisForFile(psiFile: PsiFile, holder: HighlightInfoHolder) {
         val ind = fileToInjectionData[psiFile]?.notebookCellIndex
         if (ind == null) {
