@@ -42,7 +42,7 @@ internal val isSwingUiEnabledForKotlinDataframe: Boolean
     get() = try {
         Registry.`is`("kotlin.dataframe.swing.outputs.enabled")
     } catch (e: MissingResourceException) {
-        false
+        true
     }
 
 class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
