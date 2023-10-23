@@ -178,10 +178,6 @@ class NotebookHighlightingManager(
     fun isCanModifyHLRequests(project: Project): Boolean =
         !JupyterKtScriptingSupport.isInTheTransaction(project)
 
-    // Basically, that's just a replication of what isInTransaction can yield
-    // todo: remove
-    private val canModifyAfterExecutionRequests = AtomicBoolean(false)
-
     fun tryGetKnownHostFor(file: PsiFile): PsiLanguageInjectionHost? {
         if (file !is KtFile) return null
         return fileToInjectionData.getOrElse(file, defaultValue = { null })?.injectionHost
@@ -194,9 +190,6 @@ class NotebookHighlightingManager(
     fun associateWithNewCaretListener(listener: NotebookCaretListener, editor: Editor) {
         activeCaretListener = listener
         addNewMarkupListener(editor)
-        dataController.update {
-            canModifyAfterExecutionRequests.set(true)
-        }
     }
 
     fun passCreated(project: Project, targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
@@ -275,7 +268,7 @@ class NotebookHighlightingManager(
     fun beforeScriptingUpdate() = Unit
 
     fun afterScriptingUpdate() {
-        canModifyAfterExecutionRequests.set(true)
+        LOG.debug("After scripting update")
     }
 
     fun finishedAnalysisForFile(psiFile: PsiFile, holder: HighlightInfoHolder) {
