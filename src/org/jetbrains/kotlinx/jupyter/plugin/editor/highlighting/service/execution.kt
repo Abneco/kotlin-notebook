@@ -68,9 +68,15 @@ class NotebookCellExecutionHighlightingHelper(
     }
 
     private fun isCanModifyRequestData(scriptingStateFlag: Boolean): Boolean =
-        scriptingStateFlag &&
-                !jupyterNotebookSession.isKernelBusy() &&
-                executionState.get() != ExecutionState.PENDING_REQUEST
+        when {
+            jupyterNotebookSession == null -> {
+                executionState.set(ExecutionState.IDLE)
+                true
+            }
+            else -> scriptingStateFlag &&
+                    !jupyterNotebookSession.isKernelBusy() &&
+                    executionState.get() != ExecutionState.PENDING_REQUEST
+        }
 
     fun daemonFinished(completedElements: Set<Int>?,
                        currentToHLQueue: MutableSet<Int>?,
