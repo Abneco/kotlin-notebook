@@ -1,0 +1,7 @@
+#%%
+listOf(1).filter {
+
+}
+
+#%%
+println("abc")
