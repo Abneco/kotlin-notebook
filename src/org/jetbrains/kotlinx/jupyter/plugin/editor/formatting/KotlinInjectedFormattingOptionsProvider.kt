@@ -11,7 +11,7 @@ class KotlinInjectedFormattingOptionsProvider : InjectedFormattingOptionsProvide
     override fun shouldDelegateToTopLevel(file: PsiFile): Boolean? {
         if (file !is KtFile) return null
 
-      val project = file.project
+        val project = file.project
         val injectedManager = InjectedLanguageManager.getInstance(project)
         if (injectedManager.getTopLevelFile(file) is JupyterFile) return false
         return null
