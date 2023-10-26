@@ -1,14 +1,15 @@
 #%%
 class TestBase {
-    @Throws(Exception::class) protected fun tearDown()
+    @Throws(Exception::class)
+    protected fun tearDown()
 }
 
 class Clazz : TestBase() {
     @Throws(Exception::class)
     override fun tearDown() {
         RunAll.runAll(
-        {myTempFiles.deleteAll()},
-        {super.tearDown()}
+                { myTempFiles.deleteAll() },
+                { super.tearDown() }
         )
     }
 }
