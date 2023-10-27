@@ -1,8 +1,6 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
-import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerImpl
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.concurrency.ConcurrentCollectionFactory
@@ -38,6 +36,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingRestarter.UpdateSteps.performHLStartupTemplate
@@ -54,7 +53,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 @Service(Service.Level.PROJECT)
@@ -404,9 +402,9 @@ internal object NotebookHighlightingRestarter {
             file: PsiFile, delayDelta: Long,
             crossinline afterRequest: () -> Unit = {}
         ) {
-            val analyzer = DaemonCodeAnalyzer.getInstance(file.project) as DaemonCodeAnalyzerImpl
+            val analyzer = DaemonCodeAnalyzerStatusService.getInstance(file.project)
             delay(delayDelta)
-            while (analyzer.isRunning) {
+            while (analyzer.daemonRunning) {
                 delay(150)
             }
             readAction {

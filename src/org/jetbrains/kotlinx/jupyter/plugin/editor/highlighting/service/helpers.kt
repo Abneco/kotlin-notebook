@@ -1,8 +1,6 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
-import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerImpl
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.HighlightSeverity
@@ -27,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.diagnostics.Severity
@@ -68,12 +67,12 @@ internal object NotebookHighlightingUtilityObject {
     inline fun shouldStartAfterPreChecks(file: PsiFile, associatedJob: Job?,
                                          crossinline afterRequest: () -> Unit = {},
                                          crossinline undoRequest: () -> Unit = {}): Boolean {
-        val analyzer = (DaemonCodeAnalyzer.getInstance(file.project) as DaemonCodeAnalyzerImpl)
+        val analyzer = DaemonCodeAnalyzerStatusService.getInstance(file.project)
         if (associatedJob?.isActive == true) {
             undoRequest()
             return false
         }
-        if (analyzer.isRunning) {
+        if (analyzer.daemonRunning) {
             afterRequest()
             return false
         }
