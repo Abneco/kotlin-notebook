@@ -16,7 +16,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport
 import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsBuilder
@@ -36,14 +35,15 @@ import kotlin.script.experimental.api.valueOrNull
 class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport {
     private val compilerService = JupyterCompilerService.getInstance(project)
     private val editorManager: FileEditorManager? get() = FileEditorManager.getInstance(project)
+    private val indexAwareScriptDefinitionsRequestor = IndexAwareScriptDefinitionsLoadRequestor(project)
 
     override fun afterUpdate() {
         try {
-            ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()
+            indexAwareScriptDefinitionsRequestor.reloadDefinitions()
             compilerService.afterScriptingUpdate()
         } catch (ex: Exception) {
             if (ex is ProcessCanceledException) {
-                ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()
+                indexAwareScriptDefinitionsRequestor.reloadDefinitions()
             } else {
                 LOG.warn("Post-update: error occurred during reloading of script configurations", ex)
             }
