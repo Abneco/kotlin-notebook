@@ -3,7 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.typing
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DAEMON_EVENT_TOPIC
-import com.intellij.codeInsight.daemon.impl.InlayHintsPassFactory
+import com.intellij.codeInsight.daemon.impl.InlayHintsPassFactoryInternal
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.thisLogger
@@ -73,7 +73,7 @@ class NotebookCaretListener(
         }
         notebookHighlightingManager?.jupyterPsiFile?.let {
             if (projectOptionsProvider.shouldLimitTypeHintsByActiveCell) {
-                InlayHintsPassFactory.clearModificationStamp(editor)
+                InlayHintsPassFactoryInternal.clearModificationStamp(editor)
             }
             context?.launch {
                 readAction {
