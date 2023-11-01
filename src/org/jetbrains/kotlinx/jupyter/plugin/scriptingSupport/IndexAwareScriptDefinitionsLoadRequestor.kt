@@ -3,6 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupManager
+import com.intellij.util.indexing.UnindexedFilesScanner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -15,7 +16,7 @@ class IndexAwareScriptDefinitionsLoadRequestor(private val project: Project) {
 
     fun reloadDefinitions() {
         if (project.isDisposed) return
-        if (activityPassed) {
+        if (activityPassed && UnindexedFilesScanner.isProjectContentFullyScanned(project)) {
             coroutineScope.async {
                 ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()
             }
