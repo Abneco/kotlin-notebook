@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.core.StreamReadConstraints
+import com.fasterxml.jackson.core.exc.StreamConstraintsException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
@@ -53,7 +54,7 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
         val jsonFactory = JsonFactory()
         jsonFactory.setStreamReadConstraints(
             StreamReadConstraints.builder()
-                .maxStringLength(Int.MAX_VALUE)
+                .maxStringLength(Registry.intValue("jupyter.notebook.json.maxStringLength", 100000000))
                 .build()
         )
         val mapper = ObjectMapper(jsonFactory)
@@ -88,9 +89,10 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
         tableVariable: String,
         textTableOutput: String
     ): DSDataFrameInfo {
-        return parseFrameInfoFromKotlinDataframeOutput(textTableOutput, isPreview = false)
+        return executeParsing(textTableOutput) { parseFrameInfoFromKotlinDataframeOutput(textTableOutput, isPreview = false) }
     }
 
+    @Throws(DSTableDataException::class)
     override fun dataFrameGetData(
         commandExecutor: DSTableCommandExecutor,
         dataId: DataId,
@@ -104,24 +106,40 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
             TableCommandType.SLICE, CommandOutputType.DISPLAY
         )
 
+        return executeParsing(response) { parseDataFromKotlinDataframeOutput(dataId, response) }
+    }
+
+    @Throws(DSTableDataException::class)
+    private fun <T> executeParsing(@NlsSafe textData: String, parseFunction: () -> T): T {
         return try {
-            parseDataFromKotlinDataframeOutput(dataId, response)
+            parseFunction()
         } catch (e: JsonParseException) {
             // should be removed after KTNB-385 and KTNB-384
-            if (isNonComparableColumnSortingError(response)) {
+            if (isNonComparableColumnSortingError(textData)) {
                 NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
                     .createNotification(
                         KotlinNotebookBundle.message(
                             "kotlin.jupyter.table.output.sort_column_not_comparable.error",
-                            extractColumnNameFromSortErrorMessage(response)
+                            extractColumnNameFromSortErrorMessage(textData)
                         ),
-                        response,
+                        textData,
                         NotificationType.WARNING
                     )
                     .notify(null)
             }
 
-            throw DataFrameParseException("Error parsing data from Kotlin DataFrame output", e)
+            throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}")
+        } catch (e: StreamConstraintsException) {
+            // users should not encounter this error anymore once KTNB-272 is implemented.
+            NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
+                .createNotification(
+                    KotlinNotebookBundle.message("kotlin.jupyter.table.output.cannot.render.dataframe.error"),
+                    KotlinNotebookBundle.message("kotlin.jupyter.table.output.cannot.parse.dataframe.error"),
+                    NotificationType.WARNING
+                )
+                .notify(null)
+
+            throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}")
         }
     }
 
@@ -147,8 +165,6 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
             initCommand
         }
     }
-
-    class DataFrameParseException(message: String?, cause: Throwable?) : RuntimeException(message, cause)
 
     override fun getSortingCommand(
         tableVariable: String,
