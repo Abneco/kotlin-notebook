@@ -27,6 +27,7 @@ class KotlinNotebookCreateAction : CreateFileFromTemplateAction(
     KotlinJupyterIcons.FileIcon
 ), DumbAware {
 
+    @Suppress("DialogTitleCapitalization")
     override fun buildDialog(project: Project, directory: PsiDirectory, builder: CreateFileFromTemplateDialog.Builder) {
         builder
             .setTitle(KotlinNotebookBundle.message("kotlin.jupyter.action.create.notebook.dialog.title"))

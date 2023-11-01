@@ -46,7 +46,7 @@ internal class NotebookKernelRelatedNotificationFactory() : NotebookNotification
         object SessionRestart : DependencyStatus()
     }
 
-
+    @Suppress("DialogTitleCapitalization")
     override fun showNotification(project: Project?, mark: NotebookNotificationShower.NotificationTarget, @NlsSafe additionalMsg: String) {
         if ((mark !is DependencyStatus && mark !is KernelStatus) || project == null) return
 
@@ -126,6 +126,7 @@ internal class NotebookUsageRelatedNotificationFactory() : NotebookNotificationF
         object UsagesRefactoring : ActionRelated()
     }
 
+    @Suppress("DialogTitleCapitalization")
     override fun showNotification(project: Project?, mark: NotebookNotificationShower.NotificationTarget, @NlsSafe additionalMsg: String) {
         if (mark !is ActionRelated || project == null) return
 
