@@ -71,7 +71,6 @@ internal fun buildModuleTree(project: Project, initialModules: Set<Module>): Mod
 }
 
 private class ModuleCheckboxRenderer(private val moduleGrouper: ModuleGrouper) : CheckboxTreeCellRenderer() {
-    @Suppress("USELESS_CAST")
     override fun customizeRenderer(
         tree: JTree,
         value: Any?,
@@ -94,6 +93,7 @@ private class ModuleCheckboxRenderer(private val moduleGrouper: ModuleGrouper) :
             }
             is ModuleGroup -> {
                 // Hardcoded literal inspection works incorrectly there, it doesn't do smartcasts
+                @Suppress("USELESS_CAST")
                 textRenderer.append((userObject as ModuleGroup).toString(), SimpleTextAttributes.REGULAR_ATTRIBUTES)
                 textRenderer.icon = PlatformIcons.CLOSED_MODULE_GROUP_ICON.applyIf(!isEnabled) { IconLoader.getDisabledIcon(this) }
             }

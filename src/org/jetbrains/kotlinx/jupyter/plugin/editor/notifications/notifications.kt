@@ -10,10 +10,14 @@ import com.intellij.notification.SingletonNotificationManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.NlsContexts.NotificationTitle
 import com.intellij.openapi.util.NlsSafe
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookConfigurable
 
+@Suppress("DialogTitleCapitalization")
+@get:NotificationTitle
+private val kotlinNotebookTitle get() = KotlinNotebookBundle.message("kotlin.jupyter.settings.title")
 
 internal interface NotebookNotificationShower {
     sealed class NotificationTarget
@@ -46,14 +50,13 @@ internal class NotebookKernelRelatedNotificationFactory() : NotebookNotification
         object SessionRestart : DependencyStatus()
     }
 
-    @Suppress("DialogTitleCapitalization")
     override fun showNotification(project: Project?, mark: NotebookNotificationShower.NotificationTarget, @NlsSafe additionalMsg: String) {
         if ((mark !is DependencyStatus && mark !is KernelStatus) || project == null) return
 
         when (mark) {
             is DependencyStatus.Outdated -> {
                 informSingletonManagerWarning.notify(
-                    KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
+                    kotlinNotebookTitle,
                     KotlinNotebookBundle.message("kotlin.jupyter.dependencies.build.error.outdated"),
                         project
                 )
@@ -61,19 +64,19 @@ internal class NotebookKernelRelatedNotificationFactory() : NotebookNotification
             is DependencyStatus.Absent -> {
                 prepareNotificationGroupTemplate().wrapActionInNotify(project) {
                     createNotification(KotlinNotebookBundle.message("kotlin.jupyter.dependencies.build.error.severe"), NotificationType.WARNING)
-                        .setTitle(KotlinNotebookBundle.message("kotlin.jupyter.settings.title"))
+                        .setTitle(kotlinNotebookTitle)
                 }
             }
             is DependencyStatus.AbsentInitial -> {
                 informSingletonManager.notify(
-                    KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
+                    kotlinNotebookTitle,
                     KotlinNotebookBundle.message("kotlin.jupyter.session.initial.setup"),
                         project
                 )
             }
             is DependencyStatus.InconsistentJDK -> {
                 informSingletonManagerWarning.notify(
-                    KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
+                    kotlinNotebookTitle,
                     KotlinNotebookBundle.message("kotlin.jupyter.session.classloader.error") +
                             "\n" + additionalMsg, project
                 ) { notification ->
@@ -89,7 +92,7 @@ internal class NotebookKernelRelatedNotificationFactory() : NotebookNotification
             is KernelStatus.SessionRestart -> {
                 informSessionSingletonManager
                     .notify(
-                        KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
+                        kotlinNotebookTitle,
                         KotlinNotebookBundle.message("kotlin.jupyter.session.restart"),
                         project)
             }
@@ -126,7 +129,6 @@ internal class NotebookUsageRelatedNotificationFactory() : NotebookNotificationF
         object UsagesRefactoring : ActionRelated()
     }
 
-    @Suppress("DialogTitleCapitalization")
     override fun showNotification(project: Project?, mark: NotebookNotificationShower.NotificationTarget, @NlsSafe additionalMsg: String) {
         if (mark !is ActionRelated || project == null) return
 
@@ -134,12 +136,12 @@ internal class NotebookUsageRelatedNotificationFactory() : NotebookNotificationF
             is ActionRelated.ByteCodeRefactoring -> {
                 prepareNotificationGroupTemplate().wrapActionInNotify(project) {
                     createNotification(KotlinNotebookBundle.message("kotlin.jupyter.refactor.compiled.script"), NotificationType.WARNING)
-                        .setTitle(KotlinNotebookBundle.message("kotlin.jupyter.settings.title"))
+                        .setTitle(kotlinNotebookTitle)
                 }
             }
             is ActionRelated.RerunActionNeeded -> {
                 informSingletonManager.notify(
-                    KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
+                   kotlinNotebookTitle,
                     KotlinNotebookBundle.message("kotlin.jupyter.refactor.changed.definition.rerun"),
                         project
                 )
@@ -147,7 +149,7 @@ internal class NotebookUsageRelatedNotificationFactory() : NotebookNotificationF
             is ActionRelated.UsagesRefactoring -> {
                 informSingletonManager
                     .notify(
-                        KotlinNotebookBundle.message("kotlin.jupyter.settings.title"),
+                        kotlinNotebookTitle,
                         KotlinNotebookBundle.message("kotlin.jupyter.refactor.changed.definition", additionalMsg.toIntOrNull() ?: 0),
                         project
                     )
