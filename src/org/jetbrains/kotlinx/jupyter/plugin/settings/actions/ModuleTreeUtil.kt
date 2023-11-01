@@ -8,7 +8,6 @@ import com.intellij.openapi.module.ModuleGrouper
 import com.intellij.openapi.module.ModuleType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.IconLoader
-import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.text.NaturalComparator
 import com.intellij.ui.CheckboxTree
 import com.intellij.ui.CheckboxTree.CheckboxTreeCellRenderer
@@ -93,9 +92,7 @@ private class ModuleCheckboxRenderer(private val moduleGrouper: ModuleGrouper) :
                 textRenderer.icon = ModuleType.get(userObject).icon.applyIf(!isEnabled) { IconLoader.getDisabledIcon(this) }
             }
             is ModuleGroup -> {
-                // Hardcoded literal inspection works incorrectly there, it doesn't do smartcasts
-                @NlsSafe val moduleGroupName = userObject.toString()
-                textRenderer.append(moduleGroupName, SimpleTextAttributes.REGULAR_ATTRIBUTES)
+                textRenderer.append(userObject.presentableText(), SimpleTextAttributes.REGULAR_ATTRIBUTES)
                 textRenderer.icon = PlatformIcons.CLOSED_MODULE_GROUP_ICON.applyIf(!isEnabled) { IconLoader.getDisabledIcon(this) }
             }
         }
