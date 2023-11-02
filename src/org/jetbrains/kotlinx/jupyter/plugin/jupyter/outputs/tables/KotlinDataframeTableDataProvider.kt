@@ -110,7 +110,7 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     }
 
     @Throws(DSTableDataException::class)
-    private fun <T> executeParsing(@NlsSafe textData: String, parseFunction: () -> T): T {
+    private inline fun <T> executeParsing(@NlsSafe textData: String, parseFunction: () -> T): T {
         return try {
             parseFunction()
         } catch (e: JsonParseException) {
