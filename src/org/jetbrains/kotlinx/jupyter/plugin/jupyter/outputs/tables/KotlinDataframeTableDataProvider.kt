@@ -46,6 +46,8 @@ internal val isSwingUiEnabledForKotlinDataframe: Boolean
         true
     }
 
+internal const val DEFAULT_JSON_MAX_LENGTH = 100000000
+
 class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
     override fun getDataProviderCapableToParseDataOrNull(serializedData: String?): DSTableDataProvider? {
         if (!isSwingUiEnabledForKotlinDataframe) return null
@@ -54,7 +56,7 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
         val jsonFactory = JsonFactory()
         jsonFactory.setStreamReadConstraints(
             StreamReadConstraints.builder()
-                .maxStringLength(Registry.intValue("jupyter.notebook.json.maxStringLength", 100000000))
+                .maxStringLength(Registry.intValue("jupyter.notebook.json.maxStringLength", DEFAULT_JSON_MAX_LENGTH))
                 .build()
         )
         val mapper = ObjectMapper(jsonFactory)
