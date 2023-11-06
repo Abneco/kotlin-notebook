@@ -39,6 +39,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
+import org.jetbrains.kotlin.utils.addToStdlib.ifNotEmpty
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingRestarter.UpdateSteps.performHLStartupTemplate
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService.Companion.HL_DELAY_PAUSE
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.shouldStartAfterPreChecks
@@ -53,6 +54,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 @Service(Service.Level.PROJECT)
@@ -158,6 +160,7 @@ class NotebookHighlightingManager(
     private var targetPsiFile: PsiFile? = null
     private var activeCaretListener: NotebookCaretListener? = null
     private lateinit var activeMarkupModelListener: MarkupModelListener
+    private val requestWasCompleted = AtomicBoolean(false)
     private val finishedFiles = mutableSetOf<Int>()
     private val targetErrorHighlighters = ConcurrentCollectionFactory.createConcurrentSet<RangeHighlighter>()
     private val knownErrorInd = ConcurrentHashMap<Int, MutableSet<RangeHighlighter>>()
@@ -166,7 +169,7 @@ class NotebookHighlightingManager(
     val finishedHighlighting: Set<Int>
         get() = try {
             finishedFiles - (knownErrorInd.keys - (completeRangeInd ?: -1))
-        } catch (ex: Exception) { emptySet() }
+        } catch (ex: Exception) { completeRangeInd?.let { setOf(it) } ?: emptySet() }
 
     private val remainingIndexesToProcess: Set<Int>
         get() = targetIndexes - finishedHighlighting
@@ -221,6 +224,7 @@ class NotebookHighlightingManager(
                 } ?: finishedFiles.add(ind)
             }
         }
+        targetIndexes.ifNotEmpty { requestWasCompleted.set(false) }
         unrecognizedFiles.clear()
         this.completeRangeInd = completeRangeInd
     }
@@ -363,6 +367,9 @@ class NotebookHighlightingManager(
             queue?.addAll(unrecognizedFiles.toCellsIndexes(manager) ?: emptyList())
         }
         val remaining = remainingIndexesToProcess
+        if (remaining.isEmpty()) {
+            requestWasCompleted.set(true)
+        }
         val isLeft = remaining.isNotEmpty() || seenNewFiles
 
         if (isLeft || !executionRequestsDone) {

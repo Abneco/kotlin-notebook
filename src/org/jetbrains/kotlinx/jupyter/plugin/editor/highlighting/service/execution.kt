@@ -113,7 +113,8 @@ class NotebookCellExecutionHighlightingHelper(
         /*if (event.isAfterSeriesOfRuns || !event.isSingleErrorRun && size < cellToHighlightLimit) {
             updateMetaStorageForHL(project, notebookFile, event.cellOrd)
         } else*/
-        if (!event.isAfterSeriesOfRuns || size > cellToHighlightLimit) {
+        if (size > 0 && (!event.isAfterSeriesOfRuns || size > cellToHighlightLimit)) {
+            // LOG.warn("Unregister callback, but size is: $size")
             queueCurrentCell(project, notebookFile, event.cellOrd)
         }
         if (size == 0 && ifKernelDoneProcessingRequests()) {
