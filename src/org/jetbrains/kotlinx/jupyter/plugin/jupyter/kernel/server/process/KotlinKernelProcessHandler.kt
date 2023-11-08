@@ -87,6 +87,10 @@ class KotlinKernelProcessHandler(
         return BaseOutputReader.Options.forMostlySilentProcess()
     }
 
+    override fun isSilentlyDestroyOnClose(): Boolean {
+        return true
+    }
+
     companion object {
         private val LOG = Logger.getInstance(KotlinKernelProcessHandler::class.java)
     }
