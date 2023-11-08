@@ -52,6 +52,10 @@ object KotlinNotebookSettingsPanel {
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.sources"), sessionOptions::resolveSources)
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.multiplatform"), sessionOptions::resolveMpp)
             }
+            group(KotlinNotebookBundle.message("kotlin.jupyter.settings.outputs")) {
+                singleRowCheckBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.outputs.swing.letsPlot"), applicationOptions::showLetsPlotAsSwing)
+                singleRowCheckBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.outputs.swing.dataframe"), applicationOptions::showDataFrameAsSwing)
+            }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.typeHints")) {
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.should.typehint.only.active.cell"), projectOptions::shouldLimitTypeHintsByActiveCell)
             }

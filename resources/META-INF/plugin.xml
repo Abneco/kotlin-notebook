@@ -107,10 +107,10 @@
         <registryKey key="kotlin.notebook.disable.jupyter.core.actions" defaultValue="false"
                      description="Disable some of core Jupyter Notebook actions such as creation of Python Jupyter Notebook"/>
         <registryKey key="lets.plot.swing.outputs.enabled" defaultValue="true"
-                         description="When enabled, outputs of LetsPlot plotting library in Kotlin Notebooks will be rendered using no-browser approach"/>
+                     description="When enabled, outputs of LetsPlot plotting library in Kotlin Notebooks will be rendered using no-browser approach. Deprecated, use Kotlin Notebook options"/>
 
         <registryKey key="kotlin.dataframe.swing.outputs.enabled" defaultValue="true"
-                     description="When enabled, outputs of Kotlin Dataframe library will be rendered using JVM stack."/>
+                     description="When enabled, outputs of Kotlin Dataframe library will be rendered using JVM stack. Deprecated, use Kotlin Notebook options"/>
 
         <registryKey key="grid.tables.hierarchical.enabled" defaultValue="true"
                      description="When enabled, table output will support hierarchical columns."/>

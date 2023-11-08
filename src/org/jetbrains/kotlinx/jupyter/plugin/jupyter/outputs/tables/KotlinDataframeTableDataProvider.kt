@@ -23,6 +23,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDatafra
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.separator
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.serializedDataframeField
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.plugins.notebooks.tables.ColumnTreeNode
 import org.jetbrains.plugins.notebooks.tables.DSTableBundle
 import org.jetbrains.plugins.notebooks.tables.DSTableData
@@ -38,19 +39,11 @@ import javax.swing.RowSorter
 import javax.swing.SortOrder
 
 
-internal val isSwingUiEnabledForKotlinDataframe: Boolean
-    // it's implemented this way to make it possible to set the registry key programmatically for tests
-    get() = try {
-        Registry.`is`("kotlin.dataframe.swing.outputs.enabled")
-    } catch (e: MissingResourceException) {
-        true
-    }
-
 internal const val DEFAULT_JSON_MAX_LENGTH = 100000000
 
 class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
     override fun getDataProviderCapableToParseDataOrNull(serializedData: String?): DSTableDataProvider? {
-        if (!isSwingUiEnabledForKotlinDataframe) return null
+        if (!KotlinNotebookApplicationOptions.get().showDataFrameAsSwing) return null
         if (serializedData == null || !isFormatSupported(serializedData)) return null
 
         val jsonFactory = JsonFactory()

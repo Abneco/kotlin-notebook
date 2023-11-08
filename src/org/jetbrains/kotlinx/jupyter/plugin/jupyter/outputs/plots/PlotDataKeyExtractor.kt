@@ -4,18 +4,16 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots
 import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
-import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.asSafely
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.util.convertObject
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutputDataKeyExtractor
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataKey
 
-internal val letsPlotSwingOutputsEnabled: Boolean
-    get() = Registry.`is`("lets.plot.swing.outputs.enabled", true)
 
 class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
     override fun extractKey(dataObject: ObjectNode, executionCount: Int?): NotebookOutputDataKey? {
-        if (!letsPlotSwingOutputsEnabled) return null
+        if (!KotlinNotebookApplicationOptions.get().showLetsPlotAsSwing) return null
         if (!dataObject.has(PLOT_KEY)) return null
         val plotValue = dataObject[PLOT_KEY].asSafely<ObjectNode>() ?: return null
         val swingEnabled = plotValue[SWING_ENABLED_KEY].asSafely<BooleanNode>()?.asBoolean() ?: true

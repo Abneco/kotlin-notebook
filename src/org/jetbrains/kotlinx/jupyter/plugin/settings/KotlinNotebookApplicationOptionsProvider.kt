@@ -25,9 +25,15 @@ class KotlinNotebookApplicationOptionsProvider :
     var shouldShowExecutionCount by prop(State::shouldShowExecutionCount).onChange(Listener::onShowExecutionCountChanged)
     var shouldShowFoldings by prop(State::shouldShowFoldings).onChange(Listener::onShowFoldings)
 
+    var showLetsPlotAsSwing by prop(State::showLetsPlotAsSwing)
+    var showDataFrameAsSwing by prop(State::showDataFrameAsSwing)
+
     class State : BaseState() {
         var shouldShowExecutionCount by property(true)
         var shouldShowFoldings by property(true)
+
+        var showLetsPlotAsSwing by property(letsPlotSwingOutputsEnabled)
+        var showDataFrameAsSwing by property(isSwingUiEnabledForKotlinDataframe)
     }
 
     interface Listener : EventListener {
