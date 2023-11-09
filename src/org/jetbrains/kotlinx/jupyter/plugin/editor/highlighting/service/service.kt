@@ -318,9 +318,12 @@ class NotebookHighlightingManager(
 
         knownErrorInd.filter {
             if (it.key != completeIndexTarget) it.value.isNotEmpty() else !targetPassed
-        }.keys.also { // not yet counted
-            finishedFiles.removeAll(it)
-            LOG.debug("Daemon finished, knownErrorInd: ${knownErrorInd.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
+        }.keys.also {
+            // not yet counted
+            if (it.isNotEmpty()) {
+                finishedFiles.removeAll(it)
+                LOG.debug("Daemon finished, knownErrorInd: ${knownErrorInd.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
+            }
         }
     }
 

@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
+import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
@@ -11,13 +12,20 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.ProjectScope
 import com.intellij.util.concurrency.AppExecutorUtil
+import com.intellij.util.indexing.FileBasedIndex
+import com.intellij.util.indexing.FileBasedIndexImpl
+import com.intellij.util.indexing.UnindexedFilesScanner
+import com.intellij.util.indexing.UnindexedFilesUpdater
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
@@ -33,6 +41,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerServ
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.getOriginalVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.getCell
@@ -59,6 +68,8 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         val project = file.project
         val caretOffSet = editor.caretModel.offset
         val cellUnderEditor = editor.getCell(document.getLineNumber(caretOffSet))
+        ProgressManager.checkCanceled()
+
         cells?.ensureScriptConfigurations(ScriptConfigurationManager.getInstance(project),
                                                                InjectedLanguageManager.getInstance(project))
         jupyterFile.ensureScriptManagerReady()
@@ -214,6 +225,59 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(lhs)
 
 class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
+    private inner class NotebookMissingDependenciesHandler() {
+        fun checkMissingFileIsPresent(project: Project, missingClass: String): Boolean {
+            return if (missingClass.isKTNBClass()) true
+            else {
+                val fqnName = missingClass.count { it == '.' } > 0
+                val properClass = (if (fqnName) missingClass.substringAfterLast(".") else missingClass) + ".class"
+                FilenameIndex.getFilesByName(project, properClass, ProjectScope.getLibrariesScope(project)).isNotEmpty()
+            }
+        }
+
+        fun ensureDependenciesProperlyAdded(project: Project, virtualFile: VirtualFile, isCoreClass: Boolean = false) {
+            val isUpdateInProgress = UnindexedFilesUpdater.isIndexUpdateInProgress(project)
+            val filesBasedIndex = FileBasedIndexImpl.getInstance() as FileBasedIndexImpl
+            val filesToUpdate = filesBasedIndex.changedFilesCollector.allFilesToUpdate
+
+            LOG.debug("Is update in progress ${UnindexedFilesUpdater.isIndexUpdateInProgress(project)}, " +
+                             "isProjectScanned: ${UnindexedFilesScanner.isProjectContentFullyScanned(project)}, " +
+                             "filesToUpdate: ${filesToUpdate}")
+
+            if (isUpdateInProgress) {
+                val alreadyUpdating = JupyterKtScriptingSupport.isInTheTransaction(project)
+                if (!alreadyUpdating) {
+                    LOG.info("Requesting reload of scripting...")
+                    AppExecutorUtil.getAppScheduledExecutorService().schedule(
+                        { JupyterKtScriptingSupport.update(project) }
+                        , 600, TimeUnit.MILLISECONDS)
+                }
+                reloadRequested = true
+            }
+
+            if (isCoreClass) {
+                LOG.warn("Dependencies seem to be injected incorrectly, dropping indexes for $virtualFile...")
+                val properFile = if (virtualFile is VirtualFileWindow) virtualFile.getOriginalVirtualFile() else virtualFile
+                val fileId = FileBasedIndex.getFileId(properFile)
+                filesBasedIndex.doInvalidateIndicesForFile(fileId, properFile)
+                filesBasedIndex.scheduleFileForIndexing(fileId, properFile, true)
+                reloadRequested = true
+                return
+            }
+
+            if (filesToUpdate.isEmpty()) {
+                LOG.debug("No index update in process and no needs to be, try to rebuild module descriptors by reindex")
+            } else {
+                LOG.debug("There is unindexed file to be updated, requesting for ${virtualFile}")
+            }
+            filesBasedIndex.requestReindex(virtualFile)
+
+            reloadRequested = true
+        }
+    }
+
+
+    private val dependenciesHandler = NotebookMissingDependenciesHandler()
     private var reloadRequested = false
     override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {
         if (file == null || !file.name.endsWith(notebookInjectedFileExtension)) return true
@@ -234,24 +298,16 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
             if (reloadState) return false
             val missingClass = description.substringAfter("Cannot access ").split("\'")[1]
             val project = file.project
-            val found = if (missingClass.isKTNBClass()) true
-                else {
-                    val fqnName = missingClass.count { it == '.' } > 0
-                    val properClass = (if (fqnName) missingClass.substringAfterLast(".") else missingClass) + ".class"
-                    FilenameIndex.getFilesByName(project, properClass, ProjectScope.getLibrariesScope(project)).isNotEmpty()
-                }
-            LOG.warn("Faced ${highlightInfo.description} error, will try to update scripting")
-            if (found) {
-                val alreadyUpdating = JupyterKtScriptingSupport.isInTheTransaction(project)
-                if (!alreadyUpdating) {
-                    LOG.info("Requesting reload of scripting...")
-                    AppExecutorUtil.getAppScheduledExecutorService().schedule(
-                        { JupyterKtScriptingSupport.update(project) }
-                        , 600, TimeUnit.MILLISECONDS)
-                }
-                reloadRequested = true
-                return false
+            val found = dependenciesHandler.checkMissingFileIsPresent(project, missingClass)
+            LOG.warn("Faced ${highlightInfo.description} error, handling situation...")
+
+            if (!found) {
+                LOG.warn("Class ${highlightInfo.description} was not found in indexes, check your dependencies")
+                return true
             }
+            dependenciesHandler.ensureDependenciesProperlyAdded(project, file.virtualFile, isCoreClass = missingClass.contains("_0_jupyter"))
+
+            return false
         }
 
         return true
