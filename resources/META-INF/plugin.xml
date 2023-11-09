@@ -150,6 +150,7 @@
         <completion.contributor language="JKTMeta" id="JKTMetaBasic" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.metaLanguage.JKTMetaCompletionContributor" />
         <!--<completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.KotlinMagicsRuntimeCompletionContributor" order="first"/>-->
         <annotator language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.metaLanguage.JKTMetaAnnotator"/>
+        <lang.commenter language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.metaLanguage.JKTMetaCommenter"/>
         <typedHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.metaLanguage.JKTMetaTypedHandlerDelegate"/>
         <gotoDeclarationHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookGotoDeclarationProvider"/>
         <!--<searcher forClass="com.intellij.psi.search.searches.ReferencesSearch$SearchParameters"-->
