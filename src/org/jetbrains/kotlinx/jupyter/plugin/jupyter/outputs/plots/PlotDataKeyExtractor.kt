@@ -8,11 +8,10 @@ import com.intellij.util.asSafely
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.util.convertObject
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutputDataKeyExtractor
-import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataKey
 
 
 class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
-    override fun extractKey(dataObject: ObjectNode, executionCount: Int?): NotebookOutputDataKey? {
+    override fun extractKey(dataObject: ObjectNode, executionCount: Int?): LetsPlotOutputDataKey? {
         if (!KotlinNotebookApplicationOptions.get().showLetsPlotAsSwing) return null
         if (!dataObject.has(PLOT_KEY)) return null
         val plotValue = dataObject[PLOT_KEY].asSafely<ObjectNode>() ?: return null
