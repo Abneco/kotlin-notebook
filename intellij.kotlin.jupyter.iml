@@ -87,5 +87,23 @@
     <orderEntry type="module" module-name="intellij.java.ui" />
     <orderEntry type="module" module-name="intellij.java.aetherDependencyResolver" />
     <orderEntry type="library" name="jetbrains.lets.plot.shadowed" level="project" />
+    <orderEntry type="module-library">
+      <library name="jetbrains.lets.plot.export.shadowed" type="repository">
+        <properties maven-id="org.jetbrains.lets-plot:lets-plot-export-shadowed:4.1.0-14">
+          <verification>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.1.0-14/lets-plot-export-shadowed-4.1.0-14.jar">
+              <sha256sum>83ac49f1b73be74706f73027569516b124bec779bbd8ebca7c4b72f005716f90</sha256sum>
+            </artifact>
+          </verification>
+        </properties>
+        <CLASSES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.1.0-14/lets-plot-export-shadowed-4.1.0-14.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.1.0-14/lets-plot-export-shadowed-4.1.0-14-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
   </component>
 </module>

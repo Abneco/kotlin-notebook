@@ -254,6 +254,9 @@
         <action id="ToggleShowExecutionCount" class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookToggleShowExecutionCountAction">
             <add-to-group group-id="JupyterEditorGutterPopupActions"/>
         </action>
+        <action id="ExportLetsPlot" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export.ExportPlotAction" icon="AllIcons.Actions.Download">
+            <add-to-group group-id="JupyterCellOutputMenu"/>
+        </action>
 
         <group id="KotlinNotebookSettingsActions" popup="true" icon="AllIcons.General.GearPlain"
                class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookSettingsActions">
