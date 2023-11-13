@@ -6,6 +6,7 @@ import kotlin.math.ceil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.util.asSafely
 import org.jetbrains.letsPlot.core.util.MonolithicCommon
 import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
@@ -134,124 +135,120 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
 
     companion object {
         private val LOG = thisLogger()
+    }
+}
 
-        private fun getSpec(dataKey: LetsPlotOutputDataKey) = getSpec(dataKey, uiFeelsDark())
+private fun getSpec(dataKey: LetsPlotOutputDataKey) = getSpec(dataKey, uiFeelsDark())
 
-        private fun getSpec(dataKey: LetsPlotOutputDataKey, isDark: Boolean?): MutableLetsPlotSpec {
-            val rawSpec = deserializeSpec(dataKey.spec).toMutableMap().also {
-                if (dataKey.applyColorScheme) {
-                    updateFlavor(it, isDark)
-                }
-            }
-            val processedSpec = MonolithicCommon.processRawSpecs(rawSpec, false)
-            return processedSpec.toMutableMap()
+private fun getSpec(dataKey: LetsPlotOutputDataKey, isDark: Boolean?): MutableLetsPlotSpec {
+    val rawSpec = deserializeSpec(dataKey.spec).toMutableMap().also {
+        if (dataKey.applyColorScheme) {
+            updateFlavor(it, isDark)
         }
+    }
+    val processedSpec = MonolithicCommon.processRawSpecs(rawSpec, false)
+    return processedSpec.toMutableMap()
+}
 
-        @Suppress("UNCHECKED_CAST")
-        private fun updateFlavorForPlot(spec: MutableLetsPlotSpec, flavorName: String) {
-            spec.compute("theme") { _, theme ->
-              ((theme as? LetsPlotSpec)?.toMutableMap() ?: mutableMapOf()).apply {
-                    putIfAbsent("flavor", flavorName)
-                }
-            }
+private fun updateFlavorForPlot(spec: MutableLetsPlotSpec, flavorName: String) {
+    spec.compute("theme") { _, theme ->
+        (theme.asSafely<LetsPlotSpec>()?.toMutableMap() ?: mutableMapOf()).apply {
+            putIfAbsent("flavor", flavorName)
         }
+    }
+}
 
-        @Suppress("UNCHECKED_CAST")
-        private fun updateFlavorForGGBunch(spec: MutableLetsPlotSpec, flavorName: String) {
-            spec.compute("items") { _, items ->
-              (items as? List<LetsPlotSpec>)?.map {
-                    it.toMutableMap().also { item ->
-                        item.compute("feature_spec") { _, feat ->
-                          (feat as LetsPlotSpec).toMutableMap().also { plotSpec ->
-                                updateFlavorForPlot(plotSpec, flavorName)
-                            }
-                        }
+private fun updateFlavorForGGBunch(spec: MutableLetsPlotSpec, flavorName: String) {
+    spec.compute("items") { _, items ->
+        (items.asSafely<List<LetsPlotSpec>>())?.map {
+            it.toMutableMap().also { item ->
+                item.compute("feature_spec") { _, feat ->
+                    @Suppress("UNCHECKED_CAST")
+                    (feat as LetsPlotSpec).toMutableMap().also { plotSpec ->
+                        updateFlavorForPlot(plotSpec, flavorName)
                     }
-                }.orEmpty()
-            }
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        private fun updateFlavorForSubPlots(spec: MutableLetsPlotSpec, flavorName: String) {
-            spec.compute("figures") { _, figures ->
-              (figures as? List<LetsPlotSpec?>)?.map {
-                    it?.toMutableMap()?.also { figure ->
-                        updateFlavorForPlot(figure, flavorName)
-                    }
-                }.orEmpty()
-            }
-        }
-
-        private fun updateFlavor(rawSpec: MutableLetsPlotSpec, isDark: Boolean?)  {
-            if (isDark == null) return
-            val flavorName = if (isDark) ThemeOption.Flavor.DARCULA else ThemeOption.Flavor.HIGH_CONTRAST_LIGHT
-            when(PlotConfig.figSpecKind(rawSpec)) {
-                FigKind.PLOT_SPEC -> updateFlavorForPlot(rawSpec, flavorName)
-                FigKind.SUBPLOTS_SPEC -> updateFlavorForSubPlots(rawSpec, flavorName)
-                FigKind.GG_BUNCH_SPEC -> updateFlavorForGGBunch(rawSpec, flavorName)
-                else -> return
-            }
-        }
-
-        private fun plotSizeCropped(spec: LetsPlotSpec, containerWidth: Int, containerHeight: Int): Pair<Int, Int> {
-            return plotSize(spec, (containerWidth - 10).coerceAtLeast(0), (containerHeight - 10).coerceAtLeast(0))
-        }
-
-
-        private fun plotSize(spec: LetsPlotSpec, containerWidth: Int, containerHeight: Int): Pair<Int, Int> {
-            return scaledFigureSize(spec, containerWidth, containerHeight)
-        }
-
-        private fun scaledFigureSize(
-            aspectRatio: Double,
-            containerWidth: Int,
-            containerHeight: Int
-        ): Pair<Int, Int> {
-            return if (aspectRatio >= 1.0) {
-                val plotHeight = containerWidth / aspectRatio
-                val scaling = if (plotHeight > containerHeight) containerHeight / plotHeight else 1.0
-                Pair(floor(containerWidth * scaling).toInt(), floor(plotHeight * scaling).toInt())
-            } else {
-                val plotWidth = containerHeight * aspectRatio
-                val scaling = if (plotWidth > containerWidth) containerWidth / plotWidth else 1.0
-                Pair(floor(plotWidth * scaling).toInt(), floor(containerHeight * scaling).toInt())
-            }
-        }
-
-        private fun scaledFigureSize(
-            figureSpec: Map<String, Any>,
-            containerWidth: Int,
-            containerHeight: Int
-        ): Pair<Int, Int> {
-
-            if (PlotConfig.isFailure(figureSpec)) {
-                // just keep given size
-                return Pair(containerWidth, containerHeight)
-            }
-
-            return when (PlotConfig.figSpecKind(figureSpec)) {
-                FigKind.GG_BUNCH_SPEC -> {
-                    // don't scale GGBunch size
-                    val bunchSize = PlotSizeHelper.plotBunchSize(figureSpec)
-                    Pair(ceil(bunchSize.x).toInt(), ceil(bunchSize.y).toInt())
                 }
-
-                FigKind.PLOT_SPEC -> {
-                    // for single plot: scale component to fit in requested size
-                    val aspectRatio = PlotSizeHelper.figureAspectRatio(figureSpec)
-                    scaledFigureSize(aspectRatio, containerWidth, containerHeight)
-                }
-
-                FigKind.SUBPLOTS_SPEC -> {
-                    val (nCol, nRow) = (figureSpec["layout"]!! as Map<*, *>).let {
-                        (it["ncol"]!! as Double) to (it["nrow"] as Double)
-                    }
-                    val aspectRatio = (nCol * 600.0) / (nRow * 400.0)
-                    scaledFigureSize(aspectRatio, containerWidth, containerHeight)
-                }
-
             }
+        }.orEmpty()
+    }
+}
+
+private fun updateFlavorForSubPlots(spec: MutableLetsPlotSpec, flavorName: String) {
+    spec.compute("figures") { _, figures ->
+        (figures.asSafely<List<LetsPlotSpec?>>())?.map {
+            it?.toMutableMap()?.also { figure ->
+                updateFlavorForPlot(figure, flavorName)
+            }
+        }.orEmpty()
+    }
+}
+
+private fun updateFlavor(rawSpec: MutableLetsPlotSpec, isDark: Boolean?)  {
+    if (isDark == null) return
+    val flavorName = if (isDark) ThemeOption.Flavor.DARCULA else ThemeOption.Flavor.HIGH_CONTRAST_LIGHT
+    when(PlotConfig.figSpecKind(rawSpec)) {
+        FigKind.PLOT_SPEC -> updateFlavorForPlot(rawSpec, flavorName)
+        FigKind.SUBPLOTS_SPEC -> updateFlavorForSubPlots(rawSpec, flavorName)
+        FigKind.GG_BUNCH_SPEC -> updateFlavorForGGBunch(rawSpec, flavorName)
+        else -> return
+    }
+}
+
+private fun plotSizeCropped(spec: LetsPlotSpec, containerWidth: Int, containerHeight: Int): Pair<Int, Int> {
+    return plotSize(spec, (containerWidth - 10).coerceAtLeast(0), (containerHeight - 10).coerceAtLeast(0))
+}
+
+
+private fun plotSize(spec: LetsPlotSpec, containerWidth: Int, containerHeight: Int): Pair<Int, Int> {
+    return scaledFigureSize(spec, containerWidth, containerHeight)
+}
+
+private fun scaledFigureSize(
+    aspectRatio: Double,
+    containerWidth: Int,
+    containerHeight: Int
+): Pair<Int, Int> {
+    return if (aspectRatio >= 1.0) {
+        val plotHeight = containerWidth / aspectRatio
+        val scaling = if (plotHeight > containerHeight) containerHeight / plotHeight else 1.0
+        Pair(floor(containerWidth * scaling).toInt(), floor(plotHeight * scaling).toInt())
+    } else {
+        val plotWidth = containerHeight * aspectRatio
+        val scaling = if (plotWidth > containerWidth) containerWidth / plotWidth else 1.0
+        Pair(floor(plotWidth * scaling).toInt(), floor(containerHeight * scaling).toInt())
+    }
+}
+
+private fun scaledFigureSize(
+    figureSpec: Map<String, Any>,
+    containerWidth: Int,
+    containerHeight: Int
+): Pair<Int, Int> {
+
+    if (PlotConfig.isFailure(figureSpec)) {
+        // just keep given size
+        return Pair(containerWidth, containerHeight)
+    }
+
+    return when (PlotConfig.figSpecKind(figureSpec)) {
+        FigKind.GG_BUNCH_SPEC -> {
+            // don't scale GGBunch size
+            val bunchSize = PlotSizeHelper.plotBunchSize(figureSpec)
+            Pair(ceil(bunchSize.x).toInt(), ceil(bunchSize.y).toInt())
         }
 
+        FigKind.PLOT_SPEC -> {
+            // for single plot: scale component to fit in requested size
+            val aspectRatio = PlotSizeHelper.figureAspectRatio(figureSpec)
+            scaledFigureSize(aspectRatio, containerWidth, containerHeight)
+        }
+
+        FigKind.SUBPLOTS_SPEC -> {
+            val (nCol, nRow) = (figureSpec["layout"]!! as Map<*, *>).let {
+                (it["ncol"]!! as Double) to (it["nrow"] as Double)
+            }
+            val aspectRatio = (nCol * 600.0) / (nRow * 400.0)
+            scaledFigureSize(aspectRatio, containerWidth, containerHeight)
+        }
     }
 }
