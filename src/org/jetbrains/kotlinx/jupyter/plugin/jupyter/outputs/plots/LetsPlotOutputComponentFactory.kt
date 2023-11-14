@@ -24,7 +24,7 @@ import java.awt.Component
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOutputComponentFactory.LetsPlotComponent, LetsPlotOutputDataKey> {
+class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotComponent, LetsPlotOutputDataKey> {
 
     override val componentClass: Class<LetsPlotComponent>
         get() = LetsPlotComponent::class.java
@@ -61,76 +61,76 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotOut
             NotebookOutputComponentFactory.Match.NONE
         }
     }
+}
 
-    class LetsPlotComponent : JPanel() {
-        private var jComponent: JComponent? = null
-        private var _dataKey: LetsPlotOutputDataKey? = null
-        private var previousIsDark: Boolean? = null
+class LetsPlotComponent : JPanel() {
+    private var jComponent: JComponent? = null
+    private var _dataKey: LetsPlotOutputDataKey? = null
+    private var previousIsDark: Boolean? = null
 
-        val dataKey: LetsPlotOutputDataKey? get() = _dataKey
+    val dataKey: LetsPlotOutputDataKey? get() = _dataKey
 
-        override fun updateUI() {
-            val isDark = uiFeelsDark() ?: return
-            val data = _dataKey ?: return
-            if (previousIsDark == isDark) return
-            previousIsDark = isDark
+    override fun updateUI() {
+        val isDark = uiFeelsDark() ?: return
+        val data = _dataKey ?: return
+        if (previousIsDark == isDark) return
+        previousIsDark = isDark
 
-            clear()
+        clear()
 
-            val spec = getSpec(data, isDark)
-            initForSpec(spec)
+        val spec = getSpec(data, isDark)
+        initForSpec(spec)
+    }
+
+    override fun doLayout() {
+        super.doLayout()
+        val mySize = size
+        if (mySize.width <= 0 || mySize.height <= 0) return
+
+        val myComponent = jComponent ?: return
+        val myData = dataKey ?: return
+        val spec = getSpec(myData)
+        val (plotWidth, plotHeight) = plotSizeCropped(spec, mySize.width, mySize.height)
+        myComponent.setBounds(0, 0, plotWidth, plotHeight)
+    }
+
+    fun initialize(dataKey: LetsPlotOutputDataKey) {
+        clear()
+        val processedSpec = getSpec(dataKey)
+        initForSpec(processedSpec)
+        _dataKey = dataKey
+    }
+
+    private fun clear() {
+        jComponent?.let {
+            remove(it)
         }
+    }
 
-        override fun doLayout() {
-            super.doLayout()
-            val mySize = size
-            if (mySize.width <= 0 || mySize.height <= 0) return
-
-            val myComponent = jComponent ?: return
-            val myData = dataKey ?: return
-            val spec = getSpec(myData)
-            val (plotWidth, plotHeight) = plotSizeCropped(spec, mySize.width, mySize.height)
-            myComponent.setBounds(0, 0, plotWidth, plotHeight)
-        }
-
-        fun initialize(dataKey: LetsPlotOutputDataKey) {
-            clear()
-            val processedSpec = getSpec(dataKey)
-            initForSpec(processedSpec)
-            _dataKey = dataKey
-        }
-
-        private fun clear() {
-            jComponent?.let {
-                remove(it)
-            }
-        }
-
-        private fun initForSpec(processedSpec: MutableLetsPlotSpec) {
-            val plotPanel: PlotPanel = object : PlotPanel(
-              plotComponentProvider = IdeaPlotComponentProviderBatik(
+    private fun initForSpec(processedSpec: MutableLetsPlotSpec) {
+        val plotPanel: PlotPanel = object : PlotPanel(
+            plotComponentProvider = IdeaPlotComponentProviderBatik(
                 processedSpec = processedSpec,
                 preserveAspectRatio = false,
                 executor = IdeaSwingContextBatik.IDEA_EDT_EXECUTOR,
                 computationMessagesHandler = { messages ->
-                        for (message in messages) {
-                            LOG.debug("[Demo Plot Viewer] $message")
-                        }
+                    for (message in messages) {
+                        LOG.debug("[Demo Plot Viewer] $message")
                     }
-                ),
-              preferredSizeFromPlot = true,
-              repaintDelay = 200,
-              applicationContext = IdeaSwingContextBatik
-            ), Disposable {}
+                }
+            ),
+            preferredSizeFromPlot = true,
+            repaintDelay = 200,
+            applicationContext = IdeaSwingContextBatik
+        ), Disposable {}
 
-            plotPanel.isOpaque = true
+        plotPanel.isOpaque = true
 
-            alignmentX = Component.CENTER_ALIGNMENT
-            alignmentY = Component.CENTER_ALIGNMENT
+        alignmentX = Component.CENTER_ALIGNMENT
+        alignmentY = Component.CENTER_ALIGNMENT
 
-            add(plotPanel)
-            jComponent = plotPanel
-        }
+        add(plotPanel)
+        jComponent = plotPanel
     }
 
     companion object {
