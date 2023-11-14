@@ -10,6 +10,7 @@ import java.awt.AlphaComposite
 import java.awt.Dimension
 import java.awt.Graphics2D
 import java.awt.Rectangle
+import java.awt.Transparency
 import java.awt.image.BufferedImage
 import java.lang.ref.WeakReference
 
@@ -25,6 +26,11 @@ class IdeaBatikGraphicsNodeRenderer : BatikGraphicsNodeRenderer {
     private fun getRenderedImage(node: GraphicsNode, size: Dimension): BufferedImage {
         val width = size.width
         val height = size.height
+
+        if (width <= 0 || height <= 0) {
+            return emptyImage
+        }
+
         val img = ImageUtil.createImage(width, height, BufferedImage.TYPE_INT_ARGB)
         val g: Graphics2D = img.createGraphics().apply {
             setRenderingHint(
@@ -45,3 +51,5 @@ class IdeaBatikGraphicsNodeRenderer : BatikGraphicsNodeRenderer {
         private val cacheService get() = LetsPlotGraphicsNodesRenderingCache.getInstance()
     }
 }
+
+private val emptyImage = ImageUtil.createImage(1, 1, Transparency.TRANSLUCENT)
