@@ -82,7 +82,7 @@ class LetsPlotComponent : JBLayeredPane() {
     val dataKey: LetsPlotOutputDataKey? get() = _dataKey
 
     override fun updateUI() {
-        val isDark = uiFeelsDark() ?: return
+        val isDark = uiFeelsDark()
         val data = _dataKey ?: return
         if (previousIsDark == isDark) return
         previousIsDark = isDark
@@ -174,7 +174,7 @@ class LetsPlotComponent : JBLayeredPane() {
 
 private fun getSpec(dataKey: LetsPlotOutputDataKey) = getSpec(dataKey, uiFeelsDark())
 
-private fun getSpec(dataKey: LetsPlotOutputDataKey, isDark: Boolean?): MutableLetsPlotSpec {
+private fun getSpec(dataKey: LetsPlotOutputDataKey, isDark: Boolean): MutableLetsPlotSpec {
     val rawSpec = deserializeSpec(dataKey.spec).toMutableMap().also {
         if (dataKey.applyColorScheme) {
             updateFlavor(it, isDark)
@@ -217,8 +217,7 @@ private fun updateFlavorForSubPlots(spec: MutableLetsPlotSpec, flavorName: Strin
     }
 }
 
-private fun updateFlavor(rawSpec: MutableLetsPlotSpec, isDark: Boolean?)  {
-    if (isDark == null) return
+private fun updateFlavor(rawSpec: MutableLetsPlotSpec, isDark: Boolean)  {
     val flavorName = if (isDark) ThemeOption.Flavor.DARCULA else ThemeOption.Flavor.HIGH_CONTRAST_LIGHT
     when(PlotConfig.figSpecKind(rawSpec)) {
         FigKind.PLOT_SPEC -> updateFlavorForPlot(rawSpec, flavorName)

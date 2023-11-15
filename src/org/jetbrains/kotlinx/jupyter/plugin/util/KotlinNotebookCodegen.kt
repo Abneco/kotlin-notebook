@@ -3,8 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.util
 
 object KotlinNotebookCodegen {
     fun generateColorSchemeChangeCode(): String {
-        val isDark = uiFeelsDark() ?: return ""
-        val themeName = if (isDark) {
+        val themeName = if (uiFeelsDark()) {
             "DARK"
         } else {
             "LIGHT"

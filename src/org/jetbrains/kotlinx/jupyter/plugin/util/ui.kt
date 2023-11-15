@@ -12,7 +12,7 @@ import java.awt.event.MouseMotionListener
 import java.util.*
 import javax.swing.SwingUtilities
 
-fun uiFeelsDark(): Boolean? {
+fun uiFeelsDark(): Boolean {
     return StartupUiUtil.isDarkTheme
 }
 
