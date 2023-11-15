@@ -3,6 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogBuilder
@@ -18,9 +19,12 @@ import com.intellij.ui.layout.selectedValueMatches
 import com.intellij.ui.util.preferredWidth
 import org.jetbrains.kotlin.util.collectionUtils.filterIsInstanceAnd
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotComponent
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputDataKey
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.MutableLetsPlotSpec
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.PlotDataKeyExtractor
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import org.jetbrains.kotlinx.jupyter.plugin.util.firstAncestorOfType
 import org.jetbrains.letsPlot.awt.plot.PlotSvgExport
 import org.jetbrains.letsPlot.core.plot.export.PlotImageExport
 import org.jetbrains.letsPlot.core.plot.export.PlotImageExport.buildImageFromRawSpecs
@@ -43,10 +47,7 @@ class ExportPlotAction : NotebookEditorActionBase() {
     override fun actionPerformed(event: AnActionEvent) {
         val letsPlotOutputs = getLetsPlotOutputs(event)
 
-        val plotData = letsPlotOutputs.singleOrNull()?.data ?: return
-        val extractor = NotebookObjectOutputDataKeyExtractor.EP_NAME.findExtension(PlotDataKeyExtractor::class.java) ?: return
-        val spec = extractor.extractKey(plotData, null)?.spec ?: return
-
+        val spec = letsPlotOutputs.singleOrNull()?.spec ?: return
         val notebookFile = event.getNotebookFile() ?: return
         val notebookDir = notebookFile.file.parent
 
@@ -176,19 +177,29 @@ class ExportPlotAction : NotebookEditorActionBase() {
         }
     }
 
-    private fun getLetsPlotOutputs(event: AnActionEvent): List<JupyterDisplayDataOutput> {
+    private fun getLetsPlotOutputs(event: AnActionEvent): List<LetsPlotOutputDataKey> {
+        val contextComponent = event.dataContext.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT)
+        val letsPlotComponent = contextComponent?.firstAncestorOfType<LetsPlotComponent>()
+        if (letsPlotComponent != null) {
+            return listOfNotNull(letsPlotComponent.dataKey)
+        }
+
         val (psiCell, notebookVirtualFile) = event.dataContext.getNotebookCellAndFile() ?: return emptyList()
         return getLetsPlotOutputs(notebookVirtualFile, psiCell.getCellIndex())
     }
 
-    private fun getLetsPlotOutputs(notebookVirtualFile: BackedNotebookVirtualFile, cellIndex: Int): List<JupyterDisplayDataOutput> {
+    private fun getLetsPlotOutputs(notebookVirtualFile: BackedNotebookVirtualFile, cellIndex: Int): List<LetsPlotOutputDataKey> {
         val notebook = notebookVirtualFile.notebook
         val jupyterCell = notebook.cells[cellIndex]
 
         val outputs = jupyterCell.outputs ?: return emptyList()
 
-        return outputs.outputs.filterIsInstanceAnd { output ->
+        val extractor = NotebookObjectOutputDataKeyExtractor.EP_NAME.findExtension(PlotDataKeyExtractor::class.java) ?: return emptyList()
+
+        return outputs.outputs.filterIsInstanceAnd<JupyterDisplayDataOutput> { output ->
             output.data.has(PlotDataKeyExtractor.PLOT_KEY)
+        }.mapNotNull { letPlotOutput ->
+            extractor.extractKey(letPlotOutput.data, null)
         }
     }
 

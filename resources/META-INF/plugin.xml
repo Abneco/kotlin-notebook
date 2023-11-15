@@ -272,5 +272,9 @@
             <add-to-group group-id="JupyterEditorPopupActions"/>
             <add-to-group group-id="JupyterEditorLeftToolbarActions"/>
         </group>
+
+        <group id="LetsPlotActions">
+            <reference id="ExportLetsPlot"/>
+        </group>
     </actions>
 </idea-plugin>

@@ -1,28 +1,38 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots
 
-import kotlin.math.floor
-import kotlin.math.ceil
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.ui.PopupHandler
+import com.intellij.ui.components.JBLayeredPane
 import com.intellij.util.asSafely
-import org.jetbrains.letsPlot.core.util.MonolithicCommon
-import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
+import org.jetbrains.kotlinx.jupyter.plugin.util.MouseEventDeepReDispatcher
+import org.jetbrains.kotlinx.jupyter.plugin.util.RetargetingCursorProvider
+import org.jetbrains.kotlinx.jupyter.plugin.util.addCursorProvider
+import org.jetbrains.kotlinx.jupyter.plugin.util.addDispatchingMouseListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.uiFeelsDark
+import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
 import org.jetbrains.letsPlot.batik.plot.util.ServiceLoaderHelper
 import org.jetbrains.letsPlot.core.plot.builder.defaultTheme.values.ThemeOption
 import org.jetbrains.letsPlot.core.spec.FigKind
 import org.jetbrains.letsPlot.core.spec.config.PlotConfig
+import org.jetbrains.letsPlot.core.util.MonolithicCommon
 import org.jetbrains.letsPlot.core.util.PlotSizeHelper
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.createGutterPainter
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.updateGutterPainter
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory.Companion.gutterPainter
 import java.awt.Component
+import java.awt.Cursor
+import java.awt.Dimension
 import javax.swing.JComponent
+import javax.swing.JLayeredPane
 import javax.swing.JPanel
+import kotlin.math.ceil
+import kotlin.math.floor
 
 class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotComponent, LetsPlotOutputDataKey> {
 
@@ -63,8 +73,9 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotCom
     }
 }
 
-class LetsPlotComponent : JPanel() {
-    private var jComponent: JComponent? = null
+class LetsPlotComponent : JBLayeredPane() {
+    private var plotPanel: JComponent? = null
+    private var transparentPanel: JPanel? = null
     private var _dataKey: LetsPlotOutputDataKey? = null
     private var previousIsDark: Boolean? = null
 
@@ -76,10 +87,7 @@ class LetsPlotComponent : JPanel() {
         if (previousIsDark == isDark) return
         previousIsDark = isDark
 
-        clear()
-
-        val spec = getSpec(data, isDark)
-        initForSpec(spec)
+        reinitComponent(getSpec(data, isDark))
     }
 
     override fun doLayout() {
@@ -87,24 +95,34 @@ class LetsPlotComponent : JPanel() {
         val mySize = size
         if (mySize.width <= 0 || mySize.height <= 0) return
 
-        val myComponent = jComponent ?: return
+        val myComponent = plotPanel ?: return
         val myData = dataKey ?: return
         val spec = getSpec(myData)
-        val (plotWidth, plotHeight) = plotSizeCropped(spec, mySize.width, mySize.height)
+        val (plotWidth, plotHeight) = plotSize(spec, mySize.width, mySize.height)
         myComponent.setBounds(0, 0, plotWidth, plotHeight)
+
+        val transparentPanel = this.transparentPanel ?: return
+        transparentPanel.size = mySize
     }
 
     fun initialize(dataKey: LetsPlotOutputDataKey) {
-        clear()
-        val processedSpec = getSpec(dataKey)
-        initForSpec(processedSpec)
+        reinitComponent(getSpec(dataKey))
         _dataKey = dataKey
     }
 
+    private fun reinitComponent(spec: MutableLetsPlotSpec) {
+        clear()
+        initForSpec(spec)
+    }
+
     private fun clear() {
-        jComponent?.let {
-            remove(it)
-        }
+        removeAll()
+        plotPanel = null
+        transparentPanel = null
+    }
+
+    override fun getPreferredSize(): Dimension {
+        return plotPanel?.preferredSize ?: super.getPreferredSize()
     }
 
     private fun initForSpec(processedSpec: MutableLetsPlotSpec) {
@@ -129,8 +147,24 @@ class LetsPlotComponent : JPanel() {
         alignmentX = Component.CENTER_ALIGNMENT
         alignmentY = Component.CENTER_ALIGNMENT
 
-        add(plotPanel)
-        jComponent = plotPanel
+        val transparentPanel = JPanel().apply {
+            isOpaque = false
+            PopupHandler.installPopupMenu(this, "LetsPlotActions", ActionPlaces.JUPYTER_NOTEBOOK_CELL_OUTPUT_POPUP)
+
+            addDispatchingMouseListener(
+                MouseEventDeepReDispatcher(plotPanel)
+            )
+
+            addCursorProvider(
+                RetargetingCursorProvider.Factory(plotPanel, Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR))
+            )
+        }
+
+        add(transparentPanel, JLayeredPane.POPUP_LAYER, -1)
+        add(plotPanel, JLayeredPane.DEFAULT_LAYER, -1)
+
+        this.plotPanel = plotPanel
+        this.transparentPanel = transparentPanel
     }
 
     companion object {
@@ -193,11 +227,6 @@ private fun updateFlavor(rawSpec: MutableLetsPlotSpec, isDark: Boolean?)  {
         else -> return
     }
 }
-
-private fun plotSizeCropped(spec: LetsPlotSpec, containerWidth: Int, containerHeight: Int): Pair<Int, Int> {
-    return plotSize(spec, (containerWidth - 10).coerceAtLeast(0), (containerHeight - 10).coerceAtLeast(0))
-}
-
 
 private fun plotSize(spec: LetsPlotSpec, containerWidth: Int, containerHeight: Int): Pair<Int, Int> {
     return scaledFigureSize(spec, containerWidth, containerHeight)
