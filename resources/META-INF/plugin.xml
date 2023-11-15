@@ -197,6 +197,13 @@
                 key="kotlin.jupyter.output.error.notification.group"
         />
 
+        <notificationGroup
+                id="Kandy plot export"
+                displayType="BALLOON"
+                bundle="messages.KotlinNotebookBundle"
+                key="kotlin.notebook.outputs.kandy.export.notification.group"
+        />
+
         <statistics.counterUsagesCollector implementationClass="org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector"/>
         <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookMissingJdkEditorNotification"/>
     </extensions>

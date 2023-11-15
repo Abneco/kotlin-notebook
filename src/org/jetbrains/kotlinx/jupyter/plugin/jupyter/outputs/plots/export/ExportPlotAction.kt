@@ -1,9 +1,15 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
 
+import com.intellij.ide.actions.OpenFileAction
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationType
+import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogBuilder
@@ -17,6 +23,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.layout.selectedValueMatches
 import com.intellij.ui.util.preferredWidth
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.kotlin.util.collectionUtils.filterIsInstanceAnd
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotComponent
@@ -53,7 +60,10 @@ class ExportPlotAction : NotebookEditorActionBase() {
 
         val exportModel = showExportDialog(notebookDir) ?: return
 
-        export(deserializeSpec(spec).toMutableMap(), exportModel)
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val file = export(deserializeSpec(spec).toMutableMap(), exportModel)
+            showPlotExportedNotification(file)
+        }
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
@@ -144,7 +154,8 @@ class ExportPlotAction : NotebookEditorActionBase() {
         return model.takeIf { isOk }
     }
 
-    private fun export(spec: MutableLetsPlotSpec, model: ExportModel) {
+    @RequiresBackgroundThread
+    private fun export(spec: MutableLetsPlotSpec, model: ExportModel): File {
         val file = File(model.directory, model.fileName)
         if (!file.exists()) {
             file.createNewFile()
@@ -164,7 +175,6 @@ class ExportPlotAction : NotebookEditorActionBase() {
                     ExportFormat.JPG -> PlotImageExport.Format.JPEG()
                     else -> throw IllegalStateException("No other formats are possible on this stage")
                 }
-                // todo take parameters from model
                 val byteArray = buildImageFromRawSpecs(
                     plotSpec = spec,
                     format = format,
@@ -173,8 +183,9 @@ class ExportPlotAction : NotebookEditorActionBase() {
                 ).bytes
                 file.writeBytes(byteArray)
             }
-
         }
+
+        return file
     }
 
     private fun getLetsPlotOutputs(event: AnActionEvent): List<LetsPlotOutputDataKey> {
@@ -231,4 +242,23 @@ class ExportPlotAction : NotebookEditorActionBase() {
             }
         }
     }
+}
+
+private const val KANDY_NOTIFICATIONS_GROUP = "Kandy plot export"
+
+private fun showPlotExportedNotification(file: File) {
+    val notification = Notification(
+        KANDY_NOTIFICATIONS_GROUP,
+        KotlinNotebookBundle.message("kotlin.notebook.outputs.kandy.export.notification.message", file.name),
+        NotificationType.INFORMATION
+    )
+
+    notification.addAction(
+        NotificationAction.create(KotlinNotebookBundle.message("kotlin.notebook.outputs.kandy.export.notification.action.open")) { e ->
+            val project = e.project ?: return@create
+            OpenFileAction.openFile(file.absolutePath, project)
+        }
+    )
+
+    Notifications.Bus.notify(notification)
 }
