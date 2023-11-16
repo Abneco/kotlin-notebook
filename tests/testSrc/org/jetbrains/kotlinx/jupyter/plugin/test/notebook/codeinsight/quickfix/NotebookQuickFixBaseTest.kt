@@ -10,7 +10,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
-import com.intellij.rt.execution.junit.FileComparisonFailure
 import com.intellij.util.ui.UIUtil
 import junit.framework.TestCase
 import org.jetbrains.kotlin.idea.test.ConfigLibraryUtil
@@ -107,8 +106,6 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
                 val contents = StringUtil.convertLineSeparators(fileText)
 
                 applyAction(contents)
-            } catch (e: FileComparisonFailure) {
-                throw e
             } catch (e: AssertionError) {
                 throw e
             } finally {
