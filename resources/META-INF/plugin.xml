@@ -57,6 +57,31 @@
         ]]>
     </description>
 
+    <!--suppress PluginXmlValidity -->
+    <change-notes>
+        <![CDATA[
+            <h1>What's New in Kotlin Notebook 2023.3</h1>
+
+            <p>In this release, our primary focus was on maintenance tasks. However, we're delighted to introduce several notable features that have made it into this release.</p>
+            <ul>
+                <li>DataFrame tables are now rendered natively by default, and hierarchical DataFrame rendering is now supported!</li>
+                <li>Kandy plots are also rendered natively by default.</li>
+                <li>You can now choose the kernel version, providing more flexibility and freedom from embedded kernel versions.</li>
+                <li>Java to Kotlin conversion is now supported within the notebooks.</li>
+                <li>We have improved the user experience for managing project dependencies.</li>
+                <li>When you drop a CSV file into the notebook editor, DataFrame code is now generated automatically.</li>
+            </ul>
+
+            <p>This release also addresses several bug fixes, including:</p>
+            <ul>
+                <li>Enhanced stability in code highlighting.</li>
+                <li>Thorough testing and fixes for various Kotlin refactorings within the notebooks.</li>
+                <li>Resolution of minor issues related to autoformatting.</li>
+                <li>The kernel process is now automatically terminated upon IDE shutdown.</li>
+            </ul>
+        ]]>
+    </change-notes>
+
     <depends>org.jetbrains.kotlin</depends>
     <depends>Pythonid</depends>
     <depends>intellij.jupyter</depends>
