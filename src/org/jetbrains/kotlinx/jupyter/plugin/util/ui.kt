@@ -105,17 +105,18 @@ abstract class CursorProvider(protected val component: Component) {
     }
 }
 
-class RetargetingCursorProvider(component: Component, private val boundsSource: Component, private val cursor: Cursor): CursorProvider(component) {
+class RetargetingCursorProvider(component: Component, private val boundsSource: Component): CursorProvider(component) {
     override fun provideCursor(x: Int, y: Int): Cursor? {
         val pointWithinSource = SwingUtilities.convertPoint(component, x, y, boundsSource)
-        if (boundsSource.contains(pointWithinSource)) return cursor
+        if (!boundsSource.contains(pointWithinSource)) return null
 
-        return null
+        val cursorSource = SwingUtilities.getDeepestComponentAt(boundsSource, pointWithinSource.x, pointWithinSource.y)
+        return cursorSource.cursor
     }
 
-    class Factory(private val boundsSource: Component, private val cursor: Cursor): CursorProvider.Factory {
+    class Factory(private val boundsSource: Component): CursorProvider.Factory {
         override fun create(component: Component): CursorProvider {
-            return RetargetingCursorProvider(component, boundsSource, cursor)
+            return RetargetingCursorProvider(component, boundsSource)
         }
     }
 }

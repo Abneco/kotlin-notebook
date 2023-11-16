@@ -26,7 +26,6 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.updateGutterPainte
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory.Companion.gutterPainter
 import java.awt.Component
-import java.awt.Cursor
 import java.awt.Dimension
 import javax.swing.JComponent
 import javax.swing.JLayeredPane
@@ -156,7 +155,7 @@ class LetsPlotComponent : JBLayeredPane() {
             )
 
             addCursorProvider(
-                RetargetingCursorProvider.Factory(plotPanel, Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR))
+                RetargetingCursorProvider.Factory(plotPanel)
             )
         }
 
