@@ -4,7 +4,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.util.containers.nullize
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.util.CodeInterval
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
@@ -28,7 +27,7 @@ object KotlinCodeRangesProcessor {
         val code = getCellCode(cell)
         if (looksLikeReplCommand(code)) return CodeRangesResult(
             CellRanges(
-                null,
+                emptyList(),
                 listOf(
                     TextRange(
                         0,
@@ -42,12 +41,34 @@ object KotlinCodeRangesProcessor {
 
         fun Sequence<CodeInterval>.toRanges() = mapTo(mutableListOf()) {
             TextRange(it.from, it.to)
-        }.nullize()
+        }
 
         val codeRanges = magicsProcessor.codeIntervals(text, magicIntervals).toRanges()
         val magicRanges = magicIntervals.toRanges()
 
+        insertEmptyCodeRange(codeRanges, magicRanges)
+
         return CodeRangesResult(CellRanges(codeRanges, magicRanges), false)
+    }
+
+    private fun insertEmptyCodeRange(
+        codeRanges: MutableList<TextRange>,
+        magicRanges: List<TextRange>
+    ) {
+        val lastCodeRange = codeRanges.lastOrNull()
+        val lastMagicRange = magicRanges.lastOrNull()
+
+        var startOffset = -1
+
+        if (lastCodeRange == null) {
+            startOffset = lastMagicRange?.endOffset ?: 0
+        } else if (lastMagicRange != null && lastCodeRange.startOffset < lastMagicRange.startOffset) {
+            startOffset = lastMagicRange.endOffset
+        }
+
+        if (startOffset != -1) {
+            codeRanges.add(TextRange(startOffset, startOffset))
+        }
     }
 
     data class CodeRangesResult(
@@ -55,5 +76,5 @@ object KotlinCodeRangesProcessor {
         val isCommand: Boolean,
     )
 
-    data class CellRanges(val codeRanges: List<TextRange>?, val magicRanges: List<TextRange>?)
+    data class CellRanges(val codeRanges: List<TextRange>, val magicRanges: List<TextRange>)
 }

@@ -58,22 +58,24 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
 
             val (ranges, isCommand) = KotlinCodeRangesProcessor.codeRanges(element)
 
-            fun List<TextRange>.inject(language: Language, extension: String) {
+            fun List<TextRange>.inject(language: Language, extension: String, skipEmpty: Boolean) {
+                val rangesToInject = if (skipEmpty) filterNot { it.isEmpty } else this
+                if (rangesToInject.isEmpty()) return
+
                 registrar.startInjecting(
                     language,
                     "${getId(element)}.$extension"
                 )
-                for (range in this) {
-                    if (range.isEmpty) continue
+                for (range in rangesToInject) {
                     registrar.addPlace(null, null, element, range)
                 }
                 registrar.doneInjecting()
             }
 
             try {
-                ranges.codeRanges?.inject(kotlinLanguage, projectCompilerService.fileExtension)
-                if ((ranges.magicRanges?.size ?: 0) > 1 || isCommand) {
-                    ranges.magicRanges?.inject(metaLanguage, JKTMetaFileType.EXTENSION)
+                ranges.codeRanges.inject(kotlinLanguage, projectCompilerService.fileExtension, skipEmpty = false)
+                if (ranges.magicRanges.size > 1 || isCommand) {
+                    ranges.magicRanges.inject(metaLanguage, JKTMetaFileType.EXTENSION, skipEmpty = true)
                 }
             } catch (e: RuntimeException) {
                 // ignore concurrent change in NotebookVirtualFileSystem

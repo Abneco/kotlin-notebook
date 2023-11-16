@@ -1,14 +1,11 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.conversion
 
-import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiDocumentManager
-import com.intellij.psi.impl.source.resolve.FileContextUtil
 import junit.framework.TestCase
 import org.jetbrains.kotlin.idea.conversion.copy.ConvertTextJavaCopyPasteProcessor
 import org.jetbrains.kotlin.idea.editor.KotlinEditorOptions
@@ -21,16 +18,35 @@ import org.junit.Test
 import java.awt.datatransfer.StringSelection
 import java.io.File
 
+private const val emptyCellTemplate = "template.ipynb"
+private const val newLineCellTemplate = "templateNewLine.ipynb"
+
+private val testNameRegex = Regex("""(.*[^0-9])([0-9]*)""")
+
 class J2KConversionTest : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile
 
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/conversion"
 
     @Test
-    fun testSimpleConversion() = doTest()
+    fun testSimpleConversion() = doTest(emptyCellTemplate)
 
-    private fun doTest() {
-        myFixture.configureByJupyterFile("template.ipynb", testDataPath)
+    @Test
+    fun testSimpleConversion2() = doTest(newLineCellTemplate)
+
+    private fun myTestName(): String {
+        return getTestName(true)
+    }
+
+    private fun rawTestName(): String {
+        val myTestName = myTestName()
+        val match = testNameRegex.find(myTestName) ?: return myTestName
+        val rawPart = match.groupValues[1]
+        return rawPart
+    }
+
+    private fun doTest(templateFileName: String = emptyCellTemplate) {
+        myFixture.configureByJupyterFile(templateFileName, testDataPath)
         myFixture.setCaresAboutInjection(true)
         invokeAndWaitIfNeeded {
             setMode(NotebookEditorMode.EDIT)
@@ -42,8 +58,8 @@ class J2KConversionTest : KotlinNotebookBaseTestCase() {
 
         fun String.prepareText() = lines().joinToString("\n") { it.trimEnd() }
 
-        val javaCode = File(testDataPath).resolve("${getTestName(true)}.txt").readText()
-        val expectedCellText = File(testDataPath).resolve("${getTestName(true)}.kt.txt").readText().prepareText()
+        val javaCode = File(testDataPath).resolve("${rawTestName()}.txt").readText()
+        val expectedCellText = File(testDataPath).resolve("${myTestName()}.kt.txt").readText().prepareText()
 
         CopyPasteManager.getInstance().setContents(StringSelection(javaCode))
 
