@@ -3,8 +3,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.notifications
 
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
-import com.intellij.notification.NotificationGroup
-import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.notification.SingletonNotificationManager
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -19,22 +17,16 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookConfigurab
 @get:NotificationTitle
 private val kotlinNotebookTitle get() = KotlinNotebookBundle.message("kotlin.jupyter.settings.title")
 
+private const val kotlinNotebookSessionNotificationGroup = "Kotlin Notebook session info"
+
 internal interface NotebookNotificationShower {
     sealed class NotificationTarget
     fun showNotification(project: Project?, mark: NotificationTarget, @NlsSafe additionalMsg: String = "")
 }
 
 abstract class NotebookNotificationFactoryBase : NotebookNotificationShower {
-    protected fun prepareNotificationGroupTemplate(): NotificationGroup =
-        NotificationGroupManager.getInstance().getNotificationGroup("Find Problems")
-
-    protected inline fun NotificationGroup.wrapActionInNotify(project: Project?, crossinline action: NotificationGroup.() -> Notification) =
-        this.action().notify(project)
-
-    protected val informSingletonManager = SingletonNotificationManager("Find Problems", NotificationType.INFORMATION)
-    protected val informSingletonManagerWarning = SingletonNotificationManager("Find Problems", NotificationType.WARNING)
-    protected val informSessionSingletonManager = SingletonNotificationManager("Kotlin Notebook plugin updates", NotificationType.INFORMATION)
-
+    protected val sessionInfoNotifier = SingletonNotificationManager(kotlinNotebookSessionNotificationGroup, NotificationType.INFORMATION)
+    protected val sessionWarnNotifier = SingletonNotificationManager(kotlinNotebookSessionNotificationGroup, NotificationType.WARNING)
 }
 
 
@@ -55,27 +47,28 @@ internal class NotebookKernelRelatedNotificationFactory() : NotebookNotification
 
         when (mark) {
             is DependencyStatus.Outdated -> {
-                informSingletonManagerWarning.notify(
+                sessionWarnNotifier.notify(
                     kotlinNotebookTitle,
                     KotlinNotebookBundle.message("kotlin.jupyter.dependencies.build.error.outdated"),
-                        project
+                    project
                 )
             }
             is DependencyStatus.Absent -> {
-                prepareNotificationGroupTemplate().wrapActionInNotify(project) {
-                    createNotification(KotlinNotebookBundle.message("kotlin.jupyter.dependencies.build.error.severe"), NotificationType.WARNING)
-                        .setTitle(kotlinNotebookTitle)
-                }
+                sessionWarnNotifier.notify(
+                    kotlinNotebookTitle,
+                    KotlinNotebookBundle.message("kotlin.jupyter.dependencies.build.error.severe"),
+                    project
+                )
             }
             is DependencyStatus.AbsentInitial -> {
-                informSingletonManager.notify(
+                sessionInfoNotifier.notify(
                     kotlinNotebookTitle,
                     KotlinNotebookBundle.message("kotlin.jupyter.session.initial.setup"),
                         project
                 )
             }
             is DependencyStatus.InconsistentJDK -> {
-                informSingletonManagerWarning.notify(
+                sessionWarnNotifier.notify(
                     kotlinNotebookTitle,
                     KotlinNotebookBundle.message("kotlin.jupyter.session.classloader.error") +
                             "\n" + additionalMsg, project
@@ -90,7 +83,7 @@ internal class NotebookKernelRelatedNotificationFactory() : NotebookNotification
                 }
             }
             is KernelStatus.SessionRestart -> {
-                informSessionSingletonManager
+                sessionInfoNotifier
                     .notify(
                         kotlinNotebookTitle,
                         KotlinNotebookBundle.message("kotlin.jupyter.session.restart"),
@@ -134,20 +127,21 @@ internal class NotebookUsageRelatedNotificationFactory() : NotebookNotificationF
 
         when (mark) {
             is ActionRelated.ByteCodeRefactoring -> {
-                prepareNotificationGroupTemplate().wrapActionInNotify(project) {
-                    createNotification(KotlinNotebookBundle.message("kotlin.jupyter.refactor.compiled.script"), NotificationType.WARNING)
-                        .setTitle(kotlinNotebookTitle)
-                }
+                sessionWarnNotifier.notify(
+                    kotlinNotebookTitle,
+                    KotlinNotebookBundle.message("kotlin.jupyter.refactor.compiled.script"),
+                    project
+                )
             }
             is ActionRelated.RerunActionNeeded -> {
-                informSingletonManager.notify(
+                sessionInfoNotifier.notify(
                    kotlinNotebookTitle,
                     KotlinNotebookBundle.message("kotlin.jupyter.refactor.changed.definition.rerun"),
-                        project
+                    project
                 )
             }
             is ActionRelated.UsagesRefactoring -> {
-                informSingletonManager
+                sessionInfoNotifier
                     .notify(
                         kotlinNotebookTitle,
                         KotlinNotebookBundle.message("kotlin.jupyter.refactor.changed.definition", additionalMsg.toIntOrNull() ?: 0),

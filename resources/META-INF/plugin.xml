@@ -191,6 +191,13 @@
         />
 
         <notificationGroup
+                id="Kotlin Notebook session info"
+                displayType="BALLOON"
+                bundle="messages.KotlinNotebookBundle"
+                key="kotlin.notebook.session.notification.group"
+        />
+
+        <notificationGroup
                 id="Kotlin Notebook output error"
                 displayType="BALLOON"
                 bundle="messages.KotlinNotebookBundle"
