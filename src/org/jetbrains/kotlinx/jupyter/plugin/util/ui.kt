@@ -16,8 +16,6 @@ fun uiFeelsDark(): Boolean {
     return StartupUiUtil.isDarkTheme
 }
 
-inline fun <reified R> Sequence<*>.firstOfType(): R? = filterIsInstance<R>().firstOrNull()
-
 fun Component.ancestors() = generateSequence(this) { it.parent }
 
 inline fun <reified T> Component.firstAncestorOfType() = ancestors().firstOfType<T>()
