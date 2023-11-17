@@ -106,9 +106,7 @@ abstract class CursorProvider(protected val component: Component) {
 class RetargetingCursorProvider(component: Component, private val boundsSource: Component): CursorProvider(component) {
     override fun provideCursor(x: Int, y: Int): Cursor? {
         val pointWithinSource = SwingUtilities.convertPoint(component, x, y, boundsSource)
-        if (!boundsSource.contains(pointWithinSource)) return null
-
-        val cursorSource = SwingUtilities.getDeepestComponentAt(boundsSource, pointWithinSource.x, pointWithinSource.y)
+        val cursorSource = SwingUtilities.getDeepestComponentAt(boundsSource, pointWithinSource.x, pointWithinSource.y) ?: return null
         return cursorSource.cursor
     }
 
@@ -124,14 +122,18 @@ fun Component.addCursorProvider(cursorProviderFactory: CursorProvider.Factory) {
     val defaultCursor = component.cursor
     val cursorProvider = cursorProviderFactory.create(component)
 
+    fun updateComponentCursor(e: MouseEvent?) {
+        if (e == null) return
+        val newCursor = cursorProvider.provideCursor(e.x, e.y)
+        UIUtil.setCursor(component, newCursor ?: defaultCursor)
+    }
+
     val mouseMotionListener = object : MouseMotionListener {
         override fun mouseDragged(e: MouseEvent?) {
         }
 
         override fun mouseMoved(e: MouseEvent?) {
-            if (e == null) return
-            val newCursor = cursorProvider.provideCursor(e.x, e.y)
-            UIUtil.setCursor(component, newCursor ?: defaultCursor)
+            updateComponentCursor(e)
         }
     }
 
