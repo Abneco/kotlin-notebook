@@ -27,6 +27,7 @@ import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputCompo
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory.Companion.gutterPainter
 import java.awt.Component
 import java.awt.Dimension
+import java.awt.event.ComponentEvent
 import javax.swing.JComponent
 import javax.swing.JLayeredPane
 import javax.swing.JPanel
@@ -99,6 +100,8 @@ class LetsPlotComponent : JBLayeredPane() {
         val spec = getSpec(myData)
         val (plotWidth, plotHeight) = plotSize(spec, mySize.width, mySize.height)
         myComponent.setBounds(0, 0, plotWidth, plotHeight)
+        // This is a workaround: plot panel may skip first resize event, but we need it to rebuild the plot
+        myComponent.dispatchEvent(ComponentEvent(myComponent, ComponentEvent.COMPONENT_RESIZED))
 
         val transparentPanel = this.transparentPanel ?: return
         transparentPanel.size = mySize
