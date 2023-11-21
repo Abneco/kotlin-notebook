@@ -1,0 +1,15 @@
+#%%
+open class TestBase {
+    @Throws(Exception::class)
+    protected open fun tearDown()
+}
+
+class Clazz : TestBase() {
+    @Throws(Exception::class)
+    override fun tearDown() {
+        RunAll.runAll(
+                { myTempFiles.deleteAll() },
+                { super.tearDown() }
+        )
+    }
+}

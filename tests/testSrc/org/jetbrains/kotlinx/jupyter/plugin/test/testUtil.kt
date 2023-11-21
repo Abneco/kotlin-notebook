@@ -188,3 +188,14 @@ fun Project.createEmptyNotebook(name: String): BackedNotebookVirtualFile {
 fun BackedNotebookVirtualFile.delete() {
     originFile.let { runWriteAction { it.delete("test") } }
 }
+
+fun cartesianProduct(vararg lists: List<Any>): List<Array<Any>> {
+    if (lists.isEmpty()) return listOf(emptyArray())
+
+    val head = lists.first()
+    val tail = lists.drop(1)
+
+    return head.flatMap { item ->
+        cartesianProduct(*tail.toTypedArray()).map { arrayOf(item, *it) }
+    }
+}

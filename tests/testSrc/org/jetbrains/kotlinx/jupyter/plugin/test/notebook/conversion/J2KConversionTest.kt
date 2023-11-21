@@ -11,42 +11,84 @@ import org.jetbrains.kotlin.idea.conversion.copy.ConvertTextJavaCopyPasteProcess
 import org.jetbrains.kotlin.idea.editor.KotlinEditorOptions
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
+import org.jetbrains.kotlinx.jupyter.plugin.test.cartesianProduct
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
+import org.junit.Assume
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 import java.awt.datatransfer.StringSelection
 import java.io.File
 
 private const val emptyCellTemplate = "template.ipynb"
 private const val newLineCellTemplate = "templateNewLine.ipynb"
 
-private val testNameRegex = Regex("""(.*[^0-9])([0-9]*)""")
+class MarkedTestParameter<T: Any>(
+    val value: T,
+    val expectedFileMark: String,
+    private val testNameMark: String,
+) {
+    override fun toString() = testNameMark
+}
 
-class J2KConversionTest : KotlinNotebookBaseTestCase() {
+@RunWith(Parameterized::class)
+class J2KConversionTest(
+    private val templateFileName: MarkedTestParameter<String>,
+    private val fromJavaFile: MarkedTestParameter<Boolean>,
+) : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile
 
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/conversion"
 
     @Test
-    fun testSimpleConversion() = doTest(emptyCellTemplate)
+    fun testSimpleConversion() = doTest()
 
-    @Test
-    fun testSimpleConversion2() = doTest(newLineCellTemplate)
+    companion object {
+        @Parameterized.Parameters(name = "{index}. Parameters: <{0}>, <{1}>")
+        @JvmStatic
+        fun `data`(): List<Array<Any>> {
+            return cartesianProduct(
+                listOf(
+                    MarkedTestParameter(emptyCellTemplate, "E", "to the empty cell"),
+                    MarkedTestParameter(newLineCellTemplate, "Nl", "to the cell with newline only")
+                ),
+                listOf(
+                    MarkedTestParameter(false, "Txt", "from text file"),
+                    MarkedTestParameter(true, "Java", "from Java file")
+                )
+            )
+        }
+    }
+
 
     private fun myTestName(): String {
         return getTestName(true)
     }
 
-    private fun rawTestName(): String {
-        val myTestName = myTestName()
-        val match = testNameRegex.find(myTestName) ?: return myTestName
-        val rawPart = match.groupValues[1]
-        return rawPart
-    }
+    private fun doTest() {
+        val expectedFileSuffix = listOf(templateFileName, fromJavaFile).joinToString("") { it.expectedFileMark }
+        val expectedCellFile = File(testDataPath).resolve("${myTestName()}$expectedFileSuffix.kt.txt")
+        Assume.assumeTrue(expectedCellFile.exists())
 
-    private fun doTest(templateFileName: String = emptyCellTemplate) {
-        myFixture.configureByJupyterFile(templateFileName, testDataPath)
+        val notebookFile = myFixture.configureByJupyterFile(templateFileName.value, testDataPath)
+
+        fun String.prepareText() = lines().joinToString("\n") { it.trimEnd() }
+        val expectedCellText = expectedCellFile.readText().prepareText()
+
+        val javaCode = File(testDataPath).resolve("${myTestName()}.txt").readText()
+
+        if (fromJavaFile.value) {
+            val javaPsi = myFixture.addFileToProject("MyJavaFile.java", javaCode)
+            myFixture.openFileInEditor(javaPsi.virtualFile)
+            myFixture.performEditorAction(IdeActions.ACTION_SELECT_ALL)
+            myFixture.performEditorAction(IdeActions.ACTION_COPY)
+            myFixture.openFileInEditor(notebookFile.file)
+        } else {
+            CopyPasteManager.getInstance().setContents(StringSelection(javaCode))
+        }
+
         myFixture.setCaresAboutInjection(true)
         invokeAndWaitIfNeeded {
             setMode(NotebookEditorMode.EDIT)
@@ -55,13 +97,6 @@ class J2KConversionTest : KotlinNotebookBaseTestCase() {
 
         KotlinEditorOptions.getInstance().isDonTShowConversionDialog = true
         ConvertTextJavaCopyPasteProcessor.conversionPerformed = false
-
-        fun String.prepareText() = lines().joinToString("\n") { it.trimEnd() }
-
-        val javaCode = File(testDataPath).resolve("${rawTestName()}.txt").readText()
-        val expectedCellText = File(testDataPath).resolve("${myTestName()}.kt.txt").readText().prepareText()
-
-        CopyPasteManager.getInstance().setContents(StringSelection(javaCode))
 
         myFixture.performEditorAction(IdeActions.ACTION_EDITOR_MOVE_CARET_DOWN)
         myFixture.performEditorAction(IdeActions.ACTION_PASTE)
