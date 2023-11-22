@@ -67,15 +67,16 @@ class J2KConversionTest(
         return getTestName(true)
     }
 
-    private fun doTest() {
+    private fun prepareExpectedCellText(): String {
         val expectedFileSuffix = listOf(templateFileName, fromJavaFile).joinToString("") { it.expectedFileMark }
         val expectedCellFile = File(testDataPath).resolve("${myTestName()}$expectedFileSuffix.kt.txt")
         Assume.assumeTrue(expectedCellFile.exists())
+        return expectedCellFile.readText().prepareText()
+    }
 
+    private fun doTest() {
+        val expectedCellText = prepareExpectedCellText()
         val notebookFile = myFixture.configureByJupyterFile(templateFileName.value, testDataPath)
-
-        fun String.prepareText() = lines().joinToString("\n") { it.trimEnd() }
-        val expectedCellText = expectedCellFile.readText().prepareText()
 
         val javaCode = File(testDataPath).resolve("${myTestName()}.txt").readText()
 
@@ -107,4 +108,6 @@ class J2KConversionTest(
         }.prepareText()
         TestCase.assertEquals(expectedCellText, actualText)
     }
+
+    private fun String.prepareText() = lines().joinToString("\n") { it.trimEnd() }
 }
