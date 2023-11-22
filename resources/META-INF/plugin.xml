@@ -62,22 +62,22 @@
         <![CDATA[
             <h1>What's New in Kotlin Notebook 2023.3</h1>
 
-            <p>In this release, our primary focus was on maintenance tasks. However, we're delighted to introduce several notable features that have made it into this release.</p>
+            <p>In this release, our primary focus was on maintenance tasks, but we're delighted to introduce several notable features.</p>
             <ul>
-                <li>DataFrame tables are now rendered natively by default, and hierarchical DataFrame rendering is now supported!</li>
+                <li>Native rendering is now the default for DataFrame tables, with support for hierarchical rendering!</li>
                 <li>Kandy plots are also rendered natively by default.</li>
-                <li>You can now choose the kernel version, providing more flexibility and freedom from embedded kernel versions.</li>
-                <li>Java to Kotlin conversion is now supported within the notebooks.</li>
-                <li>We have improved the user experience for managing project dependencies.</li>
-                <li>When you drop a CSV file into the notebook editor, DataFrame code is now generated automatically.</li>
+                <li>The kernel version can now be selected, offering greater flexibility and independence from embedded versions.</li>
+                <li>Conversion from Java to Kotlin is now supported within notebooks.</li>
+                <li>Enhancements have been made to the user experience for managing project dependencies.</li>
+                <li>Automatic generation of DataFrame code occurs when a CSV file is dropped into the notebook editor.</li>
             </ul>
 
             <p>This release also addresses several bug fixes, including:</p>
             <ul>
-                <li>Enhanced stability in code highlighting.</li>
-                <li>Thorough testing and fixes for various Kotlin refactorings within the notebooks.</li>
-                <li>Resolution of minor issues related to autoformatting.</li>
-                <li>The kernel process is now automatically terminated upon IDE shutdown.</li>
+                <li>Improved stability in code highlighting.</li>
+                <li>Extensive testing and fixes for various Kotlin refactorings within notebooks.</li>
+                <li>Resolution of minor issues in autoformatting.</li>
+                <li>Automatic termination of the kernel process upon IDE shutdown.</li>
             </ul>
         ]]>
     </change-notes>
