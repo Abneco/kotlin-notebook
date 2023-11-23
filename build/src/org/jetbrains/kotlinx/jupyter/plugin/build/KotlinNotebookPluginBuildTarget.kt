@@ -6,7 +6,6 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.intellij.build.BuildTasks
 import org.jetbrains.intellij.build.IdeaProjectLoaderUtil
 import org.jetbrains.intellij.build.IdeaUltimateProperties
-import org.jetbrains.intellij.build.ProprietaryBuildTools
 import org.jetbrains.intellij.build.impl.BuildContextImpl
 
 object KotlinNotebookPluginBuildTarget {
@@ -14,14 +13,13 @@ object KotlinNotebookPluginBuildTarget {
     @JvmStatic
     fun main(args: Array<String>) = runBlocking(Dispatchers.Default) {
         val ultimateHome = IdeaProjectLoaderUtil.guessUltimateHome(javaClass)
-        val context = BuildContextImpl.createContextBlocking(
-            IdeaProjectLoaderUtil.guessCommunityHome(javaClass),
-            IdeaProjectLoaderUtil.guessUltimateHome(javaClass),
-            IdeaUltimateProperties(ultimateHome),
-            ProprietaryBuildTools.DUMMY,
+        val context = BuildContextImpl.createContext(
+            communityHome = IdeaProjectLoaderUtil.guessCommunityHome(javaClass),
+            projectHome = IdeaProjectLoaderUtil.guessUltimateHome(javaClass),
+            productProperties = IdeaUltimateProperties(ultimateHome),
         )
 
-        BuildTasks.create(context).blockingBuildNonBundledPlugins(listOf(
+        BuildTasks.create(context).buildNonBundledPlugins(listOf(
             "intellij.kotlin.jupyter",
         ))
 
