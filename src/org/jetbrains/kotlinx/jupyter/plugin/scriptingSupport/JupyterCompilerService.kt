@@ -11,8 +11,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ultimate.PluginVerifier
+import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
+import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.serialization.serializationPluginEnabled
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -40,7 +42,7 @@ class JupyterCompilerService(val project: Project) : Disposable {
         registerKernelRestartListener()
     }
 
-    val initialClasspath: List<File> by lazy {
+    private val initialClasspath: List<File> by lazy {
        emptyList()
     }
 
@@ -49,6 +51,8 @@ class JupyterCompilerService(val project: Project) : Disposable {
             scriptClasspath = initialClasspath,
             compilerArgsConfigurator = DefaultCompilerArgsConfigurator(),
         ) {
+            addBaseClass<ScriptTemplateWithDisplayHelpers>()
+
             ide {
                 serializationPluginEnabled(true)
             }
