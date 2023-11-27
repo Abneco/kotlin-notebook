@@ -41,7 +41,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.plugins.notebooks.visualization.getCell
 
@@ -65,7 +65,6 @@ class NotebookMemberInplaceRenamer(
     override fun performRenameInner(element: PsiElement?, newName: String?) {
         super.performRenameInner(element, newName)
         if (element != null && newName?.isNotEmpty() == true && prevClassData != null) {
-            //invalidateStoredUserData(element.containingFile, null)
             element.containingFile.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, prevClassData)
         }
     }
@@ -104,7 +103,7 @@ class NotebookMemberInplaceRenamer(
                     val hostFile = injectedManager.getTopLevelFile(element)
                     if (adjustmentTextRange != null) {
                         notebookHighlightingService?.dataController?.update {
-                            notebookChangedCellIndex = hostFile?.getNotebookCellList()?.indexOf(originalHostInvocation)
+                            notebookChangedCellIndex = hostFile?.getNotebookCells()?.indexOf(originalHostInvocation)
                             renamingEnclosedRange = adjustmentTextRange
                         }
                     }
@@ -194,7 +193,7 @@ class NotebookMemberInplaceRenamer(
     }
 
     override fun performInplaceRefactoring(nameSuggestions: LinkedHashSet<String>?): Boolean {
-        if (myEditor is ImaginaryEditor && myEditor.getUserData(INPLACE_RENAME_ALLOWED) !== java.lang.Boolean.TRUE) return false
+        if (myEditor is ImaginaryEditor && myEditor.getUserData(INPLACE_RENAME_ALLOWED) != true) return false
         myNameSuggestions = nameSuggestions
         if (InjectedLanguageUtil.isInInjectedLanguagePrefixSuffix(myElementToRename)) {
             return false
@@ -202,9 +201,6 @@ class NotebookMemberInplaceRenamer(
 
         val references =
             KotlinNotebookElementFindUsagesHandler(myElementToRename).findReferencesToHighlight(myElementToRename, myElementToRename.useScope)
-                //.filter {
-                //    it.element.containingFile == originalElement.containingFile
-                //}
         val scope = checkLocalScope() ?: return false
 
         val containingFile = scope.containingFile

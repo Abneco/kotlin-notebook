@@ -10,11 +10,17 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.resolve.FileContextUtil
 import com.intellij.testFramework.TestLoggerFactory
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
+import com.intellij.testFramework.runInEdtAndWait
+import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.test.waitIndexingComplete
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
+import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
 import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServers
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 import org.junit.jupiter.api.Assertions
@@ -27,8 +33,8 @@ interface ReceivedMessages {
 }
 
 data class ReceivedMessagesBuilder(
-        override var reply: JupyterMessage? = null,
-        override val outputs: MutableList<JupyterMessage> = mutableListOf(),
+    override var reply: JupyterMessage? = null,
+    override val outputs: MutableList<JupyterMessage> = mutableListOf(),
 ) : ReceivedMessages
 
 interface ReceivedMessagesTester {
@@ -59,8 +65,32 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
         Disposer.register(testRootDisposable, JupyterServers.getInstance())
     }
 
+    // todo: add to base class
+    protected fun setUpScriptingDependencies() {
+        val ktFiles = when(val psiFile = myFixture.file) {
+            is KtFile -> listOf(psiFile)
+            is JupyterFile -> {
+                psiFile.getInjectedKtFiles()
+            }
+            else -> error("Only KtFiles are expected, file passed: ${psiFile}")
+        }
+
+        runInEdtAndWait {
+            myFixture.project.waitIndexingComplete()
+            runReadAction {
+                for (file in ktFiles) {
+                    ScriptConfigurationManager.updateScriptDependenciesSynchronously(
+                        file
+                    )
+                }
+            }
+        }
+
+    }
+
+
     protected fun configureExecutionTest(
-            copyNotebookToProject: Boolean = false,
+        copyNotebookToProject: Boolean = false,
     ): PsiFile {
         TestLoggerFactory.enableDebugLogging(myFixture.projectDisposable, javaClass)
         myFixture.setCaresAboutInjection(true)
@@ -70,9 +100,9 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
         (myFixture as CodeInsightTestFixtureImpl).canChangeDocumentDuringHighlighting(true)
 
         myFixture.configureByJupyterFile(
-                jupyterFileName = "${getTestName(true)}.ipynb",
-                testDataPath = testDataPath,
-                isCopyToProject = copyNotebookToProject,
+            jupyterFileName = "${getTestName(true)}.ipynb",
+            testDataPath = testDataPath,
+            isCopyToProject = copyNotebookToProject,
         )
         invokeAndWaitIfNeeded {
             setMode(NotebookEditorMode.EDIT)

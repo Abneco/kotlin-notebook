@@ -13,7 +13,7 @@ import org.jetbrains.kotlin.js.translate.utils.splitToRanges
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -52,7 +52,7 @@ class ImpatientNotebookChangeListener(
         val (document, psiFile, psiCells) = withReadAccess {
             val document = FileDocumentManager.getInstance().getDocument(file.file)
             val psiFile = file.file.toPsiFile(project)
-            val psiCells = psiFile?.getNotebookCellList()
+            val psiCells = psiFile?.getNotebookCells()
             Triple(document, psiFile, psiCells)
         }
         if (document == null || psiFile == null || psiCells == null) return
@@ -86,7 +86,6 @@ class ImpatientNotebookChangeListener(
         if (isInDocumentReformatAction) {
             cellsAffectedByReformat.add(targetCellIndex)
             notebookDataHolder.update { reformatDocumentTargets = cellsAffectedByReformat }
-            //document.handleWholeRefactorAction(cellsAffectedByReformat)
             return
         } else cellsAffectedByReformat.clear()
 

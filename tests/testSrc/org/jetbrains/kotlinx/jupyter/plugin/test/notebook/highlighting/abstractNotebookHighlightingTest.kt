@@ -6,22 +6,19 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzerSettings
 import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerImpl
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
-import com.intellij.codeInsight.daemon.impl.HighlightInfoType
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.editor.Document
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.ExpectedHighlightingData
+import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.util.ArrayUtilRt
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 
 abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTestCase() {
-    override lateinit var originalVirtualFile: VirtualFile
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/highlighting"
 
     abstract val canChangeDocumentDuringHighlighting: Boolean
@@ -69,53 +66,33 @@ abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTes
         return ExpectedHighlightingData(myFixture.editor.document, checkWarnings, checkWeakWarnings, checkInfos)
     }
 
-    protected fun getDocument(file: PsiFile): Document? {
-        return PsiDocumentManager.getInstance(file.project).getDocument(file)
-    }
-
-    protected fun removeDuplicatedRangesForInjected(infos: MutableList<out HighlightInfo>) {
-        infos.sortedWith { o1: HighlightInfo, o2: HighlightInfo ->
-            val i = o1.startOffset - o2.startOffset
-            if (i != 0) i else o1.severity.myVal - o2.severity.myVal
-        }
-        var prevInfo: HighlightInfo? = null
-        val it = infos.iterator()
-        while (it.hasNext()) {
-            val info = it.next()
-            if (prevInfo != null && info.severity === HighlightInfoType.SYMBOL_TYPE_SEVERITY && info.description == null && info.startOffset == prevInfo.startOffset && info.endOffset == prevInfo.endOffset) {
-                it.remove()
-            }
-            prevInfo = if (info.type === HighlightInfoType.INJECTED_LANGUAGE_FRAGMENT) info else null
-        }
-    }
-
     protected fun doTest(strategy: ResultCheckStrategy, notebookAftermathAction: (PsiFile) -> Unit = {}) {
         val notebookFile = configureExecutionTest()
-        InjectedLanguageManager.getInstance(project).getInjectedPsiFiles(notebookFile)
+        setUpScriptingDependencies()
         val filter = createFilterForStrategy(strategy)
         val expectedData = getExpectedHighlightingData(true, false, true)
         val results = doHighlighting()
-        assert(results.none { it.description != null && it.description == scriptingMissingClassError })
+        UsefulTestCase.assertTrue(results.none { it.description != null && it.description == scriptingMissingClassError })
 
         val isHasShadowed = results.any { it.description != null && (it.description.startsWith("Not yet provided symbol") || it.description.startsWith("Improper usage")) }
         if (strategy.isOnlyValidSyntax()) {
-            assert(results.none { it.severity == HighlightSeverity.ERROR })
+            UsefulTestCase.assertTrue(results.none { it.severity == HighlightSeverity.ERROR })
         }
         if (strategy.isShadowedErrors()) {
-            assert(isHasShadowed)
-            assert(results.none { it.severity == HighlightSeverity.ERROR })
+            UsefulTestCase.assertTrue(isHasShadowed)
+            UsefulTestCase.assertTrue(results.none { it.severity == HighlightSeverity.ERROR })
         }
 
         if (strategy.isOnlyValidSyntax()) {
-            assert(results.none { it.severity == HighlightSeverity.ERROR })
-            assert(!isHasShadowed)
+            UsefulTestCase.assertTrue(results.none { it.severity == HighlightSeverity.ERROR })
+            UsefulTestCase.assertTrue(!isHasShadowed)
         }
         val actualData = results.filter { filter(it) }
         if (strategy == ResultCheckStrategy.OnlyValidSyntax || strategy == ResultCheckStrategy.ShadowedErrors) {
             expectedData.checkResult(notebookFile, actualData, myFixture.editor.document.text)
         }
         if (strategy == ResultCheckStrategy.WithErrors) {
-            assert(results.any { it.severity == HighlightSeverity.ERROR })
+            UsefulTestCase.assertTrue(results.any { it.severity == HighlightSeverity.ERROR })
         }
 
         notebookAftermathAction(notebookFile)
@@ -141,7 +118,7 @@ abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTes
         return CodeInsightTestFixtureImpl.instantiateAndRun(file, editor, toIgnore, canChangeDocumentDuringHighlighting)
     }
 
-    protected fun createFilterForStrategy(strategy: ResultCheckStrategy): (HighlightInfo) -> Boolean {
+    private fun createFilterForStrategy(strategy: ResultCheckStrategy): (HighlightInfo) -> Boolean {
         return when (strategy) {
             ResultCheckStrategy.ShadowedErrors -> { {
                 it.severity.displayName == "INJECTED_FRAGMENT_SYNTAX" || it.severity.displayName == "ERROR"

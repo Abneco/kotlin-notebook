@@ -2,7 +2,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.editor.typing.state
 
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiLanguageInjectionHost
@@ -23,7 +22,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookH
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingManager
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCellHighlightingTrigger
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.tryWithWriteLock
@@ -40,9 +39,6 @@ class NotebookCaretStateProcessor(
     private val notebookHighlightingManager: NotebookHighlightingManager?,
     private val highlightingStarter: NotebookCellHighlightingTrigger
 ) : NotebookCaretMovementProcessor, NotebookDaemonFinishedEventProcessor {
-    companion object {
-        private val LOG = thisLogger()
-    }
 
     private val dataController = notebookHighlightingManager?.dataController
     private val psiFile = editor.virtualFile.toPsiFile(project)
@@ -113,9 +109,9 @@ class NotebookCaretStateProcessor(
                     floatingCellInd = ordinal
                 }
                 val cells = readAction {
-                    psiFile.getNotebookCellList()
+                    psiFile.getNotebookCells()
                 }
-                lastCell = cells?.get(ordinal)
+                lastCell = cells.getOrNull(ordinal)
 
                 val prevKnownInd = lastCellInd
                 val floatingInd = floatingCellInd
@@ -136,8 +132,8 @@ class NotebookCaretStateProcessor(
         val errorsRef = lastCell?.getErrorPresenceIndicator()
         prevCell = if (errorsRef?.acquire == true || errorsRef == null) lastCell else null
         val prev = prevCell
-        val cells = psiFile.getNotebookCellList()
-        lastCell = cells?.let {
+        val cells = psiFile.getNotebookCells()
+        lastCell = cells.let {
             val prevSize = lastCellSize
             lastCellSize = it.size
             isSizeChanged = prevSize != -1 && prevSize != lastCellSize
@@ -147,7 +143,8 @@ class NotebookCaretStateProcessor(
             ]
         }
         val prevInd = runIf(prev != null) {
-            cells?.indexOf(prev)?.let { if (it == -1) knownPrevInd else it }
+            val indexOfPrev = cells.indexOf(prev)
+            if (indexOfPrev == -1) knownPrevInd else indexOfPrev
         }
         val guaranteeAddition = if (knownPrevInd == ordinal) knownPrevInd - 1 else knownPrevInd
         highlightingStarter.performRangedUpdate(setOfNotNull(prevInd, guaranteeAddition, lastCellInd))

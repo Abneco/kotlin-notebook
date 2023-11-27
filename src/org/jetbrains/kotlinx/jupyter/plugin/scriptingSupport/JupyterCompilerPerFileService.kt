@@ -1,26 +1,20 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
-import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.EDT
-import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.thisLogger
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
@@ -31,7 +25,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.core.script.ClasspathToVfsConverter
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
@@ -40,6 +33,7 @@ import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrap
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
+import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
@@ -54,6 +48,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.ComputableWithName
 import org.jetbrains.kotlinx.jupyter.plugin.util.ExecutedOnceBackgroundTask
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
 import org.jetbrains.kotlinx.jupyter.plugin.util.anyOf
+import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
+import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.tryWithWriteLock
@@ -69,8 +65,6 @@ import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -110,9 +104,7 @@ class JupyterCompilerPerFileService(
     private var isDisposed = false
 
     private val compileLock = ReentrantReadWriteLock()
-    private val listLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(0)
-    private val nbInjectionHosts: MutableSet<PsiLanguageInjectionHost> = ConcurrentCollectionFactory.createConcurrentSet()
     private val implicitListsLoadQueue = ArrayDeque<Pair<Path, List<String>>>()
     val cellOrdinalToClassName = mutableMapOf<Int, Set<String>>()
 
@@ -155,49 +147,21 @@ class JupyterCompilerPerFileService(
     val executedCellsCount: Int get() = directoryCounter.get()
 
     fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
-        val psiDocumentManager = PsiDocumentManager.getInstance(project)
-        val fileDocumentManager = FileDocumentManager.getInstance()
-        val attemptsLimit = 3
-        for (attempt in 1..attemptsLimit) {
-            val res = runReadAction {
-                val injectedManager = InjectedLanguageManager.getInstance(project)
-                readInjectionHosts { hosts ->
-                    hosts?.flatMap { host ->
-                        injectedManager
-                            .getInjectedPsiFiles(host)
-                            .orEmpty()
-                            .map { it.first }
-                            .filterIsInstance<KtFile>()
-                            .mapNotNull { ktFile ->
-                                val conf = JupyterKtScriptingSupport.getConfiguration(project, ktFile)?.valueOrNull()
-                                if (conf != null) (ktFile.virtualFile to conf) else null
-                            }
-                    }
+        return runReadAction {
+            val notebookPsiFile = virtualFile.file.toPsiFile(project)
+            val ktFiles = notebookPsiFile.getInjectedKtFiles()
+            val configurations = ktFiles.mapNotNull { ktFile ->
+                val conf = JupyterKtScriptingSupport.getConfiguration(project, ktFile)?.valueOrNull()
+                if (conf == null || conf.dependenciesClassPath.isEmpty()) {
+                    ktFile.reportAsAttachment()
+                    null
+                } else {
+                    ktFile.virtualFile to conf
                 }
             }
-            if (res != null) return res
-            val document = runReadAction {
-                fileDocumentManager.getDocument(virtualFile.file)
-            } ?: return emptyList()
 
-            val commitNotifier = CountDownLatch(1)
-            // We commit document here and hope that Jupyter file will be reparsed,
-            // and injection hosts will be recollected on this reparse
-            invokeLater(ModalityState.nonModal()) {
-                try {
-                    psiDocumentManager.commitDocument(document)
-                } finally {
-                    commitNotifier.countDown()
-                }
-            }
-            if (!commitNotifier.await(30, TimeUnit.SECONDS)) {
-                LOG.error("Too long wait for document to commit", Throwable())
-                return emptyList()
-            }
+            configurations
         }
-
-        LOG.error("No luck in obtaining notebook's scripts in $attemptsLimit attempts")
-        return emptyList()
     }
 
     init {
@@ -210,6 +174,17 @@ class JupyterCompilerPerFileService(
             externalDependenciesProvider.join()
         }
     }
+
+    private fun KtFile.reportAsAttachment() {
+        LOG.errorUnderDebug(
+            "Empty script dependencies found",
+            Attachment(
+                virtualFilePath,
+                text.takeIf { it.isNotEmpty() } ?: "[Injected file has no text]"
+            )
+        )
+    }
+
 
     private fun getSession(): JupyterNotebookSession? {
         return try {
@@ -273,41 +248,27 @@ class JupyterCompilerPerFileService(
     ): ScriptCompilationConfiguration {
         val sourceText = runReadAction { sourceCode.text }
         LOG.debug("Before-compiling callback for script: $sourceText")
-        if (!externalDependenciesProvider.isCompletedSuccessfully) return config
 
-        val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
-        return ScriptCompilationConfiguration(withNewClasspath) {
-            hostConfiguration.update {
-                it.with {
-                    getScriptingClass(classGetter)
+        compileLock.read {
+            val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
+            return ScriptCompilationConfiguration(withNewClasspath) {
+                if (_currentClasspath.hasInitialPart) {
+                    addBaseClass<ScriptTemplateWithDisplayHelpers>()
                 }
-            }
-            implicitReceivers(implicitsList)
-            defaultImports(additionalDefaultImports.getList())
-            ide.dependenciesSources(
-                JvmDependency(
-                    project.allSourceRoots() + _sourceRoots.getList()
+
+                hostConfiguration.update {
+                    it.with {
+                        getScriptingClass(classGetter)
+                    }
+                }
+                implicitReceivers(implicitsList)
+                defaultImports(additionalDefaultImports.getList())
+                ide.dependenciesSources(
+                    JvmDependency(
+                        project.allSourceRoots() + _sourceRoots.getList()
+                    )
                 )
-            )
-        }
-    }
-
-    private fun <R> readInjectionHosts(readAction: (Collection<PsiLanguageInjectionHost>?) -> R): R {
-        return listLock.read {
-            val hosts = if (nbInjectionHosts.isEmpty()) {
-                emptyList()
-            } else if (!nbInjectionHosts.first().containingFile.isValid) {
-                null
-            } else {
-                nbInjectionHosts
             }
-            readAction(hosts)
-        }
-    }
-
-    fun updateInjectionHosts(updateAction: (MutableCollection<PsiLanguageInjectionHost>) -> Unit) {
-        listLock.write {
-            updateAction(nbInjectionHosts)
         }
     }
 
@@ -333,7 +294,6 @@ class JupyterCompilerPerFileService(
 
     fun updateScripting() {
         compileLock.withWriteLock {
-            //updateCellsAnalysis()
             NotebookHighlightingService.getForFile(project, virtualFile)
                 .beforeScriptingUpdate()
             JupyterKtScriptingSupport.update(project)
@@ -391,6 +351,8 @@ class JupyterCompilerPerFileService(
     )
 
     val hasPendingUpdates: Boolean get() = needsToUpdate.get()
+
+    // TODO: try do get rif of it
     private val needsToUpdate = AtomicBoolean(false)
 
     fun afterScriptingUpdate() {
@@ -403,17 +365,14 @@ class JupyterCompilerPerFileService(
 
     fun loadReceiverClassesIfAny(shouldUpdateImmediately: Boolean = false): Boolean {
         var loadedSize = 0
-        return compileLock.tryWithWriteLock {
+        val classesLoaded = compileLock.tryWithWriteLock {
             if (implicitListsLoadQueue.isEmpty()) {
                 return false
             }
             loadedSize = implicitListsLoadQueue.size
 
             while (implicitListsLoadQueue.isNotEmpty()) {
-                val firstElem = implicitListsLoadQueue.firstOrNull()
-                if (firstElem == null) {
-                    return@tryWithWriteLock needsToUpdate.get()
-                }
+                val firstElem = implicitListsLoadQueue.removeFirstOrNull() ?: return@tryWithWriteLock needsToUpdate.get()
                 val (lineDir, classes) = firstElem
                 try {
                     val loader = createNextClassLoader(lineDir)
@@ -422,7 +381,6 @@ class JupyterCompilerPerFileService(
                         val kClass = loader.loadClass(className).kotlin
                         implicitsList.addClass(kClass)
                     }
-                    implicitListsLoadQueue.removeFirstOrNull()
                     needsToUpdate.set(true)
                 } catch (e: Throwable) {
                     when (e) {
@@ -432,31 +390,29 @@ class JupyterCompilerPerFileService(
                         is UnsupportedClassVersionError -> {
                             val msg = e.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
                             NotebookNotificationUtility.kernelRelatedFactory.showKernelJDKInconsistentError(project, msg)
-                        }
-                        is ClassNotFoundException -> {
-                            implicitListsLoadQueue.removeFirstOrNull()
-                            LOG.error(e)
+                            return@tryWithWriteLock true
                         }
                         else -> LOG.error(e)
                     }
-                    return@tryWithWriteLock true
+                    return@tryWithWriteLock false
                 }
             }
-            return@tryWithWriteLock true
-        }.apply {
-            if (this == true && shouldUpdateImmediately) {
-                coroutineScope.async {
-                    val psiFile = readAction {
-                        virtualFile.file.toPsiFile(project)
-                    }
-                    LOG.debug("Requesting update of scripting after loading new classes in ${psiFile?.name}, loaded: $loadedSize")
-                    NotebookHighlightingService.getForFile(project, virtualFile).beforeScriptingUpdate()
-                    withContext(Dispatchers.EDT) {
-                        JupyterKtScriptingSupport.update(project)
-                    }
+            true
+        } ?: return false
+
+        if (classesLoaded && shouldUpdateImmediately) {
+            coroutineScope.async {
+                val psiFile = readAction {
+                    virtualFile.file.toPsiFile(project)
                 }
+                LOG.warn("Requesting update of scripting after loading new classes in ${psiFile?.name}, loaded: $loadedSize")
+                NotebookHighlightingService.getForFile(project, virtualFile).beforeScriptingUpdate()
+
+                JupyterKtScriptingSupport.update(project)
             }
-        } ?: false
+        }
+
+        return classesLoaded
     }
 
     internal fun changeCellsData(effectedIndexes: Collection<Int>,
@@ -577,10 +533,6 @@ class JupyterCompilerPerFileService(
             classesDir.delete(true)
             coroutineScope.cancel()
             implicitListsLoadQueue.clear()
-        }
-
-        listLock.write {
-            nbInjectionHosts.clear()
         }
 
         ClasspathToVfsConverter.clearCaches()

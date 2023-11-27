@@ -20,10 +20,10 @@ import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.idea.editor.fixers.end
 import org.jetbrains.kotlin.idea.editor.fixers.start
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFile
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.retrieveCellIntervalUnderCaret
+import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
@@ -55,7 +55,7 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
         }
         if (highlightingDataProvider?.renamingRanges != null) return
 
-        val cellList = jupyterPsiFile.getNotebookCellList() ?: return
+        val cellList = jupyterPsiFile.getNotebookCells().ifEmpty { return }
 
         val filesToProcess = cellList
             .mapNotNull { getKotlinFileWithRanges(it, formattingRanges, injectedManager) }
@@ -114,7 +114,7 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
         val hostRanges: List<TextRange> = formattingRanges
             .filter { range -> range.intersectsStrict(cellRange) }
         if (hostRanges.isEmpty()) return null
-        val ktFile = cell.getInjectedKtFile(injectedManager) ?: return null
+        val ktFile = cell.getInjectedKtFiles(injectedManager).firstOrNull() ?: return null
         val documentWindow = ktFile.toDocument(cell.project) as? DocumentWindow ?: return null
 
         val ranges = hostRanges.mapNotNull { range ->

@@ -8,17 +8,15 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
-import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.language.meta.JKTMetaFileType
 import org.jetbrains.kotlinx.jupyter.plugin.language.meta.JupyterKtMetaLanguage
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.KotlinCodeRangesProcessor
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.RAW_CELL_SUFFIX
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -48,40 +46,31 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
         if (!virtualFile.file.isKotlinNotebook) return
         if (element.cellMarker.text.matches(NON_CODE_CELL_REGEX)) return
 
-        val compilerService = projectCompilerService.getOrCreate(virtualFile)
-        val actualNotebookCells = (containingFile as? JupyterFile)?.children?.firstOrNull { it is JupyterNotebook }
-                            ?.children?.toSet() ?: emptySet()
+        val (ranges, isCommand) = KotlinCodeRangesProcessor.codeRanges(element)
 
-        compilerService.updateInjectionHosts { hosts ->
-            hosts.removeIf { it !in actualNotebookCells }
-            hosts.add(element)
+        fun List<TextRange>.inject(language: Language, extension: String, skipEmpty: Boolean) {
+            val rangesToInject = if (skipEmpty) filterNot { it.isEmpty } else this
+            if (rangesToInject.isEmpty()) return
 
-            val (ranges, isCommand) = KotlinCodeRangesProcessor.codeRanges(element)
-
-            fun List<TextRange>.inject(language: Language, extension: String, skipEmpty: Boolean) {
-                val rangesToInject = if (skipEmpty) filterNot { it.isEmpty } else this
-                if (rangesToInject.isEmpty()) return
-
-                registrar.startInjecting(
-                    language,
-                    "${getId(element)}.$extension"
-                )
-                for (range in rangesToInject) {
-                    registrar.addPlace(null, null, element, range)
-                }
-                registrar.doneInjecting()
+            registrar.startInjecting(
+                language,
+                "${getId(element)}.$extension"
+            )
+            for (range in rangesToInject) {
+                registrar.addPlace(null, null, element, range)
             }
+            registrar.doneInjecting()
+        }
 
-            try {
-                ranges.codeRanges.inject(kotlinLanguage, projectCompilerService.fileExtension, skipEmpty = false)
-                if (ranges.magicRanges.size > 1 || isCommand) {
-                    ranges.magicRanges.inject(metaLanguage, JKTMetaFileType.EXTENSION, skipEmpty = true)
-                }
-            } catch (e: RuntimeException) {
-                // ignore concurrent change in NotebookVirtualFileSystem
-                if (e is ProcessCanceledException) {
-                    throw e
-                }
+        try {
+            ranges.codeRanges.inject(kotlinLanguage, projectCompilerService.fileExtension, skipEmpty = false)
+            if (ranges.magicRanges.size > 1 || isCommand) {
+                ranges.magicRanges.inject(metaLanguage, JKTMetaFileType.EXTENSION, skipEmpty = true)
+            }
+        } catch (e: RuntimeException) {
+            // ignore concurrent change in NotebookVirtualFileSystem
+            if (e is ProcessCanceledException) {
+                throw e
             }
         }
     }

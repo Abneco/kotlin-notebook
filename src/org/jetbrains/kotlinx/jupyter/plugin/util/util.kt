@@ -6,7 +6,6 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -96,14 +95,31 @@ private fun getLanguageFromOriginalFile(file: VirtualFile): Language? {
     }
 }
 
-internal fun PsiFile?.getNotebookCellList() =
-    (this?.children?.first() as? JupyterNotebook)?.psiCellList
+fun PsiFile?.getInjectedKtFiles(): List<KtFile> {
+    if (this == null) return emptyList()
 
-internal fun PsiLanguageInjectionHost.getInjectedKtFile(injectedLanguageManager: InjectedLanguageManager) =
-    injectedLanguageManager.getInjectedPsiFiles(this)?.firstOrNull { it.first is KtFile }?.first as? KtFile
+    val manager = InjectedLanguageManager.getInstance(project)
+    val cells = getNotebookValidCells()
+
+    return buildList {
+        for (cell in cells) {
+            addAll(
+                cell.getInjectedKtFiles(manager)
+            )
+        }
+    }
+}
+
+fun PsiFile?.getNotebookValidCells() = getNotebookCells().filter { it.isValid && it is PsiLanguageInjectionHost }
+
+fun PsiFile?.getNotebookCells() =
+    (this?.children?.first() as? JupyterNotebook)?.psiCellList.orEmpty()
+
+fun PsiLanguageInjectionHost.getInjectedKtFiles(injectedLanguageManager: InjectedLanguageManager) =
+    injectedLanguageManager.getInjectedPsiFiles(this)?.map { it.first }?.filterIsInstance<KtFile>().orEmpty()
 
 fun PsiLanguageInjectionHost.getKtFileStartOffset(injectedLanguageManager: InjectedLanguageManager): Int? {
-    val ktFile = getInjectedKtFile(injectedLanguageManager) ?: return null
+    val ktFile = getInjectedKtFiles(injectedLanguageManager).firstOrNull() ?: return null
     return injectedLanguageManager.injectedToHost(ktFile, 0)
 }
 
@@ -145,12 +161,6 @@ internal inline fun <T> withReadAccess(crossinline block: () -> T): T {
 
 internal fun PsiFile.restartAnalyzing() {
     DaemonCodeAnalyzer.getInstance(this.project).restart(this)
-}
-
-internal fun restartAnalyzing(project: Project, virtualFile: VirtualFile) {
-    ReadAction.compute<PsiFile?, Throwable> {
-        virtualFile.toPsiFile(project)
-    }?.restartAnalyzing()
 }
 
 suspend fun anyOf(vararg actions: suspend () -> Boolean): Boolean {

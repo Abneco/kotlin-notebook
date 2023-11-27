@@ -105,7 +105,6 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         fun isInTheTransaction(project: Project) = getUpdater(project).isTransactionAboutToHappen()
 
         fun update(project: Project) {
-            // cache.clear()
             val updater = getUpdater(project)
             updateJob?.cancel()
             if (updater.isTransactionAboutToHappen()) {

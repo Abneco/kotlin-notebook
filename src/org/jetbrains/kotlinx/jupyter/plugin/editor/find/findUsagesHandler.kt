@@ -26,10 +26,10 @@ import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtReferenceExpression
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
-import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookGotoDeclarationProvider.Companion.tryGetPreviousValidResolvedResult
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder.tryResolveCompiledDeclaration
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
@@ -63,11 +63,10 @@ internal fun tryResolveCompiledDeclarationInNotebook(element: PsiElement, scope:
     tryGetPreviousValidResolvedResult(element)?.let { return it }
     var ans: PsiElement? = null
     runReadAction {
-        scope.getNotebookCellList()?.let { targets ->
-            ans = tryResolveCompiledDeclaration(element, targets)
-            if (ans != null) {
-                element.putUserData(IN_EDITOR_ELEM_REF_KEY, ans)
-            }
+        val targets = scope.getNotebookCells()
+        ans = tryResolveCompiledDeclaration(element, targets)
+        if (ans != null) {
+            element.putUserData(IN_EDITOR_ELEM_REF_KEY, ans)
         }
     }
     return ans

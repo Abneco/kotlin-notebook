@@ -11,7 +11,6 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.colors.CodeInsightColors
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
@@ -37,7 +36,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
@@ -51,7 +50,6 @@ import java.util.concurrent.atomic.AtomicReference
 
 internal object NotebookHighlightingUtilityObject {
     const val notebookInjectedFileExtension: String = "jupyter.kts"
-    private const val notebookInjectedMetaFileExtension: String = "juktm"
     private const val notebookDocumentFileExtension: String = "ipynb"
     private val updateScope = CoroutineScope(Dispatchers.Default)
     private val LOG = thisLogger()
@@ -104,9 +102,6 @@ internal object NotebookHighlightingUtilityObject {
         }
     }
 
-    fun isLooksLikeNotebookDocument(document: Document): Boolean =
-        FileDocumentManager.getInstance().getFile(document)?.extension == notebookDocumentFileExtension
-
     fun looksLikeNotebookFile(file: PsiFile): Boolean =
         file.fileType.defaultExtension == notebookDocumentFileExtension
 
@@ -121,7 +116,7 @@ internal object NotebookHighlightingUtilityObject {
             notebookChangedCellIndex = null
             renamingEnclosedRange = null
             notebookRangesQueuedForHL?.addAll(
-                file.toPsiFile(project)?.getNotebookCellList()?.indices?.toList() ?: emptyList()
+              file.toPsiFile(project)?.getNotebookCells()?.indices?.toList() ?: emptyList()
             )
         }
     }
@@ -150,7 +145,7 @@ internal object NotebookHighlightingUtilityObject {
         if (project.isDisposed) return
         val (psiFile, cells) = runReadAction {
             val psiFile = vFile.toPsiFile(project)
-            val cells = psiFile?.getNotebookCellList()
+            val cells = psiFile?.getNotebookCells()
             hlManager?.dataController?.invalidateStateAfterCellExecution(null)
             val injectedManager = InjectedLanguageManager.getInstance(project)
             psiFile?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
@@ -291,12 +286,6 @@ internal object HighlightInfoManipulator {
         return if (diagnostic.factory.name == Errors.UNRESOLVED_REFERENCE.name)
             this.description(shadowedSymbolDescription).unescapedToolTip(shadowedSymbolDescription)
         else this.escapedToolTip(improperSymbolDescription)
-    }
-
-    private fun HighlightInfo.Builder.fillInProperDescription(info: HighlightInfo): HighlightInfo.Builder {
-        return if (info.description == Errors.UNRESOLVED_REFERENCE.name)
-                  this.description(shadowedSymbolDescription).unescapedToolTip(shadowedSymbolDescription)
-               else this.escapedToolTip(improperSymbolDescription)
     }
 }
 

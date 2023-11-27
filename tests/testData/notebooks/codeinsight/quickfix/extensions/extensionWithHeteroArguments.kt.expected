@@ -4,6 +4,6 @@ val l = listOf(1, 2, 3)
 val h = Hohoh()
 h.foo(l, listOf("a, b, c"))
 
-fun Hohoh.foo(l: Any, listOf: Any) {
+fun Hohoh.foo(l: List<Int>, listOf: List<String>) {
     TODO("Not yet implemented")
 }

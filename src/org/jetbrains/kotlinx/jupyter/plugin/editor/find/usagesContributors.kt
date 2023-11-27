@@ -16,7 +16,7 @@ import com.intellij.psi.util.parentOfType
 import com.intellij.util.Processor
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.kotlin.psi.KtDeclaration
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.isInsideKotlinNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.retrieveElementUnderCaret
@@ -81,13 +81,11 @@ sealed class NotebookUsagesContributor {
         val goalText = adjustElement(targetElement).text
         val injectedManager = InjectedLanguageManager.getInstance(project)
         val elemUnderCaret = retrieveElementUnderCaret(asPsiFile)
-        //val isInsideLambda = isItGeneratedNameInsideLambdaCall(targetElement, elemUnderCaret)
-        //println("Search for Libs! isInLambda: $isInsideLambda, elem: ${elemUnderCaret?.text}")
 
         // || to strict insideLambda rule optimisation
         val files = if (isFromDSLibs || isItGeneratedNameInsideLambdaCall(targetElement, elemUnderCaret)) listOfNotNull(elemUnderCaret?.containingFile)
-                    else asPsiFile.getNotebookCellList()?.mapNotNull { injectedManager.getInjectedPsiFiles(it)?.firstOrNull()?.first }
-        if (files.isNullOrEmpty()) return null
+                    else asPsiFile.getNotebookCells().mapNotNull { injectedManager.getInjectedPsiFiles(it)?.firstOrNull()?.first }
+        if (files.isEmpty()) return null
 
         val currentLocalSearchScope = LocalSearchScope(files.toTypedArray())
         helper.processElementsWithWord(processor, currentLocalSearchScope, goalText, UsageSearchContext.ANY,  true, false)
@@ -100,7 +98,7 @@ typealias UsageSearchSupplier = (VirtualFile, PsiElement, Boolean) -> Array<PsiE
 
 
 @ApiStatus.Experimental
-internal object NotebookUsagesContributorFactory : NotebookUsagesContributor() {
+internal data object NotebookUsagesContributorFactory : NotebookUsagesContributor() {
     enum class SearchPattern {
         Sources, CompiledCellClass, ProvidedLibrariesOrJVMDeclaration
     }

@@ -11,17 +11,20 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ultimate.PluginVerifier
-import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
-import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.serialization.serializationPluginEnabled
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelListener
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.script.experimental.api.*
+import kotlin.script.experimental.api.ScriptCompilationConfiguration
+import kotlin.script.experimental.api.ScriptEvaluationConfiguration
+import kotlin.script.experimental.api.asSuccess
+import kotlin.script.experimental.api.fileExtension
+import kotlin.script.experimental.api.ide
+import kotlin.script.experimental.api.refineConfiguration
 import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.jvm.baseClassLoader
 import kotlin.script.experimental.jvm.jvm
@@ -51,8 +54,6 @@ class JupyterCompilerService(val project: Project) : Disposable {
             scriptClasspath = initialClasspath,
             compilerArgsConfigurator = DefaultCompilerArgsConfigurator(),
         ) {
-            addBaseClass<ScriptTemplateWithDisplayHelpers>()
-
             ide {
                 serializationPluginEnabled(true)
             }

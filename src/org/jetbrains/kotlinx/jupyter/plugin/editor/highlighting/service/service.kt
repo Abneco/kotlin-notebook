@@ -46,7 +46,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.ImpatientNotebookChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCellList
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
@@ -121,7 +121,7 @@ class NotebookHighlightingManager(
     private fun initialiseData(project: Project) {
         val targetData = mutableSetOf<Int>()
         targetData.addAll(
-            virtualFile.file.toPsiFile(project)?.getNotebookCellList()?.indices?.toList() ?: emptyList()
+            virtualFile.file.toPsiFile(project).getNotebookCells().indices
         )
         dataController.update {
             notebookRangesQueuedForHL = targetData
@@ -215,8 +215,8 @@ class NotebookHighlightingManager(
                             ktFileRange,
                             it,
                             it.startOffset,
-                            InjectedLanguageUtilBase.getHighlightTokens(ktFile).filter {
-                                it.type != WHITE_SPACE
+                            InjectedLanguageUtilBase.getHighlightTokens(ktFile).filter { token ->
+                                token.type != WHITE_SPACE
                             }
                         )
                         if (ind == completeRangeInd) targetPsiFile = ktFile
@@ -247,10 +247,10 @@ class NotebookHighlightingManager(
         }
     }
 
-    private fun Collection<PsiFile>.toCellsIndexes(manager: InjectedLanguageManager) =
-        jupyterPsiFile?.getNotebookCellList()?.let { cells ->
-            mapNotNull { injected -> cells.indexOf(manager.getInjectionHost(injected)) }
-        }
+    private fun Collection<PsiFile>.toCellsIndexes(manager: InjectedLanguageManager): List<Int> {
+        val cells = jupyterPsiFile.getNotebookCells()
+        return mapNotNull { injected -> cells.indexOf(manager.getInjectionHost(injected)) }
+    }
 
     fun resetCaretListenerState() {
         activeCaretListener?.resetState()
@@ -367,7 +367,7 @@ class NotebookHighlightingManager(
         val manager = InjectedLanguageManager.getInstance(project)
         val seenNewFiles = unrecognizedFiles.isNotEmpty()
         if (seenNewFiles) {
-            queue?.addAll(unrecognizedFiles.toCellsIndexes(manager) ?: emptyList())
+            queue?.addAll(unrecognizedFiles.toCellsIndexes(manager))
         }
         val remaining = remainingIndexesToProcess
         if (remaining.isEmpty()) {
@@ -377,7 +377,7 @@ class NotebookHighlightingManager(
 
         if (isLeft || !executionRequestsDone) {
             psiFile?.let {
-                NotebookHighlightingRestarter.scheduleRegularUpdate(document, psiFile)
+                NotebookHighlightingRestarter.scheduleRegularUpdate(psiFile)
             }
         }
         if (isLeft) {
@@ -424,16 +424,22 @@ internal object NotebookHighlightingRestarter {
         }
     }
 
-    fun scheduleRegularUpdateNoChecks(file: PsiFile, delayDelta: Long = HL_DELAY_PAUSE) {
+    fun scheduleRegularUpdateNoChecks(
+        file: PsiFile,
+        delayDelta: Long = HL_DELAY_PAUSE
+    ) {
         regularUpdateScope.launch {
             delay(delayDelta)
             readAction { file.restartAnalyzing() }
         }
     }
 
-    inline fun scheduleRegularUpdate(document: Document?, file: PsiFile, delayDelta: Long = HL_DELAY_PAUSE,
-                                     crossinline afterRequest: () -> Unit = {},
-                                     crossinline undoRequest: () -> Unit = {}) {
+    inline fun scheduleRegularUpdate(
+        file: PsiFile,
+        delayDelta: Long = HL_DELAY_PAUSE,
+        crossinline afterRequest: () -> Unit = {},
+        crossinline undoRequest: () -> Unit = {}
+    ) {
         if (!shouldStartAfterPreChecks(file, updateJob, afterRequest, undoRequest)) return
         updateJob = regularUpdateScope.launch {
             performHLStartupTemplate(file, delayDelta, afterRequest)

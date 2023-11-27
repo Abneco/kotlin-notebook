@@ -1,56 +1,41 @@
+@file:Suppress("UNUSED")
+
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
+import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.util.containers.ContainerUtil
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
+import com.intellij.openapi.diagnostic.RuntimeExceptionWithAttachments
 
-private val dateFormatter = DateTimeFormatter.ofPattern("H:m:s")
 
 fun Logger.logListInfo(message: String, list: List<Any>) {
     info("$message. Listing ${list.size} elements:${list.joinToString("\n", "\n")}")
 }
 
-class LogEntry(
-  val message: String,
-  private val time: LocalTime,
-  private val threadName: String,
-  val stackTrace: Array<StackTraceElement>,
-) {
-    override fun toString(): String {
-        val formattedDate = "[${time.format(dateFormatter)}]"
-        val currentThread = "[$threadName]"
-        return "$formattedDate $currentThread $message"
+fun Logger.doUnderDebug(action: Logger.() -> Unit) {
+    if (isDebugEnabled) {
+        action()
     }
 }
 
-/**
- * [LogSaver] may be used for tracking some events in debug mode
- */
-class LogSaver {
-    private val entries: MutableList<LogEntry> = ContainerUtil.createConcurrentList()
-
-    fun clear() {
-        entries.clear()
-    }
-
-    fun eventsAsString(): String {
-        return entries.joinToString("\n")
-    }
-
-    operator fun invoke(message: String) {
-        val currentThread = Thread.currentThread()
-        invoke(
-            LogEntry(
-                message,
-                LocalTime.now(),
-                currentThread.name,
-                currentThread.stackTrace
-            )
-        )
-    }
-
-    operator fun invoke(entry: LogEntry) {
-        entries.add(entry)
-    }
+fun Logger.errorUnderDebug(message: String) = doUnderDebug {
+    error(message)
 }
+
+fun Logger.errorUnderDebug(message: String, throwable: Throwable) = doUnderDebug {
+    error(message, throwable)
+}
+
+
+fun Logger.errorUnderDebug(message: String, vararg attachments: Attachment) = doUnderDebug {
+    errorWithAttachments(message, *attachments)
+}
+
+fun Logger.errorUnderDebug(throwable: Throwable) = doUnderDebug {
+    error(throwable)
+}
+
+fun Logger.errorWithAttachments(message: String, vararg attachments: Attachment) =
+    error(
+        message,
+        RuntimeExceptionWithAttachments(message, *attachments)
+    )

@@ -13,6 +13,8 @@ internal class TwoPartsList<T>(
 
     val size: Int get() = initialPart.size + snippetsPart.size
 
+    val hasInitialPart: Boolean get() = initialPart.isNotEmpty()
+
     fun clear() {
         lock.withWriteLock { snippetsPart.clear() }
     }
