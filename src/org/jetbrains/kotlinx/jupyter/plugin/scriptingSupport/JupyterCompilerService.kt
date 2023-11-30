@@ -5,16 +5,23 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ultimate.PluginVerifier
+import com.intellij.util.messages.Topic
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.serialization.serializationPluginEnabled
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelListener
 import java.io.File
@@ -37,7 +44,7 @@ import kotlin.script.experimental.jvm.jvm
  * @property project This service project
  */
 @Service(Service.Level.PROJECT)
-class JupyterCompilerService(val project: Project) : Disposable {
+class JupyterCompilerService(val project: Project, private val coroutineScope: CoroutineScope) : Disposable {
     private val mapping: MutableMap<VirtualFile, JupyterCompilerPerFileService> = ConcurrentHashMap()
 
     init {
@@ -48,6 +55,8 @@ class JupyterCompilerService(val project: Project) : Disposable {
     private val initialClasspath: List<File> by lazy {
        emptyList()
     }
+
+    private val compilerScriptsChangePublisher: CodeSnippetsChangeListener = project.messageBus.syncPublisher(TOPIC)
 
     private val initialCompileConfiguration by lazy {
         getCompilationConfiguration(
@@ -95,7 +104,9 @@ class JupyterCompilerService(val project: Project) : Disposable {
     val language = Language.findLanguageByID("kotlin")!!
 
     fun getOrCreate(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
-        return mapping.getOrPut(virtualFile.file) { JupyterCompilerPerFileService(project, virtualFile, initialClasspath, this) }
+        return mapping.getOrPut(virtualFile.file) {
+            JupyterCompilerPerFileService(project, virtualFile, compilerScriptsChangePublisher, initialClasspath,this)
+        }
     }
 
     fun removeSession(virtualFile: BackedNotebookVirtualFile) {
@@ -117,6 +128,22 @@ class JupyterCompilerService(val project: Project) : Disposable {
         mapping.forEach { (_, u) -> u.afterScriptingUpdate() }
     }
 
+    fun restartHighlighting(files: Collection<VirtualFile>) {
+        val notebookFiles = files.filter { it.isKotlinNotebook }.mapNotNull { BackedNotebookVirtualFile.find(it) }
+        if (notebookFiles.isEmpty()) {
+            return
+        }
+        coroutineScope.async {
+            JupyterKtScriptingSupport.updateSynchronously(project)
+
+            readAction {
+                notebookFiles.forEach { file ->
+                    NotebookHighlightingService.getForFile(project, file).restartAnalysing()
+                }
+            }
+        }
+    }
+
     private fun registerKernelRestartListener() {
         ApplicationManager.getApplication().messageBus.connect(this)
             .subscribe(JupyterRestartKernelListener.TOPIC, object : JupyterRestartKernelListener {
@@ -127,6 +154,11 @@ class JupyterCompilerService(val project: Project) : Disposable {
     }
 
     override fun dispose() {
+        coroutineScope.cancel()
+    }
+
+    interface CodeSnippetsChangeListener {
+        fun scriptsClassesChanged(file: BackedNotebookVirtualFile)
     }
 
     companion object {
@@ -135,5 +167,8 @@ class JupyterCompilerService(val project: Project) : Disposable {
         fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
             return getInstance(project).getOrCreate(virtualFile)
         }
+
+        @Topic.ProjectLevel
+        internal val TOPIC: Topic<CodeSnippetsChangeListener> = Topic(CodeSnippetsChangeListener::class.java, Topic.BroadcastDirection.NONE)
     }
 }

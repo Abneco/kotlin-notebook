@@ -5,6 +5,15 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 internal fun DataContext.getVirtualFile(): VirtualFile? = CommonDataKeys.VIRTUAL_FILE.getData(this)
 internal fun AnActionEvent.getVirtualFile(): VirtualFile? = dataContext.getVirtualFile()
+
+internal fun DataContext.getKotlinNotebookVirtualFile(): BackedNotebookVirtualFile? {
+    val virtualFile = getVirtualFile() ?: return null
+    if (!virtualFile.isKotlinNotebook) return null
+    return BackedNotebookVirtualFile.takeIfBacked(virtualFile)
+}
+
+internal fun AnActionEvent.getKotlinNotebookVirtualFile(): BackedNotebookVirtualFile? = dataContext.getKotlinNotebookVirtualFile()

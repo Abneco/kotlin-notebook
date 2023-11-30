@@ -13,6 +13,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
@@ -27,9 +28,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scheduleUpdateLater
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingBaseClassError
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingDependencyPrefix
+import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorWithAttachments
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
@@ -216,30 +219,63 @@ private const val SCRIPT_CLASS_ACCESS_ERROR  = "Cannot access "
 @NlsSafe
 private const val SCRIPT_BASE_CLASS_ACCESS_ERROR  = "Cannot access script base class"
 
-private fun String.isLikeMissingDependencyClassError(baseClassCheck: Boolean) =
-    if (baseClassCheck) startsWith(scriptingMissingBaseClassError) || startsWith(SCRIPT_BASE_CLASS_ACCESS_ERROR)
-    else startsWith("[${scriptingMissingDependencyPrefix}")
-            || startsWith(scriptingMissingDependencyPrefix) || startsWith(SCRIPT_CLASS_ACCESS_ERROR)
+private fun String.tryMatch(predicate: String.() -> Boolean) = predicate()
+
+private fun String.isMissingBaseDependencyError() = tryMatch {
+    startsWith(scriptingMissingBaseClassError) || startsWith(SCRIPT_BASE_CLASS_ACCESS_ERROR)
+}
+
+private fun String.isMissingImplicitRecieverError() = tryMatch {
+    startsWith("[${scriptingMissingDependencyPrefix}") ||
+            startsWith(scriptingMissingDependencyPrefix) ||
+            startsWith(SCRIPT_CLASS_ACCESS_ERROR)
+}
 
 
 class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
+    private var subscribed = false
+    @Volatile
     private var reloadRequested = false
+
+    private fun checkCompilerListenerPersists(project: Project) {
+        if (subscribed) return
+        project.messageBus.connect().subscribe(JupyterCompilerService.TOPIC, object : JupyterCompilerService.CodeSnippetsChangeListener {
+            override fun scriptsClassesChanged(file: BackedNotebookVirtualFile) {
+                reloadRequested = false
+            }
+        })
+        subscribed = true
+    }
+
     override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {
         if (file == null || !file.name.endsWith(notebookInjectedFileExtension)) return true
+        checkCompilerListenerPersists(file.project)
+
         val isTargetHost = file.getUserData(NonTargetHostErrorMark) == null
         if (!isTargetHost) return true
 
+        if (highlightInfo.severity != HighlightSeverity.ERROR) return true
         val description = highlightInfo.description ?: return true
-        if (highlightInfo.severity == HighlightSeverity.ERROR
-            && description.isLikeMissingDependencyClassError(true) && !reloadRequested) {
-            LOG.errorWithAttachments(
-                "Missing base script class",
-                Attachment(file.name, file.text)
-            )
-            return false
-        }
+        val missingBaseClass = description.isMissingBaseDependencyError()
+        val missingReceiverClass = description.isMissingImplicitRecieverError()
 
-        return true
+        if ((missingBaseClass || missingReceiverClass) && reloadRequested) return false
+        if (!missingBaseClass && !missingReceiverClass) return true
+
+        LOG.errorWithAttachments(
+            if (missingBaseClass)
+                "Missing base script class"
+            else
+                "Missing script receiver class: $description",
+            Attachment(file.name, file.text)
+        )
+
+        NotebookNotificationUtility.kernelRelatedFactory
+            .showAbsentInitialBaseDependenciesInfo(file.project)
+
+        reloadRequested = true
+
+        return false
     }
 
     companion object {

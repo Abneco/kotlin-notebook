@@ -43,6 +43,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArt
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanentIndexService
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
+import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.usages.KotlinNotebookPluginUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.util.ComputableWithName
 import org.jetbrains.kotlinx.jupyter.plugin.util.ExecutedOnceBackgroundTask
@@ -98,6 +99,7 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
 class JupyterCompilerPerFileService(
     private val project: Project,
     private val virtualFile: BackedNotebookVirtualFile,
+    private val compilerPublisher: JupyterCompilerService.CodeSnippetsChangeListener,
     initialClasspath: List<File>,
     parent: Disposable
 ) : Disposable {
@@ -208,6 +210,7 @@ class JupyterCompilerPerFileService(
                 ::updateClasspathWithKernelJars,
                 ::updateClasspathWithProjectArtifactsAsync,
             )) {
+                compilerPublisher.scriptsClassesChanged(virtualFile)
                 if (!ApplicationManager.getApplication().isUnitTestMode) {
                     JupyterKtScriptingSupport.updateSynchronously(project)
                 }
@@ -215,10 +218,22 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private suspend fun updateClasspathWithKernelJars(): Boolean {
+    private suspend fun updateClasspathWithKernelJars(
+        version: String = getSelectedKernelVersion(project)
+    ): Boolean {
         val mavenArtifactsDownloader = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
-        val jars = mavenArtifactsDownloader.downloadArtifactAsync(KotlinNotebookMavenArtifacts.IDE_CLASSPATH_SHADOWED)
-        val sourcesJars = mavenArtifactsDownloader.downloadArtifactAsync(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED_SOURCES)
+        val jars = mavenArtifactsDownloader.downloadArtifactAsync(
+            KotlinNotebookMavenArtifacts.IDE_CLASSPATH_SHADOWED,
+            version = version
+        )
+        val sourcesJars = mavenArtifactsDownloader.downloadArtifactAsync(
+            KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED_SOURCES,
+            version = version
+        )
+
+        if (jars.isEmpty()) {
+            LOG.warn("Couldn't download jars for the kernel version: $version")
+        }
 
         compileLock.write {
             _currentClasspath.addInitial(jars)
@@ -294,6 +309,7 @@ class JupyterCompilerPerFileService(
 
     fun updateScripting() {
         compileLock.withWriteLock {
+            compilerPublisher.scriptsClassesChanged(virtualFile)
             NotebookHighlightingService.getForFile(project, virtualFile)
                 .beforeScriptingUpdate()
             JupyterKtScriptingSupport.update(project)

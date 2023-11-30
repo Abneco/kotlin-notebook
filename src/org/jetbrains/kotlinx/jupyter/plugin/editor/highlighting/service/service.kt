@@ -109,16 +109,17 @@ class NotebookHighlightingManager(
             val processedTokens = AtomicInteger(0)
         }
     }
+    private val project: Project = projectService.project
 
     val dataController = NotebookPerFileHighlightingMetaDataController(
         virtualFile,
-        NotebookCellExecutionHighlightingHelper(projectService.project, virtualFile),
+        NotebookCellExecutionHighlightingHelper(project, virtualFile),
         this
     )
     private var _jupyterFile: PsiFile? = null
     val jupyterPsiFile: PsiFile? get() = _jupyterFile
 
-    private fun initialiseData(project: Project) {
+    private fun initialiseData(restart: Boolean = false) {
         val targetData = mutableSetOf<Int>()
         targetData.addAll(
             virtualFile.file.toPsiFile(project).getNotebookCells().indices
@@ -127,7 +128,7 @@ class NotebookHighlightingManager(
             notebookRangesQueuedForHL = targetData
             notebookDocumentStructureNontrivialChanged.set(false)
         }
-        if (virtualFile.file.isKotlinNotebook) {
+        if (virtualFile.file.isKotlinNotebook && !restart) {
             _jupyterFile = virtualFile.file.toPsiFile(project)
             document.addDocumentListener(
                 ImpatientNotebookChangeListener(project, virtualFile),
@@ -152,7 +153,7 @@ class NotebookHighlightingManager(
 
     init {
         Disposer.register(projectService, this)
-        initialiseData(projectService.project)
+        initialiseData()
     }
 
     private val fileToInjectionData = ConcurrentHashMap<KtFile, InjectedFileData>()
@@ -394,6 +395,11 @@ class NotebookHighlightingManager(
 
     fun sessionRestarted() {
         dataController.executionHighlightingHelper.onSessionRestarted()
+    }
+
+    fun restartAnalysing() {
+        initialiseData(true)
+        NotebookHighlightingRestarter.scheduleRegularUpdate(jupyterPsiFile!!)
     }
 
     override fun dispose() {

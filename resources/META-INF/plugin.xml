@@ -316,5 +316,7 @@
         <group id="LetsPlotActions">
             <reference id="ExportLetsPlot"/>
         </group>
+        <action id="RestartKotlinNotebookHighlighting"
+                class="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.RestartKotlinNotebookHighlighting"/>
     </actions>
 </idea-plugin>

@@ -4,7 +4,9 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.notifications
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
+import com.intellij.notification.Notifications
 import com.intellij.notification.SingletonNotificationManager
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
@@ -32,14 +34,14 @@ abstract class NotebookNotificationFactoryBase : NotebookNotificationShower {
 
 internal class NotebookKernelRelatedNotificationFactory() : NotebookNotificationFactoryBase() {
     sealed class DependencyStatus : NotebookNotificationShower.NotificationTarget() {
-        object Outdated : DependencyStatus()
-        object Absent : DependencyStatus()
-        object AbsentInitial : DependencyStatus()
-        object InconsistentJDK : DependencyStatus()
+        data object Outdated : DependencyStatus()
+        data object Absent : DependencyStatus()
+        data object AbsentInitial : DependencyStatus()
+        data object InconsistentJDK : DependencyStatus()
     }
 
     sealed class KernelStatus : NotebookNotificationShower.NotificationTarget() {
-        object SessionRestart : DependencyStatus()
+        data object SessionRestart : DependencyStatus()
     }
 
     override fun showNotification(project: Project?, mark: NotebookNotificationShower.NotificationTarget, @NlsSafe additionalMsg: String) {
@@ -61,10 +63,15 @@ internal class NotebookKernelRelatedNotificationFactory() : NotebookNotification
                 )
             }
             is DependencyStatus.AbsentInitial -> {
-                sessionInfoNotifier.notify(
-                    kotlinNotebookTitle,
-                    KotlinNotebookBundle.message("kotlin.jupyter.session.initial.setup"),
-                        project
+                // SingletonManager is not suitable if call it frequently
+                Notifications.Bus.notify(
+                    Notification(
+                        kotlinNotebookTitle,
+                        KotlinNotebookBundle.message("kotlin.jupyter.session.initial.setup"),
+                        NotificationType.INFORMATION
+                    ).addAction(
+                        ActionManager.getInstance().getAction("RestartKotlinNotebookHighlighting")
+                    )
                 )
             }
             is DependencyStatus.InconsistentJDK -> {
@@ -117,9 +124,9 @@ internal class NotebookKernelRelatedNotificationFactory() : NotebookNotification
 
 internal class NotebookUsageRelatedNotificationFactory() : NotebookNotificationFactoryBase() {
     sealed class ActionRelated : NotebookNotificationShower.NotificationTarget() {
-        object ByteCodeRefactoring : ActionRelated()
-        object RerunActionNeeded : ActionRelated()
-        object UsagesRefactoring : ActionRelated()
+        data object ByteCodeRefactoring : ActionRelated()
+        data object RerunActionNeeded : ActionRelated()
+        data object UsagesRefactoring : ActionRelated()
     }
 
     override fun showNotification(project: Project?, mark: NotebookNotificationShower.NotificationTarget, @NlsSafe additionalMsg: String) {
