@@ -9,6 +9,7 @@ import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.api.libraries.rawMessageCallback
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
+import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
 import org.jetbrains.kotlinx.jupyter.plugin.util.toJacksonJson
 import org.jetbrains.kotlinx.jupyter.plugin.util.toKotlinSerializationJson
 import org.jetbrains.kotlinx.jupyter.protocol.AbstractJupyterConnection
@@ -48,13 +49,17 @@ class KernelZMQClientSession(
         val socketType = content.channel.socketType ?: return
         val socket = socketManager.fromSocketType(socketType)
 
-        socket.sendRawMessage(RawMessageImpl(
-            messageBytePrefix,
-            content.header.json.toKotlinSerializationJson().jsonObject,
-            content.parentHeader?.json?.toKotlinSerializationJson()?.jsonObject,
-            null,
-            content.messageContent.toKotlinSerializationJson()
-        ))
+        try {
+            socket.sendRawMessage(RawMessageImpl(
+                messageBytePrefix,
+                content.header.json.toKotlinSerializationJson().jsonObject,
+                content.parentHeader?.json?.toKotlinSerializationJson()?.jsonObject,
+                null,
+                content.messageContent.toKotlinSerializationJson()
+            ))
+        } catch (e: Exception) {
+            LOG.errorUnderDebug(e)
+        }
     }
 
     private fun initSockets() {
