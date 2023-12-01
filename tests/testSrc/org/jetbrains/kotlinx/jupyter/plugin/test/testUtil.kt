@@ -1,16 +1,20 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test
 
+import com.intellij.injected.editor.DocumentWindow
 import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.util.descendantsOfType
 import com.intellij.testFramework.HeavyTestHelper
+import junit.framework.TestCase
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookCreateAction
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionTest
@@ -19,6 +23,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMess
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.originFile
+import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterBackedVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
@@ -32,6 +37,8 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutp
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
+import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
+import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointerFactory
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory
@@ -53,6 +60,43 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
         withProductionDataManagerRule = false,
         withClearJupyterSettings = true
     )
+}
+
+abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCase() {
+    override lateinit var originalVirtualFile: VirtualFile
+
+    val notebookFile: BackedNotebookVirtualFile get() = _notebookFile!!
+    private var _notebookFile: BackedNotebookVirtualFile? = null
+
+    protected fun doSimpleTransformerTest(
+        expectedDocumentText: String,
+        checkTopLevelDocument: Boolean,
+        notebookFactory: () -> BackedNotebookVirtualFile = {
+            myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
+        },
+        transformer: () -> Unit
+    ) {
+        myFixture.setCaresAboutInjection(true)
+        _notebookFile = notebookFactory()
+        invokeAndWaitIfNeeded {
+            setMode(NotebookEditorMode.EDIT)
+        }
+        originalVirtualFile = myFixture.file.virtualFile
+
+        transformer()
+
+        val doc = myFixture.editor.document
+        val docToCheck = if (checkTopLevelDocument && doc is DocumentWindow) {
+            doc.delegate
+        } else {
+            doc
+        }
+
+        val actualText = runReadAction {
+            docToCheck.text
+        }
+        TestCase.assertEquals(expectedDocumentText, actualText)
+    }
 }
 
 

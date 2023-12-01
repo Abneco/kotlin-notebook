@@ -2,43 +2,59 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.formatting
 
 import com.intellij.openapi.actionSystem.IdeActions
-import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.vfs.VirtualFile
-import junit.framework.TestCase
-import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.psi.codeStyle.CodeStyleManager
+import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookTransformerBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
-import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
+import org.jetbrains.kotlinx.jupyter.plugin.util.getTopLevelFile
 import org.junit.Test
 
-class KotlinNotebookFormattingTest : KotlinNotebookBaseTestCase() {
-    override lateinit var originalVirtualFile: VirtualFile
-
+class KotlinNotebookFormattingTest : KotlinNotebookTransformerBaseTestCase() {
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/formatting"
 
     @Test
-    fun testFormatKotlinCell() = doTest("""
-        fun f(i: Int): Int {
-            return i * i
-        }
-        
-    """.trimIndent())
+    fun testFormatKotlinCell() = doTest(
+        false,
+        """
+            fun f(i: Int): Int {
+                return i * i
+            }
+            
+        """.trimIndent()
+    )
 
-    private fun doTest(expectedCellText: String) {
-        myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
-        invokeAndWaitIfNeeded {
-            setMode(NotebookEditorMode.EDIT)
-        }
-        originalVirtualFile = myFixture.file.virtualFile
-        myFixture.performEditorAction(IdeActions.ACTION_EDITOR_REFORMAT)
+    @Test
+    fun testFormatWholeFile() = doTest(
+        true,
+        """
+            #%%
+            fun f(i: Int): Int {
+                return i * i
+            }
+            #%%
+            %use dataframe
+            fun f2(i: Int): Int {
+                return i * i
+            }
+        """.trimIndent()
+    )
 
-        val doc = myFixture.editor.document
-        val actualText = runReadAction {
-            doc.text
+    private fun doTest(
+        reformatWholeFile: Boolean,
+        expectedText: String,
+    ) {
+        doSimpleTransformerTest(
+            expectedText,
+            checkTopLevelDocument = reformatWholeFile,
+        ) {
+            if (reformatWholeFile) {
+                WriteCommandAction.runWriteCommandAction(project) {
+                    CodeStyleManager.getInstance(project).reformat(myFixture.file.getTopLevelFile())
+                }
+            } else {
+                myFixture.performEditorAction(IdeActions.ACTION_EDITOR_REFORMAT)
+            }
         }
-        TestCase.assertEquals(expectedCellText, actualText)
     }
 
     override fun runInDispatchThread(): Boolean {

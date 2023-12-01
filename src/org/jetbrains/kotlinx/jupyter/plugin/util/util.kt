@@ -95,6 +95,16 @@ private fun getLanguageFromOriginalFile(file: VirtualFile): Language? {
     }
 }
 
+fun PsiFile.getTopLevelFile(): PsiFile = InjectedLanguageManager.getInstance(project).getTopLevelFile(this) ?: this
+
+fun VirtualFile.getTopLevelFile(): VirtualFile {
+    return if (this is VirtualFileWindow) {
+        delegate
+    } else {
+        this
+    }
+}
+
 fun PsiFile?.getInjectedKtFiles(): List<KtFile> {
     if (this == null) return emptyList()
 

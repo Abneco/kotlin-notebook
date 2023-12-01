@@ -3,7 +3,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting
 
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
-import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtilBase
@@ -11,6 +10,7 @@ import org.jetbrains.kotlin.idea.base.highlighting.visitor.AbstractHighlightingV
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.InjectedFileHighlightingHelper
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.highlightingManagerFor
+import org.jetbrains.kotlinx.jupyter.plugin.util.getTopLevelFile
 
 abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingVisitor>(
     protected val visitorFactory: (HighlightInfoHolder) -> T,
@@ -34,12 +34,10 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
 
             return true
         } finally {
-            highlightingManagerFor(file.project, getTopLevelFile(file).virtualFile)?.finishedAnalysisForFile(file, holder)
+            highlightingManagerFor(file.project, file.virtualFile.getTopLevelFile())?.finishedAnalysisForFile(file, holder)
             visitor = null
         }
     }
-
-    private fun getTopLevelFile(file: PsiFile) = InjectedLanguageManager.getInstance(file.project).getTopLevelFile(file)
 
     protected fun prepareForFile(injectedFile: PsiFile) {
         highlightingHelper = InjectedFileHighlightingHelper(injectedFile)

@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.idea.editor.fixers.start
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.retrieveCellIntervalUnderCaret
+import org.jetbrains.kotlinx.jupyter.plugin.util.buildFlatMap
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
@@ -47,26 +48,29 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
         quickFormat: Boolean
     ) {
         val jupyterPsiFile = formattingContext.containingFile
-        val project = formattingContext.project
-        val injectedManager = InjectedLanguageManager.getInstance(project)
         if (!jupyterPsiFile.isValid) return
+        val project = formattingContext.project
+
+        // TODO: This logic should be in a listener
         val highlightingDataProvider = jupyterPsiFile.virtualFile.toBackedNotebookFile()?.let {
             NotebookHighlightingService.getForFile(project, it).dataController
         }
-        if (highlightingDataProvider?.renamingRanges != null) return
+        val renamingRanges = highlightingDataProvider?.renamingRanges
+        if (!renamingRanges.isNullOrEmpty()) return
 
         val cellList = jupyterPsiFile.getNotebookCells().ifEmpty { return }
-
+        val injectedManager = InjectedLanguageManager.getInstance(project)
         val filesToProcess = cellList
-            .mapNotNull { getKotlinFileWithRanges(it, formattingRanges, injectedManager) }
-            .takeIf { it.isNotEmpty() } ?: return
+            .buildFlatMap { addKotlinFilesWithRanges(it, formattingRanges, injectedManager) }
+            .ifEmpty { return }
 
+        // TODO: This logic should be in a listener
         val invokedInCell = document.retrieveCellIntervalUnderCaret(jupyterPsiFile.virtualFile, project)
-
         highlightingDataProvider?.update {
             reformatDocumentTargets = mutableSetOf()
         }
 
+        // TODO: Possibly could be removed
         if (filesToProcess.any { !it.file.isValid }) {
             runAsWriteActionIfNeeded {
                 jupyterPsiFile.viewProvider.contentsSynchronized()
@@ -88,6 +92,7 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
             }
             thisLogger().warn("Error occurred during reformatting of Kotlin Notebook", e)
         } finally {
+            // TODO: This logic should be in a listener
             val targets = highlightingDataProvider?.reformatDocumentTargets
             highlightingDataProvider?.update {
                 reformatDocumentTargets = null
@@ -105,23 +110,29 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
         }
     }
 
-    private fun getKotlinFileWithRanges(
+    private fun MutableList<FileWithRanges>.addKotlinFilesWithRanges(
         cell: JupyterPsiCell,
         formattingRanges: MutableList<TextRange>,
         injectedManager: InjectedLanguageManager
-    ): FileWithRanges? {
+    ) {
         val cellRange = cell.textRange
         val hostRanges: List<TextRange> = formattingRanges
             .filter { range -> range.intersectsStrict(cellRange) }
-        if (hostRanges.isEmpty()) return null
-        val ktFile = cell.getInjectedKtFiles(injectedManager).firstOrNull() ?: return null
-        val documentWindow = ktFile.toDocument(cell.project) as? DocumentWindow ?: return null
+            .ifEmpty { return }
+        val ktFiles = cell.getInjectedKtFiles(injectedManager).ifEmpty { return }
 
-        val ranges = hostRanges.mapNotNull { range ->
-            ProperTextRange(documentWindow.hostToInjected(range.start), documentWindow.hostToInjected(range.end)).takeIf { !it.isEmpty }
-        }.takeIf { it.isNotEmpty() } ?: return null
+        for (ktFile in ktFiles) {
+            val documentWindow = ktFile.toDocument(cell.project) as? DocumentWindow ?: continue
 
-        return FileWithRanges(ktFile, ranges)
+            val ranges = hostRanges.mapNotNull { range ->
+                ProperTextRange(
+                    documentWindow.hostToInjected(range.start),
+                    documentWindow.hostToInjected(range.end)
+                ).takeIf { !it.isEmpty }
+            }.takeIf { it.isNotEmpty() } ?: continue
+
+            add(FileWithRanges(ktFile, ranges))
+        }
     }
 
     private data class FileWithRanges(val file: KtFile, val ranges: List<TextRange>)
