@@ -18,6 +18,7 @@ object KotlinNotebookPluginBuildTarget {
             projectHome = IdeaProjectLoaderUtil.guessUltimateHome(javaClass),
             productProperties = IdeaUltimateProperties(ultimateHome),
         )
+        context.options.enableEmbeddedJetBrainsClient = false
 
         BuildTasks.create(context).buildNonBundledPlugins(listOf(
             "intellij.kotlin.jupyter",
