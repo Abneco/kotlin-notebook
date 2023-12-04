@@ -15,6 +15,9 @@ import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
+import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
+import org.jetbrains.kotlinx.jupyter.plugin.test.runWithJupyterSession
+import org.jetbrains.kotlinx.jupyter.plugin.test.withDisabledJcef
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
 import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
@@ -70,7 +73,7 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
         val ktFiles = when(val psiFile = myFixture.file) {
             is KtFile -> listOf(psiFile)
             is JupyterFile -> {
-                psiFile.getInjectedKtFiles()
+                runReadAction { psiFile.getInjectedKtFiles() }
             }
             else -> error("Only KtFiles are expected, file passed: ${psiFile}")
         }
@@ -112,6 +115,21 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
             FileContextUtil.getFileContext(myFixture.file)?.containingFile ?: myFixture.file
         }
         return notebookFile
+    }
+
+    protected fun doTestAfterExecution(
+        executionTester: ReceivedMessagesTester,
+        testAction: () -> Unit
+    ) {
+        withDisabledJcef {
+            val notebookFile = configureExecutionTest(copyNotebookToProject = false)
+
+            runWithJupyterSession(notebookFile) {
+                executeCells(executionTester, notebookFile)
+                setUpScriptingDependencies()
+                testAction()
+            }
+        }
     }
 
     class OutputsTester(private val cellOutputs: List<List<ObjectNode>>) : ReceivedMessagesTester {

@@ -6,18 +6,12 @@ import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
-import com.intellij.testFramework.runInEdtAndWait
 import junit.framework.TestCase
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
-import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion.KotlinNotebookAutoCompletionTest
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
-import org.jetbrains.kotlinx.jupyter.plugin.test.runWithJupyterSession
-import org.jetbrains.kotlinx.jupyter.plugin.test.withDisabledJcef
 import org.junit.Test
 
 class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCase() {
@@ -162,22 +156,10 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
     private fun actualText() = runReadAction { myFixture.editor.document.text }
 
     private fun doTest(executionTester: ReceivedMessagesTester, completionChecker: (CompletionAutoPopupTester) -> Unit) {
-        withDisabledJcef {
-            val notebookFile = configureExecutionTest(copyNotebookToProject = false)
-            runWithJupyterSession(notebookFile) {
-                executeCells(executionTester, notebookFile)
-
-                runInEdtAndWait {
-                    myFixture.project.waitIndexingComplete()
-                    runReadAction {
-                        ScriptConfigurationManager.updateScriptDependenciesSynchronously(myFixture.file)
-                    }
-                }
-
-                val completionTester = CompletionAutoPopupTester(myFixture)
-                completionTester.runWithAutoPopupEnabled {
-                    completionChecker(completionTester)
-                }
+        doTestAfterExecution(executionTester) {
+            val completionTester = CompletionAutoPopupTester(myFixture)
+            completionTester.runWithAutoPopupEnabled {
+                completionChecker(completionTester)
             }
         }
     }

@@ -3,18 +3,12 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.highlighting
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.lang.annotation.HighlightSeverity
-import com.intellij.openapi.application.runReadAction
 import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.runInEdtAndWait
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
-import org.jetbrains.kotlinx.jupyter.plugin.test.runWithJupyterSession
-import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
-import org.jetbrains.kotlinx.jupyter.plugin.test.withDisabledJcef
 import org.junit.Test
 
 class NotebookHighlightingAfterExecutionTest: KotlinNotebookExecutionBaseTestCase() {
@@ -37,20 +31,10 @@ class NotebookHighlightingAfterExecutionTest: KotlinNotebookExecutionBaseTestCas
     }
 
     private fun doTest(executionTester: ReceivedMessagesTester, hlChecker: (List<HighlightInfo>) -> Unit) {
-        withDisabledJcef {
-            val notebookFile = configureExecutionTest(copyNotebookToProject = false)
-
-            runWithJupyterSession(notebookFile) {
-                executeCells(executionTester, notebookFile)
-
-                runInEdtAndWait {
-                    myFixture.project.waitIndexingComplete()
-                    runReadAction {
-                        ScriptConfigurationManager.updateScriptDependenciesSynchronously(myFixture.file)
-                    }
-                    val hl = myFixture.doHighlighting()
-                    hlChecker(hl)
-                }
+        doTestAfterExecution(executionTester) {
+            runInEdtAndWait {
+                val hl = myFixture.doHighlighting()
+                hlChecker(hl)
             }
         }
     }
