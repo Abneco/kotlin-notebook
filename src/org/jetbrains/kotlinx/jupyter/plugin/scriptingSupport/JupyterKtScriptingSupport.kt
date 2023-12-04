@@ -2,7 +2,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -133,13 +132,8 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         }
 
         fun getConfiguration(project: Project, psiFile: KtFile): ScriptCompilationConfigurationResult? {
-            return runReadAction {
-                if (!psiFile.isScript()) return@runReadAction null
-                val scriptDef = psiFile.findScriptDefinition() ?: return@runReadAction null
-
-                refineScriptCompilationConfiguration(KtFileScriptSource(psiFile), scriptDef, project)
-            }
+            val scriptDef = psiFile.findScriptDefinition() ?: return null
+            return refineScriptCompilationConfiguration(KtFileScriptSource(psiFile), scriptDef, project)
         }
-
     }
 }
