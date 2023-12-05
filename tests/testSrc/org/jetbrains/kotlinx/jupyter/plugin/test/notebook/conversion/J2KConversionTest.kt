@@ -72,7 +72,6 @@ class J2KConversionTest(
 
         doSimpleTransformerTest(
             expectedCellText,
-            checkTopLevelDocument = false,
             notebookFactory = { myFixture.configureByJupyterFile(templateFileName.value, testDataPath) }
         ) {
             val javaCode = File(testDataPath).resolve("${myTestName()}.txt").readText()

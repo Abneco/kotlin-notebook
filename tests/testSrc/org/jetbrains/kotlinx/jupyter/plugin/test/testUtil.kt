@@ -2,11 +2,14 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test
 
 import com.intellij.injected.editor.DocumentWindow
+import com.intellij.injected.editor.EditorWindow
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
@@ -14,8 +17,10 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.util.descendantsOfType
 import com.intellij.testFramework.HeavyTestHelper
+import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import junit.framework.TestCase
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookCreateAction
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionTest
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
@@ -68,25 +73,38 @@ abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCas
     val notebookFile: BackedNotebookVirtualFile get() = _notebookFile!!
     private var _notebookFile: BackedNotebookVirtualFile? = null
 
+    protected class TestOptions(
+        val checkTopLevelDocument: Boolean = false,
+        val caresAboutInjection: Boolean = true,
+    ) {
+        companion object {
+            val DEFAULT = TestOptions()
+        }
+    }
+
     protected fun doSimpleTransformerTest(
         expectedDocumentText: String,
-        checkTopLevelDocument: Boolean,
+        testOptions: TestOptions = TestOptions.DEFAULT,
         notebookFactory: () -> BackedNotebookVirtualFile = {
             myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
         },
         transformer: () -> Unit
     ) {
-        myFixture.setCaresAboutInjection(true)
+        myFixture.setCaresAboutInjection(testOptions.caresAboutInjection)
         _notebookFile = notebookFactory()
         invokeAndWaitIfNeeded {
             setMode(NotebookEditorMode.EDIT)
         }
         originalVirtualFile = myFixture.file.virtualFile
 
+        if (!testOptions.caresAboutInjection) {
+            // Cache injection on current offset
+            InjectedLanguageManager.getInstance(project).findInjectedElementAt(myFixture.file, myFixture.caretOffset)
+        }
         transformer()
 
         val doc = myFixture.editor.document
-        val docToCheck = if (checkTopLevelDocument && doc is DocumentWindow) {
+        val docToCheck = if (testOptions.checkTopLevelDocument && doc is DocumentWindow) {
             doc.delegate
         } else {
             doc
@@ -243,3 +261,10 @@ fun cartesianProduct(vararg lists: List<Any>): List<Array<Any>> {
         cartesianProduct(*tail.toTypedArray()).map { arrayOf(item, *it) }
     }
 }
+
+fun CodeInsightTestFixture.configureBySimpleNotebook(notebookName: String) =
+    configureByJupyterFile("$notebookName.ipynb", "$baseTestDataPath/notebooks/simple")
+
+fun CodeInsightTestFixture.configureBySingleEmptyCellNotebook() = configureBySimpleNotebook("singleEmptyCell")
+
+

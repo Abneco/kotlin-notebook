@@ -45,7 +45,9 @@ class KotlinNotebookFormattingTest : KotlinNotebookTransformerBaseTestCase() {
     ) {
         doSimpleTransformerTest(
             expectedText,
-            checkTopLevelDocument = reformatWholeFile,
+            TestOptions(
+                checkTopLevelDocument = reformatWholeFile,
+            ),
         ) {
             if (reformatWholeFile) {
                 WriteCommandAction.runWriteCommandAction(project) {
