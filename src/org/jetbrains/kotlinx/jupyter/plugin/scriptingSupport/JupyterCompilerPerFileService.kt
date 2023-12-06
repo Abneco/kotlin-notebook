@@ -416,7 +416,7 @@ class JupyterCompilerPerFileService(
                 val psiFile = readAction {
                     virtualFile.file.toPsiFile(project)
                 }
-                LOG.warn("Requesting update of scripting after loading new classes in ${psiFile?.name}, loaded: $loadedSize")
+                LOG.debug("Requesting update of scripting after loading new classes in ${psiFile?.name}, loaded: $loadedSize")
                 NotebookHighlightingService.getForFile(project, virtualFile).beforeScriptingUpdate()
 
                 JupyterKtScriptingSupport.update(project)

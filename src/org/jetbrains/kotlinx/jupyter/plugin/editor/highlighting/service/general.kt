@@ -196,7 +196,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
         if (scriptDefManager.isReady()) {
             if (JupyterCompilerService.getInstance(project).needToUpdateImplicitReceiversIfAny(virtualFile, true)) {
-                LOG.warn("${Thread.currentThread().id} requested loading of classes")
+                LOG.debug("${Thread.currentThread().id} requested loading of classes")
                 throw ProcessCanceledException()
             }
             return
