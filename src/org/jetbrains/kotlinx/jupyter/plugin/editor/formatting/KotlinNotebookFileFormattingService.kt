@@ -17,8 +17,8 @@ import com.intellij.openapi.util.ProperTextRange
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
-import org.jetbrains.kotlin.idea.editor.fixers.end
-import org.jetbrains.kotlin.idea.editor.fixers.start
+import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.end
+import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.start
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.retrieveCellIntervalUnderCaret
