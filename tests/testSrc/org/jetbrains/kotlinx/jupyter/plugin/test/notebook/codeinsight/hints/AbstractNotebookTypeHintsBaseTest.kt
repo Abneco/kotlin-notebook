@@ -131,7 +131,7 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
         val fileOffset = injectedLanguageManager.injectedToHost(injectedFile, 0)
 
         with(provider) {
-            val expectedFileContents = FileUtil.loadFile(File("$testDataPath/${getTestName(true)}.kt"), true)
+            val expectedFileContents = FileUtil.loadFile(getTestFile(".kt"), true)
             val settings = createSettings()
             setupAction(settings)
             runTestProvider(fileOffset, injectedFile.text, expectedFileContents, this, settings, verifyHintPresence = true)

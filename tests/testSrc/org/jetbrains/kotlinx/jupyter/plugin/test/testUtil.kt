@@ -51,6 +51,7 @@ import org.junit.Rule
 import org.junit.jupiter.api.Assertions
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import java.io.File
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
@@ -65,6 +66,10 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
         withProductionDataManagerRule = false,
         withClearJupyterSettings = true
     )
+
+    fun getTestFile(suffix: String): File {
+        return File(testDataPath, "${getTestName(true)}$suffix")
+    }
 }
 
 abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCase() {

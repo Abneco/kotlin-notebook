@@ -87,7 +87,7 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
             } else {
                 stubComparisonFailure = null
             }
-            val expectedResult = FileUtil.loadFile(File("$testDataPath/${getTestName(true)}.kt.expected"), true)
+            val expectedResult = FileUtil.loadFile(getTestFile(".kt.expected"), true)
             stubComparisonFailure?.let { throw it }
 
             TestCase.assertEquals(expectedResult, myFixture.file.text)
@@ -125,7 +125,7 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
             (InjectedLanguageManager.getInstance(project)
                 .getInjectedPsiFiles(neededCell)?.firstOrNull { it.first.containingFile.isInjectedKtFile() }?.first as? PsiFile)
         } ?: error("No suitable KtFile found in a host")
-        val rawContent = FileUtil.loadFile(File("$testDataPath/${getTestName(true)}.ipynb"), true)
+        val rawContent = FileUtil.loadFile(getTestFile(".ipynb"), true)
 
         doKotlinQuickFixTest(injectedFile, rawContent)
     }
