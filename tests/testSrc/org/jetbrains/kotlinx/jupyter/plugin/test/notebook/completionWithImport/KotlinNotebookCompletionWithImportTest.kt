@@ -139,11 +139,9 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
 
     private fun CompletionAutoPopupTester.finishLookupForElement(filter: (LookupElement) -> Boolean) {
         val elements = myFixture?.lookupElements
-        assertNoThrowable {
-            invokeAndWaitIfNeeded {
-                elements?.first(filter).let {
-                    lookup.finishLookup(KotlinNotebookAutoCompletionTest.CompletionMode.ADD.ch, it)
-                }
+        invokeAndWaitIfNeeded {
+            elements?.first(filter).let {
+                lookup.finishLookup(KotlinNotebookAutoCompletionTest.CompletionMode.ADD.ch, it)
             }
         }
         joinCommit()
