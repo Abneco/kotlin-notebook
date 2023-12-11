@@ -149,15 +149,20 @@ class JupyterCompilerPerFileService(
     val executedCellsCount: Int get() = directoryCounter.get()
 
     fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
-        val ktFiles = runReadAction { virtualFile.file.toPsiFile(project).getInjectedKtFiles() }
-        return ktFiles.mapNotNull { ktFile ->
-            val conf = JupyterKtScriptingSupport.getConfiguration(project, ktFile)?.valueOrNull()
-            if (conf == null || conf.dependenciesClassPath.isEmpty()) {
-                ktFile.reportAsAttachment()
-                null
-            } else {
-                ktFile.virtualFile to conf
+        return runReadAction {
+            val notebookPsiFile = virtualFile.file.toPsiFile(project)
+            val ktFiles = notebookPsiFile.getInjectedKtFiles()
+            val configurations = ktFiles.mapNotNull { ktFile ->
+                val conf = JupyterKtScriptingSupport.getConfiguration(project, ktFile)?.valueOrNull()
+                if (conf == null || conf.dependenciesClassPath.isEmpty()) {
+                    ktFile.reportAsAttachment()
+                    null
+                } else {
+                    ktFile.virtualFile to conf
+                }
             }
+
+            configurations
         }
     }
 
@@ -177,7 +182,7 @@ class JupyterCompilerPerFileService(
             "Empty script dependencies found",
             Attachment(
                 virtualFilePath,
-                runReadAction { text }.takeIf { it.isNotEmpty() } ?: "[Injected file has no text]"
+                text.takeIf { it.isNotEmpty() } ?: "[Injected file has no text]"
             )
         )
     }
