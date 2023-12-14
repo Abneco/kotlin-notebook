@@ -11,7 +11,6 @@ import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
@@ -19,13 +18,11 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getCellRangesInDocumentOrNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scheduleUpdateLater
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingBaseClassError
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingDependencyPrefix
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
@@ -64,7 +61,6 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 
         cells?.ensureScriptConfigurations(ScriptConfigurationManager.getInstance(project),
                                                                InjectedLanguageManager.getInstance(project))
-        jupyterFile.ensureScriptManagerReady()
         val highlightingManager = backedNotebook?.let { NotebookHighlightingService.getForFile(project, it) }
         val dataController = highlightingManager?.dataController
 
@@ -190,18 +186,6 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                 }
             }
         }
-    }
-
-    private fun PsiFile.ensureScriptManagerReady() {
-        val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
-
-        if (scriptDefManager.isReady()) {
-            return
-        }
-        if (ApplicationManager.getApplication().isDispatchThread) {
-            scheduleUpdateLater(this)
-        } else throw ProcessCanceledException()
-        // for some reason, in debug mode calling isReady() might cause DL
     }
 
     companion object {

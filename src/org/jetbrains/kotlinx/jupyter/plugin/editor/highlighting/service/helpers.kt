@@ -5,7 +5,6 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.thisLogger
@@ -22,13 +21,10 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.diagnostics.Severity
-import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
@@ -37,7 +33,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotific
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
-import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -76,20 +71,6 @@ internal object NotebookHighlightingUtilityObject {
         }
 
         return true
-    }
-
-    fun scheduleUpdateLater(file: PsiFile, delayDelta: Long = 700) {
-        updateScope.async {
-            val manager = ScriptDefinitionsManager.getInstance(file.project)
-            var isReady = manager.isReady()
-            while (!isReady) {
-                delay(delayDelta)
-                isReady = manager.isReady()
-            }
-            readAction {
-                file.restartAnalyzing()
-            }
-        }
     }
 
     fun getCompleteAnalysisRangeForWholeNotebook(injectedFile: PsiFile): TextRange? {

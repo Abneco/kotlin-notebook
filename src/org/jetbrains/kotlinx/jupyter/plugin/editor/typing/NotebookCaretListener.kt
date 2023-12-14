@@ -51,7 +51,7 @@ class NotebookCaretListener(
         project.messageBus
             .connect(this)
             .subscribe(DAEMON_EVENT_TOPIC,
-                       NotebookHighlightingDaemonListener(project, caretStateProcessor)
+                       NotebookHighlightingDaemonListener(caretStateProcessor)
         )
     }
 

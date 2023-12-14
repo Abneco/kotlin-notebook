@@ -10,17 +10,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookD
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.state.NotebookCaretStateProcessor
 
 class NotebookHighlightingDaemonListener(
-    project: Project,
     private val stateProcessor: NotebookCaretStateProcessor
 ) : DaemonListener {
-    private val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
 
     override fun daemonFinished(fileEditors: MutableCollection<out FileEditor>) {
         fileEditors.firstOrNull { (it as? TextEditor)?.editor == stateProcessor.editor }?.let {
-            if (!scriptDefManager.isReady()) {
-                return
-            }
-
             with(stateProcessor) {
                 onEventHappened(NotebookDaemonFinishedEvent)
             }

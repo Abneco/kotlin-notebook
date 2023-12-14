@@ -18,7 +18,8 @@ class IndexAwareScriptDefinitionsLoadRequestor(private val project: Project) {
         if (project.isDisposed) return
         if (activityPassed && UnindexedFilesScanner.isProjectContentFullyScanned(project)) {
             coroutineScope.async {
-                ScriptDefinitionsManager.getInstance(project).reloadScriptDefinitionsIfNeeded()
+                //TODO: .reloadScriptDefinitions() would probably match better, depends on whether the method assumes warmup or reload from scratch
+                ScriptDefinitionsManager.getInstance(project).allDefinitions
             }
             return
         }
