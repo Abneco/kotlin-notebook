@@ -50,11 +50,11 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
 
         val notebookFile = BackedNotebookVirtualFile.takeIfBacked(file) ?: return
         val jupyterChangeListener = JupyterChangeListener { event ->
-            if (event is NotebookChanged) {
-                refreshSettings(notebookFile)
+            when (event) {
+                is NotebookChanged -> refreshSettings(notebookFile)
             }
         }
-        notebookFile.notebook.listeners.changeListeners.add(jupyterChangeListener, parentDisposable = this)
+        notebookFile.notebook.listeners.changeListeners.addListener(jupyterChangeListener, this)
 
         notebookFile.notebook.migrateSettings()
         refreshSettings(notebookFile)
