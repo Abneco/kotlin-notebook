@@ -66,7 +66,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             var codeCellsCount = 0
             file.cells.forEach { cell ->
                 when(cell.cellType) {
-                    JupyterCellType.RAW, JupyterCellType.UNDEFINED -> {}
+                    JupyterCellType.RAW, JupyterCellType.HEADING, JupyterCellType.HTML, JupyterCellType.UNDEFINED -> {}
                     JupyterCellType.MARKDOWN -> {
                         ++markdownCellsCount
                     }
@@ -208,7 +208,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
                 }
                 is JupyterDisplayDataOutput -> {
                     buildList {
-                        output.data.properties().forEach { (key, _) ->
+                        output.data.items.forEach { key ->
                             add(mimeToOutputType[key] ?: OutputType.OTHER)
                         }
                     }

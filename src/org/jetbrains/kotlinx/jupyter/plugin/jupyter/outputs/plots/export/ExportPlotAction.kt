@@ -210,7 +210,7 @@ class ExportPlotAction : NotebookEditorActionBase() {
         return outputs.outputs.filterIsInstanceAnd<JupyterDisplayDataOutput> { output ->
             output.data.has(PlotDataKeyExtractor.PLOT_KEY)
         }.mapNotNull { letPlotOutput ->
-            extractor.extractKey(letPlotOutput.data, null)
+            extractor.extractKey(letPlotOutput.data.toV4Json(), null)
         }
     }
 
