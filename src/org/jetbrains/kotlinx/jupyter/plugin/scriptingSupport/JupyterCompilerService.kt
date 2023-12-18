@@ -10,12 +10,15 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.RecursionManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ultimate.PluginVerifier
 import com.intellij.util.messages.Topic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
@@ -72,7 +75,7 @@ class JupyterCompilerService(val project: Project, private val coroutineScope: C
                     val virtualFile = (sourceCode as? KtFileScriptSource)?.virtualFile
                     val fileDelegate = (virtualFile as? VirtualFileWindow)?.delegate
                     val notebookFile = fileDelegate?.let(BackedNotebookVirtualFile::takeIfBacked) ?: return@beforeCompiling config.asSuccess()
-                    getOrCreate(notebookFile).handleBeforeCompiling(sourceCode, config).asSuccess()
+                    getOrCreate(notebookFile).handleBeforeCompiling(config, sourceCode).asSuccess()
                 }
             }
         }
@@ -109,23 +112,14 @@ class JupyterCompilerService(val project: Project, private val coroutineScope: C
         }
     }
 
+    fun requestScriptingUpdate() = scriptingSupportUpdateScheduler.requestUpdate()
+
     fun removeSession(virtualFile: BackedNotebookVirtualFile) {
         mapping.remove(virtualFile.file)?.let { Disposer.dispose(it) }
     }
 
     fun get(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService? {
         return mapping[virtualFile.file]
-    }
-
-    fun needToUpdateImplicitReceiversIfAny(file: VirtualFile, shouldUpdateImmediately: Boolean): Boolean {
-        return mapping[file]?.let {
-            (!shouldUpdateImmediately && it.hasPendingUpdates) ||
-                    it.loadReceiverClassesIfAny(shouldUpdateImmediately)
-        } == true
-    }
-
-    fun afterScriptingUpdate() {
-        mapping.forEach { (_, u) -> u.afterScriptingUpdate() }
     }
 
     fun restartHighlighting(files: Collection<VirtualFile>) {
@@ -141,6 +135,19 @@ class JupyterCompilerService(val project: Project, private val coroutineScope: C
                     NotebookHighlightingService.getForFile(project, file).restartAnalysing()
                 }
             }
+        }
+    }
+
+    private val scriptingSupportUpdateScheduler = ScriptingSupportUpdateScheduler(
+        project,
+        ::performScriptingUpdate,
+        this
+    )
+
+    private fun performScriptingUpdate() {
+        val updater = (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
+        RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
+            updater.invalidateAndCommit()
         }
     }
 

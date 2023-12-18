@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
+import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -25,7 +26,10 @@ import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfiguration
+import org.jetbrains.kotlin.utils.addToStdlib.safeAs
+import org.jetbrains.kotlinx.jupyter.plugin.util.errorWithAttachments
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
@@ -35,11 +39,12 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     private val compilerService = JupyterCompilerService.getInstance(project)
     private val editorManager: FileEditorManager? get() = FileEditorManager.getInstance(project)
     private val indexAwareScriptDefinitionsRequestor = IndexAwareScriptDefinitionsLoadRequestor(project)
+    private val scriptingSupportPublisher = project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC)
 
     override fun afterUpdate() {
         try {
             indexAwareScriptDefinitionsRequestor.reloadDefinitions()
-            compilerService.afterScriptingUpdate()
+            scriptingSupportPublisher.afterUpdate()
         } catch (ex: Exception) {
             if (ex is ProcessCanceledException) {
                 indexAwareScriptDefinitionsRequestor.reloadDefinitions()
@@ -64,7 +69,11 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         if (file !is VirtualFileWindow) return null
         val psiFile = PsiManager.getInstance(project).findFile(file) ?: return null
         if (psiFile !is KtFile) return null
-        return getConfiguration(project, psiFile)?.valueOrNull()
+        val conf = getDefaultConfiguration(project, psiFile)?.valueOrNull()
+        if (conf == null) {
+            LOG.errorWithAttachments("Can't retrieve fast configuration", Attachment(psiFile.name, psiFile.text))
+        }
+        return conf
     }
 
     override fun isApplicable(file: VirtualFile): Boolean {
@@ -103,6 +112,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
         fun isInTheTransaction(project: Project) = getUpdater(project).isTransactionAboutToHappen()
 
+        @Deprecated("Scheduled to removal")
         fun update(project: Project) {
             val updater = getUpdater(project)
             updateJob?.cancel()
@@ -133,7 +143,23 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
         fun getConfiguration(project: Project, psiFile: KtFile): ScriptCompilationConfigurationResult? {
             val scriptDef = psiFile.findScriptDefinition() ?: return null
-            return refineScriptCompilationConfiguration(KtFileScriptSource(psiFile), scriptDef, project)
+            val sourceCode = KtFileScriptSource(psiFile)
+            val configurationResult = refineScriptCompilationConfiguration(sourceCode, scriptDef, project)
+
+            return configurationResult
+        }
+
+        fun getDefaultConfiguration(project: Project, psiFile: KtFile): ScriptCompilationConfigurationResult? {
+            val sourceCode = KtFileScriptSource(psiFile)
+            val notebookFile = psiFile.virtualFile?.safeAs<VirtualFileWindow>()?.delegate?.toBackedNotebookFile()
+
+            if (notebookFile == null) {
+                LOG.error("Can't retrieve Notebook file for $psiFile")
+                return null
+            }
+
+            val compilerService = JupyterCompilerService.getForFile(project, notebookFile)
+            return compilerService.provideDefaultConfiguration(sourceCode)
         }
     }
 }

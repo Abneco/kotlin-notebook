@@ -3,11 +3,16 @@ package org.jetbrains.kotlinx.jupyter.plugin.util
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.progress.util.BackgroundTaskUtil.BackgroundTask
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsSafe
+import com.intellij.util.ConcurrencyUtil
 import com.intellij.util.concurrency.AppExecutorUtil
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ComputableWithName<T>(@NlsSafe private val name: String, private val action: () -> T): (() -> T) by action {
@@ -90,5 +95,85 @@ class ExecutedOnceBackgroundTask<T> private constructor(
             Disposer.register(parentDisposable, task)
             return task
         }
+    }
+}
+
+
+sealed class UpdateScheduler(
+    protected val updateAction: () -> Unit,
+    protected val delay: Long = DEFAULT_DELAY
+) {
+    abstract fun requestUpdate()
+
+    companion object {
+        const val DEFAULT_DELAY: Long = 300
+    }
+}
+
+
+open class SingleUpdateScheduler(
+    scheduledAction: () -> Unit,
+    parentDisposable: Disposable,
+    delay: Long = DEFAULT_DELAY
+) : UpdateScheduler(scheduledAction, delay), Disposable {
+    init {
+        Disposer.register(parentDisposable, this)
+    }
+
+    private val scheduler: ScheduledExecutorService = ConcurrencyUtil
+        .newSingleScheduledThreadExecutor("UpdateRequestor")
+
+    private val isUpdateRequested = AtomicBoolean(false)
+    private val isRunning = AtomicBoolean(false)
+    private var scheduledFuture: ScheduledFuture<*>? = null
+
+    private val updateRunnable: Runnable = Runnable {
+        try {
+            isRunning.set(true)
+            updateAction.invoke()
+        } finally {
+            actionInvocationDone()
+        }
+    }
+
+    @Synchronized
+    override fun requestUpdate() {
+        if (isRunning.get()) {
+            isUpdateRequested.set(true)
+            return
+        }
+
+        if (!isUpdateRequested.getAndSet(true)) {
+            scheduleUpdate()
+        } else {
+            LOG.debug("Ignoring update as have scheduled")
+        }
+    }
+
+    private fun scheduleUpdate() {
+        scheduledFuture = scheduler.schedule(updateRunnable, delay, TimeUnit.MILLISECONDS)
+    }
+
+    protected open fun actionInvocationDone() {
+        fireActionFinished()
+    }
+
+    protected fun fireActionFinished() {
+        isRunning.set(false)
+        LOG.debug("Update is done")
+        if (isUpdateRequested.compareAndSet(true, false)) {
+            LOG.debug("Someone requested update, rescheduled")
+            scheduleUpdate()
+        }
+    }
+
+    override fun dispose() {
+        scheduledFuture?.cancel(true)
+        scheduledFuture = null
+        scheduler.shutdown()
+    }
+
+    companion object {
+        val LOG = thisLogger()
     }
 }

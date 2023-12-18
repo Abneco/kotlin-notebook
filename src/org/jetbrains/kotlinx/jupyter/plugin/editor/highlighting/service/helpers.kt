@@ -35,7 +35,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
@@ -172,8 +172,7 @@ internal object NotebookHighlightingUtilityObject {
             if (project.isDisposed) return@runInEdt
 
             LOG.info("Requesting restart of scripting support after session restart")
-            hlManager?.beforeScriptingUpdate()
-            JupyterKtScriptingSupport.update(project)
+            JupyterCompilerService.getInstance(project).requestScriptingUpdate()
         }
         if (project.isDisposed) return
         runReadAction {

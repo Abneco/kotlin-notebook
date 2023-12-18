@@ -257,23 +257,6 @@ class NotebookHighlightingManager(
         activeCaretListener?.resetState()
     }
 
-    /**
-     * OUTDATED, to be removed
-     * Semantic of the following 2 methods is to ensure no requests are lost after 'afterUpdate()' of scripting.
-     * It was done by disallowing any modifications to the queue of HL during scripting updates via indicators.
-     * Basically, that indicator was designed to determine an interval of update by providing an API to call
-     * 'before' and 'after' update.
-     *
-     * Which is basically, not needed. We can do same by just asking by request if right now some update going.
-     *
-     */
-    // todo: to be removed
-    fun beforeScriptingUpdate() = Unit
-
-    fun afterScriptingUpdate() {
-        LOG.debug("After scripting update")
-    }
-
     fun finishedAnalysisForFile(psiFile: PsiFile, holder: HighlightInfoHolder) {
         val ind = fileToInjectionData[psiFile]?.notebookCellIndex
         if (ind == null) {

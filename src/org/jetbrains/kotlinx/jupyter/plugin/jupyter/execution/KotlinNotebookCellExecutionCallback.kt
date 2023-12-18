@@ -6,8 +6,8 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListInfo
@@ -76,8 +76,9 @@ class KotlinNotebookCellExecutionCallback(
                  * and pass the metadata we received to it.
                  */
                 val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-                compilerService.addCompiledSnippet(snippetMetadata, psiCell)
-                updateScriptingIfNeeded(false)
+                compilerService.addCompiledSnippet(snippetMetadata, psiCell) {
+                    updateScriptingIfNeeded(false)
+                }
             } else {
                 NotebookHighlightingService.getForFile(project, virtualFile)
                     .dataController.notebookDocumentStructureNontrivialChanged.compareAndSet(false, true)
@@ -103,8 +104,8 @@ class KotlinNotebookCellExecutionCallback(
         val shouldUpdateDependencies = factory.unregisterCallback(project, virtualFile, index, onError)
 
         if (shouldUpdateDependencies) {
-            val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-            compilerService.updateScripting()
+            val compilerService = JupyterCompilerService.getInstance(project)
+            compilerService.requestScriptingUpdate()
         }
     }
 

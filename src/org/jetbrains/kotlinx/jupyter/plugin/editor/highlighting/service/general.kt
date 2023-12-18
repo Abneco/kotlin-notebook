@@ -30,6 +30,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingDependencyPrefix
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorWithAttachments
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -195,10 +196,6 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         val scriptDefManager = ScriptDefinitionsManager.getInstance(project)
 
         if (scriptDefManager.isReady()) {
-            if (JupyterCompilerService.getInstance(project).needToUpdateImplicitReceiversIfAny(virtualFile, true)) {
-                LOG.debug("${Thread.currentThread().id} requested loading of classes")
-                throw ProcessCanceledException()
-            }
             return
         }
         if (ApplicationManager.getApplication().isDispatchThread) {
@@ -262,7 +259,7 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
         if ((missingBaseClass || missingReceiverClass) && reloadRequested) return false
         if (!missingBaseClass && !missingReceiverClass) return true
 
-        LOG.errorWithAttachments(
+        reportErrorTestAware(
             if (missingBaseClass)
                 "Missing base script class"
             else
@@ -270,12 +267,25 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
             Attachment(file.name, file.text)
         )
 
+        if (missingReceiverClass) {
+            return false
+        }
+
         NotebookNotificationUtility.kernelRelatedFactory
             .showAbsentInitialBaseDependenciesInfo(file.project)
 
         reloadRequested = true
 
         return false
+    }
+
+    private fun reportErrorTestAware(message: String, attachment: Attachment) {
+        val logReference = if (ApplicationManager.getApplication().isUnitTestMode)
+            LOG::errorWithAttachments
+        else
+            LOG::errorUnderDebug
+
+        logReference(message, arrayOf(attachment))
     }
 
     companion object {
