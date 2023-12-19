@@ -2,14 +2,12 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test
 
 import com.intellij.injected.editor.DocumentWindow
-import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
@@ -18,14 +16,18 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.util.descendantsOfType
 import com.intellij.testFramework.HeavyTestHelper
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
+import com.intellij.testFramework.runInEdtAndWait
 import junit.framework.TestCase
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.kotlin.utils.addToStdlib.safeAs
+import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.test.waitIndexingComplete
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookCreateAction
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionTest
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
+import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.originFile
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
@@ -39,6 +41,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
+import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
@@ -69,6 +72,28 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
 
     fun getTestFile(suffix: String): File {
         return File(testDataPath, "${getTestName(true)}$suffix")
+    }
+
+    protected fun setUpScriptingDependencies() {
+        val ktFiles = when(val psiFile = myFixture.file) {
+            is KtFile -> listOf(psiFile)
+            is JupyterFile -> {
+                runReadAction { psiFile.getInjectedKtFiles() }
+            }
+            else -> error("Only KtFiles are expected, file passed: ${psiFile}")
+        }
+
+        runInEdtAndWait {
+            myFixture.project.waitIndexingComplete()
+            runReadAction {
+                for (file in ktFiles) {
+                    ScriptConfigurationManager.updateScriptDependenciesSynchronously(
+                        file
+                    )
+                }
+            }
+        }
+
     }
 }
 
@@ -101,6 +126,7 @@ abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCas
             setMode(NotebookEditorMode.EDIT)
         }
         originalVirtualFile = myFixture.file.virtualFile
+        setUpScriptingDependencies()
 
         if (!testOptions.caresAboutInjection) {
             // Cache injection on current offset
