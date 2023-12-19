@@ -323,7 +323,7 @@ class JupyterCompilerPerFileService(
                         getScriptingClass(classGetter)
                     }
                 }
-                implicitReceivers(implicitsList.reversed())
+                implicitReceivers(implicitsList)
                 defaultImports(additionalDefaultImports.getList())
                 ide.dependenciesSources(
                     JvmDependency(

@@ -143,10 +143,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
         fun getConfiguration(project: Project, psiFile: KtFile): ScriptCompilationConfigurationResult? {
             val scriptDef = psiFile.findScriptDefinition() ?: return null
-            val sourceCode = KtFileScriptSource(psiFile)
-            val configurationResult = refineScriptCompilationConfiguration(sourceCode, scriptDef, project)
-
-            return configurationResult
+            return refineScriptCompilationConfiguration(KtFileScriptSource(psiFile), scriptDef, project)
         }
 
         fun getDefaultConfiguration(project: Project, psiFile: KtFile): ScriptCompilationConfigurationResult? {
