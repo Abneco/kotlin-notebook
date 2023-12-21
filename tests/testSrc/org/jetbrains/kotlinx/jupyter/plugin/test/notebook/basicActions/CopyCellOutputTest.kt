@@ -1,7 +1,6 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.basicActions
 
-import com.intellij.idea.IJIgnore
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.asSafely
@@ -22,7 +21,6 @@ class CopyCellOutputTest: KotlinNotebookExecutionBaseTestCase() {
     @Test
     fun testTextPlain() = doTest("This is my output")
 
-    @IJIgnore(issue = "KTNB-499")
     @Test
     fun testStream() = doTest("printing 123")
 
