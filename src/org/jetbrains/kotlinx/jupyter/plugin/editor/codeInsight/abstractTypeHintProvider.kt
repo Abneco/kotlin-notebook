@@ -13,7 +13,6 @@ import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
@@ -50,7 +49,6 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
         val project = file.project
 
         return object : FactoryInlayHintsCollector(editor) {
-            private val document = FileDocumentManager.getInstance().getDocument(file.virtualFile)!!
             private val optionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
             private val injectedLanguageManager = InjectedLanguageManager.getInstance(file.project)
 
@@ -77,11 +75,12 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                             if (!element.containingFile.virtualFile.isValid || !element.containingFile.isValid) return false
                             val resolved = data.filter { isElementSupported(it, settings) }.ifEmpty { return@forEach }
                             resolved.forEach { hintType ->
-                                addInlayElementToSink(el, project,
-                                                      hintType, sink,
-                                                      factory, this@KotlinNotebookAbstractInlayTypeHintsProvider,
-                                                      hintsPriority, hintsArePlacedAtTheEndOfLine, fileOffset,
-                                                      registry, RegistryMode.Apply
+                                addInlayElementToSink(
+                                    el, project,
+                                    hintType, sink,
+                                    factory, this@KotlinNotebookAbstractInlayTypeHintsProvider,
+                                    hintsPriority, hintsArePlacedAtTheEndOfLine, fileOffset,
+                                    registry
                                 )
                             }
                         }
@@ -105,10 +104,11 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                             registry.putIfAbsent(elem, mutableSetOf())
                         }
                         if (isElementSupported(hintType, settings)) {
-                            addInlayElementToSink(elem, project,
-                                                  hintType, sink,
-                                                  f, this@KotlinNotebookAbstractInlayTypeHintsProvider,
-                                                  hintsPriority, hintsArePlacedAtTheEndOfLine, fileOffset, registry, RegistryMode.Store
+                            addInlayElementToSink(
+                                elem, project,
+                                hintType, sink,
+                                f, this@KotlinNotebookAbstractInlayTypeHintsProvider,
+                                hintsPriority, hintsArePlacedAtTheEndOfLine, fileOffset, registry
                             )
                         }
                     }
@@ -129,10 +129,6 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
         internal val psiHostChainHintsRegistry = Key.create<PsiHostChainCallTypeHintsRegistry>("jupyter.kotlin.inlay.hints.chain.call.registry")
         internal val psiHostHintsRegistry = Key.create<PsiHostTypeHintsRegistry>("jupyter.kotlin.inlay.hints.registry")
         private val psiBindingContext = Key.create<BindingContext>("jupyter.kotlin.inlay.hints.binding.context")
-        internal enum class RegistryMode {
-            Apply,
-            Store
-        }
 
         internal fun PsiElement.putBindingContext(bindingContext: BindingContext) =
             putUserData(psiBindingContext, bindingContext)
@@ -168,15 +164,16 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
             } else stored
         }
 
-        internal fun addInlayElementToSink(contextElement: PsiElement, project: Project,
-                                           hintType: HintType, sink: InlayHintsSink,
-                                           factory: PresentationFactory,
-                                           provider: InlayHintsProvider<*>,
-                                           hintsPriority: Int,
-                                           isEndOfTheLine: Boolean,
-                                           injectionOffset: Int, registry: PsiHostTypeHintsRegistry,
-                                           registryMode: RegistryMode,
-                                           inlayPresentation: InlayPresentation? = null) {
+        internal fun addInlayElementToSink(
+            contextElement: PsiElement, project: Project,
+            hintType: HintType, sink: InlayHintsSink,
+            factory: PresentationFactory,
+            provider: InlayHintsProvider<*>,
+            hintsPriority: Int,
+            isEndOfTheLine: Boolean,
+            injectionOffset: Int, registry: PsiHostTypeHintsRegistry,
+            inlayPresentation: InlayPresentation? = null
+        ) {
             registry[contextElement]?.add(hintType)
             val detailsInfo = hintType.provideHintDetails(contextElement)
 
@@ -216,4 +213,3 @@ internal fun tryGetInjectedKtFileIfPossibleOrProvided(element: PsiElement, proje
     val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
     return injectedLanguageManager.getInjectedPsiFiles(element)?.firstOrNull { it.first.containingFile is KtFile }?.first ?: element
 }
-

@@ -2,7 +2,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution
 
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.ExecutionCallbackRegistered
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.ExecutionCallbackUnregistered
@@ -70,14 +69,15 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
     }
 
     override fun create(task: JupyterExecutionTask): JupyterExecutionCallback? {
-        val file = task.notebookVirtualFile
         val cellProject = task.project ?: return null
+        val file = task.notebookVirtualFile
+        if (!file.file.isKotlinNotebook) return null
+
         val jupyterPsiCellData = runReadAction {
             val cellIndex = task.options.cellPointer?.get()?.ordinal ?: return@runReadAction null
             getCells(cellProject, task.notebookVirtualFile)?.getOrNull(cellIndex) to cellIndex
         }
         val cell = jupyterPsiCellData?.first ?: return null
-        if (!file.file.isKotlinNotebook) return null
 
         val index = registerNextIndexForCallback(cellProject, file, jupyterPsiCellData.second)
 
@@ -105,7 +105,6 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
     }
 
     companion object {
-        private val LOG = logger<KotlinNotebookCellExecutionCallbackFactory>()
         fun getInstance() = JupyterCellExecutionCallbackFactory.EP_NAME.findExtensionOrFail(KotlinNotebookCellExecutionCallbackFactory::class.java)
     }
 }

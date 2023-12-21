@@ -30,6 +30,6 @@ class IdeaJupyterSocketManager(private val kernelConfig: KernelConfig): JupyterS
 
     override fun close() {
         sockets.values.forEach { it.closeSafely() }
-        context.closeSafely()
+        context.term()
     }
 }

@@ -195,7 +195,7 @@ class JupyterCompilerPerFileService(
             val notebookPsiFile = virtualFile.file.toPsiFile(project)
             val ktFiles = notebookPsiFile.getInjectedKtFiles()
             val configurations = ktFiles.mapNotNull { ktFile ->
-                val conf = JupyterKtScriptingSupport.getConfiguration(project, ktFile)?.valueOrNull()
+                val conf = JupyterKtScriptingSupport.getConfiguration(ktFile)?.valueOrNull()
                 if (conf == null || conf.dependenciesClassPath.isEmpty()) {
                     ktFile.reportAsAttachment()
                     null

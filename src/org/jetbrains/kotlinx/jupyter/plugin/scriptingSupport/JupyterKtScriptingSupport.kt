@@ -7,14 +7,8 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.RecursionManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport
@@ -69,7 +63,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         if (file !is VirtualFileWindow) return null
         val psiFile = PsiManager.getInstance(project).findFile(file) ?: return null
         if (psiFile !is KtFile) return null
-        val conf = getDefaultConfiguration(project, psiFile)?.valueOrNull()
+        val conf = getDefaultConfiguration(psiFile)?.valueOrNull()
         if (conf == null) {
             LOG.errorWithAttachments("Can't retrieve fast configuration", Attachment(psiFile.name, psiFile.text))
         }
@@ -103,36 +97,12 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
     companion object {
         private val LOG = logger<JupyterKtScriptingSupport>()
-        private val updateScope = CoroutineScope(Dispatchers.Default)
-        private var updateJob: Deferred<*>? = null
 
         private fun getUpdater(project: Project): ScriptClassRootsUpdater {
             return (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
         }
 
         fun isInTheTransaction(project: Project) = getUpdater(project).isTransactionAboutToHappen()
-
-        @Deprecated("Scheduled to removal")
-        fun update(project: Project) {
-            val updater = getUpdater(project)
-            updateJob?.cancel()
-            if (updater.isTransactionAboutToHappen()) {
-                LOG.debug("In the transaction, aborting")
-                updateJob?.cancel()
-                updateJob = updateScope.async {
-                    delay(1000)
-                    LOG.debug("Scripting coroutine dispatched")
-                    update(project)
-                }
-                return
-            }
-            updateJob?.cancel()
-            updateJob = null
-            LOG.debug("Running scripting support update")
-            RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
-                updater.invalidateAndCommit()
-            }
-        }
 
         fun updateSynchronously(project: Project) {
             val updater = getUpdater(project)
@@ -141,12 +111,12 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             }
         }
 
-        fun getConfiguration(project: Project, psiFile: KtFile): ScriptCompilationConfigurationResult? {
+        fun getConfiguration(psiFile: KtFile): ScriptCompilationConfigurationResult? {
             val scriptDef = psiFile.findScriptDefinition() ?: return null
-            return refineScriptCompilationConfiguration(KtFileScriptSource(psiFile), scriptDef, project)
+            return refineScriptCompilationConfiguration(KtFileScriptSource(psiFile), scriptDef, psiFile.project)
         }
 
-        fun getDefaultConfiguration(project: Project, psiFile: KtFile): ScriptCompilationConfigurationResult? {
+        fun getDefaultConfiguration(psiFile: KtFile): ScriptCompilationConfigurationResult? {
             val sourceCode = KtFileScriptSource(psiFile)
             val notebookFile = psiFile.virtualFile?.safeAs<VirtualFileWindow>()?.delegate?.toBackedNotebookFile()
 
@@ -155,7 +125,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
                 return null
             }
 
-            val compilerService = JupyterCompilerService.getForFile(project, notebookFile)
+            val compilerService = JupyterCompilerService.getForFile(psiFile.project, notebookFile)
             return compilerService.provideDefaultConfiguration(sourceCode)
         }
     }
