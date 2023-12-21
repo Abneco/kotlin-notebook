@@ -21,11 +21,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOption
 import org.jetbrains.kotlinx.jupyter.plugin.settings.asJson
 import org.jetbrains.plugins.notebooks.jupyter.actions.createFileFromTemplateWithProperties
 
-class KotlinNotebookCreateAction : CreateFileFromTemplateAction(
-    KotlinNotebookBundle.messagePointer("kotlin.jupyter.action.create.notebook.text"),
-    KotlinNotebookBundle.messagePointer("kotlin.jupyter.action.create.notebook.description"),
-    KotlinJupyterIcons.FileIcon
-), DumbAware {
+class KotlinNotebookCreateAction : CreateFileFromTemplateAction(), DumbAware {
 
     override fun buildDialog(project: Project, directory: PsiDirectory, builder: CreateFileFromTemplateDialog.Builder) {
         builder

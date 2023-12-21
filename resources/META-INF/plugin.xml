@@ -284,7 +284,8 @@
     </extensions>
 
     <actions resource-bundle="messages/KotlinNotebookBundle">
-        <action id="CreateNewKotlinNotebook" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookCreateAction">
+        <action id="CreateNewKotlinNotebook" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookCreateAction"
+                icon="icons.KotlinJupyterIcons.FileIcon">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="JupyterCreateFileAction"/>
         </action>
         <action id="SelectKotlinNotebookModuleDependencies" class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookSelectModulesAction"/>
