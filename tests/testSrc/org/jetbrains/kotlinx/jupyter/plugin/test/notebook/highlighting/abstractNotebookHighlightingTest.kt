@@ -1,4 +1,4 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.highlighting
 
 import com.intellij.codeHighlighting.Pass
@@ -14,6 +14,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.testFramework.ExpectedHighlightingData
 import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
+import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.util.ArrayUtilRt
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
@@ -71,7 +72,9 @@ abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTes
         setUpScriptingDependencies()
         val filter = createFilterForStrategy(strategy)
         val expectedData = getExpectedHighlightingData(true, false, true)
-        val results = doHighlighting()
+        val results = runInEdtAndGet {
+            doHighlighting()
+        }
         UsefulTestCase.assertTrue(results.none { it.description != null && it.description == scriptingMissingClassError })
 
         val isHasShadowed = results.any { it.description != null && (it.description.startsWith("Not yet provided symbol") || it.description.startsWith("Improper usage")) }

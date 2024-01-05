@@ -1,4 +1,4 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completionWithImport
 
 import com.intellij.codeInsight.lookup.LookupElement
@@ -16,10 +16,6 @@ import org.junit.Test
 
 class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCase() {
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/completionWithImport"
-
-    override fun runInDispatchThread(): Boolean {
-        return false
-    }
 
     @Test(timeout = 300_000)
     fun testCompletionWithImport() = doTest(

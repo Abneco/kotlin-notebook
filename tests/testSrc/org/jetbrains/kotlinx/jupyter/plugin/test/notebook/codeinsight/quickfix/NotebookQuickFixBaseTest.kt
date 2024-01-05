@@ -1,4 +1,4 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.codeinsight.quickfix
 
 import com.intellij.codeInsight.intention.IntentionAction
@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
+import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.ui.UIUtil
 import junit.framework.TestCase
 import org.jetbrains.kotlin.idea.test.ConfigLibraryUtil
@@ -22,9 +23,6 @@ import org.junit.ComparisonFailure
 
 abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() {
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/codeinsight/quickfix"
-    override fun runInDispatchThread(): Boolean {
-        return true
-    }
 
     override fun getBasePath(): String {
         return testDataPath
@@ -95,7 +93,7 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
         }
     }
 
-    protected fun doKotlinQuickFixTest(ktFile: PsiFile, documentContent: String) {
+    protected fun doKotlinQuickFixTest(ktFile: PsiFile, documentContent: String) = runInEdtAndWait {
         CommandProcessor.getInstance().executeCommand(project, {
             var fileText = ""
             try {

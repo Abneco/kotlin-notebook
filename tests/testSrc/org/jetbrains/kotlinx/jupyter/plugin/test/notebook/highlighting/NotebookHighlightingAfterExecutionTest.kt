@@ -1,4 +1,4 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.highlighting
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
@@ -13,10 +13,6 @@ import org.junit.Test
 
 class NotebookHighlightingAfterExecutionTest: KotlinNotebookExecutionBaseTestCase() {
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/highlighting"
-
-    override fun runInDispatchThread(): Boolean {
-        return false
-    }
 
     @Test
     fun serializationHighlighting() = doTest(object : ReceivedMessagesTester {

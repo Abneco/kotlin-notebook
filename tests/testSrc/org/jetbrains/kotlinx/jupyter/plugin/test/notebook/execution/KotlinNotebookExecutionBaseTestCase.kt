@@ -1,4 +1,4 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution
 
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -10,6 +10,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.resolve.FileContextUtil
 import com.intellij.testFramework.TestLoggerFactory
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
+import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.runWithJupyterSession
@@ -20,9 +21,10 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.Jupyte
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
+import org.junit.Rule
 import org.junit.jupiter.api.Assertions
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.rules.DisableOnDebug
+import org.junit.rules.TestRule
 
 interface ReceivedMessages {
     val reply: JupyterMessage?
@@ -51,8 +53,13 @@ fun textPlainOutput(content: String): ObjectNode = jackson.createObjectNode().ap
     put("text/plain", content)
 }
 
-@RunWith(JUnit4::class)
 abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase() {
+    @JvmField
+    @Rule
+    var timeout: TestRule = DisableOnDebug(
+        CoroutinesTimeout.seconds(180)
+    )
+
     override lateinit var originalVirtualFile: VirtualFile
 
     override fun runInDispatchThread() = false
