@@ -22,15 +22,15 @@ abstract class RefactoringTestBase(private val refactoringActionId: String) : Ko
     protected fun doTest(caretInitializer: (CaretModel) -> Unit) {
         myFixture.setCaresAboutInjection(true)
         val editorProvider = FileEditorProvider.EP_FILE_EDITOR_PROVIDER.findExtension(JupyterDSFileEditorProvider::class.java)!!
-        myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath, fileEditorProvider = editorProvider)
+        val notebookFile = myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath, fileEditorProvider = editorProvider)
+        originalVirtualFile = notebookFile.file
+
         invokeAndWaitIfNeeded {
             setMode(NotebookEditorMode.EDIT)
 
             val caretModel = myFixture.editor.caretModel
             caretInitializer(caretModel)
         }
-
-        originalVirtualFile = myFixture.file.virtualFile
 
         JupyterKtScriptingSupport.updateSynchronously(project)
 
