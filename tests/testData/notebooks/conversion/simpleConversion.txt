@@ -5,8 +5,8 @@ public class TestBase {
 public class Clazz extends TestBase {
     protected void tearDown() throws Exception {
         RunAll.runAll(
-                () -> myTempFiles.deleteAll(),
-                () -> super.tearDown()
+            () -> myTempFiles.deleteAll(),
+            () -> super.tearDown()
         );
     }
 }

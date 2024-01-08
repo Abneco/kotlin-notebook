@@ -8,8 +8,8 @@ class Clazz : TestBase() {
     @Throws(Exception::class)
     override fun tearDown() {
         RunAll.runAll(
-                { myTempFiles.deleteAll() },
-                { super.tearDown() }
+            { myTempFiles.deleteAll() },
+            { super.tearDown() }
         )
     }
 }
