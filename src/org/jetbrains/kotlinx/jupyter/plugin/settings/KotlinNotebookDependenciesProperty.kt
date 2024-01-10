@@ -1,4 +1,4 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.settings
 
 import com.fasterxml.jackson.databind.JsonNode
@@ -14,7 +14,6 @@ import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
-import com.intellij.util.alsoIfNull
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanentIndexService
 import java.util.*
@@ -60,8 +59,9 @@ fun KotlinNotebookDependencies.findModules(project: Project): List<Module> {
     return when (this) {
         KotlinNotebookDependencies.All -> getSuitableModules(project)
         is KotlinNotebookDependencies.Selection -> values.mapNotNull {
-            ModuleManager.getInstance(project).findModuleByName(it).alsoIfNull {
+            ModuleManager.getInstance(project).findModuleByName(it) ?: run {
                 thisLogger<KotlinNotebookDependencies>().warn("Could not find module by name $it in project ${project.name}")
+                null
             }
         }
     }
