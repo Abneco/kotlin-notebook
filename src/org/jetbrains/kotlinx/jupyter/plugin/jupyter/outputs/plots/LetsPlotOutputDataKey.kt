@@ -5,12 +5,14 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.HasExecutionCount
+import org.jetbrains.plugins.notebooks.visualization.outputs.statistic.NotebookOutputKeyType
 
 data class LetsPlotOutputDataKey(
     val spec: JsonObject,
     override val executionCount: Int?,
     val applyColorScheme: Boolean,
 ): HasExecutionCount {
+    override val statisticKey = NotebookOutputKeyType.LETS_PLOT
     override fun getContentForDiffing(): Any {
         return JSON.encodeToString(spec)
     }
