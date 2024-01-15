@@ -47,6 +47,7 @@ class KotlinKernelProcessHandler(
 
             override fun processTerminated(event: ProcessEvent) {
                 LOG.debug("Kernel process terminated with code ${event.exitCode} (${event.text})")
+                LOG.warnInTests { "Destroyed Kotlin kernel $kernelId" }
                 eventDispatcher.multicaster.kernelTerminated(KotlinKernelProcessEventImpl(event))
                 eventDispatcher.listeners.clear()
             }
@@ -92,11 +93,6 @@ class KotlinKernelProcessHandler(
 
     override fun isSilentlyDestroyOnClose(): Boolean {
         return true
-    }
-
-    override fun destroyProcess() {
-        super.destroyProcess()
-        LOG.warnInTests { "Destroyed Kotlin kernel $kernelId" }
     }
 
     companion object {
