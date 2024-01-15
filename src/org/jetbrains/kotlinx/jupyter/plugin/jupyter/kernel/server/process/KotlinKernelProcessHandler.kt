@@ -95,6 +95,11 @@ class KotlinKernelProcessHandler(
         return true
     }
 
+    override fun destroyProcess() {
+        super.destroyProcess()
+        LOG.warnInTests { "Destroyed Kotlin kernel $kernelId" }
+    }
+
     companion object {
         private val LOG = Logger.getInstance(KotlinKernelProcessHandler::class.java)
     }
