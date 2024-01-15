@@ -44,8 +44,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService.Companion.HL_DELAY_PAUSE
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.shouldStartAfterPreChecks
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.ImpatientNotebookChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ImpatientNotebookChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
@@ -119,7 +119,7 @@ class NotebookHighlightingManager(
     private var _jupyterFile: PsiFile? = null
     val jupyterPsiFile: PsiFile? get() = _jupyterFile
 
-    private fun initialiseData(restart: Boolean = false) {
+    private fun initializeData(restart: Boolean = false) {
         val targetData = mutableSetOf<Int>()
         targetData.addAll(
             virtualFile.file.toPsiFile(project).getNotebookCells().indices
@@ -153,7 +153,7 @@ class NotebookHighlightingManager(
 
     init {
         Disposer.register(projectService, this)
-        initialiseData()
+        initializeData()
     }
 
     private val fileToInjectionData = ConcurrentHashMap<KtFile, InjectedFileData>()
@@ -381,7 +381,7 @@ class NotebookHighlightingManager(
     }
 
     fun restartAnalysing() {
-        initialiseData(true)
+        initializeData(true)
         NotebookHighlightingRestarter.scheduleRegularUpdate(jupyterPsiFile!!)
     }
 

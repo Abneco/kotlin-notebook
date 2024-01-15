@@ -56,7 +56,7 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
     @RequiresBackgroundThread
     fun downloadArtifactBlocking(
         artifact: ArtifactDescriptionWithKind,
-        version: String = getSelectedKernelVersion(project),
+        version: String,
     ): List<File> {
         return runBlocking {
             downloadArtifactAsync(artifact, version)
@@ -65,7 +65,7 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
 
     suspend fun downloadArtifactAsync(
         artifact: ArtifactDescriptionWithKind,
-        version: String = getSelectedKernelVersion(project),
+        version: String,
     ): List<File> {
         val artifactWithVersion = ArtifactDescriptionWithVersion(artifact, version)
         return downloadWithCache(artifactWithVersion) { cacheDirectory ->
@@ -85,7 +85,7 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
 
     private suspend fun downloadAndUnzipAsync(
         artifact: ArtifactDescriptionWithKind,
-        version: String = getSelectedKernelVersion(project),
+        version: String,
     ): List<File> {
         assert(artifact.kind.extension == "zip")
         val zipFiles = downloadArtifactAsync(artifact, version)
@@ -115,8 +115,9 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
 
     private fun preloadArtifacts() {
         preloadJobScope.launch {
+            val version = getSelectedKernelVersion(project)
             for (artifact in KotlinNotebookMavenArtifacts.all()) {
-                downloadArtifactAsync(artifact)
+                downloadArtifactAsync(artifact, version)
             }
         }
     }

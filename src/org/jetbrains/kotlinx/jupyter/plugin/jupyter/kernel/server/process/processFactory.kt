@@ -14,8 +14,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.Ker
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.maxBytecodeVersion
-import org.jetbrains.kotlinx.jupyter.startup.*
+import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
+import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
+import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
 import java.io.File
 import java.nio.file.Path
@@ -34,7 +37,7 @@ fun createKernelProcess(
         "tcp",
         "HmacSHA256",
         "x-x-x",
-        mavenArtifactsDownloader.getClasspathArtifacts(),
+        mavenArtifactsDownloader.getClasspathArtifacts(project),
         null,
         null,
         "kotlin_notebook",
@@ -66,7 +69,10 @@ fun createKernelProcess(
     val cmdArgs = kernelConfig.javaCmdLine(
         javaExecutable,
         "kernelProcessConnection",
-        mavenArtifactsDownloader.downloadArtifactBlocking(KotlinNotebookMavenArtifacts.KERNEL_SHADOWED).joinToString(classpathSeparator) { it.absolutePath },
+        mavenArtifactsDownloader.downloadArtifactBlocking(
+            KotlinNotebookMavenArtifacts.KERNEL_SHADOWED,
+            getSelectedKernelVersion(project)
+        ).joinToString(classpathSeparator) { it.absolutePath },
         extraJavaArgs
     )
 
@@ -93,12 +99,15 @@ fun createKernelProcess(
     }
 }
 
-private fun KotlinNotebookMavenArtifactsDownloader.getClasspathArtifacts(): List<File> {
+private fun KotlinNotebookMavenArtifactsDownloader.getClasspathArtifacts(project: Project): List<File> {
     return try {
         downloadAndUnzipBlocking(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED_ZIP)
     } catch (e: Exception) {
         logger<KotlinNotebookMavenArtifactsDownloader>().warn("Unable to download artifacts zip", e)
-        downloadArtifactBlocking(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED)
+        downloadArtifactBlocking(
+            KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED,
+            getSelectedKernelVersion(project)
+        )
     }
 }
 

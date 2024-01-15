@@ -3,10 +3,11 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.common
 
 import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import kotlinx.coroutines.*
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersionTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -36,8 +37,9 @@ class ArtifactsDownloaderTest: BasePlatformTestCase() {
     fun `all artifacts should consist of a single JAR`() {
         runBlocking {
             val artifacts = KotlinNotebookMavenArtifacts.all()
+            val version = getSelectedKernelVersionTest(project)
             artifacts.forEach { artifact ->
-                val jars = downloader.downloadArtifactAsync(artifact)
+                val jars = downloader.downloadArtifactAsync(artifact, version)
                 UsefulTestCase.assertSize(1, jars)
             }
         }
@@ -46,8 +48,9 @@ class ArtifactsDownloaderTest: BasePlatformTestCase() {
     @Test
     fun `blocking mode should work the same way`() {
         val artifacts = KotlinNotebookMavenArtifacts.all()
+        val version = getSelectedKernelVersionTest(project)
         artifacts.forEach { artifact ->
-            val jars = downloader.downloadArtifactBlocking(artifact)
+            val jars = downloader.downloadArtifactBlocking(artifact, version)
             UsefulTestCase.assertSize(1, jars)
         }
     }

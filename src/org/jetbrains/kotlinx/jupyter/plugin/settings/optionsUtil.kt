@@ -2,7 +2,11 @@
 package org.jetbrains.kotlinx.jupyter.plugin.settings
 
 import com.intellij.openapi.project.Project
+import org.jetbrains.annotations.TestOnly
 
 internal fun getSelectedKernelVersion(project: Project): String {
     return KotlinNotebookProjectOptionsProvider.getInstance(project).kernelVersion
 }
+
+@TestOnly
+fun getSelectedKernelVersionTest(project: Project) = getSelectedKernelVersion(project)

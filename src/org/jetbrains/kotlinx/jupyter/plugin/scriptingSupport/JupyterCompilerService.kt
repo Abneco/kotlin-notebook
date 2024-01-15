@@ -13,7 +13,6 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.RecursionManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ultimate.PluginVerifier
-import com.intellij.util.messages.Topic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -24,6 +23,7 @@ import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.serialization.serializationPluginEnabled
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelListener
@@ -59,7 +59,8 @@ class JupyterCompilerService(val project: Project, private val coroutineScope: C
        emptyList()
     }
 
-    private val compilerScriptsChangePublisher: CodeSnippetsChangeListener = project.messageBus.syncPublisher(TOPIC)
+    val compilerScriptsChangePublisher: NotebookCodeSnippetsChangeListener =
+        project.messageBus.syncPublisher(NotebookCodeSnippetsChangeListener.TOPIC)
 
     private val initialCompileConfiguration by lazy {
         getCompilationConfiguration(
@@ -108,7 +109,7 @@ class JupyterCompilerService(val project: Project, private val coroutineScope: C
 
     fun getOrCreate(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
         return mapping.getOrPut(virtualFile.file) {
-            JupyterCompilerPerFileService(project, virtualFile, compilerScriptsChangePublisher, initialClasspath,this)
+            JupyterCompilerPerFileService(project, virtualFile, initialClasspath,this)
         }
     }
 
@@ -164,18 +165,11 @@ class JupyterCompilerService(val project: Project, private val coroutineScope: C
         coroutineScope.cancel()
     }
 
-    interface CodeSnippetsChangeListener {
-        fun scriptsClassesChanged(file: BackedNotebookVirtualFile)
-    }
-
     companion object {
         fun getInstance(project: Project) = project.service<JupyterCompilerService>()
 
         fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
             return getInstance(project).getOrCreate(virtualFile)
         }
-
-        @Topic.ProjectLevel
-        internal val TOPIC: Topic<CodeSnippetsChangeListener> = Topic(CodeSnippetsChangeListener::class.java, Topic.BroadcastDirection.NONE)
     }
 }

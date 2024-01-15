@@ -44,6 +44,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArt
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanentIndexService
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookChangeEventsType
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookMoveEvent
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ScriptingSupportAfterUpdateListener
 import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.usages.KotlinNotebookPluginUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.util.ComputableWithName
@@ -98,7 +102,6 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
 class JupyterCompilerPerFileService(
     private val project: Project,
     private val virtualFile: BackedNotebookVirtualFile,
-    private val compilerPublisher: JupyterCompilerService.CodeSnippetsChangeListener,
     initialClasspath: List<File>,
     parent: Disposable
 ) : Disposable {
@@ -137,10 +140,12 @@ class JupyterCompilerPerFileService(
 
                     updateLastKnownConfiguration()
                 }
-                compilerPublisher.scriptsClassesChanged(virtualFile)
+                getScriptsChangePublisher().scriptsClassesChanged(virtualFile)
             }
         }
     }
+
+    private fun getScriptsChangePublisher() = JupyterCompilerService.getInstance(project).compilerScriptsChangePublisher
 
     private var isDisposed = false
 
@@ -257,7 +262,7 @@ class JupyterCompilerPerFileService(
                 ::updateClasspathWithKernelJars,
                 ::updateClasspathWithProjectArtifactsAsync,
             )) {
-                compilerPublisher.scriptsClassesChanged(virtualFile)
+                getScriptsChangePublisher().scriptsClassesChanged(virtualFile)
                 if (!ApplicationManager.getApplication().isUnitTestMode) {
                     JupyterKtScriptingSupport.updateSynchronously(project)
                 }
