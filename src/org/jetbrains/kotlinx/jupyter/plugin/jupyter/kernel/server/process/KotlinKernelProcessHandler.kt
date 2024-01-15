@@ -14,6 +14,7 @@ import com.intellij.util.io.BaseOutputReader
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
+import org.jetbrains.kotlinx.jupyter.plugin.util.warnInTests
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
@@ -37,6 +38,8 @@ class KotlinKernelProcessHandler(
     }
 
     init {
+        LOG.warnInTests { "Created Kotlin kernel $kernelId" }
+
         addProcessListener(object : ProcessAdapter() {
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                 LOG.debug(event.text.trimEnd().trimStart('\r', '\n'))
@@ -89,6 +92,11 @@ class KotlinKernelProcessHandler(
 
     override fun isSilentlyDestroyOnClose(): Boolean {
         return true
+    }
+
+    override fun destroyProcess() {
+        super.destroyProcess()
+        LOG.warnInTests { "Destroyed Kotlin kernel $kernelId" }
     }
 
     companion object {

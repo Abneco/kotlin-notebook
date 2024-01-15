@@ -2,6 +2,7 @@
 
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.RuntimeExceptionWithAttachments
@@ -39,3 +40,9 @@ fun Logger.errorWithAttachments(message: String, vararg attachments: Attachment)
         message,
         RuntimeExceptionWithAttachments(message, *attachments)
     )
+
+fun Logger.warnInTests(messageFactory: () -> String) {
+    if (ApplicationManager.getApplication().isUnitTestMode) {
+        warn(messageFactory())
+    }
+}
