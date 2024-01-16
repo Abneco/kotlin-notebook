@@ -5,6 +5,7 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.KillableColoredProcessHandler
 import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
@@ -39,6 +40,8 @@ class KotlinKernelProcessHandler(
 
     init {
         LOG.warnInTests { "Created Kotlin kernel $kernelId" }
+
+        setShouldKillProcessSoftly(!ApplicationManager.getApplication().isUnitTestMode)
 
         addProcessListener(object : ProcessAdapter() {
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
