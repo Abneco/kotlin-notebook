@@ -33,7 +33,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.isEitherSymmetricallyContainedRange
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
-import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage
+import com.intellij.jupyter.core.jupyter.JupyterLanguage
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 

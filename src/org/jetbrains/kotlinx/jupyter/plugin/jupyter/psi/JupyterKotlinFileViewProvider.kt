@@ -10,7 +10,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.source.PsiFileImpl
 import com.intellij.psi.templateLanguages.TemplateLanguageFileViewProvider
 import com.intellij.util.InjectionUtils
-import org.jetbrains.plugins.notebooks.jupyter.JupyterLanguage
+import com.intellij.jupyter.core.jupyter.JupyterLanguage
 import org.jetbrains.plugins.notebooks.jupyter.getMarkdownLanguage
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterTemplateTypes
 

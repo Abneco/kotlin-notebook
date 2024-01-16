@@ -26,7 +26,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.errorWithAttachments
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.JupyterFileType
+import com.intellij.jupyter.core.jupyter.JupyterFileType
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import kotlin.script.experimental.api.valueOrNull
 
