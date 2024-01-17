@@ -31,7 +31,7 @@ class NotebookCellExecutionHighlightingHelper(
         }
     }
 
-    private val jupyterNotebookSession get() = JupyterRuntimeService.getInstance(project).getSession(notebookFile.file)
+    private val jupyterNotebookSession get() = JupyterRuntimeService.getInstance(project).getSession(notebookFile)
     private val dataLock = ReentrantReadWriteLock()
     private val executionState = AtomicReference(ExecutionState.IDLE)
 
