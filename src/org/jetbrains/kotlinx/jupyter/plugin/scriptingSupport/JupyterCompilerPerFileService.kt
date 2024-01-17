@@ -44,6 +44,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanent
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookChangeEventsType
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookMoveEvent
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ScriptingSupportAfterUpdateListener
@@ -119,8 +120,7 @@ class JupyterCompilerPerFileService(
         }
 
         private fun checkLastDependenciesPresentInCache(): Boolean {
-            val cache = (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager)
-                .updater.classpathRoots
+            val cache = project.scriptConfigurationsClassCache
 
             val lastCompiledSnippetPath = classesDir
                 .resolve(
@@ -145,7 +145,8 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private fun getScriptsChangePublisher() = JupyterCompilerService.getInstance(project).compilerScriptsChangePublisher
+    private fun getScriptsChangePublisher() =
+        project.messageBus.syncPublisher(NotebookCodeSnippetsChangeListener.TOPIC)
 
     private var isDisposed = false
 

@@ -44,15 +44,15 @@ import java.util.concurrent.atomic.AtomicReference
 
 
 internal object NotebookHighlightingUtilityObject {
-    const val notebookInjectedFileExtension: String = "jupyter.kts"
-    private const val notebookDocumentFileExtension: String = "ipynb"
+    const val NOTEBOOK_INJECTED_FILE_EXTENSION: String = "jupyter.kts"
+    private const val NOTEBOOK_DOCUMENT_FILE_EXTENSION: String = "ipynb"
     private val updateScope = CoroutineScope(Dispatchers.Default)
     private val LOG = thisLogger()
 
-    const val scriptingMissingDependencyPrefix = "MISSING"
-    const val scriptingMissingClassError = "${scriptingMissingDependencyPrefix}_SCRIPT_RECEIVER_CLASS"
+    const val SCRIPTING_MISSING_DEPENDENCY_PREFIX = "MISSING"
+    const val SCRIPTING_MISSING_CLASS_ERROR = "${SCRIPTING_MISSING_DEPENDENCY_PREFIX}_SCRIPT_RECEIVER_CLASS"
     @NlsSafe
-    const val scriptingMissingBaseClassError = "[${scriptingMissingDependencyPrefix}_SCRIPT_BASE_CLASS]"
+    const val SCRIPTING_MISSING_BASE_CLASS_ERROR = "[${SCRIPTING_MISSING_DEPENDENCY_PREFIX}_SCRIPT_BASE_CLASS]"
 
     internal val InjectedHostHasErrors = Key.create<AtomicReference<Boolean>>("injected.element.errors.found")
     internal val NonTargetHostErrorMark: Key<Boolean> = Key.create("injected.element.actual.errors.registry")
@@ -84,7 +84,7 @@ internal object NotebookHighlightingUtilityObject {
     }
 
     fun looksLikeNotebookFile(file: PsiFile): Boolean =
-        file.fileType.defaultExtension == notebookDocumentFileExtension
+        file.fileType.defaultExtension == NOTEBOOK_DOCUMENT_FILE_EXTENSION
 
     fun getCellRangesInDocumentOrNull(notebookCells: List<JupyterPsiCell>, targets: Collection<Int>?): List<TextRange>? = if (targets?.isNotEmpty() == true) {
         targets.mapNotNull { notebookCells.getOrNull(it)?.textRange }
@@ -232,11 +232,11 @@ class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
 
     fun isShouldAcceptDiagnostic(elem: Diagnostic): Boolean {
         val info = elem.factory.name
-        if (info.startsWith(NotebookHighlightingUtilityObject.scriptingMissingBaseClassError)) {
+        if (info.startsWith(NotebookHighlightingUtilityObject.SCRIPTING_MISSING_BASE_CLASS_ERROR)) {
             NotebookNotificationUtility.kernelRelatedFactory.showAbsentInitialBaseDependenciesInfo(elem.psiFile.project)
             return false
         }
-        return info != NotebookHighlightingUtilityObject.scriptingMissingClassError
+        return info != NotebookHighlightingUtilityObject.SCRIPTING_MISSING_CLASS_ERROR
     }
 
 }

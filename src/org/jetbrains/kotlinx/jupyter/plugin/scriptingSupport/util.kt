@@ -2,7 +2,13 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 
 val Project.baseScriptingCompilationConfiguration: ScriptCompilationConfiguration
     get() = JupyterCompilerService.getInstance(this).scriptDefinition.compilationConfiguration
+
+val Project.scriptConfigurationsClassCache
+    get() = (ScriptConfigurationManager.getInstance(this) as CompositeScriptConfigurationManager)
+        .updater.classpathRoots

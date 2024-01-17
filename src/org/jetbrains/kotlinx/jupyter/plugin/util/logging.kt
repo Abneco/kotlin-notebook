@@ -26,7 +26,6 @@ fun Logger.errorUnderDebug(message: String, throwable: Throwable) = doUnderDebug
     error(message, throwable)
 }
 
-
 fun Logger.errorUnderDebug(message: String, vararg attachments: Attachment) = doUnderDebug {
     errorWithAttachments(message, *attachments)
 }
@@ -45,4 +44,13 @@ fun Logger.warnInTests(messageFactory: () -> String) {
     if (ApplicationManager.getApplication().isUnitTestMode) {
         warn(messageFactory())
     }
+}
+
+fun Logger.reportErrorTestAware(message: String, attachment: Attachment) {
+    val logReference = if (ApplicationManager.getApplication().isUnitTestMode)
+        ::errorWithAttachments
+    else
+        ::errorUnderDebug
+
+    logReference(message, arrayOf(attachment))
 }

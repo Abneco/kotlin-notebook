@@ -23,7 +23,6 @@ import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.serialization.serializationPluginEnabled
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelListener
@@ -58,9 +57,6 @@ class JupyterCompilerService(val project: Project, private val coroutineScope: C
     private val initialClasspath: List<File> by lazy {
        emptyList()
     }
-
-    val compilerScriptsChangePublisher: NotebookCodeSnippetsChangeListener =
-        project.messageBus.syncPublisher(NotebookCodeSnippetsChangeListener.TOPIC)
 
     private val initialCompileConfiguration by lazy {
         getCompilationConfiguration(

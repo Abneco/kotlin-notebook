@@ -4,6 +4,12 @@ package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners
 import com.intellij.util.messages.Topic
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
+/**
+ * Way to be informed when scripts are updated in the particular [BackedNotebookVirtualFile]
+ * Listener is invoked once CompilationConfiguration for all cells in [BackedNotebookVirtualFile] is updated.
+ *
+ * @see JupyterCompilerPerFileService
+ */
 interface NotebookCodeSnippetsChangeListener {
     companion object {
         @Topic.ProjectLevel
@@ -12,4 +18,3 @@ interface NotebookCodeSnippetsChangeListener {
 
     fun scriptsClassesChanged(file: BackedNotebookVirtualFile)
 }
-

@@ -6,13 +6,12 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
@@ -20,16 +19,15 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.NOTEBOOK_INJECTED_FILE_EXTENSION
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_BASE_CLASS_ERROR
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_DEPENDENCY_PREFIX
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getCellRangesInDocumentOrNull
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.notebookInjectedFileExtension
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingBaseClassError
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.scriptingMissingDependencyPrefix
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
-import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
-import org.jetbrains.kotlinx.jupyter.plugin.util.errorWithAttachments
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
+import org.jetbrains.kotlinx.jupyter.plugin.util.reportErrorTestAware
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
@@ -201,57 +199,60 @@ private const val SCRIPT_CLASS_ACCESS_ERROR  = "Cannot access "
 private const val SCRIPT_BASE_CLASS_ACCESS_ERROR  = "Cannot access script base class"
 
 private fun String.isMissingBaseDependencyError() =
-    startsWith(scriptingMissingBaseClassError) || startsWith(SCRIPT_BASE_CLASS_ACCESS_ERROR)
+    startsWith(SCRIPTING_MISSING_BASE_CLASS_ERROR) || startsWith(SCRIPT_BASE_CLASS_ACCESS_ERROR)
 
 private fun String.isMissingImplicitReceiverError() =
-    startsWith("[${scriptingMissingDependencyPrefix}") ||
-            startsWith(scriptingMissingDependencyPrefix) ||
+    startsWith("[${SCRIPTING_MISSING_DEPENDENCY_PREFIX}") ||
+            startsWith(SCRIPTING_MISSING_DEPENDENCY_PREFIX) ||
             startsWith(SCRIPT_CLASS_ACCESS_ERROR)
 
 
 class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
-    private var subscribed = false
     @Volatile
     private var reloadRequested = false
 
-    private fun checkCompilerListenerPersists(project: Project) {
-        if (subscribed) return
-        project.messageBus.connect().subscribe(NotebookCodeSnippetsChangeListener.TOPIC, object : NotebookCodeSnippetsChangeListener {
+    init {
+        checkCompilerListenerPersists()
+    }
+
+    private fun checkCompilerListenerPersists() {
+        val currentProject = ProjectManager.getInstance().openProjects.firstOrNull {
+            it.isOpen
+        } ?: return
+        currentProject.messageBus.connect().subscribe(NotebookCodeSnippetsChangeListener.TOPIC, object : NotebookCodeSnippetsChangeListener {
             override fun scriptsClassesChanged(file: BackedNotebookVirtualFile) {
                 reloadRequested = false
             }
         })
-        subscribed = true
     }
 
     override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {
-        if (file == null || !file.name.endsWith(notebookInjectedFileExtension)) return true
-        checkCompilerListenerPersists(file.project)
+        if (file == null || !file.name.endsWith(NOTEBOOK_INJECTED_FILE_EXTENSION)) return true
 
         val isTargetHost = file.getUserData(NonTargetHostErrorMark) == null
         if (!isTargetHost) return true
 
         if (highlightInfo.severity != HighlightSeverity.ERROR) return true
         val description = highlightInfo.description ?: return true
-        val missingBaseClass = description.isMissingBaseDependencyError()
-        val missingReceiverClass = description.isMissingImplicitReceiverError()
+        val isMissingBaseClass = description.isMissingBaseDependencyError()
+        val isMissingReceiverClass = description.isMissingImplicitReceiverError()
 
-        val missingDependency = missingBaseClass || missingReceiverClass
-        if (missingDependency) {
+        val isMissingDependency = isMissingBaseClass || isMissingReceiverClass
+        if (isMissingDependency) {
             if (reloadRequested) {
                 return false
             }
         } else return true
 
-        reportErrorTestAware(
-            if (missingBaseClass)
+        LOG.reportErrorTestAware(
+            if (isMissingBaseClass)
                 "Missing base script class"
             else
                 "Missing script receiver class: $description",
             Attachment(file.name, file.text)
         )
 
-        if (missingReceiverClass) {
+        if (isMissingReceiverClass) {
             return false
         }
 
@@ -261,15 +262,6 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
         reloadRequested = true
 
         return false
-    }
-
-    private fun reportErrorTestAware(message: String, attachment: Attachment) {
-        val logReference = if (ApplicationManager.getApplication().isUnitTestMode)
-            LOG::errorWithAttachments
-        else
-            LOG::errorUnderDebug
-
-        logReference(message, arrayOf(attachment))
     }
 
     companion object {
