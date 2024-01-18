@@ -35,7 +35,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.isEitherSymmetricallyContainedRange
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.getKtFileStartOffset
-import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
+import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 
 
@@ -141,7 +141,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 ProgressManager.checkCanceled()
                 val ktFile = tryGetInjectedKtFileIfPossibleOrProvided(element, project) as? PsiFile ?: return true
 
-                val notebookHighlightingService = editor.virtualFile.toBackedNotebookFile()?.let {
+                val notebookHighlightingService = editor.notebookOrNull?.let {
                     NotebookHighlightingService.getForFile(project, it)
                 }
                 val modificationArea = notebookHighlightingService?.dataController?.completeHighlightingRange

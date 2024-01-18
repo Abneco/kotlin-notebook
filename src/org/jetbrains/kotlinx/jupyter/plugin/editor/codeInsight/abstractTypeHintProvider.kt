@@ -27,12 +27,12 @@ import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
 import org.jetbrains.kotlin.idea.codeInsight.hints.getInlayPresentationForInlayInfoDetails
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.BindingContext
-import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.kotlinx.jupyter.plugin.util.getKtFileStartOffset
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.isEitherSymmetricallyContainedRange
-import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.util.getKtFileStartOffset
+import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
 import com.intellij.jupyter.core.jupyter.JupyterLanguage
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
@@ -55,7 +55,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
                 if (DumbService.isDumb(project) || element !is JupyterPsiCellImpl || !element.isValid) return true
 
-                val highlightingManager = editor.virtualFile.toBackedNotebookFile()?.let {
+                val highlightingManager = editor.notebookOrNull?.let {
                     NotebookHighlightingService.getForFile(project, it)
                 }
                 val modificationArea = highlightingManager?.dataController?.completeHighlightingRange

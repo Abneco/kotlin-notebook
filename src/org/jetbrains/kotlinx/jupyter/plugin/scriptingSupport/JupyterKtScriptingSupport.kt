@@ -118,15 +118,24 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         }
 
         fun getDefaultConfiguration(psiFile: KtFile): ScriptCompilationConfigurationResult? {
-            val sourceCode = KtFileScriptSource(psiFile)
-            val notebookFile = psiFile.virtualFile?.safeAs<VirtualFileWindow>()?.delegate?.toBackedNotebookFile()
+            val virtualFile = psiFile.virtualFile?.safeAs<VirtualFileWindow>()
+            if (virtualFile == null) {
+                LOG.error("Can't retrieve virtual file window for $psiFile")
+                return null
+            }
 
+            val notebookVirtualFile = virtualFile.delegate
+            val notebookFile = notebookVirtualFile.toBackedNotebookFile()
             if (notebookFile == null) {
-                LOG.error("Can't retrieve Notebook file for $psiFile")
+                LOG.error(
+                    "Can't retrieve notebook file for $psiFile. " +
+                    "Virtual file $notebookVirtualFile is of type ${notebookVirtualFile::class}"
+                )
                 return null
             }
 
             val compilerService = JupyterCompilerService.getForFile(psiFile.project, notebookFile)
+            val sourceCode = KtFileScriptSource(psiFile)
             return compilerService.provideDefaultConfiguration(sourceCode)
         }
     }

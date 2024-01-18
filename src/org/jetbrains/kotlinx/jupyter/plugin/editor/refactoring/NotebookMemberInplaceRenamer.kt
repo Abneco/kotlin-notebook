@@ -42,7 +42,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotific
 import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
-import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
+import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
 import org.jetbrains.plugins.notebooks.visualization.getCell
 
 
@@ -93,7 +93,7 @@ class NotebookMemberInplaceRenamer(
                 is EditorWindow -> (myEditor as EditorWindow).delegate
                 else -> myEditor
             }
-            private val notebookHighlightingService = topLevelEditor.virtualFile.toBackedNotebookFile()?.let {
+            private val notebookHighlightingService = topLevelEditor.notebookOrNull?.let {
                 NotebookHighlightingService.getForFile(element.project, it)
             }
 

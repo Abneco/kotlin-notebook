@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.find
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.jupyter.NOTEBOOK_LANGUAGE
@@ -134,7 +135,7 @@ fun PsiLanguageInjectionHost.getKtFileStartOffset(injectedLanguageManager: Injec
 }
 
 internal fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
-    takeIfBacked(this)
+    takeIfBacked(this) ?: find(this)
 
 @RequiresReadLock
 internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
