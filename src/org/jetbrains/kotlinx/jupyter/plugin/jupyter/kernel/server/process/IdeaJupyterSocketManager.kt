@@ -1,10 +1,6 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
-import com.intellij.platform.util.coroutines.namedChildScope
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocket
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketInfo
@@ -33,11 +29,8 @@ class IdeaJupyterSocketManager(private val kernelConfig: KernelConfig): JupyterS
         return sockets[type] ?: throw IllegalArgumentException("Unsupported socket type: $type")
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     override fun close() {
-        GlobalScope.namedChildScope("Kotlin kernel ZMQ socket destruction").launch {
-            closeWithTimeout(15_000L, ::doClose)
-        }
+        closeWithTimeout(10_000L, ::doClose)
     }
 
     private fun doClose() {

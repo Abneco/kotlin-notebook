@@ -10,6 +10,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.resolve.FileContextUtil
 import com.intellij.testFramework.TestLoggerFactory
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
+import com.intellij.util.containers.forEachGuaranteed
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
@@ -67,6 +68,15 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
     override fun setUp() {
         super.setUp()
         Disposer.register(testRootDisposable, JupyterServers.getInstance())
+    }
+
+    @Suppress("MoveLambdaOutsideParentheses")
+    override fun tearDown() {
+        listOf(
+            { super.tearDown() },
+            // Uncomment for testing project leak
+            // { TestApplicationManager.testProjectLeak() }
+        ).forEachGuaranteed { it() }
     }
 
     protected fun configureExecutionTest(
