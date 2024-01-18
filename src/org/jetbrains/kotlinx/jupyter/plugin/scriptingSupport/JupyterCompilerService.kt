@@ -3,10 +3,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -16,7 +14,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ultimate.PluginVerifier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
@@ -24,11 +21,11 @@ import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.serialization.serializationPluginEnabled
+import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelListener
 import java.io.File
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
 import kotlin.script.experimental.api.asSuccess
@@ -47,8 +44,10 @@ import kotlin.script.experimental.jvm.jvm
  * @property project This service project
  */
 @Service(Service.Level.PROJECT)
-class JupyterCompilerService(val project: Project, private val coroutineScope: CoroutineScope) : Disposable {
-    private val mapping: MutableMap<VirtualFile, JupyterCompilerPerFileService> = ConcurrentHashMap()
+class JupyterCompilerService(
+    val project: Project,
+    coroutineScope: CoroutineScope
+) : NotebookProjectLevelService<JupyterCompilerPerFileService>(coroutineScope) {
 
     init {
         PluginVerifier.verifyUltimatePlugin()
@@ -104,12 +103,8 @@ class JupyterCompilerService(val project: Project, private val coroutineScope: C
 
     val language = Language.findLanguageByID("kotlin")!!
 
-    fun getOrCreate(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
-        return mapping.getOrPut(virtualFile.file) {
-            runReadAction {
-                JupyterCompilerPerFileService(project, virtualFile, initialClasspath,this)
-            }
-        }
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
+        return JupyterCompilerPerFileService(project, virtualFile, initialClasspath,this)
     }
 
     fun requestScriptingUpdate() = scriptingSupportUpdateScheduler.requestUpdate()
@@ -158,10 +153,6 @@ class JupyterCompilerService(val project: Project, private val coroutineScope: C
                     removeSession(notebookFile)
                 }
             })
-    }
-
-    override fun dispose() {
-        coroutineScope.cancel()
     }
 
     companion object {

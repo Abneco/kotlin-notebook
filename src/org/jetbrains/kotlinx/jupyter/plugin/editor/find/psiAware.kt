@@ -11,11 +11,10 @@ import com.intellij.psi.PsiManager
 import com.intellij.util.runIf
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtScript
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
-
 
 
 fun searchForElementDeclarationOrUsages(
@@ -29,7 +28,7 @@ fun searchForElementDeclarationOrUsages(
     val foundData = mutableSetOf<PsiElement>()
     val asPsiFile = PsiManager.getInstance(project).findFile(virtualFile)
     val notebookCells = (asPsiFile?.children?.first() as? JupyterNotebook)?.psiCellList ?: return null
-    val ordinalMap = JupyterCompilerService.getForFile(project, BackedNotebookVirtualFile(virtualFile)).notebookStructureClassTracker.cellOrdinalToClassNameStructure
+    val ordinalMap = NotebookStructureTrackerService.getForFile(project, BackedNotebookVirtualFile(virtualFile)).cellOrdinalToClassNameStructure
     val injectionManager = InjectedLanguageManager.getInstance(project)
     val targetHost = injectionManager.getInjectionHost(target.containingFile)
     val targetClassName = runIf(searchStrategy == ReferenceSearchStrategy.REFERENCES) {

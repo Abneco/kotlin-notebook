@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookValidCells
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
@@ -102,8 +103,7 @@ fun Int.toCompiledCellSnippedName(): String = "Line_${this}_jupyter"
 
 fun JupyterPsiCell.updateInfoBeforeExecution(project: Project, virtualFile: BackedNotebookVirtualFile, cellOrdinal: Int?) {
     runReadAction {
-        JupyterCompilerService.getForFile(project, virtualFile)
-            .notebookStructureClassTracker
+        NotebookStructureTrackerService.getForFile(project, virtualFile)
             .updateCellInformationBeforeExecution(this@updateInfoBeforeExecution, cellOrdinal)
 
         /* KJupyterDebugSessionManager.getForFile(project, virtualFile).also {

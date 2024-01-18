@@ -63,6 +63,8 @@ class KotlinNotebookProjectOptionsProvider :
         internal set
     var shouldOpenDebugPort by prop(State::shouldOpenDebugPort)
         internal set
+    var shouldShowNotebookVariables by prop(State::shouldShowNotebookVariables)
+        internal set
 
     @RequiresEdt
     internal fun getNewKotlinNotebookSettings(): KotlinNotebookSettings {
@@ -88,8 +90,8 @@ class KotlinNotebookProjectOptionsProvider :
         // default settings for new notebooks
         var shouldBuildProject by property(false)
         var shouldAddProjectLibrariesToClasspath by property(true)
-        var openedDebugPort by property(DEFAULT_OPENED_DEBUG_PORT)
         var shouldOpenDebugPort by property(false)
+        var shouldShowNotebookVariables by property(false)
     }
 
     class PresentableNameGetter : com.intellij.openapi.components.State.NameGetter() {

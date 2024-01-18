@@ -46,6 +46,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ImpatientNotebookChangeListener
+import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
@@ -58,20 +59,15 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 @Service(Service.Level.PROJECT)
-class NotebookHighlightingService(val project: Project): Disposable {
-    private val mapping: MutableMap<VirtualFile, NotebookHighlightingManager> = ConcurrentHashMap()
+class NotebookHighlightingService(
+    val project: Project, coroutineScope: CoroutineScope
+) : NotebookProjectLevelService<NotebookHighlightingManager>(coroutineScope) {
 
-    fun getOrCreate(virtualFile: BackedNotebookVirtualFile): NotebookHighlightingManager {
-        return mapping.getOrPut(virtualFile.file) {
-            withReadAccess {
-                val document = FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
-                NotebookHighlightingManager(virtualFile, document, this@NotebookHighlightingService, null)
-            }
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile): NotebookHighlightingManager {
+        return withReadAccess {
+            val document = FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
+            NotebookHighlightingManager(virtualFile, document, this@NotebookHighlightingService, null)
         }
-    }
-
-    override fun dispose() {
-        mapping.clear()
     }
 
     companion object {

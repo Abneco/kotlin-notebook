@@ -18,6 +18,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookChangeEventsType
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookMoveEvent
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
+import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
@@ -57,7 +58,9 @@ class NotebookStructureClassTracker(
     init {
       Disposer.register(parentDisposable, this)
     }
-    private val psiFile = file.file.toPsiFile(project)
+    private val psiFile = withReadAccess {
+        file.file.toPsiFile(project)
+    }
     private val knownCellInfo = ExecutedPresentCellInfo(psiFile)
 
     override val cellOrdinalToClassNameStructure: MutableMap<Int, Set<String>>

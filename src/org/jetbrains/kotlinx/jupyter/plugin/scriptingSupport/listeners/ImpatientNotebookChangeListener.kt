@@ -13,7 +13,7 @@ import org.jetbrains.kotlin.js.translate.utils.splitToRanges
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
@@ -100,7 +100,7 @@ class ImpatientNotebookChangeListener(
         if (isCellListChange) {
             val currentTime = System.currentTimeMillis()
             val last = lastStructureChangeEvent
-            val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
+            val notebookStructureService = NotebookStructureTrackerService.getForFile(project, virtualFile)
             var moveEvent: NotebookMoveEvent? = null
             var moveEventInvokedInCell: Int? = null
             if (currentTime - lastTimeCellChangeActionPerformed < FAST_INVOCATION_DELTA
@@ -125,7 +125,7 @@ class ImpatientNotebookChangeListener(
                 lastTimeCellChangeActionPerformed = System.currentTimeMillis()
             }
             val affected = psiCells.indices.filterTo(mutableSetOf()) { it >= cellIndexToStore }
-            compilerService.notebookStructureClassTracker.changeCellsData(affected, eventType, moveEvent, moveEventInvokedInCell)
+            notebookStructureService.changeCellsData(affected, eventType, moveEvent, moveEventInvokedInCell)
             // no other way to indicate size changed in CaretListener
             notebookDataHolder.notebookDocumentStructureNontrivialChanged.compareAndSet(false, true)
 

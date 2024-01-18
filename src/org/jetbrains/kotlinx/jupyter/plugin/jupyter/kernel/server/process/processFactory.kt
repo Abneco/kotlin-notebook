@@ -9,7 +9,7 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.pom.java.LanguageLevel
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.systemIndependentPath
-import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KJupyterDebugSessionManager
+import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelVmCommandCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
@@ -33,7 +33,7 @@ fun createKernelProcess(
     notebookPath: Path,
 ): KotlinKernelProcessHandler {
     val mavenArtifactsDownloader = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
-    val debugManager = KJupyterDebugSessionManager.getInstance(project).getByPath(notebookPath)
+    val debugManager = KotlinNotebookDebugSessionManager.getInstance(project).getByPath(notebookPath)
 
     val kernelConfig = KernelConfig(
         createRandomKernelPorts(),

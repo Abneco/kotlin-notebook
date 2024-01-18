@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.debug.session
 
 import com.intellij.debugger.DebuggerManagerEx
@@ -10,19 +10,12 @@ import com.intellij.debugger.settings.DebuggerSettings
 import com.intellij.execution.configurations.RemoteConnection
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.EDT
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageType
 import com.intellij.openapi.util.Disposer
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.impl.XDebuggerManagerImpl
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.SessionRelatedInfo
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectionUtility
@@ -31,92 +24,22 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectio
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectionUtility.buildRemoteRunProfileState
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.NotebookDebugConnectionHolder
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.NotebookDebugProcessListener
-import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.isDebuggerSilentSessionEnabled
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.DebugPortGenerator
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
-import org.jetbrains.kotlinx.jupyter.plugin.util.findNotebookVirtualFileOrNull
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.NotebookPathProvider
 import org.jetbrains.plugins.notebooks.jupyter.debugger.JupyterSessionPath
-import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowManager
-import java.nio.file.Path
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutionException
 
-@Service(Service.Level.PROJECT)
-class KJupyterDebugSessionManager(private val project: Project, private val coroutineScope: CoroutineScope) : Disposable {
-    private val mapping: MutableMap<BackedNotebookVirtualFile, KJupyterNotebookDebugSession> = ConcurrentHashMap()
-    //private val perFileBreakpointManagers: MutableMap<BackedNotebookVirtualFile, KJupyterBreakpointPerFileManager> = ConcurrentHashMap()
 
-    private val portsGenerator = DebugPortGenerator()
-
-    private val nextTargetDebugPortOrNull: Int?
-        get() {
-            val isKeepOpened = KotlinNotebookProjectOptionsProvider.getInstance(project).shouldOpenDebugPort
-            return if (isKeepOpened) portsGenerator.generate() else null
-        }
-
-    fun afterScriptingUpdate(virtualFile: BackedNotebookVirtualFile) {
-        if (!isDebuggerSilentSessionEnabled) return
-
-        coroutineScope.async {
-            withContext(Dispatchers.EDT) {
-                JupyterVarsToolWindowManager.getInstance(project).updateVariablesView(virtualFile)
-            }
-        }
-    }
-
-    override fun dispose() {
-        mapping.forEach { Disposer.dispose(it.value) }
-    }
-
-    fun whichProject(): Project = project
-
-    fun getByPath(path: Path): KJupyterNotebookDebugSession? {
-        return mapping.firstNotNullOfOrNull {
-            if (it.key.file.path == path.toString()) it.value else null
-        } ?: run {
-            val backedNotebookVirtualFile = path.findNotebookVirtualFileOrNull() ?: return null
-            get(backedNotebookVirtualFile)
-        }
-    }
-
-    fun get(virtualFile: BackedNotebookVirtualFile): KJupyterNotebookDebugSession {
-        return mapping.getOrPut(virtualFile) {
-            KJupyterNotebookDebugSession(
-                virtualFile,
-                this
-            ) { nextTargetDebugPortOrNull }
-        }
-    }
-
-    /*fun getBreakpointManager(virtualFile: BackedNotebookVirtualFile): KJupyterBreakpointPerFileManager {
-        return perFileBreakpointManagers.getOrPut(virtualFile) { KJupyterBreakpointPerFileManager(virtualFile,  project, this) }
-    }*/
-
-    companion object {
-        fun getInstance(project: Project) = project.service<KJupyterDebugSessionManager>()
-
-        fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): KJupyterNotebookDebugSession {
-            return getInstance(project).get(virtualFile)
-        }
-
-        /*fun getBreakpointManagerForFile(project: Project, virtualFile: BackedNotebookVirtualFile): KJupyterBreakpointPerFileManager {
-            return getInstance(project).getBreakpointManager(virtualFile)
-        }*/
-    }
-}
-
-class KJupyterNotebookDebugSession(
+class KotlinNotebookDebugSession(
     val virtualFile: BackedNotebookVirtualFile,
-    private val projectService: KJupyterDebugSessionManager,
+    private val project: Project,
+    projectService: Disposable,
     private val portProvider: () -> Int?
 ): Disposable {
     init {
       Disposer.register(projectService, this)
     }
-
     companion object {
         private val LOG = thisLogger()
     }
@@ -129,7 +52,7 @@ class KJupyterNotebookDebugSession(
 
     val debugConnectionHolder = NotebookDebugConnectionHolder(
         virtualFile,
-        SessionRelatedInfo(projectService.whichProject(), virtualFile)
+        SessionRelatedInfo(project, virtualFile)
     )
 
     private var isSilent: Boolean = false
@@ -137,8 +60,6 @@ class KJupyterNotebookDebugSession(
         get() = isSilent
 
     val targetDebugPort: Int? get() = portProvider()
-
-    //val breakpointPerFileManager = projectService.getBreakpointManager(virtualFile)
 
     private val currentProcess: DebugProcessImpl?
         get() = debuggerSession?.process
@@ -150,7 +71,7 @@ class KJupyterNotebookDebugSession(
 
     private fun updateCurrentSession(xDebugSession: XDebugSession?) {
         if (xDebugSession == null) {
-            debugConnectionHolder.clearKnownConnection(projectService.whichProject())
+            debugConnectionHolder.clearKnownConnection(project)
         }
     }
 
@@ -169,8 +90,8 @@ class KJupyterNotebookDebugSession(
         }
     }
 
-    fun ensureSilentSessionAlive(project: Project, debugPort: Int? = targetDebugPort) {
-        if (isLiveSession || debugPort == null || !isDebuggerSilentSessionEnabled) return
+    fun ensureSilentSessionAlive(debugPort: Int? = targetDebugPort) {
+        if (isLiveSession || debugPort == null) return
 
         ApplicationManager.getApplication().executeOnPooledThread {
             val newSession = connectToKernelVirtualMachine(project, debugPort) ?: return@executeOnPooledThread
@@ -186,9 +107,8 @@ class KJupyterNotebookDebugSession(
             } else return debuggerSession
         }
 
-        if (debugPort == null) return null
-        if (!isDebuggerSilentSessionEnabled) {
-            LOG.warn("Silent debugger session is disabled, check registry key: kotlin.notebook.silent.debug.session.enabled")
+        if (debugPort == null) {
+            LOG.debug("Could not connect to a debugger session, debug port provided is null")
             return null
         }
 
@@ -221,7 +141,7 @@ class KJupyterNotebookDebugSession(
     fun disposeCurrentSession() {
         currentSession?.let {
             it.stop()
-            debugConnectionHolder.clearKnownConnection(projectService.whichProject())
+            debugConnectionHolder.clearKnownConnection(project)
         }
     }
 
@@ -258,11 +178,10 @@ class KJupyterNotebookDebugSession(
 
 
     private fun addProcessListener() {
-        val project = projectService.whichProject()
         val path = debugConnectionHolder.sessionRelatedInfo.sessionPath
             ?: NotebookPathProvider.calculateNotebookPath(project, virtualFile.file, notebookKernelSpec.name)
         processListener = NotebookDebugProcessListener(
-            projectService.whichProject(), JupyterSessionPath(virtualFile), virtualFile, isSilent
+            project, JupyterSessionPath(virtualFile), virtualFile, isSilent
         )
         // maybe DebugProcessListener
         debugConnectionHolder.myDebugSession?.process?.addDebugProcessListener(
@@ -273,7 +192,7 @@ class KJupyterNotebookDebugSession(
 
     override fun dispose() {
         debugConnectionHolder.myDebugSession?.process?.removeDebugProcessListener(processListener)
-        debugConnectionHolder.clearKnownConnection(projectService.whichProject())
+        debugConnectionHolder.clearKnownConnection(project)
         processListener = null
     }
 

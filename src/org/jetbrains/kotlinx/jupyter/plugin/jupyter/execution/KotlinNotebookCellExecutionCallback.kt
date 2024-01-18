@@ -5,6 +5,7 @@ import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector
@@ -15,6 +16,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
+import org.jetbrains.plugins.notebooks.jupyter.editor.getCellIndex
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutputsBase
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import kotlin.system.measureTimeMillis
@@ -90,6 +92,8 @@ class KotlinNotebookCellExecutionCallback(
             }
             LOG.warn("Kotlin execution callback failed", e)
         } finally {
+            KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
+                .ensureSilentSessionAlive(psiCell?.getCellIndex())
             finalizeCallback()
         }
     }

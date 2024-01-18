@@ -53,6 +53,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotific
 import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.tryCastParentToSuitableTarget
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
@@ -211,8 +212,8 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
                 && isNotebookRefactoringSupported(psiElement)
                 && (isCompiledElem
                 || cell?.getUserData(CELL_CLASS_NAME) != null
-                || JupyterCompilerService.getForFile(psiFile.project, BackedNotebookVirtualFile(notebookFile))
-                    .notebookStructureClassTracker.cellOrdinalToClassNameStructure[ind] != null)
+                || NotebookStructureTrackerService.getForFile(psiFile.project, BackedNotebookVirtualFile(notebookFile))
+                    .cellOrdinalToClassNameStructure[ind] != null)
                 //|| cell?.getUserData(CELL_CLASS_NAME) != null)
     }
 

@@ -1,4 +1,4 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection
 
 import com.intellij.debugger.DebuggerManagerEx
@@ -19,7 +19,6 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.registry.Registry
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
@@ -27,14 +26,6 @@ import com.intellij.xdebugger.XDebuggerManager
 import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.SessionRelatedInfo
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import java.util.*
-
-internal val isDebuggerSilentSessionEnabled: Boolean
-    get() = try {
-        Registry.`is`("kotlin.notebook.silent.debug.session.enabled")
-    } catch (e: MissingResourceException) {
-        false
-    }
 
 data class NotebookDebugConnectionHolder(
     val backedFile: BackedNotebookVirtualFile,

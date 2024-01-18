@@ -140,7 +140,7 @@ class JupyterCompilerPerFileService(
         project.messageBus.syncPublisher(NotebookCodeSnippetsChangeListener.TOPIC)
 
     private var isDisposed = false
-
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private val compileLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(0)
     val notebookStructureClassTracker = NotebookStructureClassTracker(project, virtualFile, coroutineScope, this)
@@ -178,7 +178,6 @@ class JupyterCompilerPerFileService(
         implicitsList
     }
 
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private var previousSessionId: JupyterNotebookSessionId? = null
 
     private val lastStableConfiguration = AtomicReference(project.baseScriptingCompilationConfiguration)
@@ -394,7 +393,8 @@ class JupyterCompilerPerFileService(
         if (psiCell != null) {
             coroutineScope.async {
                 smartReadAction(project) {
-                    notebookStructureClassTracker.storeCompliedDataInCell(snippetMetadata, psiCell)
+                    NotebookStructureTrackerService.getForFile(project, virtualFile)
+                        .storeCompliedDataInCell(snippetMetadata, psiCell)
                 }
             }
         }
@@ -459,7 +459,7 @@ class JupyterCompilerPerFileService(
         _currentClasspath.clear()
         additionalDefaultImports.clear()
         implicitsList.clear()
-        notebookStructureClassTracker.notebookDataCleared()
+        NotebookStructureTrackerService.getForFile(project, virtualFile).notebookDataCleared()
         lastStableConfiguration.set(project.baseScriptingCompilationConfiguration)
     }
 

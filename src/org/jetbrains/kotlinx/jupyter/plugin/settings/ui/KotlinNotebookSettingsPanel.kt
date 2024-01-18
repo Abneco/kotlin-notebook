@@ -14,7 +14,9 @@ import com.intellij.openapi.roots.ui.configuration.SdkComboBoxModel
 import com.intellij.openapi.roots.ui.configuration.SdkListItem
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.util.NlsContexts
+import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.dsl.builder.ButtonsGroup
+import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.builder.bind
@@ -23,7 +25,9 @@ import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.selected
 import com.intellij.ui.dsl.builder.toMutableProperty
+import com.intellij.ui.layout.ComponentPredicate
 import com.intellij.util.execution.ParametersListUtil
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
@@ -64,7 +68,9 @@ object KotlinNotebookSettingsPanel {
                 createMaxHeapSizeSpinner(projectOptions).showForSeparateProcess()
                 createExtraJvmArgumentsField(projectOptions).showForSeparateProcess()
                 createEnvironmentVariablesField(projectOptions).showForSeparateProcess()
-                createDebugPortSelector(projectOptions)
+            }
+            group(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug")) {
+                setUpDebugOptions(projectOptions)
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session")) {
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.sources"), sessionOptions::resolveSources)
@@ -202,12 +208,20 @@ object KotlinNotebookSettingsPanel {
         }
     }
 
-    private fun Panel.createDebugPortSelector(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
-        return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port")) {
-            checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.check.box")).run {
+    private fun Panel.setUpDebugOptions(optionsProvider: KotlinNotebookProjectOptionsProvider) {
+        var checkBox: Cell<JBCheckBox>? = null
+        row {
+            checkBox = checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.check.box")).run {
                 accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.check.box.description"))
                 bindSelected(optionsProvider::shouldOpenDebugPort)
             }
+        }
+
+        row {
+            checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables")).run {
+                accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.description"))
+                bindSelected(optionsProvider::shouldShowNotebookVariables)
+            }.visibleIf(checkBox?.selected ?: ComponentPredicate.FALSE)
         }
     }
 

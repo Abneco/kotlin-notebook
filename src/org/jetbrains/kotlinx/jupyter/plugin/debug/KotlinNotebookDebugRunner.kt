@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.kotlinx.jupyter.plugin.debug
 
 
@@ -19,7 +19,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
-import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KJupyterDebugSessionManager
+import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.SessionRelatedInfo
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.updateInfoBeforeExecution
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
@@ -39,7 +39,7 @@ import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
 import java.util.concurrent.TimeUnit
 
 
-class KJupyterDebugRunner(project: Project, private val virtualFile: BackedNotebookVirtualFile) : NotebookDebugRunner {
+class KotlinNotebookDebugRunner(project: Project, private val virtualFile: BackedNotebookVirtualFile) : NotebookDebugRunner {
     private var myDebugSession: DebuggerSession? = null
     private var currentNotebookSession: JupyterNotebookSession = runBlocking {
         JupyterRuntimeService.getInstance(project).getOrCreateSession(virtualFile)
@@ -56,7 +56,7 @@ class KJupyterDebugRunner(project: Project, private val virtualFile: BackedNoteb
         output: OutputConsumer?,
         afterCellExecuted: () -> Unit
     ): XDebugSession? {
-        val debugSessionManager = KJupyterDebugSessionManager.getForFile(project, virtualFile)
+        val debugSessionManager = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
 
         val sessionRelatedInfo = SessionRelatedInfo(
             project, virtualFile, 1
@@ -152,7 +152,7 @@ class KJupyterDebugRunner(project: Project, private val virtualFile: BackedNoteb
     companion object {
         const val runnerName = "KJupyter Debug Runner"
 
-        val LOG = logger<KJupyterDebugRunner>()
+        val LOG = logger<KotlinNotebookDebugRunner>()
 
         private fun JupyterPsiCell.toFileName(): @NlsSafe String {
             return if (this.containingFile != null) {
