@@ -5,10 +5,7 @@ import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.core.StreamReadConstraints
 import com.fasterxml.jackson.core.exc.StreamConstraintsException
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ArrayNode
-import com.intellij.database.datagrid.ArrayBackedNestedTable
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.util.NlsSafe
@@ -16,15 +13,16 @@ import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.containers.tail
 import com.jetbrains.python.debugger.pydev.TableCommandType
 import com.jetbrains.python.debugger.pydev.tables.CommandOutputType
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.DATA_FIELD
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.METADATA_FIELD
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.VERSION_FIELD
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.columnsField
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.jsonPayloadField
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.nColsField
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.nRowsField
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.separator
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.serializedDataframeField
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
-import org.jetbrains.plugins.notebooks.tables.ColumnTreeNode
+import org.jetbrains.kotlinx.jupyter.plugin.settings.isSwingUiEnabledForKotlinDataframe
 import org.jetbrains.plugins.notebooks.tables.DSTableBundle
 import org.jetbrains.plugins.notebooks.tables.DSTableData
 import org.jetbrains.plugins.notebooks.tables.DSTableDataException
@@ -43,7 +41,7 @@ internal const val DEFAULT_JSON_MAX_LENGTH = 100000000
 
 class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
     override fun getDataProviderCapableToParseDataOrNull(serializedData: String?): DSTableDataProvider? {
-        if (!KotlinNotebookApplicationOptions.get().showDataFrameAsSwing) return null
+        if (!isSwingOutputEnabled()) return null
         if (serializedData == null || !isFormatSupported(serializedData)) return null
 
         val jsonFactory = JsonFactory()
@@ -54,7 +52,21 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
         )
         val mapper = ObjectMapper(jsonFactory)
 
-        return KotlinDataFrameProvider(mapper)
+        val parser = if (serializedData.contains(VERSION_FIELD)) {
+            KotlinDataframeParserImpl(listOf(serializedDataframeField, DATA_FIELD), listOf(METADATA_FIELD), isFormatV2 = true, mapper)
+        } else {
+            KotlinDataframeParserImpl(listOf(serializedDataframeField), emptyList(), isFormatV2 = false, mapper)
+        }
+
+        return KotlinDataFrameProvider(parser)
+    }
+
+    private fun isSwingOutputEnabled(): Boolean {
+        return try {
+            KotlinNotebookApplicationOptions.get().showDataFrameAsSwing
+        } catch (e: NullPointerException) {
+            isSwingUiEnabledForKotlinDataframe
+        }
     }
 
     private fun isFormatSupported(serializedData: String): Boolean {
@@ -67,7 +79,7 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
 
 const val NULL: String = "null"
 
-class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper()) : DSTableDataProvider {
+class KotlinDataFrameProvider(private val parser: KotlinDataframeParser<KotlinDataframeInfo, List<List<Any>>>) : DSTableDataProvider {
     override val type: DSTableDataType = DSTableDataType.EXTERNAL
 
     override fun parseTextToFrameInfo(text: String): DSDataFrameInfo {
@@ -224,189 +236,38 @@ class KotlinDataFrameProvider(private val mapper: ObjectMapper = ObjectMapper())
     override fun isFallbackToStaticTableSupported(): Boolean = true
 
     private fun parseFrameInfoFromKotlinDataframeOutput(text: String, isPreview: Boolean): DSDataFrameInfo {
-        val rawJson = extractRawJson(text)
-
-        val rows = extractDatasetRows(rawJson)
-        if (rows.isEmpty()) {
-            val columnNames = rawJson[columnsField].map { it.asText() }.ifEmpty { listOf(" ") }
-            return DSDataFrameInfo(
-                0,
-                0,
-                columnNames,
-                emptyList(),
-                DSTableBundle.message("ds.table.dimensions.info", 0, 0),
-                hierarchyRoot = createRoot(columnNames)
-            )
-        }
-
-        val firstRowJson = mapper.readTree(rows[0])
-
-        val root = extractHierarchy(firstRowJson)
-        val columnNames = root.columnChildren.map { it.columnName }
-
-        val nRow = if (isPreview) rows.size else rawJson[nRowsField].asInt()
-        val nCol = rawJson[nColsField].asInt()
-
-        val dimensionsStr = DSTableBundle.message("ds.table.dimensions.info", nRow, nCol)
-
-        return DSDataFrameInfo(
-            nRow,
-            0,
-            columnNames,
-            List(columnNames.size) { null },
-            dimensionsStr,
-            hierarchyRoot = root
-        )
-    }
-
-    private fun extractRawJson(text: String): JsonNode {
-        val data = mapper.readTree(text)
-        return mapper.readTree(data[jsonPayloadField].asText())
-    }
-
-    private fun extractDatasetRows(rawJson: JsonNode): List<String> {
-        val dataframeNode = rawJson[serializedDataframeField]
-        if (dataframeNode.isEmpty) return emptyList()
-        val rawRows = asConcatenatedRows(dataframeNode)
-        return rawRows.split(separator)
-    }
-
-    private fun extractHierarchy(row: JsonNode): ColumnTreeNode {
-        val root = createRoot()
-
-        var index = 0
-        fun extractColumnsHelper(jsonNode: JsonNode, columnsNode: ColumnTreeNode, path: List<String>) {
-            var childIdx = 0
-            if (jsonNode.isObject) {
-                jsonNode.fields().forEach { (key, value) ->
-                    val child = ColumnTreeNode(key, index++, childIdx++, mutableListOf())
-                    columnsNode.columnChildren.add(child)
-                    extractColumnsHelper(value, child, path + listOf(key))
-                }
-            }
-        }
-
-        extractColumnsHelper(row, root, emptyList())
-
-        return root
-    }
-
-    private fun createRoot() = ColumnTreeNode("root", -1, 0, mutableListOf())
-
-    private fun createRoot(childrenNames: List<String>): ColumnTreeNode {
-        val root = createRoot()
-        for ((index, column) in childrenNames.withIndex()) {
-            root.columnChildren.add(ColumnTreeNode(column, index, index, mutableListOf()))
-        }
-
-        return root
-    }
-
-    private fun extractValues(jsonNode: JsonNode, columns: List<ColumnTreeNode>): List<Any> {
-        return columns.map { column ->
-            when {
-                jsonNode.isValueNode && (column.name == "value" || column.name == "array") -> handleAutogeneratedColumn(jsonNode, column)
-                jsonNode.isObject && jsonNode.has(column.name) -> {
-                    val value = jsonNode.get(column.name)
-                    extractValue(value, column)
-                }
-                // It is normal to return null here.
-                // This situation occurs when there is a mixture of primitives and objects in a nested dataframe.
-                // In this case autogenerated columns are created for, but other columns do not have any values.
-                else -> NULL
-            }
-        }
-    }
-
-    private fun handleAutogeneratedColumn(jsonNode: JsonNode, column: ColumnTreeNode): Any {
-        return if (jsonNode.isArray) deserializeArray(jsonNode) else extractValue(jsonNode, column)
-    }
-
-    private fun extractValue(value: JsonNode, column: ColumnTreeNode): Any {
-        return when {
-            value.isValueNode -> deserializeValue(value)
-            value.isObject -> extractValues(value, column.columnChildren)
-            value.isArray -> handleArrayValue(value)
-            else -> throw IllegalArgumentException("Unsupported JsonNode type encountered when trying to extract value for column: ${column.name} from node: ${value}")
-        }
-    }
-
-    private fun handleArrayValue(value: JsonNode): Iterable<*> {
-        return if (isMultidimensionalArrayOfPrimitives(value)) {
-            deserializeArray(value)
-        } else {
-            val nestedTableHierarchy = extractNestedTableHierarchy(value)
-            val nestedRows: Array<Array<Any>> = value.map { arrayNode ->
-                extractValues(arrayNode, nestedTableHierarchy.columnChildren).toTypedArray()
-            }.toTypedArray()
-            ArrayBackedNestedTable(nestedRows, nestedTableHierarchy)
-        }
-    }
-
-
-    /**
-     *  Determines whether the given [JsonNode] represents a multidimensional array of primitives.
-     *  It is safe to check only on the top level because of the way Dataframe serialization works.
-     *	It is impossible for objects to be mixed with primitives on any level except the top one.
-     */
-    private fun isMultidimensionalArrayOfPrimitives(value: JsonNode): Boolean {
-        return value.all { !it.isObject }
-    }
-
-    private fun extractNestedTableHierarchy(value: JsonNode): ColumnTreeNode {
-        return value.find { it.isObject }?.let { extractHierarchy(it) } ?: createRoot()
-    }
-
-    private fun deserializeArray(jsonNode: JsonNode): List<*> {
-        return jsonNode.map { if (it.isArray) deserializeArray(it) else deserializeValue(it) }
-    }
-
-    private fun deserializeValue(jsonNode: JsonNode): Any {
-        return when {
-            jsonNode.isTextual -> jsonNode.asText()
-            jsonNode.isBoolean -> jsonNode.asBoolean()
-            jsonNode.isNumber -> {
-                when {
-                    jsonNode.isIntegralNumber -> {
-                        jsonNode.numberValue()
-                    }
-                    else -> {
-                        jsonNode.asDouble()
-                    }
-                }
-            }
-            jsonNode.isBinary -> jsonNode.binaryValue()
-            jsonNode.isNull -> NULL
-            else -> jsonNode.asText()
-        }
+        return parser.parseDataFrameInfo(text).asDsTableInfo(isPreview)
     }
 
     private fun parseDataFromKotlinDataframeOutput(id: DataId, text: String): DSTableData {
-        val rawJson = extractRawJson(text)
-
-        val rows = extractDatasetRows(rawJson)
-        if (rows.isEmpty()) return DSTableData(id, emptyList())
-
-        val firstRowJson = mapper.readTree(rows[0])
-
-        val root = extractHierarchy(firstRowJson)
-
-        val columnValues = List(root.columnChildren.size) { mutableListOf<Any>() }
-
-        for (row in rows) {
-            val json = mapper.readTree(row)
-            val values = extractValues(json, root.columnChildren)
-            values.forEachIndexed { index, any -> columnValues[index].add(any) }
-        }
-
+        val columnValues = parser.parseDataFrameData(text)
         return DSTableData(id, columnValues)
     }
+}
 
-    private fun asConcatenatedRows(text: JsonNode): String {
-        return if (text.isArray) {
-            (text as ArrayNode).joinToString(separator = separator)
-        } else {
-            text.asText()
-        }
+private fun KotlinDataframeInfo.asDsTableInfo(isPreview: Boolean): DSDataFrameInfo {
+    if (rowsNum == 0) {
+        return DSDataFrameInfo(
+            0,
+            0,
+            topLevelColumnNames,
+            emptyList(),
+            DSTableBundle.message("ds.table.dimensions.info", 0, 0),
+            hierarchyRoot = columnTreeRoot
+        )
     }
+
+    val nRow = if (isPreview) rowsNum else totalRowsNum
+    val nCol = topLevelColumnNames.size
+
+    val dimensionsStr = DSTableBundle.message("ds.table.dimensions.info", nRow, nCol)
+
+    return DSDataFrameInfo(
+        nRow,
+        0,
+        topLevelColumnNames,
+        List(topLevelColumnNames.size) { null },
+        dimensionsStr,
+        hierarchyRoot = columnTreeRoot
+    )
 }
