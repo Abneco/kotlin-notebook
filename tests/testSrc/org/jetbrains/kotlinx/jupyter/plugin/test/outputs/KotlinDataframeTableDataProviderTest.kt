@@ -34,22 +34,22 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
         val mapper = ObjectMapper()
         val serializedDf = data.toString()
 
-        val messageContent = mapper.readTree(serializedDf)[KotlinDataframeParsing.jsonPayloadField]
+        val messageContent = mapper.readTree(serializedDf)[KotlinDataframeParsing.JSON_PAYLOAD_FIELD]
         val rawJson = mapper.readTree(messageContent.asText())
 
-        val nRow = rawJson[KotlinDataframeParsing.nRowsField].asInt()
-        val nCol = rawJson[KotlinDataframeParsing.nColsField].asInt()
+        val nRow = rawJson[KotlinDataframeParsing.NUM_ROWS_FIELD].asInt()
+        val nCol = rawJson[KotlinDataframeParsing.NUM_COLS_FIELD].asInt()
 
         Assert.assertEquals(nRow, 20)
         Assert.assertEquals(nCol, 14)
         val columnNames = mutableListOf<String>()
-        (rawJson[KotlinDataframeParsing.columnsField] as ArrayNode).elements().forEach {
+        (rawJson[KotlinDataframeParsing.COLUMNS_FIELD] as ArrayNode).elements().forEach {
             columnNames.add(it.asText())
         }
 
         Assert.assertEquals(columnNames, actualColumns)
 
-        Assert.assertTrue(rawJson.has(KotlinDataframeParsing.serializedDataframeField))
+        Assert.assertTrue(rawJson.has(KotlinDataframeParsing.SERIALIZED_DATAFRAME_FIELD))
     }
 
     @Test
@@ -105,7 +105,7 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
     @Test
     fun `test formatV2 parsing`() {
         val parser = KotlinDataframeParserImpl(
-            listOf(KotlinDataframeParsing.serializedDataframeField, KotlinDataframeParsing.DATA_FIELD),
+            listOf(KotlinDataframeParsing.SERIALIZED_DATAFRAME_FIELD, KotlinDataframeParsing.DATA_FIELD),
             listOf(KotlinDataframeParsing.METADATA_FIELD),
             isFormatV2 = true, ObjectMapper()
         )

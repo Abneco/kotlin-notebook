@@ -178,16 +178,16 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
         }
 
         private val mimeToOutputType = mapOf(
-            "text/plain" to OutputType.PLAIN_TEXT,
-            "text/html" to OutputType.HTML,
-            "text/markdown" to OutputType.MARKDOWN,
-            "application/json" to OutputType.JSON,
-            "image/png" to OutputType.RASTER_IMAGE,
-            "image/jpeg" to OutputType.RASTER_IMAGE,
-            "image/bmp" to OutputType.RASTER_IMAGE,
-            "image/svg+xml" to OutputType.VECTOR_IMAGE,
-            PlotDataKeyExtractor.PLOT_KEY to OutputType.SWING_LETS_PLOT,
-            KotlinDataframeParsing.jsonPayloadField to OutputType.SWING_DATAFRAME,
+          "text/plain" to OutputType.PLAIN_TEXT,
+          "text/html" to OutputType.HTML,
+          "text/markdown" to OutputType.MARKDOWN,
+          "application/json" to OutputType.JSON,
+          "image/png" to OutputType.RASTER_IMAGE,
+          "image/jpeg" to OutputType.RASTER_IMAGE,
+          "image/bmp" to OutputType.RASTER_IMAGE,
+          "image/svg+xml" to OutputType.VECTOR_IMAGE,
+          PlotDataKeyExtractor.PLOT_KEY to OutputType.SWING_LETS_PLOT,
+          KotlinDataframeParsing.JSON_PAYLOAD_FIELD to OutputType.SWING_DATAFRAME,
         )
 
         @JvmStatic private val OUTPUT_UPDATED_EVENT = GROUP.registerEvent(

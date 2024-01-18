@@ -11,20 +11,19 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDatafra
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.COLUMN_KIND_FIELD
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.DATA_FIELD
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.METADATA_FIELD
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.columnsField
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.nRowsField
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.COLUMNS_FIELD
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.NUM_ROWS_FIELD
 import org.jetbrains.plugins.notebooks.tables.ColumnTreeNode
 
 /**
  * Utils for parsing encoded table data produced by Kotlin Dataframe library
  */
 object KotlinDataframeParsing {
-    const val jsonPayloadField = "application/kotlindataframe+json"
-    const val serializedDataframeField = "kotlin_dataframe"
-    const val separator = "kotlin_dataframe_sep"
-    const val columnsField = "columns"
-    const val nRowsField = "nrow"
-    const val nColsField = "ncol"
+    const val JSON_PAYLOAD_FIELD = "application/kotlindataframe+json"
+    const val SERIALIZED_DATAFRAME_FIELD = "kotlin_dataframe"
+    const val COLUMNS_FIELD = "columns"
+    const val NUM_ROWS_FIELD = "nrow"
+    const val NUM_COLS_FIELD = "ncol"
     const val VERSION_FIELD = "\$version"
     const val DATA_FIELD = "data"
     const val METADATA_FIELD = "metadata"
@@ -33,10 +32,10 @@ object KotlinDataframeParsing {
     const val FRAME_COLUMN = "FrameColumn"
 
     fun isKotlinDataFrame(dataObject: ObjectNode): Boolean {
-        if (!dataObject.has(jsonPayloadField)) return false
-        val jsonPayload = dataObject[jsonPayloadField].asText() ?: return false
+        if (!dataObject.has(JSON_PAYLOAD_FIELD)) return false
+        val jsonPayload = dataObject[JSON_PAYLOAD_FIELD].asText() ?: return false
 
-        return jsonPayload.contains(serializedDataframeField)
+        return jsonPayload.contains(SERIALIZED_DATAFRAME_FIELD)
     }
 }
 
@@ -61,7 +60,7 @@ class KotlinDataframeParserImpl(private val pathToData: List<String>, private va
         val metadata = rawJson.getByPath(pathToMetadata)
 
         if (rows.isEmpty) {
-            val columnNames = metadata[columnsField].map { it.asText() }.ifEmpty { listOf(" ") }
+            val columnNames = metadata[COLUMNS_FIELD].map { it.asText() }.ifEmpty { listOf(" ") }
             return KotlinDataframeInfo(
                 0,
                 0,
@@ -75,7 +74,7 @@ class KotlinDataframeParserImpl(private val pathToData: List<String>, private va
 
         return KotlinDataframeInfo(
             rows.size(),
-            metadata[nRowsField].asInt(),
+            metadata[NUM_ROWS_FIELD].asInt(),
             columnNames,
             root
         )
@@ -102,7 +101,7 @@ class KotlinDataframeParserImpl(private val pathToData: List<String>, private va
 
 private fun ObjectMapper.extractRawJson(text: String): JsonNode {
     val data = readTree(text)
-    return readTree(data[KotlinDataframeParsing.jsonPayloadField].asText())
+    return readTree(data[KotlinDataframeParsing.JSON_PAYLOAD_FIELD].asText())
 }
 
 private fun JsonNode.extractHierarchy(isFormatV2: Boolean): ColumnTreeNode {

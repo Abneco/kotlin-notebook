@@ -16,10 +16,10 @@ import com.jetbrains.python.debugger.pydev.tables.CommandOutputType
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.DATA_FIELD
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.METADATA_FIELD
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.VERSION_FIELD
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.columnsField
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.nColsField
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.nRowsField
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.serializedDataframeField
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.COLUMNS_FIELD
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.NUM_COLS_FIELD
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.NUM_ROWS_FIELD
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.SERIALIZED_DATAFRAME_FIELD
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isSwingUiEnabledForKotlinDataframe
@@ -53,9 +53,9 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
         val mapper = ObjectMapper(jsonFactory)
 
         val parser = if (serializedData.contains(VERSION_FIELD)) {
-            KotlinDataframeParserImpl(listOf(serializedDataframeField, DATA_FIELD), listOf(METADATA_FIELD), isFormatV2 = true, mapper)
+            KotlinDataframeParserImpl(listOf(SERIALIZED_DATAFRAME_FIELD), listOf(METADATA_FIELD), isFormatV2 = true, mapper)
         } else {
-            KotlinDataframeParserImpl(listOf(serializedDataframeField), emptyList(), isFormatV2 = false, mapper)
+            KotlinDataframeParserImpl(listOf(SERIALIZED_DATAFRAME_FIELD), emptyList(), isFormatV2 = false, mapper)
         }
 
         return KotlinDataFrameProvider(parser)
@@ -70,10 +70,10 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
     }
 
     private fun isFormatSupported(serializedData: String): Boolean {
-        return serializedData.contains(serializedDataframeField) &&
-                serializedData.contains(nColsField) &&
-                serializedData.contains(nRowsField) &&
-                serializedData.contains(columnsField)
+        return serializedData.contains(SERIALIZED_DATAFRAME_FIELD) &&
+                serializedData.contains(NUM_COLS_FIELD) &&
+                serializedData.contains(NUM_ROWS_FIELD) &&
+                serializedData.contains(COLUMNS_FIELD)
     }
 }
 
