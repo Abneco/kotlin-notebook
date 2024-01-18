@@ -8,7 +8,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Version
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.resetSessionMetaInformation
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.createKernelProcess
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory
 import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.createConcurrentDoubleKeyMap
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
@@ -31,9 +31,13 @@ import java.nio.file.Path
 
 typealias KernelName = String
 
+interface KotlinKernelRunnableProvider {
+    fun getKernel(kernelId: JupyterKernelId): KotlinKernelRunnableHandler?
+}
+
 class KotlinInProcessJupyterClient(
     private val rootDir: File
-): JupyterClient, Disposable {
+): JupyterClient, KotlinKernelRunnableProvider, Disposable {
     private val idGenerator = IdGenerator()
 
     private val kernels = ConcurrentCollectionFactory.createConcurrentMap<JupyterKernelId, KotlinKernelRunnableHandler>()
@@ -49,6 +53,10 @@ class KotlinInProcessJupyterClient(
         TreeCachingFileContentsApi(JavaIoFileContentsApi(rootDir))
     }
 
+    override fun getKernel(kernelId: JupyterKernelId): KotlinKernelRunnableHandler? {
+        return kernels[kernelId]
+    }
+
     override fun startKernel(
         project: Project,
         kernelName: String,
@@ -58,7 +66,7 @@ class KotlinInProcessJupyterClient(
         val kernelId = JupyterKernelId(idGenerator.generate())
 
         // TODO: make this constructing extendable in the future
-        val kernel: KotlinKernelRunnableHandler = createKernelProcess(
+        val kernel: KotlinKernelRunnableHandler = KernelProcessFactory.getInstance().createKernelProcess(
             project,
             kernelId,
             notebookPath,
@@ -109,6 +117,7 @@ class KotlinInProcessJupyterClient(
     private fun killKernel(kernelId: JupyterKernelId) {
         // Maybe we should send shutdown request here
         val kernelProcess = kernels.remove(kernelId) ?: return
+        removeSessionAndRelatedState(kernelProcess)
         Disposer.dispose(kernelProcess)
     }
 
@@ -145,19 +154,30 @@ class KotlinInProcessJupyterClient(
     override suspend fun getServerVersions(): Iterable<Pair<JupyterClient.VersionKind, Version>> = emptyList()
 
     private fun removeSessionAndRelatedState(kernelHandler: KotlinKernelRunnableHandler) {
-        val notebookFile = kernelHandler.notebookVirtualFile ?: return
-        val project = kernelHandler.project
+        if (removeSession(kernelHandler.kernelId) && kernelHandler.kernelState == KernelState.STARTED) {
+            val notebookFile = kernelHandler.notebookVirtualFile ?: return
+            val project = kernelHandler.project
 
-        resetSessionMetaInformation(notebookFile.file, project)
-        if (project.isDisposed) return
-        JupyterRuntimeService.getInstance(project).clearRuntime(notebookFile.file)
-        removeSession(kernelHandler.kernelId)
+            resetSessionMetaInformation(notebookFile.file, project)
+            if (!project.isDisposed) {
+                JupyterRuntimeService.getInstance(project).clearRuntime(notebookFile.file)
+            }
+        }
     }
 
-    private fun removeSession(kernelId: JupyterKernelId) {
-        clientSessions.remove(kernelId)?.let { session ->
+    /**
+     * Removes a session with the given kernelId from the clientSessions map and disposes the session.
+     * If the session is successfully removed, returns true. Otherwise, returns false.
+     *
+     * @param kernelId The ID of the Jupyter kernel associated with the session.
+     *
+     * @return True if the session was successfully removed, false otherwise.
+     */
+    private fun removeSession(kernelId: JupyterKernelId): Boolean {
+        return clientSessions.remove(kernelId)?.let { session ->
             Disposer.dispose(session)
-        }
+            true
+        } ?: false
     }
 
     private inner class MyKernelListener: KotlinKernelListener {

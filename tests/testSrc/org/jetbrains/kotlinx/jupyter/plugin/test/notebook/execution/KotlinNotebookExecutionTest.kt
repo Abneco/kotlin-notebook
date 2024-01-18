@@ -6,8 +6,14 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import junit.framework.TestCase
+import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelPortsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCellsAndShutdownKernel
+import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
+import org.jetbrains.kotlinx.jupyter.startup.create
+import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
@@ -17,6 +23,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
 import org.junit.Ignore
 import org.junit.Test
+import java.net.ServerSocket
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
@@ -38,6 +45,41 @@ class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
         ),
         listOf()
     )))
+
+    @Test
+    fun testExampleWithBoundSocket() {
+        val defaultPortsProvider = KernelProcessFactory.getInstance().kernelPortsProvider
+
+        val openedSocket = ServerSocket(0)
+        val boundPort = openedSocket.localPort
+        val portsGenerator = PortsGenerator.create(32768, 65536)
+        var attemptCount = 0
+        val portsProvider = KernelPortsProvider {
+            ++attemptCount
+            createKernelPorts { socketType ->
+                if (attemptCount == 1 && socketType == JupyterSocketType.HB) boundPort
+                else portsGenerator.randomPort()
+            }
+        }
+
+        try {
+            KernelProcessFactory.getInstance().setKernelPortsProvider(portsProvider)
+            doTest(OutputsTester(listOf(
+                listOf(
+                    textPlainOutput("5")
+                ),
+                listOf(),
+                listOf(
+                    textPlainOutput("5")
+                ),
+                listOf()
+            )))
+            TestCase.assertTrue("Kernel restart was not attempted, attempts count: $attemptCount", attemptCount >= 2)
+        } finally {
+            openedSocket.close()
+            KernelProcessFactory.getInstance().setKernelPortsProvider(defaultPortsProvider)
+        }
+    }
 
     @Test
     fun testSerialization() = doTest(OutputsTester(listOf(

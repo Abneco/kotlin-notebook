@@ -12,6 +12,7 @@ interface KotlinKernelRunnableHandler: Disposable {
     val project: Project
     val kernelId: JupyterKernelId
     val notebookVirtualFile: BackedNotebookVirtualFile?
+    val kernelState: KernelState
 
     fun addKernelListener(listener: KotlinKernelListener)
 
@@ -20,4 +21,11 @@ interface KotlinKernelRunnableHandler: Disposable {
     fun canStopKernel(): Boolean
 
     fun stopKernel()
+
+    fun markStarted()
+}
+
+enum class KernelState {
+    STARTING,
+    STARTED,
 }

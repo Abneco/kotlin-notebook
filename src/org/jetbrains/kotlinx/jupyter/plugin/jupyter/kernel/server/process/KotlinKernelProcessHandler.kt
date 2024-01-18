@@ -12,6 +12,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.EventDispatcher
 import com.intellij.util.io.BaseOutputReader
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelState
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
@@ -22,6 +23,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.Jupyte
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import java.nio.file.Path
+import java.util.concurrent.atomic.AtomicReference
 
 class KotlinKernelProcessHandler(
     override val project: Project,
@@ -30,6 +32,13 @@ class KotlinKernelProcessHandler(
     private val kernelConfig: KernelConfig,
     val notebookPath: Path,
 ): KillableColoredProcessHandler(commandLine), KotlinKernelRunnableHandler {
+
+    private val _kernelState = AtomicReference(KernelState.STARTING)
+    override val kernelState: KernelState = _kernelState.get()
+    
+    override fun markStarted() {
+        _kernelState.compareAndSet(KernelState.STARTING, KernelState.STARTED)
+    }
 
     private val eventDispatcher = EventDispatcher.create(KotlinKernelProcessListener::class.java)
 

@@ -1,7 +1,6 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.util.containers.ContainerUtil
 import kotlinx.serialization.json.jsonObject
@@ -10,18 +9,14 @@ import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.api.libraries.rawMessageCallback
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
-import org.jetbrains.kotlinx.jupyter.plugin.util.toJacksonJson
 import org.jetbrains.kotlinx.jupyter.plugin.util.toKotlinSerializationJson
 import org.jetbrains.kotlinx.jupyter.protocol.AbstractJupyterConnection
 import org.jetbrains.kotlinx.jupyter.protocol.RawMessageImpl
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageBase
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterProtocolSchemaFactory
 import org.zeromq.ZMQException
 import java.nio.channels.ClosedSelectorException
 import java.util.concurrent.locks.ReentrantLock
@@ -132,24 +127,6 @@ class KernelZMQClientSession(
     companion object {
         private val LOG = logger<KernelZMQClientSession>()
     }
-}
-
-fun createZMQJupyterMessage(channel: JupyterMessageChannel, rawMessage: RawMessage): JupyterMessage {
-    val schema = JupyterProtocolSchemaFactory.createSchema()
-    val json = jackson.createObjectNode().apply {
-        put(schema.channelFieldsName, channel.value)
-        set<JsonNode>(schema.headerFieldName, rawMessage.header.toJacksonJson())
-        set<JsonNode>(schema.parentHeaderFieldName, rawMessage.parentHeader?.toJacksonJson())
-        set<JsonNode>("metadata", rawMessage.metadata?.toJacksonJson())
-        set<JsonNode>(schema.contentFieldName, rawMessage.content.toJacksonJson())
-    }
-
-
-    return JupyterMessageBase(
-        json,
-        rawMessage.id,
-        schema
-    )
 }
 
 val JupyterMessageChannel.socketType: JupyterSocketType? get() {
