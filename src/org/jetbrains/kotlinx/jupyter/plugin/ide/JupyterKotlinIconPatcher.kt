@@ -11,7 +11,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import java.util.*
 import javax.swing.Icon
 
-class JupyterKotlinIconPatcher : FileIconPatcher, DumbAware {
+class JupyterKotlinIconPatcher : FileIconPatcher {
     private val cache: MutableSet<VirtualFile> = Collections.synchronizedSet(ContainerUtil.createWeakSet())
 
     private fun shouldPatch(virtualFile: VirtualFile?): Boolean {
