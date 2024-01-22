@@ -43,6 +43,8 @@ internal interface NotebookClassesInCellsInfoHandler {
                                  moveEvent: NotebookMoveEvent? = null,
                                  invokedMoveEventInInd: Int? = null)
 
+    fun correspondingPsiCellToClass(className: String): JupyterPsiCell?
+
     // Handlers for events
     fun notebookDataCleared()
 }
@@ -74,6 +76,10 @@ class NotebookStructureClassTracker(
             val cellsCounter = JupyterCompilerService.getForFile(project, file).executedCellsCount - 1
             return  if (cellsCounter == -1) 1 else cellsCounter + 1
         }
+
+    override fun correspondingPsiCellToClass(className: String): JupyterPsiCell? {
+        return knownCellInfo.correspondingCellToClass(className)
+    }
 
     override fun storeCompliedDataInCell(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell) {
         fun storeReferenceInfo(compiledClassName: MutableSet<String>, cellInd: Int?) {

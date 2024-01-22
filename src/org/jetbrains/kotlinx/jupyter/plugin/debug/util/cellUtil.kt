@@ -92,27 +92,12 @@ class ExecutedPresentCellInfo(psiFile: PsiFile?) {
     }
 }
 
-
-object KTNotebookUserData {
-
-    val NOTEBOOK_LAST_SHIFT_KEY: Key<Pair<JupyterPsiCell, Int>> =
-        Key.create("org.jetbrains.kotlinx.jupyter.plugin.debug.position.notebook.data")
-}
-
 fun Int.toCompiledCellSnippedName(): String = "Line_${this}_jupyter"
 
 fun JupyterPsiCell.updateInfoBeforeExecution(project: Project, virtualFile: BackedNotebookVirtualFile, cellOrdinal: Int?) {
     runReadAction {
         NotebookStructureTrackerService.getForFile(project, virtualFile)
             .updateCellInformationBeforeExecution(this@updateInfoBeforeExecution, cellOrdinal)
-
-        /* KJupyterDebugSessionManager.getForFile(project, virtualFile).also {
-            if (!it.isSilentSession) {
-                val breakPointManager = it.breakpointPerFileManager
-                breakPointManager.lastExecutedCell = this
-                breakPointManager.triggerUpdatesForCell(this)
-            }
-        }*/
     }
 }
 
@@ -123,6 +108,5 @@ fun JupyterPsiCell.ensureValidStateOnErrors(project: Project, virtualFile: Backe
             //println("Rolling back from: ${was} to: ${Pair(was.second ?: "", null)}")
             putUserData(ExecutedPresentCellInfo.NOTEBOOK_CELL_INTERNAL_INFO_KEY, Pair(was.second ?: "", null))
         }
-
     }
 }

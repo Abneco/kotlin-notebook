@@ -8,13 +8,13 @@ import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolW
 import org.jetbrains.plugins.notebooks.jupyter.variables.common.NotebookVarsToolWindowPanelProvider
 
 
-class JupyterKotlinVarsToolWindowProvider : NotebookVarsToolWindowPanelProvider {
+internal class NotebookVarsToolWindowProvider : NotebookVarsToolWindowPanelProvider {
     override fun isSupported(virtualFile: BackedNotebookVirtualFile): Boolean {
         return virtualFile.file.isKotlinNotebook
     }
 
     override fun getToolWindowPanel(project: Project, virtualFile: BackedNotebookVirtualFile): JupyterVarsToolWindowPanel {
-        return JupyterKotlinVarsToolWindow(project, virtualFile)
+        return KotlinNotebookVarsToolWindow(project, virtualFile)
     }
 }
 

@@ -143,7 +143,6 @@ class JupyterCompilerPerFileService(
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private val compileLock = ReentrantReadWriteLock()
     private val directoryCounter = AtomicInteger(0)
-    val notebookStructureClassTracker = NotebookStructureClassTracker(project, virtualFile, coroutineScope, this)
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -459,8 +458,10 @@ class JupyterCompilerPerFileService(
         _currentClasspath.clear()
         additionalDefaultImports.clear()
         implicitsList.clear()
-        NotebookStructureTrackerService.getForFile(project, virtualFile).notebookDataCleared()
         lastStableConfiguration.set(project.baseScriptingCompilationConfiguration)
+        if (!project.isDisposed) {
+            NotebookStructureTrackerService.getForFile(project, virtualFile).notebookDataCleared()
+        }
     }
 
     fun clear() {

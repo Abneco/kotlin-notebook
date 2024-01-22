@@ -20,7 +20,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
-import org.jetbrains.kotlinx.jupyter.plugin.debug.util.SessionRelatedInfo
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.updateInfoBeforeExecution
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
@@ -58,35 +57,26 @@ class KotlinNotebookDebugRunner(project: Project, private val virtualFile: Backe
     ): XDebugSession? {
         val debugSessionManager = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
 
-        val sessionRelatedInfo = SessionRelatedInfo(
-            project, virtualFile, 1
-        )
-        currentNotebookSession = JupyterRuntimeService.getInstance(project).getSession(sessionRelatedInfo.myNotebook.file)!!
+        currentNotebookSession = JupyterRuntimeService.getInstance(project).getSession(virtualFile)!!
         val sessionPath = NotebookPathProvider.calculateNotebookPath(project, virtualFile.file, notebookKernelSpec.name)
-        sessionRelatedInfo.updateWith(
-          project,
-          debugSessionManager.targetDebugPort,
-          cell, cellPointer, cell.toFileName(),
-          sessionPath
+        debugSessionManager.updateSessionCellInfo(
+          cell, cellPointer,
+          cell.toFileName(), sessionPath
         )
-
-        if (sessionRelatedInfo.debugPort == null) {
-            sessionRelatedInfo.debugPort = 1044
-        }
 
         coroutineScope.async {
-            artifactsService.buildProjectAndGetLibraries(sessionRelatedInfo.myNotebook)
+            artifactsService.buildProjectAndGetLibraries(virtualFile)
         }
 
         myDebugSession = debugSessionManager.connectToKernelVirtualMachine(
             project,
-            sessionRelatedInfo.debugPort!!,
+            debugSessionManager.targetDebugPort!!,
             forceRestart = true,
             silent = false
         )
 
         // see NotebookEditorRunActionsHandler
-        cell.updateInfoBeforeExecution(project, sessionRelatedInfo.myNotebook, cellPointer.get()?.ordinal)
+        cell.updateInfoBeforeExecution(project, virtualFile, cellPointer.get()?.ordinal)
 
         runInEdt {
             FileDocumentManager.getInstance().saveAllDocuments()
@@ -94,7 +84,7 @@ class KotlinNotebookDebugRunner(project: Project, private val virtualFile: Backe
             AppExecutorUtil.getAppScheduledExecutorService().schedule(
                 {
                     runInEdt {
-                        executeCell(project, cell, sessionRelatedInfo)
+                        executeCell(project, cell, cellPointer)
                     }
                 }, 1600, TimeUnit.MILLISECONDS)
         }
@@ -110,7 +100,6 @@ class KotlinNotebookDebugRunner(project: Project, private val virtualFile: Backe
 
     override fun canRun(executorId: String, profile: RunProfile): Boolean {
         if (DefaultDebugExecutor.EXECUTOR_ID != executorId) {
-            // If not debug at all
             return false
         }
         return true
@@ -122,15 +111,12 @@ class KotlinNotebookDebugRunner(project: Project, private val virtualFile: Backe
 
     // @see JupyterKernelClient#execute
     // @see JupyterCellExecutionManager executeCode
-    private fun executeCell(project: Project, cell: JupyterPsiCell, sessionRelatedInfo: SessionRelatedInfo) {
+    private fun executeCell(project: Project, cell: JupyterPsiCell, cellPointer: NotebookIntervalPointer) {
         FileDocumentManager.getInstance().saveAllDocuments()
         // see convenience methods in obj of JupyterExecutionTask
-        val sessionOptions = JupyterExecutionTask.Options.cellExecution(sessionRelatedInfo.cellPointer!!)
+        val sessionOptions = JupyterExecutionTask.Options.cellExecution(cellPointer)
         project.run {
             try {
-/*                val breakPointManager = KJupyterDebugSessionManager.getBreakpointManagerForFile(project, sessionRelatedInfo.myNotebook)
-                breakPointManager.lastExecutedCell = cell*/
-
                 JupyterCellExecutionManager.getInstance(this).submitTask(JupyterExecutionTask(
                     source = cell.text,
                     options = sessionOptions,
@@ -139,14 +125,13 @@ class KotlinNotebookDebugRunner(project: Project, private val virtualFile: Backe
                         JupyterErrorReporter.displayAndLogError(this, e)
                         //breakPointManager.restorePreviousLastCell()
                     },
-                    notebookVirtualFile = sessionRelatedInfo.myNotebook,
+                    notebookVirtualFile = virtualFile,
                     project = project))
             }
             catch (e: Exception) {
                 JupyterErrorReporter.displayAndLogError(this, e)
             }
         }
-
     }
 
     companion object {

@@ -4,13 +4,11 @@ package org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection
 import com.intellij.debugger.engine.DebugProcess
 import com.intellij.debugger.engine.DebugProcessListener
 import com.intellij.debugger.engine.SuspendContext
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.debugger.JupyterDebugSessionManager
 import org.jetbrains.plugins.notebooks.jupyter.debugger.JupyterSessionPath
-import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowManager
 
 
 class NotebookDebugProcessListener(
@@ -26,9 +24,6 @@ class NotebookDebugProcessListener(
     override fun paused(suspendContext: SuspendContext) {
         LOG.info("PAUSED")
         if (!isSilent) return
-        runInEdt {
-            JupyterVarsToolWindowManager.getInstance(project).updateVariablesView(virtualFile)
-        }
     }
 
     override fun resumed(suspendContext: SuspendContext?) {
@@ -36,9 +31,8 @@ class NotebookDebugProcessListener(
     }
 
     override fun processDetached(process: DebugProcess, closedByUser: Boolean) {
-        if (isSilent) return
         JupyterDebugSessionManager.getInstance(project).debugInSessionFinished(sessionPath)
-        LOG.debug("Process terminated, closedByUser: ${closedByUser}")
+        LOG.info("Process terminated, closedByUser: ${closedByUser}")
     }
 
     override fun processAttached(process: DebugProcess) {

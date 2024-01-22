@@ -104,90 +104,93 @@ class NotebookVariableFieldValue(
 
     private fun computeChildren(remainingElements: Int, node: XCompositeNode) {
         valueDescriptor.getChildrenRenderer(debugProcessImpl).thenAccept { renderer ->
-            renderer.buildChildren(valueDescriptor.value, object : ChildrenBuilder {
-                override fun getDescriptorManager(): NodeDescriptorFactory? = this@NotebookVariableFieldValue.nodeManager
-                override fun getNodeManager(): NodeManager? = this@NotebookVariableFieldValue.nodeManager as? NodeManager
-                override fun getParentDescriptor(): ValueDescriptor = valueDescriptor
+            try {
+                renderer.buildChildren(valueDescriptor.value, object : ChildrenBuilder {
+                    override fun getDescriptorManager(): NodeDescriptorFactory? = this@NotebookVariableFieldValue.nodeManager
+                    override fun getNodeManager(): NodeManager? = this@NotebookVariableFieldValue.nodeManager as? NodeManager
+                    override fun getParentDescriptor(): ValueDescriptor = valueDescriptor
 
-                override fun setChildren(children: MutableList<out DebuggerTreeNode>) {
-                    addChildren(children, true)
-                }
+                    override fun setChildren(children: MutableList<out DebuggerTreeNode>) {
+                        addChildren(children, true)
+                    }
 
-                override fun addChildren(children: MutableList<out DebuggerTreeNode>, last: Boolean) {
-                    try {
-                        var childrenList = XValueChildrenList.EMPTY
-                        if (!children.isEmpty()) {
-                            childrenList = XValueChildrenList(children.size)
-                            for (treeNode in children) {
-                                val descriptor = treeNode.getDescriptor()
-                                if (descriptor is ValueDescriptorImpl) {
-                                    // Value is calculated already in NodeManagerImpl
-/*                                    childrenList.add(
-                                        NotebookVariableFieldValue(
-                                            this@NotebookVariableFieldValue,
-                                            descriptor.toNotebookValueDescriptor(
+                    override fun addChildren(children: MutableList<out DebuggerTreeNode>, last: Boolean) {
+                        try {
+                            var childrenList = XValueChildrenList.EMPTY
+                            if (!children.isEmpty()) {
+                                childrenList = XValueChildrenList(children.size)
+                                for (treeNode in children) {
+                                    val descriptor = treeNode.getDescriptor()
+                                    if (descriptor is ValueDescriptorImpl) {
+                                        // Value is calculated already in NodeManagerImpl
+                                        childrenList.add(
+                                            NotebookVariableFieldValue(
+                                                this@NotebookVariableFieldValue,
+                                                descriptor.toNotebookValueDescriptor(
+                                                    debugProcessImpl,
+                                                    this@NotebookVariableFieldValue.valueDescriptor as? NotebookVariableStateDescriptor
+                                                ) as? ValueDescriptorImpl
+                                                    ?: descriptor,
                                                 debugProcessImpl,
-                                                this@NotebookVariableFieldValue.valueDescriptor as? NotebookVariableStateDescriptor
-                                            ) as? ValueDescriptorImpl
-                                                ?: descriptor,
-                                            debugProcessImpl,
-                                            nodeManager as NodeManagerImpl, false
+                                                nodeManager as NodeManagerImpl, false
+                                            )
                                         )
-                                    )*/
-                                } else if (descriptor is MessageDescriptor) {
-                                    childrenList.add(
-                                        JavaStackFrame.createMessageNode(
-                                            descriptor.getLabel(),
-                                            DebuggerTreeRenderer.getDescriptorIcon(descriptor)
+                                    } else if (descriptor is MessageDescriptor) {
+                                        childrenList.add(
+                                            JavaStackFrame.createMessageNode(
+                                                descriptor.getLabel(),
+                                                DebuggerTreeRenderer.getDescriptorIcon(descriptor)
+                                            )
                                         )
-                                    )
+                                    }
                                 }
                             }
+                            node.addChildren(childrenList, last)
+                        } catch (ex: Exception) {
+                            LOG.warn("Exception during computation of children for node: $name, ex: ", ex)
                         }
-                        node.addChildren(childrenList, last)
-                    } catch (ex: Exception) {
-                        LOG.warn("Exception during computation of children for node: $name, ex: ", ex)
                     }
-                }
 
-                override fun addChildren(children: XValueChildrenList, last: Boolean) {
-                    node.addChildren(children, last)
-                }
-
-                override fun tooManyChildren(remaining: Int) {
-                    node.tooManyChildren(remaining, Runnable { computeChildren(remaining, node) })
-                }
-
-                override fun tooManyChildren(remaining: Int, addNextChildren: Runnable) {
-                    node.tooManyChildren(remaining, addNextChildren)
-                }
-
-                override fun setAlreadySorted(alreadySorted: Boolean) {
-                    node.setAlreadySorted(alreadySorted)
-                }
-
-                override fun setErrorMessage(errorMessage: String) {
-                    node.setErrorMessage(errorMessage)
-                }
-
-                override fun setErrorMessage(errorMessage: String, link: XDebuggerTreeNodeHyperlink?) {
-                    node.setErrorMessage(errorMessage, link)
-                }
-
-                override fun setMessage(message: String, icon: Icon?, attributes: SimpleTextAttributes, link: XDebuggerTreeNodeHyperlink?) {
-                    node.setMessage(message, icon, attributes, link)
-                }
-
-                override fun isObsolete(): Boolean = node.isObsolete
-
-                override fun initChildrenArrayRenderer(renderer: ArrayRenderer?, arrayLength: Int) {
-                    renderer!!.START_INDEX = 0
-                    if (remainingElements >= 0) {
-                        renderer.START_INDEX = max(0.0, (arrayLength - remainingElements).toDouble()).toInt()
+                    override fun addChildren(children: XValueChildrenList, last: Boolean) {
+                        node.addChildren(children, last)
                     }
-                }
-            }, null)
 
+                    override fun tooManyChildren(remaining: Int) {
+                        node.tooManyChildren(remaining, Runnable { computeChildren(remaining, node) })
+                    }
+
+                    override fun tooManyChildren(remaining: Int, addNextChildren: Runnable) {
+                        node.tooManyChildren(remaining, addNextChildren)
+                    }
+
+                    override fun setAlreadySorted(alreadySorted: Boolean) {
+                        node.setAlreadySorted(alreadySorted)
+                    }
+
+                    override fun setErrorMessage(errorMessage: String) {
+                        node.setErrorMessage(errorMessage)
+                    }
+
+                    override fun setErrorMessage(errorMessage: String, link: XDebuggerTreeNodeHyperlink?) {
+                        node.setErrorMessage(errorMessage, link)
+                    }
+
+                    override fun setMessage(message: String, icon: Icon?, attributes: SimpleTextAttributes, link: XDebuggerTreeNodeHyperlink?) {
+                        node.setMessage(message, icon, attributes, link)
+                    }
+
+                    override fun isObsolete(): Boolean = node.isObsolete
+
+                    override fun initChildrenArrayRenderer(renderer: ArrayRenderer?, arrayLength: Int) {
+                        renderer!!.START_INDEX = 0
+                        if (remainingElements >= 0) {
+                            renderer.START_INDEX = max(0.0, (arrayLength - remainingElements).toDouble()).toInt()
+                        }
+                    }
+                }, null)
+            } catch (ex: Exception) {
+                LOG.warn("Exception during children computation: ", ex)
+            }
         }
 
     }

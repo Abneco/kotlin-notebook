@@ -21,12 +21,12 @@ import com.sun.jdi.ReferenceType
 import com.sun.jdi.StringReference
 import com.sun.jdi.Value
 import org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.NotebookVariableStateDescriptor
-import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KJupyterNotebookDebugSession
+import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSession
 
 class KotlinNotebookVariablesFrame(
     private val project: Project,
     private val sourcePosition: XSourcePosition?,
-    private val debugSession: KJupyterNotebookDebugSession
+    private val debugSession: KotlinNotebookDebugSession
 ) : XStackFrame() {
     companion object {
         private val LOG = thisLogger()
@@ -36,7 +36,7 @@ class KotlinNotebookVariablesFrame(
             val nextEntryFieldAccessor: Field,
             var mapEntryReference: ObjectReference,
             val hashMapNodeClassType: ClassType
-            )
+        )
     }
     override fun getEqualityObject(): Any? = STACK_FRAME_EQUALITY_OBJECT
 
@@ -45,10 +45,14 @@ class KotlinNotebookVariablesFrame(
     override fun computeChildren(node: XCompositeNode) {
         val debugProcess = debugSession.debuggerSession?.process
         if (node.isObsolete || debugProcess == null) {
-            node.setErrorMessage("Variables are not available")
+            node.setErrorMessage("Variables are not available, no connection is established")
             return
         }
-        if (!debugProcess.isAttached || debugSession.debuggerSession?.isStopped == true) {
+        if (!debugProcess.isAttached) {
+            if (debugProcess.isInInitialState) {
+                node.setErrorMessage("Variables will be rebuild after connection is established")
+                return
+            }
             node.setErrorMessage("Variables are not available")
             debugSession.disposeCurrentSession()
             LOG.warn("Session is not initialised, disposing")
@@ -61,7 +65,7 @@ class KotlinNotebookVariablesFrame(
                 val virtualMachine = debugProcess.virtualMachineProxy
                 val notebookClass = virtualMachine.classesByNameProvider.get("org.jetbrains.kotlinx.jupyter.NotebookImpl").firstOrNull() ?: return@invoke
                 val notebookReference = notebookClass.instances(1).firstOrNull() ?: return@invoke
-                // make it field first
+                // todo: make it field first
                 //val getter = notebookClass.methodsByName("getVariablesState").firstOrNull() ?: return@invoke
                 val variablesHolderReference = getVariablesHolderReference(notebookReference, notebookClass) ?: return@invoke
 
@@ -172,7 +176,6 @@ class KotlinNotebookVariablesFrame(
 
             add(keyReference.value(),
                 NotebookVariableFieldValue(null,
-                                      // maybe change factory
                                       NotebookVariableStateDescriptor(
                                           debuggerContext.debuggerSession!!,
                                           debugSession.virtualFile,
