@@ -7,24 +7,41 @@ import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.debugger.impl.DebuggerContextImpl
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.EDT
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.xdebugger.frame.XValueChildrenList
 import com.sun.jdi.ClassType
 import com.sun.jdi.ObjectReference
 import com.sun.jdi.StringReference
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.NotebookVariableStateDescriptor
 import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.KotlinNotebookVariablesFrame
 import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.NotebookVariableFieldValue
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowManager
 
 class NotebookVariablesPerFileState(
     private val virtualFile: BackedNotebookVirtualFile,
+    private val coroutineScope: CoroutineScope,
     parentDisposable: Disposable
 ) : NotebookAbstractSessionEnvironmentExplorer, Disposable {
     init {
-      Disposer.register(parentDisposable, this)
+        Disposer.register(parentDisposable, this)
     }
     private val notebookSessionEnvironmentProvider = NotebookSessionNoSuspensionEnvironmentProvider(virtualFile)
+
+    fun updateVariables(project: Project) {
+        coroutineScope.async {
+            withContext(Dispatchers.EDT) {
+                JupyterVarsToolWindowManager.getInstance(project).updateVariablesView(virtualFile)
+            }
+        }
+    }
 
     override fun getNotebookReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference? {
         return notebookSessionEnvironmentProvider.notebookReferenceProvider(virtualMachineProxy)
@@ -34,7 +51,7 @@ class NotebookVariablesPerFileState(
         return notebookSessionEnvironmentProvider.variableStateReferenceProvider(virtualMachineProxy)
     }
 
-    override fun representVariableStateAsXContainer(virtualMachineProxy: VirtualMachineProxy): XValueChildrenList {
+    override fun representVariablesStateAsXContainer(virtualMachineProxy: VirtualMachineProxy): XValueChildrenList {
         fun XValueChildrenList.addInternalVariables(
             variablesStateSize: Int,
             accessorData: KotlinNotebookVariablesFrame.Companion.VariablesStateAccessorData,
@@ -50,10 +67,10 @@ class NotebookVariablesPerFileState(
 
             for (i in 0 until variablesStateSize) {
                 val keyReference = mapEntryReference.getValue(keyField) as? StringReference ?: continue
-                val variableValuedData = mapEntryReference.getValue(valueField)
+                val variableStateValued = mapEntryReference.getValue(valueField)
                 val (variableStateReference, fieldAccessor) = notebookSessionEnvironmentProvider
                     .variableValueFromStateProvider(
-                        variableValuedData, keyReference.value()
+                        variableStateValued, keyReference.value()
                     )
 
                 if (variableStateReference == null) continue
@@ -104,6 +121,6 @@ class NotebookVariablesPerFileState(
     }
 
     override fun dispose() {
-
+        coroutineScope.cancel()
     }
 }

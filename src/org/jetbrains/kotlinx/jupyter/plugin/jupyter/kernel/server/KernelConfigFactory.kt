@@ -5,6 +5,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.pom.java.LanguageLevel
 import com.intellij.util.lang.JavaVersion
+import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
@@ -13,13 +14,15 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.maxBytecodeVersion
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
 import java.io.File
+import java.nio.file.Path
 
 interface KernelConfigFactory {
     fun create(): KernelConfig
 }
 
 abstract class AbstractKotlinKernelConfigFactory(
-    protected val project: Project
+    protected val project: Project,
+    protected val notebookPath: Path
 ) : KernelConfigFactory {
     final override fun create(): KernelConfig = KernelConfig(
         getKernelPorts(),
@@ -28,12 +31,14 @@ abstract class AbstractKotlinKernelConfigFactory(
         "x-x-x",
         getClasspath(),
         null,
-        null,
+        getDebugPortOrNull(notebookPath),
         "kotlin_notebook",
         jvmTargetForSnippets = getJvmTargetForSnippets(project)?.toFeatureString(),
     )
 
     protected abstract fun getKernelPorts(): KernelPorts
+
+    protected abstract fun getDebugPortOrNull(notebookPath: Path): Int?
 
     protected open fun getClasspath(): List<File> {
         return KotlinNotebookMavenArtifactsDownloader.getInstance(project).getClasspathArtifacts(project)
@@ -46,9 +51,14 @@ abstract class AbstractKotlinKernelConfigFactory(
 
 class DefaultKotlinKernelConfigFactory(
     project: Project,
-    private val kernelPorts: KernelPorts
-): AbstractKotlinKernelConfigFactory(project) {
+    private val kernelPorts: KernelPorts,
+    notebookPath: Path
+): AbstractKotlinKernelConfigFactory(project, notebookPath) {
     override fun getKernelPorts() = kernelPorts
+
+    override fun getDebugPortOrNull(notebookPath: Path): Int? {
+        return KotlinNotebookDebugSessionManager.getInstance(project).getByPath(notebookPath)?.targetDebugPort
+    }
 }
 
 private fun chooseJvmTargetForSnippets(project: Project): LanguageLevel? {

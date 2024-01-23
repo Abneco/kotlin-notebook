@@ -11,7 +11,6 @@ import com.intellij.psi.PsiFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import org.jetbrains.kotlin.utils.addIfNotNull
-import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.ExecutedPresentCellInfo
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
@@ -19,6 +18,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookC
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookMoveEvent
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
+import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
@@ -43,7 +43,7 @@ internal interface NotebookClassesInCellsInfoHandler {
                                  moveEvent: NotebookMoveEvent? = null,
                                  invokedMoveEventInInd: Int? = null)
 
-    fun correspondingPsiCellToClass(className: String): JupyterPsiCell?
+    fun findPsiCellByClassName(className: String): JupyterPsiCell?
 
     // Handlers for events
     fun notebookDataCleared()
@@ -77,7 +77,7 @@ class NotebookStructureClassTracker(
             return  if (cellsCounter == -1) 1 else cellsCounter + 1
         }
 
-    override fun correspondingPsiCellToClass(className: String): JupyterPsiCell? {
+    override fun findPsiCellByClassName(className: String): JupyterPsiCell? {
         return knownCellInfo.correspondingCellToClass(className)
     }
 

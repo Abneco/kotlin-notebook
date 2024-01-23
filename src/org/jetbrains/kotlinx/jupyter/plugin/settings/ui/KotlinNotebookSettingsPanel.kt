@@ -70,7 +70,7 @@ object KotlinNotebookSettingsPanel {
                 createEnvironmentVariablesField(projectOptions).showForSeparateProcess()
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug")) {
-                setUpDebugOptions(projectOptions)
+                createDebugOptions(projectOptions)
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session")) {
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.sources"), sessionOptions::resolveSources)
@@ -208,20 +208,19 @@ object KotlinNotebookSettingsPanel {
         }
     }
 
-    private fun Panel.setUpDebugOptions(optionsProvider: KotlinNotebookProjectOptionsProvider) {
+    private fun Panel.createDebugOptions(optionsProvider: KotlinNotebookProjectOptionsProvider) {
         var checkBox: Cell<JBCheckBox>? = null
         row {
-            checkBox = checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.check.box")).run {
-                accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.check.box.description"))
-                bindSelected(optionsProvider::shouldOpenDebugPort)
-            }
+            checkBox = checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.check.box"))
+                .accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.check.box.description"))
+                .bindSelected(optionsProvider::shouldOpenDebugPort)
         }
 
         row {
-            checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables")).run {
-                accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.description"))
-                bindSelected(optionsProvider::shouldShowNotebookVariables)
-            }.visibleIf(checkBox?.selected ?: ComponentPredicate.FALSE)
+            checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables"))
+                .accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.description"))
+                .bindSelected(optionsProvider::shouldShowNotebookVariables)
+                .visibleIf(checkBox?.selected ?: ComponentPredicate.FALSE)
         }
     }
 

@@ -10,5 +10,5 @@ internal interface NotebookAbstractSessionEnvironmentExplorer {
 
     fun getVariablesStateReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference?
 
-    fun representVariableStateAsXContainer(virtualMachineProxy: VirtualMachineProxy): XValueChildrenList
+    fun representVariablesStateAsXContainer(virtualMachineProxy: VirtualMachineProxy): XValueChildrenList
 }

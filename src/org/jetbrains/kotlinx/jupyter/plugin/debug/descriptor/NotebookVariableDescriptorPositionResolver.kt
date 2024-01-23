@@ -19,7 +19,7 @@ object NotebookVariableDescriptorPositionResolver : DeclaredVariableSourcePositi
 
         val containingClass = descriptor.`object`.referenceType().name()
         val psiCell = NotebookStructureTrackerService.getForFile(project, vFile)
-            .correspondingPsiCellToClass(containingClass) ?: return null
+            .findPsiCellByClassName(containingClass) ?: return null
 
         val ktFile = psiCell.getInjectedKtFiles(InjectedLanguageManager.getInstance(project)).firstOrNull() ?: return null
         val knownTargetDeclaration = ktFile.childrenOfType<KtScript>().firstOrNull()

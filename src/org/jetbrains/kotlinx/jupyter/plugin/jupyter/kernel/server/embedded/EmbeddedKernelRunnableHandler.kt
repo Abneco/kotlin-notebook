@@ -50,6 +50,6 @@ class EmbeddedKernelRunnableHandler(
     }
 
     override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession {
-        return EmbeddedKotlinKernelSession(project, sessionId, onMessage)
+        return EmbeddedKotlinKernelSession(project, sessionId, notebookPath, onMessage)
     }
 }

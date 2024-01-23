@@ -37,7 +37,7 @@ class KernelProcessFactory : KernelRunnableFactory {
         if (project.kotlinNotebookSessionRunMode != KotlinNotebookSessionRunMode.SEPARATE_PROCESS) return null
 
         val kernelPorts = getKernelPorts()
-        val kernelConfig = DefaultKotlinKernelConfigFactory(project, kernelPorts).create()
+        val kernelConfig = DefaultKotlinKernelConfigFactory(project, kernelPorts, notebookPath).create()
 
         val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
         val javaExecutable = getJavaExecutable(project, options)

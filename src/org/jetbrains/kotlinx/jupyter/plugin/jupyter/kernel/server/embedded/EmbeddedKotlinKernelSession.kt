@@ -13,10 +13,12 @@ import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import java.nio.file.Path
 
 class EmbeddedKotlinKernelSession(
     private val project: Project,
     override val sessionId: JupyterNotebookSessionId,
+    private val notebookPath: Path,
     private val onMessage: (JupyterMessage) -> Unit
 ) : KotlinKernelSession, JupyterKernelCommunicationClient {
 
@@ -24,7 +26,8 @@ class EmbeddedKotlinKernelSession(
     private val messageHandler = run {
         val kernelConfig: KernelConfig = DefaultKotlinKernelConfigFactory(
             project,
-            createKernelPorts { 0 }
+            createKernelPorts { 0 },
+            notebookPath
         ).create()
 
         val libraryInfoProvider = getDefaultClasspathResolutionInfoProvider()
