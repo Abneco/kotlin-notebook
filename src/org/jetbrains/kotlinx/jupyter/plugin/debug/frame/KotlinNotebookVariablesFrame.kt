@@ -32,7 +32,7 @@ class KotlinNotebookVariablesFrame(
         private val LOG = thisLogger()
         private val STACK_FRAME_EQUALITY_OBJECT = Any()
 
-        private data class VariablesStateAccessorData(
+        data class VariablesStateAccessorData(
             val nextEntryFieldAccessor: Field,
             var mapEntryReference: ObjectReference,
             val hashMapNodeClassType: ClassType
