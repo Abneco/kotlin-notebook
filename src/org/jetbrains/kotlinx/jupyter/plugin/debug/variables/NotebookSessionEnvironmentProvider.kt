@@ -33,7 +33,7 @@ internal class NotebookSessionNoSuspensionEnvironmentProvider(
 
     private fun retrieveNotebookReference(virtualMachine: VirtualMachineProxy): ObjectReference? {
         if (virtualMachine !is VirtualMachineProxyImpl) return null
-        val notebookClass = virtualMachine.classesByNameProvider.get("org.jetbrains.kotlinx.jupyter.NotebookImpl").firstOrNull() ?: return null
+        val notebookClass = virtualMachine.classesByNameProvider.get("org.jetbrains.kotlinx.jupyter.repl.notebook.impl.NotebookImpl").firstOrNull() ?: return null
         return notebookClass.instances(1).firstOrNull()
     }
 

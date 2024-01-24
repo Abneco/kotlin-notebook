@@ -24,6 +24,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOption
 import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.util.getKotlinNotebookCacheDirectory
 import java.io.File
+import java.nio.file.Path
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -82,6 +83,8 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
             downloadAndUnzipAsync(artifact, version)
         }
     }
+
+    val kernelsDirectoryPath: Path get() = project.getKotlinNotebookCacheDirectory().resolve("kernels")
 
     private suspend fun downloadAndUnzipAsync(
         artifact: ArtifactDescriptionWithKind,
@@ -193,7 +196,7 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
         directorySuffix: String = "",
     ): File {
         val (artifact, version) = artifactWithVersion
-        val versionDirectory = project.getKotlinNotebookCacheDirectory().resolve("kernels").resolve(version)
+        val versionDirectory = kernelsDirectoryPath.resolve(version)
         val artifactDirectoryName = buildString {
             append(artifact.artifact)
             artifact.kind.classifier.takeIf { it.isNotEmpty() }?.let { classifier ->

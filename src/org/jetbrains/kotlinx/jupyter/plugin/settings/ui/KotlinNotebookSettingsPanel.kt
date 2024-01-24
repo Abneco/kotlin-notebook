@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.settings.ui
 import com.intellij.execution.ExecutionBundle
 import com.intellij.execution.configuration.EnvironmentVariablesTextFieldWithBrowseButton
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.observable.properties.AtomicProperty
 import com.intellij.openapi.observable.properties.ObservableMutableProperty
@@ -39,6 +40,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.SessionOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelProcessEmbeddingEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isSuitableForStartingKernel
 import org.jetbrains.kotlinx.jupyter.plugin.settings.minJdkVersion
+import org.jetbrains.kotlinx.jupyter.plugin.util.revealKotlinNotebookLocalKernelsFolder
 import kotlin.reflect.KMutableProperty0
 
 object KotlinNotebookSettingsPanel {
@@ -105,6 +107,9 @@ object KotlinNotebookSettingsPanel {
                 optionsProvider::kernelVersion,
                 KotlinKernelVersion.STRING_VERSION_COMPARATOR.reversed(),
             )
+            button(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.explore.button.name")) {
+                project.revealKotlinNotebookLocalKernelsFolder()
+            }.visibleIf(ComponentPredicate.fromValue(ApplicationManager.getApplication().isInternal))
         }
     }
 
