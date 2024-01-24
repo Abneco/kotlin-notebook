@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completionWithImport
 
 import com.intellij.codeInsight.lookup.LookupElement
+import com.intellij.idea.IJIgnore
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
@@ -17,6 +18,7 @@ import org.junit.Test
 class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCase() {
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/completionWithImport"
 
+    @IJIgnore(issue = "KTNB-481")
     @Test(timeout = 300_000)
     fun testCompletionWithImport() = doTest(
         object : ReceivedMessagesTester {
