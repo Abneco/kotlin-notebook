@@ -49,6 +49,12 @@ class KotlinNotebookProjectOptionsProvider :
     var extraEnvironmentVariables by prop(State::extraEnvironmentVariables)
         internal set
 
+    var kernelRunMode by enumPropByName(
+        KotlinNotebookSessionRunMode::class,
+        State::kernelRunMode
+    ).onChange(Listener::onKernelRunModeChanged)
+        internal set
+
     var shouldLimitTypeHintsByActiveCell by prop(State::shouldLimitTypeHintsByActiveCell)
         internal set
     var shouldBuildProject by prop(State::shouldBuildProject)
@@ -71,6 +77,10 @@ class KotlinNotebookProjectOptionsProvider :
         var heapMaxLimitInMib by property(DEFAULT_HEAP_MAX_LIMIT_MIB)
         var extraJvmArguments by list<String>()
         var extraEnvironmentVariables by linkedMap<String, String>()
+
+        var kernelRunMode by property(KotlinNotebookSessionRunMode.DEFAULT.name) {
+            it == KotlinNotebookSessionRunMode.DEFAULT.name
+        }
         var shouldLimitTypeHintsByActiveCell by property(false)
 
         // default settings for new notebooks
@@ -86,6 +96,7 @@ class KotlinNotebookProjectOptionsProvider :
         fun onJdkChanged() {}
         fun onJvmTargetForSnippetsChanged() {}
         fun onKernelVersionChanged() {}
+        fun onKernelRunModeChanged() {}
     }
 
 

@@ -7,6 +7,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import junit.framework.TestCase
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelPortsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
@@ -48,7 +49,8 @@ class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
 
     @Test
     fun testExampleWithBoundSocket() {
-        val defaultPortsProvider = KernelProcessFactory.getInstance().kernelPortsProvider
+        val kernelProcessFactory = KernelRunnableFactory.EP.findExtensionOrFail(KernelProcessFactory::class.java)
+        val defaultPortsProvider = kernelProcessFactory.kernelPortsProvider
 
         val openedSocket = ServerSocket(0)
         val boundPort = openedSocket.localPort
@@ -63,7 +65,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
         }
 
         try {
-            KernelProcessFactory.getInstance().setKernelPortsProvider(portsProvider)
+            kernelProcessFactory.setKernelPortsProvider(portsProvider)
             doTest(OutputsTester(listOf(
                 listOf(
                     textPlainOutput("5")
@@ -77,7 +79,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookExecutionBaseTestCase() {
             TestCase.assertTrue("Kernel restart was not attempted, attempts count: $attemptCount", attemptCount >= 2)
         } finally {
             openedSocket.close()
-            KernelProcessFactory.getInstance().setKernelPortsProvider(defaultPortsProvider)
+            kernelProcessFactory.setKernelPortsProvider(defaultPortsProvider)
         }
     }
 

@@ -112,6 +112,9 @@
         <extensionPoint qualifiedName="org.jetbrains.kotlinx.jupyter.plugin.kernel.kernelProcessCommandLineCustomizer"
                         interface="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer"
                         dynamic="true"/>
+        <extensionPoint qualifiedName="org.jetbrains.kotlinx.jupyter.plugin.kernel.kernelRunnableFactory"
+                        interface="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory"
+                        dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
@@ -140,6 +143,9 @@
 
         <registryKey key="grid.tables.hierarchical.enabled" defaultValue="true"
                      description="When enabled, table output will support hierarchical columns."/>
+
+        <registryKey key="kotlin.notebook.allow.embedded.kernel" defaultValue="false"
+                     description="When enabled, it's possible to run Kotlin Notebook sessions inside IDE process" />
 
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.inject.JupyterKotlinIntoCellsInjector"/>
         <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookLocationNotificationProvider"/>
@@ -282,6 +288,8 @@
 
     <extensions defaultExtensionNs="org.jetbrains.kotlinx.jupyter.plugin">
         <kernel.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>
+        <kernel.kernelRunnableFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory"/>
+        <!--<kernel.kernelRunnableFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory"/>-->
     </extensions>
 
     <actions resource-bundle="messages/KotlinNotebookBundle">

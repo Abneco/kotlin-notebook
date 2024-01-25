@@ -3,15 +3,14 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.util.containers.ContainerUtil
-import kotlinx.serialization.json.jsonObject
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.api.libraries.rawMessageCallback
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.toJupyterMessage
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.toRawMessageWithSocket
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
-import org.jetbrains.kotlinx.jupyter.plugin.util.toKotlinSerializationJson
 import org.jetbrains.kotlinx.jupyter.protocol.AbstractJupyterConnection
-import org.jetbrains.kotlinx.jupyter.protocol.RawMessageImpl
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
@@ -30,8 +29,6 @@ class KernelZMQClientSession(
 ): AbstractJupyterConnection(), JupyterKernelCommunicationClient, KotlinKernelSession {
     private val receiveMessageLock = ReentrantLock(true)
 
-    private val messageBytePrefix = listOf(byteArrayOf(1))
-
     private val clientThreads: MutableList<Thread> = ContainerUtil.createConcurrentList()
 
     override val socketManager = IdeaJupyterSocketManager(kernelConfig)
@@ -41,17 +38,10 @@ class KernelZMQClientSession(
     }
 
     override fun send(content: JupyterMessage) {
-        val socketType = content.channel.socketType ?: return
-        val socket = socketManager.fromSocketType(socketType)
-
+        val (rawMessage, socketType) = content.toRawMessageWithSocket() ?: return
         try {
-            socket.sendRawMessage(RawMessageImpl(
-                messageBytePrefix,
-                content.header.json.toKotlinSerializationJson().jsonObject,
-                content.parentHeader?.json?.toKotlinSerializationJson()?.jsonObject,
-                null,
-                content.messageContent.toKotlinSerializationJson()
-            ))
+            val socket = socketManager.fromSocketType(socketType)
+            socket.sendRawMessage(rawMessage)
         } catch (e: Exception) {
             LOG.errorUnderDebug(e)
         }
@@ -110,7 +100,7 @@ class KernelZMQClientSession(
     }
 
     private fun processMessage(socketType: JupyterSocketType, rawMessage: RawMessage) {
-        val message = createZMQJupyterMessage(socketType.channel, rawMessage)
+        val message = rawMessage.toJupyterMessage(socketType.channel)
         onMessageCallback(message)
     }
 

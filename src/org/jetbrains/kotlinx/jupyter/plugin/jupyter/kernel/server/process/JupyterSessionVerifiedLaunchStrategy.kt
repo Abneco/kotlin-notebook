@@ -9,6 +9,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelEv
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableProvider
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.toJupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
@@ -65,7 +66,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
             MessageType.KERNEL_INFO_REQUEST,
             KernelInfoRequest()
         )
-        val zmqMessage = createZMQJupyterMessage(JupyterMessageChannel.SHELL, message.toRawMessage())
+        val zmqMessage = message.toRawMessage().toJupyterMessage(JupyterMessageChannel.SHELL)
 
         session.sendMessageOnPooledThread(zmqMessage, object : JupyterExecutionCallbackAdapter() {
             override fun onKernelInfoReply(message: JupyterMessage) {

@@ -5,14 +5,19 @@ import com.intellij.execution.ExecutionBundle
 import com.intellij.execution.configuration.EnvironmentVariablesTextFieldWithBrowseButton
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
+import com.intellij.openapi.observable.properties.AtomicProperty
+import com.intellij.openapi.observable.properties.ObservableMutableProperty
+import com.intellij.openapi.observable.util.transform
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ui.configuration.SdkComboBox
 import com.intellij.openapi.roots.ui.configuration.SdkComboBoxModel
 import com.intellij.openapi.roots.ui.configuration.SdkListItem
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.util.NlsContexts
+import com.intellij.ui.dsl.builder.ButtonsGroup
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.Row
+import com.intellij.ui.dsl.builder.bind
 import com.intellij.ui.dsl.builder.bindIntValue
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
@@ -25,7 +30,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifac
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.settings.SessionOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelProcessEmbeddingEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isSuitableForStartingKernel
 import org.jetbrains.kotlinx.jupyter.plugin.settings.minJdkVersion
 import kotlin.reflect.KMutableProperty0
@@ -42,11 +49,21 @@ object KotlinNotebookSettingsPanel {
         return panel {
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.build")) {
                 createKernelVersionSelector(project, projectOptions)
-                createJdkComboBox(project, projectOptions, parentDisposable)
+
+                val kernelModeObservable = getKernelRunModeObservable(projectOptions)
+
+                if (isKernelProcessEmbeddingEnabled) {
+                    createKernelModeSelector(projectOptions, kernelModeObservable)
+                }
+
+                val showSeparateProcessSettings = kernelModeObservable.transform { it == KotlinNotebookSessionRunMode.SEPARATE_PROCESS }
+                fun Row.showForSeparateProcess(): Row = visibleIf(showSeparateProcessSettings)
+
+                createJdkComboBox(project, projectOptions, parentDisposable).showForSeparateProcess()
                 createJvmTargetForSnippetsComboBox(projectOptions)
-                createMaxHeapSizeSpinner(projectOptions)
-                createExtraJvmArgumentsField(projectOptions)
-                createEnvironmentVariablesField(projectOptions)
+                createMaxHeapSizeSpinner(projectOptions).showForSeparateProcess()
+                createExtraJvmArgumentsField(projectOptions).showForSeparateProcess()
+                createEnvironmentVariablesField(projectOptions).showForSeparateProcess()
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session")) {
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.sources"), sessionOptions::resolveSources)
@@ -66,6 +83,13 @@ object KotlinNotebookSettingsPanel {
         }
     }
 
+    private fun getKernelRunModeObservable(
+        optionsProvider: KotlinNotebookProjectOptionsProvider
+    ): ObservableMutableProperty<KotlinNotebookSessionRunMode> {
+        val modeProperty = optionsProvider::kernelRunMode
+        return AtomicProperty(modeProperty.invoke())
+    }
+
     private fun Panel.createKernelVersionSelector(project: Project, optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.version")) {
             mavenVersionComboBox(
@@ -75,6 +99,23 @@ object KotlinNotebookSettingsPanel {
                 KotlinKernelVersion.STRING_VERSION_COMPARATOR.reversed(),
             )
         }
+    }
+
+    private fun Panel.createKernelModeSelector(
+        optionsProvider: KotlinNotebookProjectOptionsProvider,
+        kernelModeObservable: ObservableMutableProperty<KotlinNotebookSessionRunMode>
+    ): ButtonsGroup {
+        return buttonsGroup(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.mode")) {
+            for (value in KotlinNotebookSessionRunMode.entries) {
+                row {
+                    radioButton(value.description, value).onChanged { button ->
+                        if (button.isSelected) {
+                            kernelModeObservable.set(value)
+                        }
+                    }
+                }
+            }
+        }.bind(optionsProvider::kernelRunMode)
     }
 
     private fun Panel.createMaxHeapSizeSpinner(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {

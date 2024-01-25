@@ -8,7 +8,6 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Version
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.resetSessionMetaInformation
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory
 import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.createConcurrentDoubleKeyMap
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
@@ -65,8 +64,7 @@ class KotlinInProcessJupyterClient(
         if (kernelName !in kernelSpecs) return null
         val kernelId = JupyterKernelId(idGenerator.generate())
 
-        // TODO: make this constructing extendable in the future
-        val kernel: KotlinKernelRunnableHandler = KernelProcessFactory.getInstance().createKernelProcess(
+        val kernel: KotlinKernelRunnableHandler = KernelRunnableFactory.createKernelRunnableHandler(
             project,
             kernelId,
             notebookPath,

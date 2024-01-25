@@ -3,23 +3,21 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.service
-import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
-import com.intellij.pom.java.LanguageLevel
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.systemIndependentPath
 import org.jetbrains.annotations.TestOnly
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelVmCommandCustomizer
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.kotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
-import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.maxBytecodeVersion
-import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
@@ -29,28 +27,17 @@ import java.nio.file.Path
 import kotlin.io.path.absolute
 import kotlin.io.path.exists
 
-
-@Service(Service.Level.APP)
-class KernelProcessFactory {
+class KernelProcessFactory : KernelRunnableFactory {
     @RequiresBackgroundThread
-    fun createKernelProcess(
+    override fun createKernelRunnableHandler(
         project: Project,
         kernelId: JupyterKernelId,
         notebookPath: Path,
-    ): KotlinKernelProcessHandler {
-        val mavenArtifactsDownloader = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
+    ): KotlinKernelProcessHandler? {
+        if (project.kotlinNotebookSessionRunMode != KotlinNotebookSessionRunMode.SEPARATE_PROCESS) return null
+
         val kernelPorts = getKernelPorts()
-        val kernelConfig = KernelConfig(
-            kernelPorts,
-            "tcp",
-            "HmacSHA256",
-            "x-x-x",
-            mavenArtifactsDownloader.getClasspathArtifacts(project),
-            null,
-            null,
-            "kotlin_notebook",
-            jvmTargetForSnippets = chooseJvmTargetForSnippets(project)?.toJavaVersion()?.toFeatureString(),
-        )
+        val kernelConfig = DefaultKotlinKernelConfigFactory(project, kernelPorts).create()
 
         val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
         val javaExecutable = options.jdk.getPath(project)?.let { javaHome ->
@@ -77,7 +64,7 @@ class KernelProcessFactory {
         val cmdArgs = kernelConfig.javaCmdLine(
             javaExecutable,
             "kernelProcessConnection",
-            mavenArtifactsDownloader.downloadArtifactBlocking(
+            KotlinNotebookMavenArtifactsDownloader.getInstance(project).downloadArtifactBlocking(
                 KotlinNotebookMavenArtifacts.KERNEL_SHADOWED,
                 getSelectedKernelVersion(project)
             ).joinToString(classpathSeparator) { it.absolutePath },
@@ -121,41 +108,4 @@ class KernelProcessFactory {
     private fun getKernelPorts(): KernelPorts {
         return _kernelPortsProvider.getKernelPorts()
     }
-
-    companion object {
-        fun getInstance() = service<KernelProcessFactory>()
-    }
-}
-
-private fun KotlinNotebookMavenArtifactsDownloader.getClasspathArtifacts(project: Project): List<File> {
-    return try {
-        downloadAndUnzipBlocking(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED_ZIP)
-    } catch (e: Exception) {
-        logger<KotlinNotebookMavenArtifactsDownloader>().warn("Unable to download artifacts zip", e)
-        downloadArtifactBlocking(
-            KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED,
-            getSelectedKernelVersion(project)
-        )
-    }
-}
-
-private fun chooseJvmTargetForSnippets(project: Project): LanguageLevel? {
-    val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
-
-    val selectedTarget = options.jvmTargetForSnippets
-    val myMaxBytecodeVersion = maxBytecodeVersion
-
-    if (selectedTarget != null) {
-        return if (myMaxBytecodeVersion != null) selectedTarget.coerceAtMost(myMaxBytecodeVersion)
-        else selectedTarget
-    }
-
-    val jdkVersion = options.jdk.getVersion(project)
-    if (jdkVersion == null) return null
-
-    if (myMaxBytecodeVersion == null) return null
-
-    if (jdkVersion.maxLanguageLevel <= myMaxBytecodeVersion) return null
-
-    return myMaxBytecodeVersion
 }
