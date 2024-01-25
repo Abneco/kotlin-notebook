@@ -67,14 +67,14 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
         )
         val zmqMessage = createZMQJupyterMessage(JupyterMessageChannel.SHELL, message.toRawMessage())
 
-        session.sendMessage(zmqMessage, object : JupyterExecutionCallbackAdapter() {
+        session.sendMessageOnPooledThread(zmqMessage, object : JupyterExecutionCallbackAdapter() {
             override fun onKernelInfoReply(message: JupyterMessage) {
                 verificationFuture.complete(true)
             }
         })
 
         return try {
-            verificationFuture.get(120, TimeUnit.SECONDS)
+            verificationFuture.get(80, TimeUnit.SECONDS)
         } catch (e: TimeoutException) {
             false
         }
