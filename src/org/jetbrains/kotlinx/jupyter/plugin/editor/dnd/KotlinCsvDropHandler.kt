@@ -6,12 +6,12 @@ import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
-import org.jetbrains.plugins.notebooks.editor.handlers.LanguageCsvDropHandler
+import org.jetbrains.plugins.notebooks.editor.handlers.LanguageTableDataFileDropHandler
 import org.jetbrains.plugins.notebooks.editor.handlers.createCsvPath
 import org.jetbrains.plugins.notebooks.editor.handlers.guessCsvSeparator
 import java.io.File
 
-class KotlinCsvDropHandler: LanguageCsvDropHandler(
+class KotlinCsvDropHandler : LanguageTableDataFileDropHandler(
     KotlinLanguage.INSTANCE, KotlinNotebookBundle.message("kotlin.jupyter.editor.dnd.csv.dataframe.command")
 ) {
     override fun generateCellsCode(editor: Editor, csvFile: File, fileIndex: Int): List<String> {
