@@ -2,10 +2,12 @@
 package org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection
 
 import com.intellij.debugger.engine.DebugProcess
+import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.debugger.engine.DebugProcessListener
 import com.intellij.debugger.engine.SuspendContext
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.debugger.JupyterDebugSessionManager
 import org.jetbrains.plugins.notebooks.jupyter.debugger.JupyterSessionPath
@@ -22,11 +24,12 @@ class NotebookDebugProcessListener(
     }
 
     override fun paused(suspendContext: SuspendContext) {
-        LOG.info("PAUSED")
+        LOG.warn("PAUSED")
         if (!isSilent) return
     }
 
     override fun resumed(suspendContext: SuspendContext?) {
+        LOG.warn("RESUMED")
         //super.resumed(suspendContext)
     }
 
@@ -37,5 +40,9 @@ class NotebookDebugProcessListener(
 
     override fun processAttached(process: DebugProcess) {
         LOG.info("Attached: ${process}")
+        if (process is DebugProcessImpl) {
+            KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
+                .prepareInternalRequests(process)
+        }
     }
 }

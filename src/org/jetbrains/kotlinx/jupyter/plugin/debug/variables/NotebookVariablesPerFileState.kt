@@ -32,7 +32,7 @@ class NotebookVariablesPerFileState(
     }
     private val notebookSessionEnvironmentProvider = NotebookSessionNoSuspensionEnvironmentProvider(virtualFile)
 
-    fun updateVariables(project: Project) {
+    fun requestVariablesUpdate(project: Project) {
         coroutineScope.async {
             project.messageBus.syncPublisher(JupyterRuntimeProcessListener.TOPIC)
                 .notebookSessionEnvironmentUpdated(virtualFile.file, null)

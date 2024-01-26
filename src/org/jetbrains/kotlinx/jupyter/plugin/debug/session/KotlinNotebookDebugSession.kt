@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.debug.session
 import com.intellij.debugger.DebuggerManagerEx
 import com.intellij.debugger.DefaultDebugEnvironment
 import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.impl.DebuggerSession
 import com.intellij.debugger.impl.PrioritizedTask
 import com.intellij.debugger.settings.DebuggerSettings
@@ -17,6 +18,9 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.impl.XDebuggerManagerImpl
 import kotlinx.coroutines.CoroutineScope
+import org.jetbrains.kotlinx.jupyter.plugin.debug.breakpoint.KernelSyntheticMethodBreakpoint
+import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookDebugEventsHandler
+import org.jetbrains.kotlinx.jupyter.plugin.debug.session.names.KotlinNotebookSessionInternalNamesProvider
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.SessionRelatedInfo
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectionUtility
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectionUtility.attachDebuggerCreateSession
@@ -61,8 +65,27 @@ class KotlinNotebookDebugSession(
             }
         }
     }
+    @Volatile
+    var evaluationContext: EvaluationContextImpl? = null
+    private val eventsHandler = NotebookDebugEventsHandler(project, virtualFile)
+
+    private val kernelThreadBreakpoint = KernelSyntheticMethodBreakpoint(
+        project,
+        KotlinNotebookSessionInternalNamesProvider.notebookClassName,
+        KotlinNotebookSessionInternalNamesProvider.notebookDebugMethodName
+    ) { command, event ->
+        val suspendContext = command.suspendContext
+        if (suspendContext != null) {
+            evaluationContext = EvaluationContextImpl(suspendContext, suspendContext.frameProxy)
+        }
+        eventsHandler.handleInternalDebugMethodEntryEvent(command, event)
+    }
+
     // make it possible to update ports
     val targetDebugPort: Int? = portProvider()
+    fun prepareInternalRequests(debugProcess: DebugProcessImpl) {
+        kernelThreadBreakpoint.createRequest(debugProcess)
+    }
 
     private val debugConnectionHolder = NotebookDebugConnectionHolder(
         virtualFile,
