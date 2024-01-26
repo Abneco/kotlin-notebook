@@ -7,17 +7,20 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
 import org.jetbrains.plugins.notebooks.editor.handlers.LanguageTableDataFileDropHandler
+import org.jetbrains.plugins.notebooks.editor.handlers.TableDataFileExtensions
 import org.jetbrains.plugins.notebooks.editor.handlers.createCsvPath
 import org.jetbrains.plugins.notebooks.editor.handlers.guessCsvSeparator
 import java.io.File
 
 class KotlinCsvDropHandler : LanguageTableDataFileDropHandler(
-    KotlinLanguage.INSTANCE, KotlinNotebookBundle.message("kotlin.jupyter.editor.dnd.csv.dataframe.command")
+    KotlinLanguage.INSTANCE,
+    KotlinNotebookBundle.message("kotlin.jupyter.editor.dnd.csv.dataframe.command"),
+    setOf(TableDataFileExtensions.EXTENSION_CSV)
 ) {
     override fun generateCellsCode(editor: Editor, csvFile: File, fileIndex: Int): List<String> {
         val csvSeparator = guessCsvSeparator(csvFile)
         val separatorArg = csvSeparator?.let { separator ->
-            val escapedSeparator = when(separator) {
+            val escapedSeparator = when (separator) {
                 '\t' -> "\\t"
                 else -> separator
             }
