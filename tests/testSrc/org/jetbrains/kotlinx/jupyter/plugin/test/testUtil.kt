@@ -8,6 +8,7 @@ import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
@@ -23,7 +24,7 @@ import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookCreateAction
-import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionTest
+import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
@@ -211,7 +212,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
     }
 
     fun executeCell(cellNumber: Int): Unit = runBlocking {
-        KotlinNotebookExecutionTest.log.debug("Executing cell #$cellNumber...")
+        logger<KotlinNotebookExecutionBaseTestCase>().debug("Executing cell #$cellNumber...")
         val messages = ReceivedMessagesBuilder()
         val cell = notebookCells[cellNumber]
         executionManager.submitTask(readAction {

@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
@@ -124,10 +125,14 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
             get() = cellOutputs.size
 
         override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) {
-            KotlinNotebookExecutionTest.log.debug("Checking outputs for cell #$cellNum")
+            LOG.debug("Checking outputs for cell #$cellNum")
             val expectedOutputs = cellOutputs[cellNum].map { it.toPrettyString() }
             val actualOutputs = messages.outputs.map { it.messageContent["data"].toPrettyString() }
             Assertions.assertIterableEquals(expectedOutputs, actualOutputs)
         }
+    }
+
+    companion object {
+        private val LOG = logger<KotlinNotebookExecutionBaseTestCase>()
     }
 }

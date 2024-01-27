@@ -9,7 +9,7 @@ import com.intellij.ui.dsl.builder.Row
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import kotlin.reflect.KMutableProperty0
 
-private val runtimeJavaSdkVersion: JavaSdkVersion? by lazy {
+val runtimeJavaSdkVersion: JavaSdkVersion? by lazy {
     val runtimeVersion = Runtime.version()
     JavaSdkVersion.fromVersionString(runtimeVersion.toString())
 }
