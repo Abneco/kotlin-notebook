@@ -289,7 +289,7 @@
     <extensions defaultExtensionNs="org.jetbrains.kotlinx.jupyter.plugin">
         <kernel.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>
         <kernel.kernelRunnableFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory"/>
-        <!--<kernel.kernelRunnableFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory"/>-->
+        <kernel.kernelRunnableFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory"/>
     </extensions>
 
     <actions resource-bundle="messages/KotlinNotebookBundle">
