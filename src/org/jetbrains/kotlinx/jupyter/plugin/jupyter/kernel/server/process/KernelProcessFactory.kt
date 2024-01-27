@@ -40,12 +40,7 @@ class KernelProcessFactory : KernelRunnableFactory {
         val kernelConfig = DefaultKotlinKernelConfigFactory(project, kernelPorts).create()
 
         val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
-        val javaExecutable = options.jdk.getPath(project)?.let { javaHome ->
-            val binDir = File(javaHome).absoluteFile.resolve("bin")
-            val javaExec = if (SystemInfo.isWindows) binDir.resolve("java.exe")
-            else binDir.resolve("java")
-            javaExec.absolutePath
-        } ?: "java"
+        val javaExecutable = getJavaExecutable(project, options)
 
         /** There could be no physical working directory if the kernel is started from test
         and the notebook file is in i.e. [com.intellij.openapi.vfs.ex.temp.TempFileSystem] */
@@ -92,6 +87,15 @@ class KernelProcessFactory : KernelRunnableFactory {
             })
             startNotify()
         }
+    }
+
+    private fun getJavaExecutable(project: Project, options: KotlinNotebookProjectOptionsProvider): String {
+        val javaHome: String? = options.jdk.getPath(project) ?: System.getenv("JAVA_HOME")
+        if (javaHome == null) return "java"
+
+        val binDir = File(javaHome).absoluteFile.resolve("bin")
+        val javaExec =  binDir.resolve(if (SystemInfo.isWindows) "java.exe" else "java")
+        return javaExec.absolutePath
     }
 
     private var _kernelPortsProvider: KernelPortsProvider = KernelPortsProvider {
