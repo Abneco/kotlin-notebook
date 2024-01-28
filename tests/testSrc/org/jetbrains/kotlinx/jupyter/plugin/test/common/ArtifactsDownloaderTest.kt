@@ -7,7 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
-import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersionTest
+import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -22,7 +22,7 @@ class ArtifactsDownloaderTest: BasePlatformTestCase() {
 
     override fun setUp() {
         super.setUp()
-        setKernelVersion("0.12.0-72")
+        setKernelVersion("0.12.0-117")
     }
 
     override fun runInDispatchThread() = false
@@ -30,14 +30,14 @@ class ArtifactsDownloaderTest: BasePlatformTestCase() {
     @Test
     fun `there should be 5 artifacts`() {
         val artifacts = KotlinNotebookMavenArtifacts.all()
-        UsefulTestCase.assertSize(5, artifacts)
+        UsefulTestCase.assertSize(6, artifacts)
     }
 
     @Test
     fun `all artifacts should consist of a single JAR`() {
         runBlocking {
             val artifacts = KotlinNotebookMavenArtifacts.all()
-            val version = getSelectedKernelVersionTest(project)
+            val version = getSelectedKernelVersion(project)
             artifacts.forEach { artifact ->
                 val jars = downloader.downloadArtifactAsync(artifact, version)
                 UsefulTestCase.assertSize(1, jars)
@@ -48,7 +48,7 @@ class ArtifactsDownloaderTest: BasePlatformTestCase() {
     @Test
     fun `blocking mode should work the same way`() {
         val artifacts = KotlinNotebookMavenArtifacts.all()
-        val version = getSelectedKernelVersionTest(project)
+        val version = getSelectedKernelVersion(project)
         artifacts.forEach { artifact ->
             val jars = downloader.downloadArtifactBlocking(artifact, version)
             UsefulTestCase.assertSize(1, jars)

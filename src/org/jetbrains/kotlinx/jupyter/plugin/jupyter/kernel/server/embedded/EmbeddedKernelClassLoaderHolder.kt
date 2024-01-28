@@ -1,0 +1,38 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
+
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import com.intellij.util.concurrency.ThreadingAssertions
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
+import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
+import java.net.URLClassLoader
+import java.util.concurrent.ConcurrentHashMap
+
+@Service(Service.Level.PROJECT)
+class EmbeddedKernelClassLoaderHolder(private val project: Project) {
+    private val classLoaders = ConcurrentHashMap<String, ClassLoader>()
+
+    @RequiresBackgroundThread
+    private fun loadClassLoader(kernelVersion: String): ClassLoader {
+        ThreadingAssertions.assertBackgroundThread()
+        val downloader = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
+        val classpath = downloader.downloadArtifactBlocking(KotlinNotebookMavenArtifacts.EMBEDDED_KERNEL, kernelVersion)
+        return URLClassLoader(
+            classpath.map { file -> file.toURI().toURL() }.toTypedArray(),
+            EmbeddedKernelClassLoaderHolder::class.java.classLoader
+        )
+    }
+
+    fun getClassLoader(kernelVersion: String): ClassLoader {
+        return classLoaders.getOrPut(kernelVersion) {
+            loadClassLoader(kernelVersion)
+        }
+    }
+
+    companion object {
+        fun getInstance(project: Project) = project.service<EmbeddedKernelClassLoaderHolder>()
+    }
+}

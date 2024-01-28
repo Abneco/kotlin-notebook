@@ -15,6 +15,7 @@ object KotlinNotebookMavenArtifacts {
     val SCRIPT_CLASSPATH_SHADOWED_ZIP = jupyterKernelLibrary("script-classpath-shadowed", ArtifactKind.ZIP).add()
     val SCRIPT_CLASSPATH_SHADOWED_SOURCES = jupyterKernelLibrary("script-classpath-shadowed", ArtifactKind.SOURCES).add()
     val IDE_CLASSPATH_SHADOWED = jupyterKernelLibrary("ide-classpath-shadowed").add()
+    val EMBEDDED_KERNEL = jupyterKernelLibrary("embeddable-kernel").add()
 
     fun all(): List<ArtifactDescriptionWithKind> = artifactDescriptions
 }

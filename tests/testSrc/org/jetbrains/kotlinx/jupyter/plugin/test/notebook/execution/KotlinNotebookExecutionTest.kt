@@ -4,8 +4,10 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution
 import junit.framework.TestCase
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.kotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelPortsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
 import org.jetbrains.kotlinx.jupyter.startup.create
 import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
@@ -56,7 +58,15 @@ class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
                 ),
                 listOf()
             )))
-            TestCase.assertTrue("Kernel restart was not attempted, attempts count: $attemptCount", attemptCount >= 2)
+
+            when(project.kotlinNotebookSessionRunMode) {
+                KotlinNotebookSessionRunMode.SEPARATE_PROCESS -> {
+                    TestCase.assertTrue("Kernel restart was not attempted, attempts count: $attemptCount", attemptCount >= 2)
+                }
+                KotlinNotebookSessionRunMode.IDE_PROCESS -> {
+                    TestCase.assertTrue("Bound socket shouldn't be a problem for embedded kernel, but $attemptCount restart attempt(s) were made", attemptCount == 0)
+                }
+            }
         } finally {
             openedSocket.close()
             kernelProcessFactory.setKernelPortsProvider(defaultPortsProvider)

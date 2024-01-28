@@ -36,7 +36,7 @@ class EmbeddedKotlinKernelSession(
             kernelConfig,
             replConfig
         )
-        createInProcessMessageHandler(replSettings, socketsManager)
+        createEmbeddedMessageHandler(project, replSettings, socketsManager)
     }
 
 

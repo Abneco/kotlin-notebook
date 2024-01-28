@@ -3,16 +3,12 @@ package org.jetbrains.kotlinx.jupyter.plugin.settings
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
-import org.jetbrains.annotations.TestOnly
 import java.util.*
 import kotlin.reflect.KProperty
 
-internal fun getSelectedKernelVersion(project: Project): String {
+fun getSelectedKernelVersion(project: Project): String {
     return KotlinNotebookProjectOptionsProvider.getInstance(project).kernelVersion
 }
-
-@TestOnly
-fun getSelectedKernelVersionTest(project: Project) = getSelectedKernelVersion(project)
 
 internal class RegistryFlagDelegate(private val name: String, private val defaultValue: Boolean) {
     operator fun getValue(thisRef: Any?, property: KProperty<*>): Boolean {
