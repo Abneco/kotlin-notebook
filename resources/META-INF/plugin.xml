@@ -289,6 +289,9 @@
         <csvDropHandler
                 id="KotlinCsvDropHandler"
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.dnd.KotlinCsvDropHandler"/>
+        <csvDropHandler
+                id="KotlinXlsDropHandler"
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.dnd.KotlinXlsDropHandler"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlinx.jupyter.plugin">

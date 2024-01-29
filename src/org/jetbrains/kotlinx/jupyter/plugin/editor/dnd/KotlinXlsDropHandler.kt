@@ -9,27 +9,21 @@ import org.jetbrains.plugins.notebooks.editor.handlers.LanguageTableDataFileDrop
 import org.jetbrains.plugins.notebooks.editor.handlers.TableDataFileExtensions
 import org.jetbrains.plugins.notebooks.editor.handlers.createDataframeName
 import org.jetbrains.plugins.notebooks.editor.handlers.createFilePath
-import org.jetbrains.plugins.notebooks.editor.handlers.guessCsvSeparator
 import java.io.File
 
-class KotlinCsvDropHandler : LanguageTableDataFileDropHandler(
+class KotlinXlsDropHandler : LanguageTableDataFileDropHandler(
     KotlinLanguage.INSTANCE,
-    KotlinNotebookBundle.message("kotlin.jupyter.editor.dnd.csv.dataframe.command"),
-    setOf(TableDataFileExtensions.CSV, TableDataFileExtensions.TSV)
+    KotlinNotebookBundle.message("kotlin.jupyter.editor.dnd.xls.dataframe.command"),
+    setOf(
+        TableDataFileExtensions.XLS,
+        TableDataFileExtensions.XLSX,
+        TableDataFileExtensions.XLSM
+    )
 ) {
     override fun generateCellsCode(editor: Editor, tableDataFile: File, fileIndex: Int): List<String> {
-        val csvSeparator = guessCsvSeparator(tableDataFile)
-        val separatorArg = csvSeparator?.let { separator ->
-            val escapedSeparator = when (separator) {
-                '\t' -> "\\t"
-                else -> separator
-            }
-            ", delimiter = '$escapedSeparator'"
-        } ?: ""
-
-        val csvPath = createFilePath(tableDataFile, editor)
+        val xlsPath = createFilePath(tableDataFile, editor)
         val dfName =
             createDataframeName(editor.project, tableDataFile, LanguageNamesValidation.INSTANCE.forLanguage(KotlinLanguage.INSTANCE))
-        return generateCode("DataFrame.readCSV(\"$csvPath\"$separatorArg)", dfName, editor, fileIndex)
+        return generateCode("DataFrame.readExcel(\"$xlsPath\")", dfName, editor, fileIndex)
     }
 }
