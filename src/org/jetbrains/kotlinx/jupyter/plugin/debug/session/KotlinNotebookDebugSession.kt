@@ -7,6 +7,7 @@ import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.impl.DebuggerSession
 import com.intellij.debugger.impl.PrioritizedTask
+import com.intellij.debugger.jdi.StackFrameProxyImpl
 import com.intellij.debugger.settings.DebuggerSettings
 import com.intellij.execution.configurations.RemoteConnection
 import com.intellij.openapi.Disposable
@@ -65,6 +66,10 @@ class KotlinNotebookDebugSession(
             }
         }
     }
+
+    val currentStackFrameProxy: StackFrameProxyImpl?
+        get() = currentProcess?.debuggerContext?.frameProxy
+
     @Volatile
     var evaluationContext: EvaluationContextImpl? = null
     private val eventsHandler = NotebookDebugEventsHandler(project, virtualFile)

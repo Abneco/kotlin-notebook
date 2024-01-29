@@ -1,15 +1,16 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.debug.frame
 
-import com.intellij.debugger.engine.JavaValue
+import com.intellij.debugger.engine.JavaDebuggerEvaluator
+import com.intellij.debugger.engine.JavaStackFrame
+import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.impl.PrioritizedTask
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.xdebugger.XSourcePosition
+import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
 import com.intellij.xdebugger.frame.XCompositeNode
 import com.intellij.xdebugger.frame.XStackFrame
-import com.intellij.xdebugger.impl.ui.tree.nodes.XStackFrameNode
 import com.sun.jdi.ClassType
 import com.sun.jdi.Field
 import com.sun.jdi.ObjectReference
@@ -31,7 +32,16 @@ class KotlinNotebookVariablesFrame(
             val hashMapNodeClassType: ClassType
         )
     }
+    private var evaluator: XDebuggerEvaluator? = null
+
     override fun getEqualityObject(): Any? = STACK_FRAME_EQUALITY_OBJECT
+
+    override fun getEvaluator(): XDebuggerEvaluator? {
+        if (evaluator == null) {
+            evaluator = JavaDebuggerEvaluator(debugSession.debuggerSession?.process, debugSession.currentStackFrameProxy?.stackFrame as? JavaStackFrame)
+        }
+        return evaluator
+    }
 
     override fun getSourcePosition(): XSourcePosition? = sourcePosition
 
@@ -58,37 +68,17 @@ class KotlinNotebookVariablesFrame(
         debugProcess.managerThread.invoke(PrioritizedTask.Priority.HIGH) {
             try {
                 val virtualMachine = debugProcess.virtualMachineProxy
-                //val notebookClass = virtualMachine.classesByNameProvider.get("org.jetbrains.kotlinx.jupyter.NotebookImpl").firstOrNull() ?: return@invoke
-                // todo: make it field first
-                ////val getter = notebookClass.methodsByName("getVariablesState").firstOrNull() ?: return@invoke
+                val suspendContext = debugProcess.suspendManager.pausedContexts.firstOrNull() ?: return@invoke
+                val evaluationContext = EvaluationContextImpl(suspendContext, suspendContext.frameProxy)
 
                 node.addChildren(
-                    variablesService.representVariablesStateAsXContainer(virtualMachine),
+                    variablesService.representVariablesStateAsXContainer(virtualMachine, evaluationContext),
                     true
                 )
             } catch (ex: Exception) {
                 LOG.error("Error during variables state computation: ", ex)
             } finally {
-                if (debugSession.debuggerSession?.isPaused == true) {
-                    debugProcess.managerThread.schedule(PrioritizedTask.Priority.HIGH) {
-                        runInEdt {
-                            for (child in (node as XStackFrameNode).loadedChildren) {
-                                val container = child.valueContainer as? JavaValue ?: continue
-
-                                if (container.descriptor.isExpandable) {
-                                    child.startComputingChildren()
-                                }
-                            }
-
-
-                            debugProcess.managerThread.schedule(PrioritizedTask.Priority.LOWEST) {
-                                runInEdt {
-                                    debugSession.debuggerSession?.xDebugSession?.resume()
-                                }
-                            }
-                        }
-                    }
-                }
+                LOG.warn("Is paused: ${debugSession.debuggerSession?.isPaused == true}")
             }
         }
 

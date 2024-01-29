@@ -2,11 +2,13 @@
 package org.jetbrains.kotlinx.jupyter.plugin.debug.variables
 
 import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.debugger.engine.JavaValue
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.debugger.impl.DebuggerContextImpl
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.xdebugger.frame.XValueChildrenList
@@ -27,6 +29,10 @@ class NotebookVariablesPerFileState(
     private val coroutineScope: CoroutineScope,
     parentDisposable: Disposable
 ) : NotebookAbstractSessionEnvironmentExplorer, Disposable {
+    companion object {
+        private val LOG = thisLogger()
+    }
+
     init {
         Disposer.register(parentDisposable, this)
     }
@@ -47,18 +53,17 @@ class NotebookVariablesPerFileState(
         return notebookSessionEnvironmentProvider.variableStateReferenceProvider(virtualMachineProxy)
     }
 
-    override fun representVariablesStateAsXContainer(virtualMachineProxy: VirtualMachineProxy): XValueChildrenList {
+    override fun representVariablesStateAsXContainer(virtualMachineProxy: VirtualMachineProxy, evaluationContext: EvaluationContextImpl?): XValueChildrenList {
         fun XValueChildrenList.addInternalVariables(
             variablesStateSize: Int,
             accessorData: KotlinNotebookVariablesFrame.Companion.VariablesStateAccessorData,
-            evaluationContext: EvaluationContextImpl?,
             debuggerContext: DebuggerContextImpl
         ) {
             var mapEntryReference = accessorData.mapEntryReference
             val nextEntryField = accessorData.nextEntryFieldAccessor
             val keyField = accessorData.hashMapNodeClassType.fieldByName("key")
             val valueField = accessorData.hashMapNodeClassType.fieldByName("value")
-            val manager = debuggerContext.debugProcess?.xdebugProcess?.nodeManager
+            val nodeManager = debuggerContext.debugProcess?.xdebugProcess?.nodeManager
 
 
             for (i in 0 until variablesStateSize) {
@@ -71,17 +76,33 @@ class NotebookVariablesPerFileState(
 
                 if (variableStateReference == null) continue
 
-                add(keyReference.value(),
-                    NotebookVariableFieldValue(null,
-                                               NotebookVariableStateDescriptor(
-                                                   debuggerContext.debuggerSession!!,
-                                                   virtualFile,
-                                                   virtualMachineProxy.debugProcess.project, variableStateReference, fieldAccessor,
-                                                   variableStateReference.getValue(fieldAccessor)
-                                               ),
-                                               debuggerContext.debugProcess!!, manager, false
+                val xValue = if (evaluationContext != null) {
+                    JavaValue.create(
+                        null,
+                        nodeManager?.getFieldDescriptor(
+                            null,
+                            variableStateReference,
+                            fieldAccessor
+                        )!!,
+                        evaluationContext,
+                        nodeManager,
+                        false
                     )
-                )
+                } else {
+                    NotebookVariableFieldValue(
+                        null,
+                        NotebookVariableStateDescriptor(
+                           debuggerContext.debuggerSession!!,
+                           virtualFile,
+                           virtualMachineProxy.debugProcess.project, variableStateReference, fieldAccessor,
+                           variableStateReference.getValue(fieldAccessor)
+                        ),
+                        debuggerContext.debugProcess!!, nodeManager, false
+                    )
+                }
+
+                add(keyReference.value(), xValue)
+
                 (mapEntryReference.getValue(nextEntryField) as? ObjectReference?)?.let {
                     mapEntryReference = it
                 }
@@ -110,7 +131,6 @@ class NotebookVariablesPerFileState(
                 KotlinNotebookVariablesFrame.Companion.VariablesStateAccessorData(
                     nextEntryFieldAccessor, mapEntryReference, hashMapNodeType
                 ),
-                null,
                 processImpl.debuggerContext
             )
         }
