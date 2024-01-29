@@ -15,7 +15,7 @@ import java.io.File
 class KotlinCsvDropHandler : LanguageTableDataFileDropHandler(
     KotlinLanguage.INSTANCE,
     KotlinNotebookBundle.message("kotlin.jupyter.editor.dnd.csv.dataframe.command"),
-    setOf(TableDataFileExtensions.EXTENSION_CSV)
+    setOf(TableDataFileExtensions.CSV)
 ) {
     override fun generateCellsCode(editor: Editor, csvFile: File, fileIndex: Int): List<String> {
         val csvSeparator = guessCsvSeparator(csvFile)
