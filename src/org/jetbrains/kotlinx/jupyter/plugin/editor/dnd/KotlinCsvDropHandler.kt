@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.editor.dnd
 
+import com.intellij.lang.LanguageNamesValidation
 import com.intellij.openapi.editor.Editor
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
@@ -9,6 +10,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
 import org.jetbrains.plugins.notebooks.editor.handlers.LanguageTableDataFileDropHandler
 import org.jetbrains.plugins.notebooks.editor.handlers.TableDataFileExtensions
 import org.jetbrains.plugins.notebooks.editor.handlers.createCsvPath
+import org.jetbrains.plugins.notebooks.editor.handlers.createDataframeName
 import org.jetbrains.plugins.notebooks.editor.handlers.guessCsvSeparator
 import java.io.File
 
@@ -28,11 +30,12 @@ class KotlinCsvDropHandler : LanguageTableDataFileDropHandler(
         } ?: ""
 
         val csvPath = createCsvPath(csvFile, editor)
+        val dfName = createDataframeName(editor.project, csvFile, LanguageNamesValidation.INSTANCE.forLanguage(KotlinLanguage.INSTANCE))
         return listOfNotNull(
             "%use dataframe\n".takeIf { fileIndex == 0 && !isDataFrameInClasspath(editor) },
             """
-                val df = DataFrame.readCSV("$csvPath"$separatorArg)
-                df
+                val $dfName = DataFrame.readCSV("$csvPath"$separatorArg)
+                $dfName
             """.trimIndent()
         )
     }
