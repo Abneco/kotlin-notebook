@@ -9,15 +9,15 @@ import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerServ
 import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
 import org.jetbrains.plugins.notebooks.editor.handlers.LanguageTableDataFileDropHandler
 import org.jetbrains.plugins.notebooks.editor.handlers.TableDataFileExtensions
-import org.jetbrains.plugins.notebooks.editor.handlers.createCsvPath
 import org.jetbrains.plugins.notebooks.editor.handlers.createDataframeName
+import org.jetbrains.plugins.notebooks.editor.handlers.createFilePath
 import org.jetbrains.plugins.notebooks.editor.handlers.guessCsvSeparator
 import java.io.File
 
 class KotlinCsvDropHandler : LanguageTableDataFileDropHandler(
     KotlinLanguage.INSTANCE,
     KotlinNotebookBundle.message("kotlin.jupyter.editor.dnd.csv.dataframe.command"),
-    setOf(TableDataFileExtensions.CSV)
+    setOf(TableDataFileExtensions.CSV, TableDataFileExtensions.TSV)
 ) {
     override fun generateCellsCode(editor: Editor, csvFile: File, fileIndex: Int): List<String> {
         val csvSeparator = guessCsvSeparator(csvFile)
@@ -29,7 +29,7 @@ class KotlinCsvDropHandler : LanguageTableDataFileDropHandler(
             ", delimiter = '$escapedSeparator'"
         } ?: ""
 
-        val csvPath = createCsvPath(csvFile, editor)
+        val csvPath = createFilePath(csvFile, editor)
         val dfName = createDataframeName(editor.project, csvFile, LanguageNamesValidation.INSTANCE.forLanguage(KotlinLanguage.INSTANCE))
         return listOfNotNull(
             "%use dataframe\n".takeIf { fileIndex == 0 && !isDataFrameInClasspath(editor) },
