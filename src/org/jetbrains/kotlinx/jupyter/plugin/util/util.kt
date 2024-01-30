@@ -22,7 +22,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.PsiManager
 import com.intellij.psi.util.parentOfType
-import com.intellij.testFramework.LightVirtualFile
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.KtFile
@@ -31,7 +30,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.find
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
-import org.jetbrains.plugins.notebooks.jupyter.NOTEBOOK_LANGUAGE
+import org.jetbrains.plugins.notebooks.jupyter.NotebookMetadataLanguageProvider
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
@@ -40,22 +39,25 @@ import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 const val JUPYTER_NOTEBOOK_EXTENSION = "ipynb"
 const val DEFAULT_KOTLIN_KERNEL_NAME = "kotlin"
 
-val VirtualFile?.isKotlinNotebook: Boolean get() {
-    if (this == null || extension != JUPYTER_NOTEBOOK_EXTENSION) return false
-    return notebookLanguage === KotlinLanguage.INSTANCE
-}
+val VirtualFile?.isKotlinNotebook: Boolean
+    get() {
+        if (this == null || extension != JUPYTER_NOTEBOOK_EXTENSION) return false
+        return notebookLanguage === KotlinLanguage.INSTANCE
+    }
 
-val Editor.isKotlinNotebook: Boolean get() {
-    if (this !is EditorEx) return false
-    return FileDocumentManager.getInstance().getFile(document).isKotlinNotebook
-}
+val Editor.isKotlinNotebook: Boolean
+    get() {
+        if (this !is EditorEx) return false
+        return FileDocumentManager.getInstance().getFile(document).isKotlinNotebook
+    }
 
-val KtFile.isInsideKotlinNotebook: Boolean get() {
-    val vFile = virtualFile ?: return false
-    if (vFile !is VirtualFileWindow) return false
+val KtFile.isInsideKotlinNotebook: Boolean
+    get() {
+        val vFile = virtualFile ?: return false
+        if (vFile !is VirtualFileWindow) return false
 
-    return vFile.delegate.isKotlinNotebook
-}
+        return vFile.delegate.isKotlinNotebook
+    }
 
 fun isKotlinKernelName(kernelName: String?): Boolean {
     return kernelName?.toLowerCaseAsciiOnly() == DEFAULT_KOTLIN_KERNEL_NAME
@@ -65,28 +67,22 @@ fun JupyterNotebookSession.isKotlinNotebookSession(): Boolean {
     return isKotlinKernelName(kernelName)
 }
 
-private val VirtualFile.notebookLanguage: Language? get(){
-    takeIfBacked(this)?.let {
-        return it.notebook.language
-    }
+private val VirtualFile.notebookLanguage: Language?
+    get() {
+        takeIfBacked(this)?.let {
+            return it.notebook.language
+        }
+        val cachedLanguage = NotebookMetadataLanguageProvider.Utils.getNotebookLanguage(this)
+        if (cachedLanguage != null)
+            return cachedLanguage
 
-    return if (this is LightVirtualFile) {
-        // It's copy of either notebook or origin file being modified
-        val notebookFile =
-            originalFile?.let(BackedNotebookVirtualFile::takeIfBacked)
-            ?: (originalFile as? LightVirtualFile)?.originalFile?.let(BackedNotebookVirtualFile::takeIfBacked)
-        notebookFile?.notebook?.language
-            ?: originalFile?.getUserData(NOTEBOOK_LANGUAGE)
-            ?: getLanguageFromOriginalFile(this)
+        val calculatedLanguage = getLanguageFromOriginalFile(this)
+        if (calculatedLanguage != null) {
+            NotebookMetadataLanguageProvider.Utils.setNotebookLanguage(this, calculatedLanguage)
+        }
+
+        return calculatedLanguage
     }
-    else {
-        // It's origin file
-        getUserData(NOTEBOOK_LANGUAGE)
-            ?: getLanguageFromOriginalFile(this)?.let { language ->
-                language.also { putUserData(NOTEBOOK_LANGUAGE, it) }
-            }
-    }
-}
 
 private fun getLanguageFromOriginalFile(file: VirtualFile): Language? {
     return try {
