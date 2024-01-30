@@ -93,6 +93,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
                     )
                 }
             }
+            myFixture.project.waitIndexingComplete()
         }
 
     }
