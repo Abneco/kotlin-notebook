@@ -18,7 +18,7 @@ import com.sun.jdi.StringReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.NotebookVariableStateDescriptor
+import org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.NotebookFieldDescriptorNoSuspension
 import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.KotlinNotebookVariablesFrame
 import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.NotebookVariableFieldValue
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -90,14 +90,14 @@ class NotebookVariablesPerFileState(
                     )
                 } else {
                     NotebookVariableFieldValue(
-                        null,
-                        NotebookVariableStateDescriptor(
+                      null,
+                      NotebookFieldDescriptorNoSuspension(
                            debuggerContext.debuggerSession!!,
                            virtualFile,
                            virtualMachineProxy.debugProcess.project, variableStateReference, fieldAccessor,
                            variableStateReference.getValue(fieldAccessor)
                         ),
-                        debuggerContext.debugProcess!!, nodeManager, false
+                      debuggerContext.debugProcess!!, nodeManager, false
                     )
                 }
 

@@ -166,6 +166,9 @@
 
         <lang.parserDefinition language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.meta.grammar.JKTMetaParserDefinition"/>
 
+        <xdebugger.debuggerSupport implementation="org.jetbrains.kotlinx.jupyter.plugin.debug.actions.KotlinNotebookDebuggerSupport"/>
+        <debugger.sourcePositionProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookFieldSourcePositionProvider" order="first"/>
+
         <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookReferencesTypeHintsProvider" language="Jupyter"/>
         <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookLambdaTypeHintsProvider" language="Jupyter"/>
         <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookValuesHintProvider" language="Jupyter"/>
@@ -330,5 +333,14 @@
         </group>
         <action id="RestartKotlinNotebookHighlighting"
                 class="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.RestartKotlinNotebookHighlightingAction"/>
+
+
+<!--        <action id="EvaluateExpressionNb" class="org.jetbrains.kotlinx.jupyter.plugin.debug.actions.evaluate.NotebookEvaluateVariablesAction"
+                >
+        <add-to-group group-id="DebuggingActionsGroup" relative-to-action="EvaluateExpression" anchor="after"/>
+        <add-to-group group-id="XDebugger.ToolWindow.TopToolbar" relative-to-action="EvaluateExpression" anchor="after"/>
+        <add-to-group group-id="XDebugger.ToolWindow.TopToolbar3" relative-to-action="EvaluateExpression" anchor="after"/>
+
+        </action>-->
     </actions>
 </idea-plugin>

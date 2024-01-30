@@ -2,8 +2,10 @@
 package org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.api
 
 import com.intellij.debugger.SourcePosition
-import org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.NotebookVariableStateDescriptor
+import com.intellij.debugger.ui.tree.FieldDescriptor
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 
 fun interface DeclaredVariableSourcePositionProvider {
-    fun resolveTo(descriptor: NotebookVariableStateDescriptor): SourcePosition?
+    fun resolveTo(project: Project, virtualFile: VirtualFile?, descriptor: FieldDescriptor): SourcePosition?
 }

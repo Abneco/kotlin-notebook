@@ -7,6 +7,7 @@ import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.openapi.project.Project
 import com.sun.jdi.event.LocatableEvent
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.isShouldShowNotebookVariables
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookSessionVariablesService
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
@@ -35,6 +36,7 @@ class NotebookDebugEventsHandler(
 
     override fun handleInternalDebugMethodEntryEvent(command: SuspendContextCommandImpl, event: LocatableEvent?) {
         val context = command.suspendContext ?: return
+        if (!project.isShouldShowNotebookVariables) return
         NotebookSessionVariablesService.getForFile(project, virtualFile).requestVariablesUpdate(project)
     }
 }

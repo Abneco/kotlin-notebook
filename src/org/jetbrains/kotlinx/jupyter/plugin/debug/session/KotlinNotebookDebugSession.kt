@@ -37,7 +37,6 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeP
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
 import java.util.concurrent.ExecutionException
-import java.util.concurrent.atomic.AtomicReference
 
 
 class KotlinNotebookDebugSession(
@@ -47,26 +46,6 @@ class KotlinNotebookDebugSession(
     private val coroutineScope: CoroutineScope,
     private val portProvider: () -> Int?
 ): Disposable {
-    internal enum class PortMode {
-        GET, UPDATE
-    }
-
-    private inner class PortOnDemandSupplier {
-        val modeState = AtomicReference<PortMode>(PortMode.GET)
-        private var currentPort = portProvider()
-
-        fun getPort(): Int? {
-            if (modeState.get() == PortMode.GET) return currentPort
-            while (true) {
-                if (modeState.get() == PortMode.GET) return currentPort
-                if (modeState.compareAndSet(PortMode.UPDATE, PortMode.GET)) {
-                    currentPort = portProvider()
-                    return currentPort
-                }
-            }
-        }
-    }
-
     val currentStackFrameProxy: StackFrameProxyImpl?
         get() = currentProcess?.debuggerContext?.frameProxy
 
@@ -86,8 +65,15 @@ class KotlinNotebookDebugSession(
         eventsHandler.handleInternalDebugMethodEntryEvent(command, event)
     }
 
-    // make it possible to update ports
-    val targetDebugPort: Int? = portProvider()
+    @Volatile
+    private var _debugPort: Int? = portProvider()
+    val targetDebugPort: Int? = _debugPort
+
+    fun providePortOnKernelStartUp(): Int? {
+        _debugPort = portProvider()
+        return targetDebugPort
+    }
+
     fun prepareInternalRequests(debugProcess: DebugProcessImpl) {
         kernelThreadBreakpoint.createRequest(debugProcess)
     }
@@ -104,7 +90,9 @@ class KotlinNotebookDebugSession(
             NotebookCodeSnippetsChangeListener.TOPIC,
             object : NotebookCodeSnippetsChangeListener {
                 override fun scriptsClassesChanged(file: BackedNotebookVirtualFile) {
-                    messageBus.syncPublisher(JupyterRuntimeProcessListener.TOPIC)
+                  if (debuggerSession?.isConnecting == true) return
+
+                  messageBus.syncPublisher(JupyterRuntimeProcessListener.TOPIC)
                         .notebookSessionEnvironmentUpdated(virtualFile.file, null)
                 }
             }
@@ -123,9 +111,6 @@ class KotlinNotebookDebugSession(
     val debuggerSession: DebuggerSession?
         get() = debugConnectionHolder.myDebugSession
 
-    val sessionRelatedInfo: SessionRelatedInfo
-        get() = debugConnectionHolder.sessionRelatedInfo
-
     private var isSilent: Boolean = false
 
     private val currentProcess: DebugProcessImpl?
@@ -135,12 +120,6 @@ class KotlinNotebookDebugSession(
 
     val isLiveSession: Boolean
         get() = currentXSession != null
-
-    private fun updateCurrentSession(xDebugSession: XDebugSession?) {
-        if (xDebugSession == null) {
-            debugConnectionHolder.clearKnownConnection(project)
-        }
-    }
 
     fun trySuspend() {
         debuggerSession?.process?.managerThread?.invoke(PrioritizedTask.Priority.HIGH) {

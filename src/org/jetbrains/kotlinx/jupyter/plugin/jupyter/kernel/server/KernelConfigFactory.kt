@@ -57,7 +57,7 @@ class DefaultKotlinKernelConfigFactory(
     override fun getKernelPorts() = kernelPorts
 
     override fun getDebugPortOrNull(notebookPath: Path): Int? {
-        return KotlinNotebookDebugSessionManager.getInstance(project).getByPath(notebookPath)?.targetDebugPort
+        return KotlinNotebookDebugSessionManager.getInstance(project).getByPath(notebookPath)?.providePortOnKernelStartUp()
     }
 }
 

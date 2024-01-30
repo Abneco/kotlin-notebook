@@ -25,7 +25,7 @@ import java.util.concurrent.CompletionStage
 import java.util.function.BiConsumer
 import java.util.function.Function
 
-class NotebookVariableStateDescriptor(
+class NotebookFieldDescriptorNoSuspension(
     private val session: DebuggerSession,
     val virtualFile: BackedNotebookVirtualFile?,
     project: Project,
@@ -48,7 +48,7 @@ class NotebookVariableStateDescriptor(
     }
 
     val sourcePosition: SourcePosition? by lazy {
-        NotebookVariableDescriptorPositionResolver.resolveTo(this)
+        NotebookVariableDescriptorPositionResolver.resolveTo(project, virtualFile?.file, this)
     }
 
     override fun calcRepresentation(context: EvaluationContextImpl?, labelListener: DescriptorLabelListener): String {

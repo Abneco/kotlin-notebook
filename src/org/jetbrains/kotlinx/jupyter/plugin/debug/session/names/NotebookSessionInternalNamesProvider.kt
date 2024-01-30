@@ -10,7 +10,7 @@ interface NotebookSessionInternalNamesProvider {
 
 internal object KotlinNotebookSessionInternalNamesProvider : NotebookSessionInternalNamesProvider {
     override val notebookClassName: String
-        = "org.jetbrains.kotlinx.jupyter.NotebookImpl"
+        = "org.jetbrains.kotlinx.jupyter.repl.notebook.impl.NotebookImpl"
     override val notebookDebugThreadName: String
         = "NotebookDebugThread"
     override val notebookDebugMethodName: String

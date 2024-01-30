@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.debug.session
 
+import com.intellij.debugger.engine.DebugProcess
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -25,6 +26,13 @@ class KotlinNotebookDebugSessionManager(
             val isKeepOpened = KotlinNotebookProjectOptionsProvider.getInstance(project).shouldOpenDebugPort
             return if (isKeepOpened) portsGenerator.randomPort() else null
         }
+
+    fun getByDebugProcessOrNull(debugProcess: DebugProcess?): KotlinNotebookDebugSession? {
+        if (debugProcess == null) return null
+        return mapping.firstNotNullOfOrNull {
+            if (it.value.debuggerSession?.process == debugProcess) it.value else null
+        }
+    }
 
     fun getByPath(path: Path): KotlinNotebookDebugSession? {
         return mapping.firstNotNullOfOrNull {

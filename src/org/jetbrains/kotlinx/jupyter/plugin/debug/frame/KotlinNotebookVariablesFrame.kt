@@ -3,7 +3,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.debug.frame
 
 import com.intellij.debugger.engine.JavaDebuggerEvaluator
 import com.intellij.debugger.engine.JavaStackFrame
-import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.impl.PrioritizedTask
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
@@ -68,11 +67,9 @@ class KotlinNotebookVariablesFrame(
         debugProcess.managerThread.invoke(PrioritizedTask.Priority.HIGH) {
             try {
                 val virtualMachine = debugProcess.virtualMachineProxy
-                val suspendContext = debugProcess.suspendManager.pausedContexts.firstOrNull() ?: return@invoke
-                val evaluationContext = EvaluationContextImpl(suspendContext, suspendContext.frameProxy)
 
                 node.addChildren(
-                    variablesService.representVariablesStateAsXContainer(virtualMachine, evaluationContext),
+                    variablesService.representVariablesStateAsXContainer(virtualMachine, debugSession.evaluationContext),
                     true
                 )
             } catch (ex: Exception) {

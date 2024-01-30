@@ -44,7 +44,7 @@ import com.intellij.xdebugger.impl.pinned.items.PinToTopParentValue
 import com.intellij.xdebugger.impl.ui.XValueTextProvider
 import com.intellij.xdebugger.impl.ui.tree.nodes.XValueNodeImpl
 import org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.NotebookArrayElementDescriptor
-import org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.NotebookVariableStateDescriptor
+import org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.NotebookFieldDescriptorNoSuspension
 import org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.api.KotlinNotebookValueDescriptor
 import javax.swing.Icon
 import kotlin.math.max
@@ -68,9 +68,9 @@ class NotebookVariableFieldValue(
     companion object {
         private val LOG = thisLogger()
 
-        private fun ValueDescriptorImpl.toNotebookValueDescriptor(debugProcessImpl: DebugProcessImpl, parentDescriptor: NotebookVariableStateDescriptor?): KotlinNotebookValueDescriptor? {
+        private fun ValueDescriptorImpl.toNotebookValueDescriptor(debugProcessImpl: DebugProcessImpl, parentDescriptor: NotebookFieldDescriptorNoSuspension?): KotlinNotebookValueDescriptor? {
             when (this) {
-                is NotebookVariableStateDescriptor -> return this
+                is NotebookFieldDescriptorNoSuspension -> return this
                 is ArrayElementDescriptorImpl -> {
                     return NotebookArrayElementDescriptor(debugProcessImpl, array.getValue(index), array, index)
                 }
@@ -81,7 +81,7 @@ class NotebookVariableFieldValue(
             val field = field
             val value = parentValue.getValue(field)
 
-            return NotebookVariableStateDescriptor(debugProcessImpl.session, parentDescriptor?.virtualFile, debugProcessImpl.project, parentValue, field, value)
+            return NotebookFieldDescriptorNoSuspension(debugProcessImpl.session, parentDescriptor?.virtualFile, debugProcessImpl.project, parentValue, field, value)
         }
     }
 
@@ -128,7 +128,7 @@ class NotebookVariableFieldValue(
                                                 this@NotebookVariableFieldValue,
                                                 descriptor.toNotebookValueDescriptor(
                                                     debugProcessImpl,
-                                                    this@NotebookVariableFieldValue.valueDescriptor as? NotebookVariableStateDescriptor
+                                                    this@NotebookVariableFieldValue.valueDescriptor as? NotebookFieldDescriptorNoSuspension
                                                 ) as? ValueDescriptorImpl
                                                     ?: descriptor,
                                                 debugProcessImpl,

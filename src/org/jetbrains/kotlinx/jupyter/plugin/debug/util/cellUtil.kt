@@ -8,7 +8,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
-import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookValidCells
+import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 
@@ -22,7 +22,9 @@ class ExecutedPresentCellInfo(psiFile: PsiFile?) {
     var jupyterFile: PsiFile? = psiFile
         set(value) {
             field = value
-            cells = runReadAction { value.getNotebookValidCells() }
+            if (value != null) {
+                updateCellsByFile(value)
+            } else cells = null
 
             knownCellClasses.clear()
         }
@@ -72,7 +74,16 @@ class ExecutedPresentCellInfo(psiFile: PsiFile?) {
         val properName = if (cellClassName.matches(Regex(".+\\..+"))) cellClassName.split(Regex("\\.")).let {
             if (it[1] == "jupyter") "${it[0]}_${it[1]}" else it.first()
         } else cellClassName
-        return classNameToCellOrdinal[properName]?.let { cells?.get(it) } ?: knownCellClasses[properName]
+        return classNameToCellOrdinal[properName]?.let {
+            val file = jupyterFile
+            if (cells == null && file != null) updateCellsByFile(file)
+            cells?.get(it)
+        } ?: knownCellClasses[properName]
+    }
+
+
+    private fun updateCellsByFile(file: PsiFile) {
+        cells = runReadAction { file.getNotebookCells() }
     }
 
     companion object {
