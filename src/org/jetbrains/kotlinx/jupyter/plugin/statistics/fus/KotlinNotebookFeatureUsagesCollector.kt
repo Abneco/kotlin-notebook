@@ -7,7 +7,6 @@ import com.intellij.internal.statistic.eventLog.events.EventFields
 import com.intellij.internal.statistic.libraryUsage.LibraryUsageDescriptors
 import com.intellij.internal.statistic.service.fus.collectors.FeatureUsagesCollector
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlinx.jupyter.compiler.util.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.exceptions.ReplCompilerException
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.PlotDataKeyExtractor
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing
@@ -16,6 +15,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.isAddProjectLibrariesToClas
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isBuildProject
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
+import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionStatus
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.executionCount
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
