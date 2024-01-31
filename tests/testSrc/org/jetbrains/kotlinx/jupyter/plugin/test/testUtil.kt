@@ -16,6 +16,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.util.descendantsOfType
 import com.intellij.testFramework.HeavyTestHelper
+import com.intellij.testFramework.IndexingTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
 import junit.framework.TestCase
@@ -93,7 +94,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
                     )
                 }
             }
-            myFixture.project.waitIndexingComplete()
+            IndexingTestUtil.waitUntilIndexesAreReady(myFixture.project)
         }
 
     }
