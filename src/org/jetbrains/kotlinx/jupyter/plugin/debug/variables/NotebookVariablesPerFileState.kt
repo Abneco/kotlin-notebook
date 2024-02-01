@@ -7,7 +7,6 @@ import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.debugger.impl.DebuggerContextImpl
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.xdebugger.frame.XValueChildrenList
@@ -15,15 +14,13 @@ import com.sun.jdi.ClassType
 import com.sun.jdi.ObjectReference
 import com.sun.jdi.StringReference
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.NotebookVariableStateDescriptor
 import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.KotlinNotebookVariablesFrame
 import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.NotebookVariableFieldValue
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowManager
+import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
 
 class NotebookVariablesPerFileState(
     private val virtualFile: BackedNotebookVirtualFile,
@@ -37,9 +34,8 @@ class NotebookVariablesPerFileState(
 
     fun updateVariables(project: Project) {
         coroutineScope.async {
-            withContext(Dispatchers.EDT) {
-                JupyterVarsToolWindowManager.getInstance(project).updateVariablesView(virtualFile)
-            }
+            project.messageBus.syncPublisher(JupyterRuntimeProcessListener.TOPIC)
+                .notebookSessionEnvironmentUpdated(virtualFile.file, null)
         }
     }
 

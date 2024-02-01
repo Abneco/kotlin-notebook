@@ -24,11 +24,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectio
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectionUtility.buildRemoteRunProfileState
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.NotebookDebugConnectionHolder
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.NotebookDebugProcessListener
-import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookSessionVariablesService
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.debugger.JupyterSessionPath
+import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
 import java.util.concurrent.ExecutionException
@@ -71,11 +71,13 @@ class KotlinNotebookDebugSession(
 
     init {
         Disposer.register(projectService, this)
-        project.messageBus.connect(projectService).subscribe(
+        val messageBus = project.messageBus
+        messageBus.connect(projectService).subscribe(
             NotebookCodeSnippetsChangeListener.TOPIC,
             object : NotebookCodeSnippetsChangeListener {
                 override fun scriptsClassesChanged(file: BackedNotebookVirtualFile) {
-                    NotebookSessionVariablesService.getForFile(project, file).updateVariables(project)
+                    messageBus.syncPublisher(JupyterRuntimeProcessListener.TOPIC)
+                        .notebookSessionEnvironmentUpdated(virtualFile.file, null)
                 }
             }
         )
