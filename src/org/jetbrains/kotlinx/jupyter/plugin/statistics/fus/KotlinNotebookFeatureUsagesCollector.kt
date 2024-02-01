@@ -9,7 +9,7 @@ import com.intellij.internal.statistic.service.fus.collectors.FeatureUsagesColle
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.exceptions.ReplCompilerException
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.PlotDataKeyExtractor
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KOTLIN_DATAFRAME_MIME
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isAddProjectLibrariesToClasspath
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isBuildProject
@@ -187,7 +187,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
           "image/bmp" to OutputType.RASTER_IMAGE,
           "image/svg+xml" to OutputType.VECTOR_IMAGE,
           PlotDataKeyExtractor.PLOT_KEY to OutputType.SWING_LETS_PLOT,
-          KotlinDataframeParsing.JSON_PAYLOAD_FIELD to OutputType.SWING_DATAFRAME,
+          KOTLIN_DATAFRAME_MIME to OutputType.SWING_DATAFRAME,
         )
 
         @JvmStatic private val OUTPUT_UPDATED_EVENT = GROUP.registerEvent(

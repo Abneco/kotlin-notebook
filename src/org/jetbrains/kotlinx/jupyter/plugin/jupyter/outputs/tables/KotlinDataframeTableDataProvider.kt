@@ -13,13 +13,6 @@ import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.containers.tail
 import com.jetbrains.python.debugger.pydev.TableCommandType
 import com.jetbrains.python.debugger.pydev.tables.CommandOutputType
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.DATA_FIELD
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.METADATA_FIELD
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.VERSION_FIELD
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.COLUMNS_FIELD
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.NUM_COLS_FIELD
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.NUM_ROWS_FIELD
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing.SERIALIZED_DATAFRAME_FIELD
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isSwingUiEnabledForKotlinDataframe
@@ -42,7 +35,7 @@ internal const val DEFAULT_JSON_MAX_LENGTH = 100000000
 class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
     override fun getDataProviderCapableToParseDataOrNull(serializedData: String?): DSTableDataProvider? {
         if (!isSwingOutputEnabled()) return null
-        if (serializedData == null || !isFormatSupported(serializedData)) return null
+        if (serializedData == null || !KotlinDataframeParsing.isFormatSupported(serializedData)) return null
 
         val jsonFactory = JsonFactory()
         jsonFactory.setStreamReadConstraints(
@@ -52,11 +45,7 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
         )
         val mapper = ObjectMapper(jsonFactory)
 
-        val parser = if (serializedData.contains(VERSION_FIELD)) {
-            KotlinDataframeParserImpl(listOf(SERIALIZED_DATAFRAME_FIELD), listOf(METADATA_FIELD), isFormatV2 = true, mapper)
-        } else {
-            KotlinDataframeParserImpl(listOf(SERIALIZED_DATAFRAME_FIELD), emptyList(), isFormatV2 = false, mapper)
-        }
+        val parser = KotlinDataframeParsing.createParserForData(serializedData, mapper)
 
         return KotlinDataFrameProvider(parser)
     }
@@ -68,18 +57,11 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
             isSwingUiEnabledForKotlinDataframe
         }
     }
-
-    private fun isFormatSupported(serializedData: String): Boolean {
-        return serializedData.contains(SERIALIZED_DATAFRAME_FIELD) &&
-                serializedData.contains(NUM_COLS_FIELD) &&
-                serializedData.contains(NUM_ROWS_FIELD) &&
-                serializedData.contains(COLUMNS_FIELD)
-    }
 }
 
 const val NULL: String = "null"
 
-class KotlinDataFrameProvider(private val parser: KotlinDataframeParser<KotlinDataframeInfo, List<List<Any>>>) : DSTableDataProvider {
+class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : DSTableDataProvider {
     override val type: DSTableDataType = DSTableDataType.EXTERNAL
 
     override fun parseTextToFrameInfo(text: String): DSDataFrameInfo {

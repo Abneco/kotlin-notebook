@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.testFramework.UsefulTestCase
 import com.intellij.util.asSafely
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParserImpl
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParserFormatV2
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeTableDataProvider
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
@@ -34,22 +34,22 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
         val mapper = ObjectMapper()
         val serializedDf = data.toString()
 
-        val messageContent = mapper.readTree(serializedDf)[KotlinDataframeParsing.JSON_PAYLOAD_FIELD]
+        val messageContent = mapper.readTree(serializedDf)["application/kotlindataframe+json"]
         val rawJson = mapper.readTree(messageContent.asText())
 
-        val nRow = rawJson[KotlinDataframeParsing.NUM_ROWS_FIELD].asInt()
-        val nCol = rawJson[KotlinDataframeParsing.NUM_COLS_FIELD].asInt()
+        val nRow = rawJson["nrow"].asInt()
+        val nCol = rawJson["ncol"].asInt()
 
         Assert.assertEquals(nRow, 20)
         Assert.assertEquals(nCol, 14)
         val columnNames = mutableListOf<String>()
-        (rawJson[KotlinDataframeParsing.COLUMNS_FIELD] as ArrayNode).elements().forEach {
+        (rawJson["columns"] as ArrayNode).elements().forEach {
             columnNames.add(it.asText())
         }
 
         Assert.assertEquals(columnNames, actualColumns)
 
-        Assert.assertTrue(rawJson.has(KotlinDataframeParsing.SERIALIZED_DATAFRAME_FIELD))
+        Assert.assertTrue(rawJson.has("kotlin_dataframe"))
     }
 
     @Test
@@ -104,11 +104,7 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
 
     @Test
     fun `test formatV2 parsing`() {
-        val parser = KotlinDataframeParserImpl(
-            listOf(KotlinDataframeParsing.SERIALIZED_DATAFRAME_FIELD, KotlinDataframeParsing.DATA_FIELD),
-            listOf(KotlinDataframeParsing.METADATA_FIELD),
-            isFormatV2 = true, ObjectMapper()
-        )
+        val parser = KotlinDataframeParserFormatV2(ObjectMapper())
         val data = readData("dataframe_formatv2.json").toString()
 
         val frameInfo = parser.parseDataFrameInfo(data)
