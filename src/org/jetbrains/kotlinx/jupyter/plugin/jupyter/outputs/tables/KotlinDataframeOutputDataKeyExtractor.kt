@@ -36,16 +36,19 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
         return if (res.isNullOrEmpty()) null else res
     }
 
-    private fun extractImpl(editor: EditorImpl,
-                            interval: NotebookCellLines.Interval): List<NotebookOutputDataKey> {
+    private fun extractImpl(
+        editor: EditorImpl,
+        interval: NotebookCellLines.Interval
+    ): List<NotebookOutputDataKey> {
         val outputSequence = getOutputsForIndex(editor, interval.ordinal)?.first?.outputs ?: return emptyList()
         val cellPointer = NotebookIntervalPointerFactory.get(editor).create(interval)
 
         val result = ArrayList<NotebookOutputDataKey>()
         for ((outputIndex, output) in outputSequence.withIndex()) {
             if (output.outputType != JupyterOutputType.EXECUTE_RESULT &&
-                output.outputType != JupyterOutputType.DISPLAY_DATA) {
-                 continue
+                output.outputType != JupyterOutputType.DISPLAY_DATA
+            ) {
+                continue
             }
             output.json["data"]?.asSafely<ObjectNode>()?.let { dataObject ->
                 val executionCount = (output as? JupyterExecuteResultOutput)?.executionCount
@@ -67,11 +70,13 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
         return result
     }
 
-    private fun getKotlinDataframeOutputDataKey(editor: EditorImpl,
-                                                cellPointer: NotebookIntervalPointer,
-                                                dataObject: ObjectNode,
-                                                executionCount: Int?,
-                                                isLastForCell: Boolean): NotebookOutputDataKey? {
+    private fun getKotlinDataframeOutputDataKey(
+        editor: EditorImpl,
+        cellPointer: NotebookIntervalPointer,
+        dataObject: ObjectNode,
+        executionCount: Int?,
+        isLastForCell: Boolean
+    ): NotebookOutputDataKey? {
         if (!KotlinDataframeParsing.isKotlinDataFrame(dataObject)) {
             return null
         }

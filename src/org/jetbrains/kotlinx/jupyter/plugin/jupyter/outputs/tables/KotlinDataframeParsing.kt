@@ -137,11 +137,11 @@ private class KotlinDataframeParserImpl(
             var childIdx = 0
             val columnData = extractColumnData(jsonNode)
             if (columnData.isObject) {
-            columnData.fields()?.forEach { (key, value) ->
-                val child = ColumnTreeNode(key, index++, childIdx++, mutableListOf())
-                columnsNode.columnChildren.add(child)
-                extractColumnsHelper(value, child, path + listOf(key))
-            }
+                columnData.fields()?.forEach { (key, value) ->
+                    val child = ColumnTreeNode(key, index++, childIdx++, mutableListOf())
+                    columnsNode.columnChildren.add(child)
+                    extractColumnsHelper(value, child, path + listOf(key))
+                }
             }
         }
 
