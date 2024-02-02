@@ -5,6 +5,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
 import com.intellij.xdebugger.XDebugSession
+import com.intellij.xdebugger.XDebuggerUtil
+import com.intellij.xdebugger.evaluation.EvaluationMode
 import com.intellij.xdebugger.impl.actions.handlers.XDebuggerEvaluateActionHandler
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.getNotebookXSessionOrNull
@@ -25,6 +27,34 @@ class NotebookSilentEvaluateActionHandler : XDebuggerEvaluateActionHandler() {
 
     override fun perform(project: Project, event: AnActionEvent) {
         val xSession = event.dataContext.getNotebookXSessionOrNull() ?: return
-        super.perform(xSession, event.dataContext)
+
+        val context = event.dataContext
+        super.perform(xSession, context)
+    }
+
+    private fun showSilentEvaluateDialog(session: XDebugSession, dataContext: DataContext) {
+        val editorsProvider = session.getDebugProcess().getEditorsProvider()
+        val stackFrame = session.getCurrentStackFrame()
+        val evaluator = session.getDebugProcess().getEvaluator()
+        val virtualFile = dataContext.getKotlinNotebookVirtualFile()?.file
+
+        if (evaluator == null || virtualFile == null) {
+            return
+        }
+
+        val expr2 = XDebuggerUtil.getInstance()
+            .createExpression("this.variablesState", null, null, EvaluationMode.EXPRESSION)
+
+
+        //invokeOnEdt {
+        //    showDialog(
+        //        session,
+        //        virtualFile,
+        //        editorsProvider,
+        //        stackFrame,
+        //        evaluator,
+        //        expr2
+        //    )
+        //}
     }
 }
