@@ -4,12 +4,12 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.outputs
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.intellij.openapi.util.registry.Registry
-import com.intellij.testFramework.UsefulTestCase
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.asSafely
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParserFormatV2
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeTableDataProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.plugins.notebooks.tables.DataId
 import org.junit.Assert
@@ -20,7 +20,7 @@ import java.io.File
 
 
 @RunWith(JUnit4::class)
-class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
+class KotlinDataframeTableDataProviderTest : BasePlatformTestCase() {
     @Test
     fun `test format check`() {
         val (_, data) = prepareProviderAndData()
@@ -55,7 +55,7 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
     @Test
     fun `test DSDataFrameInfo extraction`() {
         val (dataframeProvider, data) = prepareProviderAndData()
-        Registry.get("kotlin.dataframe.swing.outputs.enabled").setValue(true)
+        KotlinNotebookApplicationOptions.get().showDataFrameAsSwing = true
         val provider = dataframeProvider.getDataProviderCapableToParseDataOrNull(data.toString())
 
         Assert.assertNotNull(provider!!)
@@ -70,7 +70,7 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
     @Test
     fun `test DSTableData extraction`() {
         val (dataframeProvider, data) = prepareProviderAndData()
-        Registry.get("kotlin.dataframe.swing.outputs.enabled").setValue(true)
+        KotlinNotebookApplicationOptions.get().showDataFrameAsSwing = true
         val provider = dataframeProvider.getDataProviderCapableToParseDataOrNull(data.toString())
 
         Assert.assertNotNull(provider!!)
@@ -136,7 +136,7 @@ class KotlinDataframeTableDataProviderTest : UsefulTestCase() {
     @Test
     fun `test DSTableData extraction format v2`() {
         val (dataframeProvider, data) = prepareProviderAndDataFormatV2()
-        Registry.get("kotlin.dataframe.swing.outputs.enabled").setValue(true)
+        KotlinNotebookApplicationOptions.get().showDataFrameAsSwing = true
         val provider = dataframeProvider.getDataProviderCapableToParseDataOrNull(data.toString())
 
         Assert.assertNotNull(provider!!)

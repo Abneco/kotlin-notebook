@@ -15,7 +15,6 @@ import com.jetbrains.python.debugger.pydev.TableCommandType
 import com.jetbrains.python.debugger.pydev.tables.CommandOutputType
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
-import org.jetbrains.kotlinx.jupyter.plugin.settings.isSwingUiEnabledForKotlinDataframe
 import org.jetbrains.plugins.notebooks.tables.DSTableBundle
 import org.jetbrains.plugins.notebooks.tables.DSTableData
 import org.jetbrains.plugins.notebooks.tables.DSTableDataException
@@ -32,15 +31,17 @@ import javax.swing.SortOrder
 
 internal const val DEFAULT_JSON_MAX_LENGTH = 100000000
 
+private const val JSON_MAX_STRING_LENGTH = "jupyter.notebook.json.maxStringLength"
+
 class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
     override fun getDataProviderCapableToParseDataOrNull(serializedData: String?): DSTableDataProvider? {
-        if (!isSwingOutputEnabled()) return null
+        if (!KotlinNotebookApplicationOptions.get().showDataFrameAsSwing) return null
         if (serializedData == null || !KotlinDataframeParsing.isFormatSupported(serializedData)) return null
 
         val jsonFactory = JsonFactory()
         jsonFactory.setStreamReadConstraints(
             StreamReadConstraints.builder()
-                .maxStringLength(Registry.intValue("jupyter.notebook.json.maxStringLength", DEFAULT_JSON_MAX_LENGTH))
+                .maxStringLength(Registry.intValue(JSON_MAX_STRING_LENGTH, DEFAULT_JSON_MAX_LENGTH))
                 .build()
         )
         val mapper = ObjectMapper(jsonFactory)
@@ -48,14 +49,6 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
         val parser = KotlinDataframeParsing.createParserForData(serializedData, mapper)
 
         return KotlinDataFrameProvider(parser)
-    }
-
-    private fun isSwingOutputEnabled(): Boolean {
-        return try {
-            KotlinNotebookApplicationOptions.get().showDataFrameAsSwing
-        } catch (e: NullPointerException) {
-            isSwingUiEnabledForKotlinDataframe
-        }
     }
 }
 
