@@ -225,7 +225,12 @@ object KotlinNotebookSettingsPanel {
             checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables"))
                 .accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.description"))
                 .bindSelected(optionsProvider::shouldShowNotebookVariables)
-                .visibleIf(checkBox?.selected ?: ComponentPredicate.FALSE)
+                .enabledIf(checkBox?.selected ?: ComponentPredicate.FALSE).applyToComponent {
+                    toolTipText = KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.comment")
+                    checkBox?.selected?.addListener { checkBoxValue ->
+                        if (!checkBoxValue) isSelected = false
+                    }
+                }
         }
     }
 
