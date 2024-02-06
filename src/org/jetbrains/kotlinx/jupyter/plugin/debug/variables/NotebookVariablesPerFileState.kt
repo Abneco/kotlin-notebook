@@ -13,12 +13,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.xdebugger.frame.XValueChildrenList
 import com.sun.jdi.ClassType
+import com.sun.jdi.Field
 import com.sun.jdi.ObjectReference
 import com.sun.jdi.StringReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.KotlinNotebookVariablesFrame
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
 
@@ -29,6 +29,12 @@ class NotebookVariablesPerFileState(
 ) : NotebookAbstractSessionEnvironmentExplorer, Disposable {
     companion object {
         private val LOG = thisLogger()
+
+        data class VariablesStateAccessorData(
+            val nextEntryFieldAccessor: Field,
+            var mapEntryReference: ObjectReference,
+            val hashMapNodeClassType: ClassType
+        )
     }
 
     init {
@@ -54,7 +60,7 @@ class NotebookVariablesPerFileState(
     override fun representVariablesStateAsXContainer(virtualMachineProxy: VirtualMachineProxy, evaluationContext: EvaluationContextImpl): XValueChildrenList {
         fun XValueChildrenList.addInternalVariables(
             variablesStateSize: Int,
-            accessorData: KotlinNotebookVariablesFrame.Companion.VariablesStateAccessorData,
+            accessorData: VariablesStateAccessorData,
             debuggerContext: DebuggerContextImpl
         ) {
             var mapEntryReference = accessorData.mapEntryReference
@@ -113,7 +119,7 @@ class NotebookVariablesPerFileState(
         return list.apply {
             addInternalVariables(
                 stateSize,
-                KotlinNotebookVariablesFrame.Companion.VariablesStateAccessorData(
+                VariablesStateAccessorData(
                     nextEntryFieldAccessor, mapEntryReference, hashMapNodeType
                 ),
                 processImpl.debuggerContext

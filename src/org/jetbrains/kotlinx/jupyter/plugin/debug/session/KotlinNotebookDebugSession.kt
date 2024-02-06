@@ -47,7 +47,7 @@ class KotlinNotebookDebugSession(
     private val portProvider: () -> Int?
 ): Disposable {
     val currentStackFrameProxy: StackFrameProxyImpl?
-        get() = currentProcess?.debuggerContext?.frameProxy
+        get() = debuggerSession?.process?.debuggerContext?.frameProxy
 
     @Volatile
     var evaluationContext: EvaluationContextImpl? = null
@@ -113,9 +113,6 @@ class KotlinNotebookDebugSession(
 
     private var isSilent: Boolean = false
 
-    private val currentProcess: DebugProcessImpl?
-        get() = debuggerSession?.process
-
     private var processListener: NotebookDebugProcessListener? = null
 
     val isLiveSession: Boolean
@@ -138,15 +135,14 @@ class KotlinNotebookDebugSession(
         if (isLiveSession || debugPort == null) return
 
         ApplicationManager.getApplication().executeOnPooledThread {
-            val newSession = connectToKernelVirtualMachine(project, debugPort) ?: return@executeOnPooledThread
+            val newSession = getOrCreateDebuggerSession(project, debugPort) ?: return@executeOnPooledThread
             LOG.warn("Session was successfully created: $newSession")
         }
     }
 
     // see JavaAttachDebuggerProvider
-    // getOrCreateSession pattern
     @Synchronized
-    fun connectToKernelVirtualMachine(project: Project, debugPort: Int? = targetDebugPort, transport: Int = 0, forceRestart: Boolean = false, isLocal: Boolean = true, silent: Boolean = true) : DebuggerSession? {
+    fun getOrCreateDebuggerSession(project: Project, debugPort: Int? = targetDebugPort, transport: Int = 0, forceRestart: Boolean = false, isLocal: Boolean = true, silent: Boolean = true) : DebuggerSession? {
         if (isLiveSession) {
             if (forceRestart) {
                 disposeCurrentSession()

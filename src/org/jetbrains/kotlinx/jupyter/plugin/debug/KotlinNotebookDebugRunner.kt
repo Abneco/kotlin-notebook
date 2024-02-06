@@ -68,7 +68,7 @@ class KotlinNotebookDebugRunner(project: Project, private val virtualFile: Backe
             artifactsService.buildProjectAndGetLibraries(virtualFile)
         }
 
-        myDebugSession = debugSessionManager.connectToKernelVirtualMachine(
+        myDebugSession = debugSessionManager.getOrCreateDebuggerSession(
             project,
             debugSessionManager.targetDebugPort!!,
             forceRestart = true,

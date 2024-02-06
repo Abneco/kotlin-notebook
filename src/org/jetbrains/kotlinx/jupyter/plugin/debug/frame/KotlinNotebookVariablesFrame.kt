@@ -10,9 +10,6 @@ import com.intellij.xdebugger.XSourcePosition
 import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
 import com.intellij.xdebugger.frame.XCompositeNode
 import com.intellij.xdebugger.frame.XStackFrame
-import com.sun.jdi.ClassType
-import com.sun.jdi.Field
-import com.sun.jdi.ObjectReference
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSession
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookSessionVariablesService
 
@@ -24,12 +21,6 @@ class KotlinNotebookVariablesFrame(
     companion object {
         private val LOG = thisLogger()
         private val STACK_FRAME_EQUALITY_OBJECT = Any()
-
-        data class VariablesStateAccessorData(
-            val nextEntryFieldAccessor: Field,
-            var mapEntryReference: ObjectReference,
-            val hashMapNodeClassType: ClassType
-        )
     }
     private var evaluator: XDebuggerEvaluator? = null
 
@@ -63,7 +54,12 @@ class KotlinNotebookVariablesFrame(
         }
 
         val variablesService = NotebookSessionVariablesService.getForFile(project, debugSession.virtualFile)
-        val context = debugSession.evaluationContext ?: return
+        val context = debugSession.evaluationContext
+
+        if (context == null) {
+            node.setErrorMessage("Computations are not available without suspended context")
+            return
+        }
 
         debugProcess.managerThread.invoke(PrioritizedTask.Priority.HIGH) {
             try {
