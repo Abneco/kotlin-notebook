@@ -63,13 +63,14 @@ class KotlinNotebookVariablesFrame(
         }
 
         val variablesService = NotebookSessionVariablesService.getForFile(project, debugSession.virtualFile)
+        val context = debugSession.evaluationContext ?: return
 
         debugProcess.managerThread.invoke(PrioritizedTask.Priority.HIGH) {
             try {
                 val virtualMachine = debugProcess.virtualMachineProxy
 
                 node.addChildren(
-                    variablesService.representVariablesStateAsXContainer(virtualMachine, debugSession.evaluationContext),
+                    variablesService.representVariablesStateAsXContainer(virtualMachine, context),
                     true
                 )
             } catch (ex: Exception) {

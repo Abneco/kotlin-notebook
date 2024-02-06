@@ -7,6 +7,7 @@ import com.intellij.debugger.engine.FullValueEvaluatorProvider
 import com.intellij.debugger.engine.JavaStackFrame
 import com.intellij.debugger.engine.JavaValue.createPresentation
 import com.intellij.debugger.engine.SourcePositionProvider
+import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.impl.DebuggerUtilsEx
 import com.intellij.debugger.impl.PrioritizedTask
 import com.intellij.debugger.ui.impl.DebuggerTreeRenderer
@@ -57,13 +58,6 @@ class NotebookVariableFieldValue(
     contextSet: Boolean
 ) : XNamedValue(valueDescriptor.calcValueName()), NodeDescriptorProvider,
     XValueTextProvider, PinToTopParentValue, PinToTopMemberValue
-    //: JavaValue(
-    //parent,
-    //valueDescriptor,
-    //debugProcessImpl.suspendManager.pausedContext?.evaluationContext
-    //    ?: debugProcessImpl.suspendManager.pushSuspendContext(EventRequest.SUSPEND_NONE, 1).evaluationContext,
-    //nodeManager, contextSet)
-
 {
     companion object {
         private val LOG = thisLogger()
@@ -243,9 +237,9 @@ class NotebookVariableFieldValue(
             )
 
             val lastRenderer = valueDescriptor.lastRenderer
-            var fullEvaluatorSet = setFullValueEvaluator(lastRenderer, node)
+            var fullEvaluatorSet = setFullValueEvaluator(lastRenderer, node, null)
             if (!fullEvaluatorSet && lastRenderer is CompoundReferenceRenderer) {
-                setFullValueEvaluator(lastRenderer.labelRenderer, node)
+                setFullValueEvaluator(lastRenderer.labelRenderer, node, null)
             }
 
 
@@ -258,9 +252,9 @@ class NotebookVariableFieldValue(
         }
     }
 
-    private fun setFullValueEvaluator(renderer: Renderer?, node: XValueNode): Boolean {
+    private fun setFullValueEvaluator(renderer: Renderer?, node: XValueNode, context: EvaluationContextImpl?): Boolean {
         if (renderer is FullValueEvaluatorProvider) {
-            val evaluator = (renderer as FullValueEvaluatorProvider).getFullValueEvaluator(null, valueDescriptor)
+            val evaluator = (renderer as FullValueEvaluatorProvider).getFullValueEvaluator(context, valueDescriptor)
             if (evaluator != null) {
                 node.setFullValueEvaluator(evaluator)
                 return true

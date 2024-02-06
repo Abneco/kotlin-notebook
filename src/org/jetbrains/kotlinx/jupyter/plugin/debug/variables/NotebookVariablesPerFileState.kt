@@ -18,9 +18,7 @@ import com.sun.jdi.StringReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.NotebookFieldDescriptorNoSuspension
 import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.KotlinNotebookVariablesFrame
-import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.NotebookVariableFieldValue
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
 
@@ -53,7 +51,7 @@ class NotebookVariablesPerFileState(
         return notebookSessionEnvironmentProvider.variableStateReferenceProvider(virtualMachineProxy)
     }
 
-    override fun representVariablesStateAsXContainer(virtualMachineProxy: VirtualMachineProxy, evaluationContext: EvaluationContextImpl?): XValueChildrenList {
+    override fun representVariablesStateAsXContainer(virtualMachineProxy: VirtualMachineProxy, evaluationContext: EvaluationContextImpl): XValueChildrenList {
         fun XValueChildrenList.addInternalVariables(
             variablesStateSize: Int,
             accessorData: KotlinNotebookVariablesFrame.Companion.VariablesStateAccessorData,
@@ -76,30 +74,17 @@ class NotebookVariablesPerFileState(
 
                 if (variableStateReference == null) continue
 
-                val xValue = if (evaluationContext != null) {
-                    JavaValue.create(
+                val xValue = JavaValue.create(
+                    null,
+                    nodeManager?.getFieldDescriptor(
                         null,
-                        nodeManager?.getFieldDescriptor(
-                            null,
-                            variableStateReference,
-                            fieldAccessor
-                        )!!,
-                        evaluationContext,
-                        nodeManager,
-                        false
-                    )
-                } else {
-                    NotebookVariableFieldValue(
-                      null,
-                      NotebookFieldDescriptorNoSuspension(
-                           debuggerContext.debuggerSession!!,
-                           virtualFile,
-                           virtualMachineProxy.debugProcess.project, variableStateReference, fieldAccessor,
-                           variableStateReference.getValue(fieldAccessor)
-                        ),
-                      debuggerContext.debugProcess!!, nodeManager, false
-                    )
-                }
+                        variableStateReference,
+                        fieldAccessor
+                    )!!,
+                    evaluationContext,
+                    nodeManager,
+                    false
+                )
 
                 add(keyReference.value(), xValue)
 
