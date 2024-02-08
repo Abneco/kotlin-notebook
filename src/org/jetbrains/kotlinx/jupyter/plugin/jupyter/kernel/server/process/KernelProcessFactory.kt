@@ -6,7 +6,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import com.intellij.util.io.systemIndependentPath
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory
@@ -26,6 +25,7 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolute
 import kotlin.io.path.exists
+import kotlin.io.path.invariantSeparatorsPathString
 
 class KernelProcessFactory : KernelRunnableFactory {
     @RequiresBackgroundThread
@@ -47,7 +47,7 @@ class KernelProcessFactory : KernelRunnableFactory {
         val workingDir = notebookPath.absolute().parent.takeIf { it.exists() }
 
         val extraJavaArgs = buildList {
-            workingDir?.let { add("-Duser.dir=${workingDir.systemIndependentPath}/") }
+            workingDir?.let { add("-Duser.dir=${workingDir.invariantSeparatorsPathString}/") }
             add("-Xmx${options.heapMaxLimitInMib}M")
             for (extraArg in options.extraJvmArguments) {
                 add(extraArg)
