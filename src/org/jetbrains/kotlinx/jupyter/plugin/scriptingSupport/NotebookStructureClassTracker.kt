@@ -205,7 +205,9 @@ class NotebookStructureClassTracker(
     }
 
     override fun notebookDataCleared() {
-        knownCellInfo.clear()
+        // Object could be disposed before this field is initialized
+        @Suppress("UNNECESSARY_SAFE_CALL")
+        knownCellInfo?.clear()
     }
 
     override fun dispose() {
