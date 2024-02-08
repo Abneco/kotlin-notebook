@@ -13,15 +13,17 @@ import org.jetbrains.kotlinx.jupyter.plugin.language.meta.JupyterKtMetaLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.KotlinCodeRangesProcessor
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
+import org.jetbrains.plugins.notebooks.core.api.psi.NotebookPsiCell
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.RAW_CELL_SUFFIX
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.nonCodeCellSuffixes
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 import java.util.concurrent.atomic.AtomicInteger
 
 private val ELEMENTS_TO_INJECT = mutableListOf(JupyterPsiCellImpl::class.java)
-private val NON_CODE_CELL_REGEX = Regex("""$CELL_MARKER($MARKDOWN_CELL_SUFFIX|$RAW_CELL_SUFFIX)\n?""")
+private val NON_CODE_CELL_REGEX = Regex("""$CELL_MARKER(${nonCodeCellSuffixes.joinToString("|")})\n?""")
+
+val NotebookPsiCell.isNonCode get() = cellMarker.text.matches(NON_CODE_CELL_REGEX)
 
 class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
     private val injectedCounter = AtomicInteger()
@@ -44,7 +46,7 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
         val virtualFile = containingFile.originalFile.virtualFile?.let(BackedNotebookVirtualFile::takeIfBacked) ?: return
 
         if (!virtualFile.file.isKotlinNotebook) return
-        if (element.cellMarker.text.matches(NON_CODE_CELL_REGEX)) return
+        if (element.isNonCode) return
 
         val (ranges, isCommand) = KotlinCodeRangesProcessor.codeRanges(element)
 
