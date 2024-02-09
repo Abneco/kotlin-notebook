@@ -11,6 +11,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.util.NlsSafe
@@ -53,13 +54,14 @@ import javax.swing.event.DocumentListener
 
 class ExportPlotAction : NotebookEditorActionBase() {
     override fun actionPerformed(event: AnActionEvent) {
+        val project = event.project ?: return
         val letsPlotOutputs = getLetsPlotOutputs(event)
 
         val spec = letsPlotOutputs.singleOrNull()?.spec ?: return
         val notebookFile = event.getNotebookFile() ?: return
         val notebookDir = notebookFile.file.parent
 
-        val exportModel = showExportDialog(notebookDir) ?: return
+        val exportModel = showExportDialog(project, notebookDir) ?: return
 
         ApplicationManager.getApplication().executeOnPooledThread {
             runSafely (
@@ -82,9 +84,11 @@ class ExportPlotAction : NotebookEditorActionBase() {
         event.presentation.isEnabledAndVisible = letsPlotOutputs.size == 1
     }
 
-    private fun showExportDialog(currentDir: VirtualFile): ExportModel? {
-        val model = ExportModel()
-        model.directory = currentDir.path
+    private fun showExportDialog(project: Project, currentDir: VirtualFile): ExportModel? {
+        val model = ExportModel(
+            PlotExportOptions.getInstance(project),
+            currentDir.path
+        )
 
         val fileField = JBTextField(20)
         fileField.text = model.fileName
@@ -226,20 +230,15 @@ class ExportPlotAction : NotebookEditorActionBase() {
         }
     }
 
-    private enum class ExportFormat(val isRaster: Boolean = false) {
-        SVG,
-        PNG(true),
-        JPG(true),
-        HTML,
-    }
-
     private data class ExportModel(
-        var format: ExportFormat = ExportFormat.SVG,
+        private val options: PlotExportOptions,
         var directory: String = System.getProperty("user.home"),
-        var fileName: String = "plot.svg",
-        var scalingFactor: Double = 2.0,
-        var targetDPI: Int = 4000,
     ) {
+        var format by options::format
+        var fileName by options::fileName
+        var scalingFactor by options::scalingFactor
+        var targetDPI by options::targetDPI
+
         fun changeFormat(newFormat: ExportFormat) {
             format = newFormat
             val extension = format.toString().lowercase()

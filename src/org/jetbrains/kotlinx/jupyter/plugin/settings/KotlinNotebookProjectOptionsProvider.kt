@@ -110,6 +110,5 @@ class KotlinNotebookProjectOptionsProvider :
         fun getInstance(project: Project): KotlinNotebookProjectOptionsProvider = project.service()
 
         const val DEFAULT_HEAP_MAX_LIMIT_MIB = 3256
-        const val DEFAULT_OPENED_DEBUG_PORT = 1044
     }
 }
