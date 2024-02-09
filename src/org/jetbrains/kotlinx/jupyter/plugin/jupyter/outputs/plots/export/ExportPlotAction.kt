@@ -13,10 +13,10 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogBuilder
+import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.AlignX
-import com.intellij.ui.dsl.builder.MutableProperty
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
@@ -31,7 +31,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutput
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.MutableLetsPlotSpec
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.PlotDataKeyExtractor
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.addTextFocusLostFixer
+import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindDoubleText
 import org.jetbrains.kotlinx.jupyter.plugin.util.firstAncestorOfType
+import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
 import org.jetbrains.letsPlot.awt.plot.PlotSvgExport
 import org.jetbrains.letsPlot.core.plot.export.PlotImageExport
 import org.jetbrains.letsPlot.core.plot.export.PlotImageExport.buildImageFromRawSpecs
@@ -61,8 +64,15 @@ class ExportPlotAction : NotebookEditorActionBase() {
         val exportModel = showExportDialog(notebookDir) ?: return
 
         ApplicationManager.getApplication().executeOnPooledThread {
-            val file = export(deserializeSpec(spec).toMutableMap(), exportModel)
-            showPlotExportedNotification(file)
+            runSafely (
+                {
+                    val file = export(deserializeSpec(spec).toMutableMap(), exportModel)
+                    showPlotExportedNotification(file)
+                },
+                { throwable ->
+                    showPlotExportFailedNotification(throwable)
+                }
+            )
         }
     }
 
@@ -118,13 +128,29 @@ class ExportPlotAction : NotebookEditorActionBase() {
             }
             indent {
                 row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.scaling.factor")) {
+                    /**
+                     * These values are taken from [buildImageFromRawSpecs].
+                     * For the upper bound see https://github.com/JetBrains/lets-plot/issues/1011
+                     */
+                    val minScalingFactor = 0.1
+                    val maxScalingFactor = 9.0
+                    val defaultScalingFactor = model.scalingFactor
+
+                    val scalingFactorValidator: (Double) -> Boolean = { it in minScalingFactor..maxScalingFactor }
+                    require(scalingFactorValidator(defaultScalingFactor))
+
                     textField()
-                        .bindText(
-                            MutableProperty(
-                                { model.scalingFactor.toString() },
-                                { value -> model.scalingFactor = value.toDoubleOrNull() ?: return@MutableProperty }
-                            )
-                        )
+                        .bindDoubleText(model::scalingFactor.toMutableProperty(), scalingFactorValidator)
+                        .addTextFocusLostFixer { oldText ->
+                            val value = oldText.toDoubleOrNull()
+                            val newValue = when {
+                                value == null -> defaultScalingFactor
+                                value < minScalingFactor -> minScalingFactor
+                                value > maxScalingFactor -> maxScalingFactor
+                                else-> null
+                            }
+                            newValue?.toString()
+                        }
                 }
                 row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.target.dpi")) {
                     textField()
@@ -157,9 +183,6 @@ class ExportPlotAction : NotebookEditorActionBase() {
     @RequiresBackgroundThread
     private fun export(spec: MutableLetsPlotSpec, model: ExportModel): File {
         val file = File(model.directory, model.fileName)
-        if (!file.exists()) {
-            file.createNewFile()
-        }
         when (val modelFormat = model.format) {
             ExportFormat.SVG -> {
                 val svg = PlotSvgExport.buildSvgImageFromRawSpecs(spec)
@@ -245,6 +268,20 @@ class ExportPlotAction : NotebookEditorActionBase() {
 }
 
 private const val KANDY_NOTIFICATIONS_GROUP = "Kandy plot export"
+
+private fun showPlotExportFailedNotification(throwable: Throwable) {
+    @NlsSafe
+    val exceptionText = throwable.message.orEmpty()
+
+    val notification = Notification(
+        KANDY_NOTIFICATIONS_GROUP,
+        KotlinNotebookBundle.message("kotlin.notebook.outputs.kandy.export.failed.notification.message"),
+        exceptionText,
+        NotificationType.ERROR
+    )
+
+    Notifications.Bus.notify(notification)
+}
 
 private fun showPlotExportedNotification(file: File) {
     val notification = Notification(

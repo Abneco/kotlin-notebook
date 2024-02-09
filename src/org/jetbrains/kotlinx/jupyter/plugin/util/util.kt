@@ -13,6 +13,7 @@ import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -178,4 +179,16 @@ suspend fun anyOf(vararg actions: suspend () -> Boolean): Boolean {
         }
     }
     return result
+}
+
+fun <R> runSafely(action: () -> R, onFailure: (Throwable) -> Unit): R? {
+    return try {
+        action()
+    } catch (e: Throwable) {
+        if (e is ProcessCanceledException) {
+            throw e
+        }
+        onFailure(e)
+        null
+    }
 }
