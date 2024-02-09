@@ -8,17 +8,19 @@ import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
 import javax.swing.text.JTextComponent
 
-fun <T : JTextComponent> Cell<T>.bindDoubleText(
-    property: MutableProperty<Double>,
-    validate: (Double) -> Boolean,
+fun <T : JTextComponent, V: Any> Cell<T>.bindValueText(
+    property: MutableProperty<V>,
+    validate: (V) -> Boolean,
+    valueGetter: (String) -> V?,
+    valuePrinter: (V) -> String = { it.toString() },
 ): Cell<T> {
     return bindText(
-         { property.get().toString() },
-         { value ->
-             value.toDoubleOrNull()
-                 ?.takeIf(validate)
-                 ?.let { doubleValue -> property.set(doubleValue) }
-         }
+        { valuePrinter(property.get()) },
+        { stringValue ->
+            valueGetter(stringValue)
+                ?.takeIf(validate)
+                ?.let { value -> property.set(value) }
+        }
     )
 }
 
@@ -35,4 +37,30 @@ fun <T : JTextComponent> Cell<T>.addTextFocusLostFixer(
             }
         })
     }
+}
+
+fun <T : JTextComponent, V: Comparable<V>> Cell<T>.bindComparableIntervalToTextWithFixer(
+    property: MutableProperty<V>,
+    interval: ClosedRange<V>,
+    valueGetter: (String) -> V?,
+    valuePrinter: (V) -> String = { it.toString() },
+): Cell<T> {
+    val minValue = interval.start
+    val maxValue = interval.endInclusive
+    val defaultValue = property.get()
+
+    val validator: (V) -> Boolean = { it in interval }
+    require(validator(defaultValue))
+
+    return bindValueText(property, validator, valueGetter, valuePrinter)
+        .addTextFocusLostFixer { oldText ->
+            val value = valueGetter(oldText)
+            val newValue = when {
+                value == null -> defaultValue
+                value < minValue -> minValue
+                value > maxValue -> maxValue
+                else-> null
+            }
+            newValue?.toString()
+        }
 }

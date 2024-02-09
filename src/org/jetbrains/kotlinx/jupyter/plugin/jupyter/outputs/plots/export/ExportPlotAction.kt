@@ -17,7 +17,6 @@ import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.AlignX
-import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
@@ -31,8 +30,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutput
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.MutableLetsPlotSpec
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.PlotDataKeyExtractor
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.addTextFocusLostFixer
-import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindDoubleText
+import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindComparableIntervalToTextWithFixer
 import org.jetbrains.kotlinx.jupyter.plugin.util.firstAncestorOfType
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
 import org.jetbrains.letsPlot.awt.plot.PlotSvgExport
@@ -128,33 +126,24 @@ class ExportPlotAction : NotebookEditorActionBase() {
             }
             indent {
                 row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.scaling.factor")) {
-                    /**
-                     * These values are taken from [buildImageFromRawSpecs].
-                     * For the upper bound see https://github.com/JetBrains/lets-plot/issues/1011
-                     */
-                    val minScalingFactor = 0.1
-                    val maxScalingFactor = 9.0
-                    val defaultScalingFactor = model.scalingFactor
-
-                    val scalingFactorValidator: (Double) -> Boolean = { it in minScalingFactor..maxScalingFactor }
-                    require(scalingFactorValidator(defaultScalingFactor))
-
                     textField()
-                        .bindDoubleText(model::scalingFactor.toMutableProperty(), scalingFactorValidator)
-                        .addTextFocusLostFixer { oldText ->
-                            val value = oldText.toDoubleOrNull()
-                            val newValue = when {
-                                value == null -> defaultScalingFactor
-                                value < minScalingFactor -> minScalingFactor
-                                value > maxScalingFactor -> maxScalingFactor
-                                else-> null
-                            }
-                            newValue?.toString()
-                        }
+                        .bindComparableIntervalToTextWithFixer(
+                            model::scalingFactor.toMutableProperty(),
+                            /**
+                             * These values are taken from [buildImageFromRawSpecs].
+                             * For the upper-bound see https://github.com/JetBrains/lets-plot/issues/1011
+                             */
+                            interval = 0.1..9.0,
+                            { it.toDoubleOrNull() },
+                        )
                 }
                 row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.target.dpi")) {
                     textField()
-                        .bindIntText(model::targetDPI)
+                        .bindComparableIntervalToTextWithFixer(
+                            model::targetDPI.toMutableProperty(),
+                            interval = 72..4000,
+                            { it.toIntOrNull() },
+                        )
                 }
             }.enabledIf(formatComboBox.selectedValueMatches { it?.isRaster == true })
             row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.directory")) {
