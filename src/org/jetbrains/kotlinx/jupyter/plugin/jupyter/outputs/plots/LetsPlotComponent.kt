@@ -17,6 +17,7 @@ import org.jetbrains.letsPlot.core.util.MonolithicCommon
 import org.jetbrains.letsPlot.core.util.PlotSizeHelper
 import java.awt.Dimension
 import java.awt.event.ComponentEvent
+import java.awt.event.MouseEvent
 import javax.swing.JComponent
 import javax.swing.JPanel
 import kotlin.math.ceil
@@ -105,7 +106,14 @@ class LetsPlotComponent : JBLayeredPane() {
             PopupHandler.installPopupMenu(this, "LetsPlotActions", ActionPlaces.JUPYTER_NOTEBOOK_CELL_OUTPUT_POPUP)
 
             addDispatchingMouseListener(
-                MouseEventDeepReDispatcher(plotPanel)
+                MouseEventDeepReDispatcher(plotPanel) { e: MouseEvent ->
+                    when (e.id) {
+                        MouseEvent.MOUSE_CLICKED,
+                        MouseEvent.MOUSE_PRESSED,
+                        MouseEvent.MOUSE_RELEASED -> false
+                        else -> true
+                    }
+                }
             )
 
             addCursorProvider(

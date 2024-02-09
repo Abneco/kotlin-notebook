@@ -48,13 +48,17 @@ fun interface MouseEventDispatcher {
 /**
  * Redispatches passed mouse event to the deepest subcomponent of [newTarget] if the event occurs above [newTarget]
  */
-class MouseEventDeepReDispatcher(private val newTarget: Component): MouseEventDispatcher {
+class MouseEventDeepReDispatcher(
+    private val newTarget: Component,
+    private val eventFilter: (e: MouseEvent) -> Boolean = { true },
+): MouseEventDispatcher {
     override fun dispatch(event: MouseEvent?) {
-        if (event == null) return
+        if (event == null || !eventFilter(event)) return
         val newTargetEvent = SwingUtilities.convertMouseEvent(event.component, event, newTarget)
         val deepestChild = SwingUtilities.getDeepestComponentAt(newTarget, newTargetEvent.x, newTargetEvent.y) ?: return
         val deepestChildEvent = SwingUtilities.convertMouseEvent(newTargetEvent.component, newTargetEvent, deepestChild)
         deepestChild.dispatchEvent(deepestChildEvent)
+
     }
 }
 
