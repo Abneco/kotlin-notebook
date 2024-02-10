@@ -1,7 +1,6 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.editor.dnd
 
-import com.intellij.lang.LanguageNamesValidation
 import com.intellij.openapi.editor.Editor
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
@@ -29,7 +28,7 @@ class KotlinCsvDropHandler : LanguageTableDataFileDropHandler(
 
         val csvPath = createFilePath(tableDataFile, editor)
         val dfName =
-            createDataframeName(editor.project, tableDataFile, LanguageNamesValidation.INSTANCE.forLanguage(KotlinLanguage.INSTANCE))
+            createDataframeName(editor.project, tableDataFile, KotlinDataframeVariableNameSuggester)
         return generateCode("DataFrame.readCSV(\"$csvPath\"$separatorArg)", dfName, editor, fileIndex)
     }
 }
