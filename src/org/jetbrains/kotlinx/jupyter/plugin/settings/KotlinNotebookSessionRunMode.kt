@@ -7,7 +7,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 val isKernelProcessEmbeddingEnabled by registryFlag("kotlin.notebook.allow.embedded.kernel", false)
 
 enum class KotlinNotebookSessionRunMode(
-    @NlsContexts.Label val description:  String
+    @NlsContexts.Label val description: String
 ) {
     SEPARATE_PROCESS(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.mode.separate.process")),
     IDE_PROCESS(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.mode.ide.process"));

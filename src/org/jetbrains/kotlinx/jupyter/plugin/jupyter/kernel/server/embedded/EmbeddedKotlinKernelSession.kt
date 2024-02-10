@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlinx.jupyter.libraries.createLibraryHttpUtil
 import org.jetbrains.kotlinx.jupyter.libraries.getDefaultClasspathResolutionInfoProvider
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
@@ -22,7 +23,6 @@ class EmbeddedKotlinKernelSession(
     private val onMessage: (JupyterMessage) -> Unit
 ) : KotlinKernelSession, JupyterKernelCommunicationClient {
 
-
     private val messageHandler = run {
         val kernelConfig: KernelConfig = DefaultKotlinKernelConfigFactory(
             project,
@@ -30,8 +30,11 @@ class EmbeddedKotlinKernelSession(
             notebookPath
         ).create()
 
-        val libraryInfoProvider = getDefaultClasspathResolutionInfoProvider()
-        val replConfig: ReplConfig = ReplConfig.create(libraryInfoProvider, kernelConfig.homeDir)
+        val replConfig: ReplConfig = ReplConfig.create(
+            ::getDefaultClasspathResolutionInfoProvider,
+            createLibraryHttpUtil(IdeaHttpClient),
+            kernelConfig.homeDir
+        )
 
         val socketsManager = EmbeddedJupyterSockets(onMessage)
 
@@ -41,7 +44,6 @@ class EmbeddedKotlinKernelSession(
         )
         createEmbeddedMessageHandler(project, replSettings, socketsManager)
     }
-
 
 
     override fun send(content: JupyterMessage) {
