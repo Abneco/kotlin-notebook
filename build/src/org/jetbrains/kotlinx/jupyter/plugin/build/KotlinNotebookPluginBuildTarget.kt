@@ -3,7 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.build
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.intellij.build.IdeaProjectLoaderUtil
+import org.jetbrains.intellij.build.BuildPaths.Companion.ULTIMATE_HOME
 import org.jetbrains.intellij.build.IdeaUltimateProperties
 import org.jetbrains.intellij.build.createBuildTasks
 import org.jetbrains.intellij.build.impl.BuildContextImpl
@@ -12,10 +12,9 @@ object KotlinNotebookPluginBuildTarget {
     @Suppress("RAW_RUN_BLOCKING")
     @JvmStatic
     fun main(args: Array<String>) = runBlocking(Dispatchers.Default) {
-        val ultimateHome = IdeaProjectLoaderUtil.guessUltimateHome(javaClass)
         val context = BuildContextImpl.createContext(
-            projectHome = IdeaProjectLoaderUtil.guessUltimateHome(javaClass),
-            productProperties = IdeaUltimateProperties(ultimateHome),
+            projectHome = ULTIMATE_HOME,
+            productProperties = IdeaUltimateProperties(ULTIMATE_HOME),
         )
         context.options.enableEmbeddedJetBrainsClient = false
 
