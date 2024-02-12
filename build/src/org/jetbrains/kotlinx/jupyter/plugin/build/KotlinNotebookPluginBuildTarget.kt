@@ -14,7 +14,6 @@ object KotlinNotebookPluginBuildTarget {
     fun main(args: Array<String>) = runBlocking(Dispatchers.Default) {
         val ultimateHome = IdeaProjectLoaderUtil.guessUltimateHome(javaClass)
         val context = BuildContextImpl.createContext(
-            communityHome = IdeaProjectLoaderUtil.guessCommunityHome(javaClass),
             projectHome = IdeaProjectLoaderUtil.guessUltimateHome(javaClass),
             productProperties = IdeaUltimateProperties(ultimateHome),
         )
