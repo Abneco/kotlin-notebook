@@ -50,6 +50,10 @@ class PlotExportOptions :
     var targetDPI: Int by prop(State::targetDPI)
         internal set
 
+    fun restoreDefaults() {
+        loadState(State())
+    }
+
 
     class State : BaseState() {
         var format: ExportFormat by enum(ExportFormat.SVG)

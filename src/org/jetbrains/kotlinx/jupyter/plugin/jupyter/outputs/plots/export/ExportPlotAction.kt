@@ -14,11 +14,11 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogBuilder
+import com.intellij.openapi.ui.DialogBuilder.CancelActionDescriptor
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.AlignX
-import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.layout.selectedValueMatches
@@ -32,6 +32,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.MutableLetsPlo
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.PlotDataKeyExtractor
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindComparableIntervalToTextWithFixer
+import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindStringText
 import org.jetbrains.kotlinx.jupyter.plugin.util.firstAncestorOfType
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
 import org.jetbrains.letsPlot.awt.plot.PlotSvgExport
@@ -47,7 +48,9 @@ import org.jetbrains.plugins.notebooks.jupyter.actions.getNotebookFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.getCellIndex
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutputDataKeyExtractor
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterDisplayDataOutput
+import java.awt.event.ActionEvent
 import java.io.File
+import javax.swing.AbstractAction
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
@@ -85,8 +88,10 @@ class ExportPlotAction : NotebookEditorActionBase() {
     }
 
     private fun showExportDialog(project: Project, currentDir: VirtualFile): ExportModel? {
+        val exportOptions = PlotExportOptions.getInstance(project)
+
         val model = ExportModel(
-            PlotExportOptions.getInstance(project),
+            exportOptions,
             currentDir.path
         )
 
@@ -111,22 +116,21 @@ class ExportPlotAction : NotebookEditorActionBase() {
         })
 
         val formatComboBox = ComboBox(ExportFormat.entries.toTypedArray())
-        formatComboBox.selectedItem = model.format
+        fun resetFormatComboBox() {
+            formatComboBox.selectedItem = model.format
+        }
+
+        resetFormatComboBox()
         formatComboBox.addActionListener {
             model.changeFormat(formatComboBox.selectedItem as ExportFormat)
             fileField.setText(model.fileName)
         }
 
-        val dialogBuilder = DialogBuilder()
-            .title(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.title"))
-            .apply {
-                addCancelAction()
-                addOkAction().setText(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.ok.text"))
-            }
-
         val dialogPanel = panel {
             row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.format")) {
-                cell(formatComboBox)
+                cell(formatComboBox).onReset {
+                    resetFormatComboBox()
+                }
             }
             indent {
                 row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.scaling.factor")) {
@@ -154,17 +158,32 @@ class ExportPlotAction : NotebookEditorActionBase() {
                 textFieldWithBrowseButton(
                     fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
                 )
-                    .bindText(model::directory.toMutableProperty())
+                    .bindStringText(model::directory.toMutableProperty())
                     .align(AlignX.FILL)
             }
             row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.file.name")) {
                 cell(fileField)
-                    .bindText(model::fileName.toMutableProperty())
+                    .bindStringText(model::fileName.toMutableProperty())
                     .align(AlignX.FILL)
             }
         }
 
         dialogPanel.preferredWidth = 300
+
+        val restoreDefaultSettingsAction = object : AbstractAction(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.restore.defaults")) {
+            override fun actionPerformed(e: ActionEvent?) {
+                exportOptions.restoreDefaults()
+                dialogPanel.reset()
+            }
+        }
+
+        val dialogBuilder = DialogBuilder()
+            .title(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.title"))
+            .apply {
+                addLeftSideAction(CancelActionDescriptor().getAction(dialogWrapper))
+                addAction(restoreDefaultSettingsAction)
+                addOkAction().setText(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.ok.text"))
+            }
 
         val isOk = dialogBuilder
             .centerPanel(dialogPanel)
