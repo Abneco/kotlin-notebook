@@ -292,6 +292,9 @@
         <csvDropHandler
                 id="KotlinXlsDropHandler"
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.dnd.KotlinXlsDropHandler"/>
+        <csvDropHandler
+                id="KotlinJsonDropHandler"
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.dnd.KotlinJsonDropHandler"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlinx.jupyter.plugin">
