@@ -93,6 +93,7 @@
         <plugin id="intellij.scientific.tables"/>
 
         <plugin id="intellij.jupyter"/>
+        <plugin id="com.intellij.ml.llm"/>
 
         <plugin id="com.intellij.modules.platform"/>
         <plugin id="com.intellij.modules.java"/>

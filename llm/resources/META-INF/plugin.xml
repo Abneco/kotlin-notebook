@@ -1,0 +1,25 @@
+<idea-plugin package="org.jetbrains.kotlinx.jupyter.plugin.llm">
+    <id>org.jetbrains.plugins.kotlin.jupyter.llm</id>
+    <name>LLM For KtNotebook</name>
+
+    <dependencies>
+        <plugin id="org.jetbrains.plugins.kotlin.jupyter"/>
+    </dependencies>
+    <category>Tools Integration</category>
+    <vendor>JetBrains</vendor>
+
+
+    <extensions defaultExtensionNs="com.intellij">
+        <chatContextItemIdentityExtension implementation="org.jetbrains.kotlinx.jupyter.plugin.llm.context.NotebookChatContextItemIdentityProvider"/>
+        <chatContextProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.llm.context.KotlinNotebookChatContextProvider"/>
+        <codeContextProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.llm.context.KotlinNotebookCodeContextProvider"/>
+        <codeContextAttachmentsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.llm.dependency.KotlinNotebookRuntimeDependencyCollector"/>
+
+        <smartChatEndpointProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.llm.chat.KotlinNotebookChatEndpointProviders"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij.ml.llm">
+        <languageSummaryProvider language="Jupyter" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.llm.NotebookSummaryProvider"/>
+        <nameSuggestionContextProvider language="Jupyter" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.llm.chat.NotebookNamesSuggestionProvider"/>
+    </extensions>
+</idea-plugin>

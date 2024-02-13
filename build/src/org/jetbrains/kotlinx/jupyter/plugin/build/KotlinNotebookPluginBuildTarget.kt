@@ -22,7 +22,8 @@ object KotlinNotebookPluginBuildTarget {
             "intellij.kotlin.jupyter",
             "intellij.python.jupyter",
             "intellij.python.plugin",
-        ))
+            "intellij.kotlin.jupyter.llm"
+            ))
 
         context.notifyArtifactBuilt(context.paths.artifactDir)
     }
