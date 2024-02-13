@@ -16,6 +16,7 @@ class NotebookSessionVariablesService(
 ): NotebookProjectLevelService<NotebookVariablesPerFileState>(coroutineScope) {
     override fun createInstance(virtualFile: BackedNotebookVirtualFile): NotebookVariablesPerFileState {
         return NotebookVariablesPerFileState(
+            project,
             virtualFile,
             coroutineScope.childScope(),
             this

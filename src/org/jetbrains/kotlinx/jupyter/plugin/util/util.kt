@@ -131,8 +131,11 @@ fun PsiLanguageInjectionHost.getKtFileStartOffset(injectedLanguageManager: Injec
     return injectedLanguageManager.injectedToHost(ktFile, 0)
 }
 
-internal fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
+fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
     takeIfBacked(this) ?: find(this)
+
+fun VirtualFile.findEditor(project: Project): Editor =
+    FileEditorManager.getInstance(project).getEditors(this).map { it as TextEditor }.map { it.editor }.first()
 
 @RequiresReadLock
 internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =

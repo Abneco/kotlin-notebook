@@ -19,10 +19,13 @@ import com.sun.jdi.StringReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import org.jetbrains.kotlin.idea.debugger.core.invokeInManagerThread
+import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
 
 class NotebookVariablesPerFileState(
+    private val project: Project,
     private val virtualFile: BackedNotebookVirtualFile,
     private val coroutineScope: CoroutineScope,
     parentDisposable: Disposable
@@ -42,7 +45,7 @@ class NotebookVariablesPerFileState(
     }
     private val notebookSessionEnvironmentProvider = NotebookSessionNoSuspensionEnvironmentProvider(virtualFile)
 
-    fun requestVariablesUpdate(project: Project) {
+    fun requestVariablesUpdate() {
         coroutineScope.async {
             project.messageBus.syncPublisher(JupyterRuntimeProcessListener.TOPIC)
                 .notebookSessionEnvironmentUpdated(virtualFile.file, null)
@@ -55,6 +58,29 @@ class NotebookVariablesPerFileState(
 
     override fun getVariablesStateReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference? {
         return notebookSessionEnvironmentProvider.variableStateReferenceProvider(virtualMachineProxy)
+    }
+
+    override fun getXValueChildrenList(): XValueChildrenList? {
+        val debugSession = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
+        val vmProxy = debugSession.currentStackFrameProxy?.virtualMachine
+        val evalContext = debugSession.evaluationContext
+        if (vmProxy == null || evalContext == null) {
+            return null
+        }
+        return representVariablesStateAsXContainer(vmProxy, evalContext)
+    }
+
+    override fun getVariableValueByNameOrNull(name: String): JavaValue? {
+        val variables = getXValueChildrenList() ?: return null
+        var foundVariable: JavaValue? = null
+        for (i in 0 until variables.size()) {
+            foundVariable = variables.getValue(i) as? JavaValue
+            val varName = variables.getName(i)
+            if (varName == name) {
+                break
+            }
+        }
+        return foundVariable
     }
 
     override fun representVariablesStateAsXContainer(virtualMachineProxy: VirtualMachineProxy, evaluationContext: EvaluationContextImpl): XValueChildrenList {
@@ -117,13 +143,15 @@ class NotebookVariablesPerFileState(
         val processImpl = virtualMachineProxy.debugProcess as? DebugProcessImpl ?: return list
 
         return list.apply {
-            addInternalVariables(
-                stateSize,
-                VariablesStateAccessorData(
-                    nextEntryFieldAccessor, mapEntryReference, hashMapNodeType
-                ),
-                processImpl.debuggerContext
-            )
+            processImpl.invokeInManagerThread {
+                addInternalVariables(
+                    stateSize,
+                    VariablesStateAccessorData(
+                        nextEntryFieldAccessor, mapEntryReference, hashMapNodeType
+                    ),
+                    processImpl.debuggerContext
+                )
+            }
         }
     }
 

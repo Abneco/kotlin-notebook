@@ -37,6 +37,6 @@ class NotebookDebugEventsHandler(
     override fun handleInternalDebugMethodEntryEvent(command: SuspendContextCommandImpl, event: LocatableEvent?) {
         val context = command.suspendContext ?: return
         if (!project.isShouldShowNotebookVariables) return
-        NotebookSessionVariablesService.getForFile(project, virtualFile).requestVariablesUpdate(project)
+        NotebookSessionVariablesService.getForFile(project, virtualFile).requestVariablesUpdate()
     }
 }
