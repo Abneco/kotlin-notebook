@@ -21,4 +21,6 @@ class KotlinNotebookEditorAppearanceProvider : NotebookEditorAppearanceProvider 
 
 class KotlinNotebookEditorAppearance(delegate: NotebookEditorAppearance) : NotebookEditorAppearance by delegate {
     override fun shouldShowExecutionCounts(): Boolean = KotlinNotebookApplicationOptions.get().shouldShowExecutionCount
+
+    override fun shouldShowOutExecutionCounts(): Boolean = true
 }
