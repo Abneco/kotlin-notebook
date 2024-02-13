@@ -6,6 +6,8 @@ import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.core.StreamReadConstraints
 import com.fasterxml.jackson.core.exc.StreamConstraintsException
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.intellij.database.datagrid.HierarchicalColumnsDataGridModel.HierarchicalGridColumn
+import com.intellij.database.datagrid.NestedTablesDataGridModel.NestedTableCellCoordinate
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.util.NlsSafe
@@ -24,6 +26,7 @@ import org.jetbrains.plugins.notebooks.tables.api.DSDataFrameInfo
 import org.jetbrains.plugins.notebooks.tables.api.DSTableCommandExecutor
 import org.jetbrains.plugins.notebooks.tables.api.DSTableDataProvider
 import org.jetbrains.plugins.notebooks.tables.api.DSTableDataType
+import org.jetbrains.plugins.notebooks.tables.api.NestedTableDataProvider
 import java.util.*
 import javax.swing.RowSorter
 import javax.swing.SortOrder
@@ -54,7 +57,7 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
 
 const val NULL: String = "null"
 
-class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : DSTableDataProvider {
+class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : NestedTableDataProvider {
     override val type: DSTableDataType = DSTableDataType.EXTERNAL
 
     override fun parseTextToFrameInfo(text: String): DSDataFrameInfo {
@@ -88,7 +91,7 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : DSTab
             TableCommandType.SLICE, CommandOutputType.DISPLAY
         )
 
-        return executeParsing(response) { parseDataFromKotlinDataframeOutput(dataId, response) }
+       return executeParsing(response) { parseDataFromKotlinDataframeOutput(dataId, response) }
     }
 
     @Throws(DSTableDataException::class)
@@ -123,6 +126,36 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : DSTab
 
             throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}")
         }
+    }
+
+    override fun getNestedTableCommand(tableVariable: String, path: List<NestedTableCellCoordinate>): String {
+        var command = tableVariable
+        for (cellCoordinate in path) {
+            val column = cellCoordinate.column
+
+            val columnSelector = if (column is HierarchicalGridColumn) {
+                column.getFullyQualifiedName().joinToString(separator = "") { "[\"$it\"]" }
+            } else {
+                "[\"${column.name}\"]"
+            }
+
+            command = """
+                KotlinNotebookPluginUtils.convertToDataFrame($command!!)$columnSelector[${cellCoordinate.rowIdx}]
+            """.trimIndent()
+        }
+
+        return command
+    }
+
+    private fun HierarchicalGridColumn.getFullyQualifiedName(): List<String> {
+        val names = mutableListOf<String>()
+        var cur: HierarchicalGridColumn? = this
+        while (cur != null) {
+            names.add(0, cur.name)
+            cur = cur.parent
+        }
+
+        return names
     }
 
     private fun isNonComparableColumnSortingError(
@@ -161,11 +194,7 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : DSTab
         val kotlinDataframeSortKeys = sortKeys
             .map {
                 val name = columns[it.column]
-                val nestedNames = name.split(".")
-                var sortName = "\"${nestedNames.first()}\""
-                for (nestedName in nestedNames.tail()) {
-                    sortName += "[\"$nestedName\"]"
-                }
+                val sortName = join(name.split("."))
                 "$sortName${if (it.sortOrder == SortOrder.DESCENDING) ".desc()" else ""}"
             }
             .toMutableList()
@@ -206,6 +235,15 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : DSTab
                 ((df as DataFrame<*>).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} })
             }
         """.trimIndent()
+    }
+
+    private fun join(nestedNames: List<String>): String {
+        var fullName = "\"${nestedNames.first()}\""
+        for (nestedName in nestedNames.tail()) {
+            fullName += "[\"$nestedName\"]"
+        }
+
+        return fullName
     }
 
     override fun isFallbackToStaticTableSupported(): Boolean = true
