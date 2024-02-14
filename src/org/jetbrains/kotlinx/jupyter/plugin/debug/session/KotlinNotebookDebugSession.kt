@@ -56,7 +56,8 @@ class KotlinNotebookDebugSession(
     private val kernelThreadBreakpoint = KernelSyntheticMethodBreakpoint(
         project,
         KotlinNotebookSessionInternalNamesProvider.notebookClassName,
-        KotlinNotebookSessionInternalNamesProvider.notebookDebugMethodName
+        KotlinNotebookSessionInternalNamesProvider.notebookDebugMethodName,
+        KotlinNotebookSessionInternalNamesProvider.notebookDebugMethodBreakpointLineNumber,
     ) { command, event ->
         val suspendContext = command.suspendContext
         if (suspendContext != null) {

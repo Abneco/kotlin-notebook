@@ -18,6 +18,10 @@ fun Logger.doUnderDebug(action: Logger.() -> Unit) {
     }
 }
 
+fun Logger.warnUnderDebug(message: String) = doUnderDebug {
+    warn(message)
+}
+
 fun Logger.errorUnderDebug(message: String) = doUnderDebug {
     error(message)
 }

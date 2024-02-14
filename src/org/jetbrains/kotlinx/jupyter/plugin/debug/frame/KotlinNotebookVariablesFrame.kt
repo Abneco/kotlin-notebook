@@ -12,6 +12,7 @@ import com.intellij.xdebugger.frame.XCompositeNode
 import com.intellij.xdebugger.frame.XStackFrame
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSession
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookSessionVariablesService
+import org.jetbrains.kotlinx.jupyter.plugin.util.warnUnderDebug
 
 class KotlinNotebookVariablesFrame(
     private val project: Project,
@@ -72,7 +73,7 @@ class KotlinNotebookVariablesFrame(
             } catch (ex: Exception) {
                 LOG.error("Error during variables state computation: ", ex)
             } finally {
-                LOG.warn("Is paused: ${debugSession.debuggerSession?.isPaused == true}")
+                LOG.warnUnderDebug("Is paused: ${debugSession.debuggerSession?.isPaused == true}")
             }
         }
 

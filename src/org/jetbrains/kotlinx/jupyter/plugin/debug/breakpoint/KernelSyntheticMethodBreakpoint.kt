@@ -13,12 +13,12 @@ import com.sun.jdi.AbsentInformationException
 import com.sun.jdi.Method
 import com.sun.jdi.ReferenceType
 import com.sun.jdi.event.LocatableEvent
-import org.jetbrains.kotlinx.jupyter.plugin.util.doUnderDebug
 
 class KernelSyntheticMethodBreakpoint(
     project: Project,
     private val className: String,
     private val methodName: String,
+    private val lineNumber: Int,
     private val eventHandler: (SuspendContextCommandImpl, LocatableEvent?) -> Unit
 ) : SyntheticLineBreakpoint(project) {
     companion object {
@@ -69,13 +69,11 @@ class KernelSyntheticMethodBreakpoint(
 
      private fun createMethodRequest(debugProcess: DebugProcessImpl, method: Method) {
          try {
-             val location = method.allLineLocations().lastOrNull()
+             val location = method.allLineLocations().firstOrNull { it.lineNumber() == lineNumber }
              val request = debugProcess.requestsManager.createBreakpointRequest(this, location)
              debugProcess.requestsManager.enableRequest(request)
          } catch (ex: AbsentInformationException) {
-             LOG.doUnderDebug {
-                 warn("Failure during setting up method request", ex)
-             }
+             LOG.warn("Failure during setting up method request", ex)
          }
     }
 
