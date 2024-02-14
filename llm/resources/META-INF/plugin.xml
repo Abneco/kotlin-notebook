@@ -22,4 +22,12 @@
         <languageSummaryProvider language="Jupyter" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.llm.NotebookSummaryProvider"/>
         <nameSuggestionContextProvider language="Jupyter" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.llm.chat.NotebookNamesSuggestionProvider"/>
     </extensions>
+
+    <actions resource-bundle="messages/KotlinNotebookLLMBundle">
+        <group id="KotlinNotebookAIActionsGroup"
+               class="com.intellij.ml.llm.intentions.editor.AIIntentionsActionGroup"
+               icon="com.intellij.ml.llm.MLLlmIcons.AiAssistantColored" searchable="false" popup="true">
+            <add-to-group group-id="JupyterEditorPopupActions" anchor="after" relative-to-action="NotebookRunCellAction"/>
+        </group>
+    </actions>
 </idea-plugin>

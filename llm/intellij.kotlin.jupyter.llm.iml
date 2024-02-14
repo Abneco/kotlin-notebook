@@ -24,5 +24,7 @@
     <orderEntry type="module" module-name="intellij.ml.llm" scope="PROVIDED" />
     <orderEntry type="module" module-name="intellij.kotlin.jupyter" />
     <orderEntry type="module" module-name="intellij.python.jupyter.tables" />
+    <orderEntry type="module" module-name="intellij.python.pydev" />
+    <orderEntry type="module" module-name="intellij.notebooks.visualization" />
   </component>
 </module>
