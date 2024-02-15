@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.database.datagrid.DynamicNestedTable
+import com.intellij.database.datagrid.StaticNestedTable
 import org.jetbrains.plugins.notebooks.tables.ColumnTreeNode
 
 
@@ -67,7 +68,8 @@ class KotlinDataframeParserFormatV1(mapper: ObjectMapper) :
     KotlinDataframeParser by KotlinDataframeParserImpl(
         mapper,
         pathToData = listOf(SERIALIZED_DATAFRAME_FIELD),
-        pathToMetadata = emptyList()
+        pathToMetadata = emptyList(),
+        isNestedFrameStatic = true
     )
 
 class KotlinDataframeParserFormatV2(mapper: ObjectMapper) :
@@ -75,6 +77,7 @@ class KotlinDataframeParserFormatV2(mapper: ObjectMapper) :
         mapper,
         pathToData = listOf(SERIALIZED_DATAFRAME_FIELD),
         pathToMetadata = listOf(METADATA_FIELD),
+        isNestedFrameStatic = false,
         extractColumnData = { node -> if (node.isColumnGroup() || node.isFrame()) node[DATA_FIELD] else node },
         extractNestedTablesRowNum = { node -> node[METADATA_FIELD][NUM_ROWS_FIELD].asInt() }
     )
@@ -83,6 +86,7 @@ private class KotlinDataframeParserImpl(
     private val mapper: ObjectMapper,
     private val pathToData: List<String>,
     private val pathToMetadata: List<String>,
+    private val isNestedFrameStatic: Boolean,
     private val extractColumnData: (JsonNode) -> JsonNode = { it },
     private val extractNestedTablesRowNum: (JsonNode) -> Int = { (it as ArrayNode).size() }
 ) : KotlinDataframeParser {
@@ -190,10 +194,17 @@ private class KotlinDataframeParserImpl(
         } else {
             // Nested Dataframe case
             val nestedTableHierarchy = extractNestedTableHierarchy()
-            val nestedRows: List<Array<Any>> = map { arrayNode ->
-                arrayNode.extractRowValues(nestedTableHierarchy.columnChildren).toTypedArray()
-            }.toList()
-            DynamicNestedTable(nestedRows, nestedTableHierarchy)
+            if (isNestedFrameStatic) {
+                val nestedRows: Array<Array<Any>> = map { arrayNode ->
+                    arrayNode.extractRowValues(nestedTableHierarchy.columnChildren).toTypedArray()
+                }.toTypedArray()
+                StaticNestedTable(nestedRows, nestedTableHierarchy)
+            } else {
+                val nestedRows: List<Array<Any>> = map { arrayNode ->
+                    arrayNode.extractRowValues(nestedTableHierarchy.columnChildren).toTypedArray()
+                }.toList()
+                DynamicNestedTable(nestedRows, nestedTableHierarchy)
+            }
         }
     }
 
