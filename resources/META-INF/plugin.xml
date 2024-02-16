@@ -299,6 +299,7 @@
 
     <extensions defaultExtensionNs="org.jetbrains.kotlinx.jupyter.plugin">
         <kernel.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>
+        <kernel.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.dataframe.KotlinDataframeKernelVmCommandCustomizer"/>
         <kernel.kernelRunnableFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory"/>
         <kernel.kernelRunnableFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory"/>
     </extensions>
