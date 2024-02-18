@@ -7,13 +7,30 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.channe
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketBase
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.toJupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import java.util.concurrent.atomic.AtomicReference
 
-class EmbeddedJupyterSocket(
+open class EmbeddedJupyterSocket(
     private val socketType: JupyterSocketType,
-    private val onMessageCallback: (JupyterMessage) -> Unit
+    private val onMessageCallback: (JupyterMessage) -> Unit,
+    private val delayMs: Long = 500,
 ) : JupyterSocketBase {
-    override fun receiveRawMessage(): RawMessage? {
-        return null
+    private val clientReply = AtomicReference<RawMessage?>(null)
+
+    fun setClientReply(reply: RawMessage) {
+        while (true) {
+            if (clientReply.compareAndSet(null, reply)) break
+            Thread.sleep(delayMs)
+        }
+    }
+
+    override fun receiveRawMessage(): RawMessage {
+        while (true) {
+            val reply = clientReply.getAndSet(null)
+            if (reply != null) {
+                return reply
+            }
+            Thread.sleep(delayMs)
+        }
     }
 
     override fun sendRawMessage(msg: RawMessage) {

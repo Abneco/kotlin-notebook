@@ -5,11 +5,13 @@ import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.config.KernelStreams
 import org.jetbrains.kotlinx.jupyter.execution.JupyterExecutor
 import org.jetbrains.kotlinx.jupyter.messaging.IdeCompatibleMessageRequestProcessor
+import org.jetbrains.kotlinx.jupyter.messaging.InputReply
 import org.jetbrains.kotlinx.jupyter.messaging.JupyterBaseSockets
 import org.jetbrains.kotlinx.jupyter.messaging.JupyterOutType
 import org.jetbrains.kotlinx.jupyter.messaging.MessageFactoryProvider
 import org.jetbrains.kotlinx.jupyter.messaging.comms.CommManagerInternal
 import org.jetbrains.kotlinx.jupyter.messaging.sendOut
+import org.jetbrains.kotlinx.jupyter.messaging.toRawMessage
 import org.jetbrains.kotlinx.jupyter.protocol.CapturingOutputStream
 import org.jetbrains.kotlinx.jupyter.protocol.DisabledStdinInputStream
 import org.jetbrains.kotlinx.jupyter.repl.ReplForJupyter
@@ -33,6 +35,10 @@ class EmbeddedMessageRequestProcessor(
     executionCount,
     repl
 ){
+    override fun processInputReply(content: InputReply) {
+        socketManager.stdin.setClientReply(incomingMessage.toRawMessage())
+    }
+
     override fun <T> evalWithIO(allowStdIn: Boolean, body: () -> T): T {
         val config = repl.options.outputConfig
         val out = System.out
