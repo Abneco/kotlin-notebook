@@ -74,9 +74,9 @@ class NotebookVariablesPerFileState(
         val variables = getXValueChildrenList() ?: return null
         var foundVariable: JavaValue? = null
         for (i in 0 until variables.size()) {
-            foundVariable = variables.getValue(i) as? JavaValue
             val varName = variables.getName(i)
             if (varName == name) {
+                foundVariable = variables.getValue(i) as? JavaValue
                 break
             }
         }
