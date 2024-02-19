@@ -53,7 +53,6 @@ class KotlinNotebookProjectOptionsProvider :
         KotlinNotebookSessionRunMode::class,
         State::kernelRunMode
     ).onChange(Listener::onKernelRunModeChanged)
-        internal set
 
     var shouldLimitTypeHintsByActiveCell by prop(State::shouldLimitTypeHintsByActiveCell)
         internal set

@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.settings.DEFAULT
@@ -34,7 +35,7 @@ interface KernelRunnableFactory {
 
 val Project.kotlinNotebookSessionRunMode : KotlinNotebookSessionRunMode
     get() {
-        return if (isKernelProcessEmbeddingEnabled) {
+        return if (isKernelProcessEmbeddingEnabled || ApplicationManager.getApplication().isUnitTestMode) {
             KotlinNotebookProjectOptionsProvider.getInstance(this).kernelRunMode
         } else {
             KotlinNotebookSessionRunMode.DEFAULT

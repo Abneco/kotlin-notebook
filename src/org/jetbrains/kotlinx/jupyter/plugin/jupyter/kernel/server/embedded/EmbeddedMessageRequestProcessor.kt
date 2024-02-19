@@ -62,9 +62,10 @@ class EmbeddedMessageRequestProcessor(
         val userError = getCapturingStream(null, JupyterOutType.STDERR, true)
 
         fun flushStreams() {
-            forkedOut.flush()
-            forkedError.flush()
-            userError.flush()
+            for (stream in listOf(forkedOut, forkedError, userError)) {
+                stream.flush()
+                stream.close()
+            }
         }
 
         val printForkedOut = PrintStream(forkedOut, false, "UTF-8")

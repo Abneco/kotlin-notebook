@@ -13,9 +13,11 @@ import com.intellij.testFramework.TestLoggerFactory
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.util.containers.forEachGuaranteed
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.runWithJupyterSession
+import org.jetbrains.kotlinx.jupyter.plugin.test.runners.TestContext
 import org.jetbrains.kotlinx.jupyter.plugin.test.withDisabledJcef
 import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
@@ -68,6 +70,7 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
 
     override fun setUp() {
         super.setUp()
+        KotlinNotebookProjectOptionsProvider.getInstance(project).kernelRunMode = TestContext.kernelRunMode
         Disposer.register(testRootDisposable, JupyterServers.getInstance())
     }
 
