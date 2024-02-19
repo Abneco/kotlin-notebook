@@ -33,15 +33,11 @@ class KernelSyntheticMethodBreakpoint(
         return 1
     }
 
-    private var foundClass: ReferenceType? = null
-
     override fun createRequest(debugProcess: DebugProcessImpl) {
         val targetClass = debugProcess.virtualMachineProxy.classesByNameProvider.get(className).singleOrNull()
         if (targetClass == null) {
-            LOG.error("Could not find main class :$className!")
-            return
+            LOG.warn("Main class is not yet loaded :$className!")
         }
-        foundClass = targetClass
         //createRequestForPreparedClass(debugProcess, targetClass)
         createOrWaitPrepare(debugProcess, className)
     }
