@@ -275,6 +275,8 @@
         <jupyterCellExecutionCallbackFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory"/>
         <connections.execution.preExecutionSourceModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.JupyterKotlinPreExecutionSourceModifier"/>
         <editorCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.creating.KotlinJupyterEditorCustomizer"/>
+        <notebookToolWindowSelector
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookToolWindowSelector"/>
         <notebookVarsToolWindowPanelProvider
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVarsToolWindowProvider"/>
         <jupyterActionPresentationModifier implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookActionPresentationModifier"/>
