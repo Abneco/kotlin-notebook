@@ -14,8 +14,9 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.ui.content.ContentFactory
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import icons.KotlinJupyterIcons
-import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.StopKotlinKernelAction
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import org.jetbrains.kotlinx.jupyter.plugin.util.fileNameFromProjectRoot
 import org.jetbrains.plugins.notebooks.core.api.NotebookDisposable
 import org.jetbrains.plugins.notebooks.jupyter.server.ui.attachJupyterServerContentCloseListener
 
@@ -26,10 +27,11 @@ private const val KOTLIN_NOTEBOOK_RUNNER_ID = "Kotlin Notebook Runner"
 fun showKotlinNotebookServerManagementToolWindow(
     handler: KotlinKernelProcessHandler,
 ) {
-    val kernelContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.title", handler.notebookPath.fileName)
+    val project = handler.project
+    val fileName = handler.notebookPath.fileNameFromProjectRoot(project)
+    val kernelContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.title", fileName)
     val logContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.tabs.log", handler.notebookPath)
 
-    val project = handler.project
     val toolWindow: ToolWindow = getOrCreateKotlinNotebookToolWindow(project)
 
     val console = ConsoleViewImpl(project, GlobalSearchScope.allScope(project), true, true)

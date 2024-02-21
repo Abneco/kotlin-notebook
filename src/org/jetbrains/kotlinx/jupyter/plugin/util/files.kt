@@ -2,6 +2,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.util
 
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
@@ -39,3 +40,13 @@ fun Path.findNotebookVirtualFileOrNull(): BackedNotebookVirtualFile? {
 val VirtualFile.parentsWithSelf: Sequence<VirtualFile> get() = generateSequence(this) { it.parent }
 
 typealias ProjectArtifacts = List<String>
+
+fun Path.fileNameFromProjectRoot(project: Project): String {
+    val projectPath = project.guessProjectDir()?.toNioPath()
+    val contentPath = this
+
+    return when {
+        contentPath.parent == projectPath -> contentPath.fileName.toString()
+        else -> "${contentPath.parent.fileName}/${contentPath.fileName}"
+    }
+}
