@@ -114,8 +114,6 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
 
     protected fun doTest(cellInd: Int? = null) {
         val notebookFile = configureExecutionTest()
-        // todo: move call inside KotlinNotebookExecutionBaseTestCase
-        setUpScriptingDependencies()
         val cells = notebookFile.getCells()
         val neededCell = (if (cellInd != null) cells.getOrNull(cellInd) else null) ?: error("Invalid cell index provided")
 

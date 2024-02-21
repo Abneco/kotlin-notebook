@@ -25,16 +25,19 @@ import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookCreateAction
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
+import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
+import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
+import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.originFile
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterBackedVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
@@ -185,11 +188,26 @@ fun executeCellsAndShutdownKernel(tester: ReceivedMessagesTester, notebookFile: 
     }
 }
 
+fun JupyterMessage.addCompiledSnippetDataToDependencies(project: Project, virtualFile: BackedNotebookVirtualFile) {
+    val data = getMetadata("eval_metadata")?.deserialize<EvaluatedSnippetMetadata>()
+    if (data == null) {
+        return
+    }
+
+    JupyterCompilerService.getForFile(project, virtualFile).addCompiledSnippet(
+        data,
+        psiCell = null,
+        updateAction ={}
+    )
+}
+
 fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executionCallback: JupyterExecutionCallback? = null) {
     val project = notebookFile.project
     val document = PsiDocumentManager.getInstance(project).getDocument(notebookFile)!!
     val executionManager = JupyterCellExecutionManager.getInstance(project)
     val notebookCells = notebookFile.getCells()
+    val backedNotebookFile = notebookFile.virtualFile
+        .toBackedNotebookFile() ?: error("Can't transform to BackedNotebookFile : $notebookFile")
     val cellsCount = notebookCells.size
     Assertions.assertEquals(tester.expectedCellsCount, cellsCount)
 
@@ -236,13 +254,14 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
 
                         override fun onExecuteReply(message: JupyterMessage) {
                             messages.reply = message
+                            message.addCompiledSnippetDataToDependencies(project, backedNotebookFile)
                         }
 
                         override fun onUpdateOutput(message: JupyterMessage) {
                             messages.outputs.add(message)
                         }
                     }, executionCallback),
-                    notebookVirtualFile = cell.getJupyterBackedVirtualFile()!!,
+                    notebookVirtualFile = backedNotebookFile,
                     project = project
                 )
             task
