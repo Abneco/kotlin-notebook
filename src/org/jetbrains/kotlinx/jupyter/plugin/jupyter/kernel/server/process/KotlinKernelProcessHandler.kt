@@ -33,7 +33,8 @@ class KotlinKernelProcessHandler(
 ): KillableColoredProcessHandler(commandLine), KotlinKernelRunnableHandler {
 
     private val _kernelState = AtomicReference(KernelState.STARTING)
-    override val kernelState: KernelState = _kernelState.get()
+    override val kernelState: KernelState
+        get() = _kernelState.get()
     
     override fun markStarted() {
         _kernelState.compareAndSet(KernelState.STARTING, KernelState.STARTED)
