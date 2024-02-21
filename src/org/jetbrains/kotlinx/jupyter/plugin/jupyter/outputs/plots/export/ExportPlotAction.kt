@@ -44,7 +44,7 @@ import org.jetbrains.plugins.notebooks.core.api.getNotebookCellAndFile
 import org.jetbrains.plugins.notebooks.core.impl.actions.NotebookEditorActionBase
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
-import org.jetbrains.plugins.notebooks.jupyter.actions.getNotebookFile
+import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterEditorActionsUtils.getNotebookFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.getCellIndex
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutputDataKeyExtractor
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterDisplayDataOutput
