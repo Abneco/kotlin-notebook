@@ -10,7 +10,7 @@ interface NotebookSessionEventListener {
         val TOPIC: Topic<NotebookSessionEventListener> = Topic(NotebookSessionEventListener::class.java, Topic.BroadcastDirection.NONE)
     }
 
-    fun kernelRestarted(virtualFile: BackedNotebookVirtualFile) = Unit
+    fun kernelStarted(virtualFile: BackedNotebookVirtualFile) = Unit
 
     fun sessionRestarted(virtualFile: BackedNotebookVirtualFile) = Unit
 }

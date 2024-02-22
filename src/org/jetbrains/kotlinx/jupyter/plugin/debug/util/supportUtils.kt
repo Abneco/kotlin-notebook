@@ -35,4 +35,6 @@ object NotebookDebugSessionSupportUtils {
 
     val Project.isShouldShowNotebookVariables: Boolean
         get() = KotlinNotebookProjectOptionsProvider.getInstance(this).shouldShowNotebookVariables
+
+    const val MINIMUM_SUPPORTED_VERSION: String = "0.12.0-137"
 }

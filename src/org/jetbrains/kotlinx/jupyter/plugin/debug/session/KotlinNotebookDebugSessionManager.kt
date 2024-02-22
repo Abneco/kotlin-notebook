@@ -2,11 +2,12 @@
 package org.jetbrains.kotlinx.jupyter.plugin.debug.session
 
 import com.intellij.debugger.engine.DebugProcess
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelVersionEnoughForInstrumentation
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.findNotebookVirtualFileOrNull
 import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
@@ -23,8 +24,10 @@ class KotlinNotebookDebugSessionManager(
 
     private val nextTargetDebugPortOrNull: Int?
         get() {
-            val isKeepOpened = KotlinNotebookProjectOptionsProvider.getInstance(project).shouldOpenDebugPort
-            return if (isKeepOpened) portsGenerator.randomPort() else null
+            val isSuitable = project.isKernelVersionEnoughForInstrumentation
+            return if (isSuitable && !ApplicationManager.getApplication().isUnitTestMode)
+                portsGenerator.randomPort()
+            else null
         }
 
     fun getByDebugProcessOrNull(debugProcess: DebugProcess?): KotlinNotebookDebugSession? {

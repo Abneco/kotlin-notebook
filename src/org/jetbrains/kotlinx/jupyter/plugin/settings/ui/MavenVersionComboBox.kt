@@ -56,6 +56,7 @@ private class MavenVersionComboBoxImpl(
     private fun initializeComboBox(versions: Collection<String>) {
         setModel(modelProvider.provideModel(versions))
         state = State.LOADED
+        selectedItemChanged()
     }
 
     private enum class State {
@@ -94,6 +95,8 @@ fun Row.mavenVersionComboBox(
             comboBox.version = versionProperty.get()
         }.onIsModified {
             comboBox.isReady && versionProperty.get() != comboBox.version
+        }.onChanged {
+            comboBox.isReady
         }.onApply {
             if (comboBox.isReady) {
                 versionProperty.set(comboBox.version)

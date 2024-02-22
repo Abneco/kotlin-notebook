@@ -57,7 +57,7 @@ class KotlinKernelProcessHandler(
                 val notebook = notebookVirtualFile
                 if (notebook != null) {
                     project.messageBus.syncPublisher(NotebookSessionEventListener.TOPIC)
-                        .kernelRestarted(notebook)
+                        .kernelStarted(notebook)
                 }
             }
 

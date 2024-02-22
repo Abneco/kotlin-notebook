@@ -103,12 +103,12 @@ class KotlinNotebookDebugSession(
         messageBus.connect(parentDisposable).subscribe(
             NotebookSessionEventListener.TOPIC,
             object : NotebookSessionEventListener {
-                override fun kernelRestarted(virtualFile: BackedNotebookVirtualFile) {
+                override fun kernelStarted(virtualFile: BackedNotebookVirtualFile) {
                     this@KotlinNotebookDebugSession.coroutineScope.launch {
                         if (project.isDisposed) return@launch
 
                         val session = getOrCreateDebuggerSession(project, forceRestart = true)
-                        LOG.warn("Session after restart: $session")
+                        LOG.warn("Session after start: $session")
                     }
                 }
             }
@@ -268,6 +268,7 @@ class KotlinNotebookDebugSession(
 
     override fun dispose() {
         debugConnectionHolder.myDebugSession?.process?.removeDebugProcessListener(processListener)
+        disposeCurrentSession()
         debugConnectionHolder.clearKnownConnection(project)
         processListener = null
     }

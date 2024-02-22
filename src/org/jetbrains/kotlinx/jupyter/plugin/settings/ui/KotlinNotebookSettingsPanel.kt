@@ -15,7 +15,7 @@ import com.intellij.openapi.roots.ui.configuration.SdkComboBoxModel
 import com.intellij.openapi.roots.ui.configuration.SdkListItem
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.util.NlsContexts
-import com.intellij.ui.components.JBCheckBox
+import com.intellij.openapi.util.Ref
 import com.intellij.ui.dsl.builder.ButtonsGroup
 import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.Panel
@@ -26,11 +26,11 @@ import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.builder.selected
 import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.layout.ComponentPredicate
 import com.intellij.util.execution.ParametersListUtil
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.MINIMUM_SUPPORTED_VERSION
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
@@ -38,6 +38,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOption
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.settings.SessionOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelProcessEmbeddingEnabled
+import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelVersionEnoughForInstrumentation
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isSuitableForStartingKernel
 import org.jetbrains.kotlinx.jupyter.plugin.settings.minJdkVersion
 import org.jetbrains.kotlinx.jupyter.plugin.util.revealKotlinNotebookLocalKernelsFolder
@@ -51,10 +52,11 @@ object KotlinNotebookSettingsPanel {
         val applicationOptions = KotlinNotebookApplicationOptions.get()
         val sessionOptions = service<SessionOptionsProvider>()
         val projectOptions = KotlinNotebookProjectOptionsProvider.getInstance(project)
+        val mavenSelectorCellRef: Ref<Cell<MavenVersionComboBox>> = Ref.create(null)
 
         return panel {
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.build")) {
-                createKernelVersionSelector(project, projectOptions)
+                createKernelVersionSelector(project, projectOptions, mavenSelectorCellRef)
 
                 val kernelModeObservable = getKernelRunModeObservable(projectOptions)
 
@@ -72,22 +74,38 @@ object KotlinNotebookSettingsPanel {
                 createEnvironmentVariablesField(projectOptions).showForSeparateProcess()
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug")) {
-                createDebugOptions(projectOptions)
+                createDebugOptions(projectOptions, mavenSelectorCellRef.get())
+                mavenSelectorCellRef.set(null)
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session")) {
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.sources"), sessionOptions::resolveSources)
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.multiplatform"), sessionOptions::resolveMpp)
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.outputs")) {
-                singleRowCheckBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.outputs.swing.letsPlot"), applicationOptions::showLetsPlotAsSwing)
-                singleRowCheckBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.outputs.swing.dataframe"), applicationOptions::showDataFrameAsSwing)
+                singleRowCheckBox(
+                    KotlinNotebookBundle.message("kotlin.jupyter.settings.outputs.swing.letsPlot"),
+                    applicationOptions::showLetsPlotAsSwing
+                )
+                singleRowCheckBox(
+                    KotlinNotebookBundle.message("kotlin.jupyter.settings.outputs.swing.dataframe"),
+                    applicationOptions::showDataFrameAsSwing
+                )
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.typeHints")) {
-                singleRowCheckBox(KotlinNotebookBundle.message("checkbox.should.typehint.only.active.cell"), projectOptions::shouldLimitTypeHintsByActiveCell)
+                singleRowCheckBox(
+                    KotlinNotebookBundle.message("checkbox.should.typehint.only.active.cell"),
+                    projectOptions::shouldLimitTypeHintsByActiveCell
+                )
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.appearance")) {
-                singleRowCheckBox(KotlinNotebookBundle.message("checkbox.should.show.execution.count"), applicationOptions::shouldShowExecutionCount)
-                singleRowCheckBox(KotlinNotebookBundle.message("checkbox.should.show.foldable.regions"), applicationOptions::shouldShowFoldings)
+                singleRowCheckBox(
+                    KotlinNotebookBundle.message("checkbox.should.show.execution.count"),
+                    applicationOptions::shouldShowExecutionCount
+                )
+                singleRowCheckBox(
+                    KotlinNotebookBundle.message("checkbox.should.show.foldable.regions"),
+                    applicationOptions::shouldShowFoldings
+                )
             }
         }
     }
@@ -99,14 +117,20 @@ object KotlinNotebookSettingsPanel {
         return AtomicProperty(modeProperty.invoke())
     }
 
-    private fun Panel.createKernelVersionSelector(project: Project, optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
+    private fun Panel.createKernelVersionSelector(
+        project: Project,
+        optionsProvider: KotlinNotebookProjectOptionsProvider,
+        cellReference: Ref<Cell<MavenVersionComboBox>>
+    ): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.version")) {
             mavenVersionComboBox(
                 project,
                 KotlinNotebookMavenArtifacts.KERNEL_SHADOWED,
                 optionsProvider::kernelVersion,
                 KotlinKernelVersion.STRING_VERSION_COMPARATOR.reversed(),
-            )
+            ).apply {
+                cellReference.set(this)
+            }
             button(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.explore.button.name")) {
                 project.revealKotlinNotebookLocalKernelsFolder()
             }.visibleIf(ComponentPredicate.fromValue(ApplicationManager.getApplication().isInternal))
@@ -163,7 +187,7 @@ object KotlinNotebookSettingsPanel {
                 .comment(ExecutionBundle.message("environment.variables.fragment.hint"))
                 .bind(
                     { component -> component.envs },
-                    { component, value ->  component.envs = value },
+                    { component, value -> component.envs = value },
                     optionsProvider::extraEnvironmentVariables.toMutableProperty()
                 )
         }
@@ -213,22 +237,17 @@ object KotlinNotebookSettingsPanel {
         }
     }
 
-    private fun Panel.createDebugOptions(optionsProvider: KotlinNotebookProjectOptionsProvider) {
-        var checkBox: Cell<JBCheckBox>? = null
-        row {
-            checkBox = checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.check.box"))
-                .accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.check.box.description"))
-                .bindSelected(optionsProvider::shouldOpenDebugPort)
-        }
-
+    private fun Panel.createDebugOptions(optionsProvider: KotlinNotebookProjectOptionsProvider, selectorRef: Cell<MavenVersionComboBox>?) {
         row {
             checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables"))
                 .accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.description"))
+                .comment(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.comment", MINIMUM_SUPPORTED_VERSION))
                 .bindSelected(optionsProvider::shouldShowNotebookVariables)
-                .enabledIf(checkBox?.selected ?: ComponentPredicate.FALSE).applyToComponent {
+                .applyToComponent {
                     toolTipText = KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.comment")
-                    checkBox?.selected?.addListener { checkBoxValue ->
-                        if (!checkBoxValue) isSelected = false
+
+                    selectorRef?.onChanged {
+                        isEnabled = it.version.isKernelVersionEnoughForInstrumentation
                     }
                 }
         }
