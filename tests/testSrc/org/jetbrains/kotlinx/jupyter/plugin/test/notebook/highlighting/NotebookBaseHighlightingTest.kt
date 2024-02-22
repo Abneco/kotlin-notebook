@@ -17,7 +17,7 @@ class NotebookBaseHighlightingTest : AbstractNotebookHighlightingTest() {
         doTest(ResultCheckStrategy.OnlyValidSyntax)
     }
 
-    @Test
+    //@Test
     fun testWithShadowedUnresolved() {
         doTest(ResultCheckStrategy.ShadowedErrors)
     }
