@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.util.EventDispatcher
 import com.intellij.util.io.BaseOutputReader
+import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelState
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
@@ -52,6 +53,14 @@ class KotlinKernelProcessHandler(
         setShouldKillProcessSoftly(!ApplicationManager.getApplication().isUnitTestMode)
 
         addProcessListener(object : ProcessAdapter() {
+            override fun startNotified(event: ProcessEvent) {
+                val notebook = notebookVirtualFile
+                if (notebook != null) {
+                    project.messageBus.syncPublisher(NotebookSessionEventListener.TOPIC)
+                        .kernelRestarted(notebook)
+                }
+            }
+
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                 LOG.debug(event.text.trimEnd().trimStart('\r', '\n'))
             }

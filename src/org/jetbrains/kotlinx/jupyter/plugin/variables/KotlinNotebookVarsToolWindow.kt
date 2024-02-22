@@ -29,7 +29,12 @@ class KotlinNotebookVarsToolWindow(project: Project, notebookFile: BackedNoteboo
         )
 
     override fun initVariablesView(frameVarsCallback: JupyterInlineCallback?) {
-        if (project.isDisposed || !project.isShouldShowNotebookVariables) return
+        if (project.isDisposed || !project.isShouldShowNotebookVariables) {
+            showMessage(
+                KotlinNotebookBundle.message("kotlin.jupyter.debug.node.default.message")
+            )
+            return
+        }
         removeAll()
         val debugManager = KotlinNotebookDebugSessionManager.getForFile(project, notebookFile)
 

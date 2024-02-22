@@ -128,6 +128,7 @@ class NotebookVariablesPerFileState(
 
         val list = XValueChildrenList()
         if (virtualMachineProxy !is VirtualMachineProxyImpl) return list
+        if (!virtualMachineProxy.canBeModified()) return list
 
         val variablesHolderReference = getVariablesStateReference(virtualMachineProxy) ?: return list
 

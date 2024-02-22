@@ -26,11 +26,11 @@ import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
@@ -141,8 +141,9 @@ internal object NotebookHighlightingUtilityObject {
             psiFile to cells
         }
         backedFile?.let {
-            KotlinNotebookCellExecutionCallbackFactory.getInstance().sessionRestarted(it)
-            hlManager?.sessionRestarted()
+            project.messageBus
+                .syncPublisher(NotebookSessionEventListener.TOPIC)
+                .sessionRestarted(it)
         }
         if (wouldShowNotification) {
             NotebookNotificationUtility.kernelRelatedFactory

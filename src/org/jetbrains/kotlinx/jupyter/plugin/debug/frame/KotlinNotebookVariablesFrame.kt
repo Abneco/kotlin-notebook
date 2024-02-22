@@ -6,12 +6,17 @@ import com.intellij.debugger.engine.JavaStackFrame
 import com.intellij.debugger.impl.PrioritizedTask
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
+import com.intellij.ui.SimpleTextAttributes
 import com.intellij.xdebugger.XSourcePosition
 import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
 import com.intellij.xdebugger.frame.XCompositeNode
 import com.intellij.xdebugger.frame.XStackFrame
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSession
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.isShouldShowNotebookVariables
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.createScreeningAttachment
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookSessionVariablesService
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
 import org.jetbrains.kotlinx.jupyter.plugin.util.warnUnderDebug
 
 class KotlinNotebookVariablesFrame(
@@ -22,6 +27,14 @@ class KotlinNotebookVariablesFrame(
     companion object {
         private val LOG = thisLogger()
         private val STACK_FRAME_EQUALITY_OBJECT = Any()
+    }
+    private fun XCompositeNode.fillDefaultNodeContent() {
+        setMessage(
+            KotlinNotebookBundle.message("kotlin.jupyter.debug.node.default.message"),
+            null,
+            SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES, null
+        )
+        super.computeChildren(this)
     }
     private var evaluator: XDebuggerEvaluator? = null
 
@@ -38,19 +51,29 @@ class KotlinNotebookVariablesFrame(
 
     override fun computeChildren(node: XCompositeNode) {
         debugSession.ensureSilentSessionAlive()
+        if (!project.isShouldShowNotebookVariables) {
+            node.fillDefaultNodeContent()
+            return
+        }
+
         val debugProcess = debugSession.debuggerSession?.process
         if (node.isObsolete || debugProcess == null) {
-            node.setErrorMessage("Variables are not available, no connection is established")
+            node.setErrorMessage(
+                KotlinNotebookBundle.message("kotlin.jupyter.debug.node.empty.no.connection.message")
+            )
             return
         }
         if (!debugProcess.isAttached) {
             if (debugProcess.isInInitialState) {
-                node.setErrorMessage("Variables will be rebuild after connection is established")
+                node.setErrorMessage(
+                    KotlinNotebookBundle.message("kotlin.jupyter.debug.node.rebuild.message")
+                )
                 return
             }
-            node.setErrorMessage("Variables are not available")
-            debugSession.disposeCurrentSession()
-            LOG.warn("Session is not initialised, disposing")
+            node.setErrorMessage(
+                KotlinNotebookBundle.message("kotlin.jupyter.debug.node.empty.not.attached.message")
+            )
+            LOG.warn("Session is not initialised")
             return
         }
 
@@ -58,7 +81,13 @@ class KotlinNotebookVariablesFrame(
         val context = debugSession.evaluationContext
 
         if (context == null) {
-            node.setErrorMessage("Computations are not available without suspended context")
+            node.setErrorMessage(
+                KotlinNotebookBundle.message("kotlin.jupyter.debug.node.no.context.message")
+            )
+            LOG.errorUnderDebug(
+                "Suspended context is null",
+                debugSession.createScreeningAttachment()
+            )
             return
         }
 

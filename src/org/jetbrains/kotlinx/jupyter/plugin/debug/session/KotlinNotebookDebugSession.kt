@@ -19,8 +19,10 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.impl.XDebuggerManagerImpl
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.jetbrains.kotlinx.jupyter.plugin.debug.breakpoint.KernelSyntheticMethodBreakpoint
 import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookDebugEventsHandler
+import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.names.KotlinNotebookSessionInternalNamesProvider
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.SessionRelatedInfo
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectionUtility
@@ -68,7 +70,7 @@ class KotlinNotebookDebugSession(
 
     @Volatile
     private var _debugPort: Int? = portProvider()
-    val targetDebugPort: Int? = _debugPort
+    val targetDebugPort: Int? get() = _debugPort
 
     fun providePortOnKernelStartUp(): Int? {
         _debugPort = portProvider()
@@ -84,20 +86,38 @@ class KotlinNotebookDebugSession(
         SessionRelatedInfo(project, virtualFile)
     )
 
-    init {
-        Disposer.register(projectService, this)
-        val messageBus = project.messageBus
-        messageBus.connect(projectService).subscribe(
+    private fun Project.initServiceListeners(parentDisposable: Disposable) {
+        val messageBus = messageBus
+        messageBus.connect(parentDisposable).subscribe(
             NotebookCodeSnippetsChangeListener.TOPIC,
             object : NotebookCodeSnippetsChangeListener {
                 override fun scriptsClassesChanged(file: BackedNotebookVirtualFile) {
-                  if (debuggerSession?.isConnecting == true) return
+                    if (debuggerSession?.isConnecting == true) return
 
-                  messageBus.syncPublisher(JupyterRuntimeProcessListener.TOPIC)
+                    messageBus.syncPublisher(JupyterRuntimeProcessListener.TOPIC)
                         .notebookSessionEnvironmentUpdated(virtualFile.file, null)
                 }
             }
         )
+
+        messageBus.connect(parentDisposable).subscribe(
+            NotebookSessionEventListener.TOPIC,
+            object : NotebookSessionEventListener {
+                override fun kernelRestarted(virtualFile: BackedNotebookVirtualFile) {
+                    this@KotlinNotebookDebugSession.coroutineScope.launch {
+                        if (project.isDisposed) return@launch
+
+                        val session = getOrCreateDebuggerSession(project, forceRestart = true)
+                        LOG.warn("Session after restart: $session")
+                    }
+                }
+            }
+        )
+    }
+
+    init {
+        Disposer.register(projectService, this)
+        project.initServiceListeners(projectService)
 
         debugConnectionHolder.sessionRelatedInfo.updateWith(project, targetDebugPort)
     }

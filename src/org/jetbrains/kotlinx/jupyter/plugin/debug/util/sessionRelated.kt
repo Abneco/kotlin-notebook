@@ -32,12 +32,3 @@ data class SessionRelatedInfo(
     var sessionPath: String? = myNotebook.file.path
 }
 
-
-object KernelInternalNamesHolder {
-    const val handlesProvider: String = "userHandlesProvider"
-    const val notebookName: String = "notebook"
-    val namesOfInterestInNotebookFrame = setOf(handlesProvider, "hostProvider", "\$earlierScripts", "<earlierScripts>", notebookName)
-    val scriptHistoryPossibleName = setOf("\$earlierScripts", "<earlierScripts>")
-
-}
-
