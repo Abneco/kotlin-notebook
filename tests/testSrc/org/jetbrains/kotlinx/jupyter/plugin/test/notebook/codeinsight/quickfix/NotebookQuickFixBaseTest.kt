@@ -5,15 +5,18 @@ import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.IntentionActionDelegate
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.runWriteActionAndWait
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
+import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.ui.UIUtil
 import junit.framework.TestCase
 import org.jetbrains.kotlin.idea.test.ConfigLibraryUtil
+import org.jetbrains.kotlin.idea.test.enableKotlinOfficialCodeStyle
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.getCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.isInjectedKtFile
@@ -86,7 +89,9 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
             }
             val expectedResult = FileUtil.loadFile(getTestFile(".kt.expected"), true)
             stubComparisonFailure?.let { throw it }
-
+            runWriteActionAndWait {
+                CodeStyleManager.getInstance(project).reformat(myFixture.file)
+            }
             TestCase.assertEquals(expectedResult, myFixture.file.text)
         } else {
             assertNull("Action with text ${expectedText} is present, but should not", intention)
@@ -111,8 +116,9 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
         }, "", "")
     }
 
-
     protected fun doTest(cellInd: Int? = null) {
+        enableKotlinOfficialCodeStyle(project)
+
         val notebookFile = configureExecutionTest()
         val cells = notebookFile.getCells()
         val neededCell = (if (cellInd != null) cells.getOrNull(cellInd) else null) ?: error("Invalid cell index provided")
@@ -123,6 +129,7 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
         } ?: error("No suitable KtFile found in a host")
         val rawContent = FileUtil.loadFile(getTestFile(".ipynb"), true)
 
+        setUpScriptingDependencies()
         doKotlinQuickFixTest(injectedFile, rawContent)
     }
 
