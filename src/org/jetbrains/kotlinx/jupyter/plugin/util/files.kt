@@ -1,6 +1,5 @@
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -9,7 +8,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import org.jetbrains.kotlin.idea.util.sourceRoots
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.originFile
 import java.io.File
 import java.nio.file.Path
 
@@ -51,10 +49,4 @@ fun Path.fileNameFromProjectRoot(project: Project): String {
         contentPath.parent == projectPath -> contentPath.fileName.toString()
         else -> "${contentPath.parent.fileName}/${contentPath.fileName}"
     }
-}
-
-fun BackedNotebookVirtualFile.fileNameTestAware(project: Project): String {
-    return if (ApplicationManager.getApplication().isUnitTestMode)
-        file.name
-    else originFile.toNioPath().fileNameFromProjectRoot(project)
 }

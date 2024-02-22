@@ -11,8 +11,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.KotlinNotebookVariablesF
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.isShouldShowNotebookVariables
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.kotlinx.jupyter.plugin.util.fileNameTestAware
+import org.jetbrains.kotlinx.jupyter.plugin.util.fileNameFromProjectRoot
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.originFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowPanel
@@ -25,7 +26,7 @@ class KotlinNotebookVarsToolWindow(project: Project, notebookFile: BackedNoteboo
     override fun getName() =
         KotlinNotebookBundle.message(
             "kotlin.jupyter.toolbar.tabs.variables",
-            notebookFile.fileNameTestAware(project)
+            notebookFile.originFile.toNioPath().fileNameFromProjectRoot(project)
         )
 
     override fun initVariablesView(frameVarsCallback: JupyterInlineCallback?) {

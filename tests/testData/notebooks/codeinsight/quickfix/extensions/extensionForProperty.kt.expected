@@ -1,6 +1,5 @@
 // "Create extension function" "true"
 class Hohoh {}
-
 val hohoh = Hohoh()
 hohoh.foo()
 
