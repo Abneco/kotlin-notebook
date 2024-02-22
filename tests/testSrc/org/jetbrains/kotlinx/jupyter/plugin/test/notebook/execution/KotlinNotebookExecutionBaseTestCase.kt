@@ -13,7 +13,6 @@ import com.intellij.testFramework.TestLoggerFactory
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.util.containers.forEachGuaranteed
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
-import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.runWithJupyterSession
@@ -103,10 +102,6 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
         val notebookFile = runReadAction {
             FileContextUtil.getFileContext(myFixture.file)?.containingFile ?: myFixture.file
         }
-        if (myFixture.file is KtFile) {
-            setUpScriptingDependencies()
-        }
-
         return notebookFile
     }
 

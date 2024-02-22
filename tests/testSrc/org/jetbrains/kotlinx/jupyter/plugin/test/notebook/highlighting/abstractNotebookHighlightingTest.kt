@@ -69,6 +69,7 @@ abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTes
 
     protected fun doTest(strategy: ResultCheckStrategy, notebookAftermathAction: (PsiFile) -> Unit = {}) {
         val notebookFile = configureExecutionTest()
+        setUpScriptingDependencies()
         val filter = createFilterForStrategy(strategy)
         val expectedData = getExpectedHighlightingData(true, false, true)
         val results = runInEdtAndGet {
