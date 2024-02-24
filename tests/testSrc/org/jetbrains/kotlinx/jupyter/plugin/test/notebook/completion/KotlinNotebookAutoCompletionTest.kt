@@ -2,14 +2,12 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion
 
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
-import com.intellij.testFramework.runInEdtAndWait
-import junit.framework.TestCase
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
+import org.jetbrains.kotlinx.jupyter.plugin.test.LookupFinishMode
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
+import org.jetbrains.kotlinx.jupyter.plugin.test.setUpScriptingDependencies
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
@@ -19,10 +17,6 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile
 
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/autocompletion"
-
-    internal enum class CompletionMode(val ch: Char) {
-        REPLACE('\t'), ADD('\n')
-    }
 
     @Test
     fun testCommandCompletion() = doTest { tester ->
@@ -44,62 +38,34 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
 
     @Test
     fun testKotlinCompletionInsertionCorrectStd() = doTest { tester ->
-        tester.typeWithPauses("lis")
-        val elements = myFixture?.lookupElements
-
-        invokeAndWaitIfNeeded {
-            elements?.first { it.lookupString == "listOf" }.let {
-                tester.lookup.finishLookup(CompletionMode.REPLACE.ch, it)
-            }
+        tester.typeAndFinishLookup("lis", LookupFinishMode.TAB) {
+            it.lookupString == "listOf"
         }
-
-        val t = runReadAction { myFixture.editor.document.text }
-        assertTrue(t, t.contains("listOf(x)") )
+        assertActualTextContains("listOf(x)")
     }
 
     @Test
     fun testKotlinCompletionInsertionCorrectReplace() = doTest { tester ->
-        tester.typeWithPauses("i")
-        val elements = myFixture?.lookupElements
-
-        invokeAndWaitIfNeeded {
-            elements?.first { it.lookupString == "id" }.let {
-                tester.lookup.finishLookup(CompletionMode.REPLACE.ch, it)
-            }
+        tester.typeAndFinishLookup("i", LookupFinishMode.TAB) {
+            it.lookupString == "id"
         }
-
-        val t = runReadAction { myFixture.editor.document.text }
-        assertTrue(t, t.contains("id(x)") )
+        assertActualTextContains("id(x)")
     }
 
     @Test
     fun testKotlinCompletionInsertionCorrectAdd() = doTest { tester ->
-        tester.typeWithPauses("i")
-        val elements = myFixture?.lookupElements
-
-        invokeAndWaitIfNeeded {
-            elements?.first { it.lookupString == "id" }.let {
-                tester.lookup.finishLookup(CompletionMode.ADD.ch, it)
-            }
+        tester.typeAndFinishLookup("i", LookupFinishMode.ENTER) {
+            it.lookupString == "id"
         }
-
-        val t = runReadAction { myFixture.editor.document.text }
-        assertTrue(t, t.contains("id()listOf(x)") )
+        assertActualTextContains("id()listOf(x)")
     }
 
     @Test
     fun testKotlinCompletionOverrideMethod() = doTest { tester ->
-        tester.typeWithPauses("de")
-        val elements = myFixture?.lookupElements
-
-        invokeAndWaitIfNeeded {
-            elements?.first { it.allLookupStrings.contains("hashCode") }.let {
-                tester.lookup.finishLookup(CompletionMode.ADD.ch, it)
-            }
+        tester.typeAndFinishLookup("de", LookupFinishMode.ENTER) {
+            it.allLookupStrings.contains("hashCode")
         }
-
-        val text = runReadAction { myFixture.editor.document.text }
-        TestCase.assertEquals("""
+        assertActualText("""
             class Clazz {
                 override fun hashCode(): Int {
                     return super.hashCode()
@@ -107,7 +73,7 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
             }
             
             
-        """.trimIndent(), text)
+        """.trimIndent())
     }
 
     @Test
@@ -125,11 +91,7 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
         }
         originalVirtualFile = myFixture.file.virtualFile
 
-        runInEdtAndWait {
-            runReadAction {
-                ScriptConfigurationManager.updateScriptDependenciesSynchronously(myFixture.file)
-            }
-        }
+        setUpScriptingDependencies(myFixture)
 
         val completionTester = CompletionAutoPopupTester(myFixture)
         completionTester.runWithAutoPopupEnabled {

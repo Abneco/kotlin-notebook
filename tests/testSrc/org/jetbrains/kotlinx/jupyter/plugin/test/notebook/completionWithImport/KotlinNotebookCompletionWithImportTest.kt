@@ -1,14 +1,8 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completionWithImport
 
-import com.intellij.codeInsight.lookup.LookupElement
-import com.intellij.openapi.actionSystem.IdeActions
-import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.application.runReadAction
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
-import junit.framework.TestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
-import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion.KotlinNotebookAutoCompletionTest
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
@@ -30,10 +24,10 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
                 println("#$cellNum: $messages")
             }
         }
-    ) { completionTester ->
-        completionTester.typeWithPauses("DASH")
-        myFixture.performEditorAction(IdeActions.ACTION_CHOOSE_LOOKUP_ITEM)
-        completionTester.joinCommit()
+    ) { tester ->
+        tester.typeAndFinishLookup("DASH") {
+            it.lookupString.contains("DASHED")
+        }
         assertActualText("""
             plot {
                 line {
@@ -127,27 +121,6 @@ class KotlinNotebookCompletionWithImportTest: KotlinNotebookExecutionBaseTestCas
             listOf(1, 2, 42).filter { it % 2 == 0 }.map { println() it.plus() }
         """.trimIndent())
     }
-
-    private fun CompletionAutoPopupTester.typeAndFinishLookup(string: String, filter: (LookupElement) -> Boolean) {
-        typeWithPauses(string)
-        finishLookupForElement(filter)
-    }
-
-    private fun CompletionAutoPopupTester.finishLookupForElement(filter: (LookupElement) -> Boolean) {
-        val elements = myFixture?.lookupElements
-        invokeAndWaitIfNeeded {
-            elements?.first(filter).let {
-                lookup.finishLookup(KotlinNotebookAutoCompletionTest.CompletionMode.ADD.ch, it)
-            }
-        }
-        joinCommit()
-    }
-
-    private fun assertActualText(expectedText: String) {
-        TestCase.assertEquals(expectedText, actualText())
-    }
-
-    private fun actualText() = runReadAction { myFixture.editor.document.text }
 
     private fun doTest(executionTester: ReceivedMessagesTester, completionChecker: (CompletionAutoPopupTester) -> Unit) {
         doTestAfterExecution(executionTester) {

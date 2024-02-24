@@ -18,6 +18,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.getCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.isInjectedKtFile
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
+import org.jetbrains.kotlinx.jupyter.plugin.test.setUpScriptingDependencies
 import org.junit.ComparisonFailure
 
 
@@ -115,7 +116,7 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
     protected fun doTest(cellInd: Int? = null) {
         val notebookFile = configureExecutionTest()
         // todo: move call inside KotlinNotebookExecutionBaseTestCase
-        setUpScriptingDependencies()
+        setUpScriptingDependencies(myFixture)
         val cells = notebookFile.getCells()
         val neededCell = (if (cellInd != null) cells.getOrNull(cellInd) else null) ?: error("Invalid cell index provided")
 

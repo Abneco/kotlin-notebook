@@ -1,16 +1,12 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test
 
-import com.intellij.injected.editor.DocumentWindow
-import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.PathManager
-import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
@@ -19,12 +15,12 @@ import com.intellij.testFramework.HeavyTestHelper
 import com.intellij.testFramework.IndexingTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
-import junit.framework.TestCase
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookCreateAction
+import org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaPSIFile
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
@@ -45,111 +41,14 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
-import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
-import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointerFactory
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory
-import org.junit.Rule
 import org.junit.jupiter.api.Assertions
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-import java.io.File
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 val baseTestDataPath = PathManager.getHomePath() + "/plugins/kotlin/jupyter/tests/testData"
-
-@RunWith(JUnit4::class)
-abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
-    @JvmField
-    @Rule
-    val kotlinNotebookCommonRule = JupyterCommonRule(
-        withClearPasswordSafe = false,
-        withProductionDataManagerRule = false,
-        withClearJupyterSettings = true
-    )
-
-    fun getTestFile(suffix: String): File {
-        return File(testDataPath, "${getTestName(true)}$suffix")
-    }
-
-    protected fun setUpScriptingDependencies() {
-        val ktFiles = when(val psiFile = myFixture.file) {
-            is KtFile -> listOf(psiFile)
-            is JupyterFile -> {
-                runReadAction { psiFile.getInjectedKtFiles() }
-            }
-            else -> error("Only KtFiles are expected, file passed: ${psiFile}")
-        }
-
-        runInEdtAndWait {
-            myFixture.project.waitIndexingComplete()
-            runReadAction {
-                for (file in ktFiles) {
-                    ScriptConfigurationManager.updateScriptDependenciesSynchronously(
-                        file
-                    )
-                }
-            }
-            IndexingTestUtil.waitUntilIndexesAreReady(myFixture.project)
-        }
-
-    }
-}
-
-abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCase() {
-    override lateinit var originalVirtualFile: VirtualFile
-
-    val notebookFile: BackedNotebookVirtualFile get() = _notebookFile!!
-    private var _notebookFile: BackedNotebookVirtualFile? = null
-
-    protected class TestOptions(
-        val checkTopLevelDocument: Boolean = false,
-        val caresAboutInjection: Boolean = true,
-    ) {
-        companion object {
-            val DEFAULT = TestOptions()
-        }
-    }
-
-    protected fun doSimpleTransformerTest(
-        expectedDocumentText: String,
-        testOptions: TestOptions = TestOptions.DEFAULT,
-        notebookFactory: () -> BackedNotebookVirtualFile = {
-            myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
-        },
-        transformer: () -> Unit
-    ) {
-        myFixture.setCaresAboutInjection(testOptions.caresAboutInjection)
-        _notebookFile = notebookFactory()
-        invokeAndWaitIfNeeded {
-            setMode(NotebookEditorMode.EDIT)
-        }
-        originalVirtualFile = myFixture.file.virtualFile
-        setUpScriptingDependencies()
-
-        if (!testOptions.caresAboutInjection) {
-            // Cache injection on current offset
-            InjectedLanguageManager.getInstance(project).findInjectedElementAt(myFixture.file, myFixture.caretOffset)
-        }
-        transformer()
-
-        val doc = myFixture.editor.document
-        val docToCheck = if (testOptions.checkTopLevelDocument && doc is DocumentWindow) {
-            doc.delegate
-        } else {
-            doc
-        }
-
-        val actualText = runReadAction {
-            docToCheck.text
-        }
-        TestCase.assertEquals(expectedDocumentText, actualText)
-    }
-}
 
 
 fun PsiFile.getCells(): List<JupyterPsiCell> = descendantsOfType<JupyterPsiCell>().toList()
@@ -301,4 +200,36 @@ fun CodeInsightTestFixture.configureBySimpleNotebook(notebookName: String) =
 
 fun CodeInsightTestFixture.configureBySingleEmptyCellNotebook() = configureBySimpleNotebook("singleEmptyCell")
 
+fun setUpScriptingDependencies(fixture: CodeInsightTestFixture) {
+    val ktFiles = when(val psiFile = fixture.file) {
+        is KtFile -> {
+            listOf(psiFile)
+        }
+        is JupyterFile -> {
+            runReadAction { psiFile.getInjectedKtFiles() }
+        }
+        is JKTMetaPSIFile -> {
+            return
+        }
+        else -> {
+            error("Only KtFiles are expected, file passed: ${psiFile}")
+        }
+    }
 
+    runInEdtAndWait {
+        fixture.project.waitIndexingComplete()
+        runReadAction {
+            for (file in ktFiles) {
+                ScriptConfigurationManager.updateScriptDependenciesSynchronously(
+                    file
+                )
+            }
+        }
+        IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
+    }
+}
+
+enum class LookupFinishMode(val completionChar: Char) {
+    ENTER('\n'),
+    TAB('\t');
+}

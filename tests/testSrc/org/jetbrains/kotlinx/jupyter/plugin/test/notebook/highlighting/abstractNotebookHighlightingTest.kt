@@ -18,6 +18,7 @@ import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.util.ArrayUtilRt
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
+import org.jetbrains.kotlinx.jupyter.plugin.test.setUpScriptingDependencies
 
 abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTestCase() {
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/highlighting"
@@ -69,7 +70,7 @@ abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTes
 
     protected fun doTest(strategy: ResultCheckStrategy, notebookAftermathAction: (PsiFile) -> Unit = {}) {
         val notebookFile = configureExecutionTest()
-        setUpScriptingDependencies()
+        setUpScriptingDependencies(myFixture)
         val filter = createFilterForStrategy(strategy)
         val expectedData = getExpectedHighlightingData(true, false, true)
         val results = runInEdtAndGet {

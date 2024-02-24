@@ -18,6 +18,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.runWithJupyterSession
 import org.jetbrains.kotlinx.jupyter.plugin.test.runners.TestContext
+import org.jetbrains.kotlinx.jupyter.plugin.test.setUpScriptingDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.test.withDisabledJcef
 import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
@@ -117,7 +118,7 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
 
             runWithJupyterSession(notebookFile) {
                 executeCells(executionTester, notebookFile)
-                setUpScriptingDependencies()
+                setUpScriptingDependencies(myFixture)
                 testAction()
             }
         }
