@@ -6,13 +6,13 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.ClickListener
 import com.intellij.ui.ListenerUtil
 import com.intellij.ui.PopupHandler
+import com.intellij.ui.content.Content
 import com.intellij.xdebugger.impl.frame.XStandaloneVariablesView
 import org.jetbrains.kotlinx.jupyter.plugin.debug.KotlinNotebookDebugEditorsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.KotlinNotebookVariablesFrame
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.isShouldShowNotebookVariables
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.kotlinx.jupyter.plugin.util.fileNameTestAware
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
@@ -21,12 +21,18 @@ import org.jetbrains.plugins.notebooks.jupyter.variables.inline.JupyterInlineCal
 import java.awt.BorderLayout
 import java.awt.event.MouseEvent
 
-class KotlinNotebookVarsToolWindow(project: Project, notebookFile: BackedNotebookVirtualFile) : JupyterVarsToolWindowPanel(project, notebookFile) {
+class KotlinNotebookVarsToolWindow(
+    project: Project,
+    notebookFile: BackedNotebookVirtualFile,
+    panelContent: ((JupyterVarsToolWindowPanel) -> Content)?
+) : JupyterVarsToolWindowPanel(project, notebookFile) {
     private val session: JupyterNotebookSession? = JupyterRuntimeService.getInstance(project).getSession(notebookFile.file)
+    @Volatile
+    var panelContent: Content? = panelContent?.let { it(this) }
+
     override fun getName() =
         KotlinNotebookBundle.message(
-            "kotlin.jupyter.toolbar.tabs.variables",
-            notebookFile.fileNameTestAware(project)
+            "kotlin.jupyter.toolbar.tabs.variables"
         )
 
     override fun initVariablesView(frameVarsCallback: JupyterInlineCallback?) {
@@ -60,5 +66,9 @@ class KotlinNotebookVarsToolWindow(project: Project, notebookFile: BackedNoteboo
 
         validate()
         repaint()
+    }
+
+    fun setPanelContent(content: Content) {
+        this.panelContent = content
     }
 }

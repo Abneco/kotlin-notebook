@@ -30,7 +30,7 @@ class KernelSyntheticMethodBreakpoint(
     }
 
     override fun getLineIndex(): Int {
-        return 1
+        return lineNumber
     }
 
     override fun createRequest(debugProcess: DebugProcessImpl) {

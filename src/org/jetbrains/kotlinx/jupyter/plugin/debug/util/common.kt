@@ -7,16 +7,16 @@ import com.intellij.openapi.progress.blockingContext
 import com.intellij.openapi.project.Project
 import com.intellij.xdebugger.frame.XValueChildrenList
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSession
-import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookSessionVariablesService
+import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 fun BackedNotebookVirtualFile.retrieveVariableValue(project: Project, variableName: String): JavaValue? {
-    return NotebookSessionVariablesService.getForFile(project, this).getVariableValueByNameOrNull(variableName)
+    return KotlinNotebookSessionVariablesService.getForFile(project, this).getVariableValueByNameOrNull(variableName)
 }
 
 suspend fun BackedNotebookVirtualFile.retrieveCurrentVariables(project: Project): XValueChildrenList? {
     val variables = blockingContext {
-        NotebookSessionVariablesService.getForFile(project, this).getXValueChildrenList()
+        KotlinNotebookSessionVariablesService.getForFile(project, this).getXValueChildrenList()
     }
     return variables
 }

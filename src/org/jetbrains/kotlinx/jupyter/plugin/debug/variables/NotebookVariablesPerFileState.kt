@@ -11,6 +11,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.ui.content.Content
 import com.intellij.xdebugger.frame.XValueChildrenList
 import com.sun.jdi.ClassType
 import com.sun.jdi.Field
@@ -21,8 +22,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import org.jetbrains.kotlin.idea.debugger.core.invokeInManagerThread
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
+import org.jetbrains.kotlinx.jupyter.plugin.variables.KotlinNotebookVarsToolWindow
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
+import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowPanel
 
 class NotebookVariablesPerFileState(
     private val project: Project,
@@ -43,7 +46,22 @@ class NotebookVariablesPerFileState(
     init {
         Disposer.register(parentDisposable, this)
     }
+    private var variableWindowReference: JupyterVarsToolWindowPanel? = null
     private val notebookSessionEnvironmentProvider = NotebookSessionNoSuspensionEnvironmentProvider(virtualFile)
+
+    @Synchronized
+    fun getOrCreateVariablesWindowPanel(
+        contentInitializer: ((JupyterVarsToolWindowPanel) -> Content)? = null
+    ): JupyterVarsToolWindowPanel {
+        val reference = variableWindowReference
+        if (reference != null) {
+            return reference
+        }
+
+        val newPanel = KotlinNotebookVarsToolWindow(project, virtualFile, contentInitializer)
+        variableWindowReference = newPanel
+        return newPanel
+    }
 
     fun requestVariablesUpdate() {
         coroutineScope.async {

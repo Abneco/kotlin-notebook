@@ -4,6 +4,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
@@ -43,6 +44,7 @@ val VirtualFile.parentsWithSelf: Sequence<VirtualFile> get() = generateSequence(
 
 typealias ProjectArtifacts = List<String>
 
+@NlsSafe
 fun Path.fileNameFromProjectRoot(project: Project): String {
     val projectPath = project.guessProjectDir()?.toNioPath()
     val contentPath = this

@@ -11,7 +11,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 abstract class StopKotlinKernelActionBase : DumbAwareAction(
     KotlinNotebookBundle.message("kotlin.jupyter.toolbar.actions.stop"),
     null,
-    AllIcons.Actions.Suspend
+    AllIcons.Debugger.KillProcess
 )
 
 class StopKotlinKernelAction(private val handler: KotlinKernelRunnableHandler): StopKotlinKernelActionBase() {

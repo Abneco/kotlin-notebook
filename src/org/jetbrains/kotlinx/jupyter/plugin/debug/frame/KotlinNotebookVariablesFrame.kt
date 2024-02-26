@@ -14,7 +14,7 @@ import com.intellij.xdebugger.frame.XStackFrame
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSession
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.isShouldShowNotebookVariables
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.createScreeningAttachment
-import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookSessionVariablesService
+import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
 import org.jetbrains.kotlinx.jupyter.plugin.util.warnUnderDebug
@@ -77,7 +77,7 @@ class KotlinNotebookVariablesFrame(
             return
         }
 
-        val variablesService = NotebookSessionVariablesService.getForFile(project, debugSession.virtualFile)
+        val variablesService = KotlinNotebookSessionVariablesService.getForFile(project, debugSession.virtualFile)
         val context = debugSession.evaluationContext
 
         if (context == null) {

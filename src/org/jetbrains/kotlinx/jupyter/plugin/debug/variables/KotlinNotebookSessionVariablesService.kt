@@ -10,7 +10,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 @Service(Service.Level.PROJECT)
-class NotebookSessionVariablesService(
+class KotlinNotebookSessionVariablesService(
     private val project: Project,
     coroutineScope: CoroutineScope
 ): NotebookProjectLevelService<NotebookVariablesPerFileState>(coroutineScope) {
@@ -24,7 +24,7 @@ class NotebookSessionVariablesService(
     }
 
     companion object {
-        fun getInstance(project: Project) = project.service<NotebookSessionVariablesService>()
+        fun getInstance(project: Project) = project.service<KotlinNotebookSessionVariablesService>()
 
         fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): NotebookVariablesPerFileState {
             return getInstance(project).getOrCreate(virtualFile)
