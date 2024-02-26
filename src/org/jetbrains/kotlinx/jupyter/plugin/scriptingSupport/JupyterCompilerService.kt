@@ -104,7 +104,13 @@ class JupyterCompilerService(
     val language = Language.findLanguageByID("kotlin")!!
 
     override fun createInstance(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
-        return JupyterCompilerPerFileService(project, virtualFile, initialClasspath,this)
+        return JupyterCompilerPerFileService(
+            project,
+            virtualFile,
+            initialClasspath,
+            coroutineScope,
+            this
+        )
     }
 
     fun requestScriptingUpdate() = scriptingSupportUpdateScheduler.requestUpdate()

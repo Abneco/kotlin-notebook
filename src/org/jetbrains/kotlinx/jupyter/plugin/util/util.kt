@@ -134,9 +134,6 @@ fun PsiLanguageInjectionHost.getKtFileStartOffset(injectedLanguageManager: Injec
 fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
     takeIfBacked(this) ?: find(this)
 
-fun VirtualFile.findEditor(project: Project): Editor =
-    FileEditorManager.getInstance(project).getEditors(this).map { it as TextEditor }.map { it.editor }.first()
-
 @RequiresReadLock
 internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
     PsiManager.getInstance(project).findFile(this)
@@ -193,5 +190,16 @@ fun <R> runSafely(action: () -> R, onFailure: (Throwable) -> Unit): R? {
         }
         onFailure(e)
         null
+    }
+}
+
+fun <R> runSafelyTyped(action: () -> R, onFailure: (Throwable) -> R): R {
+    return try {
+        action()
+    } catch (e: Throwable) {
+        if (e is ProcessCanceledException) {
+            throw e
+        }
+        onFailure(e)
     }
 }

@@ -3,7 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.Logger
@@ -13,13 +13,13 @@ import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.util.coroutines.namedChildScope
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.delete
 import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
@@ -50,6 +50,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.anyOf
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.util.runSafelyTyped
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -83,7 +84,7 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
 /**
  * This service is created for every Kotlin notebook file
  * and provides a scripting support for injected Kotlin snippets
- * including magics handling, storing dependencies and a list
+ * including magics handling, storing dependencies, and a list
  * of compiled scripts.
  *
  * @property project       Target Project instance
@@ -95,53 +96,28 @@ class JupyterCompilerPerFileService(
     private val project: Project,
     private val virtualFile: BackedNotebookVirtualFile,
     initialClasspath: List<File>,
+    parentCoroutineScope: CoroutineScope,
     parent: Disposable
 ) : Disposable {
-    private inner class ScriptingSupportAfterUpdateEventProcessor : ScriptingSupportAfterUpdateListener {
-        private fun updateLastKnownConfiguration() {
-            while (true) {
-                val lastStableConf = lastStableConfiguration.get()
-                val updatedConfiguration = handleBeforeCompiling(project.baseScriptingCompilationConfiguration)
+    private val coroutineScope = parentCoroutineScope.namedChildScope("JupyterCompilerPerFileService for file $virtualFile")
 
-                if (lastStableConfiguration.compareAndSet(lastStableConf, updatedConfiguration)) {
-                    LOG.info("Cached configuration updated for ${virtualFile.file.name}!")
-                    break
-                }
-            }
-        }
-
-        private fun checkLastDependenciesPresentInCache(): Boolean {
-            val cache = project.scriptConfigurationsClassCache
-
-            val lastCompiledSnippetPath = classesDir
-                .resolve(
-                    getLineFolderName(directoryCounter.get())
-                ).toString()
-            return cache.allDependenciesClassFiles.any { it.presentableUrl == lastCompiledSnippetPath }
-        }
-
-        override fun afterUpdate() {
-            coroutineScope.async {
-                if (previousSessionId == null) return@async
-
-                compileLock.read {
-                    if (!checkLastDependenciesPresentInCache()) {
-                        return@async
-                    }
-
-                    updateLastKnownConfiguration()
-                }
-                getScriptsChangePublisher().scriptsClassesChanged(virtualFile)
-            }
-        }
-    }
-
-    private fun getScriptsChangePublisher() =
+    private val scriptsChangePublisher get() =
         project.messageBus.syncPublisher(NotebookCodeSnippetsChangeListener.TOPIC)
 
     private var isDisposed = false
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
-    private val compileLock = ReentrantReadWriteLock()
+
+    // This lock is used to avoid concurrent modifications of data structures
+    // that hold the session state
+    // Please don't use it directly.
+    // Also note that acquiring this lock inside read/write action may lead to the deadlock, never do it.
+    private val dataLock = ReentrantReadWriteLock()
+
+    private fun <R> writeData(action: () -> R) = dataLock.write(action)
+    private fun <R> readData(action: () -> R) = dataLock.read(action)
+    private fun <R> readDataWithReadAction(action: () -> R): R = readData {
+        ReadAction.compute<R, Throwable>(action)
+    }
+
     private val directoryCounter = AtomicInteger(0)
 
     private val classesDir: Path by lazy {
@@ -185,24 +161,6 @@ class JupyterCompilerPerFileService(
 
     val executedCellsCount: Int get() = directoryCounter.get()
 
-    fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
-        return runReadAction {
-            val notebookPsiFile = virtualFile.file.toPsiFile(project)
-            val ktFiles = notebookPsiFile.getInjectedKtFiles()
-            val configurations = ktFiles.mapNotNull { ktFile ->
-                val conf = JupyterKtScriptingSupport.getConfiguration(ktFile)?.valueOrNull()
-                if (conf == null || conf.dependenciesClassPath.isEmpty()) {
-                    ktFile.reportAsAttachment()
-                    null
-                } else {
-                    ktFile.virtualFile to conf
-                }
-            }
-
-            configurations
-        }
-    }
-
     init {
         thisLogger().assertTrue(virtualFile.file.isKotlinNotebook) { "$virtualFile is not a Kotlin Jupyter notebook" }
         Disposer.register(parent, this)
@@ -216,6 +174,24 @@ class JupyterCompilerPerFileService(
         // We need to ensure we have all dependencies before the test started
         if (ApplicationManager.getApplication().isUnitTestMode) {
             externalDependenciesProvider.join()
+        }
+    }
+
+    fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
+        return readDataWithReadAction {
+            val notebookPsiFile = virtualFile.file.toPsiFile(project)
+            val ktFiles = notebookPsiFile.getInjectedKtFiles()
+            val configurations = ktFiles.mapNotNull { ktFile ->
+                val conf = JupyterKtScriptingSupport.getConfiguration(ktFile)?.valueOrNull()
+                if (conf == null || conf.dependenciesClassPath.isEmpty()) {
+                    ktFile.reportAsAttachment()
+                    null
+                } else {
+                    ktFile.virtualFile to conf
+                }
+            }
+
+            configurations
         }
     }
 
@@ -252,7 +228,7 @@ class JupyterCompilerPerFileService(
                 ::updateClasspathWithKernelJars,
                 ::updateClasspathWithProjectArtifactsAsync,
             )) {
-                getScriptsChangePublisher().scriptsClassesChanged(virtualFile)
+                scriptsChangePublisher.scriptsClassesChanged(virtualFile)
                 if (!ApplicationManager.getApplication().isUnitTestMode) {
                     JupyterKtScriptingSupport.updateSynchronously(project)
                 }
@@ -277,7 +253,7 @@ class JupyterCompilerPerFileService(
             LOG.warn("Couldn't download jars for the kernel version: $version")
         }
 
-        compileLock.write {
+        writeData {
             _currentClasspath.addInitial(jars)
             _sourceRoots.addInitial(sourcesJars)
         }
@@ -291,7 +267,7 @@ class JupyterCompilerPerFileService(
     private suspend fun updateClasspathWithProjectArtifactsAsync(): Boolean {
         val buildService = JupyterKotlinProjectArtifactsService.getInstance(project)
         val artifacts = buildService.buildProjectAndGetLibraries(virtualFile).ifEmpty { return false }
-        return compileLock.write {
+        return writeData {
             val oldSize = _currentClasspath.size
             _currentClasspath.addSnippet(artifacts.map { File(it) })
             val newSize = _currentClasspath.size
@@ -306,9 +282,9 @@ class JupyterCompilerPerFileService(
         val sourceText = sourceCode?.text
         LOG.debug("Before-compiling callback for script: $sourceText")
 
-        compileLock.read {
+        return readData {
             val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
-            return ScriptCompilationConfiguration(withNewClasspath) {
+            ScriptCompilationConfiguration(withNewClasspath) {
                 if (_currentClasspath.hasInitialPart) {
                     addBaseClass<ScriptTemplateWithDisplayHelpers>()
                 }
@@ -338,7 +314,7 @@ class JupyterCompilerPerFileService(
         // execute not on EDT
         AppExecutorUtil.getAppExecutorService().execute {
             try {
-                compileLock.write {
+                writeData {
                     addNewDependencies(snippetMetadata, psiCell)
                 }
                 updateAction()
@@ -421,37 +397,38 @@ class JupyterCompilerPerFileService(
         (implicitsList.lastOrNull()?.fromClass ?: this::class).java.classLoader
     )
 
+    // Returns true if some receiver classes were loaded, false otherwise
     private fun loadReceiverClassesIfAny(classesDirPath: Path, classesToLoad: Collection<String>): Boolean {
-        val classesLoaded = compileLock.write {
-            if (classesToLoad.isEmpty()) {
-                return false
-            }
+        if (classesToLoad.isEmpty()) {
+            return false
+        }
 
-            try {
-                val loader = createNextClassLoader(classesDirPath)
-                classesToLoad.forEach { className ->
-                    LOG.debug("Adding class: $className")
-                    val kClass = loader.loadClass(className).kotlin
-                    implicitsList.addClass(kClass)
-                }
-            } catch (e: Throwable) {
-                when (e) {
-                    is ProcessCanceledException -> {
-                        throw e
+        return runSafelyTyped(
+            action = {
+                writeData {
+                    val loader = createNextClassLoader(classesDirPath)
+                    classesToLoad.forEach { className ->
+                        LOG.debug("Adding class: $className")
+                        val kClass = loader.loadClass(className).kotlin
+                        implicitsList.addClass(kClass)
                     }
+                    true
+                }
+            },
+            onFailure = { e ->
+                when (e) {
                     is UnsupportedClassVersionError -> {
                         val msg = e.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
                         NotebookNotificationUtility.kernelRelatedFactory.showKernelJDKInconsistentError(project, msg)
-                        return@write true
+                        true
                     }
-                    else -> LOG.error(e)
+                    else -> {
+                        LOG.error(e)
+                        false
+                    }
                 }
-                return@write false
             }
-            true
-        }
-
-        return classesLoaded
+        )
     }
 
     private fun clearPreviousSnippets() {
@@ -465,7 +442,7 @@ class JupyterCompilerPerFileService(
     }
 
     fun clear() {
-        compileLock.write {
+        writeData {
             clearPreviousSnippets()
 
             classesDir.delete(true)
@@ -483,6 +460,42 @@ class JupyterCompilerPerFileService(
     override fun dispose() {
         isDisposed = true
         clear()
+    }
+
+    private inner class ScriptingSupportAfterUpdateEventProcessor : ScriptingSupportAfterUpdateListener {
+        private fun updateLastKnownConfiguration() {
+            while (true) {
+                val lastStableConf = lastStableConfiguration.get()
+                val updatedConfiguration = handleBeforeCompiling(project.baseScriptingCompilationConfiguration)
+
+                if (lastStableConfiguration.compareAndSet(lastStableConf, updatedConfiguration)) {
+                    LOG.info("Cached configuration updated for ${virtualFile.file.name}!")
+                    break
+                }
+            }
+        }
+
+        private fun checkLastDependenciesPresentInCache(): Boolean {
+            val cache = project.scriptConfigurationsClassCache
+
+            val lastCompiledSnippetPath = classesDir
+                .resolve(
+                    getLineFolderName(directoryCounter.get())
+                ).toString()
+            return cache.allDependenciesClassFiles.any { it.presentableUrl == lastCompiledSnippetPath }
+        }
+
+        override fun afterUpdate() {
+            coroutineScope.async {
+                if (previousSessionId == null) return@async
+
+                if (!checkLastDependenciesPresentInCache()) {
+                    return@async
+                }
+                updateLastKnownConfiguration()
+                scriptsChangePublisher.scriptsClassesChanged(virtualFile)
+            }
+        }
     }
 
     companion object {
