@@ -105,14 +105,20 @@ class NotebookVariablesPerFileState(
                     )
 
                 if (variableStateReference == null) continue
+                val fieldDescriptor = nodeManager?.getFieldDescriptor(
+                    null,
+                    variableStateReference,
+                    fieldAccessor
+                )
+                if (fieldDescriptor == null) {
+                    LOG.warn("Can't find descriptor for $fieldDescriptor")
+                    return
+                }
+
 
                 val xValue = JavaValue.create(
                     null,
-                    nodeManager?.getFieldDescriptor(
-                        null,
-                        variableStateReference,
-                        fieldAccessor
-                    )!!,
+                    fieldDescriptor,
                     evaluationContext,
                     nodeManager,
                     false

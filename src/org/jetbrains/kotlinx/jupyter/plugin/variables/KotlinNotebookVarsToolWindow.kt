@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.ClickListener
 import com.intellij.ui.ListenerUtil
+import com.intellij.ui.PopupHandler
 import com.intellij.xdebugger.impl.frame.XStandaloneVariablesView
 import org.jetbrains.kotlinx.jupyter.plugin.debug.KotlinNotebookDebugEditorsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.KotlinNotebookVariablesFrame
@@ -43,6 +44,7 @@ class KotlinNotebookVarsToolWindow(project: Project, notebookFile: BackedNoteboo
         variablesView = XStandaloneVariablesView(project, KotlinNotebookDebugEditorsProvider(), stackFrame)
         val viewReference = variablesView
         if (viewReference == null) return
+        PopupHandler.installPopupMenu(viewReference.tree, "Notebook.XDebugger.StateValueGroup", "XDebuggerTreePopup")
 
         add(viewReference.panel, BorderLayout.CENTER)
         clickListener = object : ClickListener() {
