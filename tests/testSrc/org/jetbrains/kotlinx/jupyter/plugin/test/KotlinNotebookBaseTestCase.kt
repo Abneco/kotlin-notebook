@@ -5,6 +5,7 @@ import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
+import com.intellij.util.concurrency.ThreadingAssertions
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion.finishLookup
 import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
@@ -18,9 +19,9 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
     @JvmField
     @Rule
     val kotlinNotebookCommonRule = JupyterCommonRule(
-      withClearPasswordSafe = false,
-      withProductionDataManagerRule = false,
-      withClearJupyterSettings = true
+        withClearPasswordSafe = false,
+        withProductionDataManagerRule = false,
+        withClearJupyterSettings = true
     )
 
     fun getTestFile(suffix: String): File {
@@ -32,14 +33,9 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
         mode: LookupFinishMode = LookupFinishMode.ENTER,
         filter: (LookupElement) -> Boolean
     ) {
+        ThreadingAssertions.assertBackgroundThread()
         typeWithPauses(string)
-        finishLookupForElement(mode, filter)
-    }
-
-    private fun CompletionAutoPopupTester.finishLookupForElement(
-        mode: LookupFinishMode = LookupFinishMode.ENTER,
-        filter: (LookupElement) -> Boolean
-    ) {
+        joinCommit()
         invokeAndWaitIfNeeded {
             val firstLookupElement = myFixture?.lookupElements?.firstOrNull(filter)
             lookup.finishLookup(mode, firstLookupElement)
@@ -49,7 +45,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
 
 
     protected fun assertActualText(expectedText: String) {
-      assertEquals(expectedText, actualText())
+        assertEquals(expectedText, actualText())
     }
 
     protected fun assertActualTextContains(expectedText: String) {
