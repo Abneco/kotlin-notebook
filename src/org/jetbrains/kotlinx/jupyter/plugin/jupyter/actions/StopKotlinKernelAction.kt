@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.DumbAwareAction
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.getOrCreateKotlinNotebookToolWindow
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 
 abstract class StopKotlinKernelActionBase : DumbAwareAction(
@@ -17,6 +18,7 @@ abstract class StopKotlinKernelActionBase : DumbAwareAction(
 class StopKotlinKernelAction(private val handler: KotlinKernelRunnableHandler): StopKotlinKernelActionBase() {
     override fun actionPerformed(e: AnActionEvent) {
         handler.stopKernel()
+        makeToolWindowContentClosable()
     }
 
     override fun update(e: AnActionEvent) {
@@ -25,5 +27,12 @@ class StopKotlinKernelAction(private val handler: KotlinKernelRunnableHandler): 
 
     override fun getActionUpdateThread(): ActionUpdateThread {
         return ActionUpdateThread.BGT
+    }
+
+    private fun makeToolWindowContentClosable() {
+        val toolWindow = getOrCreateKotlinNotebookToolWindow(handler.project)
+        toolWindow.contentManager.selectedContent?.let {
+            it.isCloseable = true
+        }
     }
 }

@@ -34,6 +34,7 @@ fun showKotlinNotebookServerManagementToolWindow(
 
     val newContent = notebookToolWindowBuilder.createMainContent()
     manager.addContent(newContent, -1)
+    manager.setSelectedContent(newContent)
 
     attachJupyterServerContentCloseListener(
         newContent,
@@ -50,5 +51,6 @@ internal fun getOrCreateKotlinNotebookToolWindow(project: Project): ToolWindow {
             RegisterToolWindowTask(KOTLIN_NOTEBOOK_TOOL_WINDOW_ID, canCloseContent = true, anchor = ToolWindowAnchor.BOTTOM)
         )
     toolWindow.setIcon(KotlinJupyterIcons.ToolWindowIcon)
+    toolWindow.isAutoHide = false
     return toolWindow
 }
