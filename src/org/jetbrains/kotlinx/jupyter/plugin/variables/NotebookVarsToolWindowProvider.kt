@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.variables.common.DefaultJupyterVarsToolWindowPanel
 import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowPanel
 import org.jetbrains.plugins.notebooks.jupyter.variables.common.NotebookVarsToolWindowPanelProvider
 
@@ -15,7 +16,11 @@ internal class NotebookVarsToolWindowProvider : NotebookVarsToolWindowPanelProvi
     }
 
     override fun getToolWindowPanel(project: Project, virtualFile: BackedNotebookVirtualFile): JupyterVarsToolWindowPanel {
-        return KotlinNotebookSessionVariablesService.getForFile(project, virtualFile).getOrCreateVariablesWindowPanel()
+        val variableService = KotlinNotebookSessionVariablesService.getForFile(project, virtualFile)
+        if (!variableService.isToolWindowReady()) {
+            return DefaultJupyterVarsToolWindowPanel(project, virtualFile)
+        }
+        return variableService.getToolWindow()
     }
 }
 

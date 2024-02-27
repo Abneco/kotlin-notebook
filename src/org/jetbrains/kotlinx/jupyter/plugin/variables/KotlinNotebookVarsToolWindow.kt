@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.variables
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.getPreferredFocusedComponent
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.ui.ClickListener
@@ -15,8 +16,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSes
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.isShouldShowNotebookVariables
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowPanel
 import org.jetbrains.plugins.notebooks.jupyter.variables.inline.JupyterInlineCallback
 import java.awt.BorderLayout
@@ -25,11 +24,8 @@ import java.awt.event.MouseEvent
 class KotlinNotebookVarsToolWindow(
     project: Project,
     notebookFile: BackedNotebookVirtualFile,
-    panelContent: ((JupyterVarsToolWindowPanel) -> Content)?
+    private val panelSetupData: NotebookToolWindowSetup
 ) : JupyterVarsToolWindowPanel(project, notebookFile) {
-    private val session: JupyterNotebookSession? = JupyterRuntimeService.getInstance(project).getSession(notebookFile.file)
-
-    val panelContent: Content? = panelContent?.let { it(this) }
 
     override fun getName() =
         KotlinNotebookBundle.message(
@@ -70,6 +66,22 @@ class KotlinNotebookVarsToolWindow(
     }
 
     override fun createContent(toolWindow: ToolWindow, index: Int): Content {
-        return panelContent ?: super.createContent(toolWindow, index)
+        return createContent()
+    }
+
+    fun createContent(): Content {
+        val panel = this
+        val data = panelSetupData
+
+        with(data) {
+            return uiRunnerLayoutUi
+                .createContent(
+                    id + title,
+                    panel,
+                    title,
+                    null,
+                    panel.getPreferredFocusedComponent()
+                )
+        }
     }
 }

@@ -15,7 +15,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.StopKotlinKernelActi
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KotlinKernelProcessHandler
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.fileNameFromProjectRoot
-import org.jetbrains.kotlinx.jupyter.plugin.variables.KotlinNotebookVarsToolWindow
+import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookToolWindowSetup
 import org.jetbrains.plugins.notebooks.core.api.NotebookDisposable
 
 class KotlinNotebookToolWindowBuilder(
@@ -34,7 +34,10 @@ class KotlinNotebookToolWindowBuilder(
 
     private val ui = RunnerLayoutUi.Factory.getInstance(handler.project)
         .create(
-            id, kernelContentTitle, kernelContentTitle, NotebookDisposable.forProject(handler.project)
+            id,
+            kernelContentTitle,
+            kernelContentTitle,
+            NotebookDisposable.forProject(handler.project)
         )
 
     fun createMainContent(): Content {
@@ -84,20 +87,13 @@ class KotlinNotebookToolWindowBuilder(
     private fun createVariablesView(): Content? {
         if (virtualFile == null) return null
 
+        val setupData = NotebookToolWindowSetup(
+            ui, id, variableContentTitle
+        )
         val toolWindowPanel = KotlinNotebookSessionVariablesService
             .getForFile(handler.project, virtualFile)
-            .getOrCreateVariablesWindowPanel { panel ->
-                ui.createContent(
-                    id + variableContentTitle,
-                    panel,
-                    variableContentTitle,
-                    null,
-                    panel.getPreferredFocusedComponent()
-                )
-            } as? KotlinNotebookVarsToolWindow
+            .getToolWindow(setupData)
 
-        if (toolWindowPanel == null) return null
-
-        return toolWindowPanel.panelContent
+        return toolWindowPanel.createContent()
     }
 }

@@ -6,7 +6,6 @@ import com.intellij.debugger.engine.JavaStackFrame
 import com.intellij.debugger.impl.PrioritizedTask
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
-import com.intellij.ui.SimpleTextAttributes
 import com.intellij.xdebugger.XSourcePosition
 import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
 import com.intellij.xdebugger.frame.XCompositeNode
@@ -28,14 +27,6 @@ class KotlinNotebookVariablesFrame(
         private val LOG = thisLogger()
         private val STACK_FRAME_EQUALITY_OBJECT = Any()
     }
-    private fun XCompositeNode.fillDefaultNodeContent() {
-        setMessage(
-            KotlinNotebookBundle.message("kotlin.jupyter.debug.node.default.message"),
-            null,
-            SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES, null
-        )
-        super.computeChildren(this)
-    }
     private var evaluator: XDebuggerEvaluator? = null
 
     override fun getEqualityObject(): Any? = STACK_FRAME_EQUALITY_OBJECT
@@ -52,7 +43,7 @@ class KotlinNotebookVariablesFrame(
     override fun computeChildren(node: XCompositeNode) {
         debugSession.ensureSilentSessionAlive()
         if (!project.isShouldShowNotebookVariables) {
-            node.fillDefaultNodeContent()
+            super.computeChildren(node)
             return
         }
 
