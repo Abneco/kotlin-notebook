@@ -46,7 +46,7 @@ class NotebookVariablesPerFileState(
     init {
         Disposer.register(parentDisposable, this)
     }
-    private var variableWindowReference: JupyterVarsToolWindowPanel? = null
+    private var variableWindowReference: KotlinNotebookVarsToolWindow? = null
     private val notebookSessionEnvironmentProvider = NotebookSessionNoSuspensionEnvironmentProvider(virtualFile)
 
     @Synchronized
@@ -54,7 +54,7 @@ class NotebookVariablesPerFileState(
         contentInitializer: ((JupyterVarsToolWindowPanel) -> Content)? = null
     ): JupyterVarsToolWindowPanel {
         val reference = variableWindowReference
-        if (reference != null) {
+        if (reference?.panelContent != null) {
             return reference
         }
 

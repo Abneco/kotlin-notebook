@@ -3,6 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.variables
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.wm.ToolWindow
 import com.intellij.ui.ClickListener
 import com.intellij.ui.ListenerUtil
 import com.intellij.ui.PopupHandler
@@ -27,8 +28,8 @@ class KotlinNotebookVarsToolWindow(
     panelContent: ((JupyterVarsToolWindowPanel) -> Content)?
 ) : JupyterVarsToolWindowPanel(project, notebookFile) {
     private val session: JupyterNotebookSession? = JupyterRuntimeService.getInstance(project).getSession(notebookFile.file)
-    @Volatile
-    var panelContent: Content? = panelContent?.let { it(this) }
+
+    val panelContent: Content? = panelContent?.let { it(this) }
 
     override fun getName() =
         KotlinNotebookBundle.message(
@@ -68,7 +69,7 @@ class KotlinNotebookVarsToolWindow(
         repaint()
     }
 
-    fun setPanelContent(content: Content) {
-        this.panelContent = content
+    override fun createContent(toolWindow: ToolWindow, index: Int): Content {
+        return panelContent ?: super.createContent(toolWindow, index)
     }
 }
