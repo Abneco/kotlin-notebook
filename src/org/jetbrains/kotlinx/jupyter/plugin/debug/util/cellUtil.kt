@@ -54,17 +54,8 @@ class ExecutedPresentCellInfo(psiFile: PsiFile?) {
         cellOrdinalToClassName.forEach { (ind, classes) ->
             classes.forEach {
                 classNameToCellOrdinal[it] = ind
-                cells?.get(ind)?.let { psiCell -> knownCellClasses[it] = psiCell }
+                cells?.getOrNull(ind)?.let { psiCell -> knownCellClasses[it] = psiCell }
             }
-        }
-    }
-
-    fun ensureForTheScript(cellClassName: String, cell: JupyterPsiCell) {
-        if (knownCellClasses.containsKey(cellClassName)) return
-        knownCellClasses[cellClassName] = cell
-
-        if (cell.isValid && !classNameToCellOrdinal.containsKey(cellClassName)) {
-            cells?.indexOf(cell)?.let { classNameToCellOrdinal[cellClassName] = it }
         }
     }
 
@@ -75,7 +66,7 @@ class ExecutedPresentCellInfo(psiFile: PsiFile?) {
         return classNameToCellOrdinal[properName]?.let {
             val file = jupyterFile
             if (cells == null && file != null) updateCellsByFile(file)
-            cells?.get(it)
+            cells?.getOrNull(it)
         } ?: knownCellClasses[properName]
     }
 
