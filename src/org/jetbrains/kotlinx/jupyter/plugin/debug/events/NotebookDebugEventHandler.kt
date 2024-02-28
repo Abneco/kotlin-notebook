@@ -2,7 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.debug.events
 
 import com.intellij.debugger.engine.DebugProcessImpl
-import com.intellij.debugger.engine.events.SuspendContextCommandImpl
+import com.intellij.debugger.engine.SuspendContext
 import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.openapi.project.Project
 import com.sun.jdi.event.LocatableEvent
@@ -14,7 +14,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 interface NotebookDebugEventHandler {
     fun handleVMConnectEvent(virtualMachine: VirtualMachineProxy)
     fun handleVMDisconnectEvent(virtualMachine: VirtualMachineProxy)
-    fun handleInternalDebugMethodEntryEvent(command: SuspendContextCommandImpl, event: LocatableEvent?)
+    fun handleInternalDebugMethodEntryEvent(context: SuspendContext?, event: LocatableEvent?)
 }
 
 
@@ -34,8 +34,9 @@ class NotebookDebugEventsHandler(
 
     }
 
-    override fun handleInternalDebugMethodEntryEvent(command: SuspendContextCommandImpl, event: LocatableEvent?) {
-        val context = command.suspendContext ?: return
+    override fun handleInternalDebugMethodEntryEvent(context: SuspendContext?, event: LocatableEvent?) {
+        if (context == null) return
+
         if (!project.isShouldShowNotebookVariables) return
         KotlinNotebookSessionVariablesService.getForFile(project, virtualFile).requestVariablesUpdate()
     }

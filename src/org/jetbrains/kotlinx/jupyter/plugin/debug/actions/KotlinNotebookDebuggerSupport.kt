@@ -5,6 +5,13 @@ import com.intellij.xdebugger.impl.XDebuggerSupport
 import com.intellij.xdebugger.impl.actions.DebuggerActionHandler
 import org.jetbrains.kotlinx.jupyter.plugin.debug.actions.evaluate.NotebookSilentEvaluateActionHandler
 
+/**
+ * Delegates handling of some of XDebuggerAction to implementations suitable for a particular cases.
+ * If we want to have features like ExpressionEvaluation, showing Referencing Objects, etc.
+ * without stopping Kernel itself.
+ *
+ * Even though [XDebuggerSupport] uses class marked as @Deprecated, there is no replacement for now.
+ */
 class KotlinNotebookDebuggerSupport : XDebuggerSupport() {
     private val evaluateSilentlyHandler = NotebookSilentEvaluateActionHandler()
 

@@ -25,6 +25,8 @@ import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.XDebuggerManager
 import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.SessionRelatedInfo
+import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
+import org.jetbrains.kotlinx.jupyter.startup.create
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 data class NotebookDebugConnectionHolder(
@@ -51,9 +53,6 @@ object DebugConnectionUtility {
             this, DefaultDebugExecutor.getDebugExecutorInstance()
         )
         .runnerSettings(runnerSettings)
-        //could recreate as in SwiftPackageManagerInstallSystemPackageAction
-        //@see RunConfiguration
-        // @see DebuggerTestCase
         .runProfile(
             RemoteConfiguration(this, RemoteConfigurationType.getInstance())
         ).build()
@@ -95,5 +94,14 @@ object DebugConnectionUtility {
         //debugSession.isModifiedClassesScanRequired = true // for hot-swap
         return debugSession
     }
+
+    // Random number
+    const val minimumDebugPort: Int = 5000
+
+    // 16-bit maximum value
+    const val maximumDebugPort: Int = 1 shl 16
+
+    val debugPortsGenerator: PortsGenerator
+        get() = PortsGenerator.create(minimumDebugPort, maximumDebugPort)
 
 }

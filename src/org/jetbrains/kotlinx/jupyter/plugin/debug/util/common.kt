@@ -10,11 +10,20 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSes
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
-fun BackedNotebookVirtualFile.retrieveVariableValue(project: Project, variableName: String): JavaValue? {
+/**
+ * Based on current DebugSession of [BackedNotebookVirtualFile],
+ * retrieves [JavaValue] by [variableName] in Kernel interpreter state or null.
+ *
+ */
+fun BackedNotebookVirtualFile.retrieveSessionVariableValue(project: Project, variableName: String): JavaValue? {
     return KotlinNotebookSessionVariablesService.getForFile(project, this).getVariableValueByNameOrNull(variableName)
 }
 
-suspend fun BackedNotebookVirtualFile.retrieveCurrentVariables(project: Project): XValueChildrenList? {
+/**
+ * Based on current DebugSession of [BackedNotebookVirtualFile],
+ * retrieves all [JavaValue] in Kernel interpreter state
+ */
+suspend fun BackedNotebookVirtualFile.retrieveCurrentSessionVariables(project: Project): XValueChildrenList? {
     val variables = blockingContext {
         KotlinNotebookSessionVariablesService.getForFile(project, this).getXValueChildrenList()
     }

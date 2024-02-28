@@ -4,8 +4,15 @@ package org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.api
 import com.intellij.debugger.SourcePosition
 import com.intellij.debugger.ui.tree.FieldDescriptor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
+/**
+ * Used for resolve [SourcePosition] based on [FieldDescriptor].
+ * Contract:
+ *  [FieldDescriptor] is a descriptor of Kernel interpreter state.
+ *  [BackedNotebookVirtualFile] is Kotlin Notebook
+ *  [SourcePosition] is located inside [BackedNotebookVirtualFile], or null otherwise
+ */
 fun interface DeclaredVariableSourcePositionProvider {
-    fun resolveTo(project: Project, virtualFile: VirtualFile?, descriptor: FieldDescriptor): SourcePosition?
+    fun resolveTo(project: Project, virtualFile: BackedNotebookVirtualFile, descriptor: FieldDescriptor): SourcePosition?
 }

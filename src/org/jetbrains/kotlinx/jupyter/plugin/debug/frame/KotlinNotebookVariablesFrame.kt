@@ -18,6 +18,13 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
 import org.jetbrains.kotlinx.jupyter.plugin.util.warnUnderDebug
 
+
+/**
+ * This [XStackFrame] represents current interpreter state
+ * inside Kotlin Notebook.
+ *
+ * This means, all the top-level assignments executed by the user at the present moment.
+ */
 class KotlinNotebookVariablesFrame(
     private val project: Project,
     private val sourcePosition: XSourcePosition?,
@@ -31,9 +38,15 @@ class KotlinNotebookVariablesFrame(
 
     override fun getEqualityObject(): Any? = STACK_FRAME_EQUALITY_OBJECT
 
+    // Since we focus on JVM, use Java implementations
     override fun getEvaluator(): XDebuggerEvaluator? {
         if (evaluator == null) {
-            evaluator = JavaDebuggerEvaluator(debugSession.debuggerSession?.process, debugSession.currentStackFrameProxy?.stackFrame as? JavaStackFrame)
+            val debugProcess = debugSession.debuggerSession?.process ?: return null
+            val frameProxy = debugSession.currentStackFrameProxy?.stackFrame as? JavaStackFrame
+            evaluator = JavaDebuggerEvaluator(
+                debugProcess,
+                frameProxy
+            )
         }
         return evaluator
     }

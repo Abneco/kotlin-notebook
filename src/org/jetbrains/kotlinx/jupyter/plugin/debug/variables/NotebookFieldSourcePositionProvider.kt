@@ -9,6 +9,7 @@ import com.intellij.debugger.ui.tree.NodeDescriptor
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.NotebookVariableDescriptorPositionResolver
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
+import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 
 class NotebookFieldSourcePositionProvider : SourcePositionProvider() {
     override fun computeSourcePosition(
@@ -19,6 +20,8 @@ class NotebookFieldSourcePositionProvider : SourcePositionProvider() {
     ): SourcePosition? {
         if (descriptor !is FieldDescriptor) return null
         val session = KotlinNotebookDebugSessionManager.getInstance(project).getByDebugProcessOrNull(context.debugProcess) ?: return null
-        return NotebookVariableDescriptorPositionResolver.resolveTo(project, session.virtualFile.file, descriptor)
+        val notebookFile = session.virtualFile.file.toBackedNotebookFile() ?: return null
+
+        return NotebookVariableDescriptorPositionResolver.resolveTo(project, notebookFile, descriptor)
     }
 }

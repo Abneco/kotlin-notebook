@@ -13,10 +13,21 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.idea.debugger.evaluate.KotlinEvaluatorBuilder
 import org.jetbrains.kotlin.idea.debugger.evaluate.KotlinK1CodeFragmentFactory
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterSourceImpl
 
+/**
+ * Class is used for evaluating expressions during a running DebugSession.
+ * Provides context for the following purposes:
+ *      - Ensures correct code insight within code fragments.
+ *      - Ensures that evaluations of code fragments are performed accurately.
+ *
+ * Kotlin Notebook, built upon Jupyter Notebook, lacks a default JVM-based context.
+ *
+ * Currently, this feature is not in use, as we don't have a Debug integration yet.
+ */
 class KotlinNotebookCodeFragmentFactory : CodeFragmentFactory() {
     private val ktCodeFragmentFactory = KotlinK1CodeFragmentFactory()
     private val ktEvaluator = KotlinEvaluatorBuilder
@@ -46,8 +57,7 @@ class KotlinNotebookCodeFragmentFactory : CodeFragmentFactory() {
     }
 
     override fun isContextAccepted(contextElement: PsiElement?): Boolean {
-        //return contextElement?.containingFile?.virtualFile?.isKotlinNotebook == true
-        return contextElement?.text == "Thread"
+        return contextElement?.containingFile?.virtualFile?.isKotlinNotebook == true
     }
 
     override fun getFileType(): LanguageFileType {

@@ -38,7 +38,7 @@ class KernelSyntheticMethodBreakpoint(
         if (targetClass == null) {
             LOG.warn("Main class is not yet loaded :$className!")
         }
-        //createRequestForPreparedClass(debugProcess, targetClass)
+
         createOrWaitPrepare(debugProcess, className)
     }
 

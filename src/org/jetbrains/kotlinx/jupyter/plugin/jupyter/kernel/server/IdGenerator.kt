@@ -2,7 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import org.jetbrains.kotlinx.jupyter.plugin.util.UniqueGenerator
-import java.util.*
+import java.util.UUID
 
 class IdGenerator : UniqueGenerator<UUID, String>() {
     override fun next(): UUID = UUID.randomUUID()

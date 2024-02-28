@@ -7,11 +7,10 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectionUtility
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelVersionEnoughForInstrumentation
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.findNotebookVirtualFileOrNull
-import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
-import org.jetbrains.kotlinx.jupyter.startup.create
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.nio.file.Path
 
@@ -20,7 +19,7 @@ class KotlinNotebookDebugSessionManager(
     private val project: Project,
     coroutineScope: CoroutineScope
 ) : NotebookProjectLevelService<KotlinNotebookDebugSession>(coroutineScope) {
-    private val portsGenerator = PortsGenerator.create(8000, 65535)
+    private val portsGenerator = DebugConnectionUtility.debugPortsGenerator
 
     private val nextTargetDebugPortOrNull: Int?
         get() {

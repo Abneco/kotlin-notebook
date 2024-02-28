@@ -6,7 +6,6 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiFile
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -34,7 +33,6 @@ class ExecutedPresentCellInfo(psiFile: PsiFile?) {
         val cellOrdinal = ordinal ?: cells?.indexOf(cell)
         val compiledName = nextCompiledClassNumber.toCompiledCellSnippedName()
         if (was != null && was != nextCompiledClassNumber.toCompiledCellSnippedName()) {
-            //LOG.warn("exec callback: $was != Line_${finalNum}")
             knownCellClasses.remove(was)
         }
         knownCellClasses[compiledName] = cell
@@ -109,15 +107,5 @@ fun JupyterPsiCell.updateInfoBeforeExecution(project: Project, virtualFile: Back
     runReadAction {
         NotebookStructureTrackerService.getForFile(project, virtualFile)
             .updateCellInformationBeforeExecution(this@updateInfoBeforeExecution, cellOrdinal)
-    }
-}
-
-fun JupyterPsiCell.ensureValidStateOnErrors(project: Project, virtualFile: BackedNotebookVirtualFile) {
-    runReadAction {
-        JupyterCompilerService.getForFile(project, virtualFile).also {
-            val was = this.getUserData(ExecutedPresentCellInfo.NOTEBOOK_CELL_INTERNAL_INFO_KEY) ?: return@runReadAction
-            //println("Rolling back from: ${was} to: ${Pair(was.second ?: "", null)}")
-            putUserData(ExecutedPresentCellInfo.NOTEBOOK_CELL_INTERNAL_INFO_KEY, Pair(was.second ?: "", null))
-        }
     }
 }

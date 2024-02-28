@@ -65,14 +65,14 @@ class KotlinNotebookDebugSession(
         if (suspendContext != null) {
             evaluationContext = EvaluationContextImpl(suspendContext, suspendContext.frameProxy)
         }
-        eventsHandler.handleInternalDebugMethodEntryEvent(command, event)
+        eventsHandler.handleInternalDebugMethodEntryEvent(suspendContext, event)
     }
 
     @Volatile
     private var _debugPort: Int? = portProvider()
     val targetDebugPort: Int? get() = _debugPort
 
-    fun providePortOnKernelStartUp(): Int? {
+    fun provideFreshDebugPort(): Int? {
         _debugPort = portProvider()
         return targetDebugPort
     }
