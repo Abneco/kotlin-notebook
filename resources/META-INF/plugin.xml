@@ -318,9 +318,10 @@
         <action id="ToggleShowExecutionCount" class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookToggleShowExecutionCountAction">
             <add-to-group group-id="JupyterEditorGutterPopupActions"/>
         </action>
-        <action id="ExportLetsPlot" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export.ExportPlotAction" icon="AllIcons.Actions.Download">
+        <action id="ExportLetsPlot" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export.SavePlotAction" icon="AllIcons.Actions.Download">
             <add-to-group group-id="JupyterCellOutputMenu"/>
         </action>
+        <action id="CopyLetsPlot" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export.CopyPlotAction" icon="AllIcons.Actions.Copy"/>
 
         <group id="KotlinNotebookSettingsActions" popup="true" icon="AllIcons.General.GearPlain"
                class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookSettingsActions">
@@ -339,6 +340,7 @@
 
         <group id="LetsPlotActions">
             <reference id="ExportLetsPlot"/>
+            <reference id="CopyLetsPlot"/>
         </group>
         <action id="RestartKotlinNotebookHighlighting"
                 class="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.RestartKotlinNotebookHighlightingAction"/>
