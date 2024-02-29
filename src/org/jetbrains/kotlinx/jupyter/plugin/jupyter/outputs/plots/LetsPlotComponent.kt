@@ -6,11 +6,12 @@ import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.components.JBLayeredPane
-import com.intellij.util.asSafely
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
-import org.jetbrains.kotlinx.jupyter.plugin.util.*
+import org.jetbrains.kotlinx.jupyter.plugin.util.MouseEventDeepReDispatcher
+import org.jetbrains.kotlinx.jupyter.plugin.util.RetargetingCursorProvider
+import org.jetbrains.kotlinx.jupyter.plugin.util.addCursorProvider
+import org.jetbrains.kotlinx.jupyter.plugin.util.addDispatchingMouseListener
 import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
-import org.jetbrains.letsPlot.core.plot.builder.defaultTheme.values.ThemeOption
 import org.jetbrains.letsPlot.core.spec.FigKind
 import org.jetbrains.letsPlot.core.spec.config.PlotConfig
 import org.jetbrains.letsPlot.core.util.MonolithicCommon
@@ -27,7 +28,7 @@ class LetsPlotComponent : JBLayeredPane() {
     private var plotPanel: JComponent? = null
     private var transparentPanel: JPanel? = null
     private var _dataKey: LetsPlotOutputDataKey? = null
-    private var previousIsDark: Boolean? = null
+    private var previousColorFlavor: LetsPlotFlavor? = null
 
     val dataKey: LetsPlotOutputDataKey? get() = _dataKey
 
@@ -37,12 +38,12 @@ class LetsPlotComponent : JBLayeredPane() {
     }
 
     override fun updateUI() {
-        val isDark = uiFeelsDark()
+        val colorFlavor = getCurrentLetPlotFlavor()
         val data = _dataKey ?: return
-        if (previousIsDark == isDark) return
-        previousIsDark = isDark
+        if (previousColorFlavor == colorFlavor) return
+        previousColorFlavor = colorFlavor
 
-        reinitComponent(getSpec(data, isDark))
+        reinitComponent(getSpec(data, colorFlavor))
     }
 
     override fun doLayout() {
@@ -55,7 +56,7 @@ class LetsPlotComponent : JBLayeredPane() {
         val spec = getSpec(myData)
         val (plotWidth, plotHeight) = plotSize(spec, mySize.width, mySize.height)
         myComponent.setBounds(0, 0, plotWidth, plotHeight)
-        // This is a workaround: plot panel may skip first resize event, but we need it to rebuild the plot
+        // This is a workaround: a plot panel may skip first resize event, but we need it to rebuild the plot
         myComponent.dispatchEvent(ComponentEvent(myComponent, ComponentEvent.COMPONENT_RESIZED))
 
         val transparentPanel = this.transparentPanel ?: return
@@ -133,57 +134,15 @@ class LetsPlotComponent : JBLayeredPane() {
     }
 }
 
-private fun getSpec(dataKey: LetsPlotOutputDataKey) = getSpec(dataKey, uiFeelsDark())
-private fun getSpec(dataKey: LetsPlotOutputDataKey, isDark: Boolean): MutableLetsPlotSpec {
+private fun getSpec(dataKey: LetsPlotOutputDataKey) = getSpec(dataKey, getCurrentLetPlotFlavor())
+private fun getSpec(dataKey: LetsPlotOutputDataKey, flavor: LetsPlotFlavor): MutableLetsPlotSpec {
     val rawSpec = deserializeSpec(dataKey.spec).toMutableMap().also {
         if (dataKey.applyColorScheme) {
-            updateFlavor(it, isDark)
+            updateFlavor(it, flavor)
         }
     }
     val processedSpec = MonolithicCommon.processRawSpecs(rawSpec, false)
     return processedSpec.toMutableMap()
-}
-
-private fun updateFlavorForPlot(spec: MutableLetsPlotSpec, flavorName: String) {
-    spec.compute("theme") { _, theme ->
-        (theme.asSafely<LetsPlotSpec>()?.toMutableMap() ?: mutableMapOf()).apply {
-            putIfAbsent("flavor", flavorName)
-        }
-    }
-}
-
-private fun updateFlavorForGGBunch(spec: MutableLetsPlotSpec, flavorName: String) {
-    spec.compute("items") { _, items ->
-        (items.asSafely<List<LetsPlotSpec>>())?.map {
-            it.toMutableMap().also { item ->
-                item.compute("feature_spec") { _, feat ->
-                    @Suppress("UNCHECKED_CAST") (feat as LetsPlotSpec).toMutableMap().also { plotSpec ->
-                        updateFlavorForPlot(plotSpec, flavorName)
-                    }
-                }
-            }
-        }.orEmpty()
-    }
-}
-
-private fun updateFlavorForSubPlots(spec: MutableLetsPlotSpec, flavorName: String) {
-    spec.compute("figures") { _, figures ->
-        (figures.asSafely<List<LetsPlotSpec?>>())?.map {
-            it?.toMutableMap()?.also { figure ->
-                updateFlavorForPlot(figure, flavorName)
-            }
-        }.orEmpty()
-    }
-}
-
-private fun updateFlavor(rawSpec: MutableLetsPlotSpec, isDark: Boolean) {
-    val flavorName = if (isDark) ThemeOption.Flavor.DARCULA else ThemeOption.Flavor.HIGH_CONTRAST_LIGHT
-    when (PlotConfig.figSpecKind(rawSpec)) {
-        FigKind.PLOT_SPEC -> updateFlavorForPlot(rawSpec, flavorName)
-        FigKind.SUBPLOTS_SPEC -> updateFlavorForSubPlots(rawSpec, flavorName)
-        FigKind.GG_BUNCH_SPEC -> updateFlavorForGGBunch(rawSpec, flavorName)
-        else -> return
-    }
 }
 
 private fun plotSize(spec: LetsPlotSpec, containerWidth: Int, containerHeight: Int): Pair<Int, Int> {
@@ -208,7 +167,8 @@ private fun scaledFigureSize(
     figureSpec: LetsPlotSpec, containerWidth: Int, containerHeight: Int
 ): Pair<Int, Int> {
 
-    if (PlotConfig.isFailure(figureSpec)) { // just keep given size
+    if (PlotConfig.isFailure(figureSpec)) {
+        // Keep given size
         return Pair(containerWidth, containerHeight)
     }
 

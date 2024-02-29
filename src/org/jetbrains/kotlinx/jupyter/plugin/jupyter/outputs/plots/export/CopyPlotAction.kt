@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputDataKey
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.getCurrentLetPlotFlavor
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
@@ -17,8 +18,13 @@ class CopyPlotAction : AbstractExportPlotAction() {
         ApplicationManager.getApplication().executeOnPooledThread {
             runSafely (
                 {
-                    val mutableSpec = output.toMutableSpec()
-                    copyPlotToClipboard(mutableSpec)
+                    val model = PlotExportModelImpl(
+                        format = ExportFormat.PNG,
+                        scalingFactor = 2.0,
+                        targetDPI = 4000,
+                        letsPlotFlavor = getCurrentLetPlotFlavor()
+                    )
+                    copyPlotToClipboard(output, model)
                 },
                 { throwable ->
                     showPlotExportFailedNotification(throwable)

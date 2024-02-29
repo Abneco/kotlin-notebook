@@ -6,7 +6,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.util.collectionUtils.filterIsInstanceAnd
-import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotComponent
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputDataKey
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.PlotDataKeyExtractor
@@ -36,9 +35,6 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         project: Project,
         notebookFile: BackedNotebookVirtualFile,
     )
-
-    protected fun LetsPlotOutputDataKey.toMutableSpec() =
-        deserializeSpec(spec).toMutableMap()
 
     // For now, only one plot can be exported. See KTNB-432
     private fun Collection<LetsPlotOutputDataKey>.isActionApplicable(): Boolean {

@@ -8,16 +8,22 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.ui.DialogBuilder.CancelActionDescriptor
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.ui.EnumComboBoxModel
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.AlignX
+import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
+import com.intellij.ui.dsl.builder.toNullableProperty
+import com.intellij.ui.dsl.listCellRenderer.textListCellRenderer
 import com.intellij.ui.layout.selectedValueMatches
 import com.intellij.ui.util.preferredWidth
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotFlavor
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputDataKey
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindComparableIntervalToTextWithFixer
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindStringText
+import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.enumComboBox
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
 import org.jetbrains.letsPlot.core.plot.export.PlotImageExport.buildImageFromRawSpecs
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -40,8 +46,7 @@ class SavePlotAction : AbstractExportPlotAction() {
         ApplicationManager.getApplication().executeOnPooledThread {
             runSafely (
                 {
-                    val mutableSpec = output.toMutableSpec()
-                    val file = savePlot(mutableSpec, exportModel)
+                    val file = savePlot(output, exportModel)
                     showPlotExportedNotification(file)
                 },
                 { throwable ->
@@ -56,7 +61,7 @@ class SavePlotAction : AbstractExportPlotAction() {
 
         val model = ExportModel(
             exportOptions,
-            currentDir.path
+            currentDir.path,
         )
 
         val fileField = JBTextField(20)
@@ -79,22 +84,19 @@ class SavePlotAction : AbstractExportPlotAction() {
             }
         })
 
-        val formatComboBox = ComboBox(ExportFormat.entries.toTypedArray())
-        fun resetFormatComboBox() {
-            formatComboBox.selectedItem = model.format
-        }
-
-        resetFormatComboBox()
-        formatComboBox.addActionListener {
-            model.changeFormat(formatComboBox.selectedItem as ExportFormat)
-            fileField.setText(model.fileName)
-        }
+        val formatModel = EnumComboBoxModel(ExportFormat::class.java)
+        val formatComboBox = ComboBox(formatModel)
 
         val dialogPanel = panel {
             row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.format")) {
-                cell(formatComboBox).onReset {
-                    resetFormatComboBox()
-                }
+                cell(formatComboBox)
+                    .bindItem(model::format.toNullableProperty())
+                    .applyToComponent {
+                        addActionListener {
+                            model.format = formatModel.selectedItem
+                            fileField.setText(model.fileName)
+                        }
+                    }
             }
             indent {
                 row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.scaling.factor")) {
@@ -118,6 +120,10 @@ class SavePlotAction : AbstractExportPlotAction() {
                         )
                 }
             }.enabledIf(formatComboBox.selectedValueMatches { it?.isRaster == true })
+            row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.title")) {
+                enumComboBox<LetsPlotFlavor>(textListCellRenderer { it?.description })
+                    .bindItem(model::letsPlotFlavor.toNullableProperty())
+            }
             row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.directory")) {
                 textFieldWithBrowseButton(
                     fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
@@ -160,14 +166,19 @@ class SavePlotAction : AbstractExportPlotAction() {
         private val options: PlotExportOptions,
         override var directory: String = System.getProperty("user.home"),
     ): PlotSaveModel {
-        override var format by options::format
+        override var format
+            get() = options.format
+            set(value) {
+                changeFormat(value)
+            }
+        override var letsPlotFlavor by options::letsPlotFlavor
         override var fileName by options::fileName
         override var scalingFactor by options::scalingFactor
         override var targetDPI by options::targetDPI
 
-        fun changeFormat(newFormat: ExportFormat) {
-            format = newFormat
-            val extension = format.toString().lowercase()
+        private fun changeFormat(newFormat: ExportFormat) {
+            options.format = newFormat
+            val extension = newFormat.toString().lowercase()
             if (fileName.isBlank()) {
                 fileName = "plot.$extension"
             }
