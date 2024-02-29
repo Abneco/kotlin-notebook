@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.core.StreamReadConstraints
 import com.fasterxml.jackson.core.exc.StreamConstraintsException
+import com.fasterxml.jackson.core.json.JsonReadFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.database.datagrid.HierarchicalColumnsDataGridModel.HierarchicalGridColumn
 import com.intellij.database.datagrid.NestedTablesDataGridModel.NestedTableCellCoordinate
@@ -27,6 +28,7 @@ import org.jetbrains.plugins.notebooks.tables.api.DSTableCommandExecutor
 import org.jetbrains.plugins.notebooks.tables.api.DSTableDataProvider
 import org.jetbrains.plugins.notebooks.tables.api.DSTableDataType
 import org.jetbrains.plugins.notebooks.tables.api.NestedTableDataProvider
+import java.io.IOException
 import java.util.*
 import javax.swing.RowSorter
 import javax.swing.SortOrder
@@ -48,6 +50,7 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
                 .build()
         )
         val mapper = ObjectMapper(jsonFactory)
+        mapper.enable(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS.mappedFeature())
 
         val parser = KotlinDataframeParsing.createParserForData(serializedData, mapper)
 
@@ -113,6 +116,7 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : Neste
                     .notify(null)
             }
 
+            notifyUnknownParsingException()
             throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}")
         } catch (e: StreamConstraintsException) {
             // users should not encounter this error anymore once KTNB-272 is implemented.
@@ -125,7 +129,23 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : Neste
                 .notify(null)
 
             throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}")
+        } catch (e: IOException) {
+            notifyUnknownParsingException()
+            throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}")
+        } catch (e: RuntimeException) {
+            notifyUnknownParsingException()
+            throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}")
         }
+    }
+
+    private fun notifyUnknownParsingException() {
+        NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
+            .createNotification(
+                KotlinNotebookBundle.message("kotlin.jupyter.table.output.cannot.render.dataframe.error"),
+                KotlinNotebookBundle.message("kotlin.jupyter.table.output.cannot.parse.dataframe.error.unknown"),
+                NotificationType.WARNING
+            )
+            .notify(null)
     }
 
     override fun getNestedTableCommand(tableVariable: String, path: List<NestedTableCellCoordinate>): String {
