@@ -31,6 +31,7 @@ import com.intellij.ui.layout.ComponentPredicate
 import com.intellij.util.execution.ParametersListUtil
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.MINIMUM_SUPPORTED_VERSION
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
@@ -73,9 +74,11 @@ object KotlinNotebookSettingsPanel {
                 createExtraJvmArgumentsField(projectOptions).showForSeparateProcess()
                 createEnvironmentVariablesField(projectOptions).showForSeparateProcess()
             }
-            group(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug")) {
-                createDebugOptions(projectOptions, mavenSelectorCellRef.get())
-                mavenSelectorCellRef.set(null)
+            if (debugFeaturesEnabled) {
+                group(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug")) {
+                    createDebugOptions(projectOptions, mavenSelectorCellRef.get())
+                    mavenSelectorCellRef.set(null)
+                }
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session")) {
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.sources"), sessionOptions::resolveSources)

@@ -5,10 +5,16 @@ import com.intellij.debugger.engine.JavaValue
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.progress.blockingContext
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.xdebugger.frame.XValueChildrenList
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSession
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+
+
+internal val debugFeaturesEnabled: Boolean
+    get() = Registry.`is`("kotlin.notebook.debug.enabled", true)
+
 
 /**
  * Based on current DebugSession of [BackedNotebookVirtualFile],

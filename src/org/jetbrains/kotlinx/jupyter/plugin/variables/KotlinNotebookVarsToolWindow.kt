@@ -14,6 +14,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.KotlinNotebookDebugEditorsProv
 import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.KotlinNotebookVariablesFrame
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.isShouldShowNotebookVariables
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowPanel
@@ -33,7 +34,7 @@ class KotlinNotebookVarsToolWindow(
         )
 
     override fun initVariablesView(frameVarsCallback: JupyterInlineCallback?) {
-        if (project.isDisposed || !project.isShouldShowNotebookVariables) {
+        if (project.isDisposed || !project.isShouldShowNotebookVariables || !debugFeaturesEnabled) {
             showMessage(
                 KotlinNotebookBundle.message("kotlin.jupyter.debug.node.default.message")
             )
