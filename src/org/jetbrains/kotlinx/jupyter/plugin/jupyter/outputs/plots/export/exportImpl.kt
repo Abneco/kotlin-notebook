@@ -17,12 +17,33 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import javax.imageio.ImageIO
 
-interface PlotContent {
+@RequiresBackgroundThread
+fun savePlot(
+    plot: LetsPlotOutputDataKey,
+    model: PlotSaveModel,
+): File {
+    val content = exportPlot(plot, model)
+    val file = File(model.directory, model.fileName)
+    content.saveToFile(file)
+    return file
+}
+
+@RequiresBackgroundThread
+fun copyPlotToClipboard(
+    plot: LetsPlotOutputDataKey,
+    model: PlotExportModel
+) {
+    val content = exportPlot(plot, model)
+    val transferable = content.asTransferable()
+    CopyPasteManager.getInstance().setContents(transferable)
+}
+
+private interface PlotContent {
     fun saveToFile(file: File)
     fun asTransferable(): Transferable
 }
 
-class TextPlotContent(private val text: String) : PlotContent {
+private class TextPlotContent(private val text: String) : PlotContent {
     override fun saveToFile(file: File) {
         file.writeText(text)
     }
@@ -32,7 +53,7 @@ class TextPlotContent(private val text: String) : PlotContent {
     }
 }
 
-class BinaryPlotContent(private val bytes: ByteArray) : PlotContent {
+private class BinaryPlotContent(private val bytes: ByteArray) : PlotContent {
     override fun saveToFile(file: File) {
         file.writeBytes(bytes)
     }
@@ -44,7 +65,7 @@ class BinaryPlotContent(private val bytes: ByteArray) : PlotContent {
 }
 
 @RequiresBackgroundThread
-fun exportPlot(
+private fun exportPlot(
     plot: LetsPlotOutputDataKey,
     model: PlotExportModel,
 ): PlotContent {
@@ -77,27 +98,6 @@ fun exportPlot(
             BinaryPlotContent(byteArray)
         }
     }
-}
-
-@RequiresBackgroundThread
-fun savePlot(
-    plot: LetsPlotOutputDataKey,
-    model: PlotSaveModel,
-): File {
-    val content = exportPlot(plot, model)
-    val file = File(model.directory, model.fileName)
-    content.saveToFile(file)
-    return file
-}
-
-@RequiresBackgroundThread
-fun copyPlotToClipboard(
-    plot: LetsPlotOutputDataKey,
-    model: PlotExportModel
-) {
-    val content = exportPlot(plot, model)
-    val transferable = content.asTransferable()
-    CopyPasteManager.getInstance().setContents(transferable)
 }
 
 private fun LetsPlotOutputDataKey.toMutableSpec() =
