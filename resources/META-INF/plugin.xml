@@ -149,8 +149,7 @@
 
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.inject.JupyterKotlinIntoCellsInjector"/>
         <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookLocationNotificationProvider"/>
-        <fileIconPatcher implementation="org.jetbrains.kotlinx.jupyter.plugin.ide.JupyterKotlinIconPatcher"/>
-        <iconProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.ide.KotlinNotebookIconProvider"/>
+        <fileIconProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.ide.KotlinNotebookFileIconProvider" />
         <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.BeforeResolveHighlightingVisitorAdapter"/>
         <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.KotlinNotebookBeforeHighlightingVisitor"
                           id="kotlinNotebookBeforeHighlightingVisitor"
@@ -165,6 +164,18 @@
                   fieldName="INSTANCE"/>
 
         <lang.parserDefinition language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.meta.grammar.JKTMetaParserDefinition"/>
+
+        <!-- Custom language for Jupyter Notebooks using the Kotlin kernel. It is only used to populate
+             the "Create New Scratch File"-dialog, so it re-uses the parser definition for normal Jupyter Notebooks,
+             to fake being a "proper" language. A `ScratchCreationHelper` is used to make sure that Scratch files are
+             created with the proper JSON structure.
+          -->
+        <fileType name="JupyterKotlinFile"
+                  language="Kotlin Notebook"
+                  implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.JupyterKotlinFileType"
+                  fieldName="INSTANCE"/>
+        <lang.parserDefinition language="Kotlin Notebook" implementationClass="org.jetbrains.plugins.notebooks.jupyter.JupyterParserDefinition"/>
+        <scratch.creationHelper language="Kotlin Notebook" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.JupyterKotlinScratchCreationHelper" />
 
         <xdebugger.debuggerSupport implementation="org.jetbrains.kotlinx.jupyter.plugin.debug.actions.KotlinNotebookDebuggerSupport"/>
         <debugger.sourcePositionProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookFieldSourcePositionProvider" order="first"/>

@@ -8,6 +8,8 @@ import com.intellij.internal.statistic.libraryUsage.LibraryUsageDescriptors
 import com.intellij.internal.statistic.service.fus.collectors.FeatureUsagesCollector
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.exceptions.ReplCompilerException
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.mode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.PlotDataKeyExtractor
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KOTLIN_DATAFRAME_MIME
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
@@ -16,6 +18,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.isBuildProject
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionStatus
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.executionCount
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
@@ -23,7 +27,6 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.status
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterCellType
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterDisplayDataOutput
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterErrorOutput
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutput
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterStreamOutput
 
@@ -34,13 +37,14 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
 
     @Suppress("CompanionObjectInExtension")
     companion object {
-        @JvmStatic private val GROUP = EventLogGroup("kotlin.notebook", 5)
+        @JvmStatic private val GROUP = EventLogGroup("kotlin.notebook", 6)
 
         @JvmStatic private val CELLS_COUNT = EventFields.RoundedInt("cells_count")
         @JvmStatic private val CODE_CELLS_COUNT = EventFields.RoundedInt("cells_code_count")
         @JvmStatic private val MARKDOWN_CELLS_COUNT = EventFields.RoundedInt("cells_markdown_count")
 
         @JvmStatic private val NOTEBOOK_LANGUAGE = EventFields.Language
+        @JvmStatic private val NOTEBOOK_MODE = EventFields.Enum<NotebookMode>("notebook_mode") { it.id }
 
         @JvmStatic private val INCLUDED_PROJECT_MODULES_COUNT = EventFields.RoundedInt("project_sources_v2_count")
         @JvmStatic private val INCLUDED_PROJECT_LIBRARIES_COUNT = EventFields.RoundedInt("project_libraries_v2_count")
@@ -57,14 +61,16 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             INCLUDED_PROJECT_LIBRARIES_COUNT,
             ARE_PROJECT_SOURCE_DEPENDENCIES_INCLUDED,
             ARE_PROJECT_LIBRARY_DEPENDENCIES_INCLUDED,
+            NOTEBOOK_MODE
         )
 
-        fun registerOpenNotebook(project: Project, file: JupyterNotebook) {
-            val cellsCount = file.cells.size
+        fun registerOpenNotebook(project: Project, file: BackedNotebookVirtualFile) {
+            val notebook = file.notebook
+            val cellsCount = notebook.cells.size
 
             var markdownCellsCount = 0
             var codeCellsCount = 0
-            file.cells.forEach { cell ->
+            notebook.cells.forEach { cell ->
                 when(cell.cellType) {
                     JupyterCellType.RAW, JupyterCellType.HEADING, JupyterCellType.HTML, JupyterCellType.UNDEFINED -> {}
                     JupyterCellType.MARKDOWN -> {
@@ -75,16 +81,18 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
                     }
                 }
             }
+
             NOTEBOOK_OPEN_EVENT.log(
                 project,
                 CELLS_COUNT.with(cellsCount),
                 CODE_CELLS_COUNT.with(codeCellsCount),
                 MARKDOWN_CELLS_COUNT.with(markdownCellsCount),
-                NOTEBOOK_LANGUAGE.with(file.language),
-                INCLUDED_PROJECT_MODULES_COUNT.with(file.projectDependencies.count()),
-                INCLUDED_PROJECT_LIBRARIES_COUNT.with(file.projectLibraries.count()),
-                ARE_PROJECT_SOURCE_DEPENDENCIES_INCLUDED.with(file.isBuildProject),
-                ARE_PROJECT_LIBRARY_DEPENDENCIES_INCLUDED.with(file.isAddProjectLibrariesToClasspath),
+                NOTEBOOK_LANGUAGE.with(notebook.language),
+                INCLUDED_PROJECT_MODULES_COUNT.with(notebook.projectDependencies.count()),
+                INCLUDED_PROJECT_LIBRARIES_COUNT.with(notebook.projectLibraries.count()),
+                ARE_PROJECT_SOURCE_DEPENDENCIES_INCLUDED.with(notebook.isBuildProject),
+                ARE_PROJECT_LIBRARY_DEPENDENCIES_INCLUDED.with(notebook.isAddProjectLibrariesToClasspath),
+                NOTEBOOK_MODE.with(file.mode)
             )
         }
 

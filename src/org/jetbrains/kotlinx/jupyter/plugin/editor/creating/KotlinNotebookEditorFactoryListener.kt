@@ -6,10 +6,8 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettingsCache
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector
-import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.editor.NotebookEditorCreatedCallback
 import org.jetbrains.plugins.notebooks.jupyter.editor.isJupyter
 
@@ -24,7 +22,7 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
                 KotlinNotebookPerFileSettingsCache.getInstance(project).notebookEditorCreated(file)
 
                 val backedNotebookVirtualFile = file.toBackedNotebookFile() ?: return
-                val notebook = backedNotebookVirtualFile.notebook
+                val notebook = backedNotebookVirtualFile
                 KotlinNotebookFeatureUsagesCollector.registerOpenNotebook(project, notebook)
             }
         }

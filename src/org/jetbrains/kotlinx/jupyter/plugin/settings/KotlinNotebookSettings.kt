@@ -17,10 +17,12 @@ var JupyterNotebook.projectLibraries by projectLibrariesProperty
 
 data class KotlinNotebookSettings(
     val projectDependencies: KotlinNotebookDependencies,
-    val projectLibraries: KotlinNotebookDependencies
-) {
+    val projectLibraries: KotlinNotebookDependencies) {
     companion object {
-        val DEFAULT = KotlinNotebookSettings(projectDependenciesProperty.defaultValue, projectLibrariesProperty.defaultValue)
+        val DEFAULT = KotlinNotebookSettings(
+            projectDependenciesProperty.defaultValue,
+            projectLibrariesProperty.defaultValue,
+        )
     }
 }
 

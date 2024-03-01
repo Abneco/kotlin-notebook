@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.node.TextNode
 import org.jetbrains.annotations.Nls
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.notifyNotebookChanged
 import kotlin.properties.ReadWriteProperty
@@ -65,5 +67,19 @@ internal class KotlinNotebookBooleanProperty(name: @Nls String, defaultValue: Bo
 
     override fun Boolean.toNode(): JsonNode {
         return if (this) BooleanNode.TRUE else BooleanNode.FALSE
+    }
+}
+
+internal class KotlinNotebookModeProperty(name: String, defaultValue: NotebookMode): KotlinNotebookProperty<NotebookMode>(name, defaultValue) {
+    override fun JsonNode.toValue(): NotebookMode {
+        return if (this.isTextual) {
+            NotebookMode.entries.firstOrNull { it.id == this.textValue() } ?: defaultValue
+        } else {
+            defaultValue
+        }
+    }
+
+    override fun NotebookMode.toNode(): JsonNode {
+        return TextNode(this.id)
     }
 }

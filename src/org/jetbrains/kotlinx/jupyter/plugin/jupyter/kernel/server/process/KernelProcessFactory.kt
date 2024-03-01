@@ -4,9 +4,13 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.annotations.TestOnly
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.mode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
@@ -20,12 +24,14 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolute
 import kotlin.io.path.exists
 import kotlin.io.path.invariantSeparatorsPathString
+
 
 class KernelProcessFactory : KernelRunnableFactory {
     @RequiresBackgroundThread
@@ -41,10 +47,7 @@ class KernelProcessFactory : KernelRunnableFactory {
 
         val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
         val javaExecutable = getJavaExecutable(project, options)
-
-        /** There could be no physical working directory if the kernel is started from test
-        and the notebook file is in i.e. [com.intellij.openapi.vfs.ex.temp.TempFileSystem] */
-        val workingDir = notebookPath.absolute().parent.takeIf { it.exists() }
+        val workingDir: Path? = getWorkingDir(project, notebookPath)
 
         val extraJavaArgs = buildList {
             workingDir?.let { add("-Duser.dir=${workingDir.invariantSeparatorsPathString}/") }
@@ -86,6 +89,34 @@ class KernelProcessFactory : KernelRunnableFactory {
                 }
             })
             startNotify()
+        }
+    }
+
+    /**
+     * Notebooks that are [NotebookMode.LIGHT] are stored outside the project directory,
+     * so for them, we change the working directory to be the project root dir. This is
+     * so relative paths are resolved with respect to the project. Otherwise, we just use the
+     * directory the notebook is in.
+     *
+     * Note, there could be no physical working directory if the kernel is started from test
+     * and the notebook file is in i.e. [com.intellij.openapi.vfs.ex.temp.TempFileSystem]
+     */
+    private fun getWorkingDir(project: Project, notebookPath: Path): Path? {
+        val fileManager = VirtualFileManager.getInstance()
+        val mode: NotebookMode = fileManager.findFileByNioPath(notebookPath)?.let { notebookFile ->
+            BackedNotebookVirtualFile.find(notebookFile)?.mode
+        } ?: return null
+
+        val notebookParentDir = notebookPath.absolute().parent.takeIf { it.exists() }
+        return when(mode) {
+            NotebookMode.STANDARD -> notebookParentDir
+            NotebookMode.LIGHT -> {
+                try {
+                    project.guessProjectDir()?.toNioPath()
+                } catch (ex: Exception) {
+                    notebookParentDir
+                }
+            }
         }
     }
 

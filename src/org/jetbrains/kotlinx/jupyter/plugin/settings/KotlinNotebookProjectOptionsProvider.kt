@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.pom.java.LanguageLevel
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import java.util.*
 
@@ -66,11 +67,21 @@ class KotlinNotebookProjectOptionsProvider :
         internal set
 
     @RequiresEdt
-    internal fun getNewKotlinNotebookSettings(): KotlinNotebookSettings {
-        return KotlinNotebookSettings(
-            if (shouldBuildProject) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None,
-            if (shouldAddProjectLibrariesToClasspath) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None
-        )
+    internal fun getNewKotlinNotebookSettings(mode: NotebookMode): KotlinNotebookSettings {
+        // Light Kotlin Notebooks should never include neither modules nor project dependencies as a default, as
+        // they should be able to start as fast as possible.
+        // Standard Notebooks should make the choice based on the default value for the property.
+        return when(mode) {
+            NotebookMode.STANDARD -> {
+                val includeModules = if (shouldBuildProject) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None
+                val includeLibraries = if (shouldAddProjectLibrariesToClasspath) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None
+                return KotlinNotebookSettings(
+                    includeModules,
+                    includeLibraries
+                )
+            }
+            NotebookMode.LIGHT -> KotlinNotebookSettings(KotlinNotebookDependencies.None, KotlinNotebookDependencies.None)
+        }
     }
 
     class State : BaseState() {

@@ -19,7 +19,7 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookCreateAction
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.CreateNotebookFactory
 import org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaPSIFile
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
@@ -176,7 +176,7 @@ fun Project.createEmptyNotebook(name: String): BackedNotebookVirtualFile {
     val projectBaseDir = HeavyTestHelper.getOrCreateProjectBaseDir(this)
     val directoryPsiFile = runReadAction { PsiManager.getInstance(this).findDirectory(projectBaseDir)!! }
 
-    val psiFile = KotlinNotebookCreateAction.createNotebook(name, directoryPsiFile)
+    val psiFile = CreateNotebookFactory.createFile(name, directoryPsiFile)
     return BackedNotebookVirtualFile.find(psiFile!!.virtualFile)!!
 }
 
