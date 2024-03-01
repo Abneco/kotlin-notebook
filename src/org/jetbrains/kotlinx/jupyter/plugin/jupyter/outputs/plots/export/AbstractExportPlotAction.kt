@@ -36,14 +36,19 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         notebookFile: BackedNotebookVirtualFile,
     )
 
-    protected abstract fun isActionApplicable(outputs: Collection<LetsPlotOutputDataKey>): Boolean
+    protected open fun isActionApplicable(outputs: Collection<LetsPlotOutputDataKey>): Boolean {
+        return true
+    }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun update(event: AnActionEvent) {
         super.update(event)
         val letsPlotOutputs = getLetsPlotOutputs(event)
+        doUpdate(event, letsPlotOutputs)
+    }
 
+    protected open fun doUpdate(event: AnActionEvent, letsPlotOutputs: List<LetsPlotOutputDataKey>) {
         event.presentation.isEnabledAndVisible = isActionApplicable(letsPlotOutputs)
     }
 

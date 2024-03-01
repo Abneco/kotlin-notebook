@@ -20,12 +20,11 @@ import javax.imageio.ImageIO
 @RequiresBackgroundThread
 fun savePlot(
     plot: LetsPlotOutputDataKey,
-    model: PlotSaveModel,
-): File {
+    model: PlotExportModel,
+    file: File,
+) {
     val content = exportPlot(plot, model)
-    val file = File(model.directory, model.fileName)
     content.saveToFile(file)
-    return file
 }
 
 @RequiresBackgroundThread

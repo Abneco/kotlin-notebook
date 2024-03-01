@@ -47,6 +47,9 @@ class PlotExportOptions :
     var fileName: String by propNarrowing(State::fileName) { it ?: DEFAULT_FILE_NAME }
         internal set
 
+    var overwriteExistingFiles: Boolean by prop(State::overwriteExistingFiles)
+        internal set
+
     var letsPlotFlavor by prop(State::letsPlotFlavor)
         internal set
 
@@ -64,6 +67,7 @@ class PlotExportOptions :
     class State : BaseState() {
         var format: ExportFormat by enum(ExportFormat.SVG)
         var fileName: String? by string(DEFAULT_FILE_NAME)
+        var overwriteExistingFiles: Boolean by property(true)
         var letsPlotFlavor: LetsPlotFlavor by enum(getCurrentLetsPlotFlavor())
         var scalingFactor by property(SCALING_FACTOR.default, isDefault = {it == SCALING_FACTOR.default})
         var targetDPI by property(TARGET_DPI.default)

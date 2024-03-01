@@ -3,8 +3,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
 
 class RangeWithDefault<T: Comparable<T>>(
     val default: T,
-    private val min: T,
-    private val max: T
+    val min: T,
+    val max: T
 ) {
     init {
         assert(default in min..max) {

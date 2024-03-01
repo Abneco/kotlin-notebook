@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
 
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
@@ -12,6 +13,7 @@ import com.intellij.ui.EnumComboBoxModel
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.bindItem
+import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.dsl.builder.toNullableProperty
@@ -27,15 +29,18 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.enumComboBox
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.awt.event.ActionEvent
+import java.io.File
 import javax.swing.AbstractAction
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
 
 
 class SavePlotAction : AbstractExportPlotAction() {
-    // For now, only one plot can be exported. See KTNB-432
-    override fun isActionApplicable(outputs: Collection<LetsPlotOutputDataKey>): Boolean {
-        return outputs.size == 1
+    override fun doUpdate(event: AnActionEvent, letsPlotOutputs: List<LetsPlotOutputDataKey>) {
+        super.doUpdate(event, letsPlotOutputs)
+        val multipleOutputs = letsPlotOutputs.size > 1
+        if (multipleOutputs) {
+            event.presentation.text = KotlinNotebookBundle.message("action.ExportLetsPlot.text.multiple")
+            event.presentation.description = KotlinNotebookBundle.message("action.ExportLetsPlot.description.multiple")
+        }
     }
 
     override fun doExport(
@@ -44,23 +49,34 @@ class SavePlotAction : AbstractExportPlotAction() {
         notebookFile: BackedNotebookVirtualFile,
     ) {
         val notebookDir = notebookFile.file.parent
-        val output = letsPlotOutputs.singleOrNull() ?: return
-        val exportModel = showExportDialog(project, notebookDir) ?: return
+        val exportModel = showExportDialog(project, notebookDir, letsPlotOutputs.size > 1) ?: return
 
         ApplicationManager.getApplication().executeOnPooledThread {
-            runSafely (
-                {
-                    val file = savePlot(output, exportModel)
-                    showPlotExportedNotification(file)
-                },
-                { throwable ->
-                    showPlotExportFailedNotification(throwable)
-                }
-            )
+            val files = mutableListOf<File>()
+            val errors = mutableListOf<Throwable>()
+
+            for ((outputIndex, output) in letsPlotOutputs.withIndex()) {
+                runSafely (
+                    {
+                        val file = exportModel.prepareFile(outputIndex)
+                        savePlot(output, exportModel, file)
+                        files.add(file)
+                    },
+                    { throwable ->
+                        errors.add(throwable)
+                    }
+                )
+            }
+
+            showPlotSaveNotification(files, errors)
         }
     }
 
-    private fun showExportDialog(project: Project, currentDir: VirtualFile): MutablePlotSaveModel? {
+    private fun showExportDialog(
+        project: Project,
+        currentDir: VirtualFile,
+        multipleOutputs: Boolean
+    ): MutablePlotSaveModel? {
         val exportOptions = PlotExportOptions.getInstance(project)
 
         val model = MutablePlotSaveModel(
@@ -68,30 +84,28 @@ class SavePlotAction : AbstractExportPlotAction() {
             currentDir.path,
         )
 
-        val fileField = JBTextField(20)
-        fileField.text = model.fileName
-        fileField.document.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent?) {
-                updateFileName()
-            }
+        val dialogBuilder = DialogBuilder()
 
-            override fun removeUpdate(e: DocumentEvent?) {
-                updateFileName()
-            }
+        fun panelMessage(key: String) = KotlinNotebookBundle.message(
+            if (multipleOutputs) "$key.multiple" else key
+        )
 
-            override fun changedUpdate(e: DocumentEvent?) {
-                updateFileName()
-            }
+        fun verifyModel(): Boolean {
+            return !(multipleOutputs && OUTPUT_INDEX_TEMPLATE !in model.fileName)
+        }
 
-            private fun updateFileName() {
-                model.fileName = fileField.text
-            }
-        })
+        fun updateOkAction() {
+            dialogBuilder.okActionEnabled(verifyModel())
+        }
 
-        val formatModel = EnumComboBoxModel(ExportFormat::class.java)
-        val formatComboBox = ComboBox(formatModel)
+        updateOkAction()
 
         val dialogPanel = panel {
+            val fileField = JBTextField(20)
+
+            val formatModel = EnumComboBoxModel(ExportFormat::class.java)
+            val formatComboBox = ComboBox(formatModel)
+
             row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.format")) {
                 cell(formatComboBox)
                     .bindItem(model::format.toNullableProperty())
@@ -104,43 +118,68 @@ class SavePlotAction : AbstractExportPlotAction() {
             }
             indent {
                 row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.scaling.factor")) {
+                    val scalingFactorOption = PlotExportOptions.SCALING_FACTOR
                     textField()
                         .bindComparableIntervalToTextWithFixer(
                             model::scalingFactor.toMutableProperty(),
-                            interval = PlotExportOptions.SCALING_FACTOR.range,
+                            interval = scalingFactorOption.range,
                             { it.toDoubleOrNull() },
                         )
+                        .comment(KotlinNotebookBundle.message(
+                                "kotlin.jupyter.dialog.outputs.plot.export.scaling.factor.comment",
+                                scalingFactorOption.min,
+                                scalingFactorOption.max
+                        ))
                 }
                 row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.target.dpi")) {
+                    val targetDpiOption = PlotExportOptions.TARGET_DPI
                     textField()
                         .bindComparableIntervalToTextWithFixer(
                             model::targetDPI.toMutableProperty(),
-                            interval = PlotExportOptions.TARGET_DPI.range,
+                            interval = targetDpiOption.range,
                             { it.toIntOrNull() },
                         )
+                        .comment(KotlinNotebookBundle.message(
+                                "kotlin.jupyter.dialog.outputs.plot.export.target.dpi.comment",
+                                targetDpiOption.min,
+                                targetDpiOption.max
+                        ))
                 }
             }.enabledIf(formatComboBox.selectedValueMatches { it?.isRaster == true })
             row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.title")) {
                 enumComboBox<LetsPlotFlavor>(textListCellRenderer { it?.description })
                     .bindItem(model::letsPlotFlavor.toNullableProperty())
             }
-            row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.directory")) {
+            row(panelMessage("kotlin.jupyter.dialog.outputs.plot.export.directory")) {
                 textFieldWithBrowseButton(
                     fileChooserDescriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor()
                 )
                     .bindStringText(model::directory.toMutableProperty())
                     .align(AlignX.FILL)
+                    .comment(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.directory.comment"))
             }
-            row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.file.name")) {
+            row(panelMessage("kotlin.jupyter.dialog.outputs.plot.export.file.name")) {
                 cell(fileField)
                     .bindStringText(model::fileName.toMutableProperty())
                     .align(AlignX.FILL)
+                    .onChanged {
+                        model.fileName = fileField.text
+                        updateOkAction()
+                    }
+                    .comment(KotlinNotebookBundle.message(
+                        "kotlin.jupyter.dialog.outputs.plot.export.file.name.comment",
+                        OUTPUT_INDEX_TEMPLATE
+                    ))
+            }
+            row(panelMessage("kotlin.jupyter.dialog.outputs.plot.export.overwrite.existing")) {
+                checkBox("")
+                    .bindSelected(model::overwriteExistingFiles.toMutableProperty())
             }
         }
 
         // There is no way for now to get rid of it
         @Suppress("DEPRECATION")
-        dialogPanel.preferredWidth = 300
+        dialogPanel.preferredWidth = 550
 
         val restoreDefaultSettingsAction = object : AbstractAction(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.restore.defaults")) {
             override fun actionPerformed(e: ActionEvent?) {
@@ -149,34 +188,48 @@ class SavePlotAction : AbstractExportPlotAction() {
             }
         }
 
-        val dialogBuilder = DialogBuilder()
-            .title(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.title"))
+        val isOk = dialogBuilder
+            .title(panelMessage("kotlin.jupyter.dialog.outputs.plot.export.title"))
             .apply {
                 addLeftSideAction(CancelActionDescriptor().getAction(dialogWrapper))
                 addAction(restoreDefaultSettingsAction)
                 addOkAction().setText(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.ok.text"))
             }
-
-        val isOk = dialogBuilder
             .centerPanel(dialogPanel)
             .showAndGet()
 
         return model.takeIf { isOk }
     }
 
+    private fun MutablePlotSaveModel.prepareFile(outputIndex: Int): File {
+        val file = getFile(outputIndex + 1)
+        if (!overwriteExistingFiles && file.exists()) {
+            throw FileAlreadyExistsException(file)
+        }
+        file.parentFile.mkdirs()
+        return file
+    }
+
     private data class MutablePlotSaveModel(
         private val options: PlotExportOptions,
-        override var directory: String = System.getProperty("user.home"),
-    ): PlotSaveModel {
+        var directory: String = System.getProperty("user.home"),
+    ): PlotExportModel {
         override var format
             get() = options.format
             set(value) {
                 changeFormat(value)
             }
         override var letsPlotFlavor by options::letsPlotFlavor
-        override var fileName by options::fileName
+        var fileName by options::fileName
+        var overwriteExistingFiles by options::overwriteExistingFiles
         override var scalingFactor by options::scalingFactor
         override var targetDPI by options::targetDPI
+
+        fun getFile(outputIndex: Int): File {
+            val myDirectory = directory
+            val fileNameTemplate = fileName.replace(OUTPUT_INDEX_TEMPLATE, outputIndex.toString())
+            return File(myDirectory, fileNameTemplate)
+        }
 
         private fun changeFormat(newFormat: ExportFormat) {
             options.format = newFormat
@@ -191,5 +244,9 @@ class SavePlotAction : AbstractExportPlotAction() {
                 fileName = fileNameParts.dropLast(1).joinToString(".") + ".$extension"
             }
         }
+    }
+
+    companion object {
+        private const val OUTPUT_INDEX_TEMPLATE = "%idx%"
     }
 }

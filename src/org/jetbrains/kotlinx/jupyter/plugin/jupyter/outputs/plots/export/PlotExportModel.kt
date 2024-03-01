@@ -10,11 +10,6 @@ interface PlotExportModel {
     val letsPlotFlavor: LetsPlotFlavor
 }
 
-interface PlotSaveModel: PlotExportModel {
-    val directory: String
-    val fileName: String
-}
-
 class PlotExportModelImpl(
     override val format: ExportFormat,
     override val scalingFactor: Double,
