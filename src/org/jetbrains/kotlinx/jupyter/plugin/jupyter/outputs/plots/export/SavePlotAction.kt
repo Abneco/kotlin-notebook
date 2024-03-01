@@ -60,10 +60,10 @@ class SavePlotAction : AbstractExportPlotAction() {
         }
     }
 
-    private fun showExportDialog(project: Project, currentDir: VirtualFile): PlotSaveModel? {
+    private fun showExportDialog(project: Project, currentDir: VirtualFile): MutablePlotSaveModel? {
         val exportOptions = PlotExportOptions.getInstance(project)
 
-        val model = ExportModel(
+        val model = MutablePlotSaveModel(
             exportOptions,
             currentDir.path,
         )
@@ -164,7 +164,7 @@ class SavePlotAction : AbstractExportPlotAction() {
         return model.takeIf { isOk }
     }
 
-    private data class ExportModel(
+    private data class MutablePlotSaveModel(
         private val options: PlotExportOptions,
         override var directory: String = System.getProperty("user.home"),
     ): PlotSaveModel {
