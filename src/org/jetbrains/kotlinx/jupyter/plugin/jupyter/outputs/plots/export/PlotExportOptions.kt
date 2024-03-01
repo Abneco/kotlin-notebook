@@ -9,7 +9,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotFlavor
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.getCurrentLetPlotFlavor
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.getCurrentLetsPlotFlavor
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.DelegatingOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.prop
@@ -63,7 +63,7 @@ class PlotExportOptions :
     class State : BaseState() {
         var format: ExportFormat by enum(ExportFormat.SVG)
         var fileName: String? by string(DEFAULT_FILE_NAME)
-        var letsPlotFlavor: LetsPlotFlavor by enum(getCurrentLetPlotFlavor())
+        var letsPlotFlavor: LetsPlotFlavor by enum(getCurrentLetsPlotFlavor())
         var scalingFactor by property(DEFAULT_SCALING_FACTOR, isDefault = {it == DEFAULT_SCALING_FACTOR})
         var targetDPI by property(4000)
     }

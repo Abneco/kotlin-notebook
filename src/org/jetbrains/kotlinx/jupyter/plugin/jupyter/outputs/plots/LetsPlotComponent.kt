@@ -38,7 +38,7 @@ class LetsPlotComponent : JBLayeredPane() {
     }
 
     override fun updateUI() {
-        val colorFlavor = getCurrentLetPlotFlavor()
+        val colorFlavor = getCurrentLetsPlotFlavor()
         val data = _dataKey ?: return
         if (previousColorFlavor == colorFlavor) return
         previousColorFlavor = colorFlavor
@@ -134,7 +134,7 @@ class LetsPlotComponent : JBLayeredPane() {
     }
 }
 
-private fun getSpec(dataKey: LetsPlotOutputDataKey) = getSpec(dataKey, getCurrentLetPlotFlavor())
+private fun getSpec(dataKey: LetsPlotOutputDataKey) = getSpec(dataKey, getCurrentLetsPlotFlavor())
 private fun getSpec(dataKey: LetsPlotOutputDataKey, flavor: LetsPlotFlavor): MutableLetsPlotSpec {
     val rawSpec = deserializeSpec(dataKey.spec).toMutableMap().also {
         if (dataKey.applyColorScheme) {

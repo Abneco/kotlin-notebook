@@ -21,9 +21,9 @@ enum class LetsPlotFlavor(
     SOLARIZED_DARK(ThemeOption.Flavor.SOLARIZED_DARK, KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.solarizedDark")),
 }
 
-fun getCurrentLetPlotFlavor() = getLetPlotFlavor(uiFeelsDark())
+fun getCurrentLetsPlotFlavor() = getLetsPlotFlavor(uiFeelsDark())
 
-fun getLetPlotFlavor(isDark: Boolean): LetsPlotFlavor {
+fun getLetsPlotFlavor(isDark: Boolean): LetsPlotFlavor {
     return if (isDark) LetsPlotFlavor.DARCULA else LetsPlotFlavor.HIGH_CONTRAST_LIGHT
 }
 
