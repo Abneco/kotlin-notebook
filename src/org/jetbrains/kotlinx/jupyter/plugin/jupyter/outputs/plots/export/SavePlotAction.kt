@@ -33,6 +33,11 @@ import javax.swing.event.DocumentListener
 
 
 class SavePlotAction : AbstractExportPlotAction() {
+    // For now, only one plot can be exported. See KTNB-432
+    override fun isActionApplicable(outputs: Collection<LetsPlotOutputDataKey>): Boolean {
+        return outputs.size == 1
+    }
+
     override fun doExport(
         letsPlotOutputs: List<LetsPlotOutputDataKey>,
         project: Project,

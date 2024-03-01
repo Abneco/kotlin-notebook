@@ -24,7 +24,7 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
     override fun actionPerformed(event: AnActionEvent) {
         val project = event.project ?: return
         val letsPlotOutputs = getLetsPlotOutputs(event)
-            .takeIf { it.isActionApplicable() } ?: return
+            .takeIf { isActionApplicable(it) } ?: return
 
         val notebookFile = event.getNotebookFile() ?: return
         doExport(letsPlotOutputs, project, notebookFile)
@@ -36,10 +36,7 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         notebookFile: BackedNotebookVirtualFile,
     )
 
-    // For now, only one plot can be exported. See KTNB-432
-    private fun Collection<LetsPlotOutputDataKey>.isActionApplicable(): Boolean {
-        return size == 1
-    }
+    protected abstract fun isActionApplicable(outputs: Collection<LetsPlotOutputDataKey>): Boolean
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
@@ -47,7 +44,7 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         super.update(event)
         val letsPlotOutputs = getLetsPlotOutputs(event)
 
-        event.presentation.isEnabledAndVisible = letsPlotOutputs.isActionApplicable()
+        event.presentation.isEnabledAndVisible = isActionApplicable(letsPlotOutputs)
     }
 
     private fun getLetsPlotOutputs(event: AnActionEvent): List<LetsPlotOutputDataKey> {

@@ -9,6 +9,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 class CopyPlotAction : AbstractExportPlotAction() {
+    override fun isActionApplicable(outputs: Collection<LetsPlotOutputDataKey>): Boolean {
+        return outputs.size == 1
+    }
+
     override fun doExport(
         letsPlotOutputs: List<LetsPlotOutputDataKey>,
         project: Project,
