@@ -20,8 +20,8 @@ class CopyPlotAction : AbstractExportPlotAction() {
                 {
                     val model = PlotExportModelImpl(
                         format = ExportFormat.PNG,
-                        scalingFactor = 2.0,
-                        targetDPI = 4000,
+                        scalingFactor = PlotExportOptions.SCALING_FACTOR.default,
+                        targetDPI = PlotExportOptions.TARGET_DPI.default,
                         letsPlotFlavor = getCurrentLetsPlotFlavor()
                     )
                     copyPlotToClipboard(output, model)

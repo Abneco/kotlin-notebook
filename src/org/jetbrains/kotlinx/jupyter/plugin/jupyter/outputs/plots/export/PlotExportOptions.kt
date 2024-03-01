@@ -14,6 +14,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.DelegatingOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.prop
 import org.jetbrains.kotlinx.jupyter.plugin.settings.propNarrowing
+import org.jetbrains.letsPlot.core.plot.export.PlotImageExport.buildImageFromRawSpecs
 import java.util.*
 
 enum class ExportFormat(val isRaster: Boolean = false) {
@@ -64,8 +65,8 @@ class PlotExportOptions :
         var format: ExportFormat by enum(ExportFormat.SVG)
         var fileName: String? by string(DEFAULT_FILE_NAME)
         var letsPlotFlavor: LetsPlotFlavor by enum(getCurrentLetsPlotFlavor())
-        var scalingFactor by property(DEFAULT_SCALING_FACTOR, isDefault = {it == DEFAULT_SCALING_FACTOR})
-        var targetDPI by property(4000)
+        var scalingFactor by property(SCALING_FACTOR.default, isDefault = {it == SCALING_FACTOR.default})
+        var targetDPI by property(TARGET_DPI.default)
     }
 
     interface Listener : EventListener
@@ -73,7 +74,13 @@ class PlotExportOptions :
     companion object {
         fun getInstance(project: Project): PlotExportOptions = project.service()
 
-        private const val DEFAULT_SCALING_FACTOR = 2.0
         private const val DEFAULT_FILE_NAME = "plot.svg"
+        /**
+         * These values are taken from [buildImageFromRawSpecs].
+         * For the upper-bound see https://github.com/JetBrains/lets-plot/issues/1011
+         */
+        val SCALING_FACTOR = RangeWithDefault(2.0, 0.1, 9.0)
+
+        val TARGET_DPI = RangeWithDefault(4000, 72, 4000)
     }
 }

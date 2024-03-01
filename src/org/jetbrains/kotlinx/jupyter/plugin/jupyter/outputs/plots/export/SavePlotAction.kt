@@ -25,7 +25,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindComparableIntervalTo
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindStringText
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.enumComboBox
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
-import org.jetbrains.letsPlot.core.plot.export.PlotImageExport.buildImageFromRawSpecs
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.awt.event.ActionEvent
 import javax.swing.AbstractAction
@@ -103,11 +102,7 @@ class SavePlotAction : AbstractExportPlotAction() {
                     textField()
                         .bindComparableIntervalToTextWithFixer(
                             model::scalingFactor.toMutableProperty(),
-                            /**
-                             * These values are taken from [buildImageFromRawSpecs].
-                             * For the upper-bound see https://github.com/JetBrains/lets-plot/issues/1011
-                             */
-                            interval = 0.1..9.0,
+                            interval = PlotExportOptions.SCALING_FACTOR.range,
                             { it.toDoubleOrNull() },
                         )
                 }
@@ -115,7 +110,7 @@ class SavePlotAction : AbstractExportPlotAction() {
                     textField()
                         .bindComparableIntervalToTextWithFixer(
                             model::targetDPI.toMutableProperty(),
-                            interval = 72..4000,
+                            interval = PlotExportOptions.TARGET_DPI.range,
                             { it.toIntOrNull() },
                         )
                 }
@@ -138,6 +133,8 @@ class SavePlotAction : AbstractExportPlotAction() {
             }
         }
 
+        // There is no way for now to get rid of it
+        @Suppress("DEPRECATION")
         dialogPanel.preferredWidth = 300
 
         val restoreDefaultSettingsAction = object : AbstractAction(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.restore.defaults")) {
