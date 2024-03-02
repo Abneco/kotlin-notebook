@@ -1,16 +1,15 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.psi
 
+import com.intellij.jupyter.core.jupyter.JupyterLanguage
 import com.intellij.lang.Language
 import com.intellij.lang.LanguageParserDefinitions
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.MultiplePsiFilesPerDocumentFileViewProvider
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.source.PsiFileImpl
-import com.intellij.psi.templateLanguages.TemplateLanguageFileViewProvider
 import com.intellij.util.InjectionUtils
-import com.intellij.jupyter.core.jupyter.JupyterLanguage
+import org.jetbrains.plugins.notebooks.jupyter.JupyterFileViewProvider
 import org.jetbrains.plugins.notebooks.jupyter.getMarkdownLanguage
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterTemplateTypes
 
@@ -19,11 +18,11 @@ class JupyterKotlinFileViewProvider(
     file: VirtualFile,
     eventSystemEnabled: Boolean
 ) :
-    MultiplePsiFilesPerDocumentFileViewProvider(
+    JupyterFileViewProvider(
         manager,
         file,
         eventSystemEnabled
-    ), TemplateLanguageFileViewProvider {
+    ) {
 
     init {
         InjectionUtils.setFormatOnlyInjectedCode(this, true)
