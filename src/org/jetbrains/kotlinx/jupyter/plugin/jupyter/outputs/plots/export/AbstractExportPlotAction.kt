@@ -36,7 +36,7 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         notebookFile: BackedNotebookVirtualFile,
     )
 
-    protected open fun isActionApplicable(outputs: Collection<LetsPlotOutputDataKey>): Boolean {
+    protected open fun isActionApplicable(outputs: List<LetsPlotOutputDataKey>): Boolean {
         return outputs.isNotEmpty()
     }
 
