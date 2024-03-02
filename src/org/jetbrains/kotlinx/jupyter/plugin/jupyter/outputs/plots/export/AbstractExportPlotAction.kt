@@ -37,7 +37,7 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
     )
 
     protected open fun isActionApplicable(outputs: Collection<LetsPlotOutputDataKey>): Boolean {
-        return true
+        return outputs.isNotEmpty()
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
