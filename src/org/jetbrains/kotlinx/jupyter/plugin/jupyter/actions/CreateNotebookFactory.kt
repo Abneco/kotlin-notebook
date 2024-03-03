@@ -8,11 +8,14 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.config.notebookLanguageInfo
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSettings
 import org.jetbrains.kotlinx.jupyter.plugin.settings.asJson
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.actions.createFileFromTemplateWithProperties
@@ -60,7 +63,7 @@ object CreateNotebookFactory {
         }
         val kernelSpec = serializer.encodeToString(notebookKernelSpec)
         val languageSpec = serializer.encodeToString(notebookLanguageInfo)
-        val notebookSettings = KotlinNotebookProjectOptionsProvider.getInstance(project).getNewKotlinNotebookSettings(mode).asJson()
+        val notebookSettings = getNewKotlinNotebookSettings(project, mode).asJson()
 
         return buildMap {
             put(VAR_KERNEL_SPEC, kernelSpec)
@@ -69,6 +72,24 @@ object CreateNotebookFactory {
                 put(VAR_KTNB_METADATA, notebookSettings)
             }
         }
+    }
+
+    @RequiresEdt
+    private fun getNewKotlinNotebookSettings(project: Project, mode: NotebookMode): KotlinNotebookSettings {
+        val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
+
+        // Light Kotlin Notebooks should never include neither modules nor project dependencies as a default, as
+        // they should be able to start as fast as possible.
+        // Standard Notebooks should make the choice based on the default value for the property.
+        fun disabledInLightMode(flag: Boolean) = flag && mode != NotebookMode.LIGHT
+
+        val includeModules = disabledInLightMode(options.shouldBuildProject)
+        val includeLibraries = disabledInLightMode(options.shouldAddProjectLibrariesToClasspath)
+
+        return KotlinNotebookSettings(
+            projectDependencies = if (includeModules) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None,
+            projectLibraries = if (includeLibraries) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None
+        )
     }
 
     /**
