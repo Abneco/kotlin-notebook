@@ -13,7 +13,7 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import java.util.*
+import java.util.EventListener
 
 @Service(Service.Level.PROJECT)
 @State(
@@ -50,10 +50,8 @@ class KotlinNotebookProjectOptionsProvider :
     var extraEnvironmentVariables by prop(State::extraEnvironmentVariables)
         internal set
 
-    var kernelRunMode by enumPropByName(
-        KotlinNotebookSessionRunMode::class,
-        State::kernelRunMode
-    ).onChange(Listener::onKernelRunModeChanged)
+    var kernelRunMode by prop(State::kernelRunMode)
+        .onChange(Listener::onKernelRunModeChanged)
 
     var shouldLimitTypeHintsByActiveCell by prop(State::shouldLimitTypeHintsByActiveCell)
         internal set
@@ -92,9 +90,7 @@ class KotlinNotebookProjectOptionsProvider :
         var extraJvmArguments by list<String>()
         var extraEnvironmentVariables by linkedMap<String, String>()
 
-        var kernelRunMode by property(KotlinNotebookSessionRunMode.DEFAULT.name) {
-            it == KotlinNotebookSessionRunMode.DEFAULT.name
-        }
+        var kernelRunMode by enum(KotlinNotebookSessionRunMode.DEFAULT)
         var shouldLimitTypeHintsByActiveCell by property(false)
 
         // default settings for new notebooks

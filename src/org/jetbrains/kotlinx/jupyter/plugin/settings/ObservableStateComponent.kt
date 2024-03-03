@@ -2,8 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.settings
 
 import com.intellij.openapi.Disposable
-import java.util.*
-import kotlin.reflect.KClass
+import java.util.EventListener
 import kotlin.reflect.KMutableProperty1
 
 interface ObservableStateComponent<StateT, ListenerT : EventListener> {
@@ -23,11 +22,4 @@ fun <StateT, ListenerT : EventListener, InternalT, ExternalT : InternalT> Observ
 
 fun <StateT, ListenerT : EventListener, PropertyT> ObservableStateComponent<StateT, ListenerT>.prop(stateProperty: KMutableProperty1<StateT, PropertyT>): StatePropertyDelegate<StateT, ListenerT, PropertyT> {
     return prop(stateProperty, { it }, { it })
-}
-
-inline fun <StateT, ListenerT: EventListener, reified ExternalT: Enum<ExternalT>> ObservableStateComponent<StateT, ListenerT>.enumPropByName(
-    @Suppress("UNUSED_PARAMETER") enumClass: KClass<ExternalT>,
-    stateProperty: KMutableProperty1<StateT, String>
-): StatePropertyDelegate<StateT, ListenerT, ExternalT> {
-    return prop(stateProperty, { enumValueOf(it) }, { it.name })
 }
