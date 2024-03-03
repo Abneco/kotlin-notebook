@@ -47,6 +47,8 @@ class KotlinNotebookVarsToolWindow(
         variablesView = XStandaloneVariablesView(project, KotlinNotebookDebugEditorsProvider(), stackFrame)
         val viewReference = variablesView
         if (viewReference == null) return
+
+        // Overrides default context menu group for XVariablesViewBase, removing disabled actions
         PopupHandler.installPopupMenu(viewReference.tree, "Notebook.XDebugger.StateValueGroup", "XDebuggerTreePopup")
 
         add(viewReference.panel, BorderLayout.CENTER)
