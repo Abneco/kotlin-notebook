@@ -13,9 +13,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.getOrCreateKotlinNotebookToolWindow
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.toNotebookToolWindowPanelHelpId
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
-import org.jetbrains.kotlinx.jupyter.plugin.util.fileNameFromProjectRoot
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.util.toAbsolutePath
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
@@ -38,18 +39,19 @@ class KotlinNotebookSessionVariablesService(
             if (!event.newFile.isKotlinNotebook) return
             val virtualFile = event.newFile?.toBackedNotebookFile() ?: return
 
-            coroutineScope.launch {
-                refreshToolWindowIfPossible(virtualFile)
-            }
+            refreshToolWindowIfPossible(virtualFile)
         }
+    }
 
-        private suspend fun refreshToolWindowIfPossible(virtualFile: BackedNotebookVirtualFile) {
-            val name = virtualFile.file.path.fileNameFromProjectRoot(project)
+    private fun refreshToolWindowIfPossible(virtualFile: BackedNotebookVirtualFile) {
+        coroutineScope.launch {
+            val fileId = virtualFile.file.toAbsolutePath().toNotebookToolWindowPanelHelpId()
+
             withContext(Dispatchers.EDT) {
                 val panel = getOrCreateKotlinNotebookToolWindow(project)
                 val contentManager = panel.contentManager
                 contentManager.contents.firstOrNull {
-                    it.toolwindowTitle == name && !it.isSelected
+                    it.helpId == fileId && !it.isSelected
                 }?.let {
                     contentManager.setSelectedContent(it)
                 }

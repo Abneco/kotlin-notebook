@@ -52,6 +52,7 @@ class KotlinNotebookToolWindowBuilder(
             true
         )
         mainContent.isCloseable = false
+        mainContent.helpId = id
 
         return mainContent
     }

@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.RegisterToolWindowTask
 import com.intellij.openapi.wm.ToolWindow
@@ -11,9 +12,15 @@ import icons.KotlinJupyterIcons
 import org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookToolWindowBuilder
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.plugins.notebooks.jupyter.server.ui.attachJupyterServerContentCloseListener
+import java.nio.file.Path
 
 private const val KOTLIN_NOTEBOOK_TOOL_WINDOW_ID = "Kotlin Notebook"
 private const val KOTLIN_NOTEBOOK_RUNNER_ID = "Kotlin Notebook Runner"
+
+
+internal fun Path.toNotebookToolWindowPanelHelpId(): String {
+    return KOTLIN_NOTEBOOK_RUNNER_ID + this
+}
 
 @RequiresEdt
 fun showKotlinNotebookServerManagementToolWindow(
@@ -22,7 +29,7 @@ fun showKotlinNotebookServerManagementToolWindow(
     val project = handler.project
     val toolWindow: ToolWindow = getOrCreateKotlinNotebookToolWindow(project)
 
-    val id = KOTLIN_NOTEBOOK_RUNNER_ID + handler.notebookPath.toString()
+    val id = handler.notebookPath.toNotebookToolWindowPanelHelpId()
     val notebookToolWindowBuilder = KotlinNotebookToolWindowBuilder(handler, id)
 
     val manager = toolWindow.contentManager
@@ -42,8 +49,27 @@ fun showKotlinNotebookServerManagementToolWindow(
         KotlinNotebookBundle.message("kotlin.jupyter.toolbar.session.name"),
         handler
     )
+
+    handler.addKernelProcessListener(object : KotlinKernelProcessListener {
+        override fun kernelTerminated(event: KotlinKernelProcessEvent) {
+            runInEdt {
+                project.makeNotebookToolWindowContentClosable()
+            }
+        }
+    })
 }
 
+@RequiresEdt
+internal fun Project.makeNotebookToolWindowContentClosable() {
+    if (isDisposed || !isInitialized) return
+
+    val toolWindow = getOrCreateKotlinNotebookToolWindow(this)
+    toolWindow.contentManager.selectedContent?.let {
+        it.isCloseable = true
+    }
+}
+
+@RequiresEdt
 internal fun getOrCreateKotlinNotebookToolWindow(project: Project): ToolWindow {
     val toolWindowManager = ToolWindowManager.getInstance(project)
     val toolWindow = toolWindowManager.getToolWindow(KOTLIN_NOTEBOOK_TOOL_WINDOW_ID)

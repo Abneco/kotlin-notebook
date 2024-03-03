@@ -44,10 +44,8 @@ val VirtualFile.parentsWithSelf: Sequence<VirtualFile> get() = generateSequence(
 
 typealias ProjectArtifacts = List<String>
 
-@NlsSafe
-fun String.fileNameFromProjectRoot(project: Project): String {
-    val path = File(this).absoluteFile
-    return path.toPath().fileNameFromProjectRoot(project)
+fun VirtualFile.toAbsolutePath(): Path {
+    return File(path).absoluteFile.toPath()
 }
 
 @NlsSafe
