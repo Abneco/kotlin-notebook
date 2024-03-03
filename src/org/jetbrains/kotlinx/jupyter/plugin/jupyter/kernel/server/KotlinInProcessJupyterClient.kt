@@ -8,6 +8,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Version
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.resetSessionMetaInformation
+import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.createConcurrentDoubleKeyMap
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
@@ -127,8 +128,14 @@ class KotlinInProcessJupyterClient(
 
     override fun restart(kernelId: JupyterKernelId) {
         val sessionData = sessions.getBySecondKey(kernelId) ?: return
+        val project = kernels[kernelId]?.project
         killKernel(kernelId)
         sessions.removeByValue(sessionData)
+
+        if (project != null) {
+            NotebookNotificationUtility.kernelRelatedFactory
+                .showKernelRestart(project)
+        }
     }
 
     override fun createWebSocketClientForKernel(

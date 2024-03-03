@@ -116,7 +116,7 @@ internal object NotebookHighlightingUtilityObject {
      * [get] ReadAction
      * [get] EDT
      */
-    fun resetSessionMetaInformation(vFile: VirtualFile, project: Project, wouldShowNotification: Boolean = true) {
+    fun resetSessionMetaInformation(vFile: VirtualFile, project: Project) {
         if (project.isDisposed) return
 
         LOG.info("Resetting session meta information")
@@ -148,10 +148,6 @@ internal object NotebookHighlightingUtilityObject {
             project.messageBus
                 .syncPublisher(NotebookSessionEventListener.TOPIC)
                 .sessionRestarted(it)
-        }
-        if (wouldShowNotification) {
-            NotebookNotificationUtility.kernelRelatedFactory
-                .showKernelRestart(project)
         }
 
         runInEdt { // we want to ensure that this part will be executed on the dispatch thread
