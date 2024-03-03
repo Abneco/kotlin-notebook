@@ -8,7 +8,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectionUtility
-import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelVersionEnoughForInstrumentation
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.findNotebookVirtualFileOrNull
@@ -25,10 +24,7 @@ class KotlinNotebookDebugSessionManager(
     private val nextTargetDebugPortOrNull: Int?
         get() {
             val isSuitable = project.isKernelVersionEnoughForInstrumentation
-            return if (isSuitable
-                && !ApplicationManager.getApplication().isUnitTestMode
-                && debugFeaturesEnabled
-                )
+            return if (isSuitable && !ApplicationManager.getApplication().isUnitTestMode)
                 portsGenerator.randomPort()
             else null
         }

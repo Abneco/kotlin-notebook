@@ -57,8 +57,6 @@ class KotlinNotebookProjectOptionsProvider :
         internal set
     var shouldAddProjectLibrariesToClasspath by prop(State::shouldAddProjectLibrariesToClasspath)
         internal set
-    var shouldOpenDebugPort by prop(State::shouldOpenDebugPort)
-        internal set
     var shouldShowNotebookVariables by prop(State::shouldShowNotebookVariables)
         internal set
 

@@ -147,6 +147,9 @@
         <registryKey key="kotlin.notebook.allow.embedded.kernel" defaultValue="false"
                      description="When enabled, it's possible to run Kotlin Notebook sessions inside IDE process" />
 
+        <registryKey key="kotlin.notebook.debug.enabled" defaultValue="true"
+                     description="When enabled, establishing debug session with Kernel is possible" />
+
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.inject.JupyterKotlinIntoCellsInjector"/>
         <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookLocationNotificationProvider"/>
         <fileIconProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.ide.KotlinNotebookFileIconProvider" />

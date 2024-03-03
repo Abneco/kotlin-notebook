@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.MINIMUM_SUPPORTED_VERSION
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import java.util.*
 import kotlin.reflect.KProperty
 
@@ -22,6 +23,7 @@ val String.isKernelVersionEnoughForInstrumentation: Boolean
 val Project.isKernelVersionEnoughForInstrumentation: Boolean
     get() = KotlinNotebookProjectOptionsProvider.getInstance(this)
         .kernelVersion.isKernelVersionEnoughForInstrumentation
+            && debugFeaturesEnabled
 
 internal class RegistryFlagDelegate(private val name: String, private val defaultValue: Boolean) {
     operator fun getValue(thisRef: Any?, property: KProperty<*>): Boolean {
