@@ -10,6 +10,7 @@ import com.intellij.openapi.util.NlsSafe
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.ui.content.Content
 import com.intellij.ui.content.ContentFactory
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.StopKotlinKernelAction
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KotlinKernelProcessHandler
@@ -94,6 +95,8 @@ class KotlinNotebookToolWindowBuilder(
         val toolWindowPanel = KotlinNotebookSessionVariablesService
             .getForFile(handler.project, virtualFile)
             .getToolWindow(setupData)
+
+        if (!debugFeaturesEnabled) return null
 
         return toolWindowPanel.createContent()
     }
