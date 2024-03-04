@@ -31,6 +31,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectio
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectionUtility.buildRemoteRunProfileState
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.NotebookDebugConnectionHolder
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.NotebookDebugProcessListener
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -78,6 +79,8 @@ class KotlinNotebookDebugSession(
     }
 
     fun prepareInternalRequests(debugProcess: DebugProcessImpl) {
+        if (!debugFeaturesEnabled) return
+
         kernelThreadBreakpoint.createRequest(debugProcess)
     }
 
