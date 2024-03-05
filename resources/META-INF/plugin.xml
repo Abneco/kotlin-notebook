@@ -360,16 +360,12 @@
                 class="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.RestartKotlinNotebookHighlightingAction"/>
 
         <group id="Notebook.XDebugger.StateValueGroup" popup="false">
-            <reference ref="XDebugger.Inspect"/>
             <reference ref="XDebugger.CopyValue"/>
             <reference ref="XDebugger.CompareValueWithClipboard"/>
             <reference ref="XDebugger.CopyName"/>
             <reference ref="Debugger.CustomizeContextView"/>
             <separator/>
-            <reference ref="XDebugger.JumpToTypeSource"/>
-            <separator/>
             <reference ref="Debugger.ViewText"/>
-            <reference ref="Debugger.ViewAsGroup"/>
         </group>
     </actions>
 </idea-plugin>
