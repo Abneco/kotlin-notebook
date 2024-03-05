@@ -11,6 +11,15 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifac
 import java.net.URLClassLoader
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Holds classloaders that are responsible for loading kernel classes.
+ * Each version of kernel is loaded with its own classloader to avoid
+ * conflicts and errors.
+ * Each created classloader has Kotlin Notebook plugin's classloader as
+ * a parent, that implies that REPL snippets may load classes of plugin and IDE,
+ * all you need is to provide a correct classpath for
+ * compilation and completion to work.
+ */
 @Service(Service.Level.PROJECT)
 class EmbeddedKernelClassLoaderHolder(private val project: Project) {
     private val classLoaders = ConcurrentHashMap<String, ClassLoader>()

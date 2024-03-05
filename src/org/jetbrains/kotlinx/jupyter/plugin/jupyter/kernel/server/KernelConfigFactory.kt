@@ -5,6 +5,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.pom.java.LanguageLevel
 import com.intellij.util.lang.JavaVersion
+import org.jetbrains.kotlinx.jupyter.api.JupyterClientType
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
@@ -25,14 +26,20 @@ abstract class AbstractKotlinKernelConfigFactory(
     protected val notebookPath: Path
 ) : KernelConfigFactory {
     final override fun create(): KernelConfig = KernelConfig(
-        getKernelPorts(),
-        "tcp",
-        "HmacSHA256",
-        "x-x-x",
-        getClasspath(),
-        null,
-        getDebugPortOrNull(notebookPath),
-        "kotlin_notebook",
+        ports = getKernelPorts(),
+        transport = "tcp",
+        signatureScheme = "HmacSHA256",
+        // Key doesn't matter as long as it's a local kernel
+        signatureKey = "x-x-x",
+        scriptClasspath = getClasspath(),
+        // Don't try to resolve libraries against some local directory,
+        // use only embedded or remote JSON library files
+        homeDir = null,
+        debugPort = getDebugPortOrNull(notebookPath),
+        // Kernel provides API for a user to learn in what environment the session is run
+        // In particular, a client type is available via `notebook.jupyterClientType`
+        // in both separate and embedded modes
+        clientType = JupyterClientType.KOTLIN_NOTEBOOK.name,
         jvmTargetForSnippets = getJvmTargetForSnippets(project)?.toFeatureString(),
     )
 
@@ -63,7 +70,6 @@ class DefaultKotlinKernelConfigFactory(
 
 private fun chooseJvmTargetForSnippets(project: Project): LanguageLevel? {
     val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
-
     val selectedTarget = options.jvmTargetForSnippets
     val myMaxBytecodeVersion = maxBytecodeVersion
 
@@ -74,9 +80,7 @@ private fun chooseJvmTargetForSnippets(project: Project): LanguageLevel? {
 
     val jdkVersion = options.jdk.getVersion(project)
     if (jdkVersion == null) return null
-
     if (myMaxBytecodeVersion == null) return null
-
     if (jdkVersion.maxLanguageLevel <= myMaxBytecodeVersion) return null
 
     return myMaxBytecodeVersion

@@ -28,9 +28,7 @@ fun createEmbeddedMessageHandler(
 ): MessageHandler {
     val messageFactoryProvider: MessageFactoryProvider = MessageFactoryProviderImpl()
     val communicationFacility: JupyterCommunicationFacility = JupyterCommunicationFacilityImpl(socketManager, messageFactoryProvider)
-
     val executor: JupyterExecutor = JupyterExecutorImpl()
-
     val commManager: CommManagerInternal = CommManagerImpl(communicationFacility)
     val replComponentsProvider = DefaultReplComponentsProvider(replSettings, communicationFacility, commManager)
     val kernelVersion = KotlinNotebookProjectOptionsProvider.getInstance(project).kernelVersion
@@ -39,6 +37,11 @@ fun createEmbeddedMessageHandler(
     return EmbeddedMessageHandler(repl, commManager, messageFactoryProvider, socketManager, executor)
 }
 
+/**
+ * Loads kernel artifact for a specific [kernelVersion],
+ * creates [java.net.URLClassLoader], loads kernel classes from it and instantiates
+ * [ReplFactory] via SPI with the components provided by [replComponentsProvider].
+ */
 @RequiresBackgroundThread
 fun getReplFactory(
     project: Project,

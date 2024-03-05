@@ -5,6 +5,13 @@ import org.jetbrains.kotlinx.jupyter.messaging.JupyterBaseSockets
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketInfo
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 
+/**
+ * Holds all Jupyter sockets that are needed for messaging
+ * between the kernel and the client inside the IDE process
+ *
+ * @param onMessageCallback Called when the kernel sends something to one of the sockets.
+ * Socket type is reflected in [JupyterMessage.channel]
+ */
 class EmbeddedJupyterSockets(
     private val onMessageCallback: (JupyterMessage) -> Unit
 ) : JupyterBaseSockets {

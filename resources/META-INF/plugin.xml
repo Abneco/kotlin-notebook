@@ -145,7 +145,7 @@
                      description="When enabled, table output will support hierarchical columns."/>
 
         <registryKey key="kotlin.notebook.allow.embedded.kernel" defaultValue="false"
-                     description="When enabled, it's possible to run Kotlin Notebook sessions inside IDE process" />
+                     description="When enabled, Kotlin Notebook sessions can be run inside the IDE process" />
 
         <registryKey key="kotlin.notebook.debug.enabled" defaultValue="true"
                      description="When enabled, establishing debug session with Kernel is possible" />
