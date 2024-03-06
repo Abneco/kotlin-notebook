@@ -88,6 +88,7 @@ private fun exportPlot(
             val format = when (modelFormat) {
                 ExportFormat.PNG -> PlotImageExport.Format.PNG
                 ExportFormat.JPG -> PlotImageExport.Format.JPEG()
+                ExportFormat.TIFF -> PlotImageExport.Format.TIFF
                 else -> throw IllegalStateException("No other formats are possible on this stage")
             }
             val byteArray = PlotImageExport.buildImageFromRawSpecs(

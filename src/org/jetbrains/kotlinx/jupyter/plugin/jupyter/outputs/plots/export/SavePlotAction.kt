@@ -233,7 +233,7 @@ class SavePlotAction : AbstractExportPlotAction() {
 
         private fun changeFormat(newFormat: ExportFormat) {
             options.format = newFormat
-            val extension = newFormat.toString().lowercase()
+            val extension = newFormat.extension
             if (fileName.isBlank()) {
                 fileName = "plot.$extension"
             }

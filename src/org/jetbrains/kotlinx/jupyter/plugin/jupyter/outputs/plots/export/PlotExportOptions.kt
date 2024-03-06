@@ -17,11 +17,15 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.propNarrowing
 import org.jetbrains.letsPlot.core.plot.export.PlotImageExport.buildImageFromRawSpecs
 import java.util.*
 
-enum class ExportFormat(val isRaster: Boolean = false) {
-    SVG,
-    PNG(true),
-    JPG(true),
-    HTML,
+enum class ExportFormat(
+    val extension: String,
+    val isRaster: Boolean = false,
+) {
+    SVG("svg"),
+    PNG("png", true),
+    JPG("jpg", true),
+    TIFF("tiff", true),
+    HTML("html"),
 }
 
 @Service(Service.Level.PROJECT)
