@@ -28,7 +28,7 @@ class CopyPlotAction : AbstractExportPlotAction() {
                         targetDPI = PlotExportOptions.TARGET_DPI.default,
                         letsPlotFlavor = getCurrentLetsPlotFlavor()
                     )
-                    copyPlotToClipboard(output, model)
+                    copyPlotToClipboard(project, output, model)
                 },
                 { throwable ->
                     showPlotExportFailedNotification(throwable)

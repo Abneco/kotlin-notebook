@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
 
 import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
@@ -13,9 +14,7 @@ import org.jetbrains.letsPlot.core.util.PlotHtmlExport
 import org.jetbrains.letsPlot.core.util.PlotHtmlHelper
 import java.awt.datatransfer.StringSelection
 import java.awt.datatransfer.Transferable
-import java.io.ByteArrayInputStream
 import java.io.File
-import javax.imageio.ImageIO
 
 @RequiresBackgroundThread
 fun savePlot(
@@ -29,17 +28,18 @@ fun savePlot(
 
 @RequiresBackgroundThread
 fun copyPlotToClipboard(
+    project: Project,
     plot: LetsPlotOutputDataKey,
     model: PlotExportModel
 ) {
     val content = exportPlot(plot, model)
-    val transferable = content.asTransferable()
+    val transferable = content.asTransferable(project)
     CopyPasteManager.getInstance().setContents(transferable)
 }
 
 private interface PlotContent {
     fun saveToFile(file: File)
-    fun asTransferable(): Transferable
+    fun asTransferable(project: Project): Transferable
 }
 
 private class TextPlotContent(private val text: String) : PlotContent {
@@ -47,19 +47,21 @@ private class TextPlotContent(private val text: String) : PlotContent {
         file.writeText(text)
     }
 
-    override fun asTransferable(): Transferable {
+    override fun asTransferable(project: Project): Transferable {
         return StringSelection(text)
     }
 }
 
-private class BinaryPlotContent(private val bytes: ByteArray) : PlotContent {
+private class BinaryPlotContent(
+    private val bytes: ByteArray,
+    private val extension: String,
+) : PlotContent {
     override fun saveToFile(file: File) {
         file.writeBytes(bytes)
     }
 
-    override fun asTransferable(): Transferable {
-        val bufferedImage = ImageIO.read(ByteArrayInputStream(bytes))
-        return BufferedImageTransferable(bufferedImage)
+    override fun asTransferable(project: Project): Transferable {
+        return createImageDataTransferable(project, bytes, extension)
     }
 }
 
@@ -94,7 +96,7 @@ private fun exportPlot(
                 scalingFactor = model.scalingFactor,
                 targetDPI = model.targetDPI.toDouble(),
             ).bytes
-            BinaryPlotContent(byteArray)
+            BinaryPlotContent(byteArray, format.defFileExt)
         }
     }
 }
