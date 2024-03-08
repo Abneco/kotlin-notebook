@@ -194,7 +194,11 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : Neste
     private fun getSliceCommand(initCommand: String, isInteractive: Boolean, start: Int, end: Int): String {
         return if (isInteractive) {
             """
-            DISPLAY(KotlinNotebookPluginUtils.getRowsSubsetForRendering($initCommand, $start, $end), "")
+            try {
+                DISPLAY(KotlinNotebookPluginUtils.getRowsSubsetForRendering($initCommand, $start, $end), "")
+            } catch (_: IllegalArgumentException) {
+                DISPLAY(($initCommand)!!, "")
+            }
             """.trimIndent()
         } else {
             initCommand
