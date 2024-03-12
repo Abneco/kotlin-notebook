@@ -27,7 +27,14 @@ import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookToolWindowSetup
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
 
-class NotebookVariablesPerFileState(
+/**
+ * This service is created for every Kotlin notebook file
+ * and provides an entry point for variables:
+ *  - retrieving variables from [VirtualMachineProxy]
+ *  - delegating creating and updates of corresponding VariableToolWindowPanel
+ *
+ */
+class NotebookVariablesPerFileStateService(
     private val project: Project,
     private val virtualFile: BackedNotebookVirtualFile,
     private val coroutineScope: CoroutineScope,

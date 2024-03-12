@@ -20,11 +20,17 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.toAbsolutePath
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
+/**
+ * [KotlinNotebookSessionVariablesService] manages all variables things across the project:
+ *  - mapping from notebooks to file services [NotebookVariablesPerFileStateService]
+ *  - keeping KotlinNotebookToolWindow aligned with opened file in the Editor
+ *
+ */
 @Service(Service.Level.PROJECT)
 class KotlinNotebookSessionVariablesService(
     private val project: Project,
     coroutineScope: CoroutineScope
-): NotebookProjectLevelService<NotebookVariablesPerFileState>(coroutineScope) {
+): NotebookProjectLevelService<NotebookVariablesPerFileStateService>(coroutineScope) {
     init {
         project.messageBus.connect(this).subscribe(
             FileEditorManagerListener.FILE_EDITOR_MANAGER,
@@ -60,8 +66,8 @@ class KotlinNotebookSessionVariablesService(
     }
 
 
-    override fun createInstance(virtualFile: BackedNotebookVirtualFile): NotebookVariablesPerFileState {
-        return NotebookVariablesPerFileState(
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile): NotebookVariablesPerFileStateService {
+        return NotebookVariablesPerFileStateService(
             project,
             virtualFile,
             coroutineScope.childScope(),
@@ -72,7 +78,7 @@ class KotlinNotebookSessionVariablesService(
     companion object {
         fun getInstance(project: Project) = project.service<KotlinNotebookSessionVariablesService>()
 
-        fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): NotebookVariablesPerFileState {
+        fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): NotebookVariablesPerFileStateService {
             return getInstance(project).getOrCreate(virtualFile)
         }
     }
