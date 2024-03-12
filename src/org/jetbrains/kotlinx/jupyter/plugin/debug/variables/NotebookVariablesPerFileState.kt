@@ -126,10 +126,9 @@ class NotebookVariablesPerFileState(
                     fieldAccessor
                 )
                 if (fieldDescriptor == null) {
-                    LOG.warn("Can't find descriptor for $fieldDescriptor")
+                    LOG.warn("Can't find descriptor for $fieldAccessor")
                     return
                 }
-
 
                 val xValue = JavaValue.create(
                     null,
