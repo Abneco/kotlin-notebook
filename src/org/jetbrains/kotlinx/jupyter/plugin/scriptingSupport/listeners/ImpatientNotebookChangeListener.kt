@@ -8,9 +8,8 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.js.translate.utils.splitToRanges
-import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookTypeHintsRegistry.Companion.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
@@ -190,11 +189,6 @@ class ImpatientNotebookChangeListener(
     override fun beforeDocumentChange(event: DocumentEvent) {
         handleNotebookChangeEvent(event)
     }
-}
-
-internal fun PsiLanguageInjectionHost.invalidateTypeHintsRegistry() {
-    putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostChainHintsRegistry, mutableMapOf())
-    putUserData(KotlinNotebookAbstractInlayTypeHintsProvider.psiHostHintsRegistry, mutableMapOf())
 }
 
 private fun retrieveEditor(vFile: VirtualFile, project: Project): Editor?

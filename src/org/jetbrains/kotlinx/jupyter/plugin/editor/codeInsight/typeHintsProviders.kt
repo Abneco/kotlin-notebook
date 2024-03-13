@@ -29,8 +29,8 @@ import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.getBindingContext
-import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.psiHostChainHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.putBindingContext
+import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookTypeHintsRegistry.Companion.psiHostChainHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.isEitherSymmetricallyContainedRange
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
@@ -146,14 +146,14 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 }
                 val modificationArea = notebookHighlightingService?.dataController?.completeHighlightingRange
 
-                val registry = KotlinNotebookAbstractInlayTypeHintsProvider.getOrCreateChainCallTypeHintsRegistry(element)
+                val registry = PsiHostChainCallTypeHintsRegistry.getOrCreateChainCallTypeHintsRegistry(element)
                 val fileOffset = element.getKtFileStartOffset(injectedLanguageManager) ?: return true
-                                                // lhs.contains(rhs) || rhs.contains(rhs)
+
                 if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
                     lastShouldLimitOptionValue = optionsProvider.shouldLimitTypeHintsByActiveCell
                     if (lastShouldLimitOptionValue) return true
                     try {
-                        registry.entries.forEach { (el, data) ->
+                        registry.data.entries.forEach { (el, data) ->
                             if (el !is KtQualifiedExpression) return@forEach
                             val c = el.getBindingContext() ?: return@forEach // getTypeComputationContext(el)
                             val withTypes = data.mapNotNull { it.first.getType(c)?.let { t -> ExpressionWithType(it.first, t)} }
@@ -197,7 +197,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
             host!!.getUserData(psiHostChainHintsRegistry)
         }
         if (host != null && !lastShouldLimitOptionValue) {
-            registry?.put(topMostExpression, elements.map { Pair(it.expression, it.type.getInlayPresentation(it.expression, factory, host.project, context)) })
+            registry?.data?.put(topMostExpression, elements.map { Pair(it.expression, it.type.getInlayPresentation(it.expression, factory, host.project, context)) })
         }
         topMostExpression.putBindingContext(context)
 

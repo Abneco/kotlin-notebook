@@ -28,7 +28,7 @@ import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookSessionEventListener
-import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.invalidateTypeHintsRegistry
+import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookTypeHintsRegistry.Companion.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
@@ -134,7 +134,7 @@ internal object NotebookHighlightingUtilityObject {
             cells?.forEach {
                 it.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
                 it.putUserData(InjectedHostHasErrors, null)
-                invalidateTypeHintsRegistry(it)
+                it.invalidateTypeHintsRegistry()
                 injectedManager.getInjectedPsiFiles(it)?.firstOrNull { f ->
                     f.first is KtFile
                 }?.first?.putUserData(NonTargetHostErrorMark, null)

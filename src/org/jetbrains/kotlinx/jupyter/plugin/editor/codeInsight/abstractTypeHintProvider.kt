@@ -9,6 +9,7 @@ import com.intellij.codeInsight.hints.InlayHintsSink
 import com.intellij.codeInsight.hints.presentation.InlayPresentation
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.codeInsight.hints.presentation.RecursivelyUpdatingRootPresentation
+import com.intellij.jupyter.core.jupyter.JupyterLanguage
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.diagnostic.logger
@@ -27,18 +28,15 @@ import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
 import org.jetbrains.kotlin.idea.codeInsight.hints.getInlayPresentationForInlayInfoDetails
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.BindingContext
+import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.PsiHostTypeHintsRegistry.Companion.getOrCreateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.isEitherSymmetricallyContainedRange
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.getKtFileStartOffset
 import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
-import com.intellij.jupyter.core.jupyter.JupyterLanguage
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
 
-typealias PsiHostChainCallTypeHintsRegistry = MutableMap<PsiElement, List<Pair<PsiElement, InlayPresentation>>>
-typealias PsiHostTypeHintsRegistry = MutableMap<PsiElement, MutableSet<HintType>>
 
 abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbstractHintsProvider<T>() {
     override fun isLanguageSupported(language: Language): Boolean {
@@ -61,17 +59,22 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                 val modificationArea = highlightingManager?.dataController?.completeHighlightingRange
                 val registry = getOrCreateTypeHintsRegistry(element)
                 val fileOffset = element.getKtFileStartOffset(injectedLanguageManager) ?: return true
+                ProgressManager.checkCanceled()
 
                 val shouldLimit = optionsProvider.shouldLimitTypeHintsByActiveCell
-                if (modificationArea != null && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
+                val registryIsValid = registry.isDataInsideValid
+
+                if (modificationArea != null && registryIsValid && !isEitherSymmetricallyContainedRange(element.textRange, modificationArea)) {
                     if (shouldLimit) return true
 
                     try {
+                        ProgressManager.checkCanceled()
+
                         if (!element.isValid) {
                             logger.warn("Error during applying type hints from registry: host is invalid")
                             return false
                         }
-                        registry.entries.forEach { (el, data) ->
+                        registry.data.entries.forEach { (el, data) ->
                             if (!element.containingFile.virtualFile.isValid || !element.containingFile.isValid) return false
                             val resolved = data.filter { isElementSupported(it, settings) }.ifEmpty { return@forEach }
                             resolved.forEach { hintType ->
@@ -85,6 +88,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                             }
                         }
                     } catch (e: Throwable) {
+                        registry.markInvalid()
                         if (e is ProcessCanceledException) {
                             throw e
                         }
@@ -101,7 +105,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                     val f = factory
                     resolved.forEach { hintType ->
                         if (!shouldLimit) {
-                            registry.putIfAbsent(elem, mutableSetOf())
+                            registry.data.putIfAbsent(elem, mutableSetOf())
                         }
                         if (isElementSupported(hintType, settings)) {
                             addInlayElementToSink(
@@ -125,9 +129,6 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
 
     companion object {
         private val logger = logger<KotlinNotebookAbstractInlayTypeHintsProvider<*>>()
-
-        internal val psiHostChainHintsRegistry = Key.create<PsiHostChainCallTypeHintsRegistry>("jupyter.kotlin.inlay.hints.chain.call.registry")
-        internal val psiHostHintsRegistry = Key.create<PsiHostTypeHintsRegistry>("jupyter.kotlin.inlay.hints.registry")
         private val psiBindingContext = Key.create<BindingContext>("jupyter.kotlin.inlay.hints.binding.context")
 
         internal fun PsiElement.putBindingContext(bindingContext: BindingContext) =
@@ -140,30 +141,6 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
                 }
             } else null
 
-        internal fun getOrCreateChainCallTypeHintsRegistry(host: PsiLanguageInjectionHost): PsiHostChainCallTypeHintsRegistry = synchronized(host) {
-            val stored = host.getUserData(psiHostChainHintsRegistry)
-            if (stored == null) {
-                host.putUserData(psiHostChainHintsRegistry, mutableMapOf())
-                host.getUserData(psiHostChainHintsRegistry)!!
-            } else stored
-        }
-
-        internal fun invalidateTypeHintsRegistry(host: PsiLanguageInjectionHost) {
-            if (host !is JupyterPsiCell) return
-            synchronized(host) {
-                host.getUserData(psiHostHintsRegistry)?.clear()
-                host.getUserData(psiHostChainHintsRegistry)?.clear()
-            }
-        }
-
-        internal fun getOrCreateTypeHintsRegistry(host: PsiLanguageInjectionHost): PsiHostTypeHintsRegistry = synchronized(host) {
-            val stored = host.getUserData(psiHostHintsRegistry)
-            if (stored == null) {
-                host.putUserData(psiHostHintsRegistry, mutableMapOf())
-                host.getUserData(psiHostHintsRegistry)!!
-            } else stored
-        }
-
         internal fun addInlayElementToSink(
             contextElement: PsiElement, project: Project,
             hintType: HintType, sink: InlayHintsSink,
@@ -174,7 +151,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
             injectionOffset: Int, registry: PsiHostTypeHintsRegistry,
             inlayPresentation: InlayPresentation? = null
         ) {
-            registry[contextElement]?.add(hintType)
+            registry.data[contextElement]?.add(hintType)
             val detailsInfo = hintType.provideHintDetails(contextElement)
 
             detailsInfo.forEach { details ->
