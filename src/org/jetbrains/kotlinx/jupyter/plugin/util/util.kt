@@ -171,7 +171,7 @@ internal fun PsiFile.restartAnalyzing() {
     DaemonCodeAnalyzer.getInstance(this.project).restart(this)
 }
 
-suspend fun anyOf(vararg actions: suspend () -> Boolean): Boolean {
+suspend inline fun anyOf(vararg actions: suspend () -> Boolean): Boolean {
     var result = false
     for (action in actions) {
         if (action()) {
@@ -181,7 +181,7 @@ suspend fun anyOf(vararg actions: suspend () -> Boolean): Boolean {
     return result
 }
 
-fun <R> runSafely(action: () -> R, onFailure: (Throwable) -> Unit): R? {
+inline fun <R> runSafely(action: () -> R, onFailure: (Throwable) -> Unit): R? {
     return try {
         action()
     } catch (e: Throwable) {
@@ -193,7 +193,7 @@ fun <R> runSafely(action: () -> R, onFailure: (Throwable) -> Unit): R? {
     }
 }
 
-fun <R> runSafelyTyped(action: () -> R, onFailure: (Throwable) -> R): R {
+inline fun <R> runSafelyTyped(action: () -> R, onFailure: (Throwable) -> R): R {
     return try {
         action()
     } catch (e: Throwable) {
