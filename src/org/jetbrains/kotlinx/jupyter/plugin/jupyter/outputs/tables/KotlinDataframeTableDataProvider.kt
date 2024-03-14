@@ -53,14 +53,15 @@ class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
         mapper.enable(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS.mappedFeature())
 
         val parser = KotlinDataframeParsing.createParserForData(serializedData, mapper)
+        val columnsLimitFromRegistry = Registry.intValue("grid.tables.columns.limit", 2000)
 
-        return KotlinDataFrameProvider(parser)
+        return KotlinDataFrameProvider(parser, columnsLimitFromRegistry)
     }
 }
 
 const val NULL: String = "null"
 
-class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : NestedTableDataProvider {
+class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private val columnsLimit: Int) : NestedTableDataProvider {
     override val type: DSTableDataType = DSTableDataType.EXTERNAL
 
     override fun parseTextToFrameInfo(text: String): DSDataFrameInfo {
@@ -101,6 +102,8 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : Neste
     private inline fun <T> executeParsing(@NlsSafe textData: String, parseFunction: () -> T): T {
         return try {
             parseFunction()
+        } catch (e: DSTableDataException) {
+            throw e
         } catch (e: JsonParseException) {
             // should be removed after KTNB-385 and KTNB-384
             if (isNonComparableColumnSortingError(textData)) {
@@ -273,12 +276,30 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser) : Neste
     override fun isFallbackToStaticTableSupported(): Boolean = true
 
     private fun parseFrameInfoFromKotlinDataframeOutput(text: String, isPreview: Boolean): DSDataFrameInfo {
-        return parser.parseDataFrameInfo(text).asDsTableInfo(isPreview)
+        val info = parser.parseDataFrameInfo(text).asDsTableInfo(isPreview)
+        requireNumberOfColumnsLessThenLimit(info.columnNames.size)
+
+        return info
     }
 
     private fun parseDataFromKotlinDataframeOutput(id: DataId, text: String): DSTableData {
         val columnValues = parser.parseDataFrameData(text)
+        requireNumberOfColumnsLessThenLimit(columnValues.size)
+
         return DSTableData(id, columnValues)
+    }
+
+    private fun requireNumberOfColumnsLessThenLimit(numberOfColumns: Int) {
+        if (numberOfColumns > columnsLimit) {
+            NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
+                .createNotification(
+                    KotlinNotebookBundle.message("kotlin.jupyter.table.output.too.many.columns.error"),
+                    KotlinNotebookBundle.message("kotlin.jupyter.table.output.notification.content.could.not.display.table.with.d.columns", numberOfColumns),
+                    NotificationType.WARNING
+                )
+                .notify(null)
+            throw DSTableDataException("Attempt to create grid with ${numberOfColumns} columns")
+        }
     }
 }
 
