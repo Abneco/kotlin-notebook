@@ -138,11 +138,15 @@ fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
 internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
     PsiManager.getInstance(project).findFile(this)
 
-internal fun PsiFile.toDocument(project: Project): Document? =
-    PsiDocumentManager.getInstance(project).getDocument(this)
+internal fun PsiFile.toDocument(): Document? =
+    PsiDocumentManager.getInstance(this.project).getDocument(this)
 
 internal fun PsiElement?.isInsideKotlinNotebookFile(): Boolean {
-    val virtualFile = (this?.containingFile?.virtualFile as? VirtualFileWindow)?.delegate ?: return false
+    val virtualFile = when (val containingFile = this?.containingFile?.virtualFile) {
+        is VirtualFileWindow -> containingFile.delegate
+        is VirtualFile -> containingFile
+        else -> null
+    } ?: return false
     return virtualFile.isKotlinNotebook
 }
 
@@ -154,7 +158,9 @@ internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
     val host = scope.findElementAt(caretOffSet)?.parentOfType<JupyterPsiCell>() as? PsiLanguageInjectionHost ?: return null
     val injectInfo = injectedManager.getInjectedPsiFiles(host)?.firstOrNull()?.first ?: return null
 
-    return (injectInfo as? PsiFile)?.findElementAt(caretOffSet - host.startOffsetInParent - 5)
+    return (injectInfo as? PsiFile)?.findElementAt(
+        (caretOffSet - host.startOffsetInParent - 5).coerceAtLeast(0)
+    )
 }
 
 internal inline fun <T> withReadAccess(crossinline block: () -> T): T {

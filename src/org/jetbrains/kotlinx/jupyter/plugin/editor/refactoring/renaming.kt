@@ -33,16 +33,18 @@ import com.intellij.refactoring.rename.inplace.InplaceRefactoring
 import com.intellij.refactoring.rename.inplace.MemberInplaceRenameHandler
 import com.intellij.refactoring.rename.inplace.MemberInplaceRenamer
 import com.intellij.refactoring.util.MoveRenameUsageInfo
-import com.intellij.util.ObjectUtils
+import com.intellij.util.runIf
 import org.jetbrains.kotlin.analysis.decompiler.psi.file.KtClsFile
 import org.jetbrains.kotlin.asJava.namedUnwrappedElement
 import org.jetbrains.kotlin.idea.refactoring.rename.RenameKotlinPropertyProcessor
 import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlin.scripting.definitions.isScript
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookGotoDeclarationProvider
@@ -54,7 +56,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactori
 import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.tryCastParentToSuitableTarget
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
+import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFilesInCurrentPsiCell
+import org.jetbrains.kotlinx.jupyter.plugin.util.isInsideKotlinNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
+import org.jetbrains.kotlinx.jupyter.plugin.util.retrieveElementUnderCaret
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
@@ -91,10 +96,7 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
     }
 
     override fun prepareRenaming(element: PsiElement, newName: String, allRenames: MutableMap<PsiElement, String>) {
-        //findReferences(element, element.resolveScope, false).forEach {
-        //    allRenames.putIfAbsent(it.element, newName)
-        //}
-        //super.prepareRenaming(element, newName, allRenames)
+
     }
 
     override fun canProcessElement(element: PsiElement): Boolean {
@@ -139,8 +141,6 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
 
 }
 
-
-//class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
 class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
     internal companion object {
         private val log = thisLogger()
@@ -190,38 +190,44 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
     // before actual doRename
     override fun checkAvailable(elementToRename: PsiElement, editor: Editor?, dataContext: DataContext): Boolean {
         val psiFile = CommonDataKeys.PSI_FILE.getData(dataContext) ?: return false
-        return isKotlinNotebookInjectedFile(psiFile) //&& elementToRename is KtProperty
+        return isKotlinNotebookInjectedFile(psiFile) || psiFile.isInsideKotlinNotebookFile() //&& elementToRename is KtProperty
     }
 
     override fun isRenaming(dataContext: DataContext): Boolean {
         val psiFile = CommonDataKeys.PSI_FILE.getData(dataContext) ?: return false
-        val psiElement = CommonDataKeys.PSI_ELEMENT.getData(dataContext) ?: return false
         val virtualFile = CommonDataKeys.VIRTUAL_FILE.getData(dataContext) ?: return false
-        val containingFile = psiElement.containingFile
+        val storedPsiElement = CommonDataKeys.PSI_ELEMENT.getData(dataContext)
+        val psiElement = storedPsiElement ?:
+            retrieveElementUnderCaret(psiFile) ?: return false
+
+        val resolvedElement = when (val parent = psiElement.parent) {
+            is KtReferenceExpression -> parent.reference?.resolve()
+            else -> psiElement
+        } ?: return false
+
+        val containingFile = resolvedElement.containingFile
         val isCompiledElem = containingFile is KtClsFile
         val manager = InjectedLanguageManager.getInstance(psiFile.project)
         if (isCompiledElem) {
             if (!containingFile.name.startsWith("Line_")) return false
         }
 
-        val cell = (manager.getInjectionHost(containingFile) as? JupyterPsiCellImpl)
+        val cell = (manager.getInjectionHost(psiElement.containingFile) as? JupyterPsiCellImpl)
         val ind = (cell?.parent as? JupyterNotebook)?.psiCellList?.indexOf(cell) // todo: might be costy
         val notebookFile = if (virtualFile is VirtualFileWindow) virtualFile.delegate else virtualFile
 
-        return isKotlinNotebookInjectedFile(psiFile)
-                && isNotebookRefactoringSupported(psiElement)
+        return psiFile.isInsideKotlinNotebookFile()
+                && isNotebookRefactoringSupported(resolvedElement)
                 && (isCompiledElem
                 || cell?.getUserData(CELL_CLASS_NAME) != null
                 || NotebookStructureTrackerService.getForFile(psiFile.project, BackedNotebookVirtualFile(notebookFile))
                     .cellOrdinalToClassNameStructure[ind] != null)
-                //|| cell?.getUserData(CELL_CLASS_NAME) != null)
     }
 
     override fun doRename(elementToRename: PsiElement, editor: Editor, dataContext: DataContext?): InplaceRefactoring? {
-        val contextComponent = ObjectUtils.notNull(
-            if (dataContext != null) PlatformCoreDataKeys.CONTEXT_COMPONENT.getData(dataContext) else null,
-            editor.component
-        )
+        val contextComponent = runIf(dataContext != null) {
+            PlatformCoreDataKeys.CONTEXT_COMPONENT.getData(dataContext!!)
+        } ?: editor.component
         val newName = if (dataContext != null) PsiElementRenameHandler.DEFAULT_NAME.getData(dataContext) else null
         var newElementToRename: PsiElement? = null
         if (elementToRename is PsiNameIdentifierOwner || elementToRename is LeafPsiElement) {
@@ -269,21 +275,14 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
 
 
     override fun createMemberRenamer(element: PsiElement, elementToRename: PsiNameIdentifierOwner, editor: Editor): MemberInplaceRenamer {
-        //val offset = editor.caretModel.offset
-        //val nameIdentifier = elementToRename.nameIdentifier
-        //val editorPsiFile = PsiDocumentManager.getInstance(element.project).getPsiFile(editor.document)
-        //if (nameIdentifier != null && editorPsiFile == elementToRename.containingFile && elementToRename is KtPrimaryConstructor && offset !in nameIdentifier.textRange && offset in elementToRename.textRange) {
-        //    editor.caretModel.moveToOffset(nameIdentifier.textOffset)
-        //}
-
         val originalCaretElement = InjectedLanguageManager.getInstance(element.project).getInjectionHost(element)
         return NotebookMemberInplaceRenamer(element, elementToRename, editor, originalCaretElement)
     }
 
     override fun isAvailable(element: PsiElement?, editor: Editor, file: PsiFile): Boolean {
-        return isKotlinNotebookInjectedFile(file) && isNotebookRefactoringSupported(element)
+        return file.isInsideKotlinNotebookFile() &&
+                (element == null || element.containingFile is KtFile && isNotebookRefactoringSupported(element))
     }
-
 }
 
 fun isKotlinNotebookInjectedFile(file: PsiFile?): Boolean {

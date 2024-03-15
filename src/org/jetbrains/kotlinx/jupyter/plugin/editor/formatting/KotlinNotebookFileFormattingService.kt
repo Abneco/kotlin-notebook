@@ -122,7 +122,7 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
         val ktFiles = cell.getInjectedKtFiles(injectedManager).ifEmpty { return }
 
         for (ktFile in ktFiles) {
-            val documentWindow = ktFile.toDocument(cell.project) as? DocumentWindow ?: continue
+            val documentWindow = ktFile.toDocument() as? DocumentWindow ?: continue
 
             val ranges = hostRanges.mapNotNull { range ->
                 ProperTextRange(

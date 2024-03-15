@@ -42,7 +42,7 @@ class NotebookCaretStateProcessor(
 
     private val dataController = notebookHighlightingManager?.dataController
     private val psiFile = editor.virtualFile.toPsiFile(project)
-    private val document = psiFile?.toDocument(project)
+    private val document = psiFile?.toDocument()
     private val codeAnalyzerStatusService = DaemonCodeAnalyzerStatusService.getInstance(project)
     private val fastUpdateQueueGuardMark = AtomicReference(false)
 
