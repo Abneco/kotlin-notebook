@@ -3,9 +3,9 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting
 
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtilBase
 import org.jetbrains.kotlin.idea.highlighter.visitor.AbstractHighlightingVisitor
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.InjectedFileHighlightingHelper
@@ -20,7 +20,7 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
     protected var highlightingHelper: InjectedFileHighlightingHelper? = null
 
     override fun suitableForFile(file: PsiFile): Boolean {
-        return file is KtFile && InjectedLanguageUtilBase.getHighlightTokens(file) != null
+        return file is KtFile && InjectedLanguageManager.getInstance(file.project).isInjectedFragment(file)
     }
 
     override fun visit(element: PsiElement) {

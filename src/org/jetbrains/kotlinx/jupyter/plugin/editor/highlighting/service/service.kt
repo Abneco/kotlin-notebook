@@ -27,10 +27,11 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
-import com.intellij.psi.TokenType.WHITE_SPACE
-import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtilBase
-import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtilBase.TokenInfo
+import com.intellij.psi.SyntaxTraverser
+import com.intellij.psi.TokenType
+import com.intellij.psi.util.PsiUtilCore
 import com.intellij.refactoring.suggested.startOffset
+import com.intellij.util.containers.TreeTraversal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -101,9 +102,8 @@ class NotebookHighlightingManager(
             val ktFileRange: TextRange,
             val injectionHost: PsiLanguageInjectionHost,
             val injectionHostOffset: Int,
-            val injectedTokens: Collection<TokenInfo>
+            val totalTokens: Int
         ) {
-            val totalTokens = injectedTokens.size
             val processedTokens = AtomicInteger(0)
         }
     }
@@ -227,9 +227,7 @@ class NotebookHighlightingManager(
                             ktFileRange,
                             it,
                             it.startOffset,
-                            InjectedLanguageUtilBase.getHighlightTokens(ktFile).filter { token ->
-                                token.type != WHITE_SPACE
-                            }
+                            numberOfNonWhiteSpaceLeaves(ktFile)
                         )
                         if (ind == completeRangeInd) targetPsiFile = ktFile
                     }
@@ -239,6 +237,12 @@ class NotebookHighlightingManager(
         targetIndexes.ifNotEmpty { requestWasCompleted.set(false) }
         unrecognizedFiles.clear()
         this.completeRangeInd = completeRangeInd
+    }
+
+    private fun numberOfNonWhiteSpaceLeaves(ktFile: KtFile): Int {
+        return SyntaxTraverser.psiTraverser(ktFile)
+            .traverse(TreeTraversal.LEAVES_DFS)
+            .count { psiLeaf -> PsiUtilCore.getElementType(psiLeaf) != TokenType.WHITE_SPACE }
     }
 
     private fun clearState(complete: Boolean = false) {
