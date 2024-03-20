@@ -120,7 +120,7 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
             }
 
             notifyUnknownParsingException()
-            throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}")
+            throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}", e)
         } catch (e: StreamConstraintsException) {
             // users should not encounter this error anymore once KTNB-272 is implemented.
             NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
@@ -131,13 +131,13 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
                 )
                 .notify(null)
 
-            throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}")
+            throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}", e)
         } catch (e: IOException) {
             notifyUnknownParsingException()
-            throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}")
+            throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}", e)
         } catch (e: RuntimeException) {
             notifyUnknownParsingException()
-            throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}")
+            throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}", e)
         }
     }
 
