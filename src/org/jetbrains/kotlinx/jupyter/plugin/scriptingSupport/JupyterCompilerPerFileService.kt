@@ -219,6 +219,14 @@ class JupyterCompilerPerFileService(
         }
     }
 
+    private fun requestScriptingUpdateTestAware() {
+        if (!ApplicationManager.getApplication().isUnitTestMode) {
+            coroutineScope.async {
+                JupyterCompilerService.getInstance(project).requestScriptingUpdate()
+            }
+        }
+    }
+
     @RequiresBackgroundThread
     private fun updateClasspathWithExternalDependencies() {
         ThreadingAssertions.assertBackgroundThread()
@@ -229,9 +237,7 @@ class JupyterCompilerPerFileService(
                 ::updateClasspathWithProjectArtifactsAsync,
             )) {
                 scriptsChangePublisher.scriptsClassesChanged(virtualFile)
-                if (!ApplicationManager.getApplication().isUnitTestMode) {
-                    JupyterKtScriptingSupport.updateSynchronously(project)
-                }
+                requestScriptingUpdateTestAware()
             }
         }
     }
@@ -380,11 +386,7 @@ class JupyterCompilerPerFileService(
     }
 
     fun provideDefaultConfiguration(sourceCode: SourceCode): ScriptCompilationConfigurationResult {
-        if (!ApplicationManager.getApplication().isUnitTestMode) {
-            coroutineScope.async {
-                JupyterCompilerService.getInstance(project).requestScriptingUpdate()
-            }
-        }
+        requestScriptingUpdateTestAware()
 
         return ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
             sourceCode,
