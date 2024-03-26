@@ -12,7 +12,9 @@ import com.intellij.openapi.util.NlsContexts
 import com.intellij.ui.CheckBoxList
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBCheckBox
+import com.intellij.util.EventDispatcher
 import com.intellij.util.ui.components.BorderLayoutPanel
+import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.findLibraries
@@ -25,6 +27,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.jupyter.editor.getJupyterVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
 import java.awt.event.ActionEvent
+import java.util.EventListener
 import javax.swing.AbstractAction
 import javax.swing.Action
 import javax.swing.JComponent
@@ -149,6 +152,11 @@ private fun showSelectionDialog(
     allCheckbox.addActionListener {
         component.isEnabled = !allCheckbox.isSelected
     }
+    val selectAllAction = ToggleCheckBoxesAction(!allCheckBoxesSelected, selectAll)
+    selectAllAction.addToggleSelectionListener { toggleAllSelected ->
+        allCheckbox.isSelected = toggleAllSelected
+        component.isEnabled = !toggleAllSelected
+    }
 
     val result = DialogBuilder()
         .title(dialogTitle)
@@ -157,7 +165,7 @@ private fun showSelectionDialog(
                 .addToCenter(ScrollPaneFactory.createScrollPane(component))
                 .addToBottom(allCheckbox)
         )
-        .addLeftSideAction(ToggleCheckBoxesAction(!allCheckBoxesSelected, selectAll))
+        .addLeftSideAction(selectAllAction)
         .dimensionKey(dimensionKey)
         .showAndGet()
 
@@ -171,6 +179,16 @@ class ToggleCheckBoxesAction(
     initialState: Boolean = false,
     private val selector: (Boolean) -> Unit
 ): AbstractAction() {
+    private val eventDispatcher = EventDispatcher.create(ToggleAllChangedListener::class.java)
+
+    fun interface ToggleAllChangedListener : EventListener {
+        fun selectionChanged(allSelected: Boolean)
+    }
+
+    @Synchronized
+    fun addToggleSelectionListener(listener: ToggleAllChangedListener) {
+        eventDispatcher.addListener(listener)
+    }
     private var shouldSelect = initialState
 
     init {
@@ -178,19 +196,25 @@ class ToggleCheckBoxesAction(
     }
 
     override fun actionPerformed(e: ActionEvent?) {
-        selector(shouldSelect)
+        val selectorValue = shouldSelect
+        selector(selectorValue)
         shouldSelect = !shouldSelect
         updateName()
+        eventDispatcher.multicaster.selectionChanged(selectorValue)
     }
 
     private fun updateName() {
         putValue(
             Action.NAME,
-            if (shouldSelect) {
-                KotlinNotebookBundle.message("kotlin.jupyter.settings.dependencies.select.all")
-            } else {
-                KotlinNotebookBundle.message("kotlin.jupyter.settings.dependencies.deselect.all")
-            }
+            getPresentableActionName()
         )
+    }
+
+    private fun getPresentableActionName(): @Nls String {
+        return if (shouldSelect) {
+            KotlinNotebookBundle.message("kotlin.jupyter.settings.dependencies.select.all")
+        } else {
+            KotlinNotebookBundle.message("kotlin.jupyter.settings.dependencies.deselect.all")
+        }
     }
 }
