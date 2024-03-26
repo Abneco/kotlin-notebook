@@ -1,0 +1,8 @@
+<idea-plugin>
+    <actions>
+        <reference id="Github.Create.Gist.AlwaysEnabled">
+            <add-to-group group-id="KotlinNotebookEditorActions"
+                          anchor="before" relative-to-action="KotlinNotebookSettingsActions"/>
+        </reference>
+    </actions>
+</idea-plugin>

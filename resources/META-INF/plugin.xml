@@ -88,6 +88,7 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
     <depends>com.intellij.modules.ultimate</depends>
+    <depends optional="true" config-file="kotlin-notebook-github.xml">org.jetbrains.plugins.github</depends>
 
     <applicationListeners>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorColorsListener"
