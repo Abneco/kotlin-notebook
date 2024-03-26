@@ -85,9 +85,8 @@ class PlotExportOptions :
         private const val DEFAULT_FILE_NAME = "plot.svg"
         /**
          * These values are taken from [buildImageFromRawSpecs].
-         * For the upper-bound see https://github.com/JetBrains/lets-plot/issues/1011
          */
-        val SCALING_FACTOR = RangeWithDefault(2.0, 0.1, 9.0)
+        val SCALING_FACTOR = RangeWithDefault(2.0, 0.1, 10.0)
 
         val TARGET_DPI = RangeWithDefault(4000, 72, 4000)
     }
