@@ -1,7 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.highlighting
 
-import com.intellij.refactoring.suggested.startOffset
+import com.intellij.psi.util.startOffset
 import org.jetbrains.kotlin.idea.core.moveCaret
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCellsAndShutdownKernel
 import org.jetbrains.kotlinx.jupyter.plugin.test.getCells

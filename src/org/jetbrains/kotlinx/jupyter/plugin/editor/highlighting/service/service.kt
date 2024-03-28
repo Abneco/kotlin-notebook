@@ -30,7 +30,7 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.SyntaxTraverser
 import com.intellij.psi.TokenType
 import com.intellij.psi.util.PsiUtilCore
-import com.intellij.refactoring.suggested.startOffset
+import com.intellij.psi.util.startOffset
 import com.intellij.util.containers.TreeTraversal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
