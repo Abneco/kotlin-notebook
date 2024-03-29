@@ -77,7 +77,13 @@ class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
     fun testSerialization() = doTest(OutputsTester(listOf(
         listOf(),
         listOf(
-            textPlainOutput("{\"x\":3}")
+            buildJacksonObject {
+                replace("application/json", buildJacksonObject {
+                    put("x", 3)
+                })
+                put("text/plain", "{\n    \"x\": 3\n}")
+                put("text/markdown", "```json\n{\n    \"x\": 3\n}\n```")
+            }
         ),
         listOf()
     )))

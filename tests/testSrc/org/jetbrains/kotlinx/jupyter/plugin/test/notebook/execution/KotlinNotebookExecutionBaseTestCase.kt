@@ -54,7 +54,10 @@ interface ReceivedMessagesTester {
 
 val JupyterMessage.messageData get() = messageContent["data"] as ObjectNode
 
-fun textPlainOutput(content: String): ObjectNode = jackson.createObjectNode().apply {
+fun buildJacksonObject(buildAction: ObjectNode.() -> Unit): ObjectNode =
+    jackson.createObjectNode().apply(buildAction)
+
+fun textPlainOutput(content: String): ObjectNode = buildJacksonObject {
     put("text/plain", content)
 }
 
