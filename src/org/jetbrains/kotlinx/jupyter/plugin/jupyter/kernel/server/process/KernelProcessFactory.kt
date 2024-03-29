@@ -121,12 +121,26 @@ class KernelProcessFactory : KernelRunnableFactory {
     }
 
     private fun getJavaExecutable(project: Project, options: KotlinNotebookProjectOptionsProvider): String {
-        val javaHome: String? = options.jdk.getPath(project) ?: System.getenv("JAVA_HOME")
+        val javaHome: String? = options.jdk.getPath(project) ?: getJavaHomeFromEnvironment()
         if (javaHome == null) return "java"
 
         val binDir = File(javaHome).absoluteFile.resolve("bin")
         val javaExec =  binDir.resolve(if (SystemInfo.isWindows) "java.exe" else "java")
         return javaExec.absolutePath
+    }
+
+    private val javaHomeEnvironmentVariablesToTry = listOf(
+        "KOTLIN_JUPYTER_JAVA_HOME",
+        "JRE_HOME",
+        "JDK_HOME",
+        "JDK_11",
+        "JAVA_HOME",
+    )
+
+    private fun getJavaHomeFromEnvironment(): String? {
+        return javaHomeEnvironmentVariablesToTry.firstNotNullOfOrNull { variableName ->
+            System.getenv(variableName)?.takeIf { it.isNotBlank() }
+        }
     }
 
     private var _kernelPortsProvider: KernelPortsProvider = KernelPortsProvider {
