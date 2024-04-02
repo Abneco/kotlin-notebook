@@ -76,22 +76,13 @@ private val VirtualFile.notebookLanguage: Language?
         val cachedLanguage = NotebookMetadataLanguageProvider.Utils.getNotebookLanguage(this)
         if (cachedLanguage != null)
             return cachedLanguage
-
-        val calculatedLanguage = getLanguageFromOriginalFile(this)
+        val calculatedLanguage = JupyterNotebookBase.createOrNullJupyterNotebook(this)?.language
         if (calculatedLanguage != null) {
             NotebookMetadataLanguageProvider.Utils.setNotebookLanguage(this, calculatedLanguage)
         }
 
         return calculatedLanguage
     }
-
-private fun getLanguageFromOriginalFile(file: VirtualFile): Language? {
-    return try {
-        file.inputStream.reader().use(JupyterNotebookBase::tryCreateJupyterNotebook).getOrNull()?.language
-    } catch (e: Exception) {
-        null
-    }
-}
 
 fun PsiFile.getTopLevelFile(): PsiFile = InjectedLanguageManager.getInstance(project).getTopLevelFile(this) ?: this
 
