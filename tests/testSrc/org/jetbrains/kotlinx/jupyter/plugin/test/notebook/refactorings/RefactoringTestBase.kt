@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.refactorings
 
+import com.intellij.openapi.application.impl.NonBlockingReadActionImpl
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.editor.CaretModel
 import com.intellij.openapi.fileEditor.FileEditorProvider
@@ -35,6 +36,11 @@ abstract class RefactoringTestBase(private val refactoringActionId: String) : Ko
         JupyterKtScriptingSupport.updateSynchronously(project)
 
         myFixture.performEditorAction(refactoringActionId)
+
+        invokeAndWaitIfNeeded {
+            NonBlockingReadActionImpl.waitForAsyncTaskCompletion()
+        }
+
         myFixture.checkResultByFile("${getTestName(true)}.txt", true)
     }
 }
