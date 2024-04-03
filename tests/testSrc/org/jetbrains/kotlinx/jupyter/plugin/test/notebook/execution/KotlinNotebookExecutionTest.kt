@@ -1,12 +1,16 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution
 
+import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.project.waitForSmartMode
 import junit.framework.TestCase
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.kotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelPortsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
 import org.jetbrains.kotlinx.jupyter.startup.create
@@ -101,4 +105,18 @@ class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
             }
         }
     })
+
+    // KTNB-552
+    @Test
+    fun testSetupInDefaultProject() {
+        val project = ProjectManager.getInstance().defaultProject
+        runBlocking {
+            try {
+                project.waitForSmartMode()
+                JupyterKtScriptingSupport.updateSynchronously(project)
+            } catch (e: Exception) {
+                LOG.error("Test for default project has failed! ", e)
+            }
+        }
+    }
 }
