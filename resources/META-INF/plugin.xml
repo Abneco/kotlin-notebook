@@ -152,7 +152,6 @@
                      description="When enabled, establishing debug session with Kernel is possible" />
 
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.inject.JupyterKotlinIntoCellsInjector"/>
-        <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookLocationNotificationProvider"/>
         <fileIconProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.ide.KotlinNotebookFileIconProvider" />
         <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.BeforeResolveHighlightingVisitorAdapter"/>
         <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.KotlinNotebookBeforeHighlightingVisitor"
