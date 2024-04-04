@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import org.jetbrains.kotlinx.jupyter.api.KernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.execution.JupyterExecutor
 import org.jetbrains.kotlinx.jupyter.execution.JupyterExecutorImpl
 import org.jetbrains.kotlinx.jupyter.messaging.JupyterBaseSockets
@@ -16,7 +17,6 @@ import org.jetbrains.kotlinx.jupyter.messaging.comms.CommManagerImpl
 import org.jetbrains.kotlinx.jupyter.messaging.comms.CommManagerInternal
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
-import org.jetbrains.kotlinx.jupyter.repl.creating.DefaultReplComponentsProvider
 import org.jetbrains.kotlinx.jupyter.repl.creating.ReplComponentsProvider
 import org.jetbrains.kotlinx.jupyter.repl.creating.ReplFactory
 import org.jetbrains.kotlinx.jupyter.repl.creating.loadDefaultReplFactory
@@ -24,17 +24,18 @@ import org.jetbrains.kotlinx.jupyter.repl.creating.loadDefaultReplFactory
 fun createEmbeddedMessageHandler(
     project: Project,
     replSettings: DefaultReplSettings,
+    loggerFactory: KernelLoggerFactory,
     socketManager: JupyterBaseSockets,
 ): MessageHandler {
     val messageFactoryProvider: MessageFactoryProvider = MessageFactoryProviderImpl()
     val communicationFacility: JupyterCommunicationFacility = JupyterCommunicationFacilityImpl(socketManager, messageFactoryProvider)
-    val executor: JupyterExecutor = JupyterExecutorImpl()
+    val executor: JupyterExecutor = JupyterExecutorImpl(loggerFactory)
     val commManager: CommManagerInternal = CommManagerImpl(communicationFacility)
-    val replComponentsProvider = DefaultReplComponentsProvider(replSettings, communicationFacility, commManager)
+    val replComponentsProvider = IdeReplComponentsProvider(replSettings, communicationFacility, commManager)
     val kernelVersion = KotlinNotebookProjectOptionsProvider.getInstance(project).kernelVersion
     val replFactory = getReplFactory(project, kernelVersion, replComponentsProvider)
     val repl = replFactory.createRepl()
-    return EmbeddedMessageHandler(repl, commManager, messageFactoryProvider, socketManager, executor)
+    return EmbeddedMessageHandler(repl, loggerFactory, commManager, messageFactoryProvider, socketManager, executor)
 }
 
 /**

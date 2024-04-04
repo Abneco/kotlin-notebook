@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlinx.jupyter.api.KernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.libraries.createLibraryHttpUtil
 import org.jetbrains.kotlinx.jupyter.libraries.getDefaultClasspathResolutionInfoProvider
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
@@ -20,6 +21,7 @@ class EmbeddedKotlinKernelSession(
     private val project: Project,
     override val sessionId: JupyterNotebookSessionId,
     private val notebookPath: Path,
+    private val loggerFactory: KernelLoggerFactory,
     private val onMessage: (JupyterMessage) -> Unit
 ) : KotlinKernelSession, JupyterKernelCommunicationClient {
 
@@ -32,7 +34,8 @@ class EmbeddedKotlinKernelSession(
 
         val replConfig: ReplConfig = ReplConfig.create(
             ::getDefaultClasspathResolutionInfoProvider,
-            createLibraryHttpUtil(IdeaHttpClient),
+            loggerFactory,
+            createLibraryHttpUtil(loggerFactory, IdeaHttpClient),
             kernelConfig.homeDir
         )
 
@@ -42,7 +45,7 @@ class EmbeddedKotlinKernelSession(
             kernelConfig,
             replConfig
         )
-        createEmbeddedMessageHandler(project, replSettings, socketsManager)
+        createEmbeddedMessageHandler(project, replSettings, loggerFactory, socketsManager)
     }
 
 

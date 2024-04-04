@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.EventDispatcher
+import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelState
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
@@ -50,6 +51,8 @@ class EmbeddedKernelRunnableHandler(
     }
 
     override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession {
-        return EmbeddedKotlinKernelSession(project, sessionId, notebookPath, onMessage)
+        // TODO: create logger factory and attach it to the tool window
+        val loggerFactory = DefaultKernelLoggerFactory
+        return EmbeddedKotlinKernelSession(project, sessionId, notebookPath, loggerFactory, onMessage)
     }
 }

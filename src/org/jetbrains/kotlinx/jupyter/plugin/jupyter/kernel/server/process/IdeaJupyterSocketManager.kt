@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
+import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocket
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketInfo
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketManagerBase
@@ -16,7 +17,7 @@ class IdeaJupyterSocketManager(private val kernelConfig: KernelConfig): JupyterS
     private val context = ZMQ.context(1)
 
     private fun openSocket(info: JupyterSocketInfo): JupyterSocket {
-        val socket = createSocket(info, context, kernelConfig, JupyterSocketSide.IDE_CLIENT)
+        val socket = createSocket(DefaultKernelLoggerFactory, info, context, kernelConfig, JupyterSocketSide.IDE_CLIENT)
         if (info.type == JupyterSocketType.IOPUB) {
             socket.subscribe(byteArrayOf())
         }

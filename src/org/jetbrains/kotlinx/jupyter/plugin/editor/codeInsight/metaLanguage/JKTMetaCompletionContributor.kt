@@ -13,13 +13,16 @@ import com.intellij.psi.util.startOffset
 import org.jetbrains.kotlinx.jupyter.common.ReplCommand
 import org.jetbrains.kotlinx.jupyter.common.ReplEnum
 import org.jetbrains.kotlinx.jupyter.common.ReplLineMagic
+import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.libraries.ResourceLibraryDescriptorsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaStatement
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class JKTMetaCompletionContributor : CompletionContributor() {
-    private val magicsCompleter = KotlinNotebookMagicsCompleter(ResourceLibraryDescriptorsProvider())
+    private val magicsCompleter = KotlinNotebookMagicsCompleter(
+        ResourceLibraryDescriptorsProvider(DefaultKernelLoggerFactory)
+    )
 
     override fun fillCompletionVariants(parameters: CompletionParameters, result: CompletionResultSet) {
         super.fillCompletionVariants(parameters, result)
