@@ -11,6 +11,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.actions.evaluate.NotebookSilen
  * without stopping Kernel itself.
  *
  * Even though [XDebuggerSupport] uses class marked as @Deprecated, there is no replacement for now.
+ *
+ * TODO: find a way to support only needed actions once enabled
  */
 class KotlinNotebookDebuggerSupport : XDebuggerSupport() {
     private val evaluateSilentlyHandler = NotebookSilentEvaluateActionHandler()

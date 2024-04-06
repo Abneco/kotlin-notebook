@@ -180,7 +180,6 @@
         <lang.parserDefinition language="Kotlin Notebook" implementationClass="org.jetbrains.plugins.notebooks.jupyter.JupyterParserDefinition"/>
         <scratch.creationHelper language="Kotlin Notebook" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.JupyterKotlinScratchCreationHelper" />
 
-        <xdebugger.debuggerSupport implementation="org.jetbrains.kotlinx.jupyter.plugin.debug.actions.KotlinNotebookDebuggerSupport"/>
         <debugger.sourcePositionProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookFieldSourcePositionProvider" order="first"/>
 
         <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookReferencesTypeHintsProvider" language="Jupyter"/>
