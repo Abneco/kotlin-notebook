@@ -18,7 +18,7 @@ class KernelSyntheticMethodBreakpoint(
     project: Project,
     private val className: String,
     private val methodName: String,
-    private val lineNumber: Int,
+    private val methodLineNumber: Int,
     private val eventHandler: (SuspendContextCommandImpl, LocatableEvent?) -> Unit
 ) : SyntheticLineBreakpoint(project) {
     companion object {
@@ -30,7 +30,7 @@ class KernelSyntheticMethodBreakpoint(
     }
 
     override fun getLineIndex(): Int {
-        return lineNumber
+        return methodLineNumber
     }
 
     override fun createRequest(debugProcess: DebugProcessImpl) {
@@ -65,7 +65,11 @@ class KernelSyntheticMethodBreakpoint(
 
      private fun createMethodRequest(debugProcess: DebugProcessImpl, method: Method) {
          try {
-             val location = method.allLineLocations().firstOrNull { it.lineNumber() == lineNumber }
+             val location = method.locationOfCodeIndex(methodLineNumber.toLong())
+             if (location == null) {
+                 LOG.warn("Can't find location in method to set up a breakpoint in :$methodName")
+                 return
+             }
              val request = debugProcess.requestsManager.createBreakpointRequest(this, location)
              debugProcess.requestsManager.enableRequest(request)
          } catch (ex: AbsentInformationException) {

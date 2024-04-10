@@ -60,7 +60,7 @@ class KotlinNotebookDebugSession(
         project,
         KotlinNotebookSessionInternalNamesProvider.notebookClassName,
         KotlinNotebookSessionInternalNamesProvider.notebookDebugMethodName,
-        KotlinNotebookSessionInternalNamesProvider.notebookDebugMethodBreakpointLineNumber,
+        KotlinNotebookSessionInternalNamesProvider.notebookDebugInsideMethodBreakpointLineNumber,
     ) { command, event ->
         val suspendContext = command.suspendContext
         if (suspendContext != null) {

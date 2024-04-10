@@ -12,5 +12,5 @@ internal object KotlinNotebookSessionInternalNamesProvider  {
         = "NotebookDebugThread"
     const val notebookDebugMethodName: String
         = "\$debugMethod"
-    const val notebookDebugMethodBreakpointLineNumber: Int = 48
+    const val notebookDebugInsideMethodBreakpointLineNumber: Int = 2 // after try -> while
 }
