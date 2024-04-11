@@ -1,4 +1,4 @@
-<idea-plugin package="org.jetbrains.kotlinx.jupyter.plugin">
+<idea-plugin>
     <name>Kotlin Notebook</name>
     <id>org.jetbrains.plugins.kotlin.jupyter</id>
     <category>Tools Integration</category>
@@ -82,17 +82,13 @@
         ]]>
     </change-notes>
 
-    <dependencies>
-        <plugin id="org.jetbrains.kotlin"/>
-        <plugin id="Pythonid"/>
-        <plugin id="intellij.jupyter"/>
-        <plugin id="com.intellij.modules.platform"/>
-        <plugin id="com.intellij.modules.java"/>
-        <plugin id="com.intellij.modules.ultimate"/>
-    </dependencies>
-    <content>
-        <module name="intellij.kotlin.jupyter.github"/>
-    </content>
+    <depends>org.jetbrains.kotlin</depends>
+    <depends>Pythonid</depends>
+    <depends>intellij.jupyter</depends>
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+    <depends>com.intellij.modules.ultimate</depends>
+    <depends optional="true" config-file="kotlin-notebook-github.xml">org.jetbrains.plugins.github</depends>
 
     <applicationListeners>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorColorsListener"
