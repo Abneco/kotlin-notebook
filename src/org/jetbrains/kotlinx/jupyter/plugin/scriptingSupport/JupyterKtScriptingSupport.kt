@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
+import com.intellij.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -9,6 +10,7 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
+import com.intellij.testFramework.LightVirtualFile
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport
@@ -26,7 +28,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.errorWithAttachments
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.JupyterFileType
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import kotlin.script.experimental.api.valueOrNull
 
@@ -127,10 +128,14 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             val notebookVirtualFile = virtualFile.delegate
             val notebookFile = notebookVirtualFile.toBackedNotebookFile()
             if (notebookFile == null) {
-                LOG.error(
-                    "Can't retrieve notebook file for $psiFile. " +
-                    "Virtual file $notebookVirtualFile is of type ${notebookVirtualFile::class}"
-                )
+                if (notebookVirtualFile is LightVirtualFile) {
+                    LOG.warn("Backed notebook file is not yet build for $notebookVirtualFile in injected file $psiFile")
+                } else {
+                    LOG.error(
+                        "Can't retrieve notebook file for $psiFile. " +
+                                "Virtual file $notebookVirtualFile is of type ${notebookVirtualFile::class}"
+                    )
+                }
                 return null
             }
 
