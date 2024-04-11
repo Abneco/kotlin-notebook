@@ -11,6 +11,12 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelProcessEmbeddingEna
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
 import java.nio.file.Path
 
+/**
+ * Extension point for choosing how to run the Kotlin kernel for a given notebook.
+ *
+ * @see [org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory]
+ * @see [org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory]
+ */
 interface KernelRunnableFactory {
     fun createKernelRunnableHandler(
         project: Project,

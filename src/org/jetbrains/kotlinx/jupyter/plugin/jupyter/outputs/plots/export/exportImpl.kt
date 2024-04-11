@@ -61,7 +61,7 @@ private class BinaryPlotContent(
     }
 
     override fun asTransferable(project: Project): Transferable {
-        return createImageDataTransferable(project, bytes, extension)
+        return createImageDataTransferable(project, bytes, "plot.$extension")
     }
 }
 

@@ -7,15 +7,18 @@ import org.jetbrains.kotlinx.jupyter.magics.LibrariesAwareMagicsHandler
 import org.jetbrains.kotlinx.jupyter.messaging.JupyterCommunicationFacility
 import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
 import org.jetbrains.kotlinx.jupyter.repl.creating.DefaultReplComponentsProvider
+import org.jetbrains.kotlinx.jupyter.repl.embedded.InMemoryReplResultsHolder
 
 class IdeReplComponentsProvider(
     settings: DefaultReplSettings,
     communicationFacility: JupyterCommunicationFacility,
     commManager: CommManager,
+    inMemoryHolder: InMemoryReplResultsHolder,
 ) : DefaultReplComponentsProvider(
     settings,
     communicationFacility,
-    commManager
+    commManager,
+    inMemoryHolder,
 ) {
     override fun provideMagicsHandler(): LibrariesAwareMagicsHandler {
         return IdeCompatibleMagicsHandler(replOptions, librariesProcessor, libraryInfoSwitcher)

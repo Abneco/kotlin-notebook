@@ -31,7 +31,7 @@ internal fun <T> JupyterMessage.asRawMessage(
         header.json.toKotlinSerializationJson().jsonObject,
         parentHeader?.json?.toKotlinSerializationJson()?.jsonObject,
         null,
-        messageContent.toKotlinSerializationJson()
+        messageContent.toKotlinSerializationJson(),
     )
 
     return action(rawMessage, socketType)
@@ -50,7 +50,6 @@ internal fun RawMessage.toJupyterMessage(channel: JupyterMessageChannel): Jupyte
         set<JsonNode>("metadata", metadata?.toJacksonJson())
         set<JsonNode>(schema.contentFieldName, content.toJacksonJson())
     }
-
     return JupyterMessageBase(
         json,
         id,

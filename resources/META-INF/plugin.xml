@@ -285,6 +285,8 @@
         <editor.notebookEditorAppearanceProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorAppearanceProvider"
                 order="before JupyterNotebookEditorAppearanceProvider"/>
         <editor.outputs.notebookOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeOutputDataKeyExtractor" order="first"/>
+        <editor.outputs.notebookObjectOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputDataKeyExtractor"/>
+        <editor.outputs.notebookOutputComponentFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputComponentFactory"/>
         <tables.externalPluginsTableDataProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeTableDataProvider"/>
     </extensions>
 
@@ -315,7 +317,6 @@
                 id="KotlinJsonDropHandler"
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.dnd.KotlinJsonDropHandler"/>
     </extensions>
-
     <extensions defaultExtensionNs="org.jetbrains.kotlinx.jupyter.plugin">
         <kernel.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>
         <kernel.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.dataframe.KotlinDataframeKernelVmCommandCustomizer"/>
@@ -338,7 +339,12 @@
         <action id="ExportLetsPlot" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export.SavePlotAction" icon="AllIcons.Actions.Download">
             <add-to-group group-id="JupyterCellOutputMenu"/>
         </action>
+
         <action id="CopyLetsPlot" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export.CopyPlotAction" icon="AllIcons.Actions.Copy"/>
+
+        <action id="CopySwingComponentScreenshot" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.export.CopySwingComponentScreenshotAction" icon="AllIcons.Actions.Copy">
+            <add-to-group group-id="JupyterCellOutputMenu"/>
+        </action>
 
         <group id="KotlinNotebookSettingsActions" popup="true" icon="AllIcons.General.GearPlain"
                class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookSettingsActions">

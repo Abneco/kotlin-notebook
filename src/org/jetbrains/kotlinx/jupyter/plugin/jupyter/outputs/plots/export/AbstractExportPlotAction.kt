@@ -60,10 +60,10 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         }
 
         val (psiCell, notebookVirtualFile) = event.dataContext.getNotebookCellAndFile() ?: return emptyList()
-        return getLetsPlotOutputs(notebookVirtualFile, psiCell.getCellIndex())
+        return getLetsPlotOutputs(event.project, notebookVirtualFile, psiCell.getCellIndex())
     }
 
-    private fun getLetsPlotOutputs(notebookVirtualFile: BackedNotebookVirtualFile, cellIndex: Int): List<LetsPlotOutputDataKey> {
+    private fun getLetsPlotOutputs(project: Project?, notebookVirtualFile: BackedNotebookVirtualFile, cellIndex: Int): List<LetsPlotOutputDataKey> {
         val notebook = notebookVirtualFile.notebook
         val jupyterCell = notebook.cells[cellIndex]
 
@@ -74,7 +74,7 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         return outputs.outputs.filterIsInstanceAnd<JupyterDisplayDataOutput> { output ->
             output.data.has(PlotDataKeyExtractor.PLOT_KEY)
         }.mapNotNull { letPlotOutput ->
-            extractor.extractKey(letPlotOutput.data.toV4Json(), null)
+            extractor.extractKey(project, notebookVirtualFile, letPlotOutput.data.toV4Json(), null)
         }
     }
 

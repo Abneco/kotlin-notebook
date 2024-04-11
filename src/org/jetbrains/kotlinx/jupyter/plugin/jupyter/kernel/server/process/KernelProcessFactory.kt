@@ -13,6 +13,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.mode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelVmCommandCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.kotlinNotebookSessionRunMode
@@ -25,14 +26,21 @@ import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServer
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolute
 import kotlin.io.path.exists
 import kotlin.io.path.invariantSeparatorsPathString
 
-
+/**
+ * Factory for creating Kotlin kernels that will run in their own process. In particular, they
+ * will not share the process with neither the [JupyterClient] nor the [JupyterServer].
+ *
+ * For kernels running in the same process, see [EmbeddedKernelRunnableFactory].
+ */
 class KernelProcessFactory : KernelRunnableFactory {
     @RequiresBackgroundThread
     override fun createKernelRunnableHandler(

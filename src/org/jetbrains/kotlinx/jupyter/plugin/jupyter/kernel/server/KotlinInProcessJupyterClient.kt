@@ -35,6 +35,9 @@ interface KotlinKernelRunnableProvider {
     fun getKernel(kernelId: JupyterKernelId): KotlinKernelRunnableHandler?
 }
 
+/**
+ * Jupyter client that is running in the IDE process.
+ */
 class KotlinInProcessJupyterClient(
     private val rootDir: File
 ): JupyterClient, KotlinKernelRunnableProvider, Disposable {

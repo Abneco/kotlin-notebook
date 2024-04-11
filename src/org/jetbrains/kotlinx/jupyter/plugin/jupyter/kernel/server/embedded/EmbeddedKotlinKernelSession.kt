@@ -25,6 +25,8 @@ class EmbeddedKotlinKernelSession(
     private val onMessage: (JupyterMessage) -> Unit
 ) : KotlinKernelSession, JupyterKernelCommunicationClient {
 
+    private val inMemoryHolderService = InMemoryReplResultsHolderService.getInstance(project)
+
     private val messageHandler = run {
         val kernelConfig: KernelConfig = DefaultKotlinKernelConfigFactory(
             project,
@@ -45,7 +47,8 @@ class EmbeddedKotlinKernelSession(
             kernelConfig,
             replConfig
         )
-        createEmbeddedMessageHandler(project, replSettings, loggerFactory, socketsManager)
+        val inMemoryResultHolder = inMemoryHolderService.getOrCreateHolder(sessionId)
+        createEmbeddedMessageHandler(project, replSettings, loggerFactory, socketsManager, inMemoryResultHolder)
     }
 
 
@@ -56,8 +59,10 @@ class EmbeddedKotlinKernelSession(
     }
 
     override fun dispose() {
+        close()
     }
 
     override fun close() {
+        inMemoryHolderService.removeHolder(sessionId)
     }
 }

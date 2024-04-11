@@ -25,7 +25,7 @@ import kotlin.system.measureTimeMillis
  *
  * Note that this is not the only callback triggered for cell actions.
  * Jupyter plugin has its own callback which is responsible for rendering,
- * outputs updating and so on. This callback should be used only for
+ * outputs, updating and so on. This callback should be used only for
  * language-specific features. If you want to change rendering or other
  * language-agnostic features, contribute to the Jupyter plugin directly.
  */

@@ -48,14 +48,14 @@ private val FileTransferableFactory =
 fun createImageDataTransferable(
     project: Project,
     imageData: ByteArray,
-    extension: String,
+    fileName: String,
 ): Transferable {
     // Standard copy works incorrectly on Mac, see JBR-6788
     return if (SystemInfo.isMac) {
         val plotFile = project
             .getKotlinNotebookCacheDirectory()
             .resolve("plotExport")
-            .resolve("plot.$extension")
+            .resolve(fileName)
             .toFile()
         plotFile.parentFile.mkdirs()
         plotFile.writeBytes(imageData)

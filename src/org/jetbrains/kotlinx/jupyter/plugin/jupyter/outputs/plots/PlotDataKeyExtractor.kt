@@ -4,14 +4,21 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots
 import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
+import com.intellij.openapi.project.Project
 import com.intellij.util.asSafely
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.util.convertObject
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutputDataKeyExtractor
 
 
 class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
-    override fun extractKey(dataObject: ObjectNode, executionCount: Int?): LetsPlotOutputDataKey? {
+    override fun extractKey(
+        project: Project?,
+        file: BackedNotebookVirtualFile?,
+        dataObject: ObjectNode,
+        executionCount: Int?
+    ): LetsPlotOutputDataKey? {
         if (!KotlinNotebookApplicationOptions.get().showLetsPlotAsSwing) return null
         if (!dataObject.has(PLOT_KEY)) return null
         val plotValue = dataObject[PLOT_KEY].asSafely<ObjectNode>() ?: return null
