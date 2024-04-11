@@ -84,8 +84,17 @@
 
     <dependencies>
         <plugin id="org.jetbrains.kotlin"/>
-        <plugin id="Pythonid"/>
+        <module name="kotlin.code-insight.live-templates.shared"/>
+
+        <module name="intellij.python.community.impl"/>
+
+        <module name="intellij.notebooks.ui"/>
+        <module name="intellij.notebooks.visualization"/>
+
         <plugin id="intellij.jupyter"/>
+
+        <plugin id="intellij.grid.impl" />
+
         <plugin id="com.intellij.modules.platform"/>
         <plugin id="com.intellij.modules.java"/>
         <plugin id="com.intellij.modules.ultimate"/>
