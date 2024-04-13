@@ -112,8 +112,8 @@ class JupyterCompilerPerFileService(
     // Also note that acquiring this lock inside read/write action may lead to the deadlock, never do it.
     private val dataLock = ReentrantReadWriteLock()
 
-    private fun <R> writeData(action: () -> R) = dataLock.write(action)
-    private fun <R> readData(action: () -> R) = dataLock.read(action)
+    private inline fun <R> writeData(crossinline action: () -> R) = dataLock.write(action)
+    private inline fun <R> readData(crossinline action: () -> R) = dataLock.read(action)
     private fun <R> readDataWithReadAction(action: () -> R): R = readData {
         ReadAction.compute<R, Throwable>(action)
     }
@@ -494,6 +494,7 @@ class JupyterCompilerPerFileService(
                 if (!checkLastDependenciesPresentInCache()) {
                     return@async
                 }
+
                 updateLastKnownConfiguration()
                 scriptsChangePublisher.scriptsClassesChanged(virtualFile)
             }
