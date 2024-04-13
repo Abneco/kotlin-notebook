@@ -234,12 +234,17 @@ class KotlinNotebookDebugSession(
             if (project.isDisposed) {
                 return false
             }
+
             val debugEnvironment = DefaultDebugEnvironment(executionEnvironment, debugConnectionHolder.runProfileState, remoteConnection, true)
             ApplicationManager.getApplication().invokeAndWait {
+                if (project.isDisposed) return@invokeAndWait
                 debugConnectionHolder.myDebugSession = executionEnvironment
                     .attachDebuggerCreateSession(virtualFile.file.name, project, debugEnvironment, headless = isSilent)
             }
 
+            if (project.isDisposed) {
+                return false
+            }
             val handler = debugConnectionHolder.myDebugSession?.process?.processHandler
             if (isSilent) {
                 // important
