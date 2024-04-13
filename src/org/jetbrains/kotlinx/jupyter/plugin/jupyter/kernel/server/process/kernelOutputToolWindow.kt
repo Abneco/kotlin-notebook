@@ -52,21 +52,13 @@ fun showKotlinNotebookServerManagementToolWindow(
 
     handler.addKernelProcessListener(object : KotlinKernelProcessListener {
         override fun kernelTerminated(event: KotlinKernelProcessEvent) {
+            if (!newContent.isValid || project.isDisposed || !project.isInitialized) return
+
             runInEdt {
-                project.makeNotebookToolWindowContentClosable()
+                newContent.isCloseable = true
             }
         }
     })
-}
-
-@RequiresEdt
-internal fun Project.makeNotebookToolWindowContentClosable() {
-    if (isDisposed || !isInitialized) return
-
-    val toolWindow = getOrCreateKotlinNotebookToolWindow(this)
-    toolWindow.contentManager.selectedContent?.let {
-        it.isCloseable = true
-    }
 }
 
 @RequiresEdt
