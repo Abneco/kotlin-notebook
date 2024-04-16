@@ -1,23 +1,20 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners
 
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.js.translate.utils.splitToRanges
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookTypeHintsRegistry.Companion.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
+import org.jetbrains.kotlinx.jupyter.plugin.util.retrieveJupyterFileEditor
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.visualization.getCell
 import kotlin.math.min
 
@@ -66,7 +63,7 @@ class ImpatientNotebookChangeListener(
             (if (isCellListChange) event.offset + 1 else event.offset).coerceAtMost(event.document.textLength)
         )
 
-        val editor = retrieveEditor(file.file, project)
+        val editor = project.retrieveJupyterFileEditor(file.file)?.editor
         val targetCellIndex = editor?.getCell(min(documentChangedLineIndex, editor.document.lineCount - 1))?.ordinal
             ?: run {
                 val documentLines = document.text.lines()
@@ -190,6 +187,3 @@ class ImpatientNotebookChangeListener(
         handleNotebookChangeEvent(event)
     }
 }
-
-private fun retrieveEditor(vFile: VirtualFile, project: Project): Editor?
-    = (FileEditorManager.getInstance(project).getSelectedEditor(vFile) as? JupyterFileEditor)?.editor

@@ -29,11 +29,7 @@ internal fun DataContext.getKotlinNotebookVirtualFile(): BackedNotebookVirtualFi
         null -> getLastActiveJupyterFileEditor()?.getNotebookFile()
         else -> vFile
     }
-    if (virtualFile == null) {
-        return null
-    }
-    if (!virtualFile.isKotlinNotebook) return null
-    return BackedNotebookVirtualFile.takeIfBacked(virtualFile)
+    return virtualFile?.toKotlinNotebookBackedFile()
 }
 
 internal fun DataContext.getInjectedKtFilesInCurrentPsiCell(): List<KtFile>? {

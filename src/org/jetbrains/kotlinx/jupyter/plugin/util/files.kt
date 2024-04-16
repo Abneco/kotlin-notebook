@@ -64,3 +64,9 @@ fun BackedNotebookVirtualFile.fileNameTestAware(project: Project): String {
         file.name
     else originFile.toNioPath().fileNameFromProjectRoot(project)
 }
+
+fun VirtualFile?.toKotlinNotebookBackedFile(): BackedNotebookVirtualFile? {
+    return if (this == null || !isKotlinNotebook) {
+        null
+    } else toBackedNotebookFile()
+}

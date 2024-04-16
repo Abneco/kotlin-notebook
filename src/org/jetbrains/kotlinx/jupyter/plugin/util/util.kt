@@ -11,8 +11,6 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
@@ -142,9 +140,8 @@ internal fun PsiElement?.isInsideKotlinNotebookFile(): Boolean {
 }
 
 internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
-    val manager = FileEditorManager.getInstance(scope.project)
-    val editor = manager.selectedEditor as? TextEditor ?: return null
-    val caretOffSet = editor.editor.caretModel.offset
+    val editor = scope.project.getCurrentEditorOrNull() ?: return null
+    val caretOffSet = editor.caretModel.offset
     val injectedManager = InjectedLanguageManager.getInstance(scope.project)
     val host = scope.findElementAt(caretOffSet)?.parentOfType<JupyterPsiCell>() as? PsiLanguageInjectionHost ?: return null
     val injectInfo = injectedManager.getInjectedPsiFiles(host)?.firstOrNull()?.first ?: return null
