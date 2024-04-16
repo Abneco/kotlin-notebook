@@ -29,3 +29,6 @@ internal fun registryFlag(
     name: String,
     defaultValue: Boolean
 ) = RegistryFlagDelegate(name, defaultValue)
+
+val Project.kotlinNotebookSettingsProvider: KotlinNotebookProjectOptionsProvider
+    get() = KotlinNotebookProjectOptionsProvider.getInstance(this)

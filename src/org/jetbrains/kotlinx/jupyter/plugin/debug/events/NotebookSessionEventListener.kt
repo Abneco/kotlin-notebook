@@ -3,8 +3,9 @@ package org.jetbrains.kotlinx.jupyter.plugin.debug.events
 
 import com.intellij.util.messages.Topic
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import java.util.*
 
-interface NotebookSessionEventListener {
+interface NotebookSessionEventListener : EventListener {
     companion object {
         @Topic.ProjectLevel
         val TOPIC: Topic<NotebookSessionEventListener> = Topic(NotebookSessionEventListener::class.java, Topic.BroadcastDirection.NONE)
@@ -13,4 +14,6 @@ interface NotebookSessionEventListener {
     fun kernelStarted(virtualFile: BackedNotebookVirtualFile) = Unit
 
     fun sessionRestarted(virtualFile: BackedNotebookVirtualFile) = Unit
+
+    fun sessionRestartedAfterRunModeChanged(virtualFile: BackedNotebookVirtualFile) = Unit
 }

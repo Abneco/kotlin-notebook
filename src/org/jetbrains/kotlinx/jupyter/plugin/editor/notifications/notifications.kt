@@ -15,6 +15,7 @@ import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsContexts.NotificationTitle
 import com.intellij.openapi.util.NlsSafe
+import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookConfigurable
 import org.jetbrains.kotlinx.jupyter.plugin.util.getCurrentEditorOrNull
@@ -137,8 +138,13 @@ internal class NotebookKernelRelatedNotificationFactory() : NotebookNotification
 
                                 restartAction.apply {
                                     actionPerformed(
-                                        createAnActionEvent(prepareEmbeddedActionContext(project, e))
+                                        createAnActionEvent(
+                                            prepareEmbeddedActionContext(project, e)
+                                        )
                                     )
+
+                                    project.messageBus.syncPublisher(NotebookSessionEventListener.TOPIC)
+                                        .sessionRestartedAfterRunModeChanged(notebookFile)
                                 }
                             }
 
