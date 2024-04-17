@@ -31,10 +31,8 @@ import com.intellij.ui.layout.ComponentPredicate
 import com.intellij.util.execution.ParametersListUtil
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinKernelVersions.DEBUG_SUPPORTED
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
@@ -45,7 +43,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelVersionEnoughForIns
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isSuitableForStartingKernel
 import org.jetbrains.kotlinx.jupyter.plugin.settings.minJdkVersion
 import org.jetbrains.kotlinx.jupyter.plugin.settings.toKotlinKernelVersion
-import org.jetbrains.kotlinx.jupyter.plugin.util.getSelectedKotlinNotebookFileOrNull
 import org.jetbrains.kotlinx.jupyter.plugin.util.revealKotlinNotebookLocalKernelsFolder
 import kotlin.reflect.KMutableProperty0
 
@@ -66,7 +63,7 @@ object KotlinNotebookSettingsPanel {
                 val kernelModeObservable = getKernelRunModeObservable(projectOptions)
 
                 if (isKernelProcessEmbeddingEnabled) {
-                    createKernelModeSelector(project, projectOptions, kernelModeObservable)
+                    createKernelModeSelector(projectOptions, kernelModeObservable)
                 }
 
                 val showSeparateProcessSettings = kernelModeObservable.transform { it == KotlinNotebookSessionRunMode.SEPARATE_PROCESS }
@@ -145,28 +142,15 @@ object KotlinNotebookSettingsPanel {
     }
 
     private fun Panel.createKernelModeSelector(
-        project: Project,
         optionsProvider: KotlinNotebookProjectOptionsProvider,
         kernelModeObservable: ObservableMutableProperty<KotlinNotebookSessionRunMode>
     ): ButtonsGroup {
-        fun checkSelectedFileHasStartedSession(): Boolean {
-            val notebookFile = project.getSelectedKotlinNotebookFileOrNull() ?: return false
-            return JupyterCompilerService.getForFile(project, notebookFile).currentClasspath.isNotEmpty()
-        }
-
         return buttonsGroup(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.mode")) {
             for (value in KotlinNotebookSessionRunMode.entries) {
-                var shouldNotifyUser = false
                 row {
                     radioButton(value.description, value).onChanged { button ->
                         if (button.isSelected) {
                             kernelModeObservable.set(value)
-                            shouldNotifyUser = true
-                        }
-                    }.onApply {
-                        if (shouldNotifyUser && checkSelectedFileHasStartedSession()) {
-                            NotebookNotificationUtility.kernelRelatedFactory.showSessionModeChanged(project)
-                            shouldNotifyUser = false
                         }
                     }
                 }

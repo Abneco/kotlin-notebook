@@ -56,7 +56,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactori
 import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.tryCastParentToSuitableTarget
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
-import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFilesInCurrentPsiCell
 import org.jetbrains.kotlinx.jupyter.plugin.util.isInsideKotlinNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.retrieveElementUnderCaret
@@ -131,7 +130,8 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
         if (!isKotlinNotebookInjectedFile(element.containingFile)) return
         val adjustedElement = tryResolveToDeclaration(element, editor) ?: element.parent.reference?.resolve()
         if ((adjustedElement == null && !isNotebookRefactoringSupported(element.parent)) || adjustedElement?.containingFile is KtClsFile) {
-            NotebookNotificationUtility.usageRelatedFactory.showBytecodeRefactoringWarning(editor.project)
+            NotebookNotificationUtility.getInstance(element.project)
+                .usageRelatedFactory.showBytecodeRefactoringWarning(editor.project)
         } else {
             val parent = tryCastParentToSuitableTarget(element)
             val properElem = adjustedElement ?: parent ?: return

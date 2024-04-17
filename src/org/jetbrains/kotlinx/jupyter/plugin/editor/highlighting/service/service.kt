@@ -41,12 +41,12 @@ import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlin.utils.addToStdlib.ifNotEmpty
-import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingRestarter.UpdateSteps.performHLStartupTemplate
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService.Companion.HL_DELAY_PAUSE
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.shouldStartAfterPreChecks
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ImpatientNotebookChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
@@ -143,8 +143,8 @@ class NotebookHighlightingManager(
 
     private fun Disposable.addListeners() {
         project.messageBus.connect(this).subscribe(
-            NotebookSessionEventListener.TOPIC,
-            object : NotebookSessionEventListener {
+          NotebookSessionEventListener.TOPIC,
+          object : NotebookSessionEventListener {
                 override fun sessionRestarted(virtualFile: BackedNotebookVirtualFile) {
                     KotlinNotebookCellExecutionCallbackFactory.getInstance().sessionRestarted(virtualFile)
                     dataController.executionHighlightingHelper.onSessionRestarted()

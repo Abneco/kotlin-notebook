@@ -418,7 +418,7 @@ class JupyterCompilerPerFileService(
                 when (e) {
                     is UnsupportedClassVersionError -> {
                         val msg = e.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
-                        NotebookNotificationUtility.kernelRelatedFactory.showKernelJDKInconsistentError(project, msg)
+                        NotebookNotificationUtility.getInstance(project).kernelRelatedFactory.showKernelJDKInconsistentError(msg)
                         true
                     }
                     else -> {

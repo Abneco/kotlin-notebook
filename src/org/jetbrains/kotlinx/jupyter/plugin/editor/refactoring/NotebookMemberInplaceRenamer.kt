@@ -99,7 +99,7 @@ class NotebookMemberInplaceRenamer(
 
             override fun performRefactoring(usages: Array<out UsageInfo>) {
                 if (foundRefsSize > 0) {
-                    NotebookNotificationUtility.usageRelatedFactory.showRerunActionNeeded(myProject)
+                    NotebookNotificationUtility.getInstance(element.project).usageRelatedFactory.showRerunActionNeeded(myProject)
                     val hostFile = injectedManager.getTopLevelFile(element)
                     if (adjustmentTextRange != null) {
                         notebookHighlightingService?.dataController?.update {
@@ -115,17 +115,18 @@ class NotebookMemberInplaceRenamer(
 
             override fun findUsages(): Array<UsageInfo> {
                 val size = foundRefsSize
+                val notificationUtility = NotebookNotificationUtility.getInstance(element.project)
                 do { // todo: might be slow (?)
                    val ans = findUsagesNotebookHandler.findReferencesToHighlight(myElementToRename, element.resolveScope).map {
                         it.toMoveUsageInfo()
                     }
                     if (ans.isEmpty()) {
-                        NotebookNotificationUtility
+                        notificationUtility
                             .usageRelatedFactory.showRefactoringExistingUsagesMessage(myProject, size)
                         return ans.toTypedArray()
                     }
                     if (size == ans.size) {
-                        NotebookNotificationUtility
+                        notificationUtility
                             .usageRelatedFactory.showRerunActionNeeded(myProject)
                         val targetHostRanges = mutableSetOf<TextRange>()
                         val targetHostIndxs = mutableSetOf<Int>()

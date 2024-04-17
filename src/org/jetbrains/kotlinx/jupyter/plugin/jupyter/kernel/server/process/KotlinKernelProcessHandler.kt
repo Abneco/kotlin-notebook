@@ -11,11 +11,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.util.EventDispatcher
 import com.intellij.util.io.BaseOutputReader
-import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelState
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.findNotebookVirtualFileOrNull
 import org.jetbrains.kotlinx.jupyter.plugin.util.warnInTests
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig

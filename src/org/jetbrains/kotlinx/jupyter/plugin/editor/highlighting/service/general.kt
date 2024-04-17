@@ -256,8 +256,8 @@ class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
             return false
         }
 
-        NotebookNotificationUtility.kernelRelatedFactory
-            .showAbsentInitialBaseDependenciesInfo(file.project)
+        NotebookNotificationUtility.getInstance(file.project).kernelRelatedFactory
+            .showAbsentInitialBaseDependenciesInfo()
 
         reloadRequested = true
 

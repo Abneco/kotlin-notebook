@@ -23,7 +23,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlinx.jupyter.plugin.debug.breakpoint.KernelSyntheticMethodBreakpoint
 import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookDebugEventsHandler
-import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.names.KotlinNotebookSessionInternalNamesProvider
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.SessionRelatedInfo
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectionUtility
@@ -33,6 +32,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectio
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.NotebookDebugConnectionHolder
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.NotebookDebugProcessListener
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
@@ -106,8 +106,8 @@ class KotlinNotebookDebugSession(
         )
 
         messageBus.connect(parentDisposable).subscribe(
-            NotebookSessionEventListener.TOPIC,
-            object : NotebookSessionEventListener {
+          NotebookSessionEventListener.TOPIC,
+          object : NotebookSessionEventListener {
                 override fun kernelStarted(virtualFile: BackedNotebookVirtualFile) {
                     this@KotlinNotebookDebugSession.coroutineScope.launch {
                         if (project.isDisposed) return@launch

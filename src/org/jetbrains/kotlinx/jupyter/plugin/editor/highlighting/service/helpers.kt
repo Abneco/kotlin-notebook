@@ -27,11 +27,11 @@ import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.diagnostics.Errors
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookTypeHintsRegistry.Companion.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
@@ -234,7 +234,8 @@ class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
     fun isShouldAcceptDiagnostic(elem: Diagnostic): Boolean {
         val info = elem.factory.name
         if (info.startsWith(NotebookHighlightingUtilityObject.SCRIPTING_MISSING_BASE_CLASS_ERROR)) {
-            NotebookNotificationUtility.kernelRelatedFactory.showAbsentInitialBaseDependenciesInfo(elem.psiFile.project)
+            NotebookNotificationUtility.getInstance(elem.psiFile.project)
+                .kernelRelatedFactory.showAbsentInitialBaseDependenciesInfo()
             return false
         }
         return info != NotebookHighlightingUtilityObject.SCRIPTING_MISSING_CLASS_ERROR

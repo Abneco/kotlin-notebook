@@ -244,13 +244,13 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         }
 
         when (buildProjectResult.state) {
-            DependenciesState.OUTDATED -> NotebookNotificationUtility
+            DependenciesState.OUTDATED -> NotebookNotificationUtility.getInstance(project)
                 .kernelRelatedFactory
-                .showOutdatedDependencies(project)
+                .showOutdatedDependencies()
             DependenciesState.ABSENT -> {
-                NotebookNotificationUtility
+                NotebookNotificationUtility.getInstance(project)
                     .kernelRelatedFactory
-                    .showAbsentDependencies(project)
+                    .showAbsentDependencies()
                 return emptyList()
             }
             else -> {}

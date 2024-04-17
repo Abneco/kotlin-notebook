@@ -136,8 +136,8 @@ class KotlinInProcessJupyterClient(
         sessions.removeByValue(sessionData)
 
         if (project != null) {
-            NotebookNotificationUtility.kernelRelatedFactory
-                .showKernelRestart(project)
+            NotebookNotificationUtility.getInstance(project)
+                .kernelRelatedFactory.showKernelRestart()
         }
     }
 

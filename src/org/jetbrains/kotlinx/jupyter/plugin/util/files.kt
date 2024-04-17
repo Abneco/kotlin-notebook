@@ -60,13 +60,17 @@ fun Path.fileNameFromProjectRoot(project: Project): String {
 }
 
 fun BackedNotebookVirtualFile.fileNameTestAware(project: Project): String {
-    return if (ApplicationManager.getApplication().isUnitTestMode)
+    return if (ApplicationManager.getApplication().isUnitTestMode) {
         file.name
-    else originFile.toNioPath().fileNameFromProjectRoot(project)
+    } else {
+        originFile.toNioPath().fileNameFromProjectRoot(project)
+    }
 }
 
 fun VirtualFile?.toKotlinNotebookBackedFile(): BackedNotebookVirtualFile? {
     return if (this == null || !isKotlinNotebook) {
         null
-    } else toBackedNotebookFile()
+    } else {
+        toBackedNotebookFile()
+    }
 }

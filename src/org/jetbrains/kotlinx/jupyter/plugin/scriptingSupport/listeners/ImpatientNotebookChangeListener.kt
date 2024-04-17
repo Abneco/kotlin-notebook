@@ -10,8 +10,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookTypeHints
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
+import org.jetbrains.kotlinx.jupyter.plugin.util.getJupyterFileEditor
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
-import org.jetbrains.kotlinx.jupyter.plugin.util.retrieveJupyterFileEditor
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -63,7 +63,7 @@ class ImpatientNotebookChangeListener(
             (if (isCellListChange) event.offset + 1 else event.offset).coerceAtMost(event.document.textLength)
         )
 
-        val editor = project.retrieveJupyterFileEditor(file.file)?.editor
+        val editor = project.getJupyterFileEditor(file.file)?.editor
         val targetCellIndex = editor?.getCell(min(documentChangedLineIndex, editor.document.lineCount - 1))?.ordinal
             ?: run {
                 val documentLines = document.text.lines()
