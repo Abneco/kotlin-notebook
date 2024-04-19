@@ -4,10 +4,10 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.export
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import kotlinx.coroutines.async
 import org.jetbrains.kotlin.util.collectionUtils.filterIsInstanceAnd
 import org.jetbrains.kotlinx.jupyter.api.InMemoryMimeTypes
 import org.jetbrains.kotlinx.jupyter.api.takeScreenshot
@@ -15,6 +15,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export.createI
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingComponent
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputDataKey
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputDataKeyExtractor
+import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.firstAncestorOfType
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
 import org.jetbrains.plugins.notebooks.core.api.getNotebookCellAndFile
@@ -55,7 +56,7 @@ class CopySwingComponentScreenshotAction : NotebookEditorActionBase() {
 
     private fun doCopyScreenshot(outputs: List<SwingOutputDataKey>, project: Project) {
         val output = outputs.singleOrNull() ?: return
-        ApplicationManager.getApplication().executeOnPooledThread {
+        KotlinNotebookPluginScope.getForProject(project).async {
             runSafely (
                 {
                     when(val component = output.component) {

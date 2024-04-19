@@ -19,6 +19,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.impl.XDebuggerManagerImpl
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlinx.jupyter.plugin.debug.breakpoint.KernelSyntheticMethodBreakpoint
 import org.jetbrains.kotlinx.jupyter.plugin.debug.events.NotebookDebugEventsHandler
@@ -159,8 +160,8 @@ class KotlinNotebookDebugSession(
     fun ensureSilentSessionAlive(debugPort: Int? = targetDebugPort) {
         if (isLiveSession || debugPort == null) return
 
-        ApplicationManager.getApplication().executeOnPooledThread {
-            val newSession = getOrCreateDebuggerSession(project, debugPort) ?: return@executeOnPooledThread
+        coroutineScope.async {
+            val newSession = getOrCreateDebuggerSession(project, debugPort) ?: return@async
             LOG.warn("Session was successfully created: $newSession")
         }
     }
@@ -197,11 +198,14 @@ class KotlinNotebookDebugSession(
         }
         isSilent = silent
 
-        addProcessListener()
-        if (!silent) {
-            XDebuggerManagerImpl.getNotificationGroup().createNotification(
-                KotlinNotebookBundle.message("kotlin.jupyter.debug.support.text"), MessageType.INFO
-            ).notify(project)
+        coroutineScope.async {
+            addProcessListener()
+
+            if (!silent) {
+                XDebuggerManagerImpl.getNotificationGroup().createNotification(
+                    KotlinNotebookBundle.message("kotlin.jupyter.debug.support.text"), MessageType.INFO
+                ).notify(project)
+            }
         }
 
         return debuggerSession

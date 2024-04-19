@@ -13,7 +13,6 @@ import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.delete
@@ -21,7 +20,6 @@ import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.idea.core.script.ClasspathToVfsConverter
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
@@ -203,11 +201,10 @@ class JupyterCompilerPerFileService(
         )
     }
 
-
-    private fun getSession(): JupyterNotebookSession? {
+    private suspend fun getSession(): JupyterNotebookSession? {
         return try {
             if (!ApplicationManager.getApplication().isUnitTestMode) {
-                runBlocking { JupyterRuntimeService.getInstance(project).getOrCreateSession(virtualFile) }
+                JupyterRuntimeService.getInstance(project).getOrCreateSession(virtualFile)
             } else null
         } catch (e: Throwable) {
             // TODO: show error for user with asking for configuring Python interpreter for the module
@@ -316,10 +313,11 @@ class JupyterCompilerPerFileService(
     ) {
         KotlinNotebookPluginUpdater.getInstance().pluginUsed()
         // execute not on EDT
-        AppExecutorUtil.getAppExecutorService().execute {
+        coroutineScope.async {
             try {
+                val sessionId = getSession()?.sessionId
                 writeData {
-                    addNewDependencies(snippetMetadata, psiCell)
+                    addNewDependencies(sessionId, snippetMetadata, psiCell)
                 }
                 updateAction()
             } catch (e: Exception) {
@@ -334,11 +332,10 @@ class JupyterCompilerPerFileService(
     private fun getLineFolderName(lineNumber: Int) = "line_$lineNumber"
 
     private fun addNewDependencies(
+        sessionId: JupyterNotebookSessionId?,
         snippetMetadata: EvaluatedSnippetMetadata,
         psiCell: JupyterPsiCell?
     ) {
-        val sessionId = getSession()?.sessionId
-
         if (sessionId != previousSessionId) {
             LOG.info("Clearing Kotlin snippets. Previous session ID: ${previousSessionId?.id}")
             clearPreviousSnippets()

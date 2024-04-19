@@ -1,10 +1,11 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.async
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputDataKey
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.getCurrentLetsPlotFlavor
+import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
@@ -19,7 +20,7 @@ class CopyPlotAction : AbstractExportPlotAction() {
         notebookFile: BackedNotebookVirtualFile
     ) {
         val output = letsPlotOutputs.singleOrNull() ?: return
-        ApplicationManager.getApplication().executeOnPooledThread {
+        KotlinNotebookPluginScope.getForProject(project).async {
             runSafely (
                 {
                     val model = PlotExportModelImpl(

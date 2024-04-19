@@ -2,7 +2,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
@@ -20,12 +19,14 @@ import com.intellij.ui.dsl.builder.toNullableProperty
 import com.intellij.ui.dsl.listCellRenderer.textListCellRenderer
 import com.intellij.ui.layout.selectedValueMatches
 import com.intellij.ui.util.preferredWidth
+import kotlinx.coroutines.async
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotFlavor
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputDataKey
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindComparableIntervalToTextWithFixer
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindStringText
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.enumComboBox
+import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.awt.event.ActionEvent
@@ -51,7 +52,7 @@ class SavePlotAction : AbstractExportPlotAction() {
         val notebookDir = notebookFile.file.parent
         val exportModel = showExportDialog(project, notebookDir, letsPlotOutputs.size > 1) ?: return
 
-        ApplicationManager.getApplication().executeOnPooledThread {
+        KotlinNotebookPluginScope.getForProject(project).async {
             val files = mutableListOf<File>()
             val errors = mutableListOf<Throwable>()
 
