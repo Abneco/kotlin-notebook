@@ -49,6 +49,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ImpatientNotebookChangeListener
+import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
@@ -66,10 +67,14 @@ class NotebookHighlightingService(
     val project: Project, coroutineScope: CoroutineScope
 ) : NotebookProjectLevelService<NotebookHighlightingManager>(coroutineScope) {
 
-    override fun createInstance(virtualFile: BackedNotebookVirtualFile): NotebookHighlightingManager {
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile, childScope: CoroutineScope): NotebookHighlightingManager {
         return withReadAccess {
             val document = FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
-            NotebookHighlightingManager(virtualFile, document, this@NotebookHighlightingService, null)
+            NotebookHighlightingManager(
+                virtualFile, document,
+                this@NotebookHighlightingService,
+                childScope,
+                null)
         }
     }
 
@@ -88,11 +93,12 @@ class NotebookHighlightingService(
 
 
 class NotebookHighlightingManager(
-    val virtualFile: BackedNotebookVirtualFile,
+    virtualFile: BackedNotebookVirtualFile,
     private val document: Document,
     projectService: NotebookHighlightingService,
+    childScope: CoroutineScope,
     var completeRangeInd: Int?
-): Disposable {
+): NotebookPerFileChildService(virtualFile, childScope) {
     companion object {
         private val LOG = thisLogger()
 

@@ -34,6 +34,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.NotebookDebugP
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
+import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.debugger.common.JupyterSessionPath
 import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
@@ -43,12 +44,12 @@ import java.util.concurrent.ExecutionException
 
 
 class KotlinNotebookDebugSession(
-    val virtualFile: BackedNotebookVirtualFile,
+    public override val virtualFile: BackedNotebookVirtualFile,
     private val project: Project,
     projectService: Disposable,
-    private val coroutineScope: CoroutineScope,
+    coroutineScope: CoroutineScope,
     private val portProvider: () -> Int?
-): Disposable {
+): NotebookPerFileChildService(virtualFile, coroutineScope) {
     val currentStackFrameProxy: StackFrameProxyImpl?
         get() = debuggerSession?.process?.debuggerContext?.frameProxy
 

@@ -13,7 +13,6 @@ import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.util.coroutines.namedChildScope
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
@@ -45,6 +44,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.usages.KotlinNotebookPluginUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.util.ComputableWithName
 import org.jetbrains.kotlinx.jupyter.plugin.util.ExecutedOnceBackgroundTask
+import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
 import org.jetbrains.kotlinx.jupyter.plugin.util.anyOf
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
@@ -94,13 +94,11 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
  */
 class JupyterCompilerPerFileService(
     private val project: Project,
-    private val virtualFile: BackedNotebookVirtualFile,
+    virtualFile: BackedNotebookVirtualFile,
     initialClasspath: List<File>,
-    parentCoroutineScope: CoroutineScope,
+    scope: CoroutineScope,
     parent: Disposable
-) : Disposable {
-    private val coroutineScope = parentCoroutineScope.namedChildScope("JupyterCompilerPerFileService for file $virtualFile")
-
+) : NotebookPerFileChildService(virtualFile, scope) {
     private val scriptsChangePublisher get() =
         project.messageBus.syncPublisher(NotebookCodeSnippetsChangeListener.TOPIC)
 

@@ -21,6 +21,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import org.jetbrains.kotlin.idea.debugger.core.invokeInManagerThread
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
+import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.kotlinx.jupyter.plugin.variables.KotlinNotebookToolWindowHandler
 import org.jetbrains.kotlinx.jupyter.plugin.variables.KotlinNotebookVarsToolWindow
 import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVariablesToolWindowSetup
@@ -35,10 +36,10 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeP
  */
 class NotebookVariablesPerFileStateService(
     private val project: Project,
-    private val virtualFile: BackedNotebookVirtualFile,
-    private val coroutineScope: CoroutineScope,
+    virtualFile: BackedNotebookVirtualFile,
+    coroutineScope: CoroutineScope,
     parentDisposable: Disposable
-) : NotebookAbstractSessionEnvironmentExplorer, Disposable {
+) : NotebookPerFileChildService(virtualFile, coroutineScope), NotebookAbstractSessionEnvironmentExplorer {
     companion object {
         private val LOG = thisLogger()
 

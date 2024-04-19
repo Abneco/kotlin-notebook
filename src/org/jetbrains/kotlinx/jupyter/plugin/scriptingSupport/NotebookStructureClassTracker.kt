@@ -16,6 +16,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookChangeEventsType
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookMoveEvent
+import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
@@ -53,15 +54,15 @@ internal interface NotebookClassesInCellsInfoHandler {
 
 class NotebookStructureClassTracker(
     private val project: Project,
-    private val file: BackedNotebookVirtualFile,
-    private val coroutineScope: CoroutineScope,
+    vFile: BackedNotebookVirtualFile,
+    scope: CoroutineScope,
     parentDisposable: Disposable
-): NotebookClassesInCellsInfoHandler, Disposable {
+): NotebookPerFileChildService(vFile, scope), NotebookClassesInCellsInfoHandler {
     init {
       Disposer.register(parentDisposable, this)
     }
     private val psiFile = withReadAccess {
-        file.file.toPsiFile(project)
+        virtualFile.file.toPsiFile(project)
     }
     private val knownCellInfo = ExecutedPresentCellInfo(psiFile)
 
@@ -73,7 +74,7 @@ class NotebookStructureClassTracker(
 
     override val nextCompiledClassLineIndex: Int
         get() {
-            val cellsCounter = JupyterCompilerService.getForFile(project, file).executedCellsCount - 1
+            val cellsCounter = JupyterCompilerService.getForFile(project, virtualFile).executedCellsCount - 1
             return  if (cellsCounter == -1) 1 else cellsCounter + 1
         }
 
@@ -83,7 +84,7 @@ class NotebookStructureClassTracker(
 
     override fun storeCompliedDataInCell(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell) {
         fun storeReferenceInfo(compiledClassName: MutableSet<String>, cellInd: Int?) {
-            NotebookHighlightingService.getForFile(project, file)
+            NotebookHighlightingService.getForFile(project, virtualFile)
                 .dataController.invalidateStateAfterCellExecution(executedCellInd = cellInd)
             synchronized(psiCell) {
                 val last = psiCell.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)?.firstOrNull()

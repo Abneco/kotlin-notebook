@@ -7,7 +7,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
-import com.intellij.platform.util.coroutines.childScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -66,11 +65,11 @@ class KotlinNotebookSessionVariablesService(
     }
 
 
-    override fun createInstance(virtualFile: BackedNotebookVirtualFile): NotebookVariablesPerFileStateService {
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile, childScope: CoroutineScope): NotebookVariablesPerFileStateService {
         return NotebookVariablesPerFileStateService(
             project,
             virtualFile,
-            coroutineScope.childScope(),
+            childScope,
             this
         )
     }

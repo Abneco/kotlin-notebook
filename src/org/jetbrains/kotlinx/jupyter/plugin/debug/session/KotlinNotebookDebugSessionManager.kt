@@ -45,12 +45,12 @@ class KotlinNotebookDebugSessionManager(
         }
     }
 
-    override fun createInstance(virtualFile: BackedNotebookVirtualFile): KotlinNotebookDebugSession {
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile, childScope: CoroutineScope): KotlinNotebookDebugSession {
         return KotlinNotebookDebugSession(
             virtualFile,
             project,
             this,
-            coroutineScope
+            childScope
         ) { nextTargetDebugPortOrNull }
     }
 
