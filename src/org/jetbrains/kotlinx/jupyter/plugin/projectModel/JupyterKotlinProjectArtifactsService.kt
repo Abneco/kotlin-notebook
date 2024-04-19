@@ -171,11 +171,13 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private fun invalidateLibrariesCaches(changedLibrary: Library) {
-        invalidateCaches(
-            librariesCache,
-            KotlinNotebookSettings::projectLibraries,
-            KotlinNotebookDependencies.fromLibraries(listOf(changedLibrary))
-        )
+        coroutineScope.async {
+            invalidateCaches(
+                librariesCache,
+                KotlinNotebookSettings::projectLibraries,
+                KotlinNotebookDependencies.fromLibraries(listOf(changedLibrary))
+            )
+        }
     }
 
     private fun invalidateBuildResultCaches(changedModules: Collection<Module>) {

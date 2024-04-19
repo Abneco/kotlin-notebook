@@ -9,7 +9,7 @@ import com.intellij.formatting.service.CoreFormattingService
 import com.intellij.formatting.service.FormattingService
 import com.intellij.injected.editor.DocumentWindow
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -22,9 +22,11 @@ import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.start
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.retrieveCellIntervalUnderCaret
+import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.buildFlatMap
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
+import org.jetbrains.kotlinx.jupyter.plugin.util.invokeNow
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
@@ -103,8 +105,10 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
             }
 
             if (!DaemonCodeAnalyzerStatusService.getInstance(project).daemonRunning) {
-                invokeLater {
-                    jupyterPsiFile.restartAnalyzing()
+                KotlinNotebookPluginScope.getForProject(project).invokeNow {
+                    readAction {
+                        jupyterPsiFile.restartAnalyzing()
+                    }
                 }
             }
         }

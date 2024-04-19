@@ -8,20 +8,20 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.platform.util.coroutines.childScope
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.ZipUtil
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.idea.maven.aether.ArtifactKind
 import org.jetbrains.jps.model.library.JpsMavenRepositoryLibraryDescriptor
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
+import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.getKotlinNotebookCacheDirectory
 import java.io.File
 import java.nio.file.Path
@@ -39,8 +39,9 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
 
     private val downloadJobs = mutableMapOf<ArtifactDescriptionWithVersion, Deferred<List<File>>>()
     private val cacheSearchLock = ReentrantLock()
-    private val downloadJobsScope = CoroutineScope(Dispatchers.Default)
-    private val preloadJobScope = CoroutineScope(Dispatchers.Default)
+    private val projectScope = KotlinNotebookPluginScope.getForProject(project)
+    private val downloadJobsScope = projectScope.childScope(Dispatchers.Default)
+    private val preloadJobScope = projectScope.childScope(Dispatchers.Default)
 
     init {
         preloadArtifacts()
@@ -59,9 +60,9 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
         artifact: ArtifactDescriptionWithKind,
         version: String,
     ): List<File> {
-        return runBlocking {
+        return projectScope.invokeAndWait {
             downloadArtifactAsync(artifact, version)
-        }
+        } ?: emptyList()
     }
 
     suspend fun downloadArtifactAsync(
@@ -79,9 +80,9 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
         artifact: ArtifactDescriptionWithKind,
         version: String = getSelectedKernelVersion(project),
     ): List<File> {
-        return runBlocking {
+        return projectScope.invokeAndWait {
             downloadAndUnzipAsync(artifact, version)
-        }
+        } ?: emptyList()
     }
 
     val kernelsDirectoryPath: Path get() = project.getKotlinNotebookCacheDirectory().resolve("kernels")

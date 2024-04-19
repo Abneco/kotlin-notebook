@@ -1,23 +1,26 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.projectModel
 
-import com.intellij.configurationStore.runAsWriteActionIfNeeded
-import com.intellij.openapi.application.invokeLater
+import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import java.io.File
 
 @Service(Service.Level.PROJECT)
 class KotlinNotebookPermanentIndexService(val project: Project) {
   fun addToPermanentIndex(classpath: List<String>, sourceClasspath: List<String>) {
-    invokeLater {
-      runAsWriteActionIfNeeded {
-        addToPermanentIndexImpl(classpath, sourceClasspath)
-      }
+    KotlinNotebookPluginScope.getForProject(project).async(Dispatchers.EDT) {
+        writeAction {
+            addToPermanentIndexImpl(classpath, sourceClasspath)
+        }
     }
   }
 

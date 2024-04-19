@@ -41,7 +41,7 @@ internal sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
      *
      * @param timeOut - timeout in milliseconds
      */
-    inline fun <T> invokeAndWait(timeOut: Long?, crossinline action: (CoroutineScope).() -> T?): T? {
+    inline fun <T> invokeAndWait(timeOut: Long? = null, crossinline action: suspend (CoroutineScope).() -> T?): T? {
         val future = async {
             action()
         }.asCompletableFuture()
