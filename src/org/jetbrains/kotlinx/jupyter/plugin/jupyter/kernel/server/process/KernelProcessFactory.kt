@@ -133,8 +133,12 @@ class KernelProcessFactory : KernelRunnableFactory {
         if (javaHome == null) return "java"
 
         val binDir = File(javaHome).absoluteFile.resolve("bin")
-        val javaExec =  binDir.resolve(if (SystemInfo.isWindows) "java.exe" else "java")
-        return javaExec.absolutePath
+        val javaExecutable = sequenceOf("java.exe", "java")
+            .map { executableName -> binDir.resolve(executableName) }
+            .takeWhile { executable -> executable.exists() }
+            .firstOrNull()
+
+        return javaExecutable?.absolutePath ?: "java"
     }
 
     private val javaHomeEnvironmentVariablesToTry = listOf(
