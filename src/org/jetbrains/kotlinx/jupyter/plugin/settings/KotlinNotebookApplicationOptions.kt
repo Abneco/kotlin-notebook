@@ -8,9 +8,7 @@ import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.DocumentEx
-import com.intellij.openapi.editor.ex.EditorEx
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.editor.JupyterNotebookGutterManager
 
 object KotlinNotebookApplicationOptions {
     private val options: KotlinNotebookApplicationOptionsProvider @Synchronized get() {
@@ -34,7 +32,6 @@ object KotlinNotebookApplicationOptions {
                 if (foldInjected != null) {
                     updateFoldRegions(editor, foldInjected)
                 }
-                JupyterNotebookGutterManager.putHighlighters(editor as EditorEx)
                 editor.component.repaint()
             }
         }
