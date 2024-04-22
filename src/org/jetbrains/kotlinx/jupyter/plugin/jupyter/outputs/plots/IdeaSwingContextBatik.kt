@@ -6,7 +6,7 @@ import org.jetbrains.letsPlot.awt.plot.component.ApplicationContext
 
 object IdeaSwingContextBatik : ApplicationContext {
     override fun runWriteAction(action: Runnable) {
-        ApplicationManager.getApplication().runWriteAction(action)
+        action.run()
     }
 
     override fun invokeLater(action: Runnable, expared: () -> Boolean) {
