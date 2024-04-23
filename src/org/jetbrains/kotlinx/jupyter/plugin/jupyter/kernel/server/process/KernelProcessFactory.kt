@@ -2,13 +2,10 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.mode
@@ -91,7 +88,7 @@ class KernelProcessFactory : KernelRunnableFactory {
         ).apply {
             addKernelProcessListener(object : KotlinKernelProcessListener {
                 override fun beforeNotificationStarted(event: KotlinKernelNotificationStartedEvent) {
-                    KotlinNotebookPluginScope.global.async(Dispatchers.EDT) {
+                    KotlinNotebookPluginScope.invokeOnEDT {
                         val mode = KotlinKernelProcessToolWindow(
                             project,
                             notebookPath,

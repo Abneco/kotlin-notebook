@@ -14,8 +14,8 @@ class NotebookStructureTrackerService(
     coroutineScope: CoroutineScope
 ) : NotebookProjectLevelService<NotebookStructureClassTracker>(coroutineScope) {
 
-    override fun createInstance(virtualFile: BackedNotebookVirtualFile, childScope: CoroutineScope): NotebookStructureClassTracker {
-        return NotebookStructureClassTracker(project, virtualFile, childScope, this)
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookStructureClassTracker {
+        return NotebookStructureClassTracker(project, virtualFile, fileScope, this)
     }
 
     companion object {

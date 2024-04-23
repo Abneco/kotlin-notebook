@@ -1,10 +1,13 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution
 
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector
@@ -78,8 +81,10 @@ class KotlinNotebookCellExecutionCallback(
                      * and pass the metadata we received to it.
                      */
                     val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-                    compilerService.addCompiledSnippet(snippetMetadata, psiCell) {
-                        updateScriptingIfNeeded(false)
+                    withContext(Dispatchers.EDT) {
+                        compilerService.addCompiledSnippet(snippetMetadata, psiCell) {
+                            updateScriptingIfNeeded(false)
+                        }
                     }
                 } else {
                     NotebookHighlightingService.getForFile(project, virtualFile)

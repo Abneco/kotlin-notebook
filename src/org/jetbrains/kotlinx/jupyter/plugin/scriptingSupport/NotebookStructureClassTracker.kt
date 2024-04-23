@@ -54,10 +54,10 @@ internal interface NotebookClassesInCellsInfoHandler {
 
 class NotebookStructureClassTracker(
     private val project: Project,
-    vFile: BackedNotebookVirtualFile,
+    virtualFile: BackedNotebookVirtualFile,
     scope: CoroutineScope,
     parentDisposable: Disposable
-): NotebookPerFileChildService(vFile, scope), NotebookClassesInCellsInfoHandler {
+): NotebookPerFileChildService(virtualFile, scope), NotebookClassesInCellsInfoHandler {
     init {
       Disposer.register(parentDisposable, this)
     }

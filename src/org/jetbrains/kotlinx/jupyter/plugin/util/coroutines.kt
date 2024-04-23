@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
@@ -10,6 +11,7 @@ import com.intellij.util.progress.getMaybeCancellable
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -21,9 +23,8 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
 /**
- * Designed to be used as a parent scope for all unbounded coroutines in a plugin.
+ * Designed to be used as a parent scope for all unbounded coroutines in the Notebook plugin.
  * Do not use GlobalScope or any other coroutine scope that has an unbounded lifetime.
- *
  *
  * If you have a parent scope such as Project-level service, use [CoroutineScope.childScope] instead.
  */
@@ -36,12 +37,23 @@ internal sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
     }
 
     /**
-     * Schedule and waits for execution of the [block] inside current coroutine.
-     * Note that job may be canceled.
+     * Schedules a coroutine to run on the Event Dispatch Thread.
+     */
+    fun onEDT(block: suspend CoroutineScope.() -> Unit) =
+        async(Dispatchers.EDT, block = block)
+
+    /**
+     * Schedule and waits for execution of the [action] inside current coroutine.
+     * Note that a job may be canceled.
      *
      * @param timeOut - timeout in milliseconds
+     * @param handler - logic for handling errors, including the operation timing out.
      */
-    inline fun <T> invokeAndWait(timeOut: Long? = null, crossinline action: suspend (CoroutineScope).() -> T?): T? {
+    inline fun <T> invokeAndWait(
+        timeOut: Long? = null,
+        crossinline action: suspend (CoroutineScope).() -> T?,
+        crossinline handler: (Throwable) -> Unit = { },
+    ): T? {
         val future = async {
             action()
         }.asCompletableFuture()
@@ -49,14 +61,49 @@ internal sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
         return when (timeOut) {
             null -> future.getMaybeCancellable()
             else -> runBlockingMaybeCancellable {
-                future.get(timeOut, TimeUnit.MILLISECONDS)
+                try {
+                    future.get(timeOut, TimeUnit.MILLISECONDS)
+                } catch (t: Throwable) {
+                    handler(t)
+                    return@runBlockingMaybeCancellable null
+                }
             }
         }
     }
 
+    /**
+     * Schedule and waits for execution of the [action] inside current coroutine.
+     * Note that a job may be canceled.
+     * Throws an exception if it happened inside [action].
+     *
+     * @param timeOut - timeout in milliseconds
+     */
+    inline fun <T> invokeAndWait(
+        timeOut: Long? = null,
+        crossinline action: suspend (CoroutineScope).() -> T?
+    ): T? {
+        return invokeAndWait(timeOut, action) { error ->
+            throw error
+        }
+    }
+
     companion object {
+        /**
+         * Schedules a coroutine to run on the Event Dispatch Thread.
+         */
+        fun invokeOnEDT(action: suspend CoroutineScope.() -> Unit) =
+            global.async(Dispatchers.EDT, block = action)
+
+        /**
+         * Retrieves global coroutine scope for the Kotlin Notebook plugin.
+         * Designed to be used in places where project scope is not available.
+         */
         val global: KotlinNotebookPluginScope get() = service<GlobalScopeService>()
 
+        /**
+         * Retrieves project-level scope for the Kotlin Notebook plugin.
+         * Designed to be used for any asynchronous work where [Project] is accessible.
+         */
         fun getForProject(project: Project): KotlinNotebookPluginScope =
             project.service<ProjectScope>()
 
@@ -72,7 +119,6 @@ internal sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
  * Makes this coroutine to be invoked with minimum delay.
  * Suspension points inside the [action] will be executed in the same thread
  * stated inside the [context].
- *
  */
 internal fun CoroutineScope.invokeNow(
     context: CoroutineContext = EmptyCoroutineContext,

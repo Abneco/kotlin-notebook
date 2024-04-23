@@ -15,6 +15,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.io.delete
 import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
@@ -306,6 +307,7 @@ class JupyterCompilerPerFileService(
         }
     }
 
+    @RequiresEdt
     fun addCompiledSnippet(
         snippetMetadata: EvaluatedSnippetMetadata,
         psiCell: JupyterPsiCell?,

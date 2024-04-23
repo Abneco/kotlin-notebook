@@ -67,14 +67,14 @@ class NotebookHighlightingService(
     val project: Project, coroutineScope: CoroutineScope
 ) : NotebookProjectLevelService<NotebookHighlightingManager>(coroutineScope) {
 
-    override fun createInstance(virtualFile: BackedNotebookVirtualFile, childScope: CoroutineScope): NotebookHighlightingManager {
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookHighlightingManager {
         return withReadAccess {
             val document = FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
             NotebookHighlightingManager(
-                virtualFile, document,
-                this@NotebookHighlightingService,
-                childScope,
-                null)
+              virtualFile, document,
+              this@NotebookHighlightingService,
+              fileScope,
+              null)
         }
     }
 

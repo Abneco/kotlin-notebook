@@ -10,7 +10,14 @@ import kotlinx.coroutines.cancel
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.util.concurrent.ConcurrentHashMap
 
-
+/**
+ * Representation of a per-file notebook service.
+ *
+ * This class provides a base implementation for services related to a specific notebook file.
+ * [CoroutineScope] is passed from the parent project-level service to handle async operations.
+ *
+ * @see NotebookProjectLevelService
+ */
 abstract class NotebookPerFileChildService(
     protected open val virtualFile: BackedNotebookVirtualFile,
     protected val coroutineScope: CoroutineScope
@@ -20,14 +27,24 @@ abstract class NotebookPerFileChildService(
     }
 }
 
+/**
+ * Abstract class representing a notebook project-level service.
+ * Every such class contains a collection of per-file [Child] services instantiated by a demand.
+ *
+ * Note that for every [Child], its own [CoroutineScope] is created as a child scope of [this.coroutineScope].
+ */
 abstract class NotebookProjectLevelService<Child : NotebookPerFileChildService>(
     protected val coroutineScope: CoroutineScope
 ): Disposable {
     protected val mapping: MutableMap<VirtualFile, Child> = ConcurrentHashMap()
 
+    /**
+     * Creates a new [Child] service for the given [virtualFile]
+     * with its own [CoroutineScope].
+     */
     protected abstract fun createInstance(
         virtualFile: BackedNotebookVirtualFile,
-        childScope: CoroutineScope
+        fileScope: CoroutineScope
     ): Child
 
     fun getOrCreate(virtualFile: BackedNotebookVirtualFile): Child {

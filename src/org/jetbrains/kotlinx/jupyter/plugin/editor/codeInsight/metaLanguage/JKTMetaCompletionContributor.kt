@@ -6,9 +6,12 @@ import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.findParentOfType
 import com.intellij.psi.util.startOffset
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlinx.jupyter.common.ReplCommand
 import org.jetbrains.kotlinx.jupyter.common.ReplEnum
 import org.jetbrains.kotlinx.jupyter.common.ReplLineMagic
@@ -16,7 +19,6 @@ import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.libraries.ResourceLibraryDescriptorsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaStatement
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
-import org.jetbrains.kotlinx.jupyter.plugin.util.invokeNow
 import java.util.concurrent.TimeUnit
 
 class JKTMetaCompletionContributor : CompletionContributor() {
@@ -24,21 +26,20 @@ class JKTMetaCompletionContributor : CompletionContributor() {
         ResourceLibraryDescriptorsProvider(DefaultKernelLoggerFactory)
     )
 
+    @RequiresReadLock
     override fun fillCompletionVariants(parameters: CompletionParameters, result: CompletionResultSet) {
         super.fillCompletionVariants(parameters, result)
 
-        KotlinNotebookPluginScope.global.invokeNow {
-            val position = parameters.position
-            val metaStatement = position.findMetaStatement() ?: return@invokeNow
+        val position = parameters.position
+        val metaStatement = position.findMetaStatement() ?: return
 
-            when(val replEnum = metaStatement.replEnum) {
-                ReplCommand -> fillIdVariants(result, replEnum)
-                ReplLineMagic -> fillMagicVariants(
-                    metaStatement.text,
-                    parameters.offset - metaStatement.startOffset,
-                    result
-                )
-            }
+        when(val replEnum = metaStatement.replEnum) {
+            ReplCommand -> fillIdVariants(result, replEnum)
+            ReplLineMagic -> fillMagicVariants(
+                metaStatement.text,
+                parameters.offset - metaStatement.startOffset,
+                result
+            )
         }
     }
 
@@ -53,12 +54,19 @@ class JKTMetaCompletionContributor : CompletionContributor() {
     private fun fillMagicVariants(statementText: String, cursor: Int, result: CompletionResultSet) {
         val awaitTimeMs = TimeUnit.SECONDS.toMillis(20)
 
-        KotlinNotebookPluginScope.global.invokeAndWait(awaitTimeMs) {
+        KotlinNotebookPluginScope.global.invokeAndWait(awaitTimeMs, action = {
             magicsCompleter.process(statementText, cursor, result)
+        }) { t ->
+            if (t is ProcessCanceledException) {
+                throw t
+            }
+            LOG.warn("Error while completing variants for $statementText at position:$cursor", t)
         }
     }
 
     companion object {
+        private val LOG = thisLogger()
+
         fun PsiElement.findMetaStatement(): JKTMetaStatement? {
             return findParentOfType<JKTMetaStatement>(strict = false)
         }
