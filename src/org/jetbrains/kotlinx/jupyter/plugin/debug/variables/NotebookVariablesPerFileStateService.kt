@@ -23,7 +23,7 @@ import org.jetbrains.kotlin.idea.debugger.core.invokeInManagerThread
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.kotlinx.jupyter.plugin.variables.KotlinNotebookToolWindowHandler
 import org.jetbrains.kotlinx.jupyter.plugin.variables.KotlinNotebookVarsToolWindow
-import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookToolWindowSetup
+import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVariablesToolWindowSetup
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
 
@@ -32,7 +32,6 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeP
  * and provides an entry point for variables:
  *  - retrieving variables from [VirtualMachineProxy]
  *  - delegating creating and updates of corresponding VariableToolWindowPanel
- *
  */
 class NotebookVariablesPerFileStateService(
     private val project: Project,
@@ -61,7 +60,7 @@ class NotebookVariablesPerFileStateService(
     }
 
     fun getToolWindow(
-        setupData: NotebookToolWindowSetup? = null
+        setupData: NotebookVariablesToolWindowSetup? = null
     ): KotlinNotebookVarsToolWindow {
         return variableToolWindowHandler
             .getOrCreateToolWindow(project, virtualFile, setupData)

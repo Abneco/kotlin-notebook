@@ -33,7 +33,7 @@ fun createEmbeddedMessageHandler(
     val communicationFacility: JupyterCommunicationFacility = JupyterCommunicationFacilityImpl(socketManager, messageFactoryProvider)
     val executor: JupyterExecutor = JupyterExecutorImpl(loggerFactory)
     val commManager: CommManagerInternal = CommManagerImpl(communicationFacility)
-    val replComponentsProvider = IdeReplComponentsProvider(replSettings, communicationFacility, commManager, inMemoryHolder)
+    val replComponentsProvider = IdeReplComponentsProvider(replSettings, communicationFacility, commManager, inMemoryHolder, loggerFactory)
     val kernelVersion = KotlinNotebookProjectOptionsProvider.getInstance(project).kernelVersion
     val replFactory = getReplFactory(project, kernelVersion, replComponentsProvider)
     val repl = replFactory.createRepl()

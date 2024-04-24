@@ -24,7 +24,7 @@ import java.awt.event.MouseEvent
 class KotlinNotebookVarsToolWindow(
     project: Project,
     notebookFile: BackedNotebookVirtualFile,
-    private val panelSetupData: NotebookToolWindowSetup
+    private val panelSetupData: NotebookVariablesToolWindowSetup
 ) : JupyterVarsToolWindowPanel(project, notebookFile) {
 
     override fun getName() =
@@ -36,6 +36,12 @@ class KotlinNotebookVarsToolWindow(
         if (project.isDisposed || !project.shouldShowNotebookVariables) {
             showMessage(
                 KotlinNotebookBundle.message("kotlin.jupyter.debug.node.default.message")
+            )
+            return
+        }
+        if (!panelSetupData.isEnabled) {
+            showMessage(
+                KotlinNotebookBundle.message("kotlin.jupyter.debug.node.not.enabled.message")
             )
             return
         }

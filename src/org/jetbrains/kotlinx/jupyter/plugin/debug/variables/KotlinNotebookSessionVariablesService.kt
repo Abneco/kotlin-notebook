@@ -12,8 +12,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.getOrCreateKotlinNotebookToolWindow
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.toNotebookToolWindowPanelHelpId
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.getOrCreateKotlinNotebookToolWindow
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.toNotebookToolWindowPanelHelpId
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toAbsolutePath

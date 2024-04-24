@@ -17,6 +17,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.Embed
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelVmCommandCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.kotlinNotebookSessionRunMode
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.showKotlinNotebookServerManagementToolWindow
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
@@ -89,10 +90,13 @@ class KernelProcessFactory : KernelRunnableFactory {
             addKernelProcessListener(object : KotlinKernelProcessListener {
                 override fun beforeNotificationStarted(event: KotlinKernelNotificationStartedEvent) {
                     val application = ApplicationManager.getApplication()
-                    if (!application.isUnitTestMode) {
-                        application.invokeLater {
-                            showKotlinNotebookServerManagementToolWindow(event.source)
-                        }
+                    application.invokeLater {
+                        val mode = KotlinKernelProcessToolWindow(
+                            project,
+                            notebookPath,
+                            event.source
+                        )
+                        showKotlinNotebookServerManagementToolWindow(mode)
                     }
                 }
             })

@@ -1,11 +1,13 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.kotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.showKotlinNotebookServerManagementToolWindow
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
@@ -26,6 +28,18 @@ class EmbeddedKernelRunnableFactory : KernelRunnableFactory {
     ): KotlinKernelRunnableHandler? {
         if (project.kotlinNotebookSessionRunMode != KotlinNotebookSessionRunMode.IDE_PROCESS) return null
 
-        return EmbeddedKernelRunnableHandler(project, kernelId, notebookPath)
+        return EmbeddedKernelRunnableHandler(
+            project, kernelId, notebookPath
+        ).apply {
+            val application = ApplicationManager.getApplication()
+            application.invokeLater {
+                val mode = EmbeddedProcessToolWindow(
+                    project,
+                    notebookPath,
+                    this
+                )
+                showKotlinNotebookServerManagementToolWindow(mode)
+            }
+        }
     }
 }

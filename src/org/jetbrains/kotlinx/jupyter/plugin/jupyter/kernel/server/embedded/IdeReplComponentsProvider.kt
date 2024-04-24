@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 
+import org.jetbrains.kotlinx.jupyter.api.KernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.api.libraries.CommManager
 import org.jetbrains.kotlinx.jupyter.magics.IdeCompatibleMagicsHandler
 import org.jetbrains.kotlinx.jupyter.magics.LibrariesAwareMagicsHandler
@@ -14,6 +15,7 @@ class IdeReplComponentsProvider(
     communicationFacility: JupyterCommunicationFacility,
     commManager: CommManager,
     inMemoryHolder: InMemoryReplResultsHolder,
+    private val _loggerFactory: KernelLoggerFactory,
 ) : DefaultReplComponentsProvider(
     settings,
     communicationFacility,
@@ -22,5 +24,9 @@ class IdeReplComponentsProvider(
 ) {
     override fun provideMagicsHandler(): LibrariesAwareMagicsHandler {
         return IdeCompatibleMagicsHandler(replOptions, librariesProcessor, libraryInfoSwitcher)
+    }
+
+    override fun provideLoggerFactory(): KernelLoggerFactory {
+        return _loggerFactory
     }
 }

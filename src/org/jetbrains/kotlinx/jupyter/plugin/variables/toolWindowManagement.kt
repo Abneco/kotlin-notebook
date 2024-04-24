@@ -19,7 +19,7 @@ class KotlinNotebookToolWindowHandler {
     fun getOrCreateToolWindow(
         project: Project,
         virtualFile: BackedNotebookVirtualFile,
-        providedSetupData: NotebookToolWindowSetup?
+        providedSetupData: NotebookVariablesToolWindowSetup?
     ): KotlinNotebookVarsToolWindow {
         val toolWindow = variableWindowReference
         if (toolWindow != null) {
@@ -40,8 +40,9 @@ class KotlinNotebookToolWindowHandler {
     }
 }
 
-data class NotebookToolWindowSetup(
+data class NotebookVariablesToolWindowSetup(
     val uiRunnerLayoutUi: RunnerLayoutUi,
     val id: String,
-    @NlsSafe val title: String
+    @NlsSafe val title: String,
+    val isEnabled: Boolean,
 )
