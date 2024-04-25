@@ -19,11 +19,13 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Highligh
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 
 
-internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlightingVisitorAdapter<KotlinNotebookDummyVisitor>(
-    { annotationHolder -> KotlinNotebookDummyVisitor(annotationHolder) }
-) {
+internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlightingVisitorAdapter<KotlinNotebookDummyVisitor>() {
     override fun clone(): HighlightVisitor {
         return KotlinNotebookBeforeHighlightingVisitor()
+    }
+
+    override fun createVisitor(holder: HighlightInfoHolder): KotlinNotebookDummyVisitor {
+        return KotlinNotebookDummyVisitor(holder)
     }
 
     override fun analyze(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, action: Runnable): Boolean {

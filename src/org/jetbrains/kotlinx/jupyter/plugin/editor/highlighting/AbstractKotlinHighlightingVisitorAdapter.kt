@@ -13,12 +13,12 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.getTopLevelFile
 
 abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingVisitor>(
-    protected val visitorFactory: (HighlightInfoHolder) -> T,
     private val isShouldUseNewHighlighting: Boolean = true // 0 if default
 ) : HighlightVisitor {
     private var visitor: T? = null
     protected var highlightingHelper: InjectedFileHighlightingHelper? = null
 
+    protected abstract fun createVisitor(holder: HighlightInfoHolder): T
     override fun suitableForFile(file: PsiFile): Boolean {
         return file is KtFile && InjectedLanguageManager.getInstance(file.project).isInjectedFragment(file)
     }
@@ -29,13 +29,16 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
 
     override fun analyze(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, action: Runnable): Boolean {
         try {
-            visitor = visitorFactory(holder)
+            visitor = createVisitor(holder)
             action.run()
 
             return true
         } finally {
-            highlightingManagerFor(file.project, file.virtualFile.getTopLevelFile())?.finishedAnalysisForFile(file, holder)
-            visitor = null
+            try {
+                highlightingManagerFor(file.project, file.virtualFile.getTopLevelFile())?.finishedAnalysisForFile(file, holder)
+            } finally {
+                visitor = null
+            }
         }
     }
 

@@ -2,12 +2,15 @@
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting
 
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor
+import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import org.jetbrains.kotlin.idea.highlighter.BeforeResolveHighlightingVisitor
 
-class BeforeResolveHighlightingVisitorAdapter: AbstractKotlinHighlightingVisitorAdapter<BeforeResolveHighlightingVisitor>(
-    { annotationHolder -> BeforeResolveHighlightingVisitor(annotationHolder) }
-) {
+class BeforeResolveHighlightingVisitorAdapter: AbstractKotlinHighlightingVisitorAdapter<BeforeResolveHighlightingVisitor>() {
     override fun clone(): HighlightVisitor {
         return BeforeResolveHighlightingVisitorAdapter()
+    }
+
+    override fun createVisitor(holder: HighlightInfoHolder): BeforeResolveHighlightingVisitor {
+        return BeforeResolveHighlightingVisitor(holder)
     }
 }
