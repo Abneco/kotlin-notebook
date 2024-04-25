@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution
 
+import MarkdownRenderModeTestHelper
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.waitForSmartMode
 import junit.framework.TestCase
@@ -78,19 +79,24 @@ class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
     }
 
     @Test
-    fun testSerialization() = doTest(OutputsTester(listOf(
-        listOf(),
-        listOf(
-            buildJacksonObject {
-                replace("application/json", buildJacksonObject {
-                    put("x", 3)
-                })
-                put("text/plain", "{\n    \"x\": 3\n}")
-                put("text/markdown", "```json\n{\n    \"x\": 3\n}\n```")
-            }
-        ),
-        listOf()
-    )))
+    fun testSerialization() {
+        val markdownRenderModeHelper = MarkdownRenderModeTestHelper()
+        markdownRenderModeHelper.setUp()
+        doTest(OutputsTester(listOf(
+            listOf(),
+            listOf(
+                buildJacksonObject {
+                    replace("application/json", buildJacksonObject {
+                        put("x", 3)
+                    })
+                    put("text/plain", "{\n    \"x\": 3\n}")
+                    put("text/markdown", "```json\n{\n    \"x\": 3\n}\n```")
+                }
+            ),
+            listOf()
+        )))
+        markdownRenderModeHelper.tearDown()
+    }
 
     @Ignore("Ignored because of some JCEF problems with project SDK")
     @Test

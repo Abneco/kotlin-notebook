@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.notebookCellLanguageProvider
 
+import MarkdownRenderModeTestHelper
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileTypes.PlainTextLanguage
 import org.intellij.plugins.markdown.lang.MarkdownLanguage
@@ -13,11 +14,28 @@ import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.junit.Test
 
 class KotlinNotebookCellLanguageProviderTest : KotlinNotebookBaseTestCase() {
+
+    private val markdownRenderModeHelper = MarkdownRenderModeTestHelper()
+
     override fun getTestDataPath() = "${baseTestDataPath}/notebooks/cellLanguageProvider"
+
+    override fun setUp() {
+        super.setUp()
+        markdownRenderModeHelper.setUp()
+    }
+
+    override fun tearDown() {
+        try {
+            markdownRenderModeHelper.tearDown()
+        } catch (e: Throwable) {
+            throw e
+        } finally {
+            super.tearDown()
+        }
+    }
 
     @Test
     fun testKotlinNotebook() {
-
         myFixture.configureByJupyterFile("kotlinNotebook.ipynb", testDataPath)
 
         assertCodeCells("kotlin cell, markdown cell, raw cell") {
