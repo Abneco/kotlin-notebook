@@ -4,7 +4,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import org.jetbrains.kotlinx.jupyter.api.KernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.execution.JupyterExecutor
 import org.jetbrains.kotlinx.jupyter.execution.JupyterExecutorImpl
 import org.jetbrains.kotlinx.jupyter.messaging.JupyterBaseSockets
@@ -25,7 +24,7 @@ import org.jetbrains.kotlinx.jupyter.repl.embedded.InMemoryReplResultsHolder
 fun createEmbeddedMessageHandler(
     project: Project,
     replSettings: DefaultReplSettings,
-    loggerFactory: KernelLoggerFactory,
+    loggerFactory: EmbeddedKotlinKernelLoggerFactory,
     socketManager: JupyterBaseSockets,
     inMemoryHolder: InMemoryReplResultsHolder,
 ): MessageHandler {

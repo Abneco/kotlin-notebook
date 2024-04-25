@@ -28,6 +28,10 @@ class EmbeddedKotlinKernelLoggerFactory: KernelLoggerFactory {
     // log entries will be ignored.
     var consoleView: ConsoleView? = null
 
+    // Log level that is used for all the loggers this factory has produced.
+    // If log level is changed, it will be applied both to new and existing loggers
+    var logLevel: LogLevel = LogLevel.DEBUG
+
     // Cache all existing logger instances, so we hand out the same instance
     // to all calls for the same clazz or category.
     private val loggerMap = ConcurrentHashMap<String, Logger>()
@@ -36,13 +40,8 @@ class EmbeddedKotlinKernelLoggerFactory: KernelLoggerFactory {
     override fun getLogger(category: String): Logger = getLoggerInstance(category)
 
     private fun getLoggerInstance(name: String): Logger {
-        val logger: Logger? = loggerMap[name]
-        if (logger != null) {
-            return logger
-        } else {
-            val newLogger = EmbeddedKotlinKernelLogger(this, name)
-            val oldLogger: Logger? = loggerMap.putIfAbsent(name, newLogger)
-            return oldLogger ?: newLogger
+        return loggerMap.getOrPut(name) {
+            EmbeddedKotlinKernelLogger(name)
         }
     }
 
@@ -52,29 +51,22 @@ class EmbeddedKotlinKernelLoggerFactory: KernelLoggerFactory {
      *
      * If no console view is present, log entries will be ignored.
      */
-    class EmbeddedKotlinKernelLogger(
-        private val factory: EmbeddedKotlinKernelLoggerFactory,
+    inner class EmbeddedKotlinKernelLogger(
         private val tag: String? = null,
-        private val logLevel: Level = Level.DEBUG
     ): AbstractLogger() {
 
-        companion object {
-            val NEW_LINE: String = System.lineSeparator()
-            val TIMESTAMP_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS").withZone(ZoneId.systemDefault())
-        }
-
-        override fun isTraceEnabled(): Boolean = isLogLevelEnabled(Level.TRACE)
+        override fun isTraceEnabled(): Boolean = isLogLevelEnabled(LogLevel.TRACE)
         override fun isTraceEnabled(marker: Marker?): Boolean = isTraceEnabled()
-        override fun isDebugEnabled(): Boolean = isLogLevelEnabled(Level.DEBUG)
+        override fun isDebugEnabled(): Boolean = isLogLevelEnabled(LogLevel.DEBUG)
         override fun isDebugEnabled(marker: Marker?): Boolean = isDebugEnabled()
-        override fun isInfoEnabled(): Boolean = isLogLevelEnabled(Level.INFO)
+        override fun isInfoEnabled(): Boolean = isLogLevelEnabled(LogLevel.INFO)
         override fun isInfoEnabled(marker: Marker?): Boolean = isInfoEnabled()
-        override fun isWarnEnabled(): Boolean = isLogLevelEnabled(Level.WARN)
+        override fun isWarnEnabled(): Boolean = isLogLevelEnabled(LogLevel.WARN)
         override fun isWarnEnabled(marker: Marker?): Boolean = isWarnEnabled()
-        override fun isErrorEnabled(): Boolean = isLogLevelEnabled(Level.ERROR)
+        override fun isErrorEnabled(): Boolean = isLogLevelEnabled(LogLevel.ERROR)
         override fun isErrorEnabled(marker: Marker?): Boolean = isErrorEnabled()
 
-        private fun isLogLevelEnabled(level: Level): Boolean {
+        private fun isLogLevelEnabled(level: LogLevel): Boolean {
             return logLevel.toInt() <= level.toInt()
         }
 
@@ -89,7 +81,7 @@ class EmbeddedKotlinKernelLoggerFactory: KernelLoggerFactory {
             arguments: Array<out Any>?,
             throwable: Throwable?
         ) {
-            val console: ConsoleView = factory.consoleView ?: return
+            val console: ConsoleView = consoleView ?: return
 
             val type = when(level) {
                 Level.ERROR -> ConsoleViewContentType.ERROR_OUTPUT
@@ -132,5 +124,10 @@ class EmbeddedKotlinKernelLoggerFactory: KernelLoggerFactory {
             }
             console.print(log.toString(), type)
         }
+    }
+
+    companion object {
+        val NEW_LINE: String = System.lineSeparator()
+        val TIMESTAMP_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS").withZone(ZoneId.systemDefault())
     }
 }

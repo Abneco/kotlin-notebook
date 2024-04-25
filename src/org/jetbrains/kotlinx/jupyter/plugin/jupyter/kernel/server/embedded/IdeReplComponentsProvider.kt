@@ -3,7 +3,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 
 import org.jetbrains.kotlinx.jupyter.api.KernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.api.libraries.CommManager
-import org.jetbrains.kotlinx.jupyter.magics.IdeCompatibleMagicsHandler
 import org.jetbrains.kotlinx.jupyter.magics.LibrariesAwareMagicsHandler
 import org.jetbrains.kotlinx.jupyter.messaging.JupyterCommunicationFacility
 import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
@@ -15,7 +14,7 @@ class IdeReplComponentsProvider(
     communicationFacility: JupyterCommunicationFacility,
     commManager: CommManager,
     inMemoryHolder: InMemoryReplResultsHolder,
-    private val _loggerFactory: KernelLoggerFactory,
+    private val _loggerFactory: EmbeddedKotlinKernelLoggerFactory,
 ) : DefaultReplComponentsProvider(
     settings,
     communicationFacility,
@@ -23,7 +22,7 @@ class IdeReplComponentsProvider(
     inMemoryHolder,
 ) {
     override fun provideMagicsHandler(): LibrariesAwareMagicsHandler {
-        return IdeCompatibleMagicsHandler(replOptions, librariesProcessor, libraryInfoSwitcher)
+        return EmbeddedFullMagicsHandler(replOptions, librariesProcessor, libraryInfoSwitcher, _loggerFactory)
     }
 
     override fun provideLoggerFactory(): KernelLoggerFactory {
