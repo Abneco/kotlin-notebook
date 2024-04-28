@@ -9,7 +9,6 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowPanel
 import org.jetbrains.plugins.notebooks.jupyter.variables.common.NotebookVarsToolWindowPanelProvider
 
-
 internal class NotebookVarsToolWindowProvider : NotebookVarsToolWindowPanelProvider {
     override fun isSupported(virtualFile: BackedNotebookVirtualFile): Boolean {
         return virtualFile.file.isKotlinNotebook
@@ -23,4 +22,3 @@ internal class NotebookVarsToolWindowProvider : NotebookVarsToolWindowPanelProvi
         return variableService.getToolWindow()
     }
 }
-

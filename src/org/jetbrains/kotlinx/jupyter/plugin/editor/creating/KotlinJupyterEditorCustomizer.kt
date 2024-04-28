@@ -4,10 +4,10 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.creating
 import com.intellij.codeInsight.folding.impl.FoldingUpdate
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.EditorColorsListener
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.reactOnThemeChangedEvent
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
@@ -19,11 +19,13 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterEditorCustomizer
 import org.jetbrains.plugins.notebooks.jupyter.editor.isJupyter
 
 class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
-    override fun onEditorCreated(project: Project, editor: Editor, virtualFile: BackedNotebookVirtualFile) {
+    override fun onEditorCreated(project: Project, textEditor: TextEditor, virtualFile: BackedNotebookVirtualFile) {
         if (!virtualFile.file.isKotlinNotebook) return
 
         val options = KotlinNotebookApplicationOptions.get()
-        editor.putUserData(FoldingUpdate.INJECTED_CODE_FOLDING_ENABLED, options.shouldShowFoldings)
+        textEditor.putUserData(FoldingUpdate.INJECTED_CODE_FOLDING_ENABLED, options.shouldShowFoldings)
+
+        val editor = textEditor.editor
 
         if (editor.isJupyter) {
             val compilerService = JupyterCompilerService.getInstance(project)

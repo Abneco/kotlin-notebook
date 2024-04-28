@@ -9,8 +9,8 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.debugger.JupyterDebugSessionManager
-import org.jetbrains.plugins.notebooks.jupyter.debugger.JupyterSessionPath
+import org.jetbrains.plugins.notebooks.jupyter.debugger.common.JupyterDebugSessionManager
+import org.jetbrains.plugins.notebooks.jupyter.debugger.common.JupyterSessionPath
 
 
 class NotebookDebugProcessListener(

@@ -17,7 +17,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSuppo
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowPanel
-import org.jetbrains.plugins.notebooks.jupyter.variables.inline.JupyterInlineCallback
 import java.awt.BorderLayout
 import java.awt.event.MouseEvent
 
@@ -32,7 +31,7 @@ class KotlinNotebookVarsToolWindow(
             "kotlin.jupyter.toolbar.tabs.variables"
         )
 
-    override fun initVariablesView(frameVarsCallback: JupyterInlineCallback?) {
+    override fun initVariablesView() {
         if (project.isDisposed || !project.shouldShowNotebookVariables) {
             showMessage(
                 KotlinNotebookBundle.message("kotlin.jupyter.debug.node.default.message")

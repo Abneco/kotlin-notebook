@@ -30,9 +30,9 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRunt
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.NotebookPathProvider
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.ui.JupyterErrorReporter
-import org.jetbrains.plugins.notebooks.jupyter.debugger.DebugConnectionNotifier
-import org.jetbrains.plugins.notebooks.jupyter.debugger.OutputConsumer
+import org.jetbrains.plugins.notebooks.jupyter.debugger.common.DebugConnectionNotifier
 import org.jetbrains.plugins.notebooks.jupyter.debugger.common.NotebookDebugRunner
+import org.jetbrains.plugins.notebooks.jupyter.debugger.common.OutputConsumer
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
 import java.util.concurrent.TimeUnit

@@ -35,7 +35,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.debugger.JupyterSessionPath
+import org.jetbrains.plugins.notebooks.jupyter.debugger.common.JupyterSessionPath
 import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
