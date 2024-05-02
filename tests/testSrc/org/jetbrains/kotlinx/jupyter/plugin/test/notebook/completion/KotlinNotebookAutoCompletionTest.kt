@@ -87,7 +87,7 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
     private fun doTest(action: (CompletionAutoPopupTester) -> Unit) {
         myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
         invokeAndWaitIfNeeded {
-            setMode(NotebookEditorMode.EDIT)
+            myFixture.editor.setMode(NotebookEditorMode.EDIT)
         }
         originalVirtualFile = myFixture.file.virtualFile
 

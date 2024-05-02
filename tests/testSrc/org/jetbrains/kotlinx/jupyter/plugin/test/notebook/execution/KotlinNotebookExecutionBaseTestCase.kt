@@ -103,7 +103,7 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
             isCopyToProject = copyNotebookToProject,
         )
         invokeAndWaitIfNeeded {
-            setMode(NotebookEditorMode.EDIT)
+            myFixture.editor.setMode(NotebookEditorMode.EDIT)
         }
         originalVirtualFile = myFixture.file.virtualFile // `myFixture.file` may return the file which is injected inside one of the cells
         val notebookFile = runReadAction {

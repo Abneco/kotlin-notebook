@@ -27,7 +27,7 @@ abstract class RefactoringTestBase(private val refactoringActionId: String) : Ko
         originalVirtualFile = notebookFile.file
 
         invokeAndWaitIfNeeded {
-            setMode(NotebookEditorMode.EDIT)
+            myFixture.editor.setMode(NotebookEditorMode.EDIT)
 
             val caretModel = myFixture.editor.caretModel
             caretInitializer(caretModel)

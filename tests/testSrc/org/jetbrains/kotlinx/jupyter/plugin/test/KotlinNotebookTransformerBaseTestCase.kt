@@ -37,7 +37,7 @@ abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCas
         myFixture.setCaresAboutInjection(testOptions.caresAboutInjection)
         _notebookFile = notebookFactory()
       invokeAndWaitIfNeeded {
-        setMode(NotebookEditorMode.EDIT)
+        myFixture.editor.setMode(NotebookEditorMode.EDIT)
       }
         originalVirtualFile = myFixture.file.virtualFile
       setUpScriptingDependencies(myFixture)
