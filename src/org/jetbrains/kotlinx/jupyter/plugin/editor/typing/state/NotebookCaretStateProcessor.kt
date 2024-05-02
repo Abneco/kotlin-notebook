@@ -13,7 +13,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
-import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookCaretMovementEvent
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookCaretMovementProcessor
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookDaemonFinishedEvent
@@ -170,7 +169,6 @@ class NotebookCaretStateProcessor(
     private fun onDaemonFinishEvent() {
         // for proper cell move up handle
         val afterNonTrivialChange = dataController?.notebookDocumentStructureNontrivialChanged?.compareAndSet(true, false) == true
-        val isRunning = codeAnalyzerStatusService.daemonRunning
 
 
         update {
@@ -198,19 +196,7 @@ class NotebookCaretStateProcessor(
                 notebookChangedCellIndex = null
             }
 
-            // move to the daemonListener?
-            val queue = dataController?.notebookRangesQueuedForHL
-            val finished = notebookHighlightingManager?.finishedHighlighting
-            val target = notebookHighlightingManager?.completeRangeInd
-            // we don't want to lose any updates happened during concurrent modification or delay
-            val isCanModifyHLRequests = notebookHighlightingManager?.isCanModifyHLRequests(project) == true
-            if (queue != null && !finished.isNullOrEmpty() && isCanModifyHLRequests) {
-                queue.removeAll(finished)
-            }
-            if (!isRunning && notebookHighlightingManager?.daemonFinished(editor, psiFile, queue, isCanModifyHLRequests) == true) {
-                queue?.clear()
-            }
-            queue?.addIfNotNull(target) ?: Unit
+            notebookHighlightingManager?.daemonFinished(editor, psiFile)
         }
     }
 }

@@ -7,8 +7,8 @@ import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
@@ -19,35 +19,42 @@ import com.intellij.openapi.editor.ex.MarkupModelEx
 import com.intellij.openapi.editor.ex.RangeHighlighterEx
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.editor.impl.event.MarkupModelListener
+import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.util.coroutines.namedChildScope
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.SyntaxTraverser
 import com.intellij.psi.TokenType
 import com.intellij.psi.util.PsiUtilCore
-import com.intellij.psi.util.startOffset
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.containers.TreeTraversal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtPackageDirective
 import org.jetbrains.kotlin.utils.addIfNotNull
-import org.jetbrains.kotlin.utils.addToStdlib.ifNotEmpty
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingRestarter.UpdateSteps.performHLStartupTemplate
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService.Companion.HL_DELAY_PAUSE
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.shouldStartAfterPreChecks
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.shouldStartAfterPreChecks
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ImpatientNotebookChangeListener
+import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
@@ -55,11 +62,17 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
+import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
+import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFileSystem
+import org.jetbrains.plugins.notebooks.core.impl.file.originFile
+import org.jetbrains.plugins.notebooks.editor.getAllIntervalPointers
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 @Service(Service.Level.PROJECT)
 class NotebookHighlightingService(
@@ -80,7 +93,7 @@ class NotebookHighlightingService(
     companion object {
         const val HL_DELAY_PAUSE: Long = 300
         fun getInstance(project: Project) = project.service<NotebookHighlightingService>()
-        // maybe for the doc
+
         fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): NotebookHighlightingManager {
             return getInstance(project).getOrCreate(virtualFile)
         }
@@ -106,13 +119,22 @@ class NotebookHighlightingManager(
             val file: KtFile,
             val ktFileRange: TextRange,
             val injectionHost: PsiLanguageInjectionHost,
-            val injectionHostOffset: Int,
             val totalTokens: Int
         ) {
             val processedTokens = AtomicInteger(0)
         }
+
+        enum class DaemonState {
+            IDLE,
+            SETUP,
+            IN_PROGRESS,
+        }
+
+        private const val INJECTED_SYNTAX_LAYER_BORDER = HighlighterLayer.CARET_ROW - 1
     }
     private val project: Project = projectService.project
+    private val iterationLock = ReentrantReadWriteLock()
+    private val iterationState = AtomicReference(DaemonState.IDLE)
 
     val dataController = NotebookPerFileHighlightingMetaDataController(
         virtualFile,
@@ -123,14 +145,26 @@ class NotebookHighlightingManager(
     val jupyterPsiFile: PsiFile? get() = _jupyterFile
 
     private fun initializeData(restart: Boolean = false) {
-        val targetData = mutableSetOf<Int>()
-        targetData.addAll(
-            virtualFile.file.toPsiFile(project).getNotebookCells().indices
-        )
-        dataController.update {
-            notebookRangesQueuedForHL = targetData
-            notebookDocumentStructureNontrivialChanged.set(false)
+        iterationLock.withWriteLock {
+            val targetData = mutableSetOf<Int>()
+            // if NotebookVirtualFileSystem is not ready yet
+            val currentVFile = if (virtualFile !is BackedNotebookVirtualFile) {
+                NotebookVirtualFileSystem.getNotebookVirtualFileSystem().refreshAndFindFileByPath(virtualFile.originFile.path)!!
+            } else virtualFile.file
+
+            val editorState = (FileEditorManager.getInstance(project).getSelectedEditor(currentVFile) as? TextEditor)?.editor
+            val cells = if (editorState != null) {
+                getAllIntervalPointers(editorState).mapNotNull { it.get()?.ordinal }
+            } else virtualFile.file.toPsiFile(project).getNotebookCells().indices
+
+            targetData.addAll(cells)
+
+            dataController.update {
+                notebookRangesQueuedForHL = targetData
+                notebookDocumentStructureNontrivialChanged.set(false)
+            }
         }
+
         if (virtualFile.file.isKotlinNotebook && !restart) {
             _jupyterFile = virtualFile.file.toPsiFile(project)
             document.addDocumentListener(
@@ -143,8 +177,8 @@ class NotebookHighlightingManager(
     private fun Disposable.addListener() {
         val targetFile = virtualFile
         project.messageBus.connect(this).subscribe(
-          NotebookSessionEventListener.TOPIC,
-          object : NotebookSessionEventListener {
+            NotebookSessionEventListener.TOPIC,
+            object : NotebookSessionEventListener {
                 override fun sessionStarted(virtualFile: BackedNotebookVirtualFile, isAfterRestart: Boolean) {
                     if (targetFile != virtualFile || !isAfterRestart) return
 
@@ -183,23 +217,24 @@ class NotebookHighlightingManager(
     private var targetPsiFile: PsiFile? = null
     private var activeCaretListener: NotebookCaretListener? = null
     private lateinit var activeMarkupModelListener: MarkupModelListener
-    private val requestWasCompleted = AtomicBoolean(false)
     private val finishedFiles = mutableSetOf<Int>()
     private val targetErrorHighlighters = ConcurrentCollectionFactory.createConcurrentSet<RangeHighlighter>()
     private val knownErrorInd = ConcurrentHashMap<Int, MutableSet<RangeHighlighter>>()
     private val targetIndexes: Set<Int>
-        get() = fileToInjectionData.mapTo(mutableSetOf()) { it.value.notebookCellIndex }
-    val finishedHighlighting: Set<Int>
+        get() = iterationLock.withReadLock { fileToInjectionData.mapTo(mutableSetOf()) { it.value.notebookCellIndex } }
+    private val finishedHighlighting: Set<Int>
         get() = try {
             finishedFiles - (knownErrorInd.keys - (completeRangeInd ?: -1))
-        } catch (ex: Exception) { completeRangeInd?.let { setOf(it) } ?: emptySet() }
+        } catch (ex: Exception) {
+            completeRangeInd?.let { setOf(it) } ?: emptySet()
+        }
 
     private val remainingIndexesToProcess: Set<Int>
         get() = targetIndexes - finishedHighlighting
 
     private val unrecognizedFiles: ConcurrentLinkedDeque<PsiFile> = ConcurrentLinkedDeque()
 
-    fun isCanModifyHLRequests(project: Project): Boolean =
+    private fun isCanModifyHLRequests(project: Project): Boolean =
         !JupyterKtScriptingSupport.isInTheTransaction(project)
 
     fun tryGetKnownHostFor(file: PsiFile): PsiLanguageInjectionHost? {
@@ -216,10 +251,20 @@ class NotebookHighlightingManager(
         addNewMarkupListener(editor)
     }
 
+    private fun enterSetupPhase(): Boolean {
+        return iterationState.compareAndSet(DaemonState.IDLE, DaemonState.SETUP)
+    }
+
     fun passCreated(project: Project, targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
         if (cells == null) {
             LOG.warn("Cells are null, nothing can be done")
         }
+
+        if (!enterSetupPhase()) {
+            LOG.warn("Another pass is in setup, aborting")
+            return
+        }
+
         clearState()
         val manager = InjectedLanguageManager.getInstance(project)
         targetIndexes.forEach { ind ->
@@ -237,7 +282,6 @@ class NotebookHighlightingManager(
                             ktFile,
                             ktFileRange,
                             it,
-                            it.startOffset,
                             numberOfNonWhiteSpaceLeaves(ktFile)
                         )
                         if (ind == completeRangeInd) targetPsiFile = ktFile
@@ -245,15 +289,19 @@ class NotebookHighlightingManager(
                 } ?: finishedFiles.add(ind)
             }
         }
-        targetIndexes.ifNotEmpty { requestWasCompleted.set(false) }
+        iterationState.compareAndSet(DaemonState.SETUP, DaemonState.IN_PROGRESS)
         unrecognizedFiles.clear()
         this.completeRangeInd = completeRangeInd
+        println("Finished after: ${finishedFiles.joinToString()}")
     }
 
     private fun numberOfNonWhiteSpaceLeaves(ktFile: KtFile): Int {
         return SyntaxTraverser.psiTraverser(ktFile)
             .traverse(TreeTraversal.LEAVES_DFS)
-            .count { psiLeaf -> PsiUtilCore.getElementType(psiLeaf) != TokenType.WHITE_SPACE }
+            .count { psiLeaf ->
+                PsiUtilCore.getElementType(psiLeaf) != TokenType.WHITE_SPACE
+                        && psiLeaf !is KtPackageDirective
+            }
     }
 
     private fun clearState(complete: Boolean = false) {
@@ -283,28 +331,29 @@ class NotebookHighlightingManager(
         activeCaretListener?.resetState()
     }
 
-    fun finishedAnalysisForFile(psiFile: PsiFile, holder: HighlightInfoHolder) {
+    fun finishedAnalysisForFile(psiFile: PsiFile, holder: HighlightInfoHolder) = coroutineScope.async {
         val ind = fileToInjectionData[psiFile]?.notebookCellIndex
         if (ind == null) {
             unrecognizedFiles.add(psiFile)
-            //finishedFiles.clear()
-            //dataController.notebookRangesQueuedForHL?.addAll(targetIndexes)
-            LOG.debug("Seen unrecognized file, will redo")
-            return
+            LOG.warn("Seen unrecognized file, will redo")
+            return@async
         }
 
         if (!isCanModifyHLRequests(psiFile.project)) {
-            LOG.debug("Not allowed to change $ind, will redo")
-            return
+            LOG.warn("Not allowed to change $ind, will redo")
+            return@async
         }
-        finishedFiles.addIfNotNull(ind)
+        iterationLock.withWriteLock {
+            finishedFiles.addIfNotNull(ind)
+            LOG.warn("Finished for $ind")
+        }
         if (psiFile != targetPsiFile || !holder.hasErrorResults()) {
-            runInEdt {
+            withContext(Dispatchers.EDT) {
                 knownErrorInd[ind]?.forEach { oldError ->
                     oldError.dispose()
                 }
             }
-            return
+            return@async
         }
         knownErrorInd.putIfAbsent(ind, mutableSetOf())
     }
@@ -332,7 +381,7 @@ class NotebookHighlightingManager(
             // not yet counted
             if (it.isNotEmpty()) {
                 finishedFiles.removeAll(it)
-                LOG.debug("Daemon finished, knownErrorInd: ${knownErrorInd.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
+                LOG.warn("Daemon finished, knownErrorInd: ${knownErrorInd.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
             }
         }
     }
@@ -345,57 +394,30 @@ class NotebookHighlightingManager(
             val seenHighlighters = mutableSetOf<RangeHighlighter>()
 
             markupModel.processRangeHighlightersOverlappingWith(range.startOffset, range.endOffset) {
-                if (it.layer == 1998 && (it.errorStripeTooltip as? HighlightInfo)?.text?.isNotBlank() == true && seenHighlighters.add(it)) {
+                // injected syntax is greater than regular SYNTAX
+                if ((it.layer < INJECTED_SYNTAX_LAYER_BORDER && it.layer != HighlighterLayer.ERROR) && seenHighlighters.add(it)) {
                     data.processedTokens.incrementAndGet()
                 }
                 true
             }
+            val token = data.processedTokens.get().floorDiv(2)
 
-            if (data.processedTokens.get() / 2 < data.totalTokens) {
+            if (token < data.totalTokens - 1) {
                 finishedFiles.remove(data.notebookCellIndex)
             }
         }
     }
 
     // returns true if all updates are processed
-    fun daemonFinished(editor: Editor, psiFile: PsiFile?, queue: MutableSet<Int>?, canModifyRequests: Boolean): Boolean {
-        val markup = (editor as? EditorEx)?.filteredDocumentMarkupModel ?: return true
-        val completedIndexes = finishedHighlighting
-        val executionRequestsDone = dataController
-            .executionHighlightingHelper
-            .daemonFinished(completedIndexes, queue, canModifyRequests)
+    fun daemonFinished(editor: Editor, psiFile: PsiFile?) {
+        val markup = (editor as? EditorEx)?.filteredDocumentMarkupModel ?: return
+        if (iterationState.get() == DaemonState.IDLE) return
 
-        determineFilesWithLeftErrors(markup, completeRangeInd)
-        determineHighlightedFiles(markup)
+        coroutineScope.launch {
+            if (iterationState.get() == DaemonState.IDLE) return@launch
 
-        val project = editor.project
-        if (project == null) {
-            LOG.warn("Project is null for editor $editor in file: $psiFile")
-            return true
+            processDaemonFinished(editor, psiFile, markup)
         }
-
-        val manager = InjectedLanguageManager.getInstance(project)
-        val seenNewFiles = unrecognizedFiles.isNotEmpty()
-        if (seenNewFiles) {
-            queue?.addAll(unrecognizedFiles.toCellsIndexes(manager))
-        }
-        val remaining = remainingIndexesToProcess
-        if (remaining.isEmpty()) {
-            requestWasCompleted.set(true)
-        }
-        val isLeft = remaining.isNotEmpty() || seenNewFiles
-
-        if (isLeft || !executionRequestsDone) {
-            psiFile?.let {
-                NotebookHighlightingRestarter.scheduleRegularUpdate(psiFile)
-            }
-        }
-        if (isLeft) {
-            queue?.addAll(remaining)
-        }
-        LOG.debug("Reducing queue by $completedIndexes, canModify: ${canModifyRequests}, exec requests done: $executionRequestsDone")
-
-        return !isLeft
     }
 
     fun editorPotentiallyDisposed() {
@@ -410,12 +432,76 @@ class NotebookHighlightingManager(
     override fun dispose() {
         clearState(true)
     }
+
+    @RequiresBackgroundThread
+    private suspend fun processDaemonFinished(editor: Editor, psiFile: PsiFile?, markup: MarkupModelEx) {
+        val queue = dataController.notebookRangesQueuedForHL
+        val canModifyRequests = isCanModifyHLRequests(project)
+        val target = completeRangeInd
+
+        iterationLock.withWriteLock {
+            reduceQueue(canModifyRequests)
+            queue?.addIfNotNull(target)
+            iterationState.set(DaemonState.IDLE)
+
+            val completedIndexes = finishedHighlighting
+            val executionRequestsDone = dataController
+                .executionHighlightingHelper
+                .daemonFinished(completedIndexes, queue, canModifyRequests)
+            val remaining = remainingIndexesToProcess
+
+            determineFilesWithLeftErrors(markup, completeRangeInd)
+            val manager = InjectedLanguageManager.getInstance(project)
+            val seenNewFiles = unrecognizedFiles.isNotEmpty()
+
+            readAction {
+                determineHighlightedFiles(markup)
+
+                if (seenNewFiles) {
+                    queue?.addAll(unrecognizedFiles.toCellsIndexes(manager))
+                    unrecognizedFiles.clear()
+                }
+            }
+
+            val project = editor.project
+            if (project == null) {
+                LOG.warn("Project is null for editor $editor in file: $psiFile")
+                return
+            }
+
+            //val isLeft = remaining.isNotEmpty() || seenNewFiles
+            val isLeft = remaining.isNotEmpty()
+
+            if (isLeft || !executionRequestsDone) {
+                psiFile?.let { psi ->
+                    NotebookHighlightingRestarter.scheduleRegularUpdate(psi)
+                }
+            }
+            if (isLeft) {
+                queue?.addAll(remaining)
+                dataController.update {
+                    notebookRangesQueuedForHL = queue
+                }
+            }
+            LOG.warn("Reducing queue by $completedIndexes, left: $remaining, canModify: ${canModifyRequests}, exec requests done: $executionRequestsDone")
+        }
+    }
+
+    private fun reduceQueue(canModifyRequests: Boolean) {
+        val queue = dataController.notebookRangesQueuedForHL
+        val finished = finishedHighlighting
+        // we don't want to lose any updates happened during concurrent modification or delay
+        if (queue != null && finished.isNotEmpty() && canModifyRequests) {
+            queue.removeAll(finished)
+        }
+    }
 }
 
 
 internal object NotebookHighlightingRestarter {
     private var updateJob: Job? = null
-    private val regularUpdateScope = CoroutineScope(Dispatchers.Default)
+    private val regularUpdateScope = KotlinNotebookPluginScope.global
+        .namedChildScope("NotebookHighlightingRestarter")
 
     object UpdateSteps {
 

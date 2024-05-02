@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.lang.Language
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -131,7 +131,7 @@ class JupyterCompilerService(
         coroutineScope.async {
             JupyterKtScriptingSupport.updateSynchronously(project)
 
-            readAction {
+            smartReadAction(project) {
                 notebookFiles.forEach { file ->
                     NotebookHighlightingService.getForFile(project, file).restartAnalysing()
                 }
