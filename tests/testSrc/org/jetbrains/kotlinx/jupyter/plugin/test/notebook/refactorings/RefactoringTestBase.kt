@@ -5,35 +5,25 @@ import com.intellij.openapi.application.impl.NonBlockingReadActionImpl
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.editor.CaretModel
 import com.intellij.openapi.fileEditor.FileEditorProvider
-import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
-import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterDSFileEditorProvider
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 
 abstract class RefactoringTestBase(private val refactoringActionId: String) : KotlinNotebookBaseTestCase() {
-    override lateinit var originalVirtualFile: VirtualFile
-
     override fun runInDispatchThread(): Boolean {
         return false
     }
 
     protected fun doTest(caretInitializer: (CaretModel) -> Unit) {
-        myFixture.setCaresAboutInjection(true)
         val editorProvider = FileEditorProvider.EP_FILE_EDITOR_PROVIDER.findExtension(JupyterDSFileEditorProvider::class.java)!!
-        val notebookFile = myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath, fileEditorProvider = editorProvider)
-        originalVirtualFile = notebookFile.file
+        configureTestDependencies(
+            caresAboutInjection = true,
+            fileEditorProvider = editorProvider
+        )
 
         invokeAndWaitIfNeeded {
-            myFixture.editor.setMode(NotebookEditorMode.EDIT)
-
             val caretModel = myFixture.editor.caretModel
             caretInitializer(caretModel)
         }
-
-        JupyterKtScriptingSupport.updateSynchronously(project)
 
         myFixture.performEditorAction(refactoringActionId)
 

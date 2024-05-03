@@ -1,21 +1,13 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion
 
-import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.LookupFinishMode
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
-import org.jetbrains.kotlinx.jupyter.plugin.test.setUpScriptingDependencies
-import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 import org.junit.Test
 
 class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
-    override lateinit var originalVirtualFile: VirtualFile
-
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/autocompletion"
 
     @Test
@@ -85,13 +77,10 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
     private val lookupStrings: List<String> get() = myFixture?.lookupElementStrings.orEmpty()
 
     private fun doTest(action: (CompletionAutoPopupTester) -> Unit) {
-        myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
-        invokeAndWaitIfNeeded {
-            myFixture.editor.setMode(NotebookEditorMode.EDIT)
-        }
-        originalVirtualFile = myFixture.file.virtualFile
-
-        setUpScriptingDependencies(myFixture)
+        configureTestDependencies(
+            copyNotebookToProject = false,
+            caresAboutInjection = false
+        )
 
         val completionTester = CompletionAutoPopupTester(myFixture)
         completionTester.runWithAutoPopupEnabled {

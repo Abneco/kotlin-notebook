@@ -9,7 +9,6 @@ import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.ProcessCanceledException
-import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
@@ -48,6 +47,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.allSourceRoots
 import org.jetbrains.kotlinx.jupyter.plugin.util.anyOf
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
+import org.jetbrains.kotlinx.jupyter.plugin.util.invokeNow
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafelyTyped
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
@@ -166,12 +166,7 @@ class JupyterCompilerPerFileService(
             SCRIPTING_SUPPORT_TOPIC,
             scriptingSupportAfterUpdateListener
         )
-
         externalDependenciesProvider.startIfNotStarted()
-        // We need to ensure we have all dependencies before the test started
-        if (ApplicationManager.getApplication().isUnitTestMode) {
-            externalDependenciesProvider.join()
-        }
     }
 
     fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
@@ -227,7 +222,7 @@ class JupyterCompilerPerFileService(
     private fun updateClasspathWithExternalDependencies() {
         ThreadingAssertions.assertBackgroundThread()
 
-        runBlockingCancellable {
+        coroutineScope.invokeNow {
             if (anyOf(
                 ::updateClasspathWithKernelJars,
                 ::updateClasspathWithProjectArtifactsAsync,
