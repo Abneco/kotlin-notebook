@@ -19,10 +19,13 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.PsiManager
+import com.intellij.psi.util.childLeafs
 import com.intellij.psi.util.parentOfType
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtScript
+import org.jetbrains.kotlin.psi.psiUtil.getChildOfType
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.find
@@ -97,6 +100,9 @@ fun PsiFile?.getNotebookValidCells() = getNotebookCells().filter { it.isValid &&
 
 fun PsiFile?.getNotebookCells() =
   (this?.children?.first() as? JupyterNotebook)?.psiCellList.orEmpty()
+
+fun KtFile.isNonEmptyScript() =
+    getChildOfType<KtScript>()?.childLeafs()?.any() ?: false
 
 fun PsiLanguageInjectionHost.getInjectedKtFiles(injectedLanguageManager: InjectedLanguageManager) =
     injectedLanguageManager.getInjectedPsiFiles(this)?.map { it.first }?.filterIsInstance<KtFile>().orEmpty()

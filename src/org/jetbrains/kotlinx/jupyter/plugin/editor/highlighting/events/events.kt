@@ -7,7 +7,7 @@ import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 
 sealed class NotebookHighlightingEvent
 
-object NotebookDaemonFinishedEvent : NotebookHighlightingEvent()
+data object NotebookDaemonFinishedEvent : NotebookHighlightingEvent()
 
 sealed class NotebookExecutionRelatedEvent(val isAfterSeriesOfRuns: Boolean = false) : NotebookHighlightingEvent()
 

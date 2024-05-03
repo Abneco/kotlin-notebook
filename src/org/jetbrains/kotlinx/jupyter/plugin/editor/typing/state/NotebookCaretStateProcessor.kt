@@ -4,15 +4,13 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.typing.state
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
+import com.intellij.platform.util.coroutines.childScope
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.util.runIf
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookCaretMovementEvent
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookCaretMovementProcessor
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookDaemonFinishedEvent
@@ -21,6 +19,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookH
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingManager
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCellHighlightingTrigger
+import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.toDocument
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
@@ -34,7 +33,7 @@ import kotlin.math.min
 
 class NotebookCaretStateProcessor(
     val editor: Editor,
-    private val project: Project,
+    project: Project,
     private val notebookHighlightingManager: NotebookHighlightingManager?,
     private val highlightingStarter: NotebookCellHighlightingTrigger
 ) : NotebookCaretMovementProcessor, NotebookDaemonFinishedEventProcessor {
@@ -42,10 +41,10 @@ class NotebookCaretStateProcessor(
     private val dataController = notebookHighlightingManager?.dataController
     private val psiFile = editor.virtualFile.toPsiFile(project)
     private val document = psiFile?.toDocument()
-    private val codeAnalyzerStatusService = DaemonCodeAnalyzerStatusService.getInstance(project)
     private val fastUpdateQueueGuardMark = AtomicReference(false)
 
-    private val updateScope = CoroutineScope(Dispatchers.Default)
+    private val updateScope = KotlinNotebookPluginScope.global
+        .childScope("NotebookCaretStateProcessor for ${editor.virtualFile.name}")
     internal val stateLock = ReentrantReadWriteLock()
 
     private var lastCellInd: Int = -1
