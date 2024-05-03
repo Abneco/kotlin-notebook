@@ -137,8 +137,7 @@ class KernelProcessFactory : KernelRunnableFactory {
         val binDir = File(javaHome).absoluteFile.resolve("bin")
         val javaExecutable = sequenceOf("java.exe", "java")
             .map { executableName -> binDir.resolve(executableName) }
-            .takeWhile { executable -> executable.exists() }
-            .firstOrNull()
+            .firstOrNull { executable -> executable.exists() }
 
         return javaExecutable?.absolutePath ?: "java"
     }

@@ -69,17 +69,3 @@ internal class KotlinNotebookBooleanProperty(name: @Nls String, defaultValue: Bo
         return if (this) BooleanNode.TRUE else BooleanNode.FALSE
     }
 }
-
-internal class KotlinNotebookModeProperty(name: String, defaultValue: NotebookMode): KotlinNotebookProperty<NotebookMode>(name, defaultValue) {
-    override fun JsonNode.toValue(): NotebookMode {
-        return if (this.isTextual) {
-            NotebookMode.entries.firstOrNull { it.id == this.textValue() } ?: defaultValue
-        } else {
-            defaultValue
-        }
-    }
-
-    override fun NotebookMode.toNode(): JsonNode {
-        return TextNode(this.id)
-    }
-}
