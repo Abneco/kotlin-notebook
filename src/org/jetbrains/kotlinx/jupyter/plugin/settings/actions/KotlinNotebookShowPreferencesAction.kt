@@ -6,9 +6,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.DumbAwareAction
-import kotlinx.coroutines.async
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookConfigurable
-import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 
 class KotlinNotebookShowPreferencesAction : DumbAwareAction() {
@@ -23,8 +21,6 @@ class KotlinNotebookShowPreferencesAction : DumbAwareAction() {
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        KotlinNotebookPluginScope.global.async {
-            ShowSettingsUtil.getInstance().showSettingsDialog(e.project, KotlinNotebookConfigurable::class.java)
-        }
+        ShowSettingsUtil.getInstance().showSettingsDialog(e.project, KotlinNotebookConfigurable::class.java)
     }
 }
