@@ -9,9 +9,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOp
 import org.jetbrains.plugins.notebooks.jupyter.editor.isJupyter
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterTableOutputDataKey
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.getOutputsForIndex
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.util.createTableOutputDataKey
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterExecuteResultOutput
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutputType
-import org.jetbrains.plugins.notebooks.jupyter.tables.newapi.createTableOutputDataKey
 import org.jetbrains.plugins.notebooks.tables.api.DSTableText
 import org.jetbrains.plugins.notebooks.tables.api.DSTableDataType
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines

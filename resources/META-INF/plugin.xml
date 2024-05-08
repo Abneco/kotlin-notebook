@@ -90,6 +90,7 @@
 
         <module name="intellij.notebooks.ui"/>
         <module name="intellij.notebooks.visualization"/>
+        <module name="intellij.notebooks.tables"/>
 
         <plugin id="intellij.jupyter"/>
 
@@ -296,7 +297,8 @@
         <editor.outputs.notebookOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeOutputDataKeyExtractor" order="first"/>
         <editor.outputs.notebookObjectOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputDataKeyExtractor"/>
         <editor.outputs.notebookOutputComponentFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputComponentFactory"/>
-        <tables.externalPluginsTableDataProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeTableDataProvider"/>
+        <tables.tableDataProviderFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeTableDataProvider"/>
+        <tables.tableDataTypeDetector implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeTableDataProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">

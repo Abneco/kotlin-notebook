@@ -7,27 +7,31 @@ import com.fasterxml.jackson.core.StreamReadConstraints
 import com.fasterxml.jackson.core.exc.StreamConstraintsException
 import com.fasterxml.jackson.core.json.JsonReadFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.database.datagrid.HierarchicalColumnsDataGridModel.HierarchicalGridColumn
 import com.intellij.database.datagrid.NestedTablesDataGridModel.NestedTableCellCoordinate
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.containers.tail
-import com.jetbrains.python.debugger.pydev.TableCommandType
-import com.jetbrains.python.debugger.pydev.tables.CommandOutputType
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
+import org.jetbrains.plugins.notebooks.jupyter.tables.newapi.TableDataTypeDetector
+import com.intellij.notebooks.tables.CommandOutputType
 import org.jetbrains.plugins.notebooks.tables.DSTableBundle
 import org.jetbrains.plugins.notebooks.tables.DSTableData
 import org.jetbrains.plugins.notebooks.tables.DSTableDataException
 import org.jetbrains.plugins.notebooks.tables.DataId
-import org.jetbrains.plugins.notebooks.tables.ExternalTableDataProviderFactory
+import com.intellij.notebooks.tables.TableCommandType
 import org.jetbrains.plugins.notebooks.tables.api.DSDataFrameInfo
 import org.jetbrains.plugins.notebooks.tables.api.DSTableCommandExecutor
 import org.jetbrains.plugins.notebooks.tables.api.DSTableDataProvider
 import org.jetbrains.plugins.notebooks.tables.api.DSTableDataType
+import org.jetbrains.plugins.notebooks.tables.api.DSTableText
 import org.jetbrains.plugins.notebooks.tables.api.NestedTableDataProvider
+import org.jetbrains.plugins.notebooks.tables.api.TableDataProviderFactory
 import java.io.IOException
 import java.util.*
 import javax.swing.RowSorter
@@ -38,8 +42,19 @@ internal const val DEFAULT_JSON_MAX_LENGTH = 100000000
 
 private const val JSON_MAX_STRING_LENGTH = "jupyter.notebook.json.maxStringLength"
 
-class KotlinDataframeTableDataProvider : ExternalTableDataProviderFactory {
-    override fun getDataProviderCapableToParseDataOrNull(serializedData: String?): DSTableDataProvider? {
+class KotlinDataframeTableDataProvider : TableDataProviderFactory, TableDataTypeDetector {
+    override fun getTableDataProvider(project: Project, type: DSTableDataType, text: DSTableText): DSTableDataProvider? {
+        if (type != DSTableDataType.EXTERNAL) return null
+        val plainText = text.plainText
+        return getDataProviderCapableToParseDataOrNull(plainText)
+    }
+
+    override fun detectTableType(dataObject: ObjectNode, hasOutputInCurrentSession: Boolean): DSTableDataType? {
+        return if (getDataProviderCapableToParseDataOrNull(dataObject.toString()) != null) DSTableDataType.EXTERNAL
+        else null
+    }
+
+    fun getDataProviderCapableToParseDataOrNull(serializedData: String?): DSTableDataProvider? {
         if (!KotlinNotebookApplicationOptions.get().showDataFrameAsSwing) return null
         if (serializedData == null || !KotlinDataframeParsing.isFormatSupported(serializedData)) return null
 
