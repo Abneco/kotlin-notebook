@@ -69,7 +69,7 @@ class NotebookCaretStateProcessor(
         }
     }
 
-    override fun isShouldProcess(event: NotebookHighlightingEvent): Boolean {
+    override fun shouldProcess(event: NotebookHighlightingEvent): Boolean {
         if (event is NotebookDaemonFinishedEvent) return true
         if (event !is NotebookCaretMovementEvent) return false
 

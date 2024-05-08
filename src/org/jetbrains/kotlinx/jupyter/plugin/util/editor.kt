@@ -2,7 +2,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
@@ -23,12 +22,12 @@ internal fun Project.getSelectedKotlinNotebookFileOrNull(): BackedNotebookVirtua
     return editor.virtualFile?.toKotlinNotebookBackedFile()
 }
 
-internal fun Project.getOpenedKotlinNotebookEditors(): Collection<FileEditor>? {
+internal fun Project.getOpenedKotlinNotebookEditors(): Collection<TextEditor>? {
     val editorManager = FileEditorManager.getInstance(this)
 
     return editorManager.openFiles.mapNotNull {
         it.toKotlinNotebookBackedFile()
     }.mapNotNull {
-        editorManager.getSelectedEditor(it.file)
+        editorManager.getSelectedEditor(it.file) as? TextEditor
     }.ifEmpty { return null }
 }

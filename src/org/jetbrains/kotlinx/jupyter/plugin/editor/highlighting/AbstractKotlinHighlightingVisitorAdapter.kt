@@ -13,7 +13,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.getTopLevelFile
 
 abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingVisitor>(
-    private val isShouldUseNewHighlighting: Boolean = true // 0 if default
+    private val shouldUseNewHighlighting: Boolean = true // 0 if default
 ) : HighlightVisitor {
     private var visitor: T? = null
     protected var highlightingHelper: InjectedFileHighlightingHelper? = null

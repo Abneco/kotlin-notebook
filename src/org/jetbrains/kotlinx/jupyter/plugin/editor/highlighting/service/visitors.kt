@@ -48,7 +48,7 @@ internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlighti
                     if (it.severity == Severity.ERROR) {
                         val element = it.psiElement as? KtElement
                         element?.suppressHighlight()
-                        if (!helper.isShouldAcceptDiagnostic(it)) return@analyzeWithAllCompilerChecks
+                        if (!helper.shouldAcceptDiagnostic(it)) return@analyzeWithAllCompilerChecks
 
                         val info = convertToShadowedDeclaration(it)
 

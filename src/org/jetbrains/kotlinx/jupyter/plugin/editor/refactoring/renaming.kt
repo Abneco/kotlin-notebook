@@ -131,7 +131,7 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
         val adjustedElement = tryResolveToDeclaration(element, editor) ?: element.parent.reference?.resolve()
         if ((adjustedElement == null && !isNotebookRefactoringSupported(element.parent)) || adjustedElement?.containingFile is KtClsFile) {
             NotebookNotificationUtility.getInstance(element.project)
-                .usageRelatedFactory.showBytecodeRefactoringWarning(editor.project)
+                .usageRelatedFactory.showBytecodeRefactoringWarning()
         } else {
             val parent = tryCastParentToSuitableTarget(element)
             val properElem = adjustedElement ?: parent ?: return

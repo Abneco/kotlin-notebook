@@ -188,7 +188,7 @@ class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
     init {
         assert(tryUpdateCurrentInjectedFileTarget())
     }
-    private var isShouldHighlightErrors: Boolean = false
+    private var shouldHighlightErrors: Boolean = false
 
     private fun tryUpdateCurrentInjectedFileTarget(): Boolean {
         val highlightingManager =
@@ -197,7 +197,7 @@ class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
         targetHost = highlightingManager?.tryGetKnownHostFor(injectedFile)
             ?: injectedManager.getInjectionHost(injectedFile) ?: return false
 
-        isShouldHighlightErrors = highlightingManager?.isFileTarget(injectedFile)
+        shouldHighlightErrors = highlightingManager?.isFileTarget(injectedFile)
             ?: checkIfHostIsTargetManually()
 
         return true
@@ -210,10 +210,10 @@ class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
             (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange!!, targetHost.textRange))
     }
 
-    val isCurrentFileTarget: Boolean get() = isShouldHighlightErrors
+    val isCurrentFileTarget: Boolean get() = shouldHighlightErrors
 
     fun markTargetHost() {
-        injectedFile.putUserData(NotebookHighlightingUtilityObject.NonTargetHostErrorMark, if (isShouldHighlightErrors) null else true)
+        injectedFile.putUserData(NotebookHighlightingUtilityObject.NonTargetHostErrorMark, if (shouldHighlightErrors) null else true)
     }
 
     fun applyReceivedHighlightInfos(foundData: Collection<HighlightInfo>, holder: HighlightInfoHolder) {
@@ -231,10 +231,10 @@ class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
         }
     }
 
-    fun isShouldAcceptDiagnostic(elem: Diagnostic): Boolean {
-        val info = elem.factory.name
+    fun shouldAcceptDiagnostic(diagnostic: Diagnostic): Boolean {
+        val info = diagnostic.factory.name
         if (info.startsWith(NotebookHighlightingUtilityObject.SCRIPTING_MISSING_BASE_CLASS_ERROR)) {
-            NotebookNotificationUtility.getInstance(elem.psiFile.project)
+            NotebookNotificationUtility.getInstance(diagnostic.psiFile.project)
                 .kernelRelatedFactory.showAbsentInitialBaseDependenciesInfo()
             return false
         }

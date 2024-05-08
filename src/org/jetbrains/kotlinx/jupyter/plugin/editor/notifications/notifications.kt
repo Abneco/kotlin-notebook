@@ -1,7 +1,6 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.editor.notifications
 
-import com.intellij.ide.DataManager
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
@@ -10,7 +9,6 @@ import com.intellij.notification.SingletonNotificationManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.ShowSettingsUtil
@@ -23,10 +21,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOption
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookConfigurable
 import org.jetbrains.kotlinx.jupyter.plugin.util.getOpenedKotlinNotebookEditors
 import org.jetbrains.kotlinx.jupyter.plugin.util.toKotlinNotebookBackedFile
-import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterEditorActionsUtils
-import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelAction
-import org.jetbrains.plugins.notebooks.jupyter.editor.createAnActionEvent
-import java.awt.Component
+import org.jetbrains.plugins.notebooks.jupyter.actions.restartKernel
 
 @Suppress("DialogTitleCapitalization")
 @get:NotificationTitle
@@ -53,10 +48,6 @@ abstract class NotebookNotificationFactoryBase(
             optionsProvider.addListener(it, disposable)
         }
     }
-
-    protected fun Component.createActionContextFromComponent(): DataContext {
-        return DataManager.getInstance().getDataContext(this)
-    }
 }
 
 internal class NotebookKernelRelatedNotificationFactory(project: Project) : NotebookNotificationFactoryBase(project) {
@@ -72,7 +63,7 @@ internal class NotebookKernelRelatedNotificationFactory(project: Project) : Note
         data object SessionRunModeChanged : KernelStatus()
     }
 
-    private inner class NotebookKernelSettingsChangesListener() : KotlinNotebookProjectOptionsProvider.Listener {
+    private inner class NotebookKernelSettingsChangesListener : KotlinNotebookProjectOptionsProvider.Listener {
         override fun onKernelRunModeChanged() {
             showNotification(KernelStatus.SessionRunModeChanged)
         }
@@ -153,7 +144,7 @@ internal class NotebookKernelRelatedNotificationFactory(project: Project) : Note
         val notebookEditors = project.getOpenedKotlinNotebookEditors()?.filter {
             val vFile = it.file.toKotlinNotebookBackedFile() ?: return@filter false
             JupyterCompilerService.getForFile(project, vFile).executedCellsCount != 0
-        } ?: return
+        }?.ifEmpty { return } ?: return
 
         val additionalMsg = if (notebookEditors.size == 1) {
             " in ${notebookEditors.first().file.name} file"
@@ -172,16 +163,8 @@ internal class NotebookKernelRelatedNotificationFactory(project: Project) : Note
                 KotlinNotebookBundle.message("action.RestartKotlinNotebookSession.text", additionalMsg)
             ) {
                 override fun actionPerformed(e: AnActionEvent, notification: Notification) {
-                    val restartAction = JupyterEditorActionsUtils.getAction(JupyterRestartKernelAction::class.java)
-
-                    notebookEditors.forEach { editor ->
-                        restartAction.apply {
-                            actionPerformed(
-                                createAnActionEvent(
-                                    editor.component.createActionContextFromComponent()
-                                )
-                            )
-                        }
+                    notebookEditors.forEach { textEditor ->
+                        restartKernel(textEditor.editor)
                     }
 
                     notification.expire()
@@ -203,13 +186,13 @@ internal class NotebookUsageRelatedNotificationFactory(project: Project) : Noteb
         if (mark !is ActionRelated) return
 
         when (mark) {
-            is ActionRelated.ByteCodeRefactoring -> showBytecodeRefactoringWarning(project)
-            is ActionRelated.RerunActionNeeded -> showRerunActionNeeded(project)
-            is ActionRelated.UsagesRefactoring -> showRefactoringExistingUsagesMessage(project, additionalMsg.toIntOrNull() ?: 0)
+            is ActionRelated.ByteCodeRefactoring -> showBytecodeRefactoringWarning()
+            is ActionRelated.RerunActionNeeded -> showRerunActionNeeded()
+            is ActionRelated.UsagesRefactoring -> showRefactoringExistingUsagesMessage(additionalMsg.toIntOrNull() ?: 0)
         }
     }
 
-    fun showRerunActionNeeded(project: Project?) {
+    fun showRerunActionNeeded() {
         sessionInfoNotifier.notify(
             kotlinNotebookTitle,
             KotlinNotebookBundle.message("kotlin.jupyter.refactor.changed.definition.rerun"),
@@ -217,7 +200,7 @@ internal class NotebookUsageRelatedNotificationFactory(project: Project) : Noteb
         )
     }
 
-    fun showBytecodeRefactoringWarning(project: Project?) {
+    fun showBytecodeRefactoringWarning() {
         sessionWarnNotifier.notify(
             kotlinNotebookTitle,
             KotlinNotebookBundle.message("kotlin.jupyter.refactor.compiled.script"),
@@ -225,7 +208,7 @@ internal class NotebookUsageRelatedNotificationFactory(project: Project) : Noteb
         )
     }
 
-    fun showRefactoringExistingUsagesMessage(project: Project?, usagesCount: Int) {
+    fun showRefactoringExistingUsagesMessage(usagesCount: Int) {
         sessionInfoNotifier.notify(
             kotlinNotebookTitle,
             KotlinNotebookBundle.message("kotlin.jupyter.refactor.changed.definition", usagesCount),

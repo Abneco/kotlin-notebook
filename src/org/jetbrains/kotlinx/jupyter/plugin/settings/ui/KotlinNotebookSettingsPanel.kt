@@ -31,6 +31,7 @@ import com.intellij.ui.layout.ComponentPredicate
 import com.intellij.util.execution.ParametersListUtil
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
+import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinKernelVersions.DEBUG_SUPPORTED
@@ -54,6 +55,8 @@ object KotlinNotebookSettingsPanel {
         val applicationOptions = KotlinNotebookApplicationOptions.get()
         val sessionOptions = service<SessionOptionsProvider>()
         val projectOptions = KotlinNotebookProjectOptionsProvider.getInstance(project)
+        // guarantee service is initialized
+        NotebookNotificationUtility.getInstance(project)
         val mavenSelectorCellRef: Ref<Cell<MavenVersionComboBox>> = Ref.create(null)
 
         return panel {

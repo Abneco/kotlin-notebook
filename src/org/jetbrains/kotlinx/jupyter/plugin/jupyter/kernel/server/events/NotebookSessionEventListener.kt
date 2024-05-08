@@ -6,7 +6,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.util.EventListener
 
 /**
- * Interface for being notified about events related to session lifecycle.
+ * Interface for being notified about events related to the session lifecycle.
  * Designed to be used across the Kotlin Notebook plugin.
  */
 interface NotebookSessionEventListener : EventListener {

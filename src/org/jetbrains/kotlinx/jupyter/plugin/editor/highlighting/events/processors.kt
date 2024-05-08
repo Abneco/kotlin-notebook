@@ -8,7 +8,7 @@ import kotlin.math.min
 
 
 interface NotebookEventProcessor {
-    fun isShouldProcess(event: NotebookHighlightingEvent): Boolean
+    fun shouldProcess(event: NotebookHighlightingEvent): Boolean
 
     fun process(event: NotebookHighlightingEvent)
 
@@ -16,7 +16,7 @@ interface NotebookEventProcessor {
 
     fun onEventHappened(event: NotebookHighlightingEvent) {
         processEventAdapter(event)
-        if (!isShouldProcess(event)) return
+        if (!shouldProcess(event)) return
 
         process(event)
     }
@@ -24,7 +24,7 @@ interface NotebookEventProcessor {
 
 
 interface NotebookDaemonFinishedEventProcessor : NotebookEventProcessor {
-    override fun isShouldProcess(event: NotebookHighlightingEvent): Boolean = event is NotebookDaemonFinishedEvent
+    override fun shouldProcess(event: NotebookHighlightingEvent): Boolean = event is NotebookDaemonFinishedEvent
 }
 
 
@@ -55,7 +55,7 @@ interface NotebookCaretMovementProcessor : NotebookEventProcessor {
 
 
 interface NotebookExecutionRelatedEventsProcessor : NotebookEventProcessor {
-    override fun isShouldProcess(event: NotebookHighlightingEvent): Boolean =
+    override fun shouldProcess(event: NotebookHighlightingEvent): Boolean =
         event is NotebookExecutionRelatedEvent
 
     override fun process(event: NotebookHighlightingEvent) {
