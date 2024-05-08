@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.util
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.util.coroutines.namedChildScope
+import com.intellij.platform.util.coroutines.childScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -51,7 +51,7 @@ abstract class NotebookProjectLevelService<Child : NotebookPerFileChildService>(
         return mapping.getOrPut(virtualFile.file) {
             createInstance(
                 virtualFile,
-                coroutineScope.namedChildScope(
+                coroutineScope.childScope(
                     "Child scope for ${virtualFile.file.name} of service ${this::class.simpleName}"
                 )
             )
