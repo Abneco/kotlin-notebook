@@ -39,10 +39,11 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
 
     protected lateinit var jupyterSession: JupyterNotebookSession
 
-    protected val injectionFixture = InjectionTestFixture(myFixture)
+    protected lateinit var injectionFixture: InjectionTestFixture
 
     override fun setUp() {
         setUpWithKotlinPlugin { super.setUp() }
+        injectionFixture = InjectionTestFixture(myFixture)
         myFixture.project.messageBus.connect(project).subscribe(
             NotebookCodeSnippetsChangeListener.TOPIC,
             object : NotebookCodeSnippetsChangeListener {
@@ -88,7 +89,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
             fileEditorProvider = fileEditorProvider
         )
         invokeAndWaitIfNeeded {
-            setMode(NotebookEditorMode.EDIT)
+            myFixture.editor.setMode(NotebookEditorMode.EDIT)
         }
         originalVirtualFile = myFixture.file.virtualFile // `myFixture.file` may return the file which is injected inside one of the cells
         val notebookFile = runReadAction {
@@ -101,6 +102,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
 
         return notebookFile
     }
+
     @JvmField
     @Rule
     val kotlinNotebookCommonRule = JupyterCommonRule(

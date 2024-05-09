@@ -4,7 +4,9 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.codeinsight.quickfix
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.IntentionActionDelegate
 import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.command.CommandProcessor
+import com.intellij.openapi.application.impl.NonBlockingReadActionImpl
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.text.StringUtil
@@ -34,8 +36,8 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
 
     protected var shouldBeAvailableAfterExecution: Boolean = true
 
-    protected fun findActionWithText(name: String, strict: Boolean = false): IntentionAction? {
-        for (action in myFixture.availableIntentions) {
+    protected fun findActionWithText(intentions: Iterable<IntentionAction>?, name: String, strict: Boolean = false): IntentionAction? {
+        for (action in (intentions ?: myFixture.availableIntentions)) {
             if (if (strict) { name == action.text } else action.text.startsWith(name)) {
                 return action
             }
@@ -44,18 +46,19 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
     }
 
 
-    private fun applyAction(contents: String, fileName: String? = null ) {
+    private fun applyAction(topLevelEditor: Editor, topLevelFile: PsiFile, contents: String, fileName: String? = null ) {
         val actionHint = contents.substringAfter("// ").substringBefore("\n").split('\"').filter { it.isNotBlank() && it.isNotEmpty() }
         assert(actionHint.size == 2) { "Action should be in format \"action\" \"true or false\" " }
         val expectedText = actionHint[0]
         val shouldBePresent = actionHint[1].toBoolean()
+        val intentions = CodeInsightTestFixtureImpl.getAvailableIntentions(topLevelEditor, topLevelFile)
 
-        val intention = findActionWithText(expectedText)
+        val intention = findActionWithText(intentions, expectedText)
         if (shouldBePresent) {
             if (intention == null) {
                 fail(
                     "Action with text '" + expectedText + "' not found\nAvailable actions:\n" +
-                            myFixture.availableIntentions.joinToString(separator = "\n") { "// \"${it.text}\" \"true\"" })
+                            intentions.joinToString(separator = "\n") { "// \"${it.text}\" \"true\"" })
                 return
             }
 
@@ -70,10 +73,10 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
                 }
 
                 UIUtil.dispatchAllInvocationEvents()
-                UIUtil.dispatchAllInvocationEvents()
+                NonBlockingReadActionImpl.waitForAsyncTaskCompletion()
 
                 if (!shouldBeAvailableAfterExecution) {
-                    var action = findActionWithText(expectedText)
+                    var action = findActionWithText(null, expectedText)
                     action = if (action == null) null else IntentionActionDelegate.unwrap(action)
                     assertNull(
                         "Action '${expectedText}' (${action?.javaClass}) is still available after its invocation in test " + fileName,
@@ -93,24 +96,22 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
         }
     }
 
-    protected fun doKotlinQuickFixTest(ktFile: PsiFile, documentContent: String) = runInEdtAndWait {
-        CommandProcessor.getInstance().executeCommand(project, {
-            var fileText = ""
-            try {
-                fileText = ktFile.text
-                TestCase.assertTrue("\"<caret>\" is missing in file \"$ktFile\"",
-                                    documentContent.indexOf(CodeInsightTestFixture.CARET_MARKER) > 0
-                )
+    protected fun doKotlinQuickFixTest(topLevelEditor: Editor, topLevelFile: PsiFile, ktFile: PsiFile, documentContent: String) = runInEdtAndWait {
+        var fileText = ""
+        try {
+            fileText = ktFile.text
+            TestCase.assertTrue("\"<caret>\" is missing in file \"$ktFile\"",
+                                documentContent.indexOf(CodeInsightTestFixture.CARET_MARKER) > 0
+            )
 
-                val contents = StringUtil.convertLineSeparators(fileText)
+            val contents = StringUtil.convertLineSeparators(fileText)
 
-                applyAction(contents)
-            } catch (e: AssertionError) {
-                throw e
-            } finally {
-                ConfigLibraryUtil.unconfigureLibrariesByDirective(myFixture.module, fileText)
-            }
-        }, "", "")
+            applyAction(topLevelEditor, topLevelFile, contents)
+        } catch (e: AssertionError) {
+            throw e
+        } finally {
+            ConfigLibraryUtil.unconfigureLibrariesByDirective(myFixture.module, fileText)
+        }
     }
 
 
@@ -121,15 +122,14 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
                 ?: error("Invalid cell index provided")
         } ?: error("No suitable KtFile found in a host")
         val rawContent = FileUtil.loadFile(getTestFile(".ipynb"), true)
+        val topLevelEditor = runReadAction { injectionFixture.topLevelEditor }
 
-        // same as myFixture.doHighlighting()
-        CodeInsightTestFixtureImpl.instantiateAndRun(
-            notebookFile,
-            injectionFixture.topLevelEditor, intArrayOf(),
-            false
-        )
+        runInEdtAndWait {
+            myFixture.doHighlighting()
+        }
+        CodeInsightTestFixtureImpl.waitForUnresolvedReferencesQuickFixesUnderCaret(notebookFile, topLevelEditor)
 
-        doKotlinQuickFixTest(injectedFile, rawContent)
+        doKotlinQuickFixTest(topLevelEditor, notebookFile, injectedFile, rawContent)
     }
 
 }
