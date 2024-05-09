@@ -4,26 +4,15 @@ package org.jetbrains.kotlinx.jupyter.plugin.settings
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
-import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.MINIMUM_SUPPORTED_VERSION
-import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
-import java.util.*
+import java.util.MissingResourceException
 import kotlin.reflect.KProperty
 
 fun getSelectedKernelVersion(project: Project): String {
     return KotlinNotebookProjectOptionsProvider.getInstance(project).kernelVersion
 }
 
-val String.isKernelVersionEnoughForInstrumentation: Boolean
-    get() {
-        val comparator = KotlinKernelVersion.STRING_VERSION_COMPARATOR
-
-        return comparator.compare(this, MINIMUM_SUPPORTED_VERSION) >= 0
-    }
-
-val Project.isKernelVersionEnoughForInstrumentation: Boolean
-    get() = KotlinNotebookProjectOptionsProvider.getInstance(this)
-        .kernelVersion.isKernelVersionEnoughForInstrumentation
-            && debugFeaturesEnabled
+val Project.selectedNotebookKernelVersion: KotlinKernelVersion?
+    get() = KotlinKernelVersion.fromMavenVersion(getSelectedKernelVersion(this))
 
 internal class RegistryFlagDelegate(private val name: String, private val defaultValue: Boolean) {
     operator fun getValue(thisRef: Any?, property: KProperty<*>): Boolean {

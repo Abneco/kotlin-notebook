@@ -11,8 +11,8 @@ import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
 import com.intellij.xdebugger.frame.XCompositeNode
 import com.intellij.xdebugger.frame.XStackFrame
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSession
-import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.shouldShowNotebookVariables
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.createScreeningAttachment
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.shouldShowNotebookVariables
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug

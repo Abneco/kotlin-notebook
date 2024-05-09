@@ -7,8 +7,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.impl.actions.handlers.XDebuggerEvaluateActionHandler
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
-import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.getNotebookXSessionOrNull
-import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.isEvaluationPossible
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.getNotebookXSessionOrNull
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.isEvaluationPossible
 import org.jetbrains.kotlinx.jupyter.plugin.util.getKotlinNotebookVirtualFile
 
 /***

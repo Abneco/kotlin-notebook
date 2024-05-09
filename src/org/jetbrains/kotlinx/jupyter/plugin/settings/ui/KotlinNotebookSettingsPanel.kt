@@ -30,10 +30,10 @@ import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.layout.ComponentPredicate
 import com.intellij.util.execution.ParametersListUtil
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
-import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.MINIMUM_SUPPORTED_VERSION
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinKernelVersions.DEBUG_SUPPORTED
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
@@ -42,6 +42,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelProcessEmbeddingEna
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelVersionEnoughForInstrumentation
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isSuitableForStartingKernel
 import org.jetbrains.kotlinx.jupyter.plugin.settings.minJdkVersion
+import org.jetbrains.kotlinx.jupyter.plugin.settings.toKotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.util.revealKotlinNotebookLocalKernelsFolder
 import kotlin.reflect.KMutableProperty0
 
@@ -244,13 +245,13 @@ object KotlinNotebookSettingsPanel {
         row {
             checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables"))
                 .accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.description"))
-                .comment(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.comment", MINIMUM_SUPPORTED_VERSION))
+                .comment(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.comment", DEBUG_SUPPORTED.toMavenVersion()))
                 .bindSelected(optionsProvider::shouldShowNotebookVariables)
                 .applyToComponent {
                     toolTipText = KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.comment")
 
                     selectorRef?.onChanged {
-                        isEnabled = it.version.isKernelVersionEnoughForInstrumentation
+                        isEnabled = it.toKotlinKernelVersion?.isKernelVersionEnoughForInstrumentation ?: false
                     }
                 }
         }

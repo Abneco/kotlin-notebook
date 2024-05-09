@@ -7,7 +7,7 @@ import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.openapi.project.Project
 import com.sun.jdi.event.LocatableEvent
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
-import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.shouldShowNotebookVariables
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.shouldShowNotebookVariables
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 

@@ -13,7 +13,7 @@ import com.intellij.xdebugger.impl.frame.XStandaloneVariablesView
 import org.jetbrains.kotlinx.jupyter.plugin.debug.KotlinNotebookDebugEditorsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.debug.frame.KotlinNotebookVariablesFrame
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
-import org.jetbrains.kotlinx.jupyter.plugin.debug.util.NotebookDebugSessionSupportUtils.shouldShowNotebookVariables
+import org.jetbrains.kotlinx.jupyter.plugin.debug.util.shouldShowNotebookVariables
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowPanel
