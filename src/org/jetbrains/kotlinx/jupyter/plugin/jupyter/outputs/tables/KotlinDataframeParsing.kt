@@ -7,7 +7,11 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.database.datagrid.DynamicNestedTable
 import com.intellij.database.datagrid.StaticNestedTable
+import com.intellij.database.extractors.ImageInfo
 import org.jetbrains.plugins.notebooks.tables.ColumnTreeNode
+import java.io.ByteArrayOutputStream
+import java.util.*
+import java.util.zip.GZIPInputStream
 
 
 const val KOTLIN_DATAFRAME_MIME: String = "application/kotlindataframe+json"
@@ -88,7 +92,8 @@ private class KotlinDataframeParserImpl(
     private val pathToMetadata: List<String>,
     private val isNestedFrameStatic: Boolean,
     private val extractColumnData: (JsonNode) -> JsonNode = { it },
-    private val extractNestedTablesRowNum: (JsonNode) -> Int = { (it as ArrayNode).size() }
+    private val extractNestedTablesRowNum: (JsonNode) -> Int = { (it as ArrayNode).size() },
+    private val base64Pattern: Regex = Regex("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$")
 ) : KotlinDataframeParser {
     override fun parseDataFrameInfo(serializedData: String): KotlinDataframeInfo {
         val rawJson = mapper.extractRawJson(serializedData)
@@ -217,12 +222,63 @@ private class KotlinDataframeParserImpl(
 
     private fun JsonNode.deserializePrimitive(): Any {
         return when {
-            isTextual -> asText()
+            isTextual -> {
+                val text = asText()
+                processTextPrimitive(text)
+            }
             isBoolean -> asBoolean()
             isNumber -> asNumber()
             isBinary -> binaryValue()
             isNull -> NULL
             else -> asText()
+        }
+    }
+
+    private fun processTextPrimitive(text: String): Any {
+        val bytes = tryDecodeBase64(text)?.let { bytes ->
+            if (isGzipCompressed(bytes)) {
+                decompressGzip(bytes)
+            } else {
+                bytes
+            }
+        }
+
+        return if (bytes != null) {
+            val info = ImageInfo.tryDetectImage(bytes)
+            info ?: text
+        } else {
+            text
+        }
+    }
+
+    private fun tryDecodeBase64(text: String): ByteArray? {
+        if (!base64Pattern.matches(text)) {
+            return null
+        }
+
+        return try {
+            Base64.getDecoder().decode(text)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+    }
+
+    private fun isGzipCompressed(bytes: ByteArray): Boolean {
+        return if (bytes.size < 3) {
+            false
+        } else {
+            val gzipSignature = bytes[0] == 0x1F.toByte() && bytes[1] == 0x8B.toByte() && bytes[2] == 0x08.toByte()
+            val freezeSignature = bytes[0] == 0x1F.toByte() && bytes[1] == 0x9E.toByte()
+            gzipSignature || freezeSignature
+        }
+    }
+
+    fun decompressGzip(input: ByteArray): ByteArray {
+        return ByteArrayOutputStream().use { byteArrayOutputStream ->
+            GZIPInputStream(input.inputStream()).use { inputStream ->
+                inputStream.copyTo(byteArrayOutputStream)
+            }
+            byteArrayOutputStream.toByteArray()
         }
     }
 
