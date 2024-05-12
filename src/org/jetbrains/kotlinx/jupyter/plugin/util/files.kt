@@ -46,8 +46,16 @@ fun VirtualFile.toAbsolutePath(): Path {
     return File(path).absoluteFile.toPath()
 }
 
+/**
+ * This function extracts a pretty file path as a string relative to the
+ * project's root directory with first parent.
+ *
+ * The first parent is considered, e.g.:
+ *    root/abc/a.txt -> "abc/a.txt"
+ *    root/a.txt -> "a.txt"
+ */
 @NlsSafe
-fun Path.fileNameFromProjectRoot(project: Project): String {
+fun Path.toRelativePathAsStringFromProjectRoot(project: Project): String {
     val projectPath = project.guessProjectDir()?.runCatching { toNioPath() }?.getOrNull()
     val contentPath = this
 

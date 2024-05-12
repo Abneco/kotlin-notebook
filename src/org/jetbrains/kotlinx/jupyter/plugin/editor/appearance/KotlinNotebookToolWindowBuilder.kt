@@ -16,7 +16,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessio
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.StopKotlinKernelAction
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.kotlinx.jupyter.plugin.util.fileNameFromProjectRoot
+import org.jetbrains.kotlinx.jupyter.plugin.util.toRelativePathAsStringFromProjectRoot
 import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVariablesToolWindowSetup
 import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVarsToolWindowProvider
 import org.jetbrains.plugins.notebooks.core.api.NotebookDisposable
@@ -34,7 +34,7 @@ class KotlinNotebookToolWindowBuilder(
         val variableContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.tabs.variables")
     }
     @NlsSafe
-    val windowTitle = mode.notebookPath.fileNameFromProjectRoot(mode.project)
+    val windowTitle = mode.notebookPath.toRelativePathAsStringFromProjectRoot(mode.project)
     private val virtualFile = mode.notebookVirtualFile()
 
     private val kernelContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.title", windowTitle)
