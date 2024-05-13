@@ -6,6 +6,9 @@ import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.util.concurrency.ThreadingAssertions
+import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
+import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
+import org.jetbrains.kotlin.idea.test.setUpWithKotlinPlugin
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion.finishLookup
 import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
@@ -15,7 +18,7 @@ import org.junit.runners.JUnit4
 import java.io.File
 
 @RunWith(JUnit4::class)
-abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
+abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPluginModeProvider{
     @JvmField
     @Rule
     val kotlinNotebookCommonRule = JupyterCommonRule(
@@ -23,6 +26,13 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase() {
         withProductionDataManagerRule = false,
         withClearJupyterSettings = true
     )
+
+    override val pluginMode: KotlinPluginMode
+        get() = KotlinPluginMode.K1
+
+    override fun setUp() {
+        setUpWithKotlinPlugin { super.setUp() }
+    }
 
     fun getTestFile(suffix: String): File {
         return File(testDataPath, "${getTestName(true)}$suffix")

@@ -1,4 +1,4 @@
-<idea-plugin package="org.jetbrains.kotlinx.jupyter.plugin">
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude" package="org.jetbrains.kotlinx.jupyter.plugin">
     <name>Kotlin Notebook</name>
     <id>org.jetbrains.plugins.kotlin.jupyter</id>
     <category>Tools Integration</category>
@@ -167,11 +167,6 @@
 
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.inject.JupyterKotlinIntoCellsInjector"/>
         <fileIconProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.ide.KotlinNotebookFileIconProvider" />
-        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.BeforeResolveHighlightingVisitorAdapter"/>
-        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.KotlinNotebookBeforeHighlightingVisitor"
-                          id="kotlinNotebookBeforeHighlightingVisitor"
-                          order="first"/>
-        <daemon.highlightInfoFilter implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.KotlinNotebookHighlightingErrorFilter"/>
         <formatting.injectedOptions implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.formatting.KotlinInjectedFormattingOptionsProvider"/>
 
         <fileType name="Jupyter Kotlin meta language"
@@ -195,11 +190,6 @@
         <scratch.creationHelper language="Kotlin Notebook" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.JupyterKotlinScratchCreationHelper" />
 
         <debugger.sourcePositionProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookFieldSourcePositionProvider" order="first"/>
-
-        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookReferencesTypeHintsProvider" language="Jupyter"/>
-        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookLambdaTypeHintsProvider" language="Jupyter"/>
-        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookValuesHintProvider" language="Jupyter"/>
-        <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookChainCallHintProvider" language="Jupyter"/>
 
         <liveTemplateContext contextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Generic"/>
         <liveTemplateContext contextId="KOTLIN_NOTEBOOK_STATEMENT" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Statement"/>
@@ -388,4 +378,11 @@
             <reference ref="Debugger.ViewText"/>
         </group>
     </actions>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <!--suppress PluginXmlValidity -->
+        <supportsKotlinK2Mode/>
+    </extensions>
+
+    <xi:include href="plugin.k1.xml" includeUnless="idea.kotlin.plugin.use.k2" />
 </idea-plugin>
