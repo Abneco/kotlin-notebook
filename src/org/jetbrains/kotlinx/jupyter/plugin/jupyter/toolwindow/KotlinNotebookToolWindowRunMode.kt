@@ -2,9 +2,12 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow
 
 import com.intellij.execution.impl.ConsoleViewImpl
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.content.Content
+import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelEvent
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
@@ -34,6 +37,7 @@ abstract class KotlinNotebookToolWindowRunMode(
      * should be made closable. Otherwise, it should always be present.
      */
     open fun makeToolWindowClosableWhenStoppingKernel(newContent: Content) {
+        registerContentInDisposer(newContent)
         handler.addKernelListener(object : KotlinKernelListener {
             override fun kernelTerminated(event: KotlinKernelEvent) {
                 if (!newContent.isValid || project.isDisposed || !project.isInitialized) return
@@ -42,6 +46,17 @@ abstract class KotlinNotebookToolWindowRunMode(
                 }
             }
         })
+    }
+
+    /**
+     * Registers content in the appropriate disposer based on the application mode.
+     */
+    private fun registerContentInDisposer(content: Content) {
+        if (ApplicationManager.getApplication().isUnitTestMode) {
+            Disposer.register(handler, content)
+        } else {
+            Disposer.register(KotlinNotebookSessionVariablesService.getInstance(project), content)
+        }
     }
 
     /**

@@ -6,6 +6,7 @@ import com.intellij.execution.ui.RunnerLayoutUi
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.ui.getPreferredFocusedComponent
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.ui.content.Content
@@ -58,6 +59,9 @@ class KotlinNotebookToolWindowBuilder(
             windowTitle,
             true
         )
+        ui.contents.forEach {
+            Disposer.register(mainContent, it)
+        }
         mainContent.isCloseable = false
         mainContent.helpId = id
 
