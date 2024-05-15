@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.CreateNotebookFactory
 import org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaPSIFile
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
@@ -224,11 +225,13 @@ fun setUpScriptingDependencies(fixture: CodeInsightTestFixture) {
     runInEdtAndWait {
         fixture.project.waitIndexingComplete()
         runReadAction {
+            // probably could be changed to something closer to a production API
             for (file in ktFiles) {
                 ScriptConfigurationManager.updateScriptDependenciesSynchronously(
                     file
                 )
             }
+            JupyterKtScriptingSupport.updateSynchronously(fixture.project)
         }
         IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
     }

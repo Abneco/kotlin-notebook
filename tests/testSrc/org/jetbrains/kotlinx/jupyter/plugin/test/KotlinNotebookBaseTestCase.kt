@@ -7,7 +7,6 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileEditorProvider
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
-import com.intellij.psi.impl.source.resolve.FileContextUtil
 import com.intellij.testFramework.TestLoggerFactory
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.testFramework.fixtures.InjectionTestFixture
@@ -93,7 +92,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
         }
         originalVirtualFile = myFixture.file.virtualFile // `myFixture.file` may return the file which is injected inside one of the cells
         val notebookFile = runReadAction {
-            FileContextUtil.getFileContext(myFixture.file)?.containingFile ?: myFixture.file
+            injectionFixture.topLevelFile
         }
 
         initSession(notebookFile)
