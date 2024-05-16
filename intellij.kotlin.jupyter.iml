@@ -84,7 +84,6 @@
     </orderEntry>
     <orderEntry type="library" name="commons-io" level="project" />
     <orderEntry type="module" module-name="intellij.platform.ide" />
-    <orderEntry type="module" module-name="intellij.python.jupyter.tables" />
     <orderEntry type="module" module-name="intellij.python.pydev" />
     <orderEntry type="module" module-name="intellij.platform.codeStyle.impl" />
     <orderEntry type="module" module-name="kotlin.compiler-plugins.kotlinx-serialization.common" />
@@ -116,5 +115,7 @@
     <orderEntry type="module" module-name="intellij.platform.util.coroutines" />
     <orderEntry type="module" module-name="intellij.platform.util" />
     <orderEntry type="module" module-name="intellij.notebooks.tables" />
+    <orderEntry type="module" module-name="intellij.scientific.tables" />
+    <orderEntry type="module" module-name="intellij.jupyter.core" />
   </component>
 </module>

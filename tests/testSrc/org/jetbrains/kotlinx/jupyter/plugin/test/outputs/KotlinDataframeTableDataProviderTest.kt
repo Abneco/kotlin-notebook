@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.outputs
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.intellij.scientific.tables.DataId
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.asSafely
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParserFormatV2
@@ -11,13 +12,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDatafra
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeTableDataProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
-import org.jetbrains.plugins.notebooks.tables.DataId
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import java.io.File
-
 
 @RunWith(JUnit4::class)
 class KotlinDataframeTableDataProviderTest : BasePlatformTestCase() {

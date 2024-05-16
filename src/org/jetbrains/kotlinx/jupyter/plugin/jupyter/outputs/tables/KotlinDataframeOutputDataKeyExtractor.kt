@@ -3,6 +3,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.scientific.tables.api.DSTableDataType
+import com.intellij.scientific.tables.api.DSTableText
 import com.intellij.util.asSafely
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
@@ -12,14 +14,11 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.getOutputsForIndex
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.util.createTableOutputDataKey
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterExecuteResultOutput
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutputType
-import org.jetbrains.plugins.notebooks.tables.api.DSTableText
-import org.jetbrains.plugins.notebooks.tables.api.DSTableDataType
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointerFactory
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataKey
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataKeyExtractor
-
 
 /**
  * Extract [JupyterTableOutputDataKey] from Kotlin Dataframe produced cell output
