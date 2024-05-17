@@ -1,13 +1,10 @@
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
+import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.BinaryNode
 import com.fasterxml.jackson.databind.node.BooleanNode
-import com.fasterxml.jackson.databind.node.DoubleNode
-import com.fasterxml.jackson.databind.node.FloatNode
-import com.fasterxml.jackson.databind.node.IntNode
-import com.fasterxml.jackson.databind.node.LongNode
 import com.fasterxml.jackson.databind.node.MissingNode
 import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.NumericNode
@@ -21,14 +18,9 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.floatOrNull
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.longOrNull
 import org.jetbrains.plugins.notebooks.jackson
 
 fun JsonNode.toKotlinSerializationJson(): JsonElement {
@@ -75,8 +67,8 @@ inline fun <reified T> JsonNode.deserialize(): T? {
 class JacksonJsonConversionException(node: JsonNode) :
     IllegalArgumentException("Node of type ${node::class} cannot be deserialized: $node")
 
-class KotlinxSerializationConversionException(node: JsonElement) :
-        IllegalArgumentException("Node $node cannot be converted to Jackson JSON")
+class KotlinxSerializationConversionException(node: JsonElement, cause: Throwable? = null) :
+    IllegalArgumentException("Node $node cannot be converted to Jackson JSON", cause)
 
 fun JsonElement.toJacksonJson(): JsonNode {
     return when(this) {
@@ -91,21 +83,17 @@ private fun convertPrimitive(value: JsonPrimitive): ValueNode {
     return if (value.isString) {
         TextNode(value.content)
     } else {
-        with(value) {
-            intOrNull?.let { IntNode(it) } ?:
-            longOrNull?.let { LongNode(it) } ?:
-            floatOrNull?.let { FloatNode(it) } ?:
-            doubleOrNull?.let { DoubleNode(it) } ?:
-            booleanOrNull?.let { BooleanNode.valueOf(it) } ?:
-            throw KotlinxSerializationConversionException(value)
+        try {
+            jackson.readValue(value.content, ValueNode::class.java)
+        } catch (e: JsonProcessingException) {
+            throw KotlinxSerializationConversionException(value, e)
         }
-
     }
 }
 
 private fun convertArray(array: JsonArray): ArrayNode {
     return jackson.createArrayNode().apply {
-        array.forEach { element ->
+        for (element in array) {
             add(element.toJacksonJson())
         }
     }
@@ -113,8 +101,8 @@ private fun convertArray(array: JsonArray): ArrayNode {
 
 private fun convertObject(objectNode: JsonObject): ObjectNode {
     return jackson.createObjectNode().apply {
-        objectNode.forEach { (key, node) ->
-            set<JsonNode>(key, node.toJacksonJson())
+        for (entry in objectNode) {
+            set<JsonNode>(entry.key, entry.value.toJacksonJson())
         }
     }
 }
