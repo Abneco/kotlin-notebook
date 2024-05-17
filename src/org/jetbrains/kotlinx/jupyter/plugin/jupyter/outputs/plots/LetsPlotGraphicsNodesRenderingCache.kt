@@ -12,12 +12,16 @@ class LetsPlotGraphicsNodesRenderingCache {
     private val cache = CollectionFactory.createConcurrentSoftValueMap<GraphicsNode, BufferedImage>()
 
     fun getOrCreateImage(node: GraphicsNode, create: () -> BufferedImage): BufferedImage {
-        return cache.getOrPut(node, create)
+        val image = cache.getOrPut(node, create)
+        if (cache.size > CACHE_LIMIT) cache.clear()
+        return image
     }
 
     fun removeCache(node: GraphicsNode) = cache.remove(node)
 
     companion object {
+        private const val CACHE_LIMIT = 10
+
         fun getInstance() = service<LetsPlotGraphicsNodesRenderingCache>()
     }
 }

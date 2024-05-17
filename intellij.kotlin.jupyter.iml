@@ -96,19 +96,19 @@
     <orderEntry type="library" name="jetbrains.lets.plot.shadowed" level="project" />
     <orderEntry type="module-library">
       <library name="jetbrains.lets.plot.export.shadowed" type="repository">
-        <properties maven-id="org.jetbrains.lets-plot:lets-plot-export-shadowed:4.3.0-16">
+        <properties maven-id="org.jetbrains.lets-plot:lets-plot-export-shadowed:4.3.3-16">
           <verification>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.3.0-16/lets-plot-export-shadowed-4.3.0-16.jar">
-              <sha256sum>01e2d0340c72eed7415f386771c2c37f421b23edd19727d7b137c1f13ac60f57</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.3.3-16/lets-plot-export-shadowed-4.3.3-16.jar">
+              <sha256sum>cfb82091f76a8d4e00abdd9e8161d24f774ab2213cad3e34758147a2e6963cd1</sha256sum>
             </artifact>
           </verification>
         </properties>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.3.0-16/lets-plot-export-shadowed-4.3.0-16.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.3.3-16/lets-plot-export-shadowed-4.3.3-16.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.3.0-16/lets-plot-export-shadowed-4.3.0-16-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.3.3-16/lets-plot-export-shadowed-4.3.3-16-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>

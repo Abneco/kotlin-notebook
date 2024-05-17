@@ -1,7 +1,6 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.ui.PopupHandler
@@ -19,13 +18,12 @@ import org.jetbrains.letsPlot.core.util.PlotSizeHelper
 import java.awt.Dimension
 import java.awt.event.ComponentEvent
 import java.awt.event.MouseEvent
-import javax.swing.JComponent
 import javax.swing.JPanel
 import kotlin.math.ceil
 import kotlin.math.floor
 
 class LetsPlotComponent : JBLayeredPane() {
-    private var plotPanel: JComponent? = null
+    private var plotPanel: PlotPanel? = null
     private var transparentPanel: JPanel? = null
     private var _dataKey: LetsPlotOutputDataKey? = null
     private var previousColorFlavor: LetsPlotFlavor? = null
@@ -39,7 +37,7 @@ class LetsPlotComponent : JBLayeredPane() {
 
     override fun updateUI() {
         val colorFlavor = getCurrentLetsPlotFlavor()
-        val data = _dataKey ?: return
+        val data = dataKey ?: return
         if (previousColorFlavor == colorFlavor) return
         previousColorFlavor = colorFlavor
 
@@ -74,6 +72,8 @@ class LetsPlotComponent : JBLayeredPane() {
 
     private fun clear() {
         removeAll()
+        @Suppress("SSBasedInspection")
+        plotPanel?.dispose()
         plotPanel = null
         transparentPanel = null
     }
@@ -95,7 +95,7 @@ class LetsPlotComponent : JBLayeredPane() {
             preferredSizeFromPlot = true,
             repaintDelay = 200,
             applicationContext = IdeaSwingContextBatik
-        ), Disposable {}
+        ){}
 
         plotPanel.isOpaque = true
 
