@@ -52,11 +52,12 @@ abstract class KotlinNotebookToolWindowRunMode(
      * Registers content in the appropriate disposer based on the application mode.
      */
     private fun registerContentInDisposer(content: Content) {
-        if (ApplicationManager.getApplication().isUnitTestMode) {
-            Disposer.register(handler, content)
-        } else {
-            Disposer.register(KotlinNotebookSessionVariablesService.getInstance(project), content)
-        }
+        // In tests, Editor disposal assertion comes before project disposal
+        val parentDisposable = if (ApplicationManager.getApplication().isUnitTestMode) {
+            handler
+        } else KotlinNotebookSessionVariablesService.getInstance(project)
+
+        Disposer.register(parentDisposable, content)
     }
 
     /**

@@ -59,9 +59,10 @@ class KotlinNotebookToolWindowBuilder(
             windowTitle,
             true
         )
-        ui.contents.forEach {
-            Disposer.register(mainContent, it)
+        for (childContent in ui.contents) {
+            Disposer.register(mainContent, childContent)
         }
+
         mainContent.isCloseable = false
         mainContent.helpId = id
 
