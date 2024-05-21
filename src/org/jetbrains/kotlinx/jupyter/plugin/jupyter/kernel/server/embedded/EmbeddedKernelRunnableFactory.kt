@@ -7,7 +7,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnable
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.kotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.showKotlinNotebookServerManagementToolWindow
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowManager
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
@@ -38,7 +38,8 @@ class EmbeddedKernelRunnableFactory : KernelRunnableFactory {
                     notebookPath,
                     this
                 )
-                showKotlinNotebookServerManagementToolWindow(mode)
+                KotlinNotebookToolWindowManager.getInstance(project)
+                    .showKotlinNotebookServerManagementToolWindow(mode)
             }
         }
     }

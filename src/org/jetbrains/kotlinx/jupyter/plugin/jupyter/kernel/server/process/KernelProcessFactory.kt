@@ -15,7 +15,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.Embed
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelVmCommandCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.kotlinNotebookSessionRunMode
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.showKotlinNotebookServerManagementToolWindow
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowManager
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
@@ -94,7 +94,8 @@ class KernelProcessFactory : KernelRunnableFactory {
                             notebookPath,
                             event.source
                         )
-                        showKotlinNotebookServerManagementToolWindow(mode)
+                        KotlinNotebookToolWindowManager.getInstance(project)
+                            .showKotlinNotebookServerManagementToolWindow(mode)
                     }
                 }
             })

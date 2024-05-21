@@ -154,11 +154,11 @@ class JupyterCompilerService(
 
     private fun registerKernelRestartListener() {
         ApplicationManager.getApplication().messageBus.connect(this)
-            .subscribe(JupyterRestartKernelListener.TOPIC, object : JupyterRestartKernelListener {
-                override fun inActionPerformed(notebookFile: BackedNotebookVirtualFile) {
-                    removeSession(notebookFile)
-                }
-            })
+            .subscribe(JupyterRestartKernelListener.TOPIC,
+                       JupyterRestartKernelListener { notebookFile ->
+                           removeSession(notebookFile)
+                       }
+            )
     }
 
     companion object {

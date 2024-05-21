@@ -11,12 +11,13 @@ import com.intellij.openapi.util.NlsSafe
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.ui.content.Content
 import com.intellij.ui.content.ContentFactory
+import com.intellij.ui.content.ContentManager
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.StopKotlinKernelAction
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.kotlinx.jupyter.plugin.util.toRelativePathAsStringFromProjectRoot
+import org.jetbrains.kotlinx.jupyter.plugin.util.toPresentablePathAsTabTitle
 import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVariablesToolWindowSetup
 import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVarsToolWindowProvider
 import org.jetbrains.plugins.notebooks.core.api.NotebookDisposable
@@ -28,14 +29,15 @@ import org.jetbrains.plugins.notebooks.core.api.NotebookDisposable
 class KotlinNotebookToolWindowBuilder(
   private val mode: KotlinNotebookToolWindowRunMode,
   private val id: String,
+  contentManager: ContentManager
 ) {
     companion object {
         val logContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.tabs.log")
         val variableContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.tabs.variables")
     }
-    @NlsSafe
-    val windowTitle = mode.notebookPath.toRelativePathAsStringFromProjectRoot(mode.project)
     private val virtualFile = mode.notebookVirtualFile()
+    @NlsSafe
+    val windowTitle = virtualFile.toPresentablePathAsTabTitle(mode.project, contentManager)
 
     private val kernelContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.title", windowTitle)
 

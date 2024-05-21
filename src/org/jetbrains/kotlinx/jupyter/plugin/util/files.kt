@@ -1,5 +1,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
+import com.intellij.openapi.fileEditor.impl.EditorTabPresentationUtil
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -7,8 +8,10 @@ import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.ui.content.ContentManager
 import org.jetbrains.kotlin.idea.util.sourceRoots
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.originFile
 import java.io.File
 import java.nio.file.Path
 
@@ -62,6 +65,20 @@ fun Path.toRelativePathAsStringFromProjectRoot(project: Project): String {
     return when {
         contentPath.parent == projectPath -> contentPath.fileName.toString()
         else -> "${contentPath.parent.fileName}/${contentPath.fileName}"
+    }
+}
+
+@NlsSafe
+internal fun BackedNotebookVirtualFile.toPresentablePathAsTabTitle(
+    project: Project,
+    contentManager: ContentManager
+): String {
+    val originFile = originFile
+    val simpleName = EditorTabPresentationUtil.getEditorTabTitle(project, originFile)
+    return if (contentManager.findContent(simpleName) != null) {
+        EditorTabPresentationUtil.getUniqueEditorTabTitle(project, originFile)
+    } else {
+        simpleName
     }
 }
 
