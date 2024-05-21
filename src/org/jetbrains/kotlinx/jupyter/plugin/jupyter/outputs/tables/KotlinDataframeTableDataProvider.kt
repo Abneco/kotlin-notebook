@@ -18,8 +18,8 @@ import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.containers.tail
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
-import com.intellij.notebooks.tables.CommandOutputType
-import com.intellij.notebooks.tables.TableCommandType
+import com.jetbrains.python.tables.CommandOutputType
+import com.jetbrains.python.tables.TableCommandType
 import com.intellij.scientific.tables.DSTableBundle
 import com.intellij.scientific.tables.DSTableData
 import com.intellij.scientific.tables.DSTableDataException

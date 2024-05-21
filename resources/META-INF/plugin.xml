@@ -90,7 +90,6 @@
 
         <module name="intellij.notebooks.ui"/>
         <module name="intellij.notebooks.visualization"/>
-        <module name="intellij.notebooks.tables"/>
         <plugin id="intellij.scientific.tables"/>
 
         <plugin id="intellij.jupyter"/>

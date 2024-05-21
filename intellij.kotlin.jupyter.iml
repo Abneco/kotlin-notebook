@@ -114,7 +114,6 @@
     </orderEntry>
     <orderEntry type="module" module-name="intellij.platform.util.coroutines" />
     <orderEntry type="module" module-name="intellij.platform.util" />
-    <orderEntry type="module" module-name="intellij.notebooks.tables" />
     <orderEntry type="module" module-name="intellij.scientific.tables" />
     <orderEntry type="module" module-name="intellij.jupyter.core" />
   </component>
