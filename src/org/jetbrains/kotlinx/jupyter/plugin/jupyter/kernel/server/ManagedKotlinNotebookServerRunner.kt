@@ -7,7 +7,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinKernelName
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.jupyter.connections.ManagedServerJupyterModuleConnectionSettings
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.ManagedJupyterServerRunner
-import org.jetbrains.plugins.notebooks.jupyter.server.JupyterServerExecution
+import org.jetbrains.plugins.notebooks.jupyter.server.common.JupyterServerExecution
 
 class ManagedKotlinNotebookServerRunner : ManagedJupyterServerRunner {
     override fun startServer(

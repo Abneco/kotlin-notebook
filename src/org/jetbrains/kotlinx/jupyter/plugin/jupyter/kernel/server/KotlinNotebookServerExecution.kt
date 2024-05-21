@@ -4,10 +4,10 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
 import org.jetbrains.plugins.notebooks.jupyter.connections.JupyterConnectionParameters
 import org.jetbrains.plugins.notebooks.jupyter.connections.JupyterConnectionParameters.Location.Direct
-import org.jetbrains.plugins.notebooks.jupyter.server.JupyterServerExecution
-import org.jetbrains.plugins.notebooks.jupyter.server.JupyterServerStarted
-import org.jetbrains.plugins.notebooks.jupyter.server.JupyterServerState
-import org.jetbrains.plugins.notebooks.jupyter.server.JupyterServerStateListener
+import org.jetbrains.plugins.notebooks.jupyter.server.common.JupyterServerExecution
+import org.jetbrains.plugins.notebooks.jupyter.server.common.JupyterServerStarted
+import org.jetbrains.plugins.notebooks.jupyter.server.common.JupyterServerState
+import org.jetbrains.plugins.notebooks.jupyter.server.common.JupyterServerStateListener
 import java.net.URI
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future
