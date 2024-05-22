@@ -11,7 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.getOrCreateKotlinNotebookToolWindow
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowManager
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.toNotebookToolWindowPanelHelpId
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
@@ -53,7 +53,7 @@ class KotlinNotebookSessionVariablesService(
             val fileId = virtualFile.file.toAbsolutePath().toNotebookToolWindowPanelHelpId()
 
             withContext(Dispatchers.EDT) {
-                val panel = getOrCreateKotlinNotebookToolWindow(project)
+                val panel = KotlinNotebookToolWindowManager.getInstance(project).getOrCreateKotlinNotebookToolWindow()
                 val contentManager = panel.contentManager
                 contentManager.contents.firstOrNull {
                     it.helpId == fileId && !it.isSelected
