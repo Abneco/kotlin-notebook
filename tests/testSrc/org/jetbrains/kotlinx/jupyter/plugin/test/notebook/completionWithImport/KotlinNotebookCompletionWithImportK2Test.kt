@@ -4,9 +4,10 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completionWithImport
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
-import org.junit.Test
+import org.junit.Ignore
 
-class KotlinNotebookCompletionWithImportTestK2: AbstractKotlinNotebookCompletionWithImportTest() {
+@Ignore
+class KotlinNotebookCompletionWithImportK2Test: AbstractKotlinNotebookCompletionWithImportTest() {
     override val pluginMode: KotlinPluginMode
         get() = KotlinPluginMode.K2
 

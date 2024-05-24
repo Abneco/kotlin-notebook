@@ -5,7 +5,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMess
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
 import org.junit.Test
 
-class KotlinNotebookCompletionWithImportTestK1: AbstractKotlinNotebookCompletionWithImportTest() {
+class KotlinNotebookCompletionWithImportK1Test: AbstractKotlinNotebookCompletionWithImportTest() {
     @Test(timeout = 300_000)
     fun testCompletionWithImport() = doTest(
         object : ReceivedMessagesTester {
