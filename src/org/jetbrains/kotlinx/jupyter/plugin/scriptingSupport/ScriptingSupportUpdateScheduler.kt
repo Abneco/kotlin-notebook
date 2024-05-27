@@ -2,7 +2,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ScriptingSupportAfterUpdateListener
@@ -19,10 +18,7 @@ class ScriptingSupportUpdateScheduler(
           .subscribe(
             SCRIPTING_SUPPORT_TOPIC,
             ScriptingSupportAfterUpdateListener {
-                // ignore rescheduling, e.g., any of unpredictable WriteAction s
-                if (!ApplicationManager.getApplication().isUnitTestMode) {
-                    fireActionFinished()
-                }
+                  fireActionFinished()
               }
           )
     }
