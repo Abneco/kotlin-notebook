@@ -28,6 +28,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.errorWithAttachments
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.NotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import kotlin.script.experimental.api.valueOrNull
 
@@ -53,7 +54,11 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     override fun collectConfigurations(builder: ScriptClassRootsBuilder) {
         val editors = editorManager?.allEditors ?: return
 
-        val openFiles = editors.mapNotNull { (it as? JupyterFileEditor)?.getNotebookFile() }
+        val openFiles = editors.mapNotNull {
+            (it as? JupyterFileEditor)?.getNotebookFile()
+        }.filter { it.fileType is JupyterFileType }.ifEmpty {
+            editors.mapNotNull { it.file as? NotebookVirtualFile }
+        }
         val notebookFiles = openFiles
             .filter { it.fileType is JupyterFileType }
             .mapNotNull { BackedNotebookVirtualFile.takeIfBacked(it) }
