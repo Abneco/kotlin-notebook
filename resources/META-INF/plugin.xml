@@ -103,8 +103,6 @@
     </content>
 
     <applicationListeners>
-        <listener class="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorColorsListener"
-                  topic="com.intellij.openapi.editor.colors.EditorColorsListener"/>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFusActionListener"
                   topic="com.intellij.openapi.actionSystem.ex.AnActionListener"/>
     </applicationListeners>
@@ -285,6 +283,7 @@
         <editor.outputs.notebookOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeOutputDataKeyExtractor" order="first"/>
         <editor.outputs.notebookObjectOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputDataKeyExtractor"/>
         <editor.outputs.notebookOutputComponentFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputComponentFactory"/>
+        <themeChangedListener implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorColorsListener"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.scientific.tables">

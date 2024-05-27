@@ -2,44 +2,37 @@
 package org.jetbrains.kotlinx.jupyter.plugin.editor.appearance
 
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.editor.colors.EditorColorsListener
-import com.intellij.openapi.editor.colors.EditorColorsScheme
-import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.editor.Editor
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookCodegen
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebookSession
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.webOutputs.appBasedApi.colorThemes.ThemeChangedListener
 
-private class KotlinNotebookEditorColorsListener : EditorColorsListener {
-    override fun globalSchemeChange(scheme: EditorColorsScheme?) {
-        if (scheme == null) return
+private class KotlinNotebookEditorColorsListener : ThemeChangedListener {
+    override fun themeChanged(editor: Editor, session: JupyterNotebookSession, isDarcula: Boolean) {
+        val project = editor.project ?: return
+        if (project.isDisposed) return
+        if (!session.isKotlinNotebookSession()) return
+
+        val scheme = editor.colorsScheme
         val changeCode = KotlinNotebookCodegen.generateColorSchemeChangeCode().takeIf { it.isNotBlank() } ?: return
 
-        val allProjects = ProjectManager.getInstance().openProjects
-        for (project in allProjects) {
-            if (project.isDisposed) continue
-            val runtimeService = JupyterRuntimeService.getInstance(project)
-            val sessions = runtimeService.getAllSessions()
-            for (session in sessions) {
-                if (session.isKotlinNotebookSession()) {
-                    session.execute(
-                        changeCode,
-                        onMessageCreated = {},
-                        callbacks = listOf(
-                            object : JupyterExecutionCallbackAdapter() {
-                                override fun onExecuteReply(message: JupyterMessage) {
-                                    LOG.debug(
-                                        "Kotlin Notebook session was updated with new color scheme $scheme: ${message.json}"
-                                    )
-                                }
-                            }
-                        ),
-                        silent = true,
-                    )
+        session.execute(
+            changeCode,
+            onMessageCreated = {},
+            callbacks = listOf(
+                object : JupyterExecutionCallbackAdapter() {
+                    override fun onExecuteReply(message: JupyterMessage) {
+                        LOG.debug(
+                            "Kotlin Notebook session was updated with new color scheme $scheme: ${message.json}"
+                        )
+                    }
                 }
-            }
-        }
+            ),
+            silent = true,
+        )
     }
 
     companion object {
