@@ -7,7 +7,6 @@ import org.junit.Test
 class NotebookQuickFixIntentionsExtensionTest : NotebookQuickFixBaseTest() {
     override fun getTestDataPath() = "${super.getTestDataPath()}/extensions"
 
-
     @Test
     fun testExtensionForClass() {
         doTest(1)

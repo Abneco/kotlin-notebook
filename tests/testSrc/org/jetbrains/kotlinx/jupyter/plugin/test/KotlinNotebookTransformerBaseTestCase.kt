@@ -5,12 +5,15 @@ import com.intellij.injected.editor.DocumentWindow
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 
 abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCase() {
+    override lateinit var originalVirtualFile: VirtualFile
+
     val notebookFile: BackedNotebookVirtualFile get() = _notebookFile!!
     private var _notebookFile: BackedNotebookVirtualFile? = null
 

@@ -13,7 +13,7 @@ abstract class AbstractSimpleExecutionTest : KotlinNotebookExecutionBaseTestCase
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/execution"
 
     protected fun doTest(tester: ReceivedMessagesTester, executionCallback: JupyterExecutionCallback? = null) {
-        val notebookFile = configureTestDependencies()
+        val notebookFile = configureExecutionTest()
         executeCellsAndShutdownKernel(tester, notebookFile, executionCallback)
     }
 }

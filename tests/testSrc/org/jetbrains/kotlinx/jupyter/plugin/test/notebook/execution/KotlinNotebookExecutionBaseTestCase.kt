@@ -2,8 +2,15 @@
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
+import com.intellij.psi.impl.source.resolve.FileContextUtil
+import com.intellij.testFramework.TestLoggerFactory
+import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.util.containers.forEachGuaranteed
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
@@ -14,8 +21,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.runners.TestContext
 import org.jetbrains.kotlinx.jupyter.plugin.test.setUpScriptingDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.test.withDisabledJcef
 import org.jetbrains.plugins.notebooks.jackson
+import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServers
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
+import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 import org.junit.Rule
 import org.junit.jupiter.api.Assertions
 import org.junit.rules.DisableOnDebug
@@ -58,6 +68,8 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
         CoroutinesTimeout.seconds(180)
     )
 
+    override lateinit var originalVirtualFile: VirtualFile
+
     override fun runInDispatchThread() = false
 
     override fun setUp() {
@@ -75,14 +87,39 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
         ).forEachGuaranteed { it() }
     }
 
+    protected fun configureExecutionTest(
+        copyNotebookToProject: Boolean = false,
+    ): PsiFile {
+        TestLoggerFactory.enableDebugLogging(myFixture.projectDisposable, javaClass)
+        myFixture.setCaresAboutInjection(true)
+
+        // If something is executed before highlighting is invoked,
+        // it may trigger daemon restarting later asynchronously
+        (myFixture as CodeInsightTestFixtureImpl).canChangeDocumentDuringHighlighting(true)
+
+        myFixture.configureByJupyterFile(
+            jupyterFileName = "${getTestName(true)}.ipynb",
+            testDataPath = testDataPath,
+            isCopyToProject = copyNotebookToProject,
+        )
+        invokeAndWaitIfNeeded {
+            myFixture.editor.setMode(NotebookEditorMode.EDIT)
+        }
+        originalVirtualFile = myFixture.file.virtualFile // `myFixture.file` may return the file which is injected inside one of the cells
+        val notebookFile = runReadAction {
+            FileContextUtil.getFileContext(myFixture.file)?.containingFile ?: myFixture.file
+        }
+        return notebookFile
+    }
+
     protected fun doTestAfterExecution(
         executionTester: ReceivedMessagesTester,
         testAction: () -> Unit
     ) {
         withDisabledJcef {
-            val notebookFile = configureTestDependencies(copyNotebookToProject = false)
+            val notebookFile = configureExecutionTest(copyNotebookToProject = false)
 
-            runWithJupyterSession(jupyterSession, notebookFile) {
+            runWithJupyterSession(notebookFile) {
                 executeCells(executionTester, notebookFile)
                 setUpScriptingDependencies(myFixture)
                 testAction()

@@ -12,6 +12,7 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.SyntaxTraverser
 import com.intellij.testFramework.runInEdtAndWait
@@ -27,6 +28,7 @@ import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 
 
 abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTestCase() {
+    override lateinit var originalVirtualFile: VirtualFile
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/codeinsight/hints"
     abstract val provider: InlayHintsProvider<*>
 
@@ -103,7 +105,7 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
 
     protected fun <T: Any> doTest(provider: InlayHintsProvider<T>, cellInd: Int, limitedAreaTargetInd: Int? = null,
                                   setupAction: (T) -> Unit = {}) = runInEdtAndWait {
-        val notebookFile = configureTestDependencies()
+        val notebookFile = configureExecutionTest()
         val cells = notebookFile.getCells()
         val neededCell = cells.getOrNull(cellInd) ?: error("Invalid cell index provided")
         val backedNotebook = BackedNotebookVirtualFile.takeIfBacked(originalVirtualFile)
