@@ -231,9 +231,8 @@ fun setUpScriptingDependencies(fixture: CodeInsightTestFixture) {
                     file
                 )
             }
+            JupyterKtScriptingSupport.updateSynchronously(fixture.project)
         }
-        IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
-        JupyterKtScriptingSupport.updateSynchronously(fixture.project)
         IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
     }
 }
