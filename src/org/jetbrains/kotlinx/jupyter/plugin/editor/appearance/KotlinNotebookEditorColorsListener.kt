@@ -2,16 +2,17 @@
 package org.jetbrains.kotlinx.jupyter.plugin.editor.appearance
 
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.editor.Editor
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookCodegen
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.webOutputs.appBasedApi.colorThemes.JupyterThemeChangedEvent
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.webOutputs.appBasedApi.colorThemes.ThemeChangedListener
 
 private class KotlinNotebookEditorColorsListener : ThemeChangedListener {
-    override fun themeChanged(editor: Editor, session: JupyterNotebookSession, isDarcula: Boolean) {
+    override fun themeChanged(event: JupyterThemeChangedEvent) {
+        val session = event.session ?: return
+        val editor = event.editor
         val project = editor.project ?: return
         if (project.isDisposed) return
         if (!session.isKotlinNotebookSession()) return
