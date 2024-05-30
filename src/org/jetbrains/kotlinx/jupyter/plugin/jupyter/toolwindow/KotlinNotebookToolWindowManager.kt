@@ -71,11 +71,11 @@ class KotlinNotebookToolWindowManager(
         val project = mode.project
         val toolWindow: ToolWindow = getOrCreateKotlinNotebookToolWindow()
 
-        val id = mode.notebookPath.toNotebookToolWindowPanelHelpId()
+        val panelHelpId = mode.notebookPath.toNotebookToolWindowPanelHelpId()
         val manager = toolWindow.contentManager
         if (project.isDisposed) return
 
-        val notebookToolWindowBuilder = KotlinNotebookToolWindowBuilder(mode, id, manager)
+        val notebookToolWindowBuilder = KotlinNotebookToolWindowBuilder(mode, panelHelpId, manager)
 
         val newContent = notebookToolWindowBuilder.createMainContent()
         manager.addContent(newContent, -1)

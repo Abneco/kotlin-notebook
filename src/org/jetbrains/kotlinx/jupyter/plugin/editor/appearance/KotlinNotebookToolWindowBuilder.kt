@@ -17,24 +17,20 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessio
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.StopKotlinKernelAction
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import org.jetbrains.kotlinx.jupyter.plugin.util.addNotebookTabsContent
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPresentablePathAsTabTitle
 import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVariablesToolWindowSetup
 import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVarsToolWindowProvider
-import org.jetbrains.plugins.notebooks.core.api.NotebookDisposable
 
 /**
  * Class responsible for setting up the UI elements making up the Kotlin Notebook tool window
  * that is found on the toolbar.
  */
 class KotlinNotebookToolWindowBuilder(
-  private val mode: KotlinNotebookToolWindowRunMode,
-  private val id: String,
-  contentManager: ContentManager
+    private val mode: KotlinNotebookToolWindowRunMode,
+    private val panelHelpId: String,
+    contentManager: ContentManager
 ) {
-    companion object {
-        val logContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.tabs.log")
-        val variableContentTitle = KotlinNotebookBundle.message("kotlin.jupyter.toolbar.tabs.variables")
-    }
     private val virtualFile = mode.notebookVirtualFile()
     @NlsSafe
     val windowTitle = virtualFile.toPresentablePathAsTabTitle(mode.project, contentManager)
@@ -43,17 +39,17 @@ class KotlinNotebookToolWindowBuilder(
 
     private val ui = RunnerLayoutUi.Factory.getInstance(mode.project)
         .create(
-            id,
+            panelHelpId,
             kernelContentTitle,
             kernelContentTitle,
-            NotebookDisposable.forProject(mode.project)
+            mode.handler
         )
 
     fun createMainContent(): Content {
-        getAllContent().forEach {
-            it.isCloseable = false
-            ui.addContent(it)
-        }
+        ui.addNotebookTabsContent(
+            createConsoleView(),
+            createVariablesView()
+        )
         initializeLeftToolBar()
 
         val mainContent = ContentFactory.getInstance().createContent(
@@ -66,7 +62,7 @@ class KotlinNotebookToolWindowBuilder(
         }
 
         mainContent.isCloseable = false
-        mainContent.helpId = id
+        mainContent.helpId = panelHelpId
 
         return mainContent
     }
@@ -76,20 +72,13 @@ class KotlinNotebookToolWindowBuilder(
         ui.options.setLeftToolbar(group, ActionPlaces.TOOLBAR)
     }
 
-    private fun getAllContent(): Collection<Content> {
-        return listOfNotNull(
-            createConsoleView(),
-            createVariablesView()
-        )
-    }
-
     private fun createConsoleView(): Content {
         val console = ConsoleViewImpl(mode.project, GlobalSearchScope.allScope(mode.project), true, true)
         mode.consoleWindowCreated(console)
         val consoleContent = ui.createContent(
-            id + "Console",
+            panelHelpId + "Console",
             console.component,
-            logContentTitle,
+            KotlinNotebookBundle.message("kotlin.jupyter.toolbar.tabs.log"),
             null,
             console.getPreferredFocusedComponent()
         )
@@ -100,7 +89,9 @@ class KotlinNotebookToolWindowBuilder(
     private fun createVariablesView(): Content? {
         val enabled = debugFeaturesEnabled && mode.shouldShowVariablesView()
         val setupData = NotebookVariablesToolWindowSetup(
-            ui, id, variableContentTitle, enabled
+            ui, panelHelpId,
+            KotlinNotebookBundle.message("kotlin.jupyter.toolbar.tabs.variables"),
+            enabled
         )
 
         /**

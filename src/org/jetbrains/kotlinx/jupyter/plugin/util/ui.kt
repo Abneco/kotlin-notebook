@@ -1,6 +1,8 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
+import com.intellij.execution.ui.RunnerLayoutUi
+import com.intellij.ui.content.Content
 import com.intellij.util.ui.StartupUiUtil
 import com.intellij.util.ui.UIUtil
 import java.awt.Component
@@ -142,4 +144,12 @@ fun Component.addCursorProvider(cursorProviderFactory: CursorProvider.Factory) {
     }
 
     addMouseMotionListener(mouseMotionListener)
+}
+
+fun RunnerLayoutUi.addNotebookTabsContent(vararg contents: Content?) {
+    for (content in contents) {
+        if (content == null) continue
+        content.isCloseable = false
+        addContent(content)
+    }
 }

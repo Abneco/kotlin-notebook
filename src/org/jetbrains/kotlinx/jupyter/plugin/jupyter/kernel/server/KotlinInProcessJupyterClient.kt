@@ -10,6 +10,7 @@ import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.resetSessionMetaInformation
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
+import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.createConcurrentDoubleKeyMap
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelDoesNotExistsException
@@ -117,10 +118,12 @@ class KotlinInProcessJupyterClient(
     }
 
     private fun killKernel(kernelId: JupyterKernelId) {
-        // Maybe we should send shutdown request here
+        // Maybe we should send a shutdown request here
         val kernelProcess = kernels.remove(kernelId) ?: return
         removeSessionAndRelatedState(kernelProcess)
-        Disposer.dispose(kernelProcess)
+        KotlinNotebookPluginScope.invokeOnEDT {
+            Disposer.dispose(kernelProcess)
+        }
     }
 
     override fun interrupt(kernelId: JupyterKernelId) {

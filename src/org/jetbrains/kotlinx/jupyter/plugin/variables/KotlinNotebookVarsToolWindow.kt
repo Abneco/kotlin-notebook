@@ -83,7 +83,8 @@ class KotlinNotebookVarsToolWindow(
         with(data) {
             return uiRunnerLayoutUi
                 .createContent(
-                    id + title,
+                    // provide unique id for each UI tab
+                    helpId + title,
                     panel,
                     title,
                     null,

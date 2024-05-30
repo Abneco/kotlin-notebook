@@ -8,11 +8,11 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 
 class KotlinNotebookToolWindowHandler {
-    private var variableWindowReference: KotlinNotebookVarsToolWindow? = null
+    private var notebookVariablesWindow: KotlinNotebookVarsToolWindow? = null
 
     val isToolWindowReady: Boolean
         get() = synchronized(this) {
-            variableWindowReference != null
+            notebookVariablesWindow != null
         }
 
     @Synchronized
@@ -21,7 +21,7 @@ class KotlinNotebookToolWindowHandler {
         virtualFile: BackedNotebookVirtualFile,
         providedSetupData: NotebookVariablesToolWindowSetup?
     ): KotlinNotebookVarsToolWindow {
-        val toolWindow = variableWindowReference
+        val toolWindow = notebookVariablesWindow
         if (toolWindow != null) {
             return toolWindow
         }
@@ -31,18 +31,18 @@ class KotlinNotebookToolWindowHandler {
         }
 
         val newPanel = KotlinNotebookVarsToolWindow(project, virtualFile, providedSetupData)
-        variableWindowReference = newPanel
+        notebookVariablesWindow = newPanel
         return newPanel
     }
 
     fun clear() {
-        variableWindowReference = null
+        notebookVariablesWindow = null
     }
 }
 
 data class NotebookVariablesToolWindowSetup(
     val uiRunnerLayoutUi: RunnerLayoutUi,
-    val id: String,
+    val helpId: String,
     @NlsSafe val title: String,
     val isEnabled: Boolean,
 )
