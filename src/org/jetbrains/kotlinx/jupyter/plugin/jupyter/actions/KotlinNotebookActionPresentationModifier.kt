@@ -5,12 +5,10 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.util.registry.Registry
-import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.getVirtualFile
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterOpenNotebookInBrowserAction
 import org.jetbrains.plugins.notebooks.jupyter.editor.actions.JupyterActionPresentationModifier
-import org.jetbrains.plugins.notebooks.jupyter.editor.toolbar.ToolbarDebugActionsProvider
-import org.jetbrains.plugins.notebooks.jupyter.editor.toolbar.getActions
 import kotlin.reflect.KClass
 
 class KotlinNotebookActionPresentationModifier : JupyterActionPresentationModifier {
@@ -18,11 +16,10 @@ class KotlinNotebookActionPresentationModifier : JupyterActionPresentationModifi
 
     private val coreActionsToDisable: List<String> = listOf(
         "JupyterCreateFileAction",
+        "JupyterDebugAction"
     )
-    private val editorActionsToDisableInKotlinNotebook: List<KClass<out AnAction>> = buildList {
-        addAll(ToolbarDebugActionsProvider.EP_NAME.getActions().map { it::class })
-        add(JupyterOpenNotebookInBrowserAction::class)
-    }
+
+    private val editorActionsToDisableInKotlinNotebook = listOf(JupyterOpenNotebookInBrowserAction::class)
 
     private val AnActionEvent.isKotlinNotebookEvent: Boolean get() = getVirtualFile().isKotlinNotebook
     private fun AnActionEvent.disable() {
