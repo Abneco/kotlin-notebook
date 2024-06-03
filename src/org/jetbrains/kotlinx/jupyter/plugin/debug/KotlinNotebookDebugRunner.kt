@@ -26,9 +26,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArt
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.NotebookPathProvider
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.ui.JupyterErrorReporter
 import org.jetbrains.plugins.notebooks.jupyter.debugger.common.DebugConnectionNotifier
 import org.jetbrains.plugins.notebooks.jupyter.debugger.common.NotebookDebugRunner
@@ -99,10 +99,7 @@ class KotlinNotebookDebugRunner(project: Project, private val virtualFile: Backe
     override fun getRunnerId(): String = runnerName
 
     override fun canRun(executorId: String, profile: RunProfile): Boolean {
-        if (DefaultDebugExecutor.EXECUTOR_ID != executorId) {
-            return false
-        }
-        return true
+        return DefaultDebugExecutor.EXECUTOR_ID == executorId
     }
 
     override fun execute(environment: ExecutionEnvironment) {

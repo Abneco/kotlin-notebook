@@ -5,8 +5,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinKernelName
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.jupyter.connections.ManagedServerJupyterModuleConnectionSettings
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.ManagedJupyterServerRunner
+import org.jetbrains.plugins.notebooks.jupyter.connections.settings.ManagedServerJupyterModuleConnectionSettings
 import org.jetbrains.plugins.notebooks.jupyter.server.common.JupyterServerExecution
 
 class ManagedKotlinNotebookServerRunner : ManagedJupyterServerRunner {

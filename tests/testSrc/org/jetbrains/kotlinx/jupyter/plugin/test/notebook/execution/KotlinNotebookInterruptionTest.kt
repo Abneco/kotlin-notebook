@@ -9,11 +9,11 @@ import com.intellij.openapi.projectRoots.JavaSdkVersion
 import junit.framework.TestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.util.JDKVersionRule
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterExecutionState
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
 import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.CompletableFuture

@@ -22,12 +22,12 @@ import com.intellij.util.ProcessingContext
 import org.jetbrains.kotlinx.jupyter.messaging.CompleteReply
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterWebSocketClientClosedException
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterCompleteRequestMessageBuilder
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.http.JupyterRestClientErrorResponseException
 import java.net.ConnectException
 import java.util.concurrent.Callable
