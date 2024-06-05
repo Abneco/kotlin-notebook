@@ -13,7 +13,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 
 internal val debugFeaturesEnabled: Boolean
-    get() = Registry.`is`("kotlin.notebook.debug.enabled", true)
+    get() = Registry.`is`("kotlin.notebook.debug.enabled", false)
 
 
 /**
