@@ -40,8 +40,8 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
     override fun afterUpdate() {
         try {
-            indexAwareScriptDefinitionsRequestor.reloadDefinitions()
             scriptingSupportPublisher.afterUpdate()
+            indexAwareScriptDefinitionsRequestor.reloadDefinitions()
         } catch (ex: Exception) {
             if (ex is ProcessCanceledException) {
                 indexAwareScriptDefinitionsRequestor.reloadDefinitions()

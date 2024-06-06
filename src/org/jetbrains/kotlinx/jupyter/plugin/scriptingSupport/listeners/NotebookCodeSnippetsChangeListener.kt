@@ -10,7 +10,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
  *
  * @see JupyterCompilerPerFileService
  */
-interface NotebookCodeSnippetsChangeListener {
+fun interface NotebookCodeSnippetsChangeListener {
     companion object {
         @Topic.ProjectLevel
         val TOPIC: Topic<NotebookCodeSnippetsChangeListener> = Topic(NotebookCodeSnippetsChangeListener::class.java, Topic.BroadcastDirection.NONE)

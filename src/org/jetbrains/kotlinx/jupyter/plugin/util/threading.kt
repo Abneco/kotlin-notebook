@@ -124,12 +124,10 @@ open class SingleUpdateScheduler(
         .newSingleScheduledThreadExecutor("UpdateRequestor")
 
     private val isUpdateRequested = AtomicBoolean(false)
-    private val isRunning = AtomicBoolean(false)
     private var scheduledFuture: ScheduledFuture<*>? = null
 
     private val updateRunnable: Runnable = Runnable {
         try {
-            isRunning.set(true)
             updateAction.invoke()
         } finally {
             actionInvocationDone()
@@ -138,12 +136,8 @@ open class SingleUpdateScheduler(
 
     @Synchronized
     override fun requestUpdate() {
-        if (isRunning.get()) {
-            isUpdateRequested.set(true)
-            return
-        }
-
         if (!isUpdateRequested.getAndSet(true)) {
+            LOG.debug("Update scheduled")
             scheduleUpdate()
         } else {
             LOG.debug("Ignoring update as have scheduled")
@@ -159,11 +153,12 @@ open class SingleUpdateScheduler(
     }
 
     protected fun fireActionFinished() {
-        isRunning.set(false)
         LOG.debug("Update is done")
         if (isUpdateRequested.compareAndSet(true, false)) {
             LOG.debug("Someone requested update, rescheduled")
             scheduleUpdate()
+        } else {
+            LOG.debug("No updates are requested right now")
         }
     }
 
