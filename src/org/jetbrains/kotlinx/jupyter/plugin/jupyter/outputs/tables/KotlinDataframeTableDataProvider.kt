@@ -108,8 +108,8 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
     ): DSTableData {
         @NlsSafe
         val response = commandExecutor.executeCommand(
-            this,
-            SliceTableCommand(tableVariable, start, end)
+            SliceTableCommand(tableVariable, start, end),
+            ::getCommandCode
         )
 
        return executeParsing(response) { parseDataFromKotlinDataframeOutput(dataId, response) }
@@ -211,15 +211,15 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
         return matchResult?.groupValues?.get(1) ?: ""
     }
 
-    override fun getCommandCode(tableCommand: TableCommand): String {
+    private fun getCommandCode(tableCommand: TableCommand): String {
         return when(tableCommand) {
             is DescribeTableCommand, is InfoTableCommand -> throw NotImplementedError()
-            is SliceTableCommand -> getSlicingCommandCode(tableCommand)
+            is SliceTableCommand -> getSliceCommandCode(tableCommand)
         }
     }
 
-    private fun getSlicingCommandCode(tableCommand: SliceTableCommand): String {
-        return with(tableCommand) {
+    private fun getSliceCommandCode(command: SliceTableCommand): String {
+        return with(command) {
             """
                 try {
                     DISPLAY(KotlinNotebookPluginUtils.getRowsSubsetForRendering($tableVariable, $startRow, $endRow), "")
