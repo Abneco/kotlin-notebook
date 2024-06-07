@@ -84,7 +84,6 @@
     </orderEntry>
     <orderEntry type="library" name="commons-io" level="project" />
     <orderEntry type="module" module-name="intellij.platform.ide" />
-    <orderEntry type="module" module-name="intellij.python.pydev" />
     <orderEntry type="module" module-name="intellij.platform.codeStyle.impl" />
     <orderEntry type="module" module-name="kotlin.compiler-plugins.kotlinx-serialization.common" />
     <orderEntry type="module" module-name="kotlin.code-insight.live-templates.shared" />

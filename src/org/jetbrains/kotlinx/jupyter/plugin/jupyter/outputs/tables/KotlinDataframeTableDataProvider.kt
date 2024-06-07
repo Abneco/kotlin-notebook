@@ -15,11 +15,6 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.registry.Registry
-import com.intellij.util.containers.tail
-import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
-import com.jetbrains.python.tables.CommandOutputType
-import com.jetbrains.python.tables.TableCommandType
 import com.intellij.scientific.tables.DSTableBundle
 import com.intellij.scientific.tables.DSTableData
 import com.intellij.scientific.tables.DSTableDataException
@@ -29,9 +24,16 @@ import com.intellij.scientific.tables.api.DSTableCommandExecutor
 import com.intellij.scientific.tables.api.DSTableDataProvider
 import com.intellij.scientific.tables.api.DSTableDataType
 import com.intellij.scientific.tables.api.DSTableText
+import com.intellij.scientific.tables.api.DescribeTableCommand
+import com.intellij.scientific.tables.api.InfoTableCommand
 import com.intellij.scientific.tables.api.NestedTableDataProvider
+import com.intellij.scientific.tables.api.SliceTableCommand
+import com.intellij.scientific.tables.api.TableCommand
 import com.intellij.scientific.tables.api.TableDataProviderFactory
 import com.intellij.scientific.tables.api.TableDataTypeDetector
+import com.intellij.util.containers.tail
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import java.io.IOException
 import java.util.*
 import javax.swing.RowSorter
@@ -106,8 +108,8 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
     ): DSTableData {
         @NlsSafe
         val response = commandExecutor.executeCommand(
-            getSliceCommand(tableVariable, commandExecutor.isDisplaySupported(), start, end),
-            TableCommandType.SLICE, CommandOutputType.DISPLAY
+            this,
+            SliceTableCommand(tableVariable, start, end)
         )
 
        return executeParsing(response) { parseDataFromKotlinDataframeOutput(dataId, response) }
@@ -209,17 +211,22 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
         return matchResult?.groupValues?.get(1) ?: ""
     }
 
-    private fun getSliceCommand(initCommand: String, isInteractive: Boolean, start: Int, end: Int): String {
-        return if (isInteractive) {
+    override fun getCommandCode(tableCommand: TableCommand): String {
+        return when(tableCommand) {
+            is DescribeTableCommand, is InfoTableCommand -> throw NotImplementedError()
+            is SliceTableCommand -> getSlicingCommandCode(tableCommand)
+        }
+    }
+
+    private fun getSlicingCommandCode(tableCommand: SliceTableCommand): String {
+        return with(tableCommand) {
             """
-            try {
-                DISPLAY(KotlinNotebookPluginUtils.getRowsSubsetForRendering($initCommand, $start, $end), "")
-            } catch (_: IllegalArgumentException) {
-                DISPLAY(($initCommand)!!, "")
-            }
+                try {
+                    DISPLAY(KotlinNotebookPluginUtils.getRowsSubsetForRendering($tableVariable, $startRow, $endRow), "")
+                } catch (_: IllegalArgumentException) {
+                    DISPLAY(($tableVariable)!!, "")
+                }
             """.trimIndent()
-        } else {
-            initCommand
         }
     }
 
