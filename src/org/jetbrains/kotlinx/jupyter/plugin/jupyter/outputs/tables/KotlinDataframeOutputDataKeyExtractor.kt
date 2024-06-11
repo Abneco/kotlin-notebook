@@ -39,7 +39,7 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
         editor: EditorImpl,
         interval: NotebookCellLines.Interval
     ): List<NotebookOutputDataKey> {
-        val outputSequence = getOutputsForIndex(editor, interval.ordinal)?.first?.outputs ?: return emptyList()
+        val outputSequence = getOutputsForIndex(editor, interval.ordinal)?.outputs ?: return emptyList()
         val cellPointer = NotebookIntervalPointerFactory.get(editor).create(interval)
 
         val result = ArrayList<NotebookOutputDataKey>()
