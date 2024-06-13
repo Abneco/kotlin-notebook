@@ -95,7 +95,12 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
         tableVariable: String,
         textTableOutput: String
     ): DSDataFrameInfo {
-        return executeParsing(textTableOutput) { parseFrameInfoFromKotlinDataframeOutput(textTableOutput, isPreview = false) }
+        // Parse data frame data sent in output and prepare
+        // basic statics info that can be fetched on request.
+        val info = executeParsing(textTableOutput) { parseFrameInfoFromKotlinDataframeOutput(textTableOutput, isPreview = false) }
+        val dataDescription = KotlinDataDescriptionImpl(commandExecutor, tableVariable)
+
+        return info.copy(dataDescription = dataDescription)
     }
 
     @Throws(DSTableDataException::class)
@@ -331,7 +336,7 @@ private fun KotlinDataframeInfo.asDsTableInfo(isPreview: Boolean): DSDataFrameIn
             0,
             0,
             topLevelColumnNames,
-            emptyList(),
+            topLevelTypeNames,
             DSTableBundle.message("ds.table.dimensions.info", 0, 0),
             hierarchyRoot = columnTreeRoot
         )
@@ -346,7 +351,7 @@ private fun KotlinDataframeInfo.asDsTableInfo(isPreview: Boolean): DSDataFrameIn
         nRow,
         0,
         topLevelColumnNames,
-        List(topLevelColumnNames.size) { null },
+        topLevelTypeNames,
         dimensionsStr,
         hierarchyRoot = columnTreeRoot
     )
