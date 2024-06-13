@@ -9,9 +9,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.scientific.tables.api.ColumnDescriptionStatistics
-import com.intellij.scientific.tables.api.DSDataDescription
 import com.intellij.scientific.tables.api.DSTableCommandExecutor
 import com.intellij.scientific.tables.api.DescriptionStatisticsValue
+import com.intellij.scientific.tables.api.TableStatisticsData
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,14 +31,12 @@ private class CommandRunner(val coroutineScope: CoroutineScope)
 class KotlinDataDescriptionImpl(
     private val commandExecutor: DSTableCommandExecutor,
     private val tableVariable: String,
-) : DSDataDescription {
-    private val columnDescriptionDataDeferred = CompletableDeferred<List<ColumnDescriptionStatistics>?>()
-    private val valueOccurrencesCountDeferred = CompletableDeferred<List<ColumnDescriptionStatistics>?>()
+) : TableStatisticsData {
+    private val tableStatisticsDataDeferred = CompletableDeferred<List<ColumnDescriptionStatistics>?>()
     private val requested = AtomicBoolean(false)
 
     override suspend fun await() {
-        columnDescriptionDataDeferred.await()
-        valueOccurrencesCountDeferred.await()
+        tableStatisticsDataDeferred.await()
     }
 
     override fun request() {
@@ -56,34 +54,22 @@ class KotlinDataDescriptionImpl(
                }
             """.trimIndent())
             val columnStats = extractDescribeData(describeJson)
-            columnDescriptionDataDeferred.complete(columnStats)
+            tableStatisticsDataDeferred.complete(columnStats)
 
             // Add support for `df[columnName].valuesCount()` here.
             // Some questions to figure out:
             //  - We should probably ignore columns with unique values
             //  - Should we ignore NA values or not?
-            valueOccurrencesCountDeferred.complete(null)
         }.invokeOnCompletion {
-            columnDescriptionDataDeferred.cancel("cannot get description", it)
-            valueOccurrencesCountDeferred.cancel("cannot get description", it)
+            tableStatisticsDataDeferred.cancel("cannot get description", it)
         }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val columnDescriptionData: List<ColumnDescriptionStatistics>?
+    override val tableStatisticsData: List<ColumnDescriptionStatistics>?
         get() {
-            return if (columnDescriptionDataDeferred.isCompleted && columnDescriptionDataDeferred.getCompletionExceptionOrNull() == null) {
-                columnDescriptionDataDeferred.getCompleted()
-            } else {
-                null
-            }
-        }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override val valueOccurrencesCount: List<ColumnDescriptionStatistics>?
-        get() {
-            return if (valueOccurrencesCountDeferred.isCompleted && valueOccurrencesCountDeferred.getCompletionExceptionOrNull() == null) {
-                valueOccurrencesCountDeferred.getCompleted()
+            return if (tableStatisticsDataDeferred.isCompleted && tableStatisticsDataDeferred.getCompletionExceptionOrNull() == null) {
+                tableStatisticsDataDeferred.getCompleted()
             } else {
                 null
             }

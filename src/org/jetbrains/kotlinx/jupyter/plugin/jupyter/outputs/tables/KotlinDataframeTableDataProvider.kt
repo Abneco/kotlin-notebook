@@ -31,6 +31,7 @@ import com.intellij.scientific.tables.api.SliceTableCommand
 import com.intellij.scientific.tables.api.TableCommand
 import com.intellij.scientific.tables.api.TableDataProviderFactory
 import com.intellij.scientific.tables.api.TableDataTypeDetector
+import com.intellij.scientific.tables.api.VisualizationDataTableCommand
 import com.intellij.util.containers.tail
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
@@ -98,9 +99,9 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
         // Parse data frame data sent in output and prepare
         // basic statics info that can be fetched on request.
         val info = executeParsing(textTableOutput) { parseFrameInfoFromKotlinDataframeOutput(textTableOutput, isPreview = false) }
-        val dataDescription = KotlinDataDescriptionImpl(commandExecutor, tableVariable)
+        val dataStatistics = KotlinDataDescriptionImpl(commandExecutor, tableVariable)
 
-        return info.copy(dataDescription = dataDescription)
+        return info.copy(dataStatistics = dataStatistics)
     }
 
     @Throws(DSTableDataException::class)
@@ -218,7 +219,7 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
 
     private fun getCommandCode(tableCommand: TableCommand): String {
         return when(tableCommand) {
-            is DescribeTableCommand, is InfoTableCommand -> throw NotImplementedError()
+            is DescribeTableCommand, is InfoTableCommand, is VisualizationDataTableCommand -> throw NotImplementedError()
             is SliceTableCommand -> getSliceCommandCode(tableCommand)
         }
     }
