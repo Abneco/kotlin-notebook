@@ -17,7 +17,6 @@ import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.test.waitIndexingComplete
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.CreateNotebookFactory
 import org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaPSIFile
@@ -217,7 +216,7 @@ fun setUpScriptingDependencies(fixture: CodeInsightTestFixture) {
     }
 
     runInEdtAndWait {
-        fixture.project.waitIndexingComplete()
+        IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
         runReadAction {
             for (file in ktFiles) {
                 ScriptConfigurationManager.updateScriptDependenciesSynchronously(
