@@ -2,7 +2,7 @@
     <dependencies>
         <plugin id="org.jetbrains.plugins.github"/>
     </dependencies>
-    <actions>
+    <actions resource-bundle="messages.KotlinNotebookBundle">
         <action id="KotlinNotebookGithubCreateGistAction"
                 class="org.jetbrains.kotlinx.jupyter.plugin.github.actions.KotlinNotebookGithubCreateGistAction">
             <add-to-group group-id="KotlinNotebookEditorActions"

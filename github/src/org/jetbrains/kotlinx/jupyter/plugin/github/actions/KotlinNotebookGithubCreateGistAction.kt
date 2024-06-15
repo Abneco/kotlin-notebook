@@ -15,7 +15,7 @@ import org.jetbrains.plugins.github.GithubCreateGistAction
  * This action won't show up in search, otherwise it would be possible to have both this action and
  * [GithubCreateGistAction] in the search results.
  */
-class KotlinNotebookGithubCreateGistAction : GithubCreateGistAction() {
+internal class KotlinNotebookGithubCreateGistAction : GithubCreateGistAction() {
     override fun update(e: AnActionEvent) {
         // We're intentionally not calling super.update(e), as it would check for a connected GitHub account,
         //  and we don't want that.
