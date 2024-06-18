@@ -1,35 +1,21 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service
 
-import com.intellij.codeInsight.daemon.impl.HighlightInfo
-import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
-import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.NOTEBOOK_INJECTED_FILE_EXTENSION
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_BASE_CLASS_ERROR
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_DEPENDENCY_PREFIX
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.getCellRangesInDocumentOrNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.looksLikeNotebookFile
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
-import org.jetbrains.kotlinx.jupyter.plugin.util.reportErrorTestAware
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
@@ -193,79 +179,3 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
 }
 
 internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(lhs)
-
-@NlsSafe
-private const val SCRIPT_CLASS_ACCESS_ERROR  = "Cannot access "
-@NlsSafe
-private const val SCRIPT_BASE_CLASS_ACCESS_ERROR  = "Cannot access script base class"
-
-private fun String.isMissingBaseDependencyError() =
-    startsWith(SCRIPTING_MISSING_BASE_CLASS_ERROR) || startsWith(SCRIPT_BASE_CLASS_ACCESS_ERROR)
-
-private fun String.isMissingImplicitReceiverError() =
-    startsWith("[${SCRIPTING_MISSING_DEPENDENCY_PREFIX}") ||
-            startsWith(SCRIPTING_MISSING_DEPENDENCY_PREFIX) ||
-            startsWith(SCRIPT_CLASS_ACCESS_ERROR)
-
-
-class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
-    @Volatile
-    private var reloadRequested = false
-
-    init {
-        checkCompilerListenerPersists()
-    }
-
-    private fun checkCompilerListenerPersists() {
-        val currentProject = ProjectManager.getInstance().openProjects.firstOrNull {
-            it.isOpen
-        } ?: return
-        currentProject.messageBus.connect().subscribe(NotebookCodeSnippetsChangeListener.TOPIC, object : NotebookCodeSnippetsChangeListener {
-            override fun scriptsClassesChanged(file: BackedNotebookVirtualFile) {
-                reloadRequested = false
-            }
-        })
-    }
-
-    override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {
-        if (file == null || !file.name.endsWith(NOTEBOOK_INJECTED_FILE_EXTENSION)) return true
-
-        val isTargetHost = file.getUserData(NonTargetHostErrorMark) == null
-        if (!isTargetHost) return true
-
-        if (highlightInfo.severity != HighlightSeverity.ERROR) return true
-        val description = highlightInfo.description ?: return true
-        val isMissingBaseClass = description.isMissingBaseDependencyError()
-        val isMissingReceiverClass = description.isMissingImplicitReceiverError()
-
-        val isMissingDependency = isMissingBaseClass || isMissingReceiverClass
-        if (isMissingDependency) {
-            if (reloadRequested) {
-                return false
-            }
-        } else return true
-
-        LOG.reportErrorTestAware(
-            if (isMissingBaseClass)
-                "Missing base script class"
-            else
-                "Missing script receiver class: $description",
-            Attachment(file.name, file.text)
-        )
-
-        if (isMissingReceiverClass) {
-            return false
-        }
-
-        NotebookNotificationUtility.getInstance(file.project).kernelRelatedFactory
-            .showAbsentInitialBaseDependenciesInfo()
-
-        reloadRequested = true
-
-        return false
-    }
-
-    companion object {
-        private val LOG = thisLogger()
-    }
-}
