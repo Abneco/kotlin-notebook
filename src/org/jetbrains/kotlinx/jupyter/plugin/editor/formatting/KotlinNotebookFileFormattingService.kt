@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.end
 import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.start
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.retrieveCellIntervalUnderCaret
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.retrieveCellIntervalUnderCaret
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.buildFlatMap
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles

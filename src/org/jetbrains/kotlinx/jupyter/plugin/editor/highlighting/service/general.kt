@@ -19,11 +19,12 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.NOTEBOOK_INJECTED_FILE_EXTENSION
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_BASE_CLASS_ERROR
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_DEPENDENCY_PREFIX
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getCellRangesInDocumentOrNull
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.NOTEBOOK_INJECTED_FILE_EXTENSION
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_BASE_CLASS_ERROR
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_DEPENDENCY_PREFIX
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.getCellRangesInDocumentOrNull
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.looksLikeNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
@@ -38,7 +39,7 @@ import org.jetbrains.plugins.notebooks.visualization.getCell
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
 
     override fun reduceRange(file: PsiFile, editor: Editor): List<TextRange>? {
-        if (!NotebookHighlightingUtilityObject.looksLikeNotebookFile(file)) return null
+        if (!file.looksLikeNotebookFile()) return null
 
         val jupyterFile = file as? JupyterFile ?: return null
         val document = FileDocumentManager.getInstance().getDocument(jupyterFile.virtualFile) ?: return null

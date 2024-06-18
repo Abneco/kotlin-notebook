@@ -8,8 +8,8 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.idea.highlighter.visitor.AbstractHighlightingVisitor
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.InjectedFileHighlightingHelper
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.highlightingManagerFor
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.InjectedFileHighlightingHelper
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.highlightingManagerFor
 import org.jetbrains.kotlinx.jupyter.plugin.util.getTopLevelFile
 
 abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingVisitor>(

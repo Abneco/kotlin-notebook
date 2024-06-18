@@ -9,7 +9,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Version
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.resetSessionMetaInformation
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.resetSessionMetaInformation
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.JupyterSessionVerifiedListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener

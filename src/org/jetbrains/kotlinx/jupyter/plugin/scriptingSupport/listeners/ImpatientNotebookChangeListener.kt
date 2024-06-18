@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.js.translate.utils.splitToRanges
 import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookTypeHintsRegistry.Companion.invalidateTypeHintsRegistry
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getJupyterFileEditor
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells

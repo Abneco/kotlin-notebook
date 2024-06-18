@@ -20,7 +20,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookD
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookDaemonFinishedEventProcessor
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookHighlightingEvent
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingManager
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCellHighlightingTrigger
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.toDocument
