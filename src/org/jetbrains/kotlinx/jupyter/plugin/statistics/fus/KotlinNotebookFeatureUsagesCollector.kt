@@ -66,11 +66,11 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
 
         fun registerOpenNotebook(project: Project, file: BackedNotebookVirtualFile) {
             val notebook = file.notebook
-            val cellsCount = notebook.cells.size
+            val cellsCount = notebook.computeCells().size
 
             var markdownCellsCount = 0
             var codeCellsCount = 0
-            notebook.cells.forEach { cell ->
+            notebook.computeCells().forEach { cell ->
                 when(cell.cellType) {
                     JupyterCellType.RAW, JupyterCellType.HEADING, JupyterCellType.HTML, JupyterCellType.UNDEFINED -> {}
                     JupyterCellType.MARKDOWN -> {

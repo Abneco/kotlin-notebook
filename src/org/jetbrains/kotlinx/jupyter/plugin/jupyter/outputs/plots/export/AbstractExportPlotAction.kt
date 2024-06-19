@@ -65,7 +65,7 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
 
     private fun getLetsPlotOutputs(project: Project?, notebookVirtualFile: BackedNotebookVirtualFile, cellIndex: Int): List<LetsPlotOutputDataKey> {
         val notebook = notebookVirtualFile.notebook
-        val jupyterCell = notebook.cells[cellIndex]
+        val jupyterCell = notebook.computeCells()[cellIndex]
 
         val outputs = jupyterCell.outputs ?: return emptyList()
 

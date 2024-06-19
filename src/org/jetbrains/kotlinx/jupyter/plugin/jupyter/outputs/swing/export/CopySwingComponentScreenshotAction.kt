@@ -85,7 +85,7 @@ class CopySwingComponentScreenshotAction : NotebookEditorActionBase() {
         val (psiCell, notebookVirtualFile) = event.dataContext.getNotebookCellAndFile() ?: return emptyList()
         val cellIndex = psiCell.getCellIndex()
         val notebook = notebookVirtualFile.notebook
-        val jupyterCell = notebook.cells[cellIndex]
+        val jupyterCell = notebook.computeCells()[cellIndex]
         val outputs = jupyterCell.outputs ?: return emptyList()
         val extractor = NotebookObjectOutputDataKeyExtractor.EP_NAME.findExtension(SwingOutputDataKeyExtractor::class.java) ?: return emptyList()
         return outputs.outputs.filterIsInstanceAnd<JupyterDisplayDataOutput> { output ->
