@@ -378,5 +378,11 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
             val settings = KotlinNotebookPerFileSettingsCache.getInstance(project).getSettings(notebookFile)
             return buildProject(notebookFile, settings).artifacts + getLibraries(notebookFile, settings)
         }
+
+        suspend fun BackedNotebookVirtualFile.getProjectLibrariesDependencies(project: Project): ProjectArtifacts {
+            val settings = KotlinNotebookPerFileSettingsCache.getInstance(project).getSettings(this)
+            val service = getInstance(project)
+            return service.buildProject(this, settings).artifacts
+        }
     }
 }
