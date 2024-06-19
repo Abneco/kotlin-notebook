@@ -5,9 +5,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinKernelName
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.NotebookPathProvider
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServer
 
 class KotlinNotebookPathProvider: NotebookPathProvider {
-    override fun getNotebookPath(project: Project, file: VirtualFile, kernelName: String?): String? {
+    override fun getNotebookPath(project: Project, file: VirtualFile, server: JupyterServer, kernelName: String?): String? {
         if (!isKotlinKernelName(kernelName)) return null
 
         return file.path
