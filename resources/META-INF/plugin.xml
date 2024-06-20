@@ -86,11 +86,9 @@
         <plugin id="org.jetbrains.kotlin"/>
         <module name="kotlin.code-insight.live-templates.shared"/>
 
-        <plugin id="com.intellij.modules.python"/>
-
         <module name="intellij.notebooks.ui"/>
         <module name="intellij.notebooks.visualization"/>
-        <plugin id="intellij.scientific.tables"/>
+        <module name="intellij.scientific.tables"/>
 
         <plugin id="intellij.jupyter"/>
 
