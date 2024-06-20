@@ -9,6 +9,7 @@ import com.intellij.util.asSafely
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.plugins.notebooks.jupyter.editor.isJupyter
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterOutputDataKeyExtractor
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterTableOutputDataKey
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.getOutputsForIndex
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.util.createTableOutputDataKey
@@ -24,6 +25,8 @@ import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataK
  * Extract [JupyterTableOutputDataKey] from Kotlin Dataframe produced cell output
  */
 class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
+    private val jupyterDelegate: JupyterOutputDataKeyExtractor = JupyterOutputDataKeyExtractor()
+
     override fun extract(editor: EditorImpl, interval: NotebookCellLines.Interval): List<NotebookOutputDataKey>? {
         val res = when {
             !KotlinNotebookApplicationOptions.get().showDataFrameAsSwing -> null
@@ -32,7 +35,11 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
             else -> extractImpl(editor, interval)
         }
 
-        return if (res.isNullOrEmpty()) null else res
+        if (res.isNullOrEmpty()) return null
+
+        val jupyterKeys = jupyterDelegate.extract(editor, interval)
+
+        return (jupyterKeys ?: emptyList()) + res
     }
 
     private fun extractImpl(
