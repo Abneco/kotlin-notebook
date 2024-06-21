@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.scientific.tables.api.ColumnDescriptionStatistics
@@ -18,7 +17,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import org.jetbrains.kotlinx.jupyter.api.MimeTypes
 import org.jetbrains.plugins.notebooks.jackson
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -26,9 +24,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 private class CommandRunner(val coroutineScope: CoroutineScope)
 
 /**
- * Class responsible for creating a [DSDataDescription] from a Kotlin DataFrame.
+ * Class responsible for creating a [TableStatisticsData] from a Kotlin DataFrame.
  */
-class KotlinDataDescriptionImpl(
+class KotlinTableStatisticsDataImpl(
     private val commandExecutor: DSTableCommandExecutor,
     private val tableVariable: String,
 ) : TableStatisticsData {
@@ -47,11 +45,9 @@ class KotlinDataDescriptionImpl(
             // data structures.
             val describeJson = commandExecutor.executeCommand("""
                import org.jetbrains.kotlinx.dataframe.jupyter.KotlinNotebookPluginUtils
-               if ($tableVariable != null) {
-                   DISPLAY(KotlinNotebookPluginUtils.convertToDataFrame($tableVariable!!).describe().toJson())
-               } else {
-                   DISPLAY("")               
-               }
+               // Use println() to force output to STREAM rather than DISPLAY
+               val value = $tableVariable 
+               println(if (value != null) KotlinNotebookPluginUtils.convertToDataFrame(value).describe().toJson() else "")
             """.trimIndent())
             val columnStats = extractDescribeData(describeJson)
             tableStatisticsDataDeferred.complete(columnStats)
@@ -77,12 +73,7 @@ class KotlinDataDescriptionImpl(
 
     private fun extractDescribeData(descriptionAsJson: String): List<ColumnDescriptionStatistics>? {
         return try {
-            val node = jackson.readTree(descriptionAsJson)
-            if (node !is ObjectNode) return null
-            if (!node.has(MimeTypes.PLAIN_TEXT)) return null
-            val mimeContent: JsonNode = node.get(MimeTypes.PLAIN_TEXT)
-            if (!mimeContent.isTextual) return null
-            val statisticsArray = jackson.readTree(mimeContent.asText())
+            val statisticsArray = jackson.readTree(descriptionAsJson)
             if (statisticsArray !is ArrayNode) return null
 
             // Parse each column for its stats. Each column has the following format:

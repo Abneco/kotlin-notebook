@@ -99,7 +99,7 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
         // Parse data frame data sent in output and prepare
         // basic statics info that can be fetched on request.
         val info = executeParsing(textTableOutput) { parseFrameInfoFromKotlinDataframeOutput(textTableOutput, isPreview = false) }
-        val dataStatistics = KotlinDataDescriptionImpl(commandExecutor, tableVariable)
+        val dataStatistics = KotlinTableStatisticsDataImpl(commandExecutor, tableVariable)
 
         return info.copy(dataStatistics = dataStatistics)
     }
