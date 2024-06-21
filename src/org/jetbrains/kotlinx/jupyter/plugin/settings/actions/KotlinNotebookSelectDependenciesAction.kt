@@ -27,7 +27,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.jupyter.editor.getJupyterVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
 import java.awt.event.ActionEvent
-import java.util.EventListener
+import java.util.*
 import javax.swing.AbstractAction
 import javax.swing.Action
 import javax.swing.JComponent
@@ -47,7 +47,7 @@ abstract class KotlinNotebookSelectDependenciesAction : DumbAwareAction() {
     override fun update(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR)
         if (e.project == null || editor == null ||
-            !editor.isKotlinNotebook || getJupyterVirtualFile(e) == null
+            !editor.isKotlinNotebook || e.getJupyterVirtualFile() == null
         ) {
             e.presentation.isEnabledAndVisible = false
         }
@@ -56,7 +56,7 @@ abstract class KotlinNotebookSelectDependenciesAction : DumbAwareAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val file = getJupyterVirtualFile(e) ?: return
+        val file = e.getJupyterVirtualFile() ?: return
 
         val selection = selectDependencies(project, file.notebook.property, file.file.presentableName)
         if (selection != null) {

@@ -19,7 +19,7 @@ class KotlinNotebookFusActionListener: AnActionListener {
         val project = event.project ?: return
 
         fun getBackedFile(): BackedNotebookVirtualFile? {
-            val backedFile = getJupyterVirtualFile(event) ?: return null
+            val backedFile = event.getJupyterVirtualFile() ?: return null
             return backedFile.takeIf { it.file.isKotlinNotebook }
         }
 
