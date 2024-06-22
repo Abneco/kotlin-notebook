@@ -45,7 +45,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService.Companion.HL_DELAY_PAUSE
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.shouldStartAfterPreChecks
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ImpatientNotebookChangeListener
@@ -141,13 +140,19 @@ class NotebookHighlightingManager(
         }
     }
 
-    private fun Disposable.addListeners() {
+    private fun Disposable.addListener() {
+        val targetFile = virtualFile
         project.messageBus.connect(this).subscribe(
           NotebookSessionEventListener.TOPIC,
           object : NotebookSessionEventListener {
-                override fun sessionRestarted(virtualFile: BackedNotebookVirtualFile) {
-                    KotlinNotebookCellExecutionCallbackFactory.getInstance().sessionRestarted(virtualFile)
-                    dataController.executionHighlightingHelper.onSessionRestarted()
+                override fun sessionStarted(virtualFile: BackedNotebookVirtualFile, isAfterRestart: Boolean) {
+                    if (targetFile != virtualFile || !isAfterRestart) return
+
+                    coroutineScope.launch {
+                        readAction {
+                            restartAnalysing()
+                        }
+                    }
                 }
             }
         )
@@ -170,7 +175,7 @@ class NotebookHighlightingManager(
     init {
         Disposer.register(projectService, this)
         initializeData()
-        projectService.addListeners()
+        projectService.addListener()
     }
 
     private val fileToInjectionData = ConcurrentHashMap<KtFile, InjectedFileData>()

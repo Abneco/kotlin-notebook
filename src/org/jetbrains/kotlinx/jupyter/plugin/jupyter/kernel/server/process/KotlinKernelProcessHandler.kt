@@ -15,7 +15,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelState
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.findNotebookVirtualFileOrNull
 import org.jetbrains.kotlinx.jupyter.plugin.util.warnInTests
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
@@ -53,14 +52,6 @@ class KotlinKernelProcessHandler(
         setShouldKillProcessSoftly(!ApplicationManager.getApplication().isUnitTestMode)
 
         addProcessListener(object : ProcessAdapter() {
-            override fun startNotified(event: ProcessEvent) {
-                val notebook = notebookVirtualFile
-                if (notebook != null) {
-                    project.messageBus.syncPublisher(NotebookSessionEventListener.TOPIC)
-                        .kernelStarted(notebook)
-                }
-            }
-
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                 LOG.debug(event.text.trimEnd().trimStart('\r', '\n'))
             }

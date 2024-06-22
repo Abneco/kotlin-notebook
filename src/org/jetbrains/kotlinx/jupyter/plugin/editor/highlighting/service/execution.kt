@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.utils.ifEmpty
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.ExecutionCallbackRegistered
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.ExecutionCallbackUnregistered
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookExecutionRelatedEventsProcessor
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -29,6 +30,20 @@ class NotebookCellExecutionHighlightingHelper(
             PENDING_REQUEST,
             IDLE
         }
+    }
+
+    init {
+        val parentDisposable = NotebookHighlightingService.getInstance(project)
+        project.messageBus.connect(parentDisposable).subscribe(
+            NotebookSessionEventListener.TOPIC,
+            object : NotebookSessionEventListener {
+                override fun sessionStarted(virtualFile: BackedNotebookVirtualFile, isAfterRestart: Boolean) {
+                    dataLock.withWriteLock {
+                        lastExecutedIndexes.clear()
+                    }
+                }
+            }
+        )
     }
 
     private val jupyterNotebookSession get() = JupyterRuntimeService.getInstance(project).getSession(notebookFile)

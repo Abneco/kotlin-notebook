@@ -5,8 +5,6 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
@@ -31,7 +29,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookTypeHints
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.getErrorPresenceIndicator
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
@@ -120,12 +117,11 @@ internal object NotebookHighlightingUtilityObject {
         if (project.isDisposed) return
 
         LOG.info("Resetting session meta information")
-        val backedFile = vFile.toBackedNotebookFile()
 
         val hlManager = highlightingManagerFor(project, vFile)
 
         if (project.isDisposed) return
-        val (psiFile, cells) = runReadAction {
+        runReadAction {
             val psiFile = vFile.toPsiFile(project)
             val cells = psiFile?.getNotebookCells()
             hlManager?.dataController?.invalidateStateAfterCellExecution(null)
@@ -139,35 +135,10 @@ internal object NotebookHighlightingUtilityObject {
                     f.first is KtFile
                 }?.first?.putUserData(NonTargetHostErrorMark, null)
             }
-            psiFile to cells
-        }
-        if (ApplicationManager.getApplication().isUnitTestMode) {
-            return
-        }
-        backedFile?.let {
-            project.messageBus
-                .syncPublisher(NotebookSessionEventListener.TOPIC)
-                .sessionRestarted(it)
         }
 
-        runInEdt { // we want to ensure that this part will be executed on the dispatch thread
-            if (project.isDisposed) return@runInEdt
-
-            LOG.info("Requesting restart of scripting support after session restart")
-            JupyterCompilerService.getInstance(project).requestScriptingUpdate()
-        }
-        if (project.isDisposed) return
-        runReadAction {
-            hlManager?.let { manager ->
-                manager.resetCaretListenerState()
-                manager.dataController.notebookRangesQueuedForHL?.addAll(
-                    cells?.indices?.toList() ?: listOf()
-                )
-            }
-            if (psiFile != null) {
-                NotebookHighlightingRestarter.scheduleRegularUpdateNoChecks(psiFile, delayDelta = 2000)
-            }
-        }
+        LOG.info("Requesting restart of scripting support after session restart")
+        JupyterCompilerService.getInstance(project).requestScriptingUpdate()
     }
 
     fun highlightingManagerFor(project: Project, file: VirtualFile): NotebookHighlightingManager? {

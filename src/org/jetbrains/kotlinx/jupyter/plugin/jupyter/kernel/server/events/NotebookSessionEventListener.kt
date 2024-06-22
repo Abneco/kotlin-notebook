@@ -16,12 +16,8 @@ interface NotebookSessionEventListener : EventListener {
     }
 
     /**
-     * Fires after kernel is started, session is initialised.
+     * Fires after the kernel is started, the session is initialized.
+     * Considers if this session was restarted or not.
      */
-    fun kernelStarted(virtualFile: BackedNotebookVirtualFile) = Unit
-
-    /**
-     * Fires after session is restarted.
-     */
-    fun sessionRestarted(virtualFile: BackedNotebookVirtualFile) = Unit
+    fun sessionStarted(virtualFile: BackedNotebookVirtualFile, isAfterRestart: Boolean = false) = Unit
 }

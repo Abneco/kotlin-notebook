@@ -1,6 +1,8 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.util.messages.Topic
 import org.jetbrains.kotlinx.jupyter.messaging.KernelInfoRequest
 import org.jetbrains.kotlinx.jupyter.messaging.MessageType
 import org.jetbrains.kotlinx.jupyter.messaging.makeSimpleMessage
@@ -9,6 +11,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelEv
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableProvider
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.JupyterSessionVerifiedListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.toJupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
@@ -24,6 +27,13 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
 abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: Int) : JupyterSessionLaunchStrategy {
+    companion object {
+        /**
+         * Topic about notifying what session is verified 
+         */
+        @Topic.ProjectLevel
+        val TOPIC: Topic<JupyterSessionVerifiedLaunchStrategy> = Topic(JupyterSessionVerifiedLaunchStrategy::class.java, Topic.BroadcastDirection.NONE)
+    }
     override fun createAndVerifySession(jupyterClient: JupyterClient,
                                         sessionDataFactory: JupyterClient.() -> JupyterSessionData,
                                         sessionFactory: (JupyterSessionData) -> JupyterNotebookSession?): JupyterNotebookSession? {
@@ -35,12 +45,20 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
 
             if (verifySession(session, kernel)) {
                 kernel?.markStarted()
+                notifySessionVerified(session)
                 return session
             }
 
             jupyterClient.deleteSession(sessionData.sessionId)
         }
         return null
+    }
+
+    private fun notifySessionVerified(session: JupyterNotebookSession) {
+        val vFile = session.virtualFile ?: return
+
+        ApplicationManager.getApplication().messageBus.syncPublisher(JupyterSessionVerifiedListener.TOPIC)
+            .verifiedSessionStarting(session.project, vFile)
     }
 
     @OptIn(ExperimentalContracts::class)

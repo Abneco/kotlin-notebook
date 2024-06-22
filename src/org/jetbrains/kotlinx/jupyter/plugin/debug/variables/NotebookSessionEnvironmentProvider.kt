@@ -42,10 +42,8 @@ internal class NotebookSessionNoSuspensionEnvironmentProvider(
         val notebookReference = retrieveNotebookReference(virtualMachine) ?: return null
 
         val sharedContextField = notebookReference.referenceType().fieldByName("sharedReplContext")
-        val sharedContextReference = notebookReference.getValue(sharedContextField) as? ObjectReference
-        if (sharedContextReference == null) {
-            return null
-        }
+        val sharedContextReference = notebookReference.getValue(sharedContextField) as? ObjectReference ?: return null
+
         val evaluatorField = sharedContextReference.referenceType().fieldByName("evaluator")
         val evaluatorImpl = sharedContextReference.getValue(evaluatorField) as ObjectReference
 

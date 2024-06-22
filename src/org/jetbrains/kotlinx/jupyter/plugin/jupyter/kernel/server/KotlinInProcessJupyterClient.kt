@@ -3,12 +3,16 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Version
+import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingUtilityObject.resetSessionMetaInformation
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.JupyterSessionVerifiedListener
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.createConcurrentDoubleKeyMap
@@ -42,9 +46,18 @@ interface KotlinKernelRunnableProvider {
 class KotlinInProcessJupyterClient(
     private val rootDir: File
 ): JupyterClient, KotlinKernelRunnableProvider, Disposable {
+    init {
+      ApplicationManager.getApplication().messageBus.connect(this)
+          .subscribe(JupyterSessionVerifiedListener.TOPIC, JupyterSessionVerifiedListener { project, virtualFile ->
+              project.messageBus.syncPublisher(NotebookSessionEventListener.TOPIC)
+                  .sessionStarted(virtualFile, isAfterRestart = pendingRestarts.remove(virtualFile.file))
+          })
+    }
+
     private val idGenerator = IdGenerator()
 
     private val kernels = ConcurrentCollectionFactory.createConcurrentMap<JupyterKernelId, KotlinKernelRunnableHandler>()
+    private val pendingRestarts = ConcurrentCollectionFactory.createConcurrentSet<VirtualFile>()
 
     private val sessions = createConcurrentDoubleKeyMap(
         JupyterSessionData::sessionId,
@@ -135,8 +148,13 @@ class KotlinInProcessJupyterClient(
     override fun restart(kernelId: JupyterKernelId) {
         val sessionData = sessions.getBySecondKey(kernelId) ?: return
         val project = kernels[kernelId]?.project
+        val notebookFile = kernels[kernelId]?.notebookVirtualFile
         killKernel(kernelId)
         sessions.removeByValue(sessionData)
+
+        if (notebookFile != null) {
+            pendingRestarts.add(notebookFile.file)
+        }
 
         if (project != null) {
             NotebookNotificationUtility.getInstance(project)
@@ -169,6 +187,7 @@ class KotlinInProcessJupyterClient(
             val notebookFile = kernelHandler.notebookVirtualFile ?: return
             val project = kernelHandler.project
 
+            // probably move out from here
             resetSessionMetaInformation(notebookFile.file, project)
             if (!project.isDisposed) {
                 JupyterRuntimeService.getInstance(project).clearRuntime(notebookFile.file)
