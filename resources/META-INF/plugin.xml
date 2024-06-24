@@ -282,6 +282,7 @@
         <editor.outputs.notebookObjectOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputDataKeyExtractor"/>
         <editor.outputs.notebookOutputComponentFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputComponentFactory"/>
         <themeChangedListener implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorColorsListener"/>
+        <jupyter.output.error.filters.provider implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.error.KotlinJupyterErrorOutputFiltersProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.scientific.tables">
