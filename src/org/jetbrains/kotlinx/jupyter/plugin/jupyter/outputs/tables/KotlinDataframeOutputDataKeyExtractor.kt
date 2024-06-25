@@ -9,10 +9,12 @@ import com.intellij.util.asSafely
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.plugins.notebooks.jupyter.editor.isJupyter
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutputDataKey
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterOutputDataKeyExtractor
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterTableOutputDataKey
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.getOutputsForIndex
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.util.createTableOutputDataKey
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.webOutputs.JupyterWebOutputInfo
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterExecuteResultOutput
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutputType
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
@@ -39,7 +41,15 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
 
         val jupyterKeys = jupyterDelegate.extract(editor, interval)
 
-        return (jupyterKeys ?: emptyList()) + res
+        return (jupyterKeys?.filterNot { isBrowserTableOutputKey(it) } ?: emptyList()) + res
+    }
+
+    private fun isBrowserTableOutputKey(key: NotebookOutputDataKey): Boolean {
+        if (key !is JupyterBrowserOutputDataKey) return false
+        val info = key.info
+        if (info !is JupyterWebOutputInfo.Output) return false
+
+        return info.output[KOTLIN_DATAFRAME_MIME] != null
     }
 
     private fun extractImpl(
