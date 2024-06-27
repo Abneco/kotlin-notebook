@@ -3,7 +3,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.util
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.injected.editor.VirtualFileWindow
-import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.readAction
@@ -28,10 +27,8 @@ import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.find
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
-import org.jetbrains.plugins.notebooks.core.impl.file.notebook
-import org.jetbrains.plugins.notebooks.jupyter.NotebookMetadataLanguageProvider
+import org.jetbrains.plugins.notebooks.core.impl.file.notebookLanguage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
 
@@ -65,22 +62,6 @@ fun isKotlinKernelName(kernelName: String?): Boolean {
 fun JupyterNotebookSession.isKotlinNotebookSession(): Boolean {
     return isKotlinKernelName(kernelName)
 }
-
-private val VirtualFile.notebookLanguage: Language?
-    get() {
-        takeIfBacked(this)?.let {
-            return it.notebook.language
-        }
-        val cachedLanguage = NotebookMetadataLanguageProvider.Utils.getNotebookLanguage(this)
-        if (cachedLanguage != null)
-            return cachedLanguage
-        val calculatedLanguage = JupyterNotebookBase.createOrNullJupyterNotebook(this)?.language
-        if (calculatedLanguage != null) {
-            NotebookMetadataLanguageProvider.Utils.setNotebookLanguage(this, calculatedLanguage)
-        }
-
-        return calculatedLanguage
-    }
 
 fun PsiFile.getTopLevelFile(): PsiFile = InjectedLanguageManager.getInstance(project).getTopLevelFile(this) ?: this
 

@@ -339,7 +339,8 @@ private fun KotlinDataframeInfo.asDsTableInfo(isPreview: Boolean): DSDataFrameIn
             topLevelColumnNames,
             topLevelTypeNames,
             DSTableBundle.message("ds.table.dimensions.info", 0, 0),
-            hierarchyRoot = columnTreeRoot
+            hierarchyRoot = columnTreeRoot,
+            tableType = DSTableDataType.KOTLIN_DATAFRAME
         )
     }
 
@@ -354,6 +355,7 @@ private fun KotlinDataframeInfo.asDsTableInfo(isPreview: Boolean): DSDataFrameIn
         topLevelColumnNames,
         topLevelTypeNames,
         dimensionsStr,
-        hierarchyRoot = columnTreeRoot
+        hierarchyRoot = columnTreeRoot,
+        tableType = DSTableDataType.KOTLIN_DATAFRAME
     )
 }
