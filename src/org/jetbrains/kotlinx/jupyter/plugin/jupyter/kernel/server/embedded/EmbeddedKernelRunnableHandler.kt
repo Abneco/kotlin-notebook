@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.EventDispatcher
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelState
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelStateMachine
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
@@ -17,7 +18,7 @@ import java.nio.file.Path
 class EmbeddedKernelRunnableHandler(
     override val project: Project,
     override val kernelId: JupyterKernelId,
-    private val notebookPath: Path,
+    override val notebookPath: Path,
 ) : KotlinKernelRunnableHandler {
 
     val loggerFactory: EmbeddedKotlinKernelLoggerFactory = EmbeddedKotlinKernelLoggerFactory()
@@ -27,19 +28,21 @@ class EmbeddedKernelRunnableHandler(
         BackedNotebookVirtualFile.find(file)
     }
 
-    override val kernelState: KernelState get() = KernelState.STARTED
-    override fun markStarted() {}
+    private val stateMachine = KernelStateMachine().apply { started() }
+    override val kernelState: KernelState get() = stateMachine.currentState
+
+    override fun markStarted() {
+        stateMachine.started()
+    }
 
     private val eventDispatcher = EventDispatcher.create(KotlinKernelListener::class.java)
 
     override fun stopKernel() {
+        stateMachine.terminating()
         eventDispatcher.multicaster.kernelTerminated(
             EmbeddedKernelEvent(this)
         )
-    }
-
-    override fun canStopKernel(): Boolean {
-        return true
+        stateMachine.terminated()
     }
 
     override fun dispose() {

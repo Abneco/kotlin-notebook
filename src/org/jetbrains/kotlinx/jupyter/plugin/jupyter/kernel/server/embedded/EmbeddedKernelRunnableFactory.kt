@@ -1,7 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
@@ -28,19 +27,17 @@ class EmbeddedKernelRunnableFactory : KernelRunnableFactory {
     ): KotlinKernelRunnableHandler? {
         if (project.kotlinNotebookSessionRunMode != KotlinNotebookSessionRunMode.IDE_PROCESS) return null
 
-        return EmbeddedKernelRunnableHandler(
+        val runnableHandler = EmbeddedKernelRunnableHandler(
             project, kernelId, notebookPath
-        ).apply {
-            val application = ApplicationManager.getApplication()
-            application.invokeLater {
-                val mode = EmbeddedProcessToolWindow(
-                    project,
-                    notebookPath,
-                    this
+        )
+
+        KotlinNotebookToolWindowManager.getInstance(project)
+            .showKotlinNotebookServerManagementToolWindow(
+                EmbeddedProcessToolWindow(
+                    runnableHandler
                 )
-                KotlinNotebookToolWindowManager.getInstance(project)
-                    .showKotlinNotebookServerManagementToolWindow(mode)
-            }
-        }
+            )
+
+        return runnableHandler
     }
 }

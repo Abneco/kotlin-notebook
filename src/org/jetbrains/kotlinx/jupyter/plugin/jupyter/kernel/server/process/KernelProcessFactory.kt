@@ -21,7 +21,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifac
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
-import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
@@ -88,15 +87,12 @@ class KernelProcessFactory : KernelRunnableFactory {
         ).apply {
             addKernelProcessListener(object : KotlinKernelProcessListener {
                 override fun beforeNotificationStarted(event: KotlinKernelNotificationStartedEvent) {
-                    KotlinNotebookPluginScope.invokeOnEDT {
-                        val mode = KotlinKernelProcessToolWindow(
-                            project,
-                            notebookPath,
-                            event.source
+                    KotlinNotebookToolWindowManager.getInstance(project)
+                        .showKotlinNotebookServerManagementToolWindow(
+                            KotlinKernelProcessToolWindow(
+                                event.source
+                            )
                         )
-                        KotlinNotebookToolWindowManager.getInstance(project)
-                            .showKotlinNotebookServerManagementToolWindow(mode)
-                    }
                 }
             })
             startNotify()

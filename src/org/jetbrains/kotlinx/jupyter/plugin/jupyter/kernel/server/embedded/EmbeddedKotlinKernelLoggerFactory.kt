@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 import com.intellij.execution.ui.ConsoleView
 import com.intellij.execution.ui.ConsoleViewContentType
 import org.jetbrains.kotlinx.jupyter.api.KernelLoggerFactory
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowRunMode
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowSettings
 import org.slf4j.Logger
 import org.slf4j.Marker
 import org.slf4j.event.Level
@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
  * This allows us to intercept kernel log messages and redirect them to the console window,
  * but this will only work if the `consoleView` has been set. Since there is a circular
  * dependency between this factory and the console view, the console view needs
- * to register itself when created. See [KotlinNotebookToolWindowRunMode] for more details.
+ * to register itself when created. See [KotlinNotebookToolWindowSettings] for more details.
  */
 class EmbeddedKotlinKernelLoggerFactory: KernelLoggerFactory {
     // Reference to the ConsoleView showing the logs. If this is `null`

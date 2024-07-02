@@ -2,22 +2,18 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
 import com.intellij.execution.impl.ConsoleViewImpl
-import com.intellij.openapi.project.Project
 import com.intellij.ui.content.Content
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowRunMode
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowSettings
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.plugins.notebooks.jupyter.server.ui.attachJupyterServerContentCloseListener
-import java.nio.file.Path
 
 /**
  * Class responsible for managing the setup of the tool window when running the kernel in a
  * separate process.
  */
 class KotlinKernelProcessToolWindow(
-    project: Project,
-    notebookPath: Path,
     override val handler: KotlinKernelProcessHandler,
-): KotlinNotebookToolWindowRunMode(project, notebookPath) {
+): KotlinNotebookToolWindowSettings() {
     override fun makeToolWindowClosableWhenStoppingKernel(newContent: Content) {
         super.makeToolWindowClosableWhenStoppingKernel(newContent)
         attachJupyterServerContentCloseListener(

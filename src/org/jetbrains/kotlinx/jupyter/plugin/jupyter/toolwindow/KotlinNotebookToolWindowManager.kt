@@ -2,7 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -14,14 +14,15 @@ import com.intellij.ui.content.Content
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import icons.KotlinJupyterIcons
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import org.jetbrains.annotations.CalledInAny
 import org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookToolWindowBuilder
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelEvent
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowManager.Companion.KOTLIN_NOTEBOOK_RUNNER_ID
-import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelListener
 import java.nio.file.Path
-import java.util.concurrent.ConcurrentHashMap
 
 
 internal fun Path.toNotebookToolWindowPanelHelpId(): String {
@@ -33,56 +34,46 @@ class KotlinNotebookToolWindowManager(
     private val project: Project,
     private val coroutineScope: CoroutineScope
 ) : Disposable {
-    private val openedNotebooksToContent = ConcurrentHashMap<BackedNotebookVirtualFile, Content>()
-    private val toolWindowContentManager = getOrCreateKotlinNotebookToolWindow().contentManager
 
-    init {
-      ApplicationManager.getApplication().messageBus.connect(this).subscribe(
-          JupyterRestartKernelListener.TOPIC, JupyterRestartKernelListener { notebook ->
-              if (project.isDisposed) return@JupyterRestartKernelListener
-              val content = findContentForNotebook(notebook) ?: return@JupyterRestartKernelListener
-              removeContent(notebook, content)
-          }
-      )
+    @RequiresEdt
+    private fun removeContent(content: Content) {
+        getOrCreateKotlinNotebookToolWindow().contentManager.removeContent(content, true)
     }
 
-    private fun removeContent(notebookVirtualFile: BackedNotebookVirtualFile, content: Content) {
-        toolWindowContentManager.removeContent(content, true)
-        openedNotebooksToContent.remove(notebookVirtualFile)
-    }
-
-    private fun findContentForNotebook(notebookVirtualFile: BackedNotebookVirtualFile): Content? {
-        return if (notebookVirtualFile.file.isKotlinNotebook) {
-            val stored = openedNotebooksToContent[notebookVirtualFile] ?: return null
-            val inManager = toolWindowContentManager.findContent(stored.displayName)
-            if (inManager == null) {
-                openedNotebooksToContent.remove(notebookVirtualFile)
-            }
-            stored
-        } else {
-            null
+    @CalledInAny
+    fun showKotlinNotebookServerManagementToolWindow(
+        settings: KotlinNotebookToolWindowSettings,
+    ) {
+        coroutineScope.launch(Dispatchers.EDT) {
+            showKotlinNotebookServerManagementToolWindowImpl(settings)
         }
     }
 
     @RequiresEdt
-    fun showKotlinNotebookServerManagementToolWindow(
-        mode: KotlinNotebookToolWindowRunMode,
-    ) {
-        val project = mode.project
+    private suspend fun showKotlinNotebookServerManagementToolWindowImpl(settings: KotlinNotebookToolWindowSettings) {
+        val project = settings.project
+
         val toolWindow: ToolWindow = getOrCreateKotlinNotebookToolWindow()
 
-        val panelHelpId = mode.notebookPath.toNotebookToolWindowPanelHelpId()
+        val panelHelpId = settings.notebookPath.toNotebookToolWindowPanelHelpId()
         val manager = toolWindow.contentManager
         if (project.isDisposed) return
 
-        val notebookToolWindowBuilder = KotlinNotebookToolWindowBuilder(mode, panelHelpId, manager)
+        val notebookToolWindowBuilder = KotlinNotebookToolWindowBuilder(coroutineScope, settings, panelHelpId, manager)
 
         val newContent = notebookToolWindowBuilder.createMainContent()
         manager.addContent(newContent, -1)
         manager.setSelectedContent(newContent)
-        openedNotebooksToContent[mode.notebookVirtualFile()] = newContent
 
-        mode.makeToolWindowClosableWhenStoppingKernel(newContent)
+        settings.handler.addKernelListener(object : KotlinKernelListener {
+            override fun kernelTerminated(event: KotlinKernelEvent) {
+                coroutineScope.launch(Dispatchers.EDT) {
+                    removeContent(newContent)
+                }
+            }
+        })
+
+        settings.makeToolWindowClosableWhenStoppingKernel(newContent)
     }
 
     @RequiresEdt
@@ -100,7 +91,6 @@ class KotlinNotebookToolWindowManager(
 
     override fun dispose() {
         coroutineScope.cancel()
-        openedNotebooksToContent.clear()
     }
 
     companion object {

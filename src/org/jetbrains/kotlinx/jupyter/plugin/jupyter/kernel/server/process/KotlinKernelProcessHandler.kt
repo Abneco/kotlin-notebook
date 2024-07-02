@@ -12,6 +12,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.util.EventDispatcher
 import com.intellij.util.io.BaseOutputReader
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelState
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelStateMachine
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
@@ -22,22 +23,20 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.Jupyte
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicReference
 
 class KotlinKernelProcessHandler(
     override val project: Project,
     override val kernelId: JupyterKernelId,
     commandLine: GeneralCommandLine,
     private val kernelConfig: KernelConfig,
-    val notebookPath: Path,
+    override val notebookPath: Path,
 ): KillableColoredProcessHandler(commandLine), KotlinKernelRunnableHandler {
 
-    private val _kernelState = AtomicReference(KernelState.STARTING)
-    override val kernelState: KernelState
-        get() = _kernelState.get()
+    private val stateMachine = KernelStateMachine()
+    override val kernelState: KernelState get() = stateMachine.currentState
     
     override fun markStarted() {
-        _kernelState.compareAndSet(KernelState.STARTING, KernelState.STARTED)
+       stateMachine.started()
     }
 
     private val eventDispatcher = EventDispatcher.create(KotlinKernelProcessListener::class.java)
@@ -57,6 +56,7 @@ class KotlinKernelProcessHandler(
             }
 
             override fun processTerminated(event: ProcessEvent) {
+                stateMachine.terminated()
                 LOG.debug("Kernel process terminated with code ${event.exitCode} (${event.text})")
                 LOG.warnInTests { "Destroyed Kotlin kernel $kernelId" }
                 eventDispatcher.multicaster.kernelTerminated(KotlinKernelProcessEventImpl(event))
@@ -86,16 +86,13 @@ class KotlinKernelProcessHandler(
         return KernelZMQClientSession(sessionId, kernelConfig, onMessage)
     }
 
-    override fun canStopKernel(): Boolean {
-        return !isProcessTerminated && !isProcessTerminating
-    }
-
     override fun stopKernel() {
+        stateMachine.terminating()
         destroyProcess()
     }
 
     override fun dispose() {
-        destroyProcess()
+        stopKernel()
     }
 
     override fun readerOptions(): BaseOutputReader.Options {

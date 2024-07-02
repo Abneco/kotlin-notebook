@@ -4,10 +4,10 @@ import com.intellij.openapi.fileEditor.impl.EditorTabPresentationUtil
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.ui.content.ContentManager
+import com.intellij.util.concurrency.ThreadingAssertions
 import org.jetbrains.kotlin.idea.util.sourceRoots
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.originFile
@@ -22,16 +22,6 @@ fun Project.allSourceRoots(): List<File> {
     val allModules = moduleManager.modules
     return allModules.flatMap { module ->
         module.sourceRoots.map { File(it.path) }
-    }
-}
-
-fun Project.isInsideSourceRoot(vFile: VirtualFile): Boolean {
-    if (!vFile.isInLocalFileSystem) return false
-    val file: File = VfsUtil.virtualToIoFile(vFile)
-
-    val sourceRoots = allSourceRoots()
-    return sourceRoots.any { root ->
-        file.startsWith(root)
     }
 }
 
@@ -53,6 +43,7 @@ internal fun BackedNotebookVirtualFile.toPresentablePathAsTabTitle(
     project: Project,
     contentManager: ContentManager
 ): String {
+    ThreadingAssertions.assertBackgroundThread()
     val originFile = originFile
     val simpleName = EditorTabPresentationUtil.getEditorTabTitle(project, originFile)
     return if (contentManager.findContent(simpleName) != null) {

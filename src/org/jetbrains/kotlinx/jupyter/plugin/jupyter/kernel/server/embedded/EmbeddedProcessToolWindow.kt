@@ -2,19 +2,15 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 
 import com.intellij.execution.impl.ConsoleViewImpl
-import com.intellij.openapi.project.Project
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowRunMode
-import java.nio.file.Path
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowSettings
 
 /**
  * Class responsible for managing the setup of the tool window when running the kernel in
  * the same process as IDEA.
  */
 class EmbeddedProcessToolWindow(
-    project: Project,
-    notebookPath: Path,
     override val handler: EmbeddedKernelRunnableHandler,
-): KotlinNotebookToolWindowRunMode(project, notebookPath) {
+): KotlinNotebookToolWindowSettings() {
 
     override fun consoleWindowCreated(console: ConsoleViewImpl) {
         handler.loggerFactory.consoleView = console

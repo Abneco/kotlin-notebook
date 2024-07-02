@@ -183,7 +183,7 @@ class KotlinInProcessJupyterClient(
     override suspend fun getServerVersions(): Iterable<Pair<JupyterClient.VersionKind, Version>> = emptyList()
 
     private fun removeSessionAndRelatedState(kernelHandler: KotlinKernelRunnableHandler) {
-        if (removeSession(kernelHandler.kernelId) && kernelHandler.kernelState == KernelState.STARTED) {
+        if (removeSession(kernelHandler.kernelId) && kernelHandler.kernelState != KernelState.STARTING) {
             val notebookFile = kernelHandler.notebookVirtualFile ?: return
             val project = kernelHandler.project
 

@@ -20,14 +20,14 @@ import java.nio.file.Path
  * Tool window depending on if the kernel is either running inside the
  * process or in a separate one.
  */
-abstract class KotlinNotebookToolWindowRunMode(
-    val project: Project,
-    val notebookPath: Path
-) {
+abstract class KotlinNotebookToolWindowSettings {
     /**
      * Handler responsible for acting on kernel callbacks
      */
     abstract val handler: KotlinKernelRunnableHandler
+
+    val project: Project get() = handler.project
+    val notebookPath: Path get() = handler.notebookPath
     
     fun notebookVirtualFile(): BackedNotebookVirtualFile {
         return notebookPath.findNotebookVirtualFileOrNull() ?: error("File not found: $notebookPath")
