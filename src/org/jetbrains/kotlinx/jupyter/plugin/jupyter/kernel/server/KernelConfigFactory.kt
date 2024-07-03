@@ -68,7 +68,7 @@ class DefaultKotlinKernelConfigFactory(
     }
 }
 
-private fun chooseJvmTargetForSnippets(project: Project): LanguageLevel? {
+fun chooseJvmTargetForSnippets(project: Project): LanguageLevel? {
     val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
     val selectedTarget = options.jvmTargetForSnippets
     val myMaxBytecodeVersion = maxBytecodeVersion

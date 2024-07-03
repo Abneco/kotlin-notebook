@@ -3,6 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.settings
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
+import com.intellij.pom.java.LanguageLevel
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import java.util.MissingResourceException
 import kotlin.reflect.KProperty
@@ -30,5 +31,4 @@ internal fun registryFlag(
     defaultValue: Boolean
 ) = RegistryFlagDelegate(name, defaultValue)
 
-val Project.kotlinNotebookSettingsProvider: KotlinNotebookProjectOptionsProvider
-    get() = KotlinNotebookProjectOptionsProvider.getInstance(this)
+fun LanguageLevel.toCanonicalString() = toJavaVersion().toFeatureString()

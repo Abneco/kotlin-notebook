@@ -38,7 +38,7 @@ class KotlinNotebookProjectOptionsProvider :
     var jvmTargetForSnippets: LanguageLevel? by prop(
         State::jvmTargetForSnippets,
         { it?.let { LanguageLevel.parse(it) } },
-        { it?.toJavaVersion()?.toFeatureString() },
+        { it?.toCanonicalString() },
     ).onChange(Listener::onJvmTargetForSnippetsChanged)
 
     var heapMaxLimitInMib by prop(State::heapMaxLimitInMib)
@@ -74,7 +74,6 @@ class KotlinNotebookProjectOptionsProvider :
         // default settings for new notebooks
         var shouldBuildProject by property(false)
         var shouldAddProjectLibrariesToClasspath by property(true)
-        var shouldOpenDebugPort by property(false)
         var shouldShowNotebookVariables by property(false)
     }
 

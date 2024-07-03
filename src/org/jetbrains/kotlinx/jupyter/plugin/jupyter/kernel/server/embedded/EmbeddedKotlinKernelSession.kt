@@ -2,11 +2,15 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlinx.jupyter.config.defaultRuntimeProperties
 import org.jetbrains.kotlinx.jupyter.libraries.createLibraryHttpUtil
 import org.jetbrains.kotlinx.jupyter.libraries.getDefaultClasspathResolutionInfoProvider
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.asRawMessage
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.chooseJvmTargetForSnippets
+import org.jetbrains.kotlinx.jupyter.plugin.settings.selectedNotebookKernelVersion
+import org.jetbrains.kotlinx.jupyter.plugin.settings.toCanonicalString
 import org.jetbrains.kotlinx.jupyter.repl.ReplConfig
 import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
@@ -42,12 +46,29 @@ class EmbeddedKotlinKernelSession(
 
         val socketsManager = EmbeddedJupyterSockets(onMessage)
 
+        val kernelVersion = project.selectedNotebookKernelVersion!!
+
+        val jvmTargetForSnippets = chooseJvmTargetForSnippets(project)?.toCanonicalString() ?: defaultRuntimeProperties.jvmTargetForSnippets
+        val runtimeProperties = IdeReplRuntimeProperties(
+            kernelVersion,
+            jvmTargetForSnippets
+        )
         val replSettings = DefaultReplSettings(
             kernelConfig,
-            replConfig
+            replConfig,
+            loggerFactory,
+            runtimeProperties,
         )
+
         val inMemoryResultHolder = inMemoryHolderService.getOrCreateHolder(sessionId)
-        createEmbeddedMessageHandler(project, replSettings, loggerFactory, socketsManager, inMemoryResultHolder)
+        createEmbeddedMessageHandler(
+            project,
+            replSettings,
+            loggerFactory,
+            socketsManager,
+            inMemoryResultHolder,
+            kernelVersion.toMavenVersion(),
+        )
     }
 
 
