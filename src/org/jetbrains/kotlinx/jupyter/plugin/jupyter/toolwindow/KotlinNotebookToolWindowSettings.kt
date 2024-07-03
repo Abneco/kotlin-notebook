@@ -2,14 +2,8 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow
 
 import com.intellij.execution.impl.ConsoleViewImpl
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.ui.content.Content
-import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelEvent
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.util.findNotebookVirtualFileOrNull
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
@@ -32,32 +26,8 @@ abstract class KotlinNotebookToolWindowSettings {
     fun notebookVirtualFile(): BackedNotebookVirtualFile {
         return notebookPath.findNotebookVirtualFileOrNull() ?: error("File not found: $notebookPath")
     }
-    /**
-     * When the kernel is stopped, the file panel in the Kotlin Notebook tool window
-     * should be made closable. Otherwise, it should always be present.
-     */
-    open fun makeToolWindowClosableWhenStoppingKernel(newContent: Content) {
-        registerContentInDisposer(newContent)
-        handler.addKernelListener(object : KotlinKernelListener {
-            override fun kernelTerminated(event: KotlinKernelEvent) {
-                if (!newContent.isValid || project.isDisposed || !project.isInitialized) return
-                runInEdt {
-                    newContent.isCloseable = true
-                }
-            }
-        })
-    }
 
-    /**
-     * Registers content in the appropriate disposer based on the application mode.
-     */
-    private fun registerContentInDisposer(content: Content) {
-        // In tests, Editor disposal assertion comes before project disposal
-        val parentDisposable = if (ApplicationManager.getApplication().isUnitTestMode) {
-            handler
-        } else KotlinNotebookSessionVariablesService.getInstance(project)
-
-        Disposer.register(parentDisposable, content)
+    open fun toolWindowContentCreated(newContent: Content) {
     }
 
     /**

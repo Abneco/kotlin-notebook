@@ -14,8 +14,8 @@ import org.jetbrains.plugins.notebooks.jupyter.server.ui.attachJupyterServerCont
 class KotlinKernelProcessToolWindow(
     override val handler: KotlinKernelProcessHandler,
 ): KotlinNotebookToolWindowSettings() {
-    override fun makeToolWindowClosableWhenStoppingKernel(newContent: Content) {
-        super.makeToolWindowClosableWhenStoppingKernel(newContent)
+    override fun toolWindowContentCreated(newContent: Content) {
+        super.toolWindowContentCreated(newContent)
         attachJupyterServerContentCloseListener(
             newContent,
             project,
