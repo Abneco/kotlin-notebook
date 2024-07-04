@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow
 
+import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
@@ -13,6 +14,9 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.content.Content
+import com.intellij.ui.content.ContentManager
+import com.intellij.ui.content.ContentManagerEvent
+import com.intellij.ui.content.ContentManagerListener
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import icons.KotlinJupyterIcons
 import kotlinx.coroutines.CoroutineScope
@@ -38,12 +42,7 @@ class KotlinNotebookToolWindowManager(
     private val project: Project,
     private val coroutineScope: CoroutineScope
 ) : Disposable {
-    private val stoppedSessions: MutableMap<Path, Content> = hashMapOf()
-
-    @RequiresEdt
-    private fun removeContent(content: Content) {
-        getOrCreateKotlinNotebookToolWindow().contentManager.removeContent(content, true)
-    }
+    private val stoppedSessions: MutableMap<Path, Content> = ConcurrentCollectionFactory.createConcurrentMap()
 
     @CalledInAny
     fun showKotlinNotebookServerManagementToolWindow(
@@ -60,9 +59,7 @@ class KotlinNotebookToolWindowManager(
         val notebookPath = settings.notebookPath
         val runnableHandler = settings.handler
 
-        stoppedSessions.remove(notebookPath)?.let { content ->
-            removeContent(content)
-        }
+        val oldContent = stoppedSessions.remove(notebookPath)
 
         val toolWindow: ToolWindow = getOrCreateKotlinNotebookToolWindow()
 
@@ -73,8 +70,8 @@ class KotlinNotebookToolWindowManager(
         val notebookToolWindowBuilder = KotlinNotebookToolWindowBuilder(coroutineScope, settings, panelHelpId, manager)
 
         val newContent = notebookToolWindowBuilder.createMainContent()
-        manager.addContent(newContent, -1)
-        manager.setSelectedContent(newContent)
+
+        manager.replaceContent(oldContent, newContent)
 
         runnableHandler.addKernelListener(object : KotlinKernelListener {
             override fun kernelTerminated(event: KotlinKernelEvent) {
@@ -84,6 +81,22 @@ class KotlinNotebookToolWindowManager(
 
         registerContentInDisposer(runnableHandler, newContent)
         settings.toolWindowContentCreated(newContent)
+    }
+
+    private fun ContentManager.replaceContent(
+        oldContent: Content?,
+        newContent: Content,
+    ) {
+        val indexToInsert = if (oldContent == null) -1
+        else getIndexOfContent(oldContent)
+
+        addContent(newContent, indexToInsert)
+
+        if (oldContent != null) {
+            removeContent(oldContent, true)
+        }
+
+        setSelectedContent(newContent)
     }
 
     private fun handleKernelTermination(notebookPath: Path, newContent: Content) {
@@ -119,14 +132,31 @@ class KotlinNotebookToolWindowManager(
 
     @RequiresEdt
     internal fun getOrCreateKotlinNotebookToolWindow(): ToolWindow {
-        val toolWindowManager = ToolWindowManager.getInstance(project)
-        val toolWindow = toolWindowManager.getToolWindow(KOTLIN_NOTEBOOK_TOOL_WINDOW_ID)
-            ?: toolWindowManager.registerToolWindow(
-                RegisterToolWindowTask(KOTLIN_NOTEBOOK_TOOL_WINDOW_ID, canCloseContent = true, anchor = ToolWindowAnchor.BOTTOM)
+        return ToolWindowManager.getInstance(project).getToolWindow(KOTLIN_NOTEBOOK_TOOL_WINDOW_ID)
+            ?: createKotlinNotebookToolWindow()
+    }
+
+    @RequiresEdt
+    private fun createKotlinNotebookToolWindow(): ToolWindow {
+        return ToolWindowManager.getInstance(project)
+            .registerToolWindow(
+                RegisterToolWindowTask(
+                    KOTLIN_NOTEBOOK_TOOL_WINDOW_ID,
+                    canCloseContent = true,
+                    anchor = ToolWindowAnchor.BOTTOM
+                )
             )
-        toolWindow.setIcon(KotlinJupyterIcons.ToolWindowIcon)
-        toolWindow.isAutoHide = false
-        return toolWindow
+            .apply {
+                setIcon(KotlinJupyterIcons.ToolWindowIcon)
+                isAutoHide = false
+
+                contentManager.addContentManagerListener(object : ContentManagerListener {
+                    override fun contentRemoved(event: ContentManagerEvent) {
+                        val content = event.content
+                        stoppedSessions.entries.removeIf { it.value == content }
+                    }
+                })
+            }
     }
 
 
