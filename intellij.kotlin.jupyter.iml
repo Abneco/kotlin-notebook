@@ -10,88 +10,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="intellij.platform.commercial" />
-    <orderEntry type="module" module-name="intellij.platform.commercial.verifier" />
-    <orderEntry type="library" name="kotlin-reflect" level="project" />
-    <orderEntry type="library" name="jackson" level="project" />
-    <orderEntry type="library" name="jackson-databind" level="project" />
-    <orderEntry type="library" name="kotlinx-serialization-json" level="project" />
-    <orderEntry type="library" name="kotlinx-serialization-core" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="jetbrains-annotations" level="project" />
     <orderEntry type="library" name="jetbrains.kotlin-jupyter-shared-compiler" level="project" />
-    <orderEntry type="library" name="kotlinx-coroutines-core" level="project" />
-    <orderEntry type="module" module-name="kotlin.base.scripting" />
-    <orderEntry type="module" module-name="kotlin.base.analysis" />
-    <orderEntry type="module" module-name="kotlin.core" scope="PROVIDED" />
-    <orderEntry type="module" module-name="kotlin.scripting" scope="PROVIDED" />
-    <orderEntry type="module" module-name="intellij.java.psi" scope="PROVIDED" />
-    <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-scripting-jvm" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-scripting-common" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-compiler-common" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-scripting-compiler-impl" level="project" />
-    <orderEntry type="module" module-name="intellij.python.jupyter" />
-    <orderEntry type="module" module-name="intellij.python.jupyter.psi" />
-    <orderEntry type="module" module-name="intellij.platform.core" />
-    <orderEntry type="module" module-name="intellij.platform.util.ex" />
-    <orderEntry type="module" module-name="intellij.platform.util.ui" />
-    <orderEntry type="module" module-name="intellij.platform.analysis" />
-    <orderEntry type="module" module-name="intellij.platform.lang" />
-    <orderEntry type="module" module-name="intellij.platform.lang.impl" />
-    <orderEntry type="module" module-name="intellij.platform.analysis.impl" />
-    <orderEntry type="module" module-name="intellij.platform.concurrency" />
-    <orderEntry type="module" module-name="intellij.java.compiler" />
-    <orderEntry type="module" module-name="intellij.platform.core.ui" />
-    <orderEntry type="module" module-name="intellij.platform.ide.util.io" />
-    <orderEntry type="module" module-name="kotlin.base.facet" />
-    <orderEntry type="module" module-name="kotlin.base.code-insight" />
-    <orderEntry type="module" module-name="kotlin.highlighting.shared" />
-    <orderEntry type="module" module-name="kotlin.idea" />
-    <orderEntry type="module" module-name="intellij.platform.statistics" />
-    <orderEntry type="module" module-name="intellij.platform.debugger" />
-    <orderEntry type="module" module-name="intellij.java.debugger.impl" />
-    <orderEntry type="module" module-name="intellij.java.execution" />
-    <orderEntry type="module" module-name="intellij.java.impl" />
-    <orderEntry type="module" module-name="intellij.java.execution.impl" />
-    <orderEntry type="module" module-name="intellij.platform.debugger.impl" />
-    <orderEntry type="module" module-name="kotlin.jvm-debugger.core" />
-    <orderEntry type="module" module-name="kotlin.jvm-debugger.evaluation" />
-    <orderEntry type="module" module-name="intellij.notebooks.ui" />
-    <orderEntry type="module" module-name="kotlin.base.fe10.analysis" />
-    <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-compiler-fe10" level="project" />
-    <orderEntry type="module" module-name="kotlin.base.project-structure" />
-    <orderEntry type="module" module-name="intellij.notebooks.visualization" />
-    <orderEntry type="module" module-name="kotlin.refactorings.common" />
-    <orderEntry type="module" module-name="intellij.java" />
-    <orderEntry type="library" name="slf4j-api" level="project" />
-    <orderEntry type="library" name="kotlinx-html-jvm" level="project" />
-    <orderEntry type="library" name="xml-apis-ext" level="project" />
-    <orderEntry type="module-library">
-      <library name="ggdsl-util" type="repository">
-        <properties include-transitive-deps="false" maven-id="org.jetbrains.kotlinx:ggdsl-util:0.4.0-dev-10">
-          <verification>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10.jar">
-              <sha256sum>17fb93d3a94f2384865dcd0c8cb157c6659bd9cb4e9a4a6c8f213317c7ca285a</sha256sum>
-            </artifact>
-          </verification>
-        </properties>
-        <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="library" name="commons-io" level="project" />
-    <orderEntry type="module" module-name="intellij.platform.ide" />
-    <orderEntry type="module" module-name="intellij.platform.codeStyle.impl" />
-    <orderEntry type="module" module-name="kotlin.compiler-plugins.kotlinx-serialization.common" />
-    <orderEntry type="module" module-name="kotlin.code-insight.live-templates.shared" />
-    <orderEntry type="module" module-name="intellij.grid.impl" />
-    <orderEntry type="module" module-name="intellij.platform.backend.workspace" />
-    <orderEntry type="module" module-name="intellij.platform.workspace.jps" />
-    <orderEntry type="module" module-name="intellij.java.ui" />
-    <orderEntry type="module" module-name="intellij.java.aetherDependencyResolver" />
     <orderEntry type="library" name="jetbrains.lets.plot.shadowed" level="project" />
     <orderEntry type="module-library">
       <library name="jetbrains.lets.plot.export.shadowed" type="repository">
@@ -111,9 +31,82 @@
         </SOURCES>
       </library>
     </orderEntry>
-    <orderEntry type="module" module-name="intellij.platform.util.coroutines" />
+    <orderEntry type="module-library">
+      <library name="ggdsl-util" type="repository">
+        <properties include-transitive-deps="false" maven-id="org.jetbrains.kotlinx:ggdsl-util:0.4.0-dev-10">
+          <verification>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10.jar">
+              <sha256sum>17fb93d3a94f2384865dcd0c8cb157c6659bd9cb4e9a4a6c8f213317c7ca285a</sha256sum>
+            </artifact>
+          </verification>
+        </properties>
+        <CLASSES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="library" scope="PROVIDED" name="kotlin-reflect" level="project" />
+    <orderEntry type="library" name="kotlinx-serialization-core" level="project" />
+    <orderEntry type="library" name="kotlinx-serialization-json" level="project" />
+    <orderEntry type="library" name="kotlinx-coroutines-core" level="project" />
+    <orderEntry type="library" name="jackson" level="project" />
+    <orderEntry type="library" name="jackson-databind" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-compiler-common" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-compiler-fe10" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-scripting-common" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-scripting-compiler-impl" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-scripting-jvm" level="project" />
+    <orderEntry type="module" module-name="intellij.platform.core" />
+    <orderEntry type="module" module-name="intellij.platform.commercial" />
+    <orderEntry type="module" module-name="intellij.platform.commercial.verifier" />
+    <orderEntry type="module" module-name="intellij.platform.analysis" />
+    <orderEntry type="module" module-name="intellij.platform.analysis.impl" />
+    <orderEntry type="module" module-name="intellij.platform.codeStyle.impl" />
+    <orderEntry type="module" module-name="intellij.platform.debugger" />
+    <orderEntry type="module" module-name="intellij.platform.debugger.impl" />
+    <orderEntry type="module" module-name="intellij.platform.ide" />
+    <orderEntry type="module" module-name="intellij.platform.ide.util.io" />
+    <orderEntry type="module" module-name="intellij.platform.lang" />
+    <orderEntry type="module" module-name="intellij.platform.lang.impl" />
+    <orderEntry type="module" module-name="intellij.platform.concurrency" />
+    <orderEntry type="module" module-name="intellij.platform.core.ui" />
+    <orderEntry type="module" module-name="intellij.platform.statistics" />
     <orderEntry type="module" module-name="intellij.platform.util" />
-    <orderEntry type="module" module-name="intellij.scientific.tables" />
+    <orderEntry type="module" module-name="intellij.platform.util.coroutines" />
+    <orderEntry type="module" module-name="intellij.platform.util.ex" />
+    <orderEntry type="module" module-name="intellij.platform.util.ui" />
+    <orderEntry type="module" module-name="kotlin.core" scope="PROVIDED" />
+    <orderEntry type="module" module-name="kotlin.base.analysis" />
+    <orderEntry type="module" module-name="kotlin.base.scripting" />
+    <orderEntry type="module" module-name="kotlin.base.facet" />
+    <orderEntry type="module" module-name="kotlin.base.code-insight" />
+    <orderEntry type="module" module-name="kotlin.base.fe10.analysis" />
+    <orderEntry type="module" module-name="kotlin.base.project-structure" />
+    <orderEntry type="module" module-name="kotlin.idea" />
+    <orderEntry type="module" module-name="kotlin.highlighting.shared" />
+    <orderEntry type="module" module-name="kotlin.refactorings.common" />
+    <orderEntry type="module" module-name="kotlin.code-insight.live-templates.shared" />
+    <orderEntry type="module" module-name="kotlin.scripting" scope="PROVIDED" />
+    <orderEntry type="module" module-name="kotlin.jvm-debugger.core" />
+    <orderEntry type="module" module-name="kotlin.jvm-debugger.evaluation" />
+    <orderEntry type="module" module-name="kotlin.compiler-plugins.kotlinx-serialization.common" />
+    <orderEntry type="module" module-name="intellij.java" />
+    <orderEntry type="module" module-name="intellij.java.impl" />
+    <orderEntry type="module" module-name="intellij.java.compiler" />
+    <orderEntry type="module" module-name="intellij.java.psi" scope="PROVIDED" />
+    <orderEntry type="module" module-name="intellij.java.debugger.impl" />
+    <orderEntry type="module" module-name="intellij.java.execution" />
+    <orderEntry type="module" module-name="intellij.java.execution.impl" />
+    <orderEntry type="module" module-name="intellij.java.ui" />
+    <orderEntry type="module" module-name="intellij.java.aetherDependencyResolver" />
+    <orderEntry type="module" module-name="intellij.python.jupyter" />
+    <orderEntry type="module" module-name="intellij.python.jupyter.psi" />
     <orderEntry type="module" module-name="intellij.jupyter.core" />
+    <orderEntry type="module" module-name="intellij.notebooks.ui" />
+    <orderEntry type="module" module-name="intellij.notebooks.visualization" />
   </component>
 </module>
