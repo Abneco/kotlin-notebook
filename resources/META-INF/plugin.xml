@@ -351,8 +351,7 @@
     </actions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
-        <!--suppress PluginXmlValidity -->
-        <supportsKotlinK2Mode/>
+        <supportsKotlinPluginMode supportsK2="true"/>
     </extensions>
 
     <xi:include href="plugin.k1.xml" includeUnless="idea.kotlin.plugin.use.k2" />
