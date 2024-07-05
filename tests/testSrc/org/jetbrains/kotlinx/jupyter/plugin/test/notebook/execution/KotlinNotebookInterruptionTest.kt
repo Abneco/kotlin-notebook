@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import junit.framework.TestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.util.JDKVersionRule
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionInterruptService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterExecutionState
@@ -50,7 +50,7 @@ class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest(){
                         Thread.sleep(1000)
                         val session = sessionFuture.get(5, TimeUnit.SECONDS)
                         val file = session.virtualFile ?: return@executeOnPooledThread
-                        JupyterCellExecutionManager.getInstance(project).interruptJupyterKernel(file)
+                        JupyterExecutionInterruptService.getInstance(project).interruptJupyterKernel(file)
                     }
                 }
             }

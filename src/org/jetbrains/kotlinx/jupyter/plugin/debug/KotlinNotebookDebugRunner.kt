@@ -24,7 +24,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.util.updateInfoBeforeExecution
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionQueueManager
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.NotebookPathProvider
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
@@ -116,7 +116,7 @@ class KotlinNotebookDebugRunner(project: Project, private val virtualFile: Backe
         val sessionOptions = JupyterExecutionTask.Options.cellExecution(cellPointer)
         project.run {
             try {
-                JupyterCellExecutionManager.getInstance(this).submitTask(JupyterExecutionTask(
+                JupyterExecutionQueueManager.getInstance(this).submitTask(JupyterExecutionTask(
                     source = cell.text,
                     options = sessionOptions,
                     callbacks = emptyList(),

@@ -27,9 +27,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMess
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.originFile
+import org.jetbrains.plugins.notebooks.extensions.JupyterPsiCellExt.getJupyterBackedVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterCellExecutionManager.Companion.getJupyterBackedVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionQueueManager
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
@@ -86,7 +86,7 @@ fun executeCellsAndShutdownKernel(tester: ReceivedMessagesTester, notebookFile: 
 fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executionCallback: JupyterExecutionCallback? = null) {
     val project = notebookFile.project
     val document = PsiDocumentManager.getInstance(project).getDocument(notebookFile)!!
-    val executionManager = JupyterCellExecutionManager.getInstance(project)
+    val executionManager = JupyterExecutionQueueManager.getInstance(project)
     val notebookCells = notebookFile.getCells()
     val cellsCount = notebookCells.size
     Assertions.assertEquals(tester.expectedCellsCount, cellsCount)
