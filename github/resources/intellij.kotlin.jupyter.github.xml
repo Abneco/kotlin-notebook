@@ -1,10 +1,10 @@
-<idea-plugin package="org.jetbrains.kotlinx.jupyter.plugin.github">
+<idea-plugin package="com.intellij.kotlin.jupyter.github">
     <dependencies>
         <plugin id="org.jetbrains.plugins.github"/>
     </dependencies>
     <actions resource-bundle="messages.KotlinNotebookBundle">
         <action id="KotlinNotebookGithubCreateGistAction"
-                class="org.jetbrains.kotlinx.jupyter.plugin.github.actions.KotlinNotebookGithubCreateGistAction"
+                class="com.intellij.kotlin.jupyter.github.actions.KotlinNotebookGithubCreateGistAction"
                 icon="AllIcons.Vcs.Vendors.Github">
             <add-to-group group-id="KotlinNotebookEditorActions"
                           anchor="before" relative-to-action="KotlinNotebookSettingsActions"/>

@@ -4,12 +4,12 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.outputs
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.intellij.kotlin.jupyter.tables.KotlinDataframeParserFormatV2
+import com.intellij.kotlin.jupyter.tables.KotlinDataframeParsing
+import com.intellij.kotlin.jupyter.tables.KotlinDataframeTableDataProvider
 import com.intellij.scientific.tables.DataId
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.asSafely
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParserFormatV2
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeParsing
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeTableDataProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.junit.Assert

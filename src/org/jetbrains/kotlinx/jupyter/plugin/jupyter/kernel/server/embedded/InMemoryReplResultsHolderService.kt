@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.repl.embedded.DefaultInMemoryReplResultsHolder
 import org.jetbrains.kotlinx.jupyter.repl.embedded.InMemoryReplResultsHolder
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutputDataKeyExtractor
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 
 /**
  * This class contains a service that tracks the lifecycle of [InMemoryReplResultsHolder]'s.
@@ -16,13 +16,13 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutp
  * session, i.e., the holder should be created when the session is started and be removed
  * when the session is closed.
  *
- * This is a [Service], so we do not need to modify the [NotebookObjectOutputDataKeyExtractor]
+ * This is a [Service], so we do not need to modify the [NotebookDisplayOutputDataKeyExtractor]
  * interface in a way that expose Kotlin Notebook specific functionality.
  *
  * @see
  */
 @Service(Service.Level.PROJECT)
-class InMemoryReplResultsHolderService(private val project: Project) {
+class InMemoryReplResultsHolderService {
 
     private val holders = HashMap<JupyterNotebookSessionId, InMemoryReplResultsHolder>()
 

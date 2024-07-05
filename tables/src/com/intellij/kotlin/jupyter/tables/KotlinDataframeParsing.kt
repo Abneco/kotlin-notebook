@@ -1,5 +1,5 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.tables
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -9,11 +9,11 @@ import com.intellij.database.datagrid.DynamicNestedTable
 import com.intellij.database.datagrid.StaticNestedTable
 import com.intellij.database.extractors.ImageInfo
 import com.intellij.scientific.tables.ColumnTreeNode
+import org.jetbrains.kotlinx.jupyter.plugin.util.KOTLIN_DATAFRAME_MIME
 import java.io.ByteArrayOutputStream
 import java.util.*
 import java.util.zip.GZIPInputStream
 
-const val KOTLIN_DATAFRAME_MIME: String = "application/kotlindataframe+json"
 private const val JSON_PAYLOAD_FIELD = KOTLIN_DATAFRAME_MIME
 private const val SERIALIZED_DATAFRAME_FIELD = "kotlin_dataframe"
 private const val COLUMNS_FIELD = "columns"
@@ -42,9 +42,9 @@ object KotlinDataframeParsing {
 
     fun isFormatSupported(serializedData: String): Boolean {
         return serializedData.contains(SERIALIZED_DATAFRAME_FIELD) &&
-                serializedData.contains(NUM_COLS_FIELD) &&
-                serializedData.contains(NUM_ROWS_FIELD) &&
-                serializedData.contains(COLUMNS_FIELD)
+               serializedData.contains(NUM_COLS_FIELD) &&
+               serializedData.contains(NUM_ROWS_FIELD) &&
+               serializedData.contains(COLUMNS_FIELD)
     }
 
     fun createParserForData(serializedData: String, mapper: ObjectMapper): KotlinDataframeParser {

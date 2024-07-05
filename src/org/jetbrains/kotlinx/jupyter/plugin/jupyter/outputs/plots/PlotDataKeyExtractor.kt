@@ -4,22 +4,24 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots
 import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
-import com.intellij.openapi.project.Project
+import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.util.asSafely
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.util.convertObject
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutputDataKeyExtractor
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.DisplayDataContainer
+import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
 
 
-class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
-    override fun extractKey(
-        project: Project?,
-        file: BackedNotebookVirtualFile?,
-        dataObject: ObjectNode,
-        executionCount: Int?
+class PlotDataKeyExtractor: NotebookDisplayOutputDataKeyExtractor {
+    fun extractKey(
+        data: DisplayDataContainer,
+        executionCount: Int?,
     ): LetsPlotOutputDataKey? {
         if (!KotlinNotebookApplicationOptions.get().showLetsPlotAsSwing) return null
+
+        val dataObject = data.toV4Json()
         if (!dataObject.has(PLOT_KEY)) return null
         val plotValue = dataObject[PLOT_KEY].asSafely<ObjectNode>() ?: return null
         val swingEnabled = plotValue[SWING_ENABLED_KEY].asSafely<BooleanNode>()?.asBoolean() ?: true
@@ -36,6 +38,17 @@ class PlotDataKeyExtractor: NotebookObjectOutputDataKeyExtractor {
             }
             else -> null
         }
+    }
+
+    override fun extractKey(
+        editor: EditorImpl,
+        file: BackedNotebookVirtualFile?,
+        data: DisplayDataContainer,
+        executionCount: Int?,
+        cellPointer: NotebookIntervalPointer,
+        isLastForCell: Boolean
+    ): LetsPlotOutputDataKey? {
+        return extractKey(data, executionCount)
     }
 
     companion object {

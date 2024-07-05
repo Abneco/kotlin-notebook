@@ -1,5 +1,5 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.tables
 
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonParseException
@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.database.datagrid.HierarchicalColumnsDataGridModel.HierarchicalGridColumn
 import com.intellij.database.datagrid.NestedTablesDataGridModel.NestedTableCellCoordinate
+import com.intellij.kotlin.jupyter.tables.i18n.KotlinNotebookTablesBundle
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
@@ -33,7 +34,6 @@ import com.intellij.scientific.tables.api.TableDataProviderFactory
 import com.intellij.scientific.tables.api.TableDataTypeDetector
 import com.intellij.scientific.tables.api.VisualizationDataTableCommand
 import com.intellij.util.containers.tail
-import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import java.io.IOException
 import java.util.*
@@ -132,7 +132,7 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
             if (isNonComparableColumnSortingError(textData)) {
                 NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
                     .createNotification(
-                        KotlinNotebookBundle.message(
+                        KotlinNotebookTablesBundle.message(
                             "kotlin.jupyter.table.output.sort_column_not_comparable.error",
                             extractColumnNameFromSortErrorMessage(textData)
                         ),
@@ -148,8 +148,8 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
             // users should not encounter this error anymore once KTNB-272 is implemented.
             NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
                 .createNotification(
-                    KotlinNotebookBundle.message("kotlin.jupyter.table.output.cannot.render.dataframe.error"),
-                    KotlinNotebookBundle.message("kotlin.jupyter.table.output.cannot.parse.dataframe.error"),
+                    KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.render.dataframe.error"),
+                    KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.parse.dataframe.error"),
                     NotificationType.WARNING
                 )
                 .notify(null)
@@ -167,8 +167,8 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
     private fun notifyUnknownParsingException() {
         NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
             .createNotification(
-                KotlinNotebookBundle.message("kotlin.jupyter.table.output.cannot.render.dataframe.error"),
-                KotlinNotebookBundle.message("kotlin.jupyter.table.output.cannot.parse.dataframe.error.unknown"),
+                KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.render.dataframe.error"),
+                KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.parse.dataframe.error.unknown"),
                 NotificationType.WARNING
             )
             .notify(null)
@@ -321,8 +321,8 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
         if (numberOfColumns > columnsLimit) {
             NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
                 .createNotification(
-                    KotlinNotebookBundle.message("kotlin.jupyter.table.output.too.many.columns.error"),
-                    KotlinNotebookBundle.message("kotlin.jupyter.table.output.notification.content.could.not.display.table.with.d.columns", numberOfColumns),
+                    KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.too.many.columns.error"),
+                    KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.notification.content.could.not.display.table.with.d.columns", numberOfColumns),
                     NotificationType.WARNING
                 )
                 .notify(null)

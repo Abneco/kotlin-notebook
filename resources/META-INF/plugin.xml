@@ -85,10 +85,8 @@
     <dependencies>
         <plugin id="org.jetbrains.kotlin"/>
         <module name="kotlin.code-insight.live-templates.shared"/>
-
         <module name="intellij.notebooks.ui"/>
         <module name="intellij.notebooks.visualization"/>
-        <module name="intellij.scientific.tables"/>
 
         <plugin id="intellij.jupyter"/>
 
@@ -98,6 +96,7 @@
     </dependencies>
     <content>
         <module name="intellij.kotlin.jupyter.github"/>
+        <module name="intellij.kotlin.jupyter.tables"/>
     </content>
 
     <applicationListeners>
@@ -278,18 +277,10 @@
         <editor.outputs.notebookOutputComponentFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputComponentFactory"/>
         <editor.notebookEditorAppearanceProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorAppearanceProvider"
                 order="before JupyterNotebookEditorAppearanceProvider"/>
-        <editor.outputs.notebookOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeOutputDataKeyExtractor" order="first"/>
         <editor.outputs.notebookObjectOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputDataKeyExtractor"/>
         <editor.outputs.notebookOutputComponentFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputComponentFactory"/>
         <themeChangedListener implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorColorsListener"/>
         <jupyter.output.error.filters.provider implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.error.KotlinJupyterErrorOutputFiltersProvider"/>
-    </extensions>
-
-    <extensions defaultExtensionNs="com.intellij.scientific.tables">
-        <tableDataProviderFactory
-                implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeTableDataProvider"/>
-        <tableDataTypeDetector
-                implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables.KotlinDataframeTableDataProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">

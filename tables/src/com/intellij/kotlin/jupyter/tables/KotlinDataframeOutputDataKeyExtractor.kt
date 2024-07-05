@@ -1,19 +1,20 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.tables
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.tables
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.intellij.jupyter.tables.createTableOutputDataKey
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.scientific.tables.api.DSTableDataType
 import com.intellij.scientific.tables.api.DSTableText
 import com.intellij.util.asSafely
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
+import org.jetbrains.kotlinx.jupyter.plugin.util.KOTLIN_DATAFRAME_MIME
 import org.jetbrains.plugins.notebooks.jupyter.editor.isJupyter
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutputDataKey
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterOutputDataKeyExtractor
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterTableOutputDataKey
+import com.intellij.jupyter.tables.JupyterTableOutputDataKey
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.getOutputsForIndex
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.util.createTableOutputDataKey
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.webOutputs.JupyterWebOutputInfo
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterExecuteResultOutput
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutputType

@@ -1,26 +1,29 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing
 
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
+import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.api.InMemoryMimeTypes
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.InMemoryReplResultsHolderService
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutputDataKeyExtractor
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.DisplayDataContainer
+import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
 
 /**
  * Extract Swing in-memory data to display in a [SwingComponent] (if applicable).
  */
-class SwingOutputDataKeyExtractor : NotebookObjectOutputDataKeyExtractor {
-    override fun extractKey(
+class SwingOutputDataKeyExtractor : NotebookDisplayOutputDataKeyExtractor {
+    fun extractKey(
         project: Project?,
         file: BackedNotebookVirtualFile?,
-        dataObject: ObjectNode,
-        executionCount: Int?
+        data: DisplayDataContainer,
+        executionCount: Int?,
     ): SwingOutputDataKey? {
         if (project == null) return null
+        val dataObject = data.toV4Json()
         if (!dataObject.has(InMemoryMimeTypes.SWING)) return null
         val node = dataObject[InMemoryMimeTypes.SWING] as? TextNode ?: return null
         val id = node.textValue()
@@ -30,5 +33,16 @@ class SwingOutputDataKeyExtractor : NotebookObjectOutputDataKeyExtractor {
         return inMemoryHolder.getReplResult(id)?.let {
             SwingOutputDataKey(it, executionCount)
         }
+    }
+
+    override fun extractKey(
+        editor: EditorImpl,
+        file: BackedNotebookVirtualFile?,
+        data: DisplayDataContainer,
+        executionCount: Int?,
+        cellPointer: NotebookIntervalPointer,
+        isLastForCell: Boolean
+    ): SwingOutputDataKey? {
+        return extractKey(editor.project, file, data, executionCount)
     }
 }

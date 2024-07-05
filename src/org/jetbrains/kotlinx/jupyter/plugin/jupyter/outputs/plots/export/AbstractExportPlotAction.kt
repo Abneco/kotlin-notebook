@@ -16,7 +16,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterEditorActionsUtils.getNotebookFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.getCellIndex
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookObjectOutputDataKeyExtractor
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterDisplayDataOutput
 
 
@@ -60,21 +60,21 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         }
 
         val (psiCell, notebookVirtualFile) = event.dataContext.getNotebookCellAndFile() ?: return emptyList()
-        return getLetsPlotOutputs(event.project, notebookVirtualFile, psiCell.getCellIndex())
+        return getLetsPlotOutputs(notebookVirtualFile, psiCell.getCellIndex())
     }
 
-    private fun getLetsPlotOutputs(project: Project?, notebookVirtualFile: BackedNotebookVirtualFile, cellIndex: Int): List<LetsPlotOutputDataKey> {
+    private fun getLetsPlotOutputs(notebookVirtualFile: BackedNotebookVirtualFile, cellIndex: Int): List<LetsPlotOutputDataKey> {
         val notebook = notebookVirtualFile.notebook
         val jupyterCell = notebook.computeCells()[cellIndex]
 
         val outputs = jupyterCell.outputs ?: return emptyList()
 
-        val extractor = NotebookObjectOutputDataKeyExtractor.EP_NAME.findExtension(PlotDataKeyExtractor::class.java) ?: return emptyList()
+        val extractor = NotebookDisplayOutputDataKeyExtractor.EP_NAME.findExtension(PlotDataKeyExtractor::class.java) ?: return emptyList()
 
         return outputs.outputs.filterIsInstanceAnd<JupyterDisplayDataOutput> { output ->
             output.data.has(PlotDataKeyExtractor.PLOT_KEY)
         }.mapNotNull { letPlotOutput ->
-            extractor.extractKey(project, notebookVirtualFile, letPlotOutput.data.toV4Json(), null)
+            extractor.extractKey(letPlotOutput.data, null)
         }
     }
 
