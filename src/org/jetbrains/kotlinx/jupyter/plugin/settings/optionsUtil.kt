@@ -24,6 +24,10 @@ internal class RegistryFlagDelegate(private val name: String, private val defaul
             defaultValue
         }
     }
+
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Boolean) {
+        Registry.get(name).setValue(value)
+    }
 }
 
 internal fun registryFlag(

@@ -158,6 +158,9 @@
         <registryKey key="kotlin.notebook.debug.enabled" defaultValue="true"
                      description="When enabled, establishing debug session with Kernel is possible" />
 
+        <registryKey key="kotlin.notebook.outdated.dependencies.hints" defaultValue="true"
+                     description="When enabled, a hint will be displayed each time notebook dependencies become outdated" />
+
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.inject.JupyterKotlinIntoCellsInjector"/>
         <fileIconProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.ide.KotlinNotebookFileIconProvider" />
         <formatting.injectedOptions implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.formatting.KotlinInjectedFormattingOptionsProvider"/>
