@@ -14,8 +14,8 @@
     <orderEntry type="module" module-name="intellij.java.testFramework" scope="TEST" />
     <orderEntry type="module" module-name="intellij.idea.ultimate.main" scope="RUNTIME" />
     <orderEntry type="module" module-name="intellij.jupyter.testFramework" />
-    <orderEntry type="module" module-name="intellij.python.jupyter" scope="TEST" />
-    <orderEntry type="module" module-name="intellij.python.jupyter.psi" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.jupyter.plugin" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.jupyter.psi" scope="TEST" />
     <orderEntry type="library" name="jackson-databind" level="project" />
     <orderEntry type="library" name="jackson" level="project" />
     <orderEntry type="module" module-name="intellij.platform.lang.impl" scope="PROVIDED" />

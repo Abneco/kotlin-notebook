@@ -103,8 +103,8 @@
     <orderEntry type="module" module-name="intellij.java.execution.impl" />
     <orderEntry type="module" module-name="intellij.java.ui" />
     <orderEntry type="module" module-name="intellij.java.aetherDependencyResolver" />
-    <orderEntry type="module" module-name="intellij.python.jupyter" />
-    <orderEntry type="module" module-name="intellij.python.jupyter.psi" />
+    <orderEntry type="module" module-name="intellij.jupyter.plugin" />
+    <orderEntry type="module" module-name="intellij.jupyter.psi" />
     <orderEntry type="module" module-name="intellij.jupyter.core" />
     <orderEntry type="module" module-name="intellij.notebooks.ui" />
     <orderEntry type="module" module-name="intellij.notebooks.visualization" />
