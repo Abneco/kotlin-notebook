@@ -1,7 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.notebookCellLanguageProvider
 
-import MarkdownRenderModeTestHelper
+import org.jetbrains.plugins.notebooks.tests.MarkdownRenderModeTestHelper
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileTypes.PlainTextLanguage
 import org.intellij.plugins.markdown.lang.MarkdownLanguage
