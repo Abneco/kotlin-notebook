@@ -1,8 +1,8 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
-import kotlinx.coroutines.flow.MutableStateFlow
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Class to manage the state of a Kotlin runnable handler (kernel),
@@ -16,7 +16,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMod
  * This class is thread-safe.
  */
 class KernelStateMachine {
-    private val state = MutableStateFlow(KernelState.STARTING)
+    private val state = AtomicReference(KernelState.STARTING)
 
     fun started(): Boolean {
         return state.compareAndSet(KernelState.STARTING, KernelState.STARTED)
@@ -32,5 +32,5 @@ class KernelStateMachine {
         return state.compareAndSet(KernelState.TERMINATING, KernelState.TERMINATED)
     }
 
-    val currentState get() = state.value
+    val currentState: KernelState get() = state.get()
 }

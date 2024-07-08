@@ -5,7 +5,7 @@ import com.intellij.execution.impl.ConsoleViewImpl
 import com.intellij.execution.ui.RunnerLayoutUi
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.application.readActionBlocking
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.ui.getPreferredFocusedComponent
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsSafe
@@ -39,7 +39,7 @@ class KotlinNotebookToolWindowBuilder(
     private val virtualFile = settings.notebookVirtualFile()
 
     private val windowTitle: Deferred<@NlsSafe String> = bgtScope.async {
-        readActionBlocking {
+        readAction {
             virtualFile.toPresentablePathAsTabTitle(settings.project, contentManager)
         }
     }

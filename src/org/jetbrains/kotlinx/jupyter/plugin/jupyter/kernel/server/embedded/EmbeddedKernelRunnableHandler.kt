@@ -28,7 +28,7 @@ class EmbeddedKernelRunnableHandler(
         BackedNotebookVirtualFile.find(file)
     }
 
-    private val stateMachine = KernelStateMachine().apply { started() }
+    private val stateMachine = KernelStateMachine()
     override val kernelState: KernelState get() = stateMachine.currentState
 
     override fun markStarted() {
