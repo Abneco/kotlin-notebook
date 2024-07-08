@@ -2,7 +2,19 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 
+/**
+ * Class to manage the state of a Kotlin runnable handler (kernel),
+ * independently of its [KotlinNotebookSessionRunMode],
+ * using a finite state machine approach.
+ *
+ * It's guaranteed that the kernel states are always changed in the following order:
+ * [KernelState.STARTING] -> [KernelState.STARTED] ->
+ * [KernelState.TERMINATING] -> [KernelState.TERMINATED]
+ *
+ * This class is thread-safe.
+ */
 class KernelStateMachine {
     private val state = MutableStateFlow(KernelState.STARTING)
 
