@@ -8,6 +8,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.ui.content.ContentManager
 import com.intellij.util.concurrency.ThreadingAssertions
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.kotlin.idea.util.sourceRoots
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.originFile
@@ -39,6 +40,7 @@ fun VirtualFile.toAbsolutePath(): Path {
 }
 
 @NlsSafe
+@RequiresBackgroundThread
 internal fun BackedNotebookVirtualFile.toPresentablePathAsTabTitle(
     project: Project,
     contentManager: ContentManager
