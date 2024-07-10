@@ -2,3 +2,4 @@
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
 const val KOTLIN_DATAFRAME_MIME: String = "application/kotlindataframe+json"
+const val LETS_PLOT_MIME: String = "application/plot+json"

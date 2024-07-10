@@ -1,0 +1,38 @@
+<idea-plugin package="com.intellij.kotlin.jupyter.plots">
+    <dependencies>
+        <plugin id="org.jetbrains.plugins.kotlin.jupyter"/>
+        <module name="intellij.notebooks.visualization"/>
+        <module name="intellij.notebooks.ui"/>
+    </dependencies>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup
+                id="Kandy plot export"
+                displayType="BALLOON"
+                bundle="messages.KotlinNotebookPlotsBundle"
+                key="kotlin.notebook.outputs.kandy.export.notification.group"
+        />
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.editor.outputs">
+        <notebookObjectOutputDataKeyExtractor implementation="com.intellij.kotlin.jupyter.plots.PlotDataKeyExtractor"/>
+        <notebookOutputComponentFactory implementation="com.intellij.kotlin.jupyter.plots.LetsPlotOutputComponentFactory"/>
+    </extensions>
+
+    <actions resource-bundle="messages/KotlinNotebookPlotsBundle">
+        <action id="ExportLetsPlot"
+                class="com.intellij.kotlin.jupyter.plots.export.SavePlotAction"
+                icon="AllIcons.Actions.Download">
+            <add-to-group group-id="JupyterCellOutputMenu"/>
+        </action>
+
+        <action id="CopyLetsPlot"
+                class="com.intellij.kotlin.jupyter.plots.export.CopyPlotAction"
+                icon="AllIcons.Actions.Copy"/>
+
+        <group id="LetsPlotActions">
+            <reference id="ExportLetsPlot"/>
+            <reference id="CopyLetsPlot"/>
+        </group>
+    </actions>
+</idea-plugin>

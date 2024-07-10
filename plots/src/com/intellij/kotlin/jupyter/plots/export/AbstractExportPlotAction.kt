@@ -1,21 +1,23 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.plots.export
 
+import com.intellij.kotlin.jupyter.plots.LetsPlotComponent
+import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey
+import com.intellij.kotlin.jupyter.plots.PlotDataKeyExtractor
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.util.collectionUtils.filterIsInstanceAnd
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotComponent
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputDataKey
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.PlotDataKeyExtractor
+import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.kotlinx.jupyter.plugin.util.LETS_PLOT_MIME
+import org.jetbrains.kotlinx.jupyter.plugin.util.filterIsInstanceAnd
 import org.jetbrains.kotlinx.jupyter.plugin.util.firstAncestorOfType
 import org.jetbrains.plugins.notebooks.core.api.getNotebookCellAndFile
 import org.jetbrains.plugins.notebooks.core.impl.actions.NotebookEditorActionBase
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
-import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterEditorActionsUtils.getNotebookFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.getCellIndex
+import org.jetbrains.plugins.notebooks.jupyter.editor.getJupyterVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterDisplayDataOutput
 
@@ -26,14 +28,14 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         val letsPlotOutputs = getLetsPlotOutputs(event)
             .takeIf { isActionApplicable(it) } ?: return
 
-        val notebookFile = event.getNotebookFile() ?: return
-        doExport(letsPlotOutputs, project, notebookFile)
+        val notebookFile = event.getJupyterVirtualFile() ?: return
+        doExport(letsPlotOutputs, project, notebookFile.file)
     }
 
     protected abstract fun doExport(
         letsPlotOutputs: List<LetsPlotOutputDataKey>,
         project: Project,
-        notebookFile: BackedNotebookVirtualFile,
+        notebookFile: VirtualFile,
     )
 
     protected open fun isActionApplicable(outputs: List<LetsPlotOutputDataKey>): Boolean {
@@ -72,7 +74,7 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         val extractor = NotebookDisplayOutputDataKeyExtractor.EP_NAME.findExtension(PlotDataKeyExtractor::class.java) ?: return emptyList()
 
         return outputs.outputs.filterIsInstanceAnd<JupyterDisplayDataOutput> { output ->
-            output.data.has(PlotDataKeyExtractor.PLOT_KEY)
+            output.data.has(LETS_PLOT_MIME)
         }.mapNotNull { letPlotOutput ->
             extractor.extractKey(letPlotOutput.data, null)
         }

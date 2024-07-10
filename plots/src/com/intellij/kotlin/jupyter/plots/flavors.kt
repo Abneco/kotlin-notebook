@@ -1,9 +1,9 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots
+package com.intellij.kotlin.jupyter.plots
 
+import com.intellij.kotlin.jupyter.plots.i18n.KotlinNotebookPlotsBundle
 import com.intellij.openapi.util.NlsContexts
 import com.intellij.util.asSafely
-import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.uiFeelsDark
 import org.jetbrains.letsPlot.core.plot.builder.defaultTheme.values.ThemeOption
 import org.jetbrains.letsPlot.core.spec.FigKind
@@ -14,11 +14,11 @@ enum class LetsPlotFlavor(
     val flavorName: String,
     @NlsContexts.ListItem val description: String,
 ) {
-    DARCULA(ThemeOption.Flavor.DARCULA, KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.darcula")),
-    HIGH_CONTRAST_LIGHT(ThemeOption.Flavor.HIGH_CONTRAST_LIGHT, KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.highContrastLight")),
-    HIGH_CONTRAST_DARK(ThemeOption.Flavor.HIGH_CONTRAST_DARK, KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.highContrastDark")),
-    SOLARIZED_LIGHT(ThemeOption.Flavor.SOLARIZED_LIGHT, KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.solarizedLight")),
-    SOLARIZED_DARK(ThemeOption.Flavor.SOLARIZED_DARK, KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.solarizedDark")),
+    DARCULA(ThemeOption.Flavor.DARCULA, KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.darcula")),
+    HIGH_CONTRAST_LIGHT(ThemeOption.Flavor.HIGH_CONTRAST_LIGHT, KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.highContrastLight")),
+    HIGH_CONTRAST_DARK(ThemeOption.Flavor.HIGH_CONTRAST_DARK, KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.highContrastDark")),
+    SOLARIZED_LIGHT(ThemeOption.Flavor.SOLARIZED_LIGHT, KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.solarizedLight")),
+    SOLARIZED_DARK(ThemeOption.Flavor.SOLARIZED_DARK, KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.solarizedDark")),
 }
 
 fun getCurrentLetsPlotFlavor() = getLetsPlotFlavor(uiFeelsDark())

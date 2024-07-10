@@ -1,5 +1,5 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.plots
 
 import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.util.asSafely
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
+import org.jetbrains.kotlinx.jupyter.plugin.util.LETS_PLOT_MIME
 import org.jetbrains.kotlinx.jupyter.plugin.util.convertObject
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
@@ -22,8 +23,8 @@ class PlotDataKeyExtractor: NotebookDisplayOutputDataKeyExtractor {
         if (!KotlinNotebookApplicationOptions.get().showLetsPlotAsSwing) return null
 
         val dataObject = data.toV4Json()
-        if (!dataObject.has(PLOT_KEY)) return null
-        val plotValue = dataObject[PLOT_KEY].asSafely<ObjectNode>() ?: return null
+        if (!dataObject.has(LETS_PLOT_MIME)) return null
+        val plotValue = dataObject[LETS_PLOT_MIME].asSafely<ObjectNode>() ?: return null
         val swingEnabled = plotValue[SWING_ENABLED_KEY].asSafely<BooleanNode>()?.asBoolean() ?: true
         if (!swingEnabled) return null
         val plotType = plotValue[PLOT_TYPE_KEY].asSafely<TextNode>()?.asText() ?: return null
@@ -52,7 +53,6 @@ class PlotDataKeyExtractor: NotebookDisplayOutputDataKeyExtractor {
     }
 
     companion object {
-        const val PLOT_KEY = "application/plot+json"
         private const val PLOT_TYPE_KEY = "output_type"
         private const val APPLY_COLOR_SCHEME_KEY = "apply_color_scheme"
         private const val SWING_ENABLED_KEY = "swing_enabled"

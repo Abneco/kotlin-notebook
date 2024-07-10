@@ -1,6 +1,9 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
+package com.intellij.kotlin.jupyter.plots.export
 
+import com.intellij.kotlin.jupyter.plots.LetsPlotFlavor
+import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey
+import com.intellij.kotlin.jupyter.plots.i18n.KotlinNotebookPlotsBundle
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
@@ -20,15 +23,11 @@ import com.intellij.ui.dsl.listCellRenderer.textListCellRenderer
 import com.intellij.ui.layout.selectedValueMatches
 import com.intellij.ui.util.preferredWidth
 import kotlinx.coroutines.async
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotFlavor
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputDataKey
-import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindComparableIntervalToTextWithFixer
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindStringText
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.enumComboBox
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.awt.event.ActionEvent
 import java.io.File
 import javax.swing.AbstractAction
@@ -39,17 +38,17 @@ class SavePlotAction : AbstractExportPlotAction() {
         super.doUpdate(event, letsPlotOutputs)
         val multipleOutputs = letsPlotOutputs.size > 1
         if (multipleOutputs) {
-            event.presentation.text = KotlinNotebookBundle.message("action.ExportLetsPlot.text.multiple")
-            event.presentation.description = KotlinNotebookBundle.message("action.ExportLetsPlot.description.multiple")
+            event.presentation.text = KotlinNotebookPlotsBundle.message("action.ExportLetsPlot.text.multiple")
+            event.presentation.description = KotlinNotebookPlotsBundle.message("action.ExportLetsPlot.description.multiple")
         }
     }
 
     override fun doExport(
         letsPlotOutputs: List<LetsPlotOutputDataKey>,
         project: Project,
-        notebookFile: BackedNotebookVirtualFile,
+        notebookFile: VirtualFile,
     ) {
-        val notebookDir = notebookFile.file.parent
+        val notebookDir = notebookFile.parent
         val exportModel = showExportDialog(project, notebookDir, letsPlotOutputs.size > 1) ?: return
 
         KotlinNotebookPluginScope.getForProject(project).async {
@@ -87,7 +86,7 @@ class SavePlotAction : AbstractExportPlotAction() {
 
         val dialogBuilder = DialogBuilder()
 
-        fun panelMessage(key: String) = KotlinNotebookBundle.message(
+        fun panelMessage(key: String) = KotlinNotebookPlotsBundle.message(
             if (multipleOutputs) "$key.multiple" else key
         )
 
@@ -107,7 +106,7 @@ class SavePlotAction : AbstractExportPlotAction() {
             val formatModel = EnumComboBoxModel(ExportFormat::class.java)
             val formatComboBox = ComboBox(formatModel)
 
-            row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.format")) {
+            row(KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.format")) {
                 cell(formatComboBox)
                     .bindItem(model::format.toNullableProperty())
                     .applyToComponent {
@@ -118,7 +117,7 @@ class SavePlotAction : AbstractExportPlotAction() {
                     }
             }
             indent {
-                row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.scaling.factor")) {
+                row(KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.scaling.factor")) {
                     val scalingFactorOption = PlotExportOptions.SCALING_FACTOR
                     textField()
                         .bindComparableIntervalToTextWithFixer(
@@ -126,13 +125,13 @@ class SavePlotAction : AbstractExportPlotAction() {
                             interval = scalingFactorOption.range,
                             { it.toDoubleOrNull() },
                         )
-                        .comment(KotlinNotebookBundle.message(
+                        .comment(KotlinNotebookPlotsBundle.message(
                                 "kotlin.jupyter.dialog.outputs.plot.export.scaling.factor.comment",
                                 scalingFactorOption.min,
                                 scalingFactorOption.max
                         ))
                 }
-                row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.target.dpi")) {
+                row(KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.target.dpi")) {
                     val targetDpiOption = PlotExportOptions.TARGET_DPI
                     textField()
                         .bindComparableIntervalToTextWithFixer(
@@ -140,14 +139,14 @@ class SavePlotAction : AbstractExportPlotAction() {
                             interval = targetDpiOption.range,
                             { it.toIntOrNull() },
                         )
-                        .comment(KotlinNotebookBundle.message(
+                        .comment(KotlinNotebookPlotsBundle.message(
                                 "kotlin.jupyter.dialog.outputs.plot.export.target.dpi.comment",
                                 targetDpiOption.min,
                                 targetDpiOption.max
                         ))
                 }
             }.enabledIf(formatComboBox.selectedValueMatches { it?.isRaster == true })
-            row(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.title")) {
+            row(KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.theme.title")) {
                 enumComboBox<LetsPlotFlavor>(textListCellRenderer { it?.description })
                     .bindItem(model::letsPlotFlavor.toNullableProperty())
             }
@@ -157,7 +156,7 @@ class SavePlotAction : AbstractExportPlotAction() {
                 )
                     .bindStringText(model::directory.toMutableProperty())
                     .align(AlignX.FILL)
-                    .comment(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.directory.comment"))
+                    .comment(KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.directory.comment"))
             }
             row(panelMessage("kotlin.jupyter.dialog.outputs.plot.export.file.name")) {
                 cell(fileField)
@@ -167,7 +166,7 @@ class SavePlotAction : AbstractExportPlotAction() {
                         model.fileName = fileField.text
                         updateOkAction()
                     }
-                    .comment(KotlinNotebookBundle.message(
+                    .comment(KotlinNotebookPlotsBundle.message(
                         "kotlin.jupyter.dialog.outputs.plot.export.file.name.comment",
                         OUTPUT_INDEX_TEMPLATE
                     ))
@@ -182,7 +181,7 @@ class SavePlotAction : AbstractExportPlotAction() {
         @Suppress("DEPRECATION")
         dialogPanel.preferredWidth = 550
 
-        val restoreDefaultSettingsAction = object : AbstractAction(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.restore.defaults")) {
+        val restoreDefaultSettingsAction = object : AbstractAction(KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.restore.defaults")) {
             override fun actionPerformed(e: ActionEvent?) {
                 exportOptions.restoreDefaults()
                 dialogPanel.reset()
@@ -194,7 +193,7 @@ class SavePlotAction : AbstractExportPlotAction() {
             .apply {
                 addLeftSideAction(CancelActionDescriptor().getAction(dialogWrapper))
                 addAction(restoreDefaultSettingsAction)
-                addOkAction().setText(KotlinNotebookBundle.message("kotlin.jupyter.dialog.outputs.plot.export.ok.text"))
+                addOkAction().setText(KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.ok.text"))
             }
             .centerPanel(dialogPanel)
             .showAndGet()
@@ -212,8 +211,8 @@ class SavePlotAction : AbstractExportPlotAction() {
     }
 
     private data class MutablePlotSaveModel(
-        private val options: PlotExportOptions,
-        var directory: String = System.getProperty("user.home"),
+      private val options: PlotExportOptions,
+      var directory: String = System.getProperty("user.home"),
     ): PlotExportModel {
         override var format
             get() = options.format

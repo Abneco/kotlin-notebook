@@ -1,5 +1,5 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
+package com.intellij.kotlin.jupyter.plots.export
 
 class RangeWithDefault<T: Comparable<T>>(
     val default: T,

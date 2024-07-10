@@ -50,7 +50,7 @@ private fun convertArray(array: ArrayNode): JsonArray {
     }
 }
 
-internal fun convertObject(objectNode: ObjectNode): JsonObject {
+fun convertObject(objectNode: ObjectNode): JsonObject {
     return buildJsonObject {
         objectNode.fields().forEachRemaining {
             put(it.key, it.value.toKotlinSerializationJson())

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/resources" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/resources-en" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="jetbrains.lets.plot.shadowed" level="project" />
+    <orderEntry type="module-library">
+      <library name="jetbrains.lets.plot.export.shadowed" type="repository">
+        <properties maven-id="org.jetbrains.lets-plot:lets-plot-export-shadowed:4.3.3-16">
+          <verification>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.3.3-16/lets-plot-export-shadowed-4.3.3-16.jar">
+              <sha256sum>cfb82091f76a8d4e00abdd9e8161d24f774ab2213cad3e34758147a2e6963cd1</sha256sum>
+            </artifact>
+          </verification>
+        </properties>
+        <CLASSES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.3.3-16/lets-plot-export-shadowed-4.3.3-16.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.3.3-16/lets-plot-export-shadowed-4.3.3-16-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="ggdsl-util" type="repository">
+        <properties include-transitive-deps="false" maven-id="org.jetbrains.kotlinx:ggdsl-util:0.4.0-dev-10">
+          <verification>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10.jar">
+              <sha256sum>17fb93d3a94f2384865dcd0c8cb157c6659bd9cb4e9a4a6c8f213317c7ca285a</sha256sum>
+            </artifact>
+          </verification>
+        </properties>
+        <CLASSES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="library" scope="PROVIDED" name="kotlin-stdlib" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="jackson" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="jackson-databind" level="project" />
+    <orderEntry type="library" name="kotlinx-serialization-core" level="project" />
+    <orderEntry type="library" name="kotlinx-serialization-json" level="project" />
+    <orderEntry type="module" module-name="intellij.platform.core.ui" />
+    <orderEntry type="module" module-name="intellij.platform.ide.impl" />
+    <orderEntry type="module" module-name="intellij.jupyter.plugin" />
+    <orderEntry type="module" module-name="intellij.jupyter.psi" />
+    <orderEntry type="module" module-name="intellij.notebooks.visualization" />
+    <orderEntry type="module" module-name="intellij.notebooks.ui" />
+    <orderEntry type="module" module-name="intellij.kotlin.jupyter" />
+  </component>
+</module>

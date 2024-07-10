@@ -1,13 +1,13 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
+package com.intellij.kotlin.jupyter.plots.export
 
+import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey
+import com.intellij.kotlin.jupyter.plots.getCurrentLetsPlotFlavor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.async
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputDataKey
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.getCurrentLetsPlotFlavor
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 class CopyPlotAction : AbstractExportPlotAction() {
     override fun isActionApplicable(outputs: List<LetsPlotOutputDataKey>): Boolean {
@@ -17,7 +17,7 @@ class CopyPlotAction : AbstractExportPlotAction() {
     override fun doExport(
         letsPlotOutputs: List<LetsPlotOutputDataKey>,
         project: Project,
-        notebookFile: BackedNotebookVirtualFile
+        notebookFile: VirtualFile
     ) {
         val output = letsPlotOutputs.singleOrNull() ?: return
         KotlinNotebookPluginScope.getForProject(project).async {

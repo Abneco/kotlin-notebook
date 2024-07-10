@@ -98,6 +98,7 @@
     <content>
         <module name="intellij.kotlin.jupyter.github"/>
         <module name="intellij.kotlin.jupyter.tables"/>
+        <module name="intellij.kotlin.jupyter.plots"/>
     </content>
 
     <applicationListeners>
@@ -253,13 +254,6 @@
                 key="kotlin.jupyter.output.error.notification.group"
         />
 
-        <notificationGroup
-                id="Kandy plot export"
-                displayType="BALLOON"
-                bundle="messages.KotlinNotebookBundle"
-                key="kotlin.notebook.outputs.kandy.export.notification.group"
-        />
-
         <statistics.counterUsagesCollector implementationClass="org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector"/>
         <editorNotificationProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookMissingJdkEditorNotification"/>
     </extensions>
@@ -277,8 +271,6 @@
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">
         <jupyterLanguageBasedFileViewProviderChooser implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.psi.JupyterKotlinFileViewProviderChooser"/>
         <editor.notebookEditorCreatedCallback implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.creating.KotlinNotebookEditorFactoryListener"/>
-        <editor.outputs.notebookObjectOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.PlotDataKeyExtractor"/>
-        <editor.outputs.notebookOutputComponentFactory implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputComponentFactory"/>
         <editor.notebookEditorAppearanceProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorAppearanceProvider"
                 order="before JupyterNotebookEditorAppearanceProvider"/>
         <editor.outputs.notebookObjectOutputDataKeyExtractor implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputDataKeyExtractor"/>
@@ -333,11 +325,6 @@
         <action id="ToggleShowExecutionCount" class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookToggleShowExecutionCountAction">
             <add-to-group group-id="JupyterEditorGutterPopupActions"/>
         </action>
-        <action id="ExportLetsPlot" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export.SavePlotAction" icon="AllIcons.Actions.Download">
-            <add-to-group group-id="JupyterCellOutputMenu"/>
-        </action>
-
-        <action id="CopyLetsPlot" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export.CopyPlotAction" icon="AllIcons.Actions.Copy"/>
 
         <action id="CopySwingComponentScreenshot" class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.export.CopySwingComponentScreenshotAction" icon="AllIcons.Actions.Copy">
             <add-to-group group-id="JupyterCellOutputMenu"/>
@@ -358,10 +345,6 @@
             <add-to-group group-id="JupyterEditorLeftToolbarActions"/>
         </group>
 
-        <group id="LetsPlotActions">
-            <reference id="ExportLetsPlot"/>
-            <reference id="CopyLetsPlot"/>
-        </group>
         <action id="RestartKotlinNotebookHighlighting"
                 class="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.RestartKotlinNotebookHighlightingAction"/>
 

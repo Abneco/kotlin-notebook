@@ -28,7 +28,7 @@ import kotlin.coroutines.EmptyCoroutineContext
  *
  * If you have a parent scope such as Project-level service, use [CoroutineScope.childScope] instead.
  */
-internal sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
+sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
     override val coroutineContext: CoroutineContext =
         SupervisorJob() + CoroutineName(javaClass.name)
 

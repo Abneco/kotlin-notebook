@@ -10,13 +10,13 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.exceptions.ReplCompilerException
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.mode
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.PlotDataKeyExtractor
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isAddProjectLibrariesToClasspath
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isBuildProject
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.util.KOTLIN_DATAFRAME_MIME
+import org.jetbrains.kotlinx.jupyter.plugin.util.LETS_PLOT_MIME
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.notebook
@@ -194,7 +194,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
           "image/jpeg" to OutputType.RASTER_IMAGE,
           "image/bmp" to OutputType.RASTER_IMAGE,
           "image/svg+xml" to OutputType.VECTOR_IMAGE,
-          PlotDataKeyExtractor.PLOT_KEY to OutputType.SWING_LETS_PLOT,
+          LETS_PLOT_MIME to OutputType.SWING_LETS_PLOT,
           KOTLIN_DATAFRAME_MIME to OutputType.SWING_DATAFRAME,
         )
 

@@ -1,13 +1,14 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.export
+package com.intellij.kotlin.jupyter.plots.export
 
+import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey
+import com.intellij.kotlin.jupyter.plots.updateFlavor
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.LetsPlotOutputDataKey
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.plots.updateFlavor
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.export.createImageDataTransferable
 import org.jetbrains.letsPlot.awt.plot.PlotSvgExport
 import org.jetbrains.letsPlot.core.plot.export.PlotImageExport
 import org.jetbrains.letsPlot.core.util.PlotHtmlExport

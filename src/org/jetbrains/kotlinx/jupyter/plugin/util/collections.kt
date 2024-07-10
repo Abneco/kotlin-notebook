@@ -1,5 +1,8 @@
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
+import org.jetbrains.kotlin.utils.SmartList
+import org.jetbrains.kotlin.utils.filterIsInstanceAndTo
+
 operator fun <T1, T2> com.intellij.openapi.util.Pair<T1, T2>.component1(): T1 {
     return getFirst()
 }
@@ -19,4 +22,9 @@ fun <T, R> Collection<T>.buildFlatMap(appender: MutableList<R>.(T) -> Unit): Lis
             appender(element)
         }
     }
+}
+
+inline fun <reified R> Collection<*>.filterIsInstanceAnd(predicate: (R) -> Boolean): List<R> {
+    if (isEmpty()) return emptyList()
+    return filterIsInstanceAndTo(SmartList(), predicate)
 }
