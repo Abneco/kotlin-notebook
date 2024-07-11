@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 import java.util.*
 
 interface KotlinKernelListener : EventListener {
+    fun kernelWillTerminate(event: KotlinKernelEvent) {}
     fun kernelTerminated(event: KotlinKernelEvent) {}
 }
 

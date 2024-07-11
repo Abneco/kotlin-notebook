@@ -38,11 +38,14 @@ class EmbeddedKernelRunnableHandler(
     private val eventDispatcher = EventDispatcher.create(KotlinKernelListener::class.java)
 
     override fun stopKernel() {
-        stateMachine.terminating()
-        eventDispatcher.multicaster.kernelTerminated(
-            EmbeddedKernelEvent(this)
-        )
-        stateMachine.terminated()
+        val event = EmbeddedKernelEvent(this)
+        if (stateMachine.terminating()) {
+            eventDispatcher.multicaster.kernelWillTerminate(event)
+        }
+
+        if (stateMachine.terminated()) {
+            eventDispatcher.multicaster.kernelTerminated(event)
+        }
     }
 
     override fun dispose() {

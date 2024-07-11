@@ -56,15 +56,20 @@ class KotlinKernelProcessHandler(
             }
 
             override fun processTerminated(event: ProcessEvent) {
-                stateMachine.terminated()
-                LOG.debug("Kernel process terminated with code ${event.exitCode} (${event.text})")
-                LOG.warnInTests { "Destroyed Kotlin kernel $kernelId" }
-                eventDispatcher.multicaster.kernelTerminated(KotlinKernelProcessEventImpl(event))
+                if (stateMachine.terminated()) {
+                    eventDispatcher.multicaster.kernelTerminated(KotlinKernelProcessEventImpl(event))
+                    LOG.debug("Kernel process terminated with code ${event.exitCode} (${event.text})")
+                    LOG.warnInTests { "Destroyed Kotlin kernel $kernelId" }
+                }
+
                 eventDispatcher.listeners.clear()
             }
 
             override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
-                LOG.debug("Kernel process is going to be terminated (will ${if (willBeDestroyed) "" else "not "}be destroyed): $event")
+                if (stateMachine.terminating()) {
+                    eventDispatcher.multicaster.kernelWillTerminate(KotlinKernelProcessEventImpl(event))
+                    LOG.debug("Kernel process is going to be terminated (will ${if (willBeDestroyed) "" else "not "}be destroyed): $event")
+                }
             }
         })
     }
@@ -87,7 +92,6 @@ class KotlinKernelProcessHandler(
     }
 
     override fun stopKernel() {
-        stateMachine.terminating()
         destroyProcess()
     }
 

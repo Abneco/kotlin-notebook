@@ -9,6 +9,7 @@ import java.util.EventListener
 import java.util.EventObject
 
 interface KotlinKernelProcessListener : EventListener {
+    fun kernelWillTerminate(event: KotlinKernelProcessEvent) {}
     fun kernelTerminated(event: KotlinKernelProcessEvent) {}
     fun beforeNotificationStarted(event: KotlinKernelNotificationStartedEvent) {}
 }
@@ -40,6 +41,10 @@ fun KotlinKernelListener.toProcessListener(): KotlinKernelProcessListener {
     return object : KotlinKernelProcessListener {
         override fun kernelTerminated(event: KotlinKernelProcessEvent) {
             listener.kernelTerminated(event)
+        }
+
+        override fun kernelWillTerminate(event: KotlinKernelProcessEvent) {
+            listener.kernelWillTerminate(event)
         }
     }
 }

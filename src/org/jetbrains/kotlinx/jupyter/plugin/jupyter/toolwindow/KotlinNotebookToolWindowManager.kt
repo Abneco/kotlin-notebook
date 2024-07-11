@@ -59,8 +59,6 @@ class KotlinNotebookToolWindowManager(
         val notebookPath = settings.notebookPath
         val runnableHandler = settings.handler
 
-        val oldContent = stoppedSessions.remove(notebookPath)
-
         val toolWindow: ToolWindow = getOrCreateKotlinNotebookToolWindow()
 
         val panelHelpId = notebookPath.toNotebookToolWindowPanelHelpId()
@@ -71,10 +69,11 @@ class KotlinNotebookToolWindowManager(
 
         val newContent = notebookToolWindowBuilder.createMainContent()
 
+        val oldContent = stoppedSessions.remove(notebookPath)
         manager.replaceContent(oldContent, newContent)
 
         runnableHandler.addKernelListener(object : KotlinKernelListener {
-            override fun kernelTerminated(event: KotlinKernelEvent) {
+            override fun kernelWillTerminate(event: KotlinKernelEvent) {
                 handleKernelTermination(notebookPath, newContent)
             }
         })
@@ -99,20 +98,20 @@ class KotlinNotebookToolWindowManager(
         setSelectedContent(newContent)
     }
 
-    private fun handleKernelTermination(notebookPath: Path, newContent: Content) {
+    private fun handleKernelTermination(notebookPath: Path, content: Content) {
         /**
          * The file panel will be closed when the new session is created for the same notebook.
          */
-        stoppedSessions[notebookPath] = newContent
+        stoppedSessions[notebookPath] = content
 
         /**
          * When the kernel is stopped, the file panel in the Kotlin Notebook tool window
          * should be made closable.
          * Otherwise, it should always be present.
          */
-        if (!newContent.isValid || project.isDisposed || !project.isInitialized) return
+        if (!content.isValid || project.isDisposed || !project.isInitialized) return
         coroutineScope.launch(Dispatchers.EDT) {
-            newContent.isCloseable = true
+            content.isCloseable = true
         }
     }
 
