@@ -2,7 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
-import com.intellij.jupyter.core.jupyter.JupyterFileType
+import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager

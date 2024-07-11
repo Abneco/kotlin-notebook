@@ -93,7 +93,7 @@
         <plugin id="com.intellij.modules.platform"/>
         <plugin id="com.intellij.modules.java"/>
         <plugin id="com.intellij.modules.ultimate"/>
-        <module name="intellij.jupyter.core"/>
+        <module name="intellij.notebooks.jupyter.core"/>
     </dependencies>
     <content>
         <module name="intellij.kotlin.jupyter.github"/>

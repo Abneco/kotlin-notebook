@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.debug.evaluation
 import com.intellij.debugger.engine.evaluation.CodeFragmentFactory
 import com.intellij.debugger.engine.evaluation.TextWithImports
 import com.intellij.debugger.engine.evaluation.expression.EvaluatorBuilder
-import com.intellij.jupyter.core.jupyter.JupyterLanguage
+import com.intellij.notebooks.jupyter.core.jupyter.JupyterLanguage
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.fileTypes.LanguageFileType
 import com.intellij.openapi.project.Project

@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.idea.core.script.configuration.listener.ScriptChangeListener
-import com.intellij.jupyter.core.jupyter.JupyterFileType
+import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 
 class JupyterKtScriptChangeListener(project: Project) : ScriptChangeListener(project) {
     override fun documentChanged(vFile: VirtualFile) {

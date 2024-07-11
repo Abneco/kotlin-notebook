@@ -9,7 +9,7 @@ import com.intellij.codeInsight.hints.InlayHintsSink
 import com.intellij.codeInsight.hints.presentation.InlayPresentation
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.codeInsight.hints.presentation.RecursivelyUpdatingRootPresentation
-import com.intellij.jupyter.core.jupyter.JupyterLanguage
+import com.intellij.notebooks.jupyter.core.jupyter.JupyterLanguage
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.diagnostic.logger

@@ -3,7 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.language
 
 import com.intellij.ide.scratch.ScratchFileCreationHelper
 import com.intellij.ide.scratch.ScratchFileService
-import com.intellij.jupyter.core.jupyter.JupyterFileType
+import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
