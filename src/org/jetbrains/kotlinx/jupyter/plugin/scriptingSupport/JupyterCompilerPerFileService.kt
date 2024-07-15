@@ -30,6 +30,7 @@ import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrap
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
+import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
@@ -374,6 +375,8 @@ class JupyterCompilerPerFileService(
                     NotebookStructureTrackerService.getForFile(project, virtualFile)
                         .storeCompliedDataInCell(snippetMetadata, psiCell)
                 }
+                KotlinNotebookSessionVariablesService.getForFile(project, virtualFile)
+                    .updateSnippetsMetaData(snippetMetadata)
             }
         }
 

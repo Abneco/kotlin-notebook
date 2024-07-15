@@ -25,6 +25,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.kotlinx.jupyter.plugin.variables.KotlinNotebookToolWindowHandler
 import org.jetbrains.kotlinx.jupyter.plugin.variables.KotlinNotebookVarsToolWindow
 import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVariablesToolWindowSetup
+import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
 
@@ -55,6 +56,12 @@ class NotebookVariablesPerFileStateService(
     }
     private val variableToolWindowHandler = KotlinNotebookToolWindowHandler()
     private val notebookSessionEnvironmentProvider = NotebookSessionNoSuspensionEnvironmentProvider(virtualFile)
+    var variablesMetaData: Map<String, String?>? = null
+        private set
+
+    fun updateSnippetsMetaData(evaluatedSnippetMetadata: EvaluatedSnippetMetadata) {
+        variablesMetaData = evaluatedSnippetMetadata.evaluatedVariablesState
+    }
 
     fun isToolWindowReady(): Boolean {
         return variableToolWindowHandler.isToolWindowReady
@@ -185,6 +192,7 @@ class NotebookVariablesPerFileStateService(
 
     override fun dispose() {
         coroutineScope.cancel()
+        variablesMetaData = null
         variableToolWindowHandler.clear()
     }
 }
