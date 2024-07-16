@@ -51,6 +51,14 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         }
     }
 
+    override fun onUpdateException(exception: Exception) {
+        scriptingSupportPublisher.onUpdateException(exception)
+    }
+
+    override fun onTrivialUpdate() {
+        scriptingSupportPublisher.onTrivialUpdate()
+    }
+
     override fun collectConfigurations(builder: ScriptClassRootsBuilder) {
         val editors = editorManager?.allEditors ?: return
 

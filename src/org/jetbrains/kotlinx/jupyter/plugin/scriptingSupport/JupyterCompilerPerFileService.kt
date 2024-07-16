@@ -39,7 +39,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifac
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ScriptingSupportAfterUpdateListener
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ScriptingSupportUpdateEventsListener
 import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.usages.KotlinNotebookPluginUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.util.ComputableWithName
@@ -155,7 +155,7 @@ class JupyterCompilerPerFileService(
 
     private val lastStableConfiguration = AtomicReference(project.baseScriptingCompilationConfiguration)
 
-    private val scriptingSupportAfterUpdateListener = ScriptingSupportAfterUpdateEventProcessor()
+    private val scriptingSupportAfterUpdateListener = ScriptingSupportUpdateEventProcessor()
 
     val executedCellsCount: Int get() = directoryCounter.get()
 
@@ -464,7 +464,7 @@ class JupyterCompilerPerFileService(
         clear()
     }
 
-    private inner class ScriptingSupportAfterUpdateEventProcessor : ScriptingSupportAfterUpdateListener {
+    private inner class ScriptingSupportUpdateEventProcessor : ScriptingSupportUpdateEventsListener {
         private fun updateLastKnownConfiguration() {
             while (true) {
                 val lastStableConf = lastStableConfiguration.get()

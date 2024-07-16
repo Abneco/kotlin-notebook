@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ScriptingSupportAfterUpdateListener
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ScriptingSupportUpdateEventsListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.SingleUpdateScheduler
 
 class ScriptingSupportUpdateScheduler(
@@ -14,13 +14,22 @@ class ScriptingSupportUpdateScheduler(
     delay: Long = DEFAULT_DELAY
 ) : SingleUpdateScheduler(scheduledAction, parentDisposable, delay) {
     init {
-      project.messageBus.connect(this)
-          .subscribe(
+        project.messageBus.connect(this).subscribe(
             SCRIPTING_SUPPORT_TOPIC,
-            ScriptingSupportAfterUpdateListener {
-                  fireActionFinished()
-              }
-          )
+            object : ScriptingSupportUpdateEventsListener {
+                override fun afterUpdate() {
+                    fireActionFinished()
+                }
+
+                override fun onUpdateException(exception: Exception) {
+                    fireActionFinished()
+                }
+
+                override fun onTrivialUpdate() {
+                    fireActionFinished()
+                }
+            }
+        )
     }
 
     override fun actionInvocationDone() = Unit
