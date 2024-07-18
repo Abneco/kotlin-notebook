@@ -13,6 +13,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.ui.UIUtil
 import junit.framework.TestCase
+import org.jetbrains.kotlin.idea.base.test.KotlinTestHelpers
 import org.jetbrains.kotlin.idea.test.ConfigLibraryUtil
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.getCells
@@ -114,6 +115,8 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
 
 
     protected fun doTest(cellInd: Int? = null) {
+        KotlinTestHelpers.registerChooserInterceptor(myFixture.testRootDisposable)
+
         val notebookFile = configureExecutionTest()
         // todo: move call inside KotlinNotebookExecutionBaseTestCase
         setUpScriptingDependencies(myFixture)
