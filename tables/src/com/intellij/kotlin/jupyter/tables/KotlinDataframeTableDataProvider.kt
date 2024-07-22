@@ -267,24 +267,24 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
             } catch (e: Exception) {
                 val dataframeLike = ($tableVariable) as Any
                 val df = when (dataframeLike) {
-                    is Pivot<*> -> dataframeLike.frames().toDataFrame()
-                    is ReducedPivot<*> -> dataframeLike.values().toDataFrame()
-                    is PivotGroupBy<*> -> dataframeLike.frames()
-                    is ReducedPivotGroupBy<*> -> dataframeLike.values()
-                    is SplitWithTransform<*, *, *> -> dataframeLike.into()
-                    is Merge<*, *, *> -> dataframeLike.into("merged")
-                    is Gather<*, *, *, *> -> dataframeLike.into("key", "value")
-                    is Update<*, *> -> dataframeLike.df
-                    is Convert<*, *> -> dataframeLike.df
-                    is AnyCol -> dataFrameOf(dataframeLike)
-                    is AnyRow -> dataframeLike.toDataFrame()
-                    is GroupBy<*, *> -> dataframeLike.toDataFrame()
-                    is AnyFrame -> dataframeLike
-                    is RenameClause<*, *> -> dataframeLike.df
-                    is ReplaceClause<*, *> -> dataframeLike.df
-                    is GroupClause<*, *> -> dataframeLike.into("untitled")
-                    is InsertClause<*> -> dataframeLike.at(0)
-                    is FormatClause<*, *> -> dataframeLike.df
+                    is org.jetbrains.kotlinx.dataframe.api.Pivot<*> -> dataframeLike.frames().toDataFrame()
+                    is org.jetbrains.kotlinx.dataframe.api.ReducedPivot<*> -> dataframeLike.values().toDataFrame()
+                    is org.jetbrains.kotlinx.dataframe.api.PivotGroupBy<*> -> dataframeLike.frames()
+                    is org.jetbrains.kotlinx.dataframe.api.ReducedPivotGroupBy<*> -> dataframeLike.values()
+                    is org.jetbrains.kotlinx.dataframe.api.SplitWithTransform<*, *, *> -> dataframeLike.into()
+                    is org.jetbrains.kotlinx.dataframe.api.Merge<*, *, *> -> dataframeLike.into("merged")
+                    is org.jetbrains.kotlinx.dataframe.api.Gather<*, *, *, *> -> dataframeLike.into("key", "value")
+                    is org.jetbrains.kotlinx.dataframe.api.Update<*, *> -> dataframeLike.df
+                    is org.jetbrains.kotlinx.dataframe.api.Convert<*, *> -> dataframeLike.df
+                    is org.jetbrains.kotlinx.dataframe.AnyCol -> dataFrameOf(dataframeLike)
+                    is org.jetbrains.kotlinx.dataframe.AnyRow -> dataframeLike.toDataFrame()
+                    is org.jetbrains.kotlinx.dataframe.api.GroupBy<*, *> -> dataframeLike.toDataFrame()
+                    is org.jetbrains.kotlinx.dataframe.AnyFrame -> dataframeLike
+                    is org.jetbrains.kotlinx.dataframe.api.RenameClause<*, *> -> dataframeLike.df
+                    is org.jetbrains.kotlinx.dataframe.api.ReplaceClause<*, *> -> dataframeLike.df
+                    is org.jetbrains.kotlinx.dataframe.api.GroupClause<*, *> -> dataframeLike.into("untitled")
+                    is org.jetbrains.kotlinx.dataframe.api.InsertClause<*> -> dataframeLike.at(0)
+                    is org.jetbrains.kotlinx.dataframe.api.FormatClause<*, *> -> dataframeLike.df
                     else -> throw IllegalArgumentException("Unsupported type")
                 }
                 ((df as DataFrame<*>).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} })
