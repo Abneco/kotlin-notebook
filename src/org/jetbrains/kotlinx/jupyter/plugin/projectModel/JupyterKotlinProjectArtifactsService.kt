@@ -24,8 +24,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
-import com.intellij.platform.backend.workspace.WorkspaceModelChangeListener
-import com.intellij.platform.backend.workspace.WorkspaceModelTopics
+import com.intellij.platform.backend.workspace.WorkspaceModel
 import com.intellij.platform.workspace.jps.entities.ModuleEntity
 import com.intellij.platform.workspace.storage.VersionedStorageChange
 import com.intellij.platform.workspace.storage.WorkspaceEntity
@@ -88,35 +87,39 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private fun addProjectStructureListeners() {
-        project.messageBus.connect(this).subscribe(WorkspaceModelTopics.CHANGED, object : WorkspaceModelChangeListener {
-            override fun changed(event: VersionedStorageChange) {
-                val changedModules = buildSet<Module> {
-                    for (isBefore in listOf(true, false)) {
-                        val moduleEntities = event.getChangedEntities(JavaSourceRootPropertiesEntity::class.java, isBefore).map {
-                            it.sourceRoot.contentRoot.module
-                        } + event.getChangedEntities(JavaModuleSettingsEntity::class.java, isBefore).map {
-                            it.module
-                        } + event.getChangedEntities(ModuleEntity::class.java, isBefore)
-
-                        val storage = if (isBefore) event.storageBefore else event.storageAfter
-                        addAll(moduleEntities.mapNotNull { it.findModule(storage) })
-                    }
-                }
-
-                invalidateBuildResultCaches(changedModules)
+        coroutineScope.launch(Dispatchers.Default) {
+            WorkspaceModel.getInstance(project).eventLog.collect { event ->
+                handleWorkspaceModelChange(event)
             }
-
-            private fun <T : WorkspaceEntity> VersionedStorageChange.getChangedEntities(
-                entityClass: Class<T>,
-                isBefore: Boolean
-            ): Collection<T> {
-                return getChanges(entityClass).mapNotNull { if (isBefore) it.oldEntity else it.newEntity }
-            }
-        })
+        }
         LibraryTablesRegistrar.getInstance().getLibraryTable(project).addListener(object : LibraryTable.Listener {
             override fun afterLibraryAdded(newLibrary: Library) = invalidateLibrariesCaches(newLibrary)
             override fun afterLibraryRemoved(library: Library) = invalidateLibrariesCaches(library)
         }, this)
+    }
+
+    private fun handleWorkspaceModelChange(event: VersionedStorageChange) {
+        val changedModules = buildSet<Module> {
+            for (isBefore in listOf(true, false)) {
+                val moduleEntities = event.getChangedEntities(JavaSourceRootPropertiesEntity::class.java, isBefore).map {
+                    it.sourceRoot.contentRoot.module
+                } + event.getChangedEntities(JavaModuleSettingsEntity::class.java, isBefore).map {
+                    it.module
+                } + event.getChangedEntities(ModuleEntity::class.java, isBefore)
+
+                val storage = if (isBefore) event.storageBefore else event.storageAfter
+                addAll(moduleEntities.mapNotNull { it.findModule(storage) })
+            }
+        }
+
+        invalidateBuildResultCaches(changedModules)
+    }
+
+    private fun <T : WorkspaceEntity> VersionedStorageChange.getChangedEntities(
+        entityClass: Class<T>,
+        isBefore: Boolean
+    ): Collection<T> {
+        return getChanges(entityClass).mapNotNull { if (isBefore) it.oldEntity else it.newEntity }
     }
 
     private fun addBuildListener() {
