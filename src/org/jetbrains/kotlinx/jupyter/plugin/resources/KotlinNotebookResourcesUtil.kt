@@ -3,6 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.resources
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.jarRepository.RemoteRepositoryDescription
 import com.intellij.openapi.extensions.PluginId
 
 object KotlinNotebookResourcesUtil {
@@ -24,6 +25,12 @@ object KotlinNotebookResourcesUtil {
             descriptor.version,
         )
     }
+
+    internal val INTELLIJ_DEPS_REPO = RemoteRepositoryDescription(
+        "intellij-dependencies",
+        "Intellij Dependencies",
+        "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies",
+    )
 
     val pluginId: PluginId get() = KOTLIN_JUPYTER_PLUGIN_ID
     val pluginVersion: String get() = pluginInfo.version

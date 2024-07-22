@@ -5,12 +5,12 @@ import org.jetbrains.kotlinx.jupyter.api.KernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.execution.JupyterExecutor
 import org.jetbrains.kotlinx.jupyter.messaging.AbstractMessageHandler
+import org.jetbrains.kotlinx.jupyter.messaging.ExecutionCounter
 import org.jetbrains.kotlinx.jupyter.messaging.JupyterBaseSockets
 import org.jetbrains.kotlinx.jupyter.messaging.MessageFactoryProvider
 import org.jetbrains.kotlinx.jupyter.messaging.MessageRequestProcessor
 import org.jetbrains.kotlinx.jupyter.messaging.comms.CommManagerInternal
 import org.jetbrains.kotlinx.jupyter.repl.ReplForJupyter
-import java.util.concurrent.atomic.AtomicLong
 
 class EmbeddedMessageHandler(
     private val repl: ReplForJupyter,
@@ -20,7 +20,7 @@ class EmbeddedMessageHandler(
     private val socketManager: JupyterBaseSockets,
     private val executor: JupyterExecutor,
 ) : AbstractMessageHandler() {
-    private val executionCount = AtomicLong(1)
+    private val executionCount = ExecutionCounter(1)
 
     override fun createProcessor(message: RawMessage): MessageRequestProcessor {
         return EmbeddedMessageRequestProcessor(

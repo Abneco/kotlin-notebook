@@ -19,6 +19,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.jetbrains.idea.maven.aether.ArtifactKind
 import org.jetbrains.jps.model.library.JpsMavenRepositoryLibraryDescriptor
+import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookResourcesUtil.INTELLIJ_DEPS_REPO
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
@@ -31,7 +32,7 @@ import kotlin.concurrent.withLock
 
 @Service(Service.Level.PROJECT)
 class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Disposable {
-    private val remoteRepositories = listOf(RemoteRepositoryDescription.MAVEN_CENTRAL)
+    private val remoteRepositories = listOf(RemoteRepositoryDescription.MAVEN_CENTRAL, INTELLIJ_DEPS_REPO)
 
     private val onlyJars = setOf(ArtifactKind.ARTIFACT)
     private val onlySources = setOf(ArtifactKind.SOURCES)
