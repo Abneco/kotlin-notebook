@@ -1,0 +1,17 @@
+<idea-plugin package="com.intellij.kotlin.jupyter.liveTemplates">
+    <dependencies>
+        <plugin id="org.jetbrains.plugins.kotlin.jupyter"/>
+        <module name="kotlin.code-insight.live-templates.shared"/>
+        <plugin id="org.jetbrains.kotlin"/>
+    </dependencies>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK" implementation="com.intellij.kotlin.jupyter.liveTemplates.KotlinNotebookTemplateContextType$Generic"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_STATEMENT" baseContextId="KOTLIN_NOTEBOOK" implementation="com.intellij.kotlin.jupyter.liveTemplates.KotlinNotebookTemplateContextType$Statement"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_CLASS" baseContextId="KOTLIN_NOTEBOOK" implementation="com.intellij.kotlin.jupyter.liveTemplates.KotlinNotebookTemplateContextType$Class"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_EXPRESSION" baseContextId="KOTLIN_NOTEBOOK" implementation="com.intellij.kotlin.jupyter.liveTemplates.KotlinNotebookTemplateContextType$Expression"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_COMMENT" baseContextId="KOTLIN_NOTEBOOK" implementation="com.intellij.kotlin.jupyter.liveTemplates.KotlinNotebookTemplateContextType$Comment"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_OBJECT_DECLARATION" baseContextId="KOTLIN_NOTEBOOK" implementation="com.intellij.kotlin.jupyter.liveTemplates.KotlinNotebookTemplateContextType$ObjectDeclaration"/>
+        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_META" baseContextId="KOTLIN_NOTEBOOK" implementation="com.intellij.kotlin.jupyter.liveTemplates.KotlinNotebookTemplateContextType$Meta"/>
+    </extensions>
+</idea-plugin>

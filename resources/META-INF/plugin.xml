@@ -76,7 +76,6 @@
 
     <dependencies>
         <plugin id="org.jetbrains.kotlin"/>
-        <module name="kotlin.code-insight.live-templates.shared"/>
         <module name="intellij.notebooks.ui"/>
         <module name="intellij.notebooks.visualization"/>
 
@@ -91,6 +90,7 @@
         <module name="intellij.kotlin.jupyter.github"/>
         <module name="intellij.kotlin.jupyter.tables"/>
         <module name="intellij.kotlin.jupyter.plots"/>
+        <module name="intellij.kotlin.jupyter.liveTemplates"/>
     </content>
 
     <applicationListeners>
@@ -186,14 +186,6 @@
         <scratch.creationHelper language="Kotlin Notebook" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.JupyterKotlinScratchCreationHelper" />
 
         <debugger.sourcePositionProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookFieldSourcePositionProvider" order="first"/>
-
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Generic"/>
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_STATEMENT" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Statement"/>
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_CLASS" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Class"/>
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_EXPRESSION" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Expression"/>
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_COMMENT" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Comment"/>
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_OBJECT_DECLARATION" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$ObjectDeclaration"/>
-        <liveTemplateContext contextId="KOTLIN_NOTEBOOK_META" baseContextId="KOTLIN_NOTEBOOK" implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates.KotlinNotebookTemplateContextType$Meta"/>
 
         <completion.contributor language="JKTMeta" id="JKTMetaBasic" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.metaLanguage.JKTMetaCompletionContributor" />
         <!--<completion.contributor language="JKTMeta" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.lang.codeInsight.KotlinMagicsRuntimeCompletionContributor" order="first"/>-->

@@ -1,15 +1,15 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.editor.liveTemplates
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.liveTemplates
 
 import com.intellij.codeInsight.template.EverywhereContextType
 import com.intellij.codeInsight.template.TemplateActionContext
 import com.intellij.codeInsight.template.TemplateContextType
 import com.intellij.injected.editor.EditorWindow
+import com.intellij.kotlin.jupyter.liveTemplates.i18n.KotlinNotebookLiveTemplatesBundle
 import com.intellij.openapi.fileTypes.SyntaxHighlighter
 import com.intellij.openapi.util.NlsContexts
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.liveTemplates.KotlinTemplateContextType
-import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 
 sealed class KotlinNotebookTemplateContextType private constructor(
@@ -28,7 +28,7 @@ sealed class KotlinNotebookTemplateContextType private constructor(
     }
 
     @Suppress("DialogTitleCapitalization")
-    class Generic : KotlinNotebookTemplateContextType(EverywhereContextType(), KotlinNotebookBundle.message("kotlin.jupyter.template.context.type.generic"))
+    class Generic : KotlinNotebookTemplateContextType(EverywhereContextType(), KotlinNotebookLiveTemplatesBundle.message("kotlin.jupyter.template.context.type.generic"))
     class Class : KotlinNotebookTemplateContextType(KotlinTemplateContextType.Class())
     class Comment : KotlinNotebookTemplateContextType(KotlinTemplateContextType.Comment())
     class Expression : KotlinNotebookTemplateContextType(KotlinTemplateContextType.Expression())
