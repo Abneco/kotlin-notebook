@@ -33,6 +33,7 @@ import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
+import org.jetbrains.kotlinx.jupyter.plugin.resources.defaultRemoteArtifactsRepositories
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinKernelVersions.DEBUG_SUPPORTED
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
@@ -135,6 +136,7 @@ object KotlinNotebookSettingsPanel {
                 KotlinNotebookMavenArtifacts.KERNEL_SHADOWED,
                 optionsProvider::kernelVersion,
                 KotlinKernelVersion.STRING_VERSION_COMPARATOR.reversed(),
+                defaultRemoteArtifactsRepositories
             ).apply {
                 cellReference.set(this)
             }

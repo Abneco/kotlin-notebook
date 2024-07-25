@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.settings.ui
 
 import com.intellij.jarRepository.JarRepositoryManager
+import com.intellij.jarRepository.RemoteRepositoryDescription
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.util.NlsSafe
@@ -26,6 +27,7 @@ private class MavenVersionComboBoxImpl(
     private val project: Project,
     private val artifactDescription: ArtifactDescription,
     private val modelProvider: MavenVersionModelProvider,
+    private val remoteRepositories: List<RemoteRepositoryDescription>
 ) : MavenVersionComboBox() {
     private var state = State.NOT_LOADED
 
@@ -49,7 +51,11 @@ private class MavenVersionComboBoxImpl(
     }
 
     private fun reloadVersionsAsync() {
-        val promise = JarRepositoryManager.getAvailableVersions(project, artifactDescription.toIntellijModelDescription())
+        val promise = JarRepositoryManager.getAvailableVersions(
+            project,
+            artifactDescription.toIntellijModelDescription(),
+            remoteRepositories
+        )
         promise.onSuccess(::initializeComboBox)
     }
 
@@ -86,10 +92,15 @@ fun Row.mavenVersionComboBox(
     artifactDescription: ArtifactDescription,
     versionProperty: KMutableProperty0<String>,
     versionComparator: Comparator<String> = Comparator.naturalOrder(),
+    remoteArtifactsRepositories: List<RemoteRepositoryDescription> = listOf(),
 ): Cell<MavenVersionComboBox> {
     val initialVersion = versionProperty.get()
 
-    val comboBox = MavenVersionComboBoxImpl(project, artifactDescription, MavenVersionModelProviderImpl(initialVersion, versionComparator))
+    val comboBox = MavenVersionComboBoxImpl(
+        project, artifactDescription,
+        MavenVersionModelProviderImpl(initialVersion, versionComparator),
+        remoteArtifactsRepositories
+    )
     return cell(comboBox)
         .onReset {
             comboBox.version = versionProperty.get()

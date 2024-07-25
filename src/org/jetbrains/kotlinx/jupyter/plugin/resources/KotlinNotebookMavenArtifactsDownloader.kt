@@ -2,7 +2,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.resources
 
 import com.intellij.jarRepository.JarRepositoryManager
-import com.intellij.jarRepository.RemoteRepositoryDescription
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -19,7 +18,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.jetbrains.idea.maven.aether.ArtifactKind
 import org.jetbrains.jps.model.library.JpsMavenRepositoryLibraryDescriptor
-import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookResourcesUtil.INTELLIJ_DEPS_REPO
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
@@ -32,8 +30,6 @@ import kotlin.concurrent.withLock
 
 @Service(Service.Level.PROJECT)
 class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Disposable {
-    private val remoteRepositories = listOf(RemoteRepositoryDescription.MAVEN_CENTRAL, INTELLIJ_DEPS_REPO)
-
     private val onlyJars = setOf(ArtifactKind.ARTIFACT)
     private val onlySources = setOf(ArtifactKind.SOURCES)
     private val onlyZip = setOf(ArtifactKind.ZIP)
@@ -143,7 +139,7 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
             project,
             JpsMavenRepositoryLibraryDescriptor(artifact.group, artifact.artifact, version, false, emptyList()),
             artifact.selectKinds(),
-            remoteRepositories,
+            defaultRemoteArtifactsRepositories,
             directory.absolutePath,
         ) ?: return false
 
