@@ -1,0 +1,30 @@
+- name: lib/kotlin-jupyter.jar
+  projectLibraries:
+  - name: jetbrains.kotlin-jupyter-shared-compiler
+    files:
+    - name: $MAVEN_REPOSITORY$/com/github/ajalt/clikt/2/clikt-2.jar
+    - name: $MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1/jnacl-1.jar
+    - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0/kotlin-jupyter-api-0.jar
+    - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0/kotlin-jupyter-common-dependencies-0.jar
+    - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0/kotlin-jupyter-lib-0.jar
+    - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0/kotlin-jupyter-shared-compiler-0.jar
+    - name: $MAVEN_REPOSITORY$/org/zeromq/jeromq/0/jeromq-0.jar
+    reason: <- intellij.kotlin.jupyter
+  modules:
+  - name: intellij.kotlin.jupyter
+  - name: intellij.platform.commercial.verifier
+    reason: <- intellij.kotlin.jupyter
+  contentModules:
+  - name: intellij.kotlin.jupyter.github
+  - name: intellij.kotlin.jupyter.liveTemplates
+  - name: intellij.kotlin.jupyter.tables
+- name: lib/modules/intellij.kotlin.jupyter.plots.jar
+  contentModules:
+  - name: intellij.kotlin.jupyter.plots
+    libraries:
+      ggdsl-util:
+      - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10.jar
+        size: 5242
+      jetbrains.lets.plot.export.shadowed:
+      - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.3.3-16/lets-plot-export-shadowed-4.3.3-16.jar
+        size: 583131
