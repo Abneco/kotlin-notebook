@@ -21,6 +21,7 @@ object KotlinNotebookPluginBuildTarget {
         createBuildTasks(context).buildNonBundledPlugins(listOf(
             "intellij.kotlin.jupyter",
             "intellij.jupyter.plugin",
+            "intellij.notebooks.core",
         ))
 
         context.notifyArtifactBuilt(context.paths.artifactDir)
