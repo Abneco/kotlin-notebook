@@ -70,6 +70,14 @@ class KotlinInProcessJupyterClient(
         TreeCachingFileContentsApi(JavaIoFileContentsApi(rootDir))
     }
 
+    override suspend fun uploadFile(filePath: String, content: ByteArray): String {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun isFileExists(filePath: String): Boolean {
+        TODO("Not yet implemented")
+    }
+
     override fun getKernel(kernelId: JupyterKernelId): KotlinKernelRunnableHandler? {
         return kernels[kernelId]
     }
