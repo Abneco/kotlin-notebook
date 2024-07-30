@@ -39,6 +39,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.asDeferred
 import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
@@ -207,7 +208,9 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
 
     private suspend fun buildProject(settings: KotlinNotebookSettings): BuildResult {
         if (settings.projectDependencies.isEmpty()) return BuildResult.EMPTY
-        return buildModules(settings.projectDependencies.findModules(project))
+        return withContext(Dispatchers.Default) {
+            buildModules(settings.projectDependencies.findModules(project))
+        }
     }
 
     private fun getLibraries(settings: KotlinNotebookSettings): ProjectArtifacts {
