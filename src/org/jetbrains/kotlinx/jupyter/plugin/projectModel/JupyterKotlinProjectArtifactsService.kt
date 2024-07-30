@@ -282,21 +282,20 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
             enableCollectionOfGeneratedFiles()
         }
 
-        val deferredResult = taskManager.run(buildTaskContext, buildTask).then { buildResult ->
-            val allModules = getDependencies(modules)
+        val buildResultDeferred = taskManager.run(buildTaskContext, buildTask).asDeferred()
+        buildResultDeferred.cancelOnDispose(this)
 
-            val projectClasspath = allModules.flatMap {
-                ModuleRootManager.getInstance(it).orderEntries().withoutSdk().classes().pathsList.pathList
-            }.distinct()
+        val allModules = getDependencies(modules)
+        val projectClasspath = allModules.flatMap {
+            ModuleRootManager.getInstance(it).orderEntries().withoutSdk().classes().pathsList.pathList
+        }.distinct()
 
-            val state = if (!buildResult.hasErrors()) DependenciesState.PROVIDED
-            else if (projectClasspath.any { File(it).isNotEmptyDirectory }) DependenciesState.OUTDATED
-            else DependenciesState.ABSENT
+        val buildResult = buildResultDeferred.await()
+        val state = if (!buildResult.hasErrors()) DependenciesState.PROVIDED
+        else if (projectClasspath.any { File(it).isNotEmptyDirectory }) DependenciesState.OUTDATED
+        else DependenciesState.ABSENT
 
-            BuildResult(projectClasspath, state)
-        }.asDeferred()
-        deferredResult.cancelOnDispose(this)
-        return deferredResult.await()
+        return BuildResult(projectClasspath, state)
     }
 
     private fun getDependencies(modules: Collection<Module>): Array<Module> {
