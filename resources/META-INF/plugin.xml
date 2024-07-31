@@ -155,7 +155,7 @@
         <registryKey key="kotlin.notebook.allow.embedded.kernel" defaultValue="false"
                      description="When enabled, Kotlin Notebook sessions can be run inside the IDE process" />
 
-        <registryKey key="kotlin.notebook.debug.enabled" defaultValue="true"
+        <registryKey key="kotlin.notebook.debug.enabled" defaultValue="false"
                      description="When enabled, establishing debug session with Kernel is possible" />
 
         <registryKey key="kotlin.notebook.outdated.dependencies.hints" defaultValue="true"
