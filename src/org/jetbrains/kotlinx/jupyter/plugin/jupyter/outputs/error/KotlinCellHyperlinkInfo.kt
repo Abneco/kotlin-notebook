@@ -12,6 +12,7 @@ import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEd
 import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.firstContentLine
+import org.jetbrains.plugins.notebooks.visualization.lastContentLine
 
 /**
  * Class wrapping the intent of navigating from a Kotlin Notebook stacktrace
@@ -32,6 +33,7 @@ internal class KotlinCellHyperlinkInfo(
     val cellLines = cellLines.intervals[index]
 
     val line = cellLines.firstContentLine + cellLine - 1
+    if (line > cellLines.lastContentLine) return
     val lineStartOffset = editor.document.getLineStartOffset(line)
 
     IdeFocusManager.getInstance(project).requestFocus(editor.component, true)

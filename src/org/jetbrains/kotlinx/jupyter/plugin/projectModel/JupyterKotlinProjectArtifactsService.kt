@@ -239,13 +239,13 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
                 val notebookSettings = KotlinNotebookPerFileSettingsCache.getInstance(project).getSettings(file)
                 Pair(buildProject(notebookSettings), getLibraries(notebookSettings))
             },
-            alreadyReturnedArtifacts = false
         )
     }
 
     fun getNewArtifactsForSession(sessionId: JupyterNotebookSessionId): Collection<String> {
         val session = sessionData[sessionId] ?: return emptyList()
         if (session.alreadyReturnedArtifacts) return emptyList()
+        session.alreadyReturnedArtifacts = true
 
         val (buildProjectResult, libraries) = runBlocking { session.artifacts.await() }
 
@@ -270,7 +270,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     private data class SessionData(
         val file: BackedNotebookVirtualFile,
         val artifacts: Deferred<Pair<BuildResult, ProjectArtifacts>>,
-        val alreadyReturnedArtifacts: Boolean,
+        var alreadyReturnedArtifacts: Boolean = false,
     )
 
     private suspend fun buildModules(modules: Collection<Module>): BuildResult {
