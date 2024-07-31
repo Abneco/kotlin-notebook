@@ -295,6 +295,8 @@
         <csvDropHandler
                 id="KotlinJsonDropHandler"
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.dnd.KotlinJsonDropHandler"/>
+        <errorOutputContentProvider
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.error.KotlinErrorOutputContentProvider"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.kotlinx.jupyter.plugin">
         <kernel.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>
