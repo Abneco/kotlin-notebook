@@ -242,6 +242,8 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
         columns: List<String>,
         indexColumnWidth: Int
     ): String {
+        if (sortKeys.isEmpty()) return tableVariable
+
         if (columns.isEmpty()) return tableVariable
 
         if (columns.all { it.isBlank() }) return tableVariable
@@ -258,38 +260,7 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
             kotlinDataframeSortKeys.add(kotlinDataframeSortKeys[0])
         }
 
-        // This is a workaround to fix the issue KTNB-382.
-        // There is no alternative solution that won’t compromise compatibility with dataframe versions <= 0.12.1.
-        // This temporary code should be removed once the majority of users have upgraded to 0.12.1 or a higher version.
-        return """
-            try{
-                (($tableVariable as DataFrame<*>).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} })
-            } catch (e: Exception) {
-                val dataframeLike = ($tableVariable) as Any
-                val df = when (dataframeLike) {
-                    is org.jetbrains.kotlinx.dataframe.api.Pivot<*> -> dataframeLike.frames().toDataFrame()
-                    is org.jetbrains.kotlinx.dataframe.api.ReducedPivot<*> -> dataframeLike.values().toDataFrame()
-                    is org.jetbrains.kotlinx.dataframe.api.PivotGroupBy<*> -> dataframeLike.frames()
-                    is org.jetbrains.kotlinx.dataframe.api.ReducedPivotGroupBy<*> -> dataframeLike.values()
-                    is org.jetbrains.kotlinx.dataframe.api.SplitWithTransform<*, *, *> -> dataframeLike.into()
-                    is org.jetbrains.kotlinx.dataframe.api.Merge<*, *, *> -> dataframeLike.into("merged")
-                    is org.jetbrains.kotlinx.dataframe.api.Gather<*, *, *, *> -> dataframeLike.into("key", "value")
-                    is org.jetbrains.kotlinx.dataframe.api.Update<*, *> -> dataframeLike.df
-                    is org.jetbrains.kotlinx.dataframe.api.Convert<*, *> -> dataframeLike.df
-                    is org.jetbrains.kotlinx.dataframe.AnyCol -> dataFrameOf(dataframeLike)
-                    is org.jetbrains.kotlinx.dataframe.AnyRow -> dataframeLike.toDataFrame()
-                    is org.jetbrains.kotlinx.dataframe.api.GroupBy<*, *> -> dataframeLike.toDataFrame()
-                    is org.jetbrains.kotlinx.dataframe.AnyFrame -> dataframeLike
-                    is org.jetbrains.kotlinx.dataframe.api.RenameClause<*, *> -> dataframeLike.df
-                    is org.jetbrains.kotlinx.dataframe.api.ReplaceClause<*, *> -> dataframeLike.df
-                    is org.jetbrains.kotlinx.dataframe.api.GroupClause<*, *> -> dataframeLike.into("untitled")
-                    is org.jetbrains.kotlinx.dataframe.api.InsertClause<*> -> dataframeLike.at(0)
-                    is org.jetbrains.kotlinx.dataframe.api.FormatClause<*, *> -> dataframeLike.df
-                    else -> throw IllegalArgumentException("Unsupported type")
-                }
-                ((df as DataFrame<*>).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} })
-            }
-        """.trimIndent()
+        return "KotlinNotebookPluginUtils.convertToDataFrame(${tableVariable}!!).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} }"
     }
 
     private fun join(nestedNames: List<String>): String {
