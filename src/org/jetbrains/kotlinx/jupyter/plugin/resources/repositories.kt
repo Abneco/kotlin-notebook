@@ -9,4 +9,7 @@ private val INTELLIJ_DEPS_REPO = RemoteRepositoryDescription(
     "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies",
 )
 
-val defaultRemoteArtifactsRepositories = listOf(RemoteRepositoryDescription.MAVEN_CENTRAL, INTELLIJ_DEPS_REPO)
+val defaultRemoteArtifactsRepositories = listOf(
+    RemoteRepositoryDescription.MAVEN_CENTRAL,
+    // INTELLIJ_DEPS_REPO,
+)
