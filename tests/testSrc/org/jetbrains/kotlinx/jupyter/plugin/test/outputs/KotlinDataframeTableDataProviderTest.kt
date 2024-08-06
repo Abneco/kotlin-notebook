@@ -55,9 +55,7 @@ class KotlinDataframeTableDataProviderTest : BasePlatformTestCase() {
     fun `test DSDataFrameInfo extraction`() {
         val (dataframeProvider, data) = prepareProviderAndData()
         KotlinNotebookApplicationOptions.get().showDataFrameAsSwing = true
-        val provider = dataframeProvider.getDataProviderCapableToParseDataOrNull(data.toString())
-
-        Assert.assertNotNull(provider!!)
+        val provider = dataframeProvider.getDataProviderCapableToParseData(project, data.toString())
 
         val frameInfo = provider.parseTextToFrameInfo(data.toString())
 
@@ -70,9 +68,7 @@ class KotlinDataframeTableDataProviderTest : BasePlatformTestCase() {
     fun `test DSTableData extraction`() {
         val (dataframeProvider, data) = prepareProviderAndData()
         KotlinNotebookApplicationOptions.get().showDataFrameAsSwing = true
-        val provider = dataframeProvider.getDataProviderCapableToParseDataOrNull(data.toString())
-
-        Assert.assertNotNull(provider!!)
+        val provider = dataframeProvider.getDataProviderCapableToParseData(project, data.toString())
 
         val tableData = provider.parseTextToTableData(DataId(19), data.toString())
 
@@ -136,9 +132,7 @@ class KotlinDataframeTableDataProviderTest : BasePlatformTestCase() {
     fun `test DSTableData extraction format v2`() {
         val (dataframeProvider, data) = prepareProviderAndDataFormatV2()
         KotlinNotebookApplicationOptions.get().showDataFrameAsSwing = true
-        val provider = dataframeProvider.getDataProviderCapableToParseDataOrNull(data.toString())
-
-        Assert.assertNotNull(provider!!)
+        val provider = dataframeProvider.getDataProviderCapableToParseData(project, data.toString())
 
         val tableData = provider.parseTextToTableData(DataId(19), data.toString())
 

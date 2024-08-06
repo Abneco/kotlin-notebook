@@ -49,18 +49,21 @@ class KotlinDataframeTableDataProvider : TableDataProviderFactory, TableDataType
     override fun getTableDataProvider(project: Project, type: DSTableDataType, text: DSTableText): DSTableDataProvider? {
         if (type != DSTableDataType.EXTERNAL) return null
         val plainText = text.plainText
-        return getDataProviderCapableToParseDataOrNull(plainText)
+        return getDataProviderCapableToParseData(project, plainText)
     }
 
     override fun detectTableType(dataObject: ObjectNode, hasOutputInCurrentSession: Boolean): DSTableDataType? {
-        return if (getDataProviderCapableToParseDataOrNull(dataObject.toString()) != null) DSTableDataType.EXTERNAL
+        return if (isFormatSupported(dataObject.toString())) DSTableDataType.EXTERNAL
         else null
     }
 
-    fun getDataProviderCapableToParseDataOrNull(serializedData: String?): DSTableDataProvider? {
-        if (!KotlinNotebookApplicationOptions.get().showDataFrameAsSwing) return null
-        if (serializedData == null || !KotlinDataframeParsing.isFormatSupported(serializedData)) return null
+    private fun isFormatSupported(serializedData: String?): Boolean {
+        return KotlinNotebookApplicationOptions.get().showDataFrameAsSwing &&
+                serializedData != null &&
+                KotlinDataframeParsing.isFormatSupported(serializedData)
+    }
 
+    fun getDataProviderCapableToParseData(project: Project, serializedData: String): DSTableDataProvider {
         val jsonFactory = JsonFactory()
         jsonFactory.setStreamReadConstraints(
             StreamReadConstraints.builder()
@@ -73,13 +76,13 @@ class KotlinDataframeTableDataProvider : TableDataProviderFactory, TableDataType
         val parser = KotlinDataframeParsing.createParserForData(serializedData, mapper)
         val columnsLimitFromRegistry = Registry.intValue("grid.tables.columns.limit", 2000)
 
-        return KotlinDataFrameProvider(parser, columnsLimitFromRegistry)
+        return KotlinDataFrameProvider(project, parser, columnsLimitFromRegistry)
     }
 }
 
 const val NULL: String = "null"
 
-class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private val columnsLimit: Int) : NestedTableDataProvider {
+class KotlinDataFrameProvider(private val project: Project, private val parser: KotlinDataframeParser, private val columnsLimit: Int) : NestedTableDataProvider {
     override val type: DSTableDataType = DSTableDataType.EXTERNAL
 
     override fun parseTextToFrameInfo(text: String): DSDataFrameInfo {
@@ -136,10 +139,11 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
                             "kotlin.jupyter.table.output.sort_column_not_comparable.error",
                             extractColumnNameFromSortErrorMessage(textData)
                         ),
-                        textData,
+                        extractNonComparableColumnTypeMessage(textData) ?: KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.sort_column_not_comparable.error.message"),
                         NotificationType.WARNING
                     )
-                    .notify(null)
+                    .notify(project)
+                throw DSTableDataException(KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.sort_column_not_comparable.error.message"), e)
             }
 
             notifyUnknownParsingException()
@@ -152,7 +156,7 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
                     KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.parse.dataframe.error"),
                     NotificationType.WARNING
                 )
-                .notify(null)
+                .notify(project)
 
             throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}", e)
         } catch (e: IOException) {
@@ -164,6 +168,13 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
         }
     }
 
+    @NlsSafe
+    private fun extractNonComparableColumnTypeMessage(exceptionMessage: String): String? {
+        val regex = Regex("""Column '(.+?)' has type '(.+?)' that is not Comparable""")
+        val matchResult = regex.find(exceptionMessage)
+        return matchResult?.value
+    }
+
     private fun notifyUnknownParsingException() {
         NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
             .createNotification(
@@ -171,7 +182,7 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
                 KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.parse.dataframe.error.unknown"),
                 NotificationType.WARNING
             )
-            .notify(null)
+            .notify(project)
     }
 
     override fun getNestedTableCommand(tableVariable: String, path: List<NestedTableCellCoordinate>): String {
@@ -296,7 +307,7 @@ class KotlinDataFrameProvider(private val parser: KotlinDataframeParser, private
                     KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.notification.content.could.not.display.table.with.d.columns", numberOfColumns),
                     NotificationType.WARNING
                 )
-                .notify(null)
+                .notify(project)
             throw DSTableDataException("Attempt to create grid with ${numberOfColumns} columns")
         }
     }
