@@ -110,7 +110,6 @@ abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTes
         }
         if (shouldDoInspections) {
             toIgnoreList.add(Pass.LOCAL_INSPECTIONS)
-            toIgnoreList.add(Pass.WHOLE_FILE_LOCAL_INSPECTIONS)
         }
         val toIgnore = if (toIgnoreList.isEmpty()) ArrayUtilRt.EMPTY_INT_ARRAY else toIgnoreList.toIntArray()
         var editor = myFixture.editor
