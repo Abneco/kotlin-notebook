@@ -13,6 +13,7 @@
     <orderEntry type="module" module-name="intellij.kotlin.jupyter" />
     <orderEntry type="module" module-name="intellij.notebooks.visualization" />
     <orderEntry type="module" module-name="intellij.jupyter.plugin" />
+    <orderEntry type="module" module-name="intellij.jupyter.core" />
     <orderEntry type="module" module-name="intellij.platform.ide.impl" />
     <orderEntry type="module" module-name="intellij.scientific.tables" />
     <orderEntry type="module" module-name="intellij.grid.core.impl" />

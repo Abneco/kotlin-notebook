@@ -80,6 +80,7 @@
         <module name="intellij.notebooks.visualization"/>
 
         <plugin id="intellij.jupyter"/>
+    <module name="intellij.jupyter.core"/>
 
         <plugin id="com.intellij.modules.platform"/>
         <plugin id="com.intellij.modules.java"/>
