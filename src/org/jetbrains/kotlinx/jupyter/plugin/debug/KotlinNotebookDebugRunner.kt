@@ -57,7 +57,7 @@ class KotlinNotebookDebugRunner(project: Project, private val virtualFile: Backe
     ): XDebugSession? {
         val debugSessionManager = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
 
-        val session = JupyterRuntimeService.getInstance(project).getSession(virtualFile)!!
+        val session = JupyterRuntimeService.getInstance(project).getNotebookSession(virtualFile)!!
         currentNotebookSession = session
         val sessionPath =
             NotebookPathProvider.calculateNotebookPath(project, virtualFile.file, session.jupyterServer, notebookKernelSpec.name)
