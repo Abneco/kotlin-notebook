@@ -26,7 +26,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMess
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.originFile
 import org.jetbrains.plugins.notebooks.extensions.JupyterPsiCellExt.getJupyterBackedVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionQueueManager
@@ -38,8 +37,8 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.Jup
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointerFactory
 import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory

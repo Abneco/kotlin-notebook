@@ -23,8 +23,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.find.IN_EDITOR_ELEM_REF_KEY
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.ReferenceSearchStrategy
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.tryResolveCompiledDeclarationInNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.originFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 
 
 class NotebookGotoDeclarationProvider: GotoDeclarationHandler {

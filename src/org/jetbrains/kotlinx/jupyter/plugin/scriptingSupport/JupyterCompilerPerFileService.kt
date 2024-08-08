@@ -57,7 +57,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
@@ -310,9 +310,9 @@ class JupyterCompilerPerFileService(
 
     @RequiresEdt
     fun addCompiledSnippet(
-        snippetMetadata: EvaluatedSnippetMetadata,
-        psiCell: JupyterPsiCell?,
-        updateAction: () -> Unit
+      snippetMetadata: EvaluatedSnippetMetadata,
+      psiCell: JupyterPsiCell?,
+      updateAction: () -> Unit
     ) {
         KotlinNotebookPluginUpdater.getInstance().pluginUsed()
         // execute not on EDT

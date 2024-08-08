@@ -13,11 +13,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.language.meta.JupyterKtMetaLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.KotlinCodeRangesProcessor
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.core.api.psi.NotebookPsiCell
+import org.jetbrains.plugins.notebooks.psi.core.api.psi.NotebookPsiCell
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.nonCodeCellSuffixes
-import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterPsiCellImpl
 import java.util.concurrent.atomic.AtomicInteger
 
 private val ELEMENTS_TO_INJECT = mutableListOf(JupyterPsiCellImpl::class.java)

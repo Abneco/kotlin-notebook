@@ -6,7 +6,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.FileViewProvider
 import com.intellij.psi.PsiManager
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.jupyter.JupyterFileViewProviderFactory
+import org.jetbrains.plugins.notebooks.psi.jupyter.JupyterFileViewProviderFactory
 
 class JupyterKotlinFileViewProviderChooser : JupyterFileViewProviderFactory.Chooser {
     override fun createFileViewProvider(

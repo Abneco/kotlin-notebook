@@ -39,7 +39,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.debugger.common.JupyterSessionPath
 import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
 import java.util.concurrent.ExecutionException
 
@@ -219,10 +219,10 @@ class KotlinNotebookDebugSession(
     }
 
     fun updateSessionCellInfo(
-        cell: JupyterPsiCell,
-        cellPointer: NotebookIntervalPointer,
-        cellFileName: String? = null,
-        sessionPath: String? = null
+      cell: JupyterPsiCell,
+      cellPointer: NotebookIntervalPointer,
+      cellFileName: String? = null,
+      sessionPath: String? = null
     ) {
         debugConnectionHolder.sessionRelatedInfo.apply {
             this.cell = cell

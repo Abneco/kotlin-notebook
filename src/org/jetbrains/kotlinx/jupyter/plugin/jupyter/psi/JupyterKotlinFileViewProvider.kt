@@ -9,9 +9,9 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.source.PsiFileImpl
 import com.intellij.util.InjectionUtils
-import org.jetbrains.plugins.notebooks.jupyter.JupyterFileViewProvider
-import org.jetbrains.plugins.notebooks.jupyter.getMarkdownLanguage
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterTemplateTypes
+import org.jetbrains.plugins.notebooks.psi.jupyter.JupyterFileViewProvider
+import org.jetbrains.plugins.notebooks.psi.jupyter.getMarkdownLanguage
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterTemplateTypes
 
 class JupyterKotlinFileViewProvider(
     manager: PsiManager,

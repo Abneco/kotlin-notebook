@@ -31,7 +31,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder.
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 
 internal fun isCompiledCellClassDeclaration(element: PsiElement?): Boolean =
     element?.containingFile?.virtualFile?.name?.matches(Regex("Line_.+\\.class")) == true

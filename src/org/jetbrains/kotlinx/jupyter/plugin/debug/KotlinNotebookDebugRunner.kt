@@ -33,7 +33,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.ui.JupyterErrorReport
 import org.jetbrains.plugins.notebooks.jupyter.debugger.common.DebugConnectionNotifier
 import org.jetbrains.plugins.notebooks.jupyter.debugger.common.NotebookDebugRunner
 import org.jetbrains.plugins.notebooks.jupyter.debugger.common.OutputConsumer
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
 import java.util.concurrent.TimeUnit
 
@@ -48,12 +48,12 @@ class KotlinNotebookDebugRunner(project: Project, private val virtualFile: Backe
     private val coroutineScope = CoroutineScope(Job())
 
     override fun createDebugSession(
-        project: Project,
-        cell: JupyterPsiCell,
-        cellPointer: NotebookIntervalPointer,
-        connectionNotifier: DebugConnectionNotifier,
-        output: OutputConsumer?,
-        afterCellExecuted: () -> Unit
+      project: Project,
+      cell: JupyterPsiCell,
+      cellPointer: NotebookIntervalPointer,
+      connectionNotifier: DebugConnectionNotifier,
+      output: OutputConsumer?,
+      afterCellExecuted: () -> Unit
     ): XDebugSession? {
         val debugSessionManager = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
 

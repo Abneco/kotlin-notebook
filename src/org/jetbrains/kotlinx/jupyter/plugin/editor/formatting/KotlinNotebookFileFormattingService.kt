@@ -31,8 +31,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.toDocument
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 
 class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() {
     override fun getFeatures(): Set<FormattingService.Feature> =

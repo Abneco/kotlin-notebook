@@ -19,12 +19,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.KOTLIN_DATAFRAME_MIME
 import org.jetbrains.kotlinx.jupyter.plugin.util.LETS_PLOT_MIME
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionStatus
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.executionCount
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.status
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterCellType
+import org.jetbrains.plugins.notebooks.psi.jupyter.nbformat.JupyterCellType
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterDisplayDataOutput
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterErrorOutput
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutput

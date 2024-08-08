@@ -9,7 +9,7 @@ import com.intellij.psi.PsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 
 
 class ExecutedPresentCellInfo(psiFile: PsiFile?) {

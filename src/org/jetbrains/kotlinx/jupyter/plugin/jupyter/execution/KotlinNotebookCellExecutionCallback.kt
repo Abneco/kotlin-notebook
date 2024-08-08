@@ -20,7 +20,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.Jupyte
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutputsBase
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import kotlin.system.measureTimeMillis
 
 /**
@@ -34,11 +34,11 @@ import kotlin.system.measureTimeMillis
  * language-agnostic features, contribute to the Jupyter plugin directly.
  */
 class KotlinNotebookCellExecutionCallback(
-    private val project: Project,
-    private val virtualFile: BackedNotebookVirtualFile,
-    private val psiCell: JupyterPsiCell?,
-    private val index: Int,
-    private val executionStartedMs: Long,
+  private val project: Project,
+  private val virtualFile: BackedNotebookVirtualFile,
+  private val psiCell: JupyterPsiCell?,
+  private val index: Int,
+  private val executionStartedMs: Long,
 ) : JupyterExecutionCallbackAdapter() {
     override val channel: JupyterMessageChannel
         get() = JupyterMessageChannel.ANY

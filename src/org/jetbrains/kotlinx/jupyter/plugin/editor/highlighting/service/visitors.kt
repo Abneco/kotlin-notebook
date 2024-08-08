@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.AbstractKotlinHighlightingVisitorAdapter
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.convertToShadowedDeclaration
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 
 
 internal class KotlinNotebookBeforeHighlightingVisitor: AbstractKotlinHighlightingVisitorAdapter<KotlinNotebookDummyVisitor>() {

@@ -17,7 +17,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.get
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.looksLikeNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
 import org.jetbrains.plugins.notebooks.visualization.getCell
 

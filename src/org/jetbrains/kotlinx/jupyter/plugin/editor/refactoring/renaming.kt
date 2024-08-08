@@ -60,8 +60,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isInsideKotlinNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.retrieveElementUnderCaret
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
-import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterPsiCellImpl
 import java.awt.Component
 
 internal object NotebookRefactoringSupport {

@@ -14,7 +14,7 @@ import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.NotebookStructureTrackerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
 
 
 fun searchForElementDeclarationOrUsages(

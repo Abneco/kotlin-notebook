@@ -7,7 +7,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.codeInsight.hints.HintType
 import org.jetbrains.kotlin.utils.addToStdlib.ifFalse
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 
 sealed class NotebookTypeHintsRegistry<T: Collection<*>> {
     val data: MutableMap<PsiElement, T> = mutableMapOf()

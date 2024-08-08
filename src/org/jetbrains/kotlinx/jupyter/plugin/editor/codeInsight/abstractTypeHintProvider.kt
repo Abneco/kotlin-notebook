@@ -35,7 +35,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.getKtFileStartOffset
 import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
-import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterPsiCellImpl
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterPsiCellImpl
 
 
 abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbstractHintsProvider<T>() {

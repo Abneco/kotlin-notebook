@@ -22,7 +22,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.retrieveElementUnderCaret
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 
 // todo: convert to lambda
 internal class ProvidedLibrariesReferencesProducer: Processor<PsiReference> {

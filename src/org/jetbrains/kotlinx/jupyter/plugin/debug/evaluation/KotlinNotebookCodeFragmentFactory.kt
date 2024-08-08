@@ -15,8 +15,8 @@ import org.jetbrains.kotlin.idea.debugger.evaluate.KotlinK1CodeFragmentFactory
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
-import org.jetbrains.plugins.notebooks.jupyter.psi.impl.JupyterSourceImpl
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterSourceImpl
 
 /**
  * Class is used for evaluating expressions during a running DebugSession.

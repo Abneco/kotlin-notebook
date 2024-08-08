@@ -24,7 +24,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.getCells
 import org.jetbrains.kotlinx.jupyter.plugin.test.isInjectedKtFile
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 
 
 abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTestCase() {

@@ -8,8 +8,8 @@ import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.util.CodeInterval
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterPsiCell
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterSource
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterSource
 
 object KotlinCodeRangesProcessor {
     private val magicsProcessor = MagicsProcessor(

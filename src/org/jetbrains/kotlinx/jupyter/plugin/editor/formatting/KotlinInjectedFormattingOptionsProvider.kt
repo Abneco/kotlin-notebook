@@ -5,7 +5,7 @@ import com.intellij.formatting.InjectedFormattingOptionsProvider
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterFile
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 
 class KotlinInjectedFormattingOptionsProvider : InjectedFormattingOptionsProvider {
     override fun shouldDelegateToTopLevel(file: PsiFile): Boolean? {

@@ -184,7 +184,7 @@
                   language="Kotlin Notebook"
                   implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.JupyterKotlinFileType"
                   fieldName="INSTANCE"/>
-        <lang.parserDefinition language="Kotlin Notebook" implementationClass="org.jetbrains.plugins.notebooks.jupyter.JupyterParserDefinition"/>
+        <lang.parserDefinition language="Kotlin Notebook" implementationClass="org.jetbrains.plugins.notebooks.psi.jupyter.JupyterParserDefinition"/>
         <scratch.creationHelper language="Kotlin Notebook" implementationClass="org.jetbrains.kotlinx.jupyter.plugin.language.JupyterKotlinScratchCreationHelper" />
 
         <debugger.sourcePositionProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.debug.variables.NotebookFieldSourcePositionProvider" order="first"/>
