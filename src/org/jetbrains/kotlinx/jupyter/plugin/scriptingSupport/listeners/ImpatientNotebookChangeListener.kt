@@ -44,7 +44,7 @@ class ImpatientNotebookChangeListener(
     private var cellsAffectedByReformat = mutableSetOf<Int>()
 
     private fun handleNotebookChangeEvent(event: DocumentEvent) {
-        val file = FileDocumentManager.getInstance().getFile(event.document)?.let(::BackedNotebookVirtualFile) ?: return
+        val file = FileDocumentManager.getInstance().getFile(event.document)?.let { BackedNotebookVirtualFile.create(it) } ?: return
 
         val (document, psiFile, psiCells) = withReadAccess {
             val document = FileDocumentManager.getInstance().getDocument(file.file)
@@ -101,7 +101,8 @@ class ImpatientNotebookChangeListener(
             var moveEventInvokedInCell: Int? = null
             if (currentTime - lastTimeCellChangeActionPerformed < FAST_INVOCATION_DELTA
                 // Pattern: ADD, REMOVE
-                && last == NotebookChangeEventsType.CELL_ADD && isSingleDeleteEvent) {
+                && last == NotebookChangeEventsType.CELL_ADD && isSingleDeleteEvent
+            ) {
                 val cellUnderCaret = editor?.caretModel?.offset?.let { document.getLineNumber(it) }?.let { editor.getCell(it) }
                 val ind = cellUnderCaret?.ordinal
                 if (ind != null) {
@@ -181,7 +182,7 @@ class ImpatientNotebookChangeListener(
     }
 
     private fun NotebookChangeEventsType.isCellListChangeEvent(): Boolean =
-      this == NotebookChangeEventsType.CELL_ADD || this == NotebookChangeEventsType.CELL_DELETE
+        this == NotebookChangeEventsType.CELL_ADD || this == NotebookChangeEventsType.CELL_DELETE
 
     override fun beforeDocumentChange(event: DocumentEvent) {
         handleNotebookChangeEvent(event)
