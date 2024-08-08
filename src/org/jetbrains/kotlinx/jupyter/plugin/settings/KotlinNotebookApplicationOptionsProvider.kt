@@ -23,6 +23,8 @@ class KotlinNotebookApplicationOptionsProvider :
 {
 
     var shouldShowExecutionCount by prop(State::shouldShowExecutionCount).onChange(Listener::onShowExecutionCountChanged)
+    var shouldStopExecutionOnFailure by prop(State::shouldStopExecutionOnFailure)
+
     var shouldShowFoldings by prop(State::shouldShowFoldings).onChange(Listener::onShowFoldings)
 
     var showLetsPlotAsSwing by prop(State::showLetsPlotAsSwing)
@@ -30,6 +32,8 @@ class KotlinNotebookApplicationOptionsProvider :
 
     class State : BaseState() {
         var shouldShowExecutionCount by property(true)
+        var shouldStopExecutionOnFailure by property(true)
+
         var shouldShowFoldings by property(true)
 
         var showLetsPlotAsSwing by property(letsPlotSwingOutputsEnabled)

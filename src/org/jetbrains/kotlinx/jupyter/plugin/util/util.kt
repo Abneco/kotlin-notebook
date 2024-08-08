@@ -27,6 +27,7 @@ import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.find
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
+import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 import org.jetbrains.plugins.notebooks.core.impl.file.notebookLanguage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.psi.JupyterNotebook
@@ -39,6 +40,11 @@ val VirtualFile?.isKotlinNotebook: Boolean
     get() {
         if (this == null || extension != JUPYTER_NOTEBOOK_EXTENSION) return false
         return notebookLanguage === KotlinLanguage.INSTANCE
+    }
+
+val BackedNotebookVirtualFile.isKotlinNotebook: Boolean
+    get() {
+        return notebook.language === KotlinLanguage.INSTANCE
     }
 
 val Editor.isKotlinNotebook: Boolean

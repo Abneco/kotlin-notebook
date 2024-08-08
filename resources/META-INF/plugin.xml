@@ -297,6 +297,8 @@
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.dnd.KotlinJsonDropHandler"/>
         <errorOutputContentProvider
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.error.KotlinErrorOutputContentProvider"/>
+        <executionSettingsProvider
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinJupyterExecutionSettingsProvider"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.kotlinx.jupyter.plugin">
         <kernel.kernelVmCommandCustomizer implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>

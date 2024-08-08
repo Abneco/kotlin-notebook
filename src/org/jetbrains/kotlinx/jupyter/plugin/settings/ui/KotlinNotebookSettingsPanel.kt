@@ -86,6 +86,11 @@ object KotlinNotebookSettingsPanel {
                 }
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session")) {
+                singleRowCheckBox(
+                    KotlinNotebookBundle.message("checkbox.should.stop.execution.on.failure"),
+                    KotlinNotebookBundle.message("checkbox.should.stop.execution.on.failure.detailed"),
+                    applicationOptions::shouldStopExecutionOnFailure
+                )
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.sources"), sessionOptions::resolveSources)
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.multiplatform"), sessionOptions::resolveMpp)
             }
@@ -263,8 +268,21 @@ object KotlinNotebookSettingsPanel {
     }
 
     private fun Panel.singleRowCheckBox(@NlsContexts.Checkbox checkBoxTitle: String, property: KMutableProperty0<Boolean>) {
+        singleRowCheckBox(checkBoxTitle, null, property)
+    }
+
+    private fun Panel.singleRowCheckBox(
+        @NlsContexts.Checkbox checkBoxTitle: String,
+        @NlsContexts.DetailedDescription detailedDescription: String?,
+        property: KMutableProperty0<Boolean>
+    ) {
         row(null) {
-            checkBox(checkBoxTitle).bindSelected(property)
+            checkBox(checkBoxTitle)
+                .apply {
+                    val commentMessage: @NlsContexts.DetailedDescription String = detailedDescription ?: return@apply
+                    comment(commentMessage)
+                }
+                .bindSelected(property)
         }
     }
 
