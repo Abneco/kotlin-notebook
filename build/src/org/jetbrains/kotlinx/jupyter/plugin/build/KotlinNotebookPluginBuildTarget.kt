@@ -19,9 +19,9 @@ object KotlinNotebookPluginBuildTarget {
         context.options.enableEmbeddedJetBrainsClient = false
 
         createBuildTasks(context).buildNonBundledPlugins(listOf(
-            "intellij.kotlin.jupyter",
-            "intellij.jupyter.plugin",
             "intellij.notebooks.core",
+            "intellij.jupyter.plugin",
+            "intellij.kotlin.jupyter",
         ))
 
         context.notifyArtifactBuilt(context.paths.artifactDir)

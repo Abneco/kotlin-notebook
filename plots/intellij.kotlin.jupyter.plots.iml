@@ -53,7 +53,6 @@
     <orderEntry type="library" name="kotlinx-serialization-json" level="project" />
     <orderEntry type="module" module-name="intellij.platform.core.ui" />
     <orderEntry type="module" module-name="intellij.platform.ide.impl" />
-    <orderEntry type="module" module-name="intellij.jupyter.plugin" />
     <orderEntry type="module" module-name="intellij.jupyter.core" />
     <orderEntry type="module" module-name="intellij.jupyter.psi" />
     <orderEntry type="module" module-name="intellij.notebooks.visualization" />
