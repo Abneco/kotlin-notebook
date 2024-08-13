@@ -155,6 +155,9 @@
         <registryKey key="grid.tables.hierarchical.additional.rows" defaultValue="1"
                      description="Additional space added to the bottom of hierarchical table component. Additional height calculated as 'value' times height of the row."/>
 
+        <registryKey key="grid.tables.hierarchical.default.page.size" defaultValue="20"
+                     description="Default number of rows displayed per page in hierarchical tables."/>
+
         <registryKey key="kotlin.notebook.allow.embedded.kernel" defaultValue="false"
                      description="When enabled, Kotlin Notebook sessions can be run inside the IDE process"/>
 
