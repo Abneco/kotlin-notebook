@@ -76,16 +76,19 @@
 
     <dependencies>
         <plugin id="org.jetbrains.kotlin"/>
+
+        <plugin id="com.intellij.notebooks.core"/>
         <module name="intellij.notebooks.ui"/>
         <module name="intellij.notebooks.visualization"/>
+        <module name="intellij.notebooks.jupyter.core"/>
 
+        <plugin id="intellij.jupyter"/>
         <module name="intellij.jupyter.psi"/>
         <module name="intellij.jupyter.core"/>
 
         <plugin id="com.intellij.modules.platform"/>
         <plugin id="com.intellij.modules.java"/>
         <plugin id="com.intellij.modules.ultimate"/>
-        <module name="intellij.notebooks.jupyter.core"/>
     </dependencies>
     <content>
         <module name="intellij.kotlin.jupyter.github"/>
