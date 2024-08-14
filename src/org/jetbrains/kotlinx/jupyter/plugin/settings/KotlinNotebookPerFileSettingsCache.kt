@@ -5,6 +5,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.smartReadAction
+import com.intellij.openapi.application.writeIntentReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
@@ -111,8 +112,10 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
                     .filter { it.file.isKotlinNotebook }
                 if (closedNotebookFiles.isNotEmpty()) {
                     withContext(Dispatchers.EDT) {
-                        closedNotebookFiles.forEach { it.notebook.operation() }
-                        FileDocumentManager.getInstance().saveAllDocuments()
+                        writeIntentReadAction {
+                            closedNotebookFiles.forEach { it.notebook.operation() }
+                            FileDocumentManager.getInstance().saveAllDocuments()
+                        }
                     }
                 }
             }
