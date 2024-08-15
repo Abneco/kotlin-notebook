@@ -1,8 +1,10 @@
 <idea-plugin package="com.intellij.kotlin.jupyter.plots">
     <dependencies>
-    <module name="intellij.jupyter.psi"/>
-    <module name="intellij.jupyter.core"/>
         <plugin id="org.jetbrains.plugins.kotlin.jupyter"/>
+
+        <module name="intellij.jupyter.psi"/>
+        <module name="intellij.jupyter.core"/>
+
         <module name="intellij.notebooks.visualization"/>
         <module name="intellij.notebooks.ui"/>
     </dependencies>
