@@ -19,7 +19,7 @@ object KotlinNotebookPluginBuildTarget {
         context.options.enableEmbeddedJetBrainsClient = false
 
         createBuildTasks(context).buildNonBundledPlugins(listOf(
-            "intellij.notebooks.core",
+            "intellij.notebooks.plugin",
             "intellij.jupyter.plugin",
             "intellij.kotlin.jupyter",
         ))
