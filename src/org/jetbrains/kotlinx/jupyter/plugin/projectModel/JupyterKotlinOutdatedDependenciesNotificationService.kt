@@ -69,7 +69,12 @@ class JupyterKotlinOutdatedDependenciesNotificationService(val project: Project,
 
         val fileEditorManager = FileEditorManager.getInstance(project)
         for (fileEditor in fileEditorManager.getEditors(notebook.virtualFile)) {
-            JupyterNotebookDependencies.setNotUpToDate(fileEditor)
+            JupyterNotebookDependencies.setStatus(
+                fileEditor = fileEditor,
+                status = JupyterNotebookDependencies.Status.NotUpToDate(
+                    message = KotlinNotebookBundle.message("kotlin.notebook.outdated.dependencies.hint.text"),
+                )
+            )
         }
 
         if (!showHints) return
@@ -92,7 +97,10 @@ class JupyterKotlinOutdatedDependenciesNotificationService(val project: Project,
 
         lateinit var lightweightHint: LightweightHint
         lightweightHint = LightweightHint(HintUtil.createInformationLabel(
-            /* text = */ KotlinNotebookBundle.message("kotlin.notebook.outdated.dependencies.hint.text"),
+            /* text = */ KotlinNotebookBundle.message(
+                key = "kotlin.notebook.outdated.dependencies.hint.message",
+                KotlinNotebookBundle.message("kotlin.notebook.outdated.dependencies.hint.text"),
+            ),
             /* hyperlinkListener = */ { e ->
                 if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
                     showHints = false
@@ -130,7 +138,7 @@ class JupyterKotlinOutdatedDependenciesNotificationService(val project: Project,
             val fileEditorManager = FileEditorManager.getInstance(project)
             coroutineScope.launch(Dispatchers.EDT) {
                 fileEditorManager.getEditors(notebook.virtualFile).forEach {
-                    JupyterNotebookDependencies.resetUpToDate(it)
+                    JupyterNotebookDependencies.setStatus(it, JupyterNotebookDependencies.Status.UpToDate)
                 }
             }
         }
