@@ -41,7 +41,8 @@ class EmbeddedKotlinKernelSession(
             ::getDefaultClasspathResolutionInfoProvider,
             loggerFactory,
             createLibraryHttpUtil(loggerFactory, IdeaHttpClient),
-            kernelConfig.homeDir
+            kernelConfig.homeDir,
+            kernelRunMode = IntellijProcessKernelRunMode,
         )
 
         val socketsManager = EmbeddedJupyterSockets(onMessage)
