@@ -36,7 +36,6 @@ import com.intellij.scientific.tables.api.VisualizationDataTableCommand
 import com.intellij.util.containers.tail
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import java.io.IOException
-import java.util.*
 import javax.swing.RowSorter
 import javax.swing.SortOrder
 
@@ -203,17 +202,6 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
         }
 
         return command
-    }
-
-    private fun HierarchicalGridColumn.getFullyQualifiedName(): List<String> {
-        val names = mutableListOf<String>()
-        var cur: HierarchicalGridColumn? = this
-        while (cur != null) {
-            names.add(0, cur.name)
-            cur = cur.parent
-        }
-
-        return names
     }
 
     private fun isNonComparableColumnSortingError(
