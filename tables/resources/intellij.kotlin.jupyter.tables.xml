@@ -7,6 +7,23 @@
         <module name="intellij.notebooks.visualization"/>
     </dependencies>
 
+    <extensions defaultExtensionNs="com.intellij">
+        <registryKey key="kotlin.dataframe.swing.outputs.enabled" defaultValue="true"
+                     description="When enabled, outputs of Kotlin Dataframe library will be rendered using JVM stack. Deprecated, use Kotlin Notebook options"/>
+
+        <registryKey key="grid.tables.hierarchical.enabled" defaultValue="true"
+                     description="When enabled, table output will support hierarchical columns."/>
+
+        <registryKey key="ds.table.loading.max.chunk.size" defaultValue="10000"
+                     description="The maximum chunk size for loading table rows"/>
+
+        <registryKey key="grid.tables.hierarchical.additional.rows" defaultValue="1"
+                     description="Additional space added to the bottom of hierarchical table component. Additional height calculated as 'value' times height of the row."/>
+
+        <registryKey key="grid.tables.hierarchical.default.page.size" defaultValue="20"
+                     description="Default number of rows displayed per page in hierarchical tables."/>
+    </extensions>
+
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">
         <editor.outputs.notebookOutputDataKeyExtractor
                 implementation="com.intellij.kotlin.jupyter.tables.KotlinDataframeOutputDataKeyExtractor" order="first"/>
