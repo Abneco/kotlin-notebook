@@ -17,8 +17,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.getKotlinNotebookVirtualFile
  * the superclass.
  */
 class NotebookSilentEvaluateActionHandler : XDebuggerEvaluateActionHandler() {
-    override fun isEnabled(project: Project, event: AnActionEvent?): Boolean {
-        val notebook = event?.dataContext?.getKotlinNotebookVirtualFile() ?: return false
+    override fun isEnabled(project: Project, event: AnActionEvent): Boolean {
+        val notebook = event.dataContext.getKotlinNotebookVirtualFile() ?: return false
         val sessionManager = KotlinNotebookDebugSessionManager.getForFile(project, notebook)
         val xSession = sessionManager.currentXSession ?: return false
         return isEnabled(xSession, event.dataContext)
