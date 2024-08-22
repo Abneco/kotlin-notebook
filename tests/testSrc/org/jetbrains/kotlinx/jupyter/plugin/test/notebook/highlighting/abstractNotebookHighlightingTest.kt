@@ -19,6 +19,8 @@ import com.intellij.util.ArrayUtilRt
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.setUpScriptingDependencies
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
 
 abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTestCase() {
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/highlighting"
@@ -79,18 +81,17 @@ abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTes
         UsefulTestCase.assertTrue(results.none { it.description != null && it.description == scriptingMissingClassError })
 
         val isHasShadowed = results.any { it.description != null && (it.description.startsWith("Not yet provided symbol") || it.description.startsWith("Improper usage")) }
+        UsefulTestCase.assertTrue(results.none { it.text.contains(CELL_MARKER) || it.text.contains("$CELL_MARKER $MARKDOWN_CELL_SUFFIX") })
+
         if (strategy.isOnlyValidSyntax()) {
             UsefulTestCase.assertTrue(results.none { it.severity == HighlightSeverity.ERROR })
+            UsefulTestCase.assertTrue(!isHasShadowed)
         }
         if (strategy.isShadowedErrors()) {
             UsefulTestCase.assertTrue(isHasShadowed)
             UsefulTestCase.assertTrue(results.none { it.severity == HighlightSeverity.ERROR })
         }
 
-        if (strategy.isOnlyValidSyntax()) {
-            UsefulTestCase.assertTrue(results.none { it.severity == HighlightSeverity.ERROR })
-            UsefulTestCase.assertTrue(!isHasShadowed)
-        }
         val actualData = results.filter { filter(it) }
         if (strategy == ResultCheckStrategy.OnlyValidSyntax || strategy == ResultCheckStrategy.ShadowedErrors) {
             expectedData.checkResult(notebookFile, actualData, myFixture.editor.document.text)
