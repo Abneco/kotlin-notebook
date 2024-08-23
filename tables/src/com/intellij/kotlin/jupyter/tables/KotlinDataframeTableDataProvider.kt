@@ -33,7 +33,6 @@ import com.intellij.scientific.tables.api.TableCommand
 import com.intellij.scientific.tables.api.TableDataProviderFactory
 import com.intellij.scientific.tables.api.TableDataTypeDetector
 import com.intellij.scientific.tables.api.VisualizationDataTableCommand
-import com.intellij.util.containers.tail
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import java.io.IOException
 import javax.swing.RowSorter
@@ -248,28 +247,18 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
 
         if (columns.all { it.isBlank() }) return tableVariable
 
-        val kotlinDataframeSortKeys = sortKeys
+        val columnPaths = sortKeys
             .map {
                 val name = columns[it.column]
-                val sortName = join(name.split("."))
-                "$sortName${if (it.sortOrder == SortOrder.DESCENDING) ".desc()" else ""}"
+                val path = name.split(".").joinToString { "\"$it\"" }
+                "listOf($path)"
             }
-            .toMutableList()
 
-        if (sortKeys.size == 1 && sortKeys[0].sortOrder != SortOrder.DESCENDING) {
-            kotlinDataframeSortKeys.add(kotlinDataframeSortKeys[0])
-        }
+        val orderings = sortKeys.map { it.sortOrder == SortOrder.DESCENDING }
 
-        return "KotlinNotebookPluginUtils.convertToDataFrame(${tableVariable}!!).sortBy { ${kotlinDataframeSortKeys.joinToString(" and ")} }"
-    }
-
-    private fun join(nestedNames: List<String>): String {
-        var fullName = "\"${nestedNames.first()}\""
-        for (nestedName in nestedNames.tail()) {
-            fullName += "[\"$nestedName\"]"
-        }
-
-        return fullName
+        return """
+            KotlinNotebookPluginUtils.sortByColumns(KotlinNotebookPluginUtils.convertToDataFrame(${tableVariable}!!), listOf(${columnPaths.joinToString()}), listOf(${orderings.joinToString()}))
+            """.trimIndent()
     }
 
     override fun isFallbackToStaticTableSupported(): Boolean = true
