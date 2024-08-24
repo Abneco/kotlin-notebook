@@ -14,6 +14,7 @@ import com.intellij.util.application
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.CreateNotebookFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 /**
  * Helper for creating Kotlin Notebook scratch files as they need a specific JSON format
@@ -34,7 +35,9 @@ class JupyterKotlinScratchCreationHelper: ScratchFileCreationHelper() {
                 val dir = VfsUtil.createDirectories(tempDir.path)
                 val psiDir: PsiDirectory = PsiManager.getInstance(project).findDirectory(dir)!!
                 val templateFile = CreateNotebookFactory.createFile(fileName, psiDir, false, NotebookMode.LIGHT)!!
-                context.text = templateFile.text
+                val backedFile = BackedNotebookVirtualFile.findOrCreate(templateFile.virtualFile)
+                val notebookJsonText = backedFile.notebook.json.toPrettyString()
+                context.text = notebookJsonText
                 context.language = null
                 context.fileExtension = JupyterFileType.defaultExtension
                 context.createOption = ScratchFileService.Option.create_new_always
