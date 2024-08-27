@@ -26,6 +26,7 @@ import com.intellij.scientific.tables.api.DSTableDataProvider
 import com.intellij.scientific.tables.api.DSTableDataType
 import com.intellij.scientific.tables.api.DSTableText
 import com.intellij.scientific.tables.api.DescribeTableCommand
+import com.intellij.scientific.tables.api.FilterExpression
 import com.intellij.scientific.tables.api.InfoTableCommand
 import com.intellij.scientific.tables.api.NestedTableDataProvider
 import com.intellij.scientific.tables.api.SliceTableCommand
@@ -259,6 +260,13 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
         return """
             KotlinNotebookPluginUtils.sortByColumns(KotlinNotebookPluginUtils.convertToDataFrame(${tableVariable}!!), listOf(${columnPaths.joinToString()}), listOf(${orderings.joinToString()}))
             """.trimIndent()
+    }
+
+    override fun getFilteringCommand(
+        tableVariable: String,
+        filters: FilterExpression?
+    ): String {
+        return tableVariable
     }
 
     override fun isFallbackToStaticTableSupported(): Boolean = true
