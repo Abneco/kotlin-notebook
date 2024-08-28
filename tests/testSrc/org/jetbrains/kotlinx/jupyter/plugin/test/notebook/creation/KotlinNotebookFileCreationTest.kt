@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.creation
 
+import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.ide.scratch.ScratchFileActions
 import com.intellij.ide.scratch.ScratchFileCreationHelper
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
@@ -12,6 +13,7 @@ import io.kotest.matchers.types.shouldBeTypeOf
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.language.JupyterKotlinFileType
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.notebookLanguage
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.tests.SingleFileImplRule
@@ -38,6 +40,12 @@ class KotlinNotebookFileCreationTest : KotlinNotebookBaseTestCase() {
         psiFile.shouldBeTypeOf<JupyterFile>()
         psiFile.virtualFile.notebookLanguage shouldBe KotlinLanguage.INSTANCE
         psiFile.text shouldBe "#%%\n"
+
+        val backedFile = BackedNotebookVirtualFile.findOrCreate(psiFile.virtualFile)
+        val notebookJson = backedFile.notebook.json
+        val mimetypeNode = notebookJson["metadata"]["language_info"]["mimetype"]
+        mimetypeNode.shouldBeTypeOf<TextNode>()
+        mimetypeNode.asText() shouldBe "text/x-kotlin"
     }
 
     private fun doTest(
