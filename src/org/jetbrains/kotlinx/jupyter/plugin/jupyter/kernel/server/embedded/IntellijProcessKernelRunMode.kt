@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 
 import org.jetbrains.kotlinx.jupyter.api.AbstractKernelRunMode
+import org.jetbrains.kotlinx.jupyter.api.StreamSubstitutionType
 import org.jetbrains.kotlinx.jupyter.api.createDefaultFilteringClassLoader
 
 object IntellijProcessKernelRunMode : AbstractKernelRunMode("Intellij Process") {
@@ -10,4 +11,6 @@ object IntellijProcessKernelRunMode : AbstractKernelRunMode("Intellij Process") 
     override val shouldKillProcessOnShutdown: Boolean get() = false
     override val inMemoryOutputsSupported: Boolean get() = true
     override val isRunInsideIntellijProcess: Boolean get() = true
+    override val streamSubstitutionType: StreamSubstitutionType
+        get() = StreamSubstitutionType.NON_BLOCKING
 }

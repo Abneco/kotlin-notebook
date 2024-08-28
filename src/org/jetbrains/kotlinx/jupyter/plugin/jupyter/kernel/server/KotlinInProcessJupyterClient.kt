@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Version
@@ -24,6 +25,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.Jupyte
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterSessionData
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInterruptRequestMessageBuilder
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterShutdownRequestMessageBuilder
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.connections.filecontentsapi.CachingFileContentsApi
 import org.jetbrains.plugins.notebooks.jupyter.connections.filecontentsapi.JavaIoFileContentsApi
@@ -139,11 +141,24 @@ class KotlinInProcessJupyterClient(
     }
 
     private fun killKernel(kernelId: JupyterKernelId) {
-        // Maybe we should send a shutdown request here
+        sendShutdown(kernelId)
         val kernelProcess = kernels.remove(kernelId) ?: return
         removeSessionAndRelatedState(kernelProcess)
         KotlinNotebookPluginScope.invokeOnEDT {
             Disposer.dispose(kernelProcess)
+        }
+    }
+
+    private fun sendShutdown(kernelId: JupyterKernelId) {
+        val clientSession = clientSessions[kernelId] ?: return
+        val shutdownMessage = JupyterShutdownRequestMessageBuilder(clientSession.sessionId).build()
+
+        try {
+            clientSession.send(shutdownMessage)
+        } catch (_: InterruptedException) {
+            // It's fine to have an InterruptedException here in the embedded mode
+        } catch (e: Throwable) {
+            thisLogger().error(e)
         }
     }
 

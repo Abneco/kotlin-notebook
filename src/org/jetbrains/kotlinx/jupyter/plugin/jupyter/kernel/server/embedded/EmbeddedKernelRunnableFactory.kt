@@ -23,7 +23,7 @@ class EmbeddedKernelRunnableFactory : KernelRunnableFactory {
     override fun createKernelRunnableHandler(
         project: Project,
         kernelId: JupyterKernelId,
-        notebookPath: Path
+        notebookPath: Path,
     ): KotlinKernelRunnableHandler? {
         if (project.kotlinNotebookSessionRunMode != KotlinNotebookSessionRunMode.IDE_PROCESS) return null
 

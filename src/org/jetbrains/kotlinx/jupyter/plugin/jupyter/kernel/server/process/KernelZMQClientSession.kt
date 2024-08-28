@@ -16,6 +16,7 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKern
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageType
 import org.zeromq.ZMQException
 import java.nio.channels.ClosedSelectorException
 import java.util.concurrent.locks.ReentrantLock
@@ -38,12 +39,23 @@ class KernelZMQClientSession(
     }
 
     override fun send(content: JupyterMessage) {
+        val messageType = content.header.messageType
+        if (dontSendMessageOfType(messageType)) return
+
         val (rawMessage, socketType) = content.toRawMessageWithSocket() ?: return
         try {
             val socket = socketManager.fromSocketType(socketType)
             socket.sendRawMessage(rawMessage)
         } catch (e: Exception) {
             LOG.errorUnderDebug(e)
+        }
+    }
+
+    private fun dontSendMessageOfType(messageType: JupyterMessageType): Boolean {
+        return when (messageType) {
+            // Don't send shutdown requests: kernel is killed by our own means anyway
+            JupyterMessageType.SHUTDOWN_REQUEST -> true
+            else -> false
         }
     }
 

@@ -11,7 +11,7 @@ import java.nio.file.Path
 
 /**
  * Abstract class for handling the different UI logic for the Kotlin Notebook
- * Tool window depending on if the kernel is either running inside the
+ * Tool window depending on if the kernel is either running inside the IDE
  * process or in a separate one.
  */
 abstract class KotlinNotebookToolWindowSettings {

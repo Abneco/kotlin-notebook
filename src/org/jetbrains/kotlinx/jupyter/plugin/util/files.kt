@@ -1,5 +1,8 @@
 package org.jetbrains.kotlinx.jupyter.plugin.util
 
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.fileEditor.impl.EditorTabPresentationUtil
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
@@ -11,7 +14,6 @@ import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.kotlin.idea.util.sourceRoots
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.originFile
 import java.io.File
 import java.nio.file.Path
 
@@ -29,6 +31,13 @@ fun Project.allSourceRoots(): List<File> {
 fun Path.findNotebookVirtualFileOrNull(): BackedNotebookVirtualFile? {
     val virtualFile = VirtualFileManager.getInstance().findFileByNioPath(this) ?: return null
     return BackedNotebookVirtualFile.find(virtualFile)
+}
+
+fun Project.findEditors(virtualFile: VirtualFile): List<Editor> {
+    val fileEditorManager = FileEditorManager.getInstance(this)
+    return fileEditorManager.getAllEditors(virtualFile)
+        .filterIsInstance<TextEditor>()
+        .map { it.editor }
 }
 
 val VirtualFile.parentsWithSelf: Sequence<VirtualFile> get() = generateSequence(this) { it.parent }

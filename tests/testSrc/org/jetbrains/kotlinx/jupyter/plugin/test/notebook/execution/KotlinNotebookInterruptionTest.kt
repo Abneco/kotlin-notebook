@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
 import junit.framework.TestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.util.JDKVersionRule
+import org.jetbrains.kotlinx.jupyter.plugin.test.util.StopExecutionOnFailureRule
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionInterruptService
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
@@ -27,6 +28,10 @@ class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest(){
     @Rule
     val jdkVersionRule = JDKVersionRule { it <= JavaSdkVersion.JDK_17 }
 
+    @JvmField
+    @Rule
+    val stopExecutionOnFailureRule = StopExecutionOnFailureRule(false)
+
     @Test
     fun testInterruption() {
         val sessionFuture = getSessionFuture(project, testRootDisposable)
@@ -37,9 +42,9 @@ class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest(){
 
             override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) {
                 if (cellNum == 0) {
-                    val output = messages.outputs.single().messageContent
-                    TestCase.assertEquals("stderr", output["name"].asText())
-                    TestCase.assertEquals("The execution was interrupted", output["text"].asText())
+                    val msg = messages.outputs.single().messageContent
+                    TestCase.assertEquals("error", msg["status"].asText())
+                    TestCase.assertEquals("The execution was interrupted", msg["evalue"].asText())
                     LOG.debug("Execution was successfully interrupted")
                 }
             }
@@ -50,7 +55,7 @@ class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest(){
                         Thread.sleep(1000)
                         val session = sessionFuture.get(5, TimeUnit.SECONDS)
                         val file = session.virtualFile ?: return@executeOnPooledThread
-                        JupyterExecutionInterruptService.getInstance(project).interruptJupyterKernel(file)
+                        JupyterExecutionInterruptService.getInstance(project).interruptExecution(file)
                     }
                 }
             }

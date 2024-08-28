@@ -22,6 +22,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.StopKotlinKernelActi
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowSettings
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.addNotebookTabsContent
+import org.jetbrains.kotlinx.jupyter.plugin.util.findEditors
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPresentablePathAsTabTitle
 import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVariablesToolWindowSetup
 import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVarsToolWindowProvider
@@ -77,7 +78,19 @@ class KotlinNotebookToolWindowBuilder(
     }
 
     private fun initializeLeftToolBar() {
-        val group = DefaultActionGroup(StopKotlinKernelAction(settings.handler))
+        val project = settings.project
+        val virtualFile = settings.notebookVirtualFile().file
+        val virtualFiles = listOf(virtualFile)
+        val editors = project.findEditors(virtualFile)
+
+        val stopAction = StopKotlinKernelAction(
+            project,
+            virtualFiles,
+            editors,
+            settings.handler
+        )
+
+        val group = DefaultActionGroup(stopAction)
         ui.options.setLeftToolbar(group, ActionPlaces.TOOLBAR)
     }
 

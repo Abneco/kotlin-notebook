@@ -12,18 +12,14 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.Kernel
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
-import org.jetbrains.kotlinx.jupyter.plugin.test.runners.RunModeAwareTestRunner
 import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
 import org.jetbrains.kotlinx.jupyter.startup.create
 import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
 import org.jetbrains.plugins.notebooks.tests.withSwingMarkdownRenderMode
 import org.junit.Ignore
 import org.junit.Test
-import org.junit.runner.RunWith
 import java.net.ServerSocket
 
-@Suppress("Junit4RunWithInspection")
-@RunWith(RunModeAwareTestRunner::class)
 class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
     @Test
     fun testExample1() = doTest(OutputsTester(listOf(
