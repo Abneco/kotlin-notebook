@@ -2,11 +2,14 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.actions.JupyterRestartKernelListener
 import com.intellij.lang.Language
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.RecursionManager
@@ -14,6 +17,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ultimate.PluginVerifier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
+import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginModeProvider
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
@@ -23,17 +28,17 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.serialization.serializationPluginEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.actions.JupyterRestartKernelListener
 import java.io.File
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
 import kotlin.script.experimental.api.asSuccess
+import kotlin.script.experimental.api.displayName
 import kotlin.script.experimental.api.fileExtension
 import kotlin.script.experimental.api.ide
 import kotlin.script.experimental.api.refineConfiguration
 import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.jvm.baseClassLoader
+import kotlin.script.experimental.jvm.defaultJvmScriptingHostConfiguration
 import kotlin.script.experimental.jvm.jvm
 
 /**
@@ -66,7 +71,7 @@ class JupyterCompilerService(
             ide {
                 serializationPluginEnabled(true)
             }
-
+            displayName("Kotlin Notebooks")
             refineConfiguration {
                 beforeCompiling { (sourceCode, config, _) ->
                     val virtualFile = (sourceCode as? KtFileScriptSource)?.virtualFile
@@ -88,6 +93,14 @@ class JupyterCompilerService(
 
     val scriptDefinition by lazy {
         ScriptDefinition(
+            initialCompileConfiguration,
+            evaluationConfiguration
+        )
+    }
+
+    val scriptDefinitionNew by lazy {
+        org.jetbrains.kotlin.scripting.definitions.ScriptDefinition.FromConfigurations(
+            defaultJvmScriptingHostConfiguration,
             initialCompileConfiguration,
             evaluationConfiguration
         )
@@ -146,9 +159,23 @@ class JupyterCompilerService(
     )
 
     private fun performScriptingUpdate() {
+        when (KotlinPluginModeProvider.currentPluginMode) {
+            KotlinPluginMode.K2 -> performScriptingUpdateK2()
+            else -> performUpdateK1()
+        }
+    }
+
+    private fun performUpdateK1() {
         val updater = (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
         RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
             updater.invalidateAndCommit()
+        }
+    }
+
+    private fun performScriptingUpdateK2() {
+        val editorManager = FileEditorManager.getInstance(project) ?: return
+        coroutineScope.async {
+            JupyterKtScriptingSupport.updateK2Configurations(editorManager, project)
         }
     }
 

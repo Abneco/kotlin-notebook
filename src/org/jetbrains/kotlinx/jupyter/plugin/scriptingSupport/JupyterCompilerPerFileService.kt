@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
@@ -20,6 +21,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.intellij.util.io.delete
 import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +33,7 @@ import org.jetbrains.kotlin.idea.core.script.ClasspathToVfsConverter
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
@@ -196,6 +199,11 @@ class JupyterCompilerPerFileService(
         }
     }
 
+    fun getFilesToRefine(): List<KtFileScriptSource> {
+        val notebookPsiFile = virtualFile.file.toPsiFile(project)
+        return notebookPsiFile.getInjectedKtFiles().map { KtFileScriptSource(it) }
+    }
+
     private fun KtFile.reportAsAttachment() {
         LOG.errorUnderDebug(
             "Empty script dependencies found",
@@ -281,6 +289,7 @@ class JupyterCompilerPerFileService(
         }
     }
 
+    @RequiresReadLock
     fun handleBeforeCompiling(
         config: ScriptCompilationConfiguration,
         sourceCode: SourceCode? = null
@@ -508,6 +517,9 @@ class JupyterCompilerPerFileService(
 
                 updateLastKnownConfiguration()
                 scriptsChangePublisher.scriptsClassesChanged(virtualFile)
+                virtualFile.file.toPsiFile(project)?.let { psiFile ->
+                    DaemonCodeAnalyzer.getInstance(project).restart(psiFile)
+                }
             }
         }
     }

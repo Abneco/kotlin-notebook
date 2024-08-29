@@ -126,6 +126,8 @@
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <renameHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.KotlinNotebookPropertiesRenameHandler"/>
         <scriptDefinitionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterScriptDefinitionProvider"/>
+        <scriptDefinitionsSource implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.k2.KotlinNotebookScriptDefinitionsSource"/>
+        <scriptDependenciesSource implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.k2.NotebookScriptDependenciesSource"/>
         <idea.caches.resolve.resolveOptimizingOptionsProvider
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.resolve.KotlinNotebookOptimizingOptionsProvider"/>
         <postInsertDeclarationCallback
@@ -258,7 +260,7 @@
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">
-        <listener implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.JupyterKtScriptChangeListener"/>
+        <!--<listener implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.JupyterKtScriptChangeListener"/>-->
         <!--suppress PluginXmlDynamicPlugin -->
         <scriptingSupport implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport"/>
     </extensions>
