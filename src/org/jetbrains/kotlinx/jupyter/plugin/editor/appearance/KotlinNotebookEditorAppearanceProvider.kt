@@ -5,8 +5,8 @@ import com.intellij.openapi.editor.Editor
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterNotebookEditorAppearanceProvider
-import org.jetbrains.plugins.notebooks.ui.visualization.NotebookEditorAppearance
-import org.jetbrains.plugins.notebooks.visualization.NotebookEditorAppearanceProvider
+import com.intellij.notebooks.ui.visualization.NotebookEditorAppearance
+import com.intellij.notebooks.visualization.NotebookEditorAppearanceProvider
 
 class KotlinNotebookEditorAppearanceProvider : NotebookEditorAppearanceProvider {
     override fun create(editor: Editor): NotebookEditorAppearance? {

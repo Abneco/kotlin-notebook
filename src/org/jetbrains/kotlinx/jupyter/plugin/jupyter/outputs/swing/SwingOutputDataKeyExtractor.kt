@@ -10,7 +10,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.DisplayDataContainer
-import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
+import com.intellij.notebooks.visualization.NotebookIntervalPointer
 
 /**
  * Extract Swing in-memory data to display in a [SwingComponent] (if applicable).

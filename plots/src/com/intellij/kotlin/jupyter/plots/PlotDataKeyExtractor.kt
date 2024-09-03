@@ -12,7 +12,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.convertObject
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.DisplayDataContainer
-import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
+import com.intellij.notebooks.visualization.NotebookIntervalPointer
 
 
 class PlotDataKeyExtractor: NotebookDisplayOutputDataKeyExtractor {

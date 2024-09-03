@@ -39,9 +39,9 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.Ju
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
-import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
-import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointerFactory
-import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory
+import com.intellij.notebooks.visualization.NotebookCellLines
+import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
+import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory
 import org.junit.jupiter.api.Assertions
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit

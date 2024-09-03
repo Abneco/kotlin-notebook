@@ -8,11 +8,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.IdeFocusManager
 import org.jetbrains.plugins.notebooks.editor.JupyterExecutionHistoryProvider
 import org.jetbrains.plugins.notebooks.fus.JupyterFeaturesCollector
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
-import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
-import org.jetbrains.plugins.notebooks.visualization.firstContentLine
-import org.jetbrains.plugins.notebooks.visualization.lastContentLine
+import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
+import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
+import com.intellij.notebooks.visualization.NotebookCellLines
+import com.intellij.notebooks.visualization.firstContentLine
+import com.intellij.notebooks.visualization.lastContentLine
 
 /**
  * Class wrapping the intent of navigating from a Kotlin Notebook stacktrace

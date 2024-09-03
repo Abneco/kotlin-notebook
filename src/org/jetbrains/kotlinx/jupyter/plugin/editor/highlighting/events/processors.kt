@@ -2,8 +2,8 @@
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events
 
 import com.intellij.openapi.editor.event.CaretEvent
-import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
-import org.jetbrains.plugins.notebooks.visualization.getCell
+import com.intellij.notebooks.visualization.NotebookCellLines
+import com.intellij.notebooks.visualization.getCell
 import kotlin.math.min
 
 

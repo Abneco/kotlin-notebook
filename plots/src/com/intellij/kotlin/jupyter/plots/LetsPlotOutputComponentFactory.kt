@@ -5,8 +5,8 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import org.jetbrains.letsPlot.batik.plot.util.ServiceLoaderHelper
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.createGutterPainter
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.updateGutterPainter
-import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory
-import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory.Companion.gutterPainter
+import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory
+import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory.Companion.gutterPainter
 
 class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotComponent, LetsPlotOutputDataKey> {
 

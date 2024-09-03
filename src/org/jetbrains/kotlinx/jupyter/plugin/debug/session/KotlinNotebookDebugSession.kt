@@ -40,7 +40,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.debugger.common.JupyterSessionPath
 import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
-import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
+import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import java.util.concurrent.ExecutionException
 
 

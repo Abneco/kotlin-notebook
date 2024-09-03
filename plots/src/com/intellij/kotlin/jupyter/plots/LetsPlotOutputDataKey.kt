@@ -5,7 +5,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.HasExecutionCount
-import org.jetbrains.plugins.notebooks.visualization.outputs.statistic.NotebookOutputKeyType
+import com.intellij.notebooks.visualization.outputs.statistic.NotebookOutputKeyType
 
 data class LetsPlotOutputDataKey(
     val spec: JsonObject,

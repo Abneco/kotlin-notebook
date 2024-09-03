@@ -18,11 +18,11 @@ import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.getOutputsForIndex
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.webOutputs.JupyterWebOutputInfo
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterExecuteResultOutput
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutputType
-import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
-import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
-import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointerFactory
-import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataKey
-import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataKeyExtractor
+import com.intellij.notebooks.visualization.NotebookCellLines
+import com.intellij.notebooks.visualization.NotebookIntervalPointer
+import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
+import com.intellij.notebooks.visualization.outputs.NotebookOutputDataKey
+import com.intellij.notebooks.visualization.outputs.NotebookOutputDataKeyExtractor
 
 /**
  * Extract [JupyterTableOutputDataKey] from Kotlin Dataframe produced cell output

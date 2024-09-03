@@ -30,8 +30,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
-import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
-import org.jetbrains.plugins.notebooks.visualization.getCell
+import com.intellij.notebooks.visualization.NotebookCellLines
+import com.intellij.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
 
 

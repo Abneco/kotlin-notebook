@@ -2,8 +2,8 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing
 
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.HasExecutionCount
-import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputDataKey
-import org.jetbrains.plugins.notebooks.visualization.outputs.statistic.NotebookOutputKeyType
+import com.intellij.notebooks.visualization.outputs.NotebookOutputDataKey
+import com.intellij.notebooks.visualization.outputs.statistic.NotebookOutputKeyType
 
 /**
  * [NotebookOutputDataKey] representing a custom in-memory Swing output.

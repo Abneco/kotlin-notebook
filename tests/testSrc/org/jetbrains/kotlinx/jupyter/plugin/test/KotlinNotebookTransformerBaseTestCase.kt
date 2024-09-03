@@ -8,8 +8,8 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
-import org.jetbrains.plugins.notebooks.ui.editor.actions.command.mode.setMode
+import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
+import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 
 abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile

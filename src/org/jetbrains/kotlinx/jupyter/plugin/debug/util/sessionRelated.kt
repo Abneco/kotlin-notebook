@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.debug.util
 import com.intellij.openapi.project.Project
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
-import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
+import com.intellij.notebooks.visualization.NotebookIntervalPointer
 
 data class SessionRelatedInfo(
     var project: Project,

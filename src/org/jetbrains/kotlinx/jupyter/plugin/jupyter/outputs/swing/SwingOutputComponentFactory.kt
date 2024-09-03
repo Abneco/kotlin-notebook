@@ -5,8 +5,8 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.createGutterPainter
 import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.updateGutterPainter
-import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory
-import org.jetbrains.plugins.notebooks.visualization.outputs.NotebookOutputComponentFactory.Companion.gutterPainter
+import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory
+import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory.Companion.gutterPainter
 
 /**
  * Component factory for creating in-memory Swing components. These are only

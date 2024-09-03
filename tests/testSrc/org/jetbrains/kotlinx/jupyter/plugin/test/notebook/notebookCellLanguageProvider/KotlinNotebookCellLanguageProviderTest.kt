@@ -9,8 +9,8 @@ import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
-import org.jetbrains.plugins.notebooks.visualization.CodeCellLinesChecker
-import org.jetbrains.plugins.notebooks.visualization.NotebookCellLines
+import com.intellij.notebooks.visualization.CodeCellLinesChecker
+import com.intellij.notebooks.visualization.NotebookCellLines
 import org.junit.Test
 
 class KotlinNotebookCellLanguageProviderTest : KotlinNotebookBaseTestCase() {

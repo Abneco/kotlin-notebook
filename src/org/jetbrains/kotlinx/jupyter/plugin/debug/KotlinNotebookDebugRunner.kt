@@ -34,7 +34,7 @@ import org.jetbrains.plugins.notebooks.jupyter.debugger.common.DebugConnectionNo
 import org.jetbrains.plugins.notebooks.jupyter.debugger.common.NotebookDebugRunner
 import org.jetbrains.plugins.notebooks.jupyter.debugger.common.OutputConsumer
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
-import org.jetbrains.plugins.notebooks.visualization.NotebookIntervalPointer
+import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import java.util.concurrent.TimeUnit
 
 

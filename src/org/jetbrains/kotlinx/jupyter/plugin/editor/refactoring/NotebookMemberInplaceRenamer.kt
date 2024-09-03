@@ -43,7 +43,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactori
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
-import org.jetbrains.plugins.notebooks.visualization.getCell
+import com.intellij.notebooks.visualization.getCell
 
 
 class NotebookMemberInplaceRenamer(
