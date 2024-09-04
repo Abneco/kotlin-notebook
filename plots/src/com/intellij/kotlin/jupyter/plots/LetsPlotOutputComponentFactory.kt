@@ -3,8 +3,8 @@ package com.intellij.kotlin.jupyter.plots
 
 import com.intellij.openapi.editor.impl.EditorImpl
 import org.jetbrains.letsPlot.batik.plot.util.ServiceLoaderHelper
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.createGutterPainter
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.updateGutterPainter
+import com.intellij.jupyter.core.jupyter.editor.outputs.createGutterPainter
+import com.intellij.jupyter.core.jupyter.editor.outputs.updateGutterPainter
 import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory
 import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory.Companion.gutterPainter
 

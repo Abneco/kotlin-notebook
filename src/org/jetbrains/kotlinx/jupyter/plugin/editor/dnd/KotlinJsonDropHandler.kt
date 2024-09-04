@@ -2,7 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.editor.dnd
 
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.plugins.notebooks.editor.handlers.TableDataFileExtensions
+import com.intellij.jupyter.core.editor.handlers.TableDataFileExtensions
 import java.io.File
 
 class KotlinJsonDropHandler : AbstractKotlinDataframeDropHandler(

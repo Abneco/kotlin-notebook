@@ -8,10 +8,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.SessionOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.generateSnippet
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookCodegen
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebookSession
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 
 class JupyterKotlinRuntimeServiceListener : JupyterRuntimeService.Listener {
     override fun sessionCreated(session: JupyterNotebookSession) {

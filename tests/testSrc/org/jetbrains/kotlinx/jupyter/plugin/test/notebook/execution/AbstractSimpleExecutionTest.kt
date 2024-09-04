@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.executeCellsAndShutdownKernel
 import org.jetbrains.kotlinx.jupyter.plugin.test.runners.RunModeAwareTestRunner
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import org.junit.runner.RunWith
 
 @Suppress("Junit4RunWithInspection")

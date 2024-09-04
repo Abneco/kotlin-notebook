@@ -3,8 +3,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing
 
 import com.intellij.openapi.editor.impl.EditorImpl
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.createGutterPainter
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.updateGutterPainter
+import com.intellij.jupyter.core.jupyter.editor.outputs.createGutterPainter
+import com.intellij.jupyter.core.jupyter.editor.outputs.updateGutterPainter
 import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory
 import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory.Companion.gutterPainter
 

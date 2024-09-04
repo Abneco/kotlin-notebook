@@ -25,18 +25,18 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMess
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.extensions.JupyterPsiCellExt.getJupyterBackedVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.extensions.JupyterPsiCellExt.getJupyterBackedVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionQueueManager
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterExecutionState
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionQueueManager
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionTask
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import com.intellij.notebooks.visualization.NotebookCellLines
@@ -119,12 +119,12 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
                 .create(NotebookCellLines.get(document).intervals[cellNumber])
             val task =
                 JupyterExecutionTask(
-                    source = cell.source.text,
-                    options = JupyterExecutionTask.Options.cellExecution(cellPointer),
-                    onError = { ex: Exception ->
+                  source = cell.source.text,
+                  options = JupyterExecutionTask.Options.cellExecution(cellPointer),
+                  onError = { ex: Exception ->
                         endExceptionally(AssertionError("Notebook execution was not successful", ex))
                     },
-                    callbacks = listOfNotNull(object : JupyterExecutionCallbackAdapter() {
+                  callbacks = listOfNotNull(object : JupyterExecutionCallbackAdapter() {
                         override fun onStatus(message: JupyterStatusMessage) {
                             if (message.executionState == JupyterExecutionState.IDLE) {
                                 receivedMessagesFutures[cellExecutionNumber[cellNumber]!!].complete(messages)
@@ -139,8 +139,8 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
                             messages.outputs.add(message)
                         }
                     }, executionCallback),
-                    notebookVirtualFile = cell.getJupyterBackedVirtualFile()!!,
-                    project = project
+                  notebookVirtualFile = cell.getJupyterBackedVirtualFile()!!,
+                  project = project
                 )
             task
         })

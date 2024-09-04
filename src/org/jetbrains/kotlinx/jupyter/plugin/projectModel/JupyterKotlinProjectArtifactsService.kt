@@ -52,12 +52,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.isEmpty
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
 import org.jetbrains.kotlinx.jupyter.plugin.util.parentsWithSelf
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.getOriginalVirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.originFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.getOriginalVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
@@ -268,9 +267,9 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     override fun dispose() = Unit
 
     private data class SessionData(
-        val file: BackedNotebookVirtualFile,
-        val artifacts: Deferred<Pair<BuildResult, ProjectArtifacts>>,
-        var alreadyReturnedArtifacts: Boolean = false,
+      val file: BackedNotebookVirtualFile,
+      val artifacts: Deferred<Pair<BuildResult, ProjectArtifacts>>,
+      var alreadyReturnedArtifacts: Boolean = false,
     )
 
     private suspend fun buildModules(modules: Collection<Module>): BuildResult {

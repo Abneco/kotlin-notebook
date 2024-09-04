@@ -9,11 +9,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.socket
 import org.jetbrains.kotlinx.jupyter.plugin.util.toJacksonJson
 import org.jetbrains.kotlinx.jupyter.plugin.util.toKotlinSerializationJson
 import org.jetbrains.kotlinx.jupyter.protocol.RawMessageImpl
-import org.jetbrains.plugins.notebooks.jackson
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageBase
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterProtocolSchemaFactory
+import com.intellij.jupyter.core.jackson
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageBase
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterProtocolSchemaFactory
 
 private val messageBytePrefix = listOf(byteArrayOf(1))
 

@@ -6,10 +6,10 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.api.InMemoryMimeTypes
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.InMemoryReplResultsHolderService
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.DisplayDataContainer
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
+import com.intellij.jupyter.core.jupyter.nbformat.DisplayDataContainer
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 
 /**
@@ -17,10 +17,10 @@ import com.intellij.notebooks.visualization.NotebookIntervalPointer
  */
 class SwingOutputDataKeyExtractor : NotebookDisplayOutputDataKeyExtractor {
     fun extractKey(
-        project: Project?,
-        file: BackedNotebookVirtualFile?,
-        data: DisplayDataContainer,
-        executionCount: Int?,
+      project: Project?,
+      file: BackedNotebookVirtualFile?,
+      data: DisplayDataContainer,
+      executionCount: Int?,
     ): SwingOutputDataKey? {
         if (project == null) return null
         val dataObject = data.toV4Json()
@@ -36,12 +36,12 @@ class SwingOutputDataKeyExtractor : NotebookDisplayOutputDataKeyExtractor {
     }
 
     override fun extractKey(
-        editor: EditorImpl,
-        file: BackedNotebookVirtualFile?,
-        data: DisplayDataContainer,
-        executionCount: Int?,
-        cellPointer: NotebookIntervalPointer,
-        isLastForCell: Boolean
+      editor: EditorImpl,
+      file: BackedNotebookVirtualFile?,
+      data: DisplayDataContainer,
+      executionCount: Int?,
+      cellPointer: NotebookIntervalPointer,
+      isLastForCell: Boolean
     ): SwingOutputDataKey? {
         return extractKey(editor.project, file, data, executionCount)
     }

@@ -9,16 +9,16 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelStateMac
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import java.nio.file.Path
 
 class EmbeddedKernelRunnableHandler(
-    override val project: Project,
-    override val kernelId: JupyterKernelId,
-    override val notebookPath: Path,
+  override val project: Project,
+  override val kernelId: JupyterKernelId,
+  override val notebookPath: Path,
 ) : KotlinKernelRunnableHandler {
 
     val loggerFactory: EmbeddedKotlinKernelLoggerFactory = EmbeddedKotlinKernelLoggerFactory()

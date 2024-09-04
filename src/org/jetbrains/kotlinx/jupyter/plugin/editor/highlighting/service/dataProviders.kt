@@ -5,7 +5,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import org.jetbrains.kotlin.utils.ifEmpty
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
@@ -32,9 +32,9 @@ internal interface NotebookFileHighlightingDataProvider {
 
 
 class NotebookPerFileHighlightingMetaDataController(
-    private val notebookFile: BackedNotebookVirtualFile,
-    val executionHighlightingHelper: NotebookCellExecutionHighlightingHelper,
-    parentDisposable: Disposable
+  private val notebookFile: BackedNotebookVirtualFile,
+  val executionHighlightingHelper: NotebookCellExecutionHighlightingHelper,
+  parentDisposable: Disposable
 ): NotebookFileHighlightingDataProvider, Disposable {
     private enum class KeysValues {
         CompleteRange,

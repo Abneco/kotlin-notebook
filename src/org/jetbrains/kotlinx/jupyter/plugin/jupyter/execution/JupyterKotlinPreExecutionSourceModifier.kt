@@ -5,9 +5,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.PreExecutionSourceModifier
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpec
+import com.intellij.jupyter.core.jupyter.connections.execution.PreExecutionSourceModifier
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
 
 class JupyterKotlinPreExecutionSourceModifier : PreExecutionSourceModifier {
     override fun amendSource(project: Project, sessionId: JupyterNotebookSessionId, kernelSpec: JupyterKernelSpec, source: String): String? {

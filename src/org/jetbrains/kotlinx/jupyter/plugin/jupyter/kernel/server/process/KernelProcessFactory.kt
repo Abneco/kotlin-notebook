@@ -24,10 +24,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServer
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterClient
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServer
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolute
@@ -43,9 +43,9 @@ import kotlin.io.path.invariantSeparatorsPathString
 class KernelProcessFactory : KernelRunnableFactory {
     @RequiresBackgroundThread
     override fun createKernelRunnableHandler(
-        project: Project,
-        kernelId: JupyterKernelId,
-        notebookPath: Path,
+      project: Project,
+      kernelId: JupyterKernelId,
+      notebookPath: Path,
     ): KotlinKernelProcessHandler? {
         if (project.kotlinNotebookSessionRunMode != KotlinNotebookSessionRunMode.SEPARATE_PROCESS) return null
 

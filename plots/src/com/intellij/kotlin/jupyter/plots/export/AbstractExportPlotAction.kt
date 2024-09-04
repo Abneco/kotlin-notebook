@@ -12,14 +12,13 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.LETS_PLOT_MIME
 import org.jetbrains.kotlinx.jupyter.plugin.util.filterIsInstanceAnd
 import org.jetbrains.kotlinx.jupyter.plugin.util.firstAncestorOfType
-import org.jetbrains.plugins.notebooks.core.api.getNotebookCellAndFile
-import org.jetbrains.plugins.notebooks.core.impl.actions.NotebookEditorActionBase
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.notebook
-import org.jetbrains.plugins.notebooks.jupyter.editor.getCellIndex
-import org.jetbrains.plugins.notebooks.jupyter.editor.getJupyterVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterDisplayDataOutput
+import com.intellij.jupyter.core.core.api.getNotebookCellAndFile
+import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.editor.getCellIndex
+import com.intellij.jupyter.core.jupyter.editor.getJupyterVirtualFile
+import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
 
 
 abstract class AbstractExportPlotAction : NotebookEditorActionBase() {

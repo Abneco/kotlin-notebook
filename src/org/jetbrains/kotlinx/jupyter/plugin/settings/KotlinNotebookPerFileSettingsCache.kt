@@ -34,12 +34,10 @@ import org.jetbrains.annotations.CalledInAny
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.JUPYTER_NOTEBOOK_EXTENSION
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.notebook
-import org.jetbrains.plugins.notebooks.core.impl.file.originFile
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterChangeListener
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.NotebookChanged
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterChangeListener
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
+import com.intellij.jupyter.core.jupyter.nbformat.NotebookChanged
 import kotlin.reflect.KMutableProperty0
 
 @Service(Service.Level.PROJECT)

@@ -30,7 +30,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookGotoDecla
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder.tryResolveCompiledDeclaration
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 
 internal fun isCompiledCellClassDeclaration(element: PsiElement?): Boolean =

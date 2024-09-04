@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.appearance
 import com.intellij.openapi.editor.Editor
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterNotebookEditorAppearanceProvider
+import com.intellij.jupyter.core.jupyter.editor.JupyterNotebookEditorAppearanceProvider
 import com.intellij.notebooks.ui.visualization.NotebookEditorAppearance
 import com.intellij.notebooks.visualization.NotebookEditorAppearanceProvider
 

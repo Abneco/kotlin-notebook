@@ -53,10 +53,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafelyTyped
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import java.io.File
 import java.net.URLClassLoader
@@ -93,11 +93,11 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
  * @param parent           Parent Disposable
  */
 class JupyterCompilerPerFileService(
-    private val project: Project,
-    virtualFile: BackedNotebookVirtualFile,
-    initialClasspath: List<File>,
-    scope: CoroutineScope,
-    parent: Disposable
+  private val project: Project,
+  virtualFile: BackedNotebookVirtualFile,
+  initialClasspath: List<File>,
+  scope: CoroutineScope,
+  parent: Disposable
 ) : NotebookPerFileChildService(virtualFile, scope) {
     private val scriptsChangePublisher get() =
         project.messageBus.syncPublisher(NotebookCodeSnippetsChangeListener.TOPIC)
@@ -335,9 +335,9 @@ class JupyterCompilerPerFileService(
     private fun getLineFolderName(lineNumber: Int) = "line_$lineNumber"
 
     private fun addNewDependencies(
-        sessionId: JupyterNotebookSessionId?,
-        snippetMetadata: EvaluatedSnippetMetadata,
-        psiCell: JupyterPsiCell?
+      sessionId: JupyterNotebookSessionId?,
+      snippetMetadata: EvaluatedSnippetMetadata,
+      psiCell: JupyterPsiCell?
     ) {
         if (sessionId != previousSessionId) {
             LOG.info("Clearing Kotlin snippets. Previous session ID: ${previousSessionId?.id}")

@@ -10,10 +10,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookE
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterExecutionState
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -138,7 +137,7 @@ class NotebookCellExecutionHighlightingHelper(
     }
 
     private fun JupyterNotebookSession?.isKernelBusy(): Boolean =
-        if (this == null) false else kernelClient.executionState == JupyterExecutionState.BUSY
+        if (this == null) false else kernelClient.executionState == com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState.BUSY
 
     @Deprecated("Unused logic, to be removed")
     private fun updateMetaStorageForHL(project: Project, file: BackedNotebookVirtualFile, index: Int) = Unit

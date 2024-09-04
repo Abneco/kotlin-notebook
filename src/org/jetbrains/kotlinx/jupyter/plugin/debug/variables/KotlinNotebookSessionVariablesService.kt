@@ -17,7 +17,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toAbsolutePath
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 
 /**
  * [KotlinNotebookSessionVariablesService] manages all variables things across the project:

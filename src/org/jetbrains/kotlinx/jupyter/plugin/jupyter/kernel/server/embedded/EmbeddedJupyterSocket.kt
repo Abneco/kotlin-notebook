@@ -6,7 +6,7 @@ import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.channel
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketBase
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.toJupyterMessage
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -22,9 +22,9 @@ import java.util.concurrent.atomic.AtomicReference
  * client sets the reply for a message and the moment kernel receives it.
  */
 open class EmbeddedJupyterSocket(
-    private val socketType: JupyterSocketType,
-    private val onMessageCallback: (JupyterMessage) -> Unit,
-    private val delayMs: Long = 500,
+  private val socketType: JupyterSocketType,
+  private val onMessageCallback: (JupyterMessage) -> Unit,
+  private val delayMs: Long = 500,
 ) : JupyterSocketBase {
     private val clientReply = AtomicReference<RawMessage?>(null)
 

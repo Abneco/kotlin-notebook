@@ -7,7 +7,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.coroutines.childScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -19,8 +19,8 @@ import java.util.concurrent.ConcurrentHashMap
  * @see NotebookProjectLevelService
  */
 abstract class NotebookPerFileChildService(
-    protected open val virtualFile: BackedNotebookVirtualFile,
-    protected val coroutineScope: CoroutineScope
+  protected open val virtualFile: BackedNotebookVirtualFile,
+  protected val coroutineScope: CoroutineScope
 ) : Disposable {
     override fun dispose() {
         coroutineScope.cancel()
@@ -43,8 +43,8 @@ abstract class NotebookProjectLevelService<Child : NotebookPerFileChildService>(
      * with its own [CoroutineScope].
      */
     protected abstract fun createInstance(
-        virtualFile: BackedNotebookVirtualFile,
-        fileScope: CoroutineScope
+      virtualFile: BackedNotebookVirtualFile,
+      fileScope: CoroutineScope
     ): Child
 
     fun getOrCreate(virtualFile: BackedNotebookVirtualFile): Child {

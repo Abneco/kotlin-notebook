@@ -6,13 +6,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ex.AnActionListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.core.impl.actions.NotebookRunAllAction
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.notebook
-import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelAction
-import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelClearOutputsAction
-import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterRestartKernelRunAllAction
-import org.jetbrains.plugins.notebooks.jupyter.editor.getJupyterVirtualFile
+import com.intellij.jupyter.core.core.impl.actions.NotebookRunAllAction
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.actions.JupyterRestartKernelAction
+import com.intellij.jupyter.core.jupyter.actions.JupyterRestartKernelClearOutputsAction
+import com.intellij.jupyter.core.jupyter.actions.JupyterRestartKernelRunAllAction
+import com.intellij.jupyter.core.jupyter.editor.getJupyterVirtualFile
 
 class KotlinNotebookFusActionListener: AnActionListener {
     override fun beforeActionPerformed(action: AnAction, event: AnActionEvent) {
@@ -26,7 +25,8 @@ class KotlinNotebookFusActionListener: AnActionListener {
         when(action) {
             is JupyterRestartKernelAction,
             is JupyterRestartKernelRunAllAction,
-            is JupyterRestartKernelClearOutputsAction -> {
+            is JupyterRestartKernelClearOutputsAction
+              -> {
                 val backedFile = getBackedFile() ?: return
                 val compilerService = JupyterCompilerService.getForFile(project, backedFile)
                 val cellCountBeforeRestart = compilerService.executedCellsCount

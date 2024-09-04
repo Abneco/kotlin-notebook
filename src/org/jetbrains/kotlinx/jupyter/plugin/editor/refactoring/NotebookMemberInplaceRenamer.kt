@@ -42,7 +42,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotific
 import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
-import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
+import com.intellij.jupyter.core.core.impl.file.notebookOrNull
 import com.intellij.notebooks.visualization.getCell
 
 

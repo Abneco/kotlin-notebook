@@ -2,12 +2,12 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
-import org.jetbrains.plugins.notebooks.jupyter.connections.JupyterConnectionParameters
-import org.jetbrains.plugins.notebooks.jupyter.connections.JupyterConnectionParameters.Location.Direct
-import org.jetbrains.plugins.notebooks.jupyter.server.common.JupyterServerExecution
-import org.jetbrains.plugins.notebooks.jupyter.server.common.JupyterServerStarted
-import org.jetbrains.plugins.notebooks.jupyter.server.common.JupyterServerState
-import org.jetbrains.plugins.notebooks.jupyter.server.common.JupyterServerStateListener
+import com.intellij.jupyter.core.jupyter.connections.JupyterConnectionParameters
+import com.intellij.jupyter.core.jupyter.connections.JupyterConnectionParameters.Location.Direct
+import com.intellij.jupyter.core.jupyter.server.common.JupyterServerExecution
+import com.intellij.jupyter.core.jupyter.server.common.JupyterServerStarted
+import com.intellij.jupyter.core.jupyter.server.common.JupyterServerState
+import com.intellij.jupyter.core.jupyter.server.common.JupyterServerStateListener
 import java.net.URI
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Future

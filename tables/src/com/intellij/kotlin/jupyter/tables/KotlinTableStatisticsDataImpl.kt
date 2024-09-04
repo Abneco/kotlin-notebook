@@ -17,7 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import org.jetbrains.plugins.notebooks.jackson
+import com.intellij.jupyter.core.jackson
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Service(Service.Level.APP)

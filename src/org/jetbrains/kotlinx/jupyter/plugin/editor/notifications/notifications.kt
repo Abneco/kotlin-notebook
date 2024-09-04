@@ -21,7 +21,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOption
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.KotlinNotebookConfigurable
 import org.jetbrains.kotlinx.jupyter.plugin.util.getOpenedKotlinNotebookEditors
 import org.jetbrains.kotlinx.jupyter.plugin.util.toKotlinNotebookBackedFile
-import org.jetbrains.plugins.notebooks.jupyter.actions.restartKernel
+import com.intellij.jupyter.core.jupyter.actions.restartKernel
 
 @Suppress("DialogTitleCapitalization")
 @get:NotificationTitle

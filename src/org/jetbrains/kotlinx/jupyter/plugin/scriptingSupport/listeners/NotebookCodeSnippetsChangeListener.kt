@@ -2,7 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners
 
 import com.intellij.util.messages.Topic
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 
 /**
  * Way to be informed when scripts are updated in the particular [BackedNotebookVirtualFile]

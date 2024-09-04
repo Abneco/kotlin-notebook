@@ -5,9 +5,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinKernelName
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.ManagedJupyterServerRunner
-import org.jetbrains.plugins.notebooks.jupyter.connections.settings.ManagedServerJupyterModuleConnectionSettings
-import org.jetbrains.plugins.notebooks.jupyter.server.common.JupyterServerExecution
+import com.intellij.jupyter.core.jupyter.connections.execution.core.ManagedJupyterServerRunner
+import com.intellij.jupyter.core.jupyter.connections.settings.ManagedServerJupyterModuleConnectionSettings
+import com.intellij.jupyter.core.jupyter.server.common.JupyterServerExecution
 
 class ManagedKotlinNotebookServerRunner : ManagedJupyterServerRunner {
     override fun startServer(

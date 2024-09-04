@@ -13,13 +13,13 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRu
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableProvider
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.JupyterSessionVerifiedListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.toJupyterMessage
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterSessionData
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterSessionLaunchStrategy
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterClient
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterSessionData
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterSessionLaunchStrategy
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -63,8 +63,8 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
 
     @OptIn(ExperimentalContracts::class)
     private fun verifySession(
-        session: JupyterNotebookSession?,
-        kernel: KotlinKernelRunnableHandler?
+      session: JupyterNotebookSession?,
+      kernel: KotlinKernelRunnableHandler?
     ): Boolean {
         contract {
             returns(true) implies (session != null)
