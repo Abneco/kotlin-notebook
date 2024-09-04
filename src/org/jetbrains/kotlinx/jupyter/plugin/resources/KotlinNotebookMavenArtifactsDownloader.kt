@@ -7,6 +7,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.platform.util.coroutines.childScope
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.ZipUtil
@@ -18,6 +19,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.jetbrains.idea.maven.aether.ArtifactKind
 import org.jetbrains.jps.model.library.JpsMavenRepositoryLibraryDescriptor
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
@@ -37,8 +39,8 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
     private val downloadJobs = mutableMapOf<ArtifactDescriptionWithVersion, Deferred<List<File>>>()
     private val cacheSearchLock = ReentrantLock()
     private val projectScope = KotlinNotebookPluginScope.getForProject(project)
-    private val downloadJobsScope = projectScope.childScope(Dispatchers.Default)
-    private val preloadJobScope = projectScope.childScope(Dispatchers.Default)
+    private val downloadJobsScope = projectScope.childScope("Kotlin Notebook artifacts download", Dispatchers.Default)
+    private val preloadJobScope = projectScope.childScope("Kotlin Notebook artifacts preload", Dispatchers.Default)
 
     init {
         preloadArtifacts()
@@ -67,9 +69,18 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
         version: String,
     ): List<File> {
         val artifactWithVersion = ArtifactDescriptionWithVersion(artifact, version)
-        return downloadWithCache(artifactWithVersion) { cacheDirectory ->
-            downloadAndSaveToDirectory(artifactWithVersion, cacheDirectory)
-        }.await()
+        @Suppress("DialogTitleCapitalization")
+        return withBackgroundProgress(
+            project,
+            KotlinNotebookBundle.message(
+                "kotlin.notebook.progress.title.kotlin.kernel.downloading",
+                artifactWithVersion.mavenCoordinates
+            )
+        ) {
+            downloadWithCache(artifactWithVersion) { cacheDirectory ->
+                downloadAndSaveToDirectory(artifactWithVersion, cacheDirectory)
+            }.await()
+        }
     }
 
     @RequiresBackgroundThread
@@ -217,7 +228,9 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
 
     private data class ArtifactDescriptionWithVersion(
         val artifact: ArtifactDescriptionWithKind, val version: String,
-    )
+    ) {
+        val mavenCoordinates: String get() = "${artifact.mavenCoordinates}:$version"
+    }
 
     companion object {
         fun getInstance(project: Project) = project.service<KotlinNotebookMavenArtifactsDownloader>()

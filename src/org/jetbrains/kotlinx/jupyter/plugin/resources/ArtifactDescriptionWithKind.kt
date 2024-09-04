@@ -9,7 +9,9 @@ data class ArtifactDescriptionWithKind(
     override val group: String,
     override val artifact: String,
     val kind: ArtifactKind,
-): ArtifactDescription
+): ArtifactDescription {
+    val mavenCoordinates: String get() = "$group:$artifact"
+}
 
 fun jupyterKernelLibrary(artifactNameSuffix: String, kind: ArtifactKind = ArtifactKind.ARTIFACT) = ArtifactDescriptionWithKind(
     KOTLINX_GROUP, "kotlin-jupyter-$artifactNameSuffix", kind)
