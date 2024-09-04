@@ -1,9 +1,16 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.plots.export
 
+import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.context.jupyterNotebookFile
+import com.intellij.jupyter.core.jupyter.editor.getJupyterVirtualFile
+import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
 import com.intellij.kotlin.jupyter.plots.LetsPlotComponent
 import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey
 import com.intellij.kotlin.jupyter.plots.PlotDataKeyExtractor
+import com.intellij.notebooks.visualization.context.NotebookDataContext.hoveredOrSelectedInterval
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
@@ -12,14 +19,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.LETS_PLOT_MIME
 import org.jetbrains.kotlinx.jupyter.plugin.util.filterIsInstanceAnd
 import org.jetbrains.kotlinx.jupyter.plugin.util.firstAncestorOfType
-import com.intellij.jupyter.core.core.api.getNotebookCellAndFile
-import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.core.impl.file.notebook
-import com.intellij.jupyter.core.jupyter.editor.getCellIndex
-import com.intellij.jupyter.core.jupyter.editor.getJupyterVirtualFile
-import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
 
 
 abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
@@ -61,8 +60,10 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
             return listOfNotNull(letsPlotComponent.dataKey)
         }
 
-        val (psiCell, notebookVirtualFile) = event.dataContext.getNotebookCellAndFile() ?: return emptyList()
-        return getLetsPlotOutputs(notebookVirtualFile, psiCell.getCellIndex())
+        val notebookVirtualFile = event.dataContext.jupyterNotebookFile ?: return emptyList()
+        val hoveredInterval = event.dataContext.hoveredOrSelectedInterval ?: return emptyList()
+
+        return getLetsPlotOutputs(notebookVirtualFile, hoveredInterval.ordinal)
     }
 
     private fun getLetsPlotOutputs(notebookVirtualFile: BackedNotebookVirtualFile, cellIndex: Int): List<LetsPlotOutputDataKey> {

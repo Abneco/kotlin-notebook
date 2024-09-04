@@ -1,6 +1,11 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.export
 
+import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
+import com.intellij.jupyter.core.jupyter.context.jupyterNotebookFile
+import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
+import com.intellij.notebooks.visualization.context.NotebookDataContext.hoveredOrSelectedInterval
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
@@ -18,12 +23,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.filterIsInstanceAnd
 import org.jetbrains.kotlinx.jupyter.plugin.util.firstAncestorOfType
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
-import com.intellij.jupyter.core.core.api.getNotebookCellAndFile
-import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
-import com.intellij.jupyter.core.core.impl.file.notebook
-import com.intellij.jupyter.core.jupyter.editor.getCellIndex
-import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
@@ -57,9 +56,9 @@ class CopySwingComponentScreenshotAction : NotebookEditorActionBase() {
     private fun doCopyScreenshot(outputs: List<SwingOutputDataKey>, project: Project) {
         val output = outputs.singleOrNull() ?: return
         KotlinNotebookPluginScope.getForProject(project).async {
-            runSafely (
+            runSafely(
                 {
-                    when(val component = output.component) {
+                    when (val component = output.component) {
                         is JFrame -> component.takeScreenshot()
                         is JDialog -> component.takeScreenshot()
                         is JComponent -> component.takeScreenshot()
@@ -74,6 +73,7 @@ class CopySwingComponentScreenshotAction : NotebookEditorActionBase() {
             )
         }
     }
+
     private fun getOutputs(event: AnActionEvent): List<SwingOutputDataKey> {
         val contextComponent = event.dataContext.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT)
         val swingComponent = contextComponent?.firstAncestorOfType<SwingComponent>()
@@ -82,12 +82,14 @@ class CopySwingComponentScreenshotAction : NotebookEditorActionBase() {
         }
 
         val project = event.project
-        val (psiCell, notebookVirtualFile) = event.dataContext.getNotebookCellAndFile() ?: return emptyList()
-        val cellIndex = psiCell.getCellIndex()
+        val notebookVirtualFile = event.dataContext.jupyterNotebookFile ?: return emptyList()
+        val hoveredInterval = event.dataContext.hoveredOrSelectedInterval ?: return emptyList()
+        val cellIndex = hoveredInterval.ordinal
         val notebook = notebookVirtualFile.notebook
         val jupyterCell = notebook.computeCells()[cellIndex]
         val outputs = jupyterCell.outputs ?: return emptyList()
-        val extractor = NotebookDisplayOutputDataKeyExtractor.EP_NAME.findExtension(SwingOutputDataKeyExtractor::class.java) ?: return emptyList()
+        val extractor =
+            NotebookDisplayOutputDataKeyExtractor.EP_NAME.findExtension(SwingOutputDataKeyExtractor::class.java) ?: return emptyList()
         return outputs.outputs.filterIsInstanceAnd<JupyterDisplayDataOutput> { output ->
             output.data.has(InMemoryMimeTypes.SWING)
         }.mapNotNull { letPlotOutput ->
