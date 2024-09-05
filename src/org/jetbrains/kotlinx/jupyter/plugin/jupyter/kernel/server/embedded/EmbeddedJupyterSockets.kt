@@ -3,7 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 
 import org.jetbrains.kotlinx.jupyter.messaging.JupyterBaseSockets
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketInfo
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 
 /**
  * Holds all Jupyter sockets that are needed for messaging

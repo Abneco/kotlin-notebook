@@ -14,9 +14,9 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.idea.refactoring.project
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
-import com.intellij.jupyter.core.core.api.getNotebookPsiCell
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
+import org.jetbrains.plugins.notebooks.core.api.getNotebookPsiCell
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 
 internal fun DataContext.getVirtualFile(): VirtualFile? = CommonDataKeys.VIRTUAL_FILE.getData(this)
 internal fun AnActionEvent.getVirtualFile(): VirtualFile? = dataContext.getVirtualFile()

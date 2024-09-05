@@ -3,7 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.settings
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
 
 private val isBuildProjectProperty = KotlinNotebookBooleanProperty("isBuildProject", false)
 private val isAddProjectLibrariesToClasspathProperty = KotlinNotebookBooleanProperty("isAddProjectLibrariesToClasspath", true)

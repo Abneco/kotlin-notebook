@@ -12,11 +12,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.toRawMessageWi
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorUnderDebug
 import org.jetbrains.kotlinx.jupyter.protocol.AbstractJupyterConnection
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelCommunicationClient
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageType
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageType
 import org.zeromq.ZMQException
 import java.nio.channels.ClosedSelectorException
 import java.util.concurrent.locks.ReentrantLock
@@ -143,8 +143,7 @@ val JupyterMessageChannel.socketType: JupyterSocketType? get() {
     }
 }
 
-val JupyterSocketType.channel: JupyterMessageChannel
-  get() {
+val JupyterSocketType.channel: JupyterMessageChannel get() {
     return when(this) {
         JupyterSocketType.HB -> JupyterMessageChannel.HEARTBEAT
         JupyterSocketType.SHELL -> JupyterMessageChannel.SHELL

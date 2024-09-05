@@ -4,10 +4,10 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.appearance
 import com.intellij.openapi.diagnostic.logger
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookCodegen
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.appBasedApi.colorThemes.JupyterThemeChangedEvent
-import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.appBasedApi.colorThemes.ThemeChangedListener
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.webOutputs.appBasedApi.colorThemes.JupyterThemeChangedEvent
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.webOutputs.appBasedApi.colorThemes.ThemeChangedListener
 
 private class KotlinNotebookEditorColorsListener : ThemeChangedListener {
     override fun themeChanged(event: JupyterThemeChangedEvent) {

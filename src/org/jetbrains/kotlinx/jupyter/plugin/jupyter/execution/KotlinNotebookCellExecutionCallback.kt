@@ -15,11 +15,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListInfo
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputsBase
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutputsBase
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import kotlin.system.measureTimeMillis
 

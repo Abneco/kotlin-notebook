@@ -6,7 +6,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.content.Content
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.util.findNotebookVirtualFileOrNull
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.nio.file.Path
 
 /**

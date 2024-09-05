@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.debug.descriptor.api
 import com.intellij.debugger.SourcePosition
 import com.intellij.debugger.ui.tree.FieldDescriptor
 import com.intellij.openapi.project.Project
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 /**
  * Used for resolve [SourcePosition] based on [FieldDescriptor].

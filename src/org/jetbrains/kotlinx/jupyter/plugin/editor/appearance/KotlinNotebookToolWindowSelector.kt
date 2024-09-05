@@ -5,8 +5,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowManager
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.variables.common.JupyterNotebookToolWindowSelector
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterNotebookToolWindowSelector
 
 class KotlinNotebookToolWindowSelector : JupyterNotebookToolWindowSelector {
     override fun getAvailableToolWindow(project: Project, virtualFile: BackedNotebookVirtualFile): ToolWindow? {

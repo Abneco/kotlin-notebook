@@ -20,7 +20,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import kotlin.math.abs
@@ -53,10 +53,10 @@ internal interface NotebookClassesInCellsInfoHandler {
 
 
 class NotebookStructureClassTracker(
-  private val project: Project,
-  virtualFile: BackedNotebookVirtualFile,
-  scope: CoroutineScope,
-  parentDisposable: Disposable
+    private val project: Project,
+    virtualFile: BackedNotebookVirtualFile,
+    scope: CoroutineScope,
+    parentDisposable: Disposable
 ): NotebookPerFileChildService(virtualFile, scope), NotebookClassesInCellsInfoHandler {
     init {
       Disposer.register(parentDisposable, this)

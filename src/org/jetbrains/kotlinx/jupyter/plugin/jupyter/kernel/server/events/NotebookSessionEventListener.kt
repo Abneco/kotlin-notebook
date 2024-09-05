@@ -2,7 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events
 
 import com.intellij.util.messages.Topic
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.util.EventListener
 
 /**

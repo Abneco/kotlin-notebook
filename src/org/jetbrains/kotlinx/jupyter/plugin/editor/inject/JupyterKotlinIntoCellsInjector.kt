@@ -14,9 +14,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerServ
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.KotlinCodeRangesProcessor
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.plugins.notebooks.psi.core.api.psi.NotebookPsiCell
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.nbformat.CELL_MARKER
-import com.intellij.jupyter.core.jupyter.nbformat.nonCodeCellSuffixes
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.nonCodeCellSuffixes
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterPsiCellImpl
 import java.util.concurrent.atomic.AtomicInteger
 

@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.jetbrains.annotations.Nls
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
-import com.intellij.jupyter.core.jupyter.nbformat.notifyNotebookChanged
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.notifyNotebookChanged
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 

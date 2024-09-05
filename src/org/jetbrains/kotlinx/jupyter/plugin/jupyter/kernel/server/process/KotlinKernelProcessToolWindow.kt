@@ -5,7 +5,7 @@ import com.intellij.execution.impl.ConsoleViewImpl
 import com.intellij.ui.content.Content
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowSettings
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import com.intellij.jupyter.core.jupyter.server.ui.attachJupyterServerContentCloseListener
+import org.jetbrains.plugins.notebooks.jupyter.server.ui.attachJupyterServerContentCloseListener
 
 /**
  * Class responsible for managing the setup of the tool window when running the kernel in a

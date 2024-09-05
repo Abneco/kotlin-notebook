@@ -13,8 +13,8 @@ import io.kotest.matchers.types.shouldBeTypeOf
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.language.JupyterKotlinFileType
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.core.impl.file.notebookLanguage
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.notebookLanguage
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.tests.SingleFileImplRule
 import org.junit.ClassRule

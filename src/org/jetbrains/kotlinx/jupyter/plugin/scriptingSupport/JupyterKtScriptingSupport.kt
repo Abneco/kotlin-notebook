@@ -27,8 +27,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.SCRIPTING
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorWithAttachments
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
 import kotlin.script.experimental.api.valueOrNull
 
 class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport {
@@ -62,7 +62,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         val editors = editorManager?.allEditors ?: return
 
         val openFiles = editors.mapNotNull {
-          (it as? JupyterFileEditor)?.getNotebookFile()
+            (it as? JupyterFileEditor)?.getNotebookFile()
         }.filter { it.fileType is JupyterFileType }.ifEmpty {
             editors.mapNotNull { BackedNotebookVirtualFile.takeIfBacked(it.file)?.file }
         }

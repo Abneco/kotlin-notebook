@@ -19,8 +19,8 @@ import com.intellij.util.ArrayUtilRt
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.setUpScriptingDependencies
-import com.intellij.jupyter.core.jupyter.nbformat.CELL_MARKER
-import com.intellij.jupyter.core.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.CELL_MARKER
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
 
 abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTestCase() {
     override fun getTestDataPath() = "$baseTestDataPath/notebooks/highlighting"

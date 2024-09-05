@@ -8,11 +8,11 @@ import org.jetbrains.kotlinx.jupyter.messaging.MessageContent
 import org.jetbrains.kotlinx.jupyter.messaging.MessageFactory
 import org.jetbrains.kotlinx.jupyter.messaging.MessageHeader
 import org.jetbrains.kotlinx.jupyter.messaging.MessageType
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 
 class NoReplyMessageFactory(
-  sessionId: JupyterNotebookSessionId,
-  override val username: String = "username",
+    sessionId: JupyterNotebookSessionId,
+    override val username: String = "username",
 ): MessageFactory {
     override val sessionId: String = sessionId.id
     override val contextMessage: RawMessage? get() = null

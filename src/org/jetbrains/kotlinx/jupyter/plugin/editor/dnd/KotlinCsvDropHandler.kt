@@ -2,8 +2,8 @@
 package org.jetbrains.kotlinx.jupyter.plugin.editor.dnd
 
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import com.intellij.jupyter.core.editor.handlers.TableDataFileExtensions
-import com.intellij.jupyter.core.editor.handlers.guessCsvSeparator
+import org.jetbrains.plugins.notebooks.editor.handlers.TableDataFileExtensions
+import org.jetbrains.plugins.notebooks.editor.handlers.guessCsvSeparator
 import java.io.File
 
 class KotlinCsvDropHandler : AbstractKotlinDataframeDropHandler(

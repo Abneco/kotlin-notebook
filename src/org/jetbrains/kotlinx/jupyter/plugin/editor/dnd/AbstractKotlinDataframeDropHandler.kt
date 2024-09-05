@@ -4,9 +4,9 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.dnd
 import com.intellij.openapi.editor.Editor
 import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import com.intellij.jupyter.core.editor.handlers.LanguageTableDataFileDropHandler
-import com.intellij.jupyter.core.editor.handlers.createDataframeName
-import com.intellij.jupyter.core.editor.handlers.createFilePath
+import org.jetbrains.plugins.notebooks.editor.handlers.LanguageTableDataFileDropHandler
+import org.jetbrains.plugins.notebooks.editor.handlers.createDataframeName
+import org.jetbrains.plugins.notebooks.editor.handlers.createFilePath
 import java.io.File
 
 abstract class AbstractKotlinDataframeDropHandler(

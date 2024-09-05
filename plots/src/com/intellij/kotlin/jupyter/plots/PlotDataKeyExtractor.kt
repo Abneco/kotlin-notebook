@@ -9,16 +9,16 @@ import com.intellij.util.asSafely
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.util.LETS_PLOT_MIME
 import org.jetbrains.kotlinx.jupyter.plugin.util.convertObject
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
-import com.intellij.jupyter.core.jupyter.nbformat.DisplayDataContainer
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.DisplayDataContainer
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 
 
 class PlotDataKeyExtractor: NotebookDisplayOutputDataKeyExtractor {
     fun extractKey(
-      data: DisplayDataContainer,
-      executionCount: Int?,
+        data: DisplayDataContainer,
+        executionCount: Int?,
     ): LetsPlotOutputDataKey? {
         if (!KotlinNotebookApplicationOptions.get().showLetsPlotAsSwing) return null
 
@@ -42,12 +42,12 @@ class PlotDataKeyExtractor: NotebookDisplayOutputDataKeyExtractor {
     }
 
     override fun extractKey(
-      editor: EditorImpl,
-      file: BackedNotebookVirtualFile?,
-      data: DisplayDataContainer,
-      executionCount: Int?,
-      cellPointer: NotebookIntervalPointer,
-      isLastForCell: Boolean
+        editor: EditorImpl,
+        file: BackedNotebookVirtualFile?,
+        data: DisplayDataContainer,
+        executionCount: Int?,
+        cellPointer: NotebookIntervalPointer,
+        isLastForCell: Boolean
     ): LetsPlotOutputDataKey? {
         return extractKey(data, executionCount)
     }

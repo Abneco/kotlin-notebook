@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.variables
 import com.intellij.execution.ui.RunnerLayoutUi
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 
 class KotlinNotebookToolWindowHandler {
@@ -17,9 +17,9 @@ class KotlinNotebookToolWindowHandler {
 
     @Synchronized
     fun getOrCreateToolWindow(
-      project: Project,
-      virtualFile: BackedNotebookVirtualFile,
-      providedSetupData: NotebookVariablesToolWindowSetup?
+        project: Project,
+        virtualFile: BackedNotebookVirtualFile,
+        providedSetupData: NotebookVariablesToolWindowSetup?
     ): KotlinNotebookVarsToolWindow {
         val toolWindow = notebookVariablesWindow
         if (toolWindow != null) {

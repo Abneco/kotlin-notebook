@@ -104,7 +104,7 @@
 
     <projectListeners>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.JupyterKotlinRuntimeServiceListener"
-                  topic="com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService$Listener"/>
+                  topic="org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService$Listener"/>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookModuleRenameListener"
                   topic="com.intellij.openapi.project.ModuleListener"/>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookLibraryRenameListener"

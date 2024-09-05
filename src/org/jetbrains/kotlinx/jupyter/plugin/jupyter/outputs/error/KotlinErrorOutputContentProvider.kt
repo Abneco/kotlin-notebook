@@ -4,8 +4,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.error
 import org.jetbrains.kotlinx.jupyter.exceptions.CompositeReplException
 import org.jetbrains.kotlinx.jupyter.exceptions.ReplEvalRuntimeException
 import org.jetbrains.kotlinx.jupyter.exceptions.ReplLibraryException
-import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterErrorOutputDataKey
-import com.intellij.jupyter.core.jupyter.editor.outputs.error.ErrorOutputContentProvider
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterErrorOutputDataKey
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.error.ErrorOutputContentProvider
 
 class KotlinErrorOutputContentProvider : ErrorOutputContentProvider {
     private val replExceptionTypesWithMeaningfulStacktrace = listOf(

@@ -2,9 +2,9 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinKernelName
-import com.intellij.jupyter.core.jupyter.connections.JupyterConnectionParameters
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServer
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServersFactory
+import org.jetbrains.plugins.notebooks.jupyter.connections.JupyterConnectionParameters
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServer
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServersFactory
 
 class KotlinServersFactory: JupyterServersFactory {
     override fun create(connectionParameters: JupyterConnectionParameters): JupyterServer? {

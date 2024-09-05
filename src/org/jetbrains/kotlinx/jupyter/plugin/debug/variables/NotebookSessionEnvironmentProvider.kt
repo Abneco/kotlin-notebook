@@ -7,7 +7,7 @@ import com.sun.jdi.Field
 import com.sun.jdi.IntegerValue
 import com.sun.jdi.ObjectReference
 import com.sun.jdi.Value
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 
 internal interface NotebookSessionEnvironmentProvider {

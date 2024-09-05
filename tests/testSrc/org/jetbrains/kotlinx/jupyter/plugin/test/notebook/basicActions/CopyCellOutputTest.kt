@@ -9,7 +9,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessages
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
-import com.intellij.jupyter.core.jupyter.actions.JupyterCopyCellOutputAction
+import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterCopyCellOutputAction
 import org.junit.Test
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection

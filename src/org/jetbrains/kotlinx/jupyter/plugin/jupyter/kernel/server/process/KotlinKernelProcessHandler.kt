@@ -19,17 +19,17 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSe
 import org.jetbrains.kotlinx.jupyter.plugin.util.findNotebookVirtualFileOrNull
 import org.jetbrains.kotlinx.jupyter.plugin.util.warnInTests
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import java.nio.file.Path
 
 class KotlinKernelProcessHandler(
-  override val project: Project,
-  override val kernelId: JupyterKernelId,
-  commandLine: GeneralCommandLine,
-  private val kernelConfig: KernelConfig,
-  override val notebookPath: Path,
+    override val project: Project,
+    override val kernelId: JupyterKernelId,
+    commandLine: GeneralCommandLine,
+    private val kernelConfig: KernelConfig,
+    override val notebookPath: Path,
 ): KillableColoredProcessHandler(commandLine), KotlinKernelRunnableHandler {
 
     private val stateMachine = KernelStateMachine()

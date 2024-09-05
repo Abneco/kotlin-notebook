@@ -10,7 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRunnableHandler
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import com.intellij.jupyter.core.jupyter.actions.shutdownNotebook
+import org.jetbrains.plugins.notebooks.jupyter.actions.shutdownNotebook
 
 abstract class StopKotlinKernelActionBase : DumbAwareAction(
     KotlinNotebookBundle.message("kotlin.jupyter.toolbar.actions.stop"),

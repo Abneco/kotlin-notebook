@@ -27,11 +27,11 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlin.psi.psiUtil.getChildOfType
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.find
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
-import com.intellij.jupyter.core.core.impl.file.notebookLanguage
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.find
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
+import org.jetbrains.plugins.notebooks.core.impl.file.notebookLanguage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 

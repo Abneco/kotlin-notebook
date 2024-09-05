@@ -4,9 +4,9 @@ package org.jetbrains.kotlinx.jupyter.plugin.debug
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugRunnerProvider
-import com.intellij.jupyter.core.jupyter.debugger.common.NotebookDebugRunner
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.debugger.common.JupyterDebugRunnerProvider
+import org.jetbrains.plugins.notebooks.jupyter.debugger.common.NotebookDebugRunner
 
 class KotlinNotebookDebugRunnerProvider : JupyterDebugRunnerProvider {
     override fun isSuitable(sdk: Sdk?, virtualFile: BackedNotebookVirtualFile): Boolean = virtualFile.file.isKotlinNotebook

@@ -15,17 +15,17 @@ import org.jetbrains.kotlinx.jupyter.repl.ReplConfig
 import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelCommunicationClient
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import java.nio.file.Path
 
 class EmbeddedKotlinKernelSession(
-  private val project: Project,
-  override val sessionId: JupyterNotebookSessionId,
-  private val notebookPath: Path,
-  private val loggerFactory: EmbeddedKotlinKernelLoggerFactory,
-  private val onMessage: (JupyterMessage) -> Unit
+    private val project: Project,
+    override val sessionId: JupyterNotebookSessionId,
+    private val notebookPath: Path,
+    private val loggerFactory: EmbeddedKotlinKernelLoggerFactory,
+    private val onMessage: (JupyterMessage) -> Unit
 ) : KotlinKernelSession, JupyterKernelCommunicationClient {
 
     private val inMemoryHolderService = InMemoryReplResultsHolderService.getInstance(project)

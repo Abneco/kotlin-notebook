@@ -2,10 +2,11 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.error
 
 import com.intellij.execution.filters.Filter
-import com.intellij.jupyter.core.jupyter.editor.outputs.error.JupyterErrorOutputFiltersProvider
+import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.error.JupyterErrorOutputFiltersProvider
 import com.intellij.openapi.editor.impl.EditorImpl
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.notebook
 
 /**
  * This class adds Kotlin Notebook-specific [Filter]s for creating custom links in the exception

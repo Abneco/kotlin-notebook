@@ -13,7 +13,7 @@ import com.intellij.ui.content.ContentManager
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.kotlin.idea.util.sourceRoots
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.io.File
 import java.nio.file.Path
 

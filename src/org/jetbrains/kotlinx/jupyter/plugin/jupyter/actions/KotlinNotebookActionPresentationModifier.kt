@@ -7,8 +7,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.util.registry.Registry
 import org.jetbrains.kotlinx.jupyter.plugin.util.getVirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import com.intellij.jupyter.core.jupyter.actions.JupyterOpenNotebookInBrowserAction
-import com.intellij.jupyter.core.jupyter.editor.actions.JupyterActionPresentationModifier
+import org.jetbrains.plugins.notebooks.jupyter.actions.JupyterOpenNotebookInBrowserAction
+import org.jetbrains.plugins.notebooks.jupyter.editor.actions.JupyterActionPresentationModifier
 import kotlin.reflect.KClass
 
 class KotlinNotebookActionPresentationModifier : JupyterActionPresentationModifier {

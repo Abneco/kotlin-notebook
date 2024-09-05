@@ -3,7 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.dnd
 
 import com.intellij.openapi.editor.Editor
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
-import com.intellij.jupyter.core.core.impl.file.notebookOrNull
+import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
 
 internal fun isDataFrameInClasspath(editor: Editor): Boolean {
     val notebookFile = editor.notebookOrNull ?: return false

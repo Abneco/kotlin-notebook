@@ -36,20 +36,20 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.Noteboo
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.debugger.common.JupyterSessionPath
-import com.intellij.jupyter.core.jupyter.editor.completion.JupyterRuntimeProcessListener
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.debugger.common.JupyterSessionPath
+import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import java.util.concurrent.ExecutionException
 
 
 class KotlinNotebookDebugSession(
-  public override val virtualFile: BackedNotebookVirtualFile,
-  private val project: Project,
-  projectService: Disposable,
-  coroutineScope: CoroutineScope,
-  private val portProvider: () -> Int?
+    public override val virtualFile: BackedNotebookVirtualFile,
+    private val project: Project,
+    projectService: Disposable,
+    coroutineScope: CoroutineScope,
+    private val portProvider: () -> Int?
 ): NotebookPerFileChildService(virtualFile, coroutineScope) {
     val currentStackFrameProxy: StackFrameProxyImpl?
         get() = debuggerSession?.process?.debuggerContext?.frameProxy
@@ -270,7 +270,7 @@ class KotlinNotebookDebugSession(
 
     private fun addProcessListener() {
         processListener = NotebookDebugProcessListener(
-          project, JupyterSessionPath(virtualFile), virtualFile, isSilent
+            project, JupyterSessionPath(virtualFile), virtualFile, isSilent
         )
 
         debugConnectionHolder.myDebugSession?.process?.addDebugProcessListener(

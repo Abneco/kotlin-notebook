@@ -20,10 +20,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.runWithJupyterSession
 import org.jetbrains.kotlinx.jupyter.plugin.test.runners.TestContext
 import org.jetbrains.kotlinx.jupyter.plugin.test.setUpScriptingDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.test.withDisabledJcef
-import com.intellij.jupyter.core.jackson
+import org.jetbrains.plugins.notebooks.jackson
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServers
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServers
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import org.junit.Rule
@@ -37,8 +37,8 @@ interface ReceivedMessages {
 }
 
 data class ReceivedMessagesBuilder(
-  override var reply: JupyterMessage? = null,
-  override val outputs: MutableList<JupyterMessage> = mutableListOf(),
+    override var reply: JupyterMessage? = null,
+    override val outputs: MutableList<JupyterMessage> = mutableListOf(),
 ) : ReceivedMessages
 
 interface ReceivedMessagesTester {

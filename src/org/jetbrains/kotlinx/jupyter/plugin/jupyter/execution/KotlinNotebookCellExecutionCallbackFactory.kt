@@ -10,11 +10,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionTask
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
-import com.intellij.jupyter.core.jupyter.editor.getCells
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
+import org.jetbrains.plugins.notebooks.jupyter.editor.getCells
 import java.util.PriorityQueue
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.write

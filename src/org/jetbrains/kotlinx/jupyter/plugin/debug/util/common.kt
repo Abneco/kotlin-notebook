@@ -9,7 +9,7 @@ import com.intellij.openapi.util.registry.Registry
 import com.intellij.xdebugger.frame.XValueChildrenList
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSession
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 
 internal val debugFeaturesEnabled: Boolean

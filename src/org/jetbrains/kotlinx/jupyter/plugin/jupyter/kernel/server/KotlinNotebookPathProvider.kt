@@ -4,8 +4,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinKernelName
-import com.intellij.jupyter.core.jupyter.connections.execution.NotebookPathProvider
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServer
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.NotebookPathProvider
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServer
 
 class KotlinNotebookPathProvider: NotebookPathProvider {
     override fun getNotebookPath(project: Project, file: VirtualFile, server: JupyterServer, kernelName: String?): String? {

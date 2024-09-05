@@ -18,16 +18,16 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.util.KOTLIN_DATAFRAME_MIME
 import org.jetbrains.kotlinx.jupyter.plugin.util.LETS_PLOT_MIME
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionStatus
-import com.intellij.jupyter.core.jupyter.connections.execution.executionCount
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.status
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionStatus
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.executionCount
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.status
 import org.jetbrains.plugins.notebooks.psi.jupyter.nbformat.JupyterCellType
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterErrorOutput
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutput
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterStreamOutput
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterDisplayDataOutput
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterErrorOutput
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterOutput
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterStreamOutput
 
 class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
     override fun getGroup(): EventLogGroup {
@@ -121,10 +121,10 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
         )
 
         fun registerCellExecuted(
-          project: Project,
-          message: JupyterMessage,
-          executionDurationMs: Long,
-          metadata: EvaluatedSnippetMetadata
+            project: Project,
+            message: JupyterMessage,
+            executionDurationMs: Long,
+            metadata: EvaluatedSnippetMetadata
         ) {
             val status = when(message.status) {
                 JupyterExecutionStatus.OK -> ExecutionStatus.OK

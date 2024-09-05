@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.getCellRangesInDocumentOrNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.looksLikeNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.getCell

@@ -17,22 +17,22 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.Noteboo
 import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.createConcurrentDoubleKeyMap
-import com.intellij.jupyter.core.jupyter.connections.exceptions.JupyterKernelDoesNotExistsException
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelCommunicationClient
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterClient
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterSessionData
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterInterruptRequestMessageBuilder
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterShutdownRequestMessageBuilder
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
-import com.intellij.jupyter.core.jupyter.connections.filecontentsapi.CachingFileContentsApi
-import com.intellij.jupyter.core.jupyter.connections.filecontentsapi.JavaIoFileContentsApi
-import com.intellij.jupyter.core.jupyter.connections.filecontentsapi.TreeCachingFileContentsApi
-import com.intellij.jupyter.core.jupyter.connections.http.HttpSession
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpecBase
+import org.jetbrains.plugins.notebooks.jupyter.connections.exceptions.JupyterKernelDoesNotExistsException
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterSessionData
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterInterruptRequestMessageBuilder
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterShutdownRequestMessageBuilder
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
+import org.jetbrains.plugins.notebooks.jupyter.connections.filecontentsapi.CachingFileContentsApi
+import org.jetbrains.plugins.notebooks.jupyter.connections.filecontentsapi.JavaIoFileContentsApi
+import org.jetbrains.plugins.notebooks.jupyter.connections.filecontentsapi.TreeCachingFileContentsApi
+import org.jetbrains.plugins.notebooks.jupyter.connections.http.HttpSession
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpec
+import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpecBase
 import java.io.File
 import java.nio.file.Path
 
@@ -62,8 +62,8 @@ class KotlinInProcessJupyterClient(
     private val pendingRestarts = ConcurrentCollectionFactory.createConcurrentSet<VirtualFile>()
 
     private val sessions = createConcurrentDoubleKeyMap(
-      JupyterSessionData::sessionId,
-      JupyterSessionData::kernelId,
+        JupyterSessionData::sessionId,
+        JupyterSessionData::kernelId,
     )
 
     private val clientSessions = ConcurrentCollectionFactory.createConcurrentMap<JupyterKernelId, KotlinKernelSession>()
@@ -186,9 +186,9 @@ class KotlinInProcessJupyterClient(
     }
 
     override fun createWebSocketClientForKernel(
-      kernelId: JupyterKernelId,
-      sessionId: JupyterNotebookSessionId,
-      onMessage: (JupyterMessage) -> Unit
+        kernelId: JupyterKernelId,
+        sessionId: JupyterNotebookSessionId,
+        onMessage: (JupyterMessage) -> Unit
     ): JupyterKernelCommunicationClient {
         val processHandler = kernels[kernelId] ?: throw RuntimeException("No kernel with id $kernelId")
         val session = processHandler.createSession(sessionId, onMessage)

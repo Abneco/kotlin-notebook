@@ -6,7 +6,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 
 @Service(Service.Level.PROJECT)
 class NotebookStructureTrackerService(
