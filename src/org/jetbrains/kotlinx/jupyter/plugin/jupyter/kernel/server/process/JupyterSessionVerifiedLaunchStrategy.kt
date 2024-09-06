@@ -1,13 +1,13 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterClient
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterSessionData
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterSessionLaunchStrategy
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterSessionData
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterSessionLaunchStrategy
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.util.messages.Topic
 import kotlinx.coroutines.CompletableDeferred

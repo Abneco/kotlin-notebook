@@ -1,12 +1,12 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution
 
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionInterruptService
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionInterruptService
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterExecutionState
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
+import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
