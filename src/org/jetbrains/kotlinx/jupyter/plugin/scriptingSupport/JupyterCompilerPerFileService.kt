@@ -10,6 +10,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.Logger
@@ -19,6 +20,8 @@ import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.workspace.jps.entities.LibraryEntity
+import com.intellij.platform.workspace.storage.entities
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresReadLock
@@ -497,6 +500,19 @@ class JupyterCompilerPerFileService(
             }
         }
 
+        private fun checkLastDependenciesPresentInCacheK2(): Boolean {
+            val cache = project.workSpaceSnapshot
+            val lastCompiledSnippetPath = classesDir
+                .resolve(
+                    getLineFolderName(directoryCounter.get())
+                ).toString()
+
+            return cache.entities<LibraryEntity>()
+                .filter {
+                    it.roots.any { root -> root.url.url.contains(lastCompiledSnippetPath) }
+                }.iterator().hasNext()
+        }
+
         private fun checkLastDependenciesPresentInCache(): Boolean {
             val cache = project.scriptConfigurationsClassCache
 
@@ -511,14 +527,17 @@ class JupyterCompilerPerFileService(
             coroutineScope.async {
                 if (previousSessionId == null) return@async
 
-                if (!checkLastDependenciesPresentInCache()) {
+                if (!checkLastDependenciesPresentInCacheK2()) {
                     return@async
                 }
 
                 updateLastKnownConfiguration()
                 scriptsChangePublisher.scriptsClassesChanged(virtualFile)
-                virtualFile.file.toPsiFile(project)?.let { psiFile ->
-                    DaemonCodeAnalyzer.getInstance(project).restart(psiFile)
+
+                readAction {
+                    virtualFile.file.toPsiFile(project)?.let { psiFile ->
+                        DaemonCodeAnalyzer.getInstance(project).restart(psiFile)
+                    }
                 }
             }
         }

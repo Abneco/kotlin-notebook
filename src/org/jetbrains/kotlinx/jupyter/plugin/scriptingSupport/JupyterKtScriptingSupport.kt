@@ -124,11 +124,21 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             val scripts = mutableListOf<KotlinNotebookScriptModel>()
             for (notebook in notebooks) {
                 val notebookService = JupyterCompilerService.getForFile(project, notebook)
+                var exception: Throwable? = null
                 val perFileScripts = readAction {
                     val scriptsToRefine = notebookService.getFilesToRefine()
                     scriptsToRefine.map { ktFileScriptSource ->
                         val ktFile = ktFileScriptSource.ktFile
-                        val defaultConfiguration = getConfiguration(ktFile)?.valueOrNull()?.configuration!!
+
+                        val defaultConfiguration = try {
+                            getConfiguration(ktFile)?.valueOrNull()?.configuration!!
+                        } catch (e: Throwable) {
+                            if (e !is ProcessCanceledException) {
+                                exception = e
+                            }
+                            throw e
+                        }
+
                         val source = KtFileScriptSource(ktFile)
                         val refinedConf = notebookService.handleBeforeCompiling(
                             defaultConfiguration,
@@ -147,6 +157,10 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
                 }
 
                 scripts.addAll(perFileScripts)
+                // rethrow if present
+                if (exception != null) {
+                    throw exception!!
+                }
             }
 
            NotebookScriptDependenciesSource.getInstance(project)

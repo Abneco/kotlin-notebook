@@ -2,6 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
 import com.intellij.openapi.project.Project
+import com.intellij.platform.backend.workspace.WorkspaceModel
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
@@ -12,3 +13,6 @@ val Project.baseScriptingCompilationConfiguration: ScriptCompilationConfiguratio
 val Project.scriptConfigurationsClassCache
     get() = (ScriptConfigurationManager.getInstance(this) as CompositeScriptConfigurationManager)
         .updater.classpathRoots
+
+val Project.workSpaceSnapshot
+    get() = WorkspaceModel.getInstance(this).currentSnapshot
