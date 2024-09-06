@@ -1,6 +1,20 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.extensions.JupyterPsiCellExt.getJupyterBackedVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionQueueManager
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionTask
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
+import com.intellij.notebooks.visualization.NotebookCellLines
+import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
+import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
@@ -15,6 +29,7 @@ import com.intellij.testFramework.HeavyTestHelper
 import com.intellij.testFramework.IndexingTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
@@ -25,26 +40,12 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMess
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.extensions.JupyterPsiCellExt.getJupyterBackedVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionQueueManager
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionTask
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
-import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
-import com.intellij.notebooks.visualization.NotebookCellLines
-import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
-import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory
+import org.jetbrains.plugins.notebooks.tests.awaitBlocking
 import org.junit.jupiter.api.Assertions
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.minutes
 
 val baseTestDataPath = PathManager.getHomePath() + "/plugins/kotlin/jupyter/tests/testData"
 
@@ -53,15 +54,7 @@ fun PsiFile.getCells(): List<JupyterPsiCell> = descendantsOfType<JupyterPsiCell>
 
 fun PsiFile.isInjectedKtFile(): Boolean = name.endsWith("kts")
 
-data class TestDuration(
-    val value: Long,
-    val unit: TimeUnit,
-)
-
-@Suppress("unused")
-fun TestDuration.millis() = unit.toMillis(value)
-
-val defaultTestDuration = TestDuration(3, TimeUnit.MINUTES)
+val defaultTestDuration = 3.minutes
 
 fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     val project = notebookFile.project
@@ -98,14 +91,14 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
             put(num, i)
         }
     }
-    val receivedMessagesFutures = List(cellsToExecute.size) {
-        CompletableFuture<ReceivedMessages>().orTimeout(testTimeout.value, testTimeout.unit)
+    val receivedMessages = List(cellsToExecute.size) {
+        CompletableDeferred<ReceivedMessages>()
     }
 
     fun endExceptionally(throwable: Throwable) {
-        for (future in receivedMessagesFutures) {
-            if (!future.isDone) {
-                future.completeExceptionally(throwable)
+        for (deferred in receivedMessages) {
+            if (!deferred.isCompleted) {
+                deferred.completeExceptionally(throwable)
             }
         }
     }
@@ -127,7 +120,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
                   callbacks = listOfNotNull(object : JupyterExecutionCallbackAdapter() {
                         override fun onStatus(message: JupyterStatusMessage) {
                             if (message.executionState == JupyterExecutionState.IDLE) {
-                                receivedMessagesFutures[cellExecutionNumber[cellNumber]!!].complete(messages)
+                                receivedMessages[cellExecutionNumber[cellNumber]!!].complete(messages)
                             }
                         }
 
@@ -149,7 +142,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
 
     // Run cells in the order they're defined in the notebook
     for (i in 0 until (cellsToExecute.size - 1)) {
-        receivedMessagesFutures[i].thenRun { executeCell(cellsToExecute[i + 1]) }
+        receivedMessages[i].invokeOnCompletion { executeCell(cellsToExecute[i + 1]) }
     }
 
     if (cellsToExecute.isNotEmpty()) {
@@ -157,7 +150,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
     }
 
     for (i in cellsToExecute.indices) {
-        tester.assertCellMessages(cellsToExecute[i], receivedMessagesFutures[i].get())
+        tester.assertCellMessages(cellsToExecute[i], receivedMessages[i].awaitBlocking(testTimeout))
     }
 }
 

@@ -4,7 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinKernelName
 
 class KotlinNotebookSessionLaunchStrategy : JupyterSessionVerifiedLaunchStrategy(3) {
-    override fun isApplicable(kernelName: String): Boolean {
+    override suspend fun isApplicable(kernelName: String): Boolean {
         return isKotlinKernelName(kernelName)
     }
 }

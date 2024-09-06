@@ -7,7 +7,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
-import com.intellij.util.progress.getMaybeCancellable
+import com.intellij.platform.util.coroutines.childScope
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -16,17 +16,17 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.withTimeout
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.time.Duration
 
 /**
  * Designed to be used as a parent scope for all unbounded coroutines in the Notebook plugin.
  * Do not use GlobalScope or any other coroutine scope that has an unbounded lifetime.
  *
- * If you have a parent scope such as Project-level service, use [CoroutineScope.childScope] instead.
+ * If you have a parent scope such as Project-level service, use [childScope] instead.
  */
 sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
     override val coroutineContext: CoroutineContext =
@@ -37,36 +37,31 @@ sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
     }
 
     /**
-     * Schedules a coroutine to run on the Event Dispatch Thread.
-     */
-    fun onEDT(block: suspend CoroutineScope.() -> Unit) =
-        async(Dispatchers.EDT, block = block)
-
-    /**
      * Schedule and waits for execution of the [action] inside current coroutine.
      * Note that a job may be canceled.
      *
-     * @param timeOut - timeout in milliseconds
-     * @param handler - logic for handling errors, including the operation timing out.
+     * @param timeout - timeout in milliseconds
+     * @param onError - logic for handling errors, including the operation timing out.
      */
     inline fun <T> invokeAndWait(
-        timeOut: Long? = null,
+        timeout: Duration? = null,
         crossinline action: suspend (CoroutineScope).() -> T?,
-        crossinline handler: (Throwable) -> Unit = { },
+        crossinline onError: (Throwable) -> Unit = { },
     ): T? {
-        val future = async {
+        val deferred = async {
             action()
-        }.asCompletableFuture()
-
-        return when (timeOut) {
-            null -> future.getMaybeCancellable()
-            else -> runBlockingMaybeCancellable {
-                try {
-                    future.get(timeOut, TimeUnit.MILLISECONDS)
-                } catch (t: Throwable) {
-                    handler(t)
-                    return@runBlockingMaybeCancellable null
+        }.apply {
+            invokeOnCompletion { throwable ->
+                if (throwable != null) {
+                    onError(throwable)
                 }
+            }
+        }
+
+        return runBlockingMaybeCancellable {
+            when(timeout) {
+                null -> deferred.await()
+                else -> withTimeout(timeout) { deferred.await() }
             }
         }
     }
@@ -76,13 +71,13 @@ sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
      * Note that a job may be canceled.
      * Throws an exception if it happened inside [action].
      *
-     * @param timeOut - timeout in milliseconds
+     * @param timeout - timeout in milliseconds
      */
     inline fun <T> invokeAndWait(
-        timeOut: Long? = null,
+        timeout: Duration? = null,
         crossinline action: suspend (CoroutineScope).() -> T?
     ): T? {
-        return invokeAndWait(timeOut, action) { error ->
+        return invokeAndWait(timeout, action) { error ->
             throw error
         }
     }
@@ -96,7 +91,7 @@ sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
 
         /**
          * Retrieves global coroutine scope for the Kotlin Notebook plugin.
-         * Designed to be used in places where project scope is not available.
+         * Designed to be used in places where the project scope is not available.
          */
         val global: KotlinNotebookPluginScope get() = service<GlobalScopeService>()
 
@@ -111,7 +106,7 @@ sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
         private class GlobalScopeService : KotlinNotebookPluginScope()
 
         @Service(Service.Level.PROJECT)
-        private class ProjectScope(project: Project) : KotlinNotebookPluginScope()
+        private class ProjectScope : KotlinNotebookPluginScope()
     }
 }
 
