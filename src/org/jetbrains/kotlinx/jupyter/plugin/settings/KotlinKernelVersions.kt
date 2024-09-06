@@ -14,7 +14,7 @@ val KotlinKernelVersion.isKernelVersionEnoughForInstrumentation: Boolean
     get() = compareTo(KotlinKernelVersions.DEBUG_SUPPORTED) >= 0
 
 val Project.isKernelVersionEnoughForInstrumentation: Boolean
-    get() = (selectedNotebookKernelVersion?.isKernelVersionEnoughForInstrumentation ?: false)
+    get() = (selectedKernelVersion?.isKernelVersionEnoughForInstrumentation ?: false)
             && debugFeaturesEnabled
 
 val MavenVersionComboBox.toKotlinKernelVersion: KotlinKernelVersion?

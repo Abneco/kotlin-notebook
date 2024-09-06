@@ -31,7 +31,7 @@ import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.notifications.notebookNotifications
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanentIndexService
@@ -40,7 +40,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifac
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ScriptingSupportUpdateEventsListener
-import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
+import org.jetbrains.kotlinx.jupyter.plugin.settings.selectedKernelVersionAsString
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.usages.KotlinNotebookPluginUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.util.ComputableWithName
 import org.jetbrains.kotlinx.jupyter.plugin.util.ExecutedOnceBackgroundTask
@@ -240,7 +240,7 @@ class JupyterCompilerPerFileService(
     }
 
     private suspend fun updateClasspathWithKernelJars(
-        version: String = getSelectedKernelVersion(project)
+        version: String = project.selectedKernelVersionAsString
     ): Boolean {
         val mavenArtifactsDownloader = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
         val jars = mavenArtifactsDownloader.downloadArtifactAsync(
@@ -421,7 +421,7 @@ class JupyterCompilerPerFileService(
                 when (e) {
                     is UnsupportedClassVersionError -> {
                         val msg = e.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
-                        NotebookNotificationUtility.getInstance(project).kernelRelatedFactory.showKernelJDKInconsistentError(msg)
+                        project.notebookNotifications.showKernelJDKInconsistentError(msg)
                         true
                     }
                     else -> {

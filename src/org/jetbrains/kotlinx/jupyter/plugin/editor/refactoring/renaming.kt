@@ -51,7 +51,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookGotoDecla
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.KotlinNotebookElementFindUsagesHandler
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder.CELL_CLASS_NAME
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.isIdentifier
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.notifications.notebookNotifications
 import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.tryCastParentToSuitableTarget
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
@@ -130,8 +130,7 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
         if (!isKotlinNotebookInjectedFile(element.containingFile)) return
         val adjustedElement = tryResolveToDeclaration(element, editor) ?: element.parent.reference?.resolve()
         if ((adjustedElement == null && !isNotebookRefactoringSupported(element.parent)) || adjustedElement?.containingFile is KtClsFile) {
-            NotebookNotificationUtility.getInstance(element.project)
-                .usageRelatedFactory.showBytecodeRefactoringWarning()
+            element.project.notebookNotifications.showBytecodeRefactoringWarning()
         } else {
             val parent = tryCastParentToSuitableTarget(element)
             val properElem = adjustedElement ?: parent ?: return

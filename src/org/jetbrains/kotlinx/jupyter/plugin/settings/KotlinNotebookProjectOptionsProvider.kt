@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.settings
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.SettingsCategory
@@ -11,7 +12,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.pom.java.LanguageLevel
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import java.util.EventListener
+import java.util.*
 
 @Service(Service.Level.PROJECT)
 @State(
@@ -24,11 +25,14 @@ class KotlinNotebookProjectOptionsProvider :
     DelegatingOptionsProvider<KotlinNotebookProjectOptionsProvider.State, KotlinNotebookProjectOptionsProvider.Listener>(
         State(),
         Listener::class.java
-    )
+    ), Disposable
 {
     var kernelVersion: String by propNarrowing(
         State::kernelVersion, internalToExternal = { it.orEmpty() }
     ).onChange(Listener::onKernelVersionChanged)
+
+    var ignoreOutdatedKernelVersion by prop(State::ignoreOutdatedKernelVersion)
+        internal set
 
     val jdk get() = KotlinNotebookJdkOption.fromName(jdkName)
     internal var jdkName: String? by prop(
@@ -62,6 +66,7 @@ class KotlinNotebookProjectOptionsProvider :
 
     class State : BaseState() {
         var kernelVersion by string(currentKernelVersion.toMavenVersion())
+        var ignoreOutdatedKernelVersion by property(false)
         var jdkName by string(null)
         var jvmTargetForSnippets by string(null)
         var heapMaxLimitInMib by property(DEFAULT_HEAP_MAX_LIMIT_MIB)
@@ -76,6 +81,8 @@ class KotlinNotebookProjectOptionsProvider :
         var shouldAddProjectLibrariesToClasspath by property(true)
         var shouldShowNotebookVariables by property(false)
     }
+
+    override fun dispose() {}
 
     class PresentableNameGetter : com.intellij.openapi.components.State.NameGetter() {
         override fun get(): String = KotlinNotebookBundle.message("kotlin.jupyter.settings.title")

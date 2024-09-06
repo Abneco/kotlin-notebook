@@ -20,7 +20,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifac
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
-import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
@@ -28,6 +27,7 @@ import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServer
+import org.jetbrains.kotlinx.jupyter.plugin.settings.selectedKernelVersionAsString
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolute
@@ -71,7 +71,7 @@ class KernelProcessFactory : KernelRunnableFactory {
             "kernelProcessConnection",
             KotlinNotebookMavenArtifactsDownloader.getInstance(project).downloadArtifactBlocking(
                 KotlinNotebookMavenArtifacts.KERNEL_SHADOWED,
-                getSelectedKernelVersion(project)
+                project.selectedKernelVersionAsString
             ).joinToString(classpathSeparator) { it.absolutePath },
             extraJavaArgs
         )

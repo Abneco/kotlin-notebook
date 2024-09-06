@@ -2,21 +2,6 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import com.intellij.concurrency.ConcurrentCollectionFactory
-import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.diagnostic.thisLogger
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.Version
-import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.resetSessionMetaInformation
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.JupyterSessionVerifiedListener
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
-import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
-import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
-import org.jetbrains.kotlinx.jupyter.plugin.util.createConcurrentDoubleKeyMap
 import org.jetbrains.plugins.notebooks.jupyter.connections.exceptions.JupyterKernelDoesNotExistsException
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
@@ -33,6 +18,21 @@ import org.jetbrains.plugins.notebooks.jupyter.connections.filecontentsapi.TreeC
 import org.jetbrains.plugins.notebooks.jupyter.connections.http.HttpSession
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpec
 import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpecBase
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.Version
+import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.resetSessionMetaInformation
+import org.jetbrains.kotlinx.jupyter.plugin.notifications.notebookNotifications
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.JupyterSessionVerifiedListener
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
+import org.jetbrains.kotlinx.jupyter.plugin.util.DEFAULT_KOTLIN_KERNEL_NAME
+import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
+import org.jetbrains.kotlinx.jupyter.plugin.util.createConcurrentDoubleKeyMap
 import java.io.File
 import java.nio.file.Path
 
@@ -179,10 +179,7 @@ class KotlinInProcessJupyterClient(
             pendingRestarts.add(notebookFile.file)
         }
 
-        if (project != null) {
-            NotebookNotificationUtility.getInstance(project)
-                .kernelRelatedFactory.showKernelRestart()
-        }
+        project?.notebookNotifications?.showKernelRestart()
     }
 
     override fun createWebSocketClientForKernel(

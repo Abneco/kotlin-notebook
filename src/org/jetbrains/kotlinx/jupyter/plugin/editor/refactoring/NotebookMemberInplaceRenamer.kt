@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring
 import com.intellij.injected.editor.DocumentWindow
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.notebooks.visualization.getCell
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.impl.FinishMarkAction
 import com.intellij.openapi.diagnostic.thisLogger
@@ -38,12 +39,11 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.find.KotlinNotebookElementFin
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.isIdentifier
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.notifications.notebookNotifications
 import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.plugins.notebooks.core.impl.file.notebookOrNull
-import com.intellij.notebooks.visualization.getCell
 
 
 class NotebookMemberInplaceRenamer(
@@ -99,7 +99,7 @@ class NotebookMemberInplaceRenamer(
 
             override fun performRefactoring(usages: Array<out UsageInfo>) {
                 if (foundRefsSize > 0) {
-                    NotebookNotificationUtility.getInstance(element.project).usageRelatedFactory.showRerunActionNeeded()
+                    element.project.notebookNotifications.showRerunActionNeeded()
                     val hostFile = injectedManager.getTopLevelFile(element)
                     if (adjustmentTextRange != null) {
                         notebookHighlightingService?.dataController?.update {
@@ -115,19 +115,17 @@ class NotebookMemberInplaceRenamer(
 
             override fun findUsages(): Array<UsageInfo> {
                 val size = foundRefsSize
-                val notificationUtility = NotebookNotificationUtility.getInstance(element.project)
+                val notificationUtility = element.project.notebookNotifications
                 do { // todo: might be slow (?)
                    val ans = findUsagesNotebookHandler.findReferencesToHighlight(myElementToRename, element.resolveScope).map {
                         it.toMoveUsageInfo()
                     }
                     if (ans.isEmpty()) {
-                        notificationUtility
-                            .usageRelatedFactory.showRefactoringExistingUsagesMessage(size)
+                        notificationUtility.showRefactoringExistingUsagesMessage(size)
                         return ans.toTypedArray()
                     }
                     if (size == ans.size) {
-                        notificationUtility
-                            .usageRelatedFactory.showRerunActionNeeded()
+                        notificationUtility.showRerunActionNeeded()
                         val targetHostRanges = mutableSetOf<TextRange>()
                         val targetHostIndxs = mutableSetOf<Int>()
                         elementHost?.textRange?.let {

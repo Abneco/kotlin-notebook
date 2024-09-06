@@ -21,7 +21,7 @@ import org.jetbrains.idea.maven.aether.ArtifactKind
 import org.jetbrains.jps.model.library.JpsMavenRepositoryLibraryDescriptor
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
-import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
+import org.jetbrains.kotlinx.jupyter.plugin.settings.selectedKernelVersionAsString
 import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.getKotlinNotebookCacheDirectory
 import java.io.File
@@ -86,7 +86,7 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
     @RequiresBackgroundThread
     fun downloadAndUnzipBlocking(
         artifact: ArtifactDescriptionWithKind,
-        version: String = getSelectedKernelVersion(project),
+        version: String = project.selectedKernelVersionAsString,
     ): List<File> {
         return projectScope.invokeAndWait {
             downloadAndUnzipAsync(artifact, version)
@@ -127,7 +127,7 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
 
     private fun preloadArtifacts() {
         preloadJobScope.launch {
-            val version = getSelectedKernelVersion(project)
+            val version = project.selectedKernelVersionAsString
             for (artifact in KotlinNotebookMavenArtifacts.all()) {
                 downloadArtifactAsync(artifact, version)
             }

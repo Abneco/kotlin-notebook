@@ -9,7 +9,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.DefaultKotlinK
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.asRawMessage
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.chooseJvmTargetForSnippets
-import org.jetbrains.kotlinx.jupyter.plugin.settings.selectedNotebookKernelVersion
+import org.jetbrains.kotlinx.jupyter.plugin.settings.selectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.settings.toCanonicalString
 import org.jetbrains.kotlinx.jupyter.repl.ReplConfig
 import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
@@ -47,7 +47,7 @@ class EmbeddedKotlinKernelSession(
 
         val socketsManager = EmbeddedJupyterSockets(onMessage)
 
-        val kernelVersion = project.selectedNotebookKernelVersion!!
+        val kernelVersion = project.selectedKernelVersion!!
 
         val jvmTargetForSnippets = chooseJvmTargetForSnippets(project)?.toCanonicalString() ?: defaultRuntimeProperties.jvmTargetForSnippets
         val runtimeProperties = IdeReplRuntimeProperties(

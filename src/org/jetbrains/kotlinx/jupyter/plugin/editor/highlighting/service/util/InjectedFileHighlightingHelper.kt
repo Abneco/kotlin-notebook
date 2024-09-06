@@ -10,7 +10,7 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.isEitherSymmetricallyContainedRange
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.notifications.notebookNotifications
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import java.util.concurrent.atomic.AtomicReference
@@ -81,8 +81,7 @@ class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
     fun shouldAcceptDiagnostic(diagnostic: Diagnostic): Boolean {
         val info = diagnostic.factory.name
         if (info.startsWith(NotebookHighlightingUtilityObject.SCRIPTING_MISSING_BASE_CLASS_ERROR)) {
-            NotebookNotificationUtility.getInstance(diagnostic.psiFile.project)
-                .kernelRelatedFactory.showAbsentInitialBaseDependenciesInfo()
+            diagnostic.psiFile.project.notebookNotifications.showAbsentInitialBaseDependenciesInfo()
             return false
         }
         return info != NotebookHighlightingUtilityObject.SCRIPTING_MISSING_CLASS_ERROR

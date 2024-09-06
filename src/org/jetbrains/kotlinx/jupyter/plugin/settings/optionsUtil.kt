@@ -8,12 +8,12 @@ import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import java.util.MissingResourceException
 import kotlin.reflect.KProperty
 
-fun getSelectedKernelVersion(project: Project): String {
-    return KotlinNotebookProjectOptionsProvider.getInstance(project).kernelVersion
+val Project.selectedKernelVersionAsString: String get() {
+    return KotlinNotebookProjectOptionsProvider.getInstance(this).kernelVersion
 }
 
-val Project.selectedNotebookKernelVersion: KotlinKernelVersion?
-    get() = KotlinKernelVersion.fromMavenVersion(getSelectedKernelVersion(this))
+val Project.selectedKernelVersion: KotlinKernelVersion?
+    get() = KotlinKernelVersion.fromMavenVersion(selectedKernelVersionAsString)
 
 internal class RegistryFlagDelegate(private val name: String, private val defaultValue: Boolean) {
     operator fun getValue(thisRef: Any?, property: KProperty<*>): Boolean {

@@ -10,7 +10,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSes
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
-import org.jetbrains.kotlinx.jupyter.plugin.settings.getSelectedKernelVersion
+import org.jetbrains.kotlinx.jupyter.plugin.settings.selectedKernelVersionAsString
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.maxBytecodeVersion
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
@@ -93,7 +93,7 @@ private fun KotlinNotebookMavenArtifactsDownloader.getClasspathArtifacts(project
         logger<KotlinNotebookMavenArtifactsDownloader>().warn("Unable to download artifacts zip", e)
         downloadArtifactBlocking(
             KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED,
-            getSelectedKernelVersion(project)
+            project.selectedKernelVersionAsString
         )
     }
 }

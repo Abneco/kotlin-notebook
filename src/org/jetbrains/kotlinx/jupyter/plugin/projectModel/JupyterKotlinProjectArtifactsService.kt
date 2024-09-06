@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.asDeferred
-import org.jetbrains.kotlinx.jupyter.plugin.editor.notifications.NotebookNotificationUtility
+import org.jetbrains.kotlinx.jupyter.plugin.notifications.notebookNotifications
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettingsCache
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSettings
@@ -54,7 +54,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
 import org.jetbrains.kotlinx.jupyter.plugin.util.parentsWithSelf
 import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.core.impl.file.getOriginalVirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.originFile
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
 import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
@@ -250,13 +249,10 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         val (buildProjectResult, libraries) = runBlocking { session.artifacts.await() }
 
         when (buildProjectResult.state) {
-            DependenciesState.OUTDATED -> NotebookNotificationUtility.getInstance(project)
-                .kernelRelatedFactory
-                .showOutdatedDependencies()
+            DependenciesState.OUTDATED ->
+                project.notebookNotifications.showOutdatedDependencies()
             DependenciesState.ABSENT -> {
-                NotebookNotificationUtility.getInstance(project)
-                    .kernelRelatedFactory
-                    .showAbsentDependencies()
+                project.notebookNotifications.showAbsentDependencies()
                 return emptyList()
             }
             else -> {}

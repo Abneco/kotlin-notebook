@@ -155,6 +155,8 @@
         <registryKey key="kotlin.notebook.outdated.dependencies.hints" defaultValue="true"
                      description="When enabled, a hint will be displayed each time notebook dependencies become outdated"/>
 
+        <postStartupActivity implementation="org.jetbrains.kotlinx.jupyter.plugin.notifications.KotlinNotebookPostStartupActivity"/>
+
         <multiHostInjector implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.inject.JupyterKotlinIntoCellsInjector"/>
         <fileIconProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.ide.KotlinNotebookFileIconProvider"/>
         <formatting.injectedOptions
