@@ -9,22 +9,17 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.RecursionManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ultimate.PluginVerifier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
-import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
-import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginModeProvider
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
+import org.jetbrains.kotlinx.jupyter.plugin.ide.handlers.ScriptingSupportUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.serialization.serializationPluginEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
@@ -152,32 +147,13 @@ class JupyterCompilerService(
         }
     }
 
+    private val updateActionHandler = ScriptingSupportUpdater.create(project)
+
     private val scriptingSupportUpdateScheduler = ScriptingSupportUpdateScheduler(
         project,
-        ::performScriptingUpdate,
+        updateActionHandler::updateScripts,
         this
     )
-
-    private fun performScriptingUpdate() {
-        when (KotlinPluginModeProvider.currentPluginMode) {
-            KotlinPluginMode.K2 -> performScriptingUpdateK2()
-            else -> performUpdateK1()
-        }
-    }
-
-    private fun performUpdateK1() {
-        val updater = (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
-        RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
-            updater.invalidateAndCommit()
-        }
-    }
-
-    private fun performScriptingUpdateK2() {
-        val editorManager = FileEditorManager.getInstance(project) ?: return
-        coroutineScope.async {
-            JupyterKtScriptingSupport.updateK2Configurations(editorManager, project)
-        }
-    }
 
     private fun registerKernelRestartListener() {
         ApplicationManager.getApplication().messageBus.connect(this)

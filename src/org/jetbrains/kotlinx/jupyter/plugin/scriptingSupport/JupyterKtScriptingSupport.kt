@@ -5,7 +5,6 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
-import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -17,7 +16,6 @@ import com.intellij.testFramework.LightVirtualFile
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport
-import org.jetbrains.kotlin.idea.core.script.k2.K2ScriptDefinitionProvider
 import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsBuilder
 import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsUpdater
 import org.jetbrains.kotlin.psi.KtFile
@@ -27,8 +25,6 @@ import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResu
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfiguration
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.k2.KotlinNotebookScriptModel
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.k2.NotebookScriptDependenciesSource
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorWithAttachments
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
@@ -118,83 +114,6 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
         private fun getUpdater(project: Project): ScriptClassRootsUpdater {
             return (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
-        }
-
-        private suspend fun updateK2Impl(project: Project, notebooks: Collection<BackedNotebookVirtualFile>) {
-            val scripts = mutableListOf<KotlinNotebookScriptModel>()
-            for (notebook in notebooks) {
-                val notebookService = JupyterCompilerService.getForFile(project, notebook)
-                var exception: Throwable? = null
-                val perFileScripts = readAction {
-                    val scriptsToRefine = notebookService.getFilesToRefine()
-                    scriptsToRefine.map { ktFileScriptSource ->
-                        val ktFile = ktFileScriptSource.ktFile
-
-                        val defaultConfiguration = try {
-                            getConfiguration(ktFile)?.valueOrNull()?.configuration!!
-                        } catch (e: Throwable) {
-                            if (e !is ProcessCanceledException) {
-                                exception = e
-                            }
-                            throw e
-                        }
-
-                        val source = KtFileScriptSource(ktFile)
-                        val refinedConf = notebookService.handleBeforeCompiling(
-                            defaultConfiguration,
-                            source
-                        )
-
-                        KotlinNotebookScriptModel(
-                            ktFileScriptSource.virtualFile,
-                            ktFile,
-                            ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
-                                source,
-                                refinedConf
-                            )
-                        )
-                    }
-                }
-
-                scripts.addAll(perFileScripts)
-                // rethrow if present
-                if (exception != null) {
-                    throw exception!!
-                }
-            }
-
-           NotebookScriptDependenciesSource.getInstance(project)
-               ?.updateDependenciesAndCreateModules(
-                        scripts
-               )
-        }
-
-        suspend fun updateK2Configurations(editorManager: FileEditorManager, project: Project) {
-            if (project.isDisposed) return
-
-            val editors = editorManager.allEditors
-            val openFiles = editors.mapNotNull { (it as? JupyterFileEditor)?.getNotebookFile() }
-            val publisher = project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC)
-
-            val notebooks = openFiles
-                .filter { it.fileType is JupyterFileType }
-                .mapNotNull { BackedNotebookVirtualFile.takeIfBacked(it) }
-                .filter { it.file.isKotlinNotebook }
-
-            runCatching {
-                updateK2Impl(project, notebooks)
-            }.onFailure {
-                if (it is ProcessCanceledException) {
-                    return@onFailure
-                }
-                LOG.warn("Exception during update k2 configuration for notebooks", it)
-                publisher.onUpdateException(Exception(it))
-            }.onSuccess {
-                K2ScriptDefinitionProvider.getInstance(project).reloadDefinitionsFromSources()
-                publisher.afterUpdate()
-            }
-
-            //K2ScriptDefinitionProvider.getInstance(project).reloadDefinitionsFromSources()
         }
 
         fun isInTheTransaction(project: Project) = getUpdater(project).isTransactionAboutToHappen()
