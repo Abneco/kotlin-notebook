@@ -21,7 +21,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.restartAnalyzing
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 
 @Service(Service.Level.PROJECT)
 class NotebookHighlightingService(

@@ -17,8 +17,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSettings
 import org.jetbrains.kotlinx.jupyter.plugin.settings.asJson
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.actions.createFileFromTemplateWithProperties
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.actions.createFileFromTemplateWithProperties
 
 /**
  * Enum describing how a Notebook is treated in the filesystem.

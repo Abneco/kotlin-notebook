@@ -11,7 +11,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.debug.util.connection.DebugConnectio
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelVersionEnoughForInstrumentation
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.findNotebookVirtualFileOrNull
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import java.nio.file.Path
 
 @Service(Service.Level.PROJECT)

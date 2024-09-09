@@ -3,7 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.completion
 
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
-import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
+import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Test
 
 class KotlinNotebookCompletionTest : KotlinNotebookBaseTestCase() {

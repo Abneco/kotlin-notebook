@@ -8,9 +8,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.kotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowManager
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServer
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterClient
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServer
 import java.nio.file.Path
 
 /**

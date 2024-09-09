@@ -26,8 +26,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.variables.KotlinNotebookToolWindowHa
 import org.jetbrains.kotlinx.jupyter.plugin.variables.KotlinNotebookVarsToolWindow
 import org.jetbrains.kotlinx.jupyter.plugin.variables.NotebookVariablesToolWindowSetup
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.editor.completion.JupyterRuntimeProcessListener
 
 /**
  * This service is created for every Kotlin notebook file

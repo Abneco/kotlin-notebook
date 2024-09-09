@@ -8,7 +8,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.DEFAULT
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelProcessEmbeddingEnabled
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterKernelId
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import java.nio.file.Path
 
 /**

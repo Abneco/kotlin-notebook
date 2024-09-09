@@ -1,17 +1,17 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test
 
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.extensions.JupyterPsiCellExt.getJupyterBackedVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionQueueManager
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterExecutionTask
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallback
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterExecutionState
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterStatusMessage
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.extensions.JupyterPsiCellExt.getJupyterBackedVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionQueueManager
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionTask
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
 import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory
@@ -40,10 +40,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMess
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesBuilder
 import org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution.ReceivedMessagesTester
 import org.jetbrains.kotlinx.jupyter.plugin.util.getInjectedKtFiles
-import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.tests.awaitBlocking
+import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.jupiter.api.Assertions
 import kotlin.time.Duration.Companion.minutes
 

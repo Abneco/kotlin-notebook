@@ -20,7 +20,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadAccess
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import kotlin.math.abs

@@ -18,7 +18,7 @@
         />
     </extensions>
 
-    <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.editor.outputs">
+    <extensions defaultExtensionNs="com.intellij.jupyter.core.editor.outputs">
         <notebookObjectOutputDataKeyExtractor implementation="com.intellij.kotlin.jupyter.plots.PlotDataKeyExtractor"/>
         <notebookOutputComponentFactory implementation="com.intellij.kotlin.jupyter.plots.LetsPlotOutputComponentFactory"/>
     </extensions>

@@ -2,10 +2,10 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import com.intellij.openapi.util.Disposer
-import org.jetbrains.plugins.notebooks.jupyter.connections.JupyterConnectionParameters
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterClient
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterServer
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterKernelSpec
+import com.intellij.jupyter.core.jupyter.connections.JupyterConnectionParameters
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterClient
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServer
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
 import java.io.File
 
 class KotlinJupyterServer(

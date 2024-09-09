@@ -6,10 +6,10 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
+import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 
 abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile

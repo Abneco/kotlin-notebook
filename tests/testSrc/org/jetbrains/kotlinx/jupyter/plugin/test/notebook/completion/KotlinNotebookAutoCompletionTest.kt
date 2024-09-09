@@ -8,9 +8,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.LookupFinishMode
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.setUpScriptingDependencies
-import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
+import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Test
 
 class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {

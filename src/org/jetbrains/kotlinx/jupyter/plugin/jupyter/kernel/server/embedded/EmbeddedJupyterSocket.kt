@@ -6,7 +6,7 @@ import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.channel
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketBase
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.toJupyterMessage
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import java.util.concurrent.atomic.AtomicReference
 
 /**

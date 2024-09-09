@@ -7,8 +7,8 @@ import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 
 internal fun Project.getJupyterFileEditor(vFile: VirtualFile): JupyterFileEditor?
         = FileEditorManager.getInstance(this).getSelectedEditor(vFile) as? JupyterFileEditor

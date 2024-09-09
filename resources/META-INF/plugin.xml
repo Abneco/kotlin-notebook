@@ -104,7 +104,7 @@
 
     <projectListeners>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.JupyterKotlinRuntimeServiceListener"
-                  topic="org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService$Listener"/>
+                  topic="com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService$Listener"/>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookModuleRenameListener"
                   topic="com.intellij.openapi.project.ModuleListener"/>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookLibraryRenameListener"
@@ -268,21 +268,26 @@
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">
         <jupyterLanguageBasedFileViewProviderChooser
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.psi.JupyterKotlinFileViewProviderChooser"/>
-        <editor.notebookEditorCreatedCallback
-                implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.creating.KotlinNotebookEditorFactoryListener"/>
         <editor.notebookEditorAppearanceProvider
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorAppearanceProvider"
                 order="before JupyterNotebookEditorAppearanceProvider"/>
-        <editor.outputs.notebookObjectOutputDataKeyExtractor
-                implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputDataKeyExtractor"/>
         <editor.outputs.notebookOutputComponentFactory
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputComponentFactory"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij.jupyter.core">
+        <editor.notebookEditorCreatedCallback
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.creating.KotlinNotebookEditorFactoryListener"/>
+        <editor.outputs.notebookObjectOutputDataKeyExtractor
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputDataKeyExtractor"/>
+        <editor.outputs.notebookObjectOutputDataKeyExtractor
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.SwingOutputDataKeyExtractor"/>
         <themeChangedListener implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorColorsListener"/>
         <jupyter.output.error.filters.provider
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.error.KotlinJupyterErrorOutputFiltersProvider"/>
     </extensions>
 
-    <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks.jupyter">
+    <extensions defaultExtensionNs="com.intellij.jupyter.core.jupyter">
         <jupyterCellExecutionCallbackFactory
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory"/>
         <connections.execution.preExecutionSourceModifier

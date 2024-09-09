@@ -8,9 +8,9 @@ import com.intellij.debugger.engine.SuspendContext
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.debug.session.KotlinNotebookDebugSessionManager
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.debugger.common.JupyterDebugSessionManager
-import org.jetbrains.plugins.notebooks.jupyter.debugger.common.JupyterSessionPath
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionManager
+import com.intellij.jupyter.core.jupyter.debugger.common.JupyterSessionPath
 
 
 class NotebookDebugProcessListener(

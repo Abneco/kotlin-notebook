@@ -8,7 +8,7 @@ import org.jetbrains.kotlin.idea.editor.KotlinEditorOptions
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookTransformerBaseTestCase
 import org.jetbrains.kotlinx.jupyter.plugin.test.baseTestDataPath
 import org.jetbrains.kotlinx.jupyter.plugin.test.cartesianProduct
-import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
+import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Assume
 import org.junit.Test
 import org.junit.runner.RunWith

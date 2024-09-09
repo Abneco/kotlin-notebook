@@ -27,8 +27,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.SCRIPTING
 import org.jetbrains.kotlinx.jupyter.plugin.util.errorWithAttachments
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import kotlin.script.experimental.api.valueOrNull
 
 class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport {

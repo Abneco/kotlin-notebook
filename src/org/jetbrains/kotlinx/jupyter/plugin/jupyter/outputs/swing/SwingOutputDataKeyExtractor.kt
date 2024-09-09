@@ -6,10 +6,10 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.api.InMemoryMimeTypes
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.InMemoryReplResultsHolderService
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
-import org.jetbrains.plugins.notebooks.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.DisplayDataContainer
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
+import com.intellij.jupyter.core.jupyter.nbformat.DisplayDataContainer
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 
 /**

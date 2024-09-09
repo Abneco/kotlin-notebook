@@ -5,7 +5,7 @@ import com.intellij.lang.LanguageNamesValidation
 import com.intellij.lang.refactoring.NamesValidator
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.plugins.notebooks.editor.handlers.DataframeVariableNameSuggester
+import com.intellij.jupyter.core.editor.handlers.DataframeVariableNameSuggester
 
 object KotlinDataframeVariableNameSuggester : DataframeVariableNameSuggester {
     override fun suggestVariableName(fileNameWithoutExtension: String): String {

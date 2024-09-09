@@ -2,7 +2,7 @@
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events
 
 import com.intellij.openapi.editor.event.CaretEvent
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.notebooks.visualization.NotebookCellLines
 
 sealed class NotebookHighlightingEvent

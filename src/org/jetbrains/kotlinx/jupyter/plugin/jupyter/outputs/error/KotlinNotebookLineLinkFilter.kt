@@ -5,8 +5,8 @@ import com.intellij.execution.filters.Filter
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.DumbAware
-import org.jetbrains.plugins.notebooks.core.impl.file.notebook
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebookBase
+import com.intellij.jupyter.core.core.impl.file.notebook
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebookBase
 
 /**
  * Class responsible for adding a link from a kernel stack trace to the relevant line in the

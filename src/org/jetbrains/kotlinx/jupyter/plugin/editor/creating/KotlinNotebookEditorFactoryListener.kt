@@ -8,8 +8,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toBackedNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettingsCache
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector
-import org.jetbrains.plugins.notebooks.editor.NotebookEditorCreatedCallback
-import org.jetbrains.plugins.notebooks.jupyter.editor.isJupyter
+import com.intellij.jupyter.core.editor.NotebookEditorCreatedCallback
+import com.intellij.jupyter.core.jupyter.editor.isJupyter
 
 class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
     override fun editorCreated(editor: Editor) {

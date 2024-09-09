@@ -21,7 +21,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
-import org.jetbrains.plugins.notebooks.jackson
+import com.intellij.jupyter.core.jackson
 
 fun JsonNode.toKotlinSerializationJson(): JsonElement {
     return when (this) {

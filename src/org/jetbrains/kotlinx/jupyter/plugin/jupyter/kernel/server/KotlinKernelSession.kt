@@ -2,8 +2,8 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import com.intellij.openapi.Disposable
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.JupyterKernelCommunicationClient
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelCommunicationClient
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 
 interface KotlinKernelSession: JupyterKernelCommunicationClient, Disposable {
     val sessionId: JupyterNotebookSessionId

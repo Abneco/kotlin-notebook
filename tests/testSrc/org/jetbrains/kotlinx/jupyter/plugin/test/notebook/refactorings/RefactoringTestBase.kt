@@ -8,10 +8,10 @@ import com.intellij.openapi.fileEditor.FileEditorProvider
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
-import org.jetbrains.plugins.notebooks.jupyter.configureByJupyterFile
-import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterDSFileEditorProvider
+import com.intellij.jupyter.core.jupyter.editor.JupyterDSFileEditorProvider
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
+import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 
 abstract class RefactoringTestBase(private val refactoringActionId: String) : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile

@@ -5,9 +5,9 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toAbsolutePath
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.variables.common.JupyterVarsToolWindowPanel
-import org.jetbrains.plugins.notebooks.jupyter.variables.common.NotebookVarsToolWindowPanelProvider
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.variables.common.JupyterVarsToolWindowPanel
+import com.intellij.jupyter.core.jupyter.variables.common.NotebookVarsToolWindowPanelProvider
 
 internal class NotebookVarsToolWindowProvider : NotebookVarsToolWindowPanelProvider {
     override fun isSupported(virtualFile: BackedNotebookVirtualFile): Boolean {

@@ -36,9 +36,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.Noteboo
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.debugger.common.JupyterSessionPath
-import org.jetbrains.plugins.notebooks.jupyter.editor.completion.JupyterRuntimeProcessListener
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.debugger.common.JupyterSessionPath
+import com.intellij.jupyter.core.jupyter.editor.completion.JupyterRuntimeProcessListener
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import java.util.concurrent.ExecutionException

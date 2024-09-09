@@ -27,8 +27,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.Not
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.getCell

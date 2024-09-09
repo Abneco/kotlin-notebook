@@ -6,8 +6,8 @@ import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.IdeFocusManager
-import org.jetbrains.plugins.notebooks.editor.JupyterExecutionHistoryProvider
-import org.jetbrains.plugins.notebooks.fus.JupyterFeaturesCollector
+import com.intellij.jupyter.core.editor.JupyterExecutionHistoryProvider
+import com.intellij.jupyter.core.fus.JupyterFeaturesCollector
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.notebooks.visualization.NotebookCellLines

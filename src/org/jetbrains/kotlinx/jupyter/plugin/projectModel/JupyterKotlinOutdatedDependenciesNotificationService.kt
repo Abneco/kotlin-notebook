@@ -23,9 +23,9 @@ import kotlinx.coroutines.launch
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.registryFlag
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterNotebookDependencies
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.notebook.JupyterRuntimeService
-import org.jetbrains.plugins.notebooks.jupyter.editor.JupyterFileEditor
+import com.intellij.jupyter.core.jupyter.editor.JupyterNotebookDependencies
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import java.awt.Font
 import java.awt.Point
 import javax.swing.event.HyperlinkEvent

@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.SessionRelatedInfo
 import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
 import org.jetbrains.kotlinx.jupyter.startup.create
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 
 data class NotebookDebugConnectionHolder(
     val backedFile: BackedNotebookVirtualFile,

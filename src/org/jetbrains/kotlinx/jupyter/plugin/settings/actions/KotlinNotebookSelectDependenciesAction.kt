@@ -23,9 +23,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.getSuitableLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import org.jetbrains.plugins.notebooks.core.impl.file.notebook
-import org.jetbrains.plugins.notebooks.jupyter.editor.getJupyterVirtualFile
-import org.jetbrains.plugins.notebooks.jupyter.nbformat.JupyterNotebook
+import com.intellij.jupyter.core.core.impl.file.notebook
+import com.intellij.jupyter.core.jupyter.editor.getJupyterVirtualFile
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import java.awt.event.ActionEvent
 import java.util.*
 import javax.swing.AbstractAction

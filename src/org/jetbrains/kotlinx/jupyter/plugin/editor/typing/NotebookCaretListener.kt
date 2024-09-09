@@ -19,7 +19,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.daemon.NotebookHighlightingDaemonListener
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.state.NotebookCaretStateProcessor
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 
 interface NotebookCellHighlightingTrigger {
     fun performRangedUpdate(reducedIndexes: Collection<Int>, context: CoroutineScope? = null)

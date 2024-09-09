@@ -8,7 +8,7 @@ import org.jetbrains.kotlinx.jupyter.messaging.MessageContent
 import org.jetbrains.kotlinx.jupyter.messaging.MessageFactory
 import org.jetbrains.kotlinx.jupyter.messaging.MessageHeader
 import org.jetbrains.kotlinx.jupyter.messaging.MessageType
-import org.jetbrains.plugins.notebooks.jupyter.connections.execution.core.JupyterNotebookSessionId
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 
 class NoReplyMessageFactory(
     sessionId: JupyterNotebookSessionId,

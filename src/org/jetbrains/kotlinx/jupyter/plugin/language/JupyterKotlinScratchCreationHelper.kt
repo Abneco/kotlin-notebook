@@ -14,7 +14,7 @@ import com.intellij.util.application
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.CreateNotebookFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
-import org.jetbrains.plugins.notebooks.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 
 /**
  * Helper for creating Kotlin Notebook scratch files as they need a specific JSON format
