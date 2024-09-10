@@ -20,8 +20,6 @@ import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.workspace.jps.entities.LibraryEntity
-import com.intellij.platform.workspace.storage.entities
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresReadLock
@@ -155,6 +153,7 @@ class JupyterCompilerPerFileService(
         this,
         ComputableWithName("Updating of Kotlin notebook dependencies", ::updateClasspathWithExternalDependencies)
     )
+    private val cachePresentsChecker = PluginModeAwareScriptPresenceChecker.create(project)
 
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterKotlinPluginScriptClassGetter(ScriptTemplateWithDisplayHelpers::class) {
@@ -358,6 +357,13 @@ class JupyterCompilerPerFileService(
 
     private fun getLineFolderName(lineNumber: Int) = "line_$lineNumber"
 
+    private fun getLastCompiledScriptPath(): String {
+        return classesDir
+            .resolve(
+                getLineFolderName(directoryCounter.get())
+            ).toString()
+    }
+
     private fun addNewDependencies(
         sessionId: JupyterNotebookSessionId?,
         snippetMetadata: EvaluatedSnippetMetadata,
@@ -508,35 +514,12 @@ class JupyterCompilerPerFileService(
             }
         }
 
-        // todo: convert to function
-        private fun checkLastDependenciesPresentInCacheK2(): Boolean {
-            val cache = project.workSpaceSnapshot
-            val lastCompiledSnippetPath = classesDir
-                .resolve(
-                    getLineFolderName(directoryCounter.get())
-                ).toString()
-
-            return cache.entities<LibraryEntity>()
-                .filter {
-                    it.roots.any { root -> root.url.url.contains(lastCompiledSnippetPath) }
-                }.iterator().hasNext()
-        }
-
-        private fun checkLastDependenciesPresentInCache(): Boolean {
-            val cache = project.scriptConfigurationsClassCache
-
-            val lastCompiledSnippetPath = classesDir
-                .resolve(
-                    getLineFolderName(directoryCounter.get())
-                ).toString()
-            return cache.allDependenciesClassFiles.any { it.presentableUrl == lastCompiledSnippetPath }
-        }
-
         override fun afterUpdate() {
             coroutineScope.async {
                 if (previousSessionId == null) return@async
 
-                if (!checkLastDependenciesPresentInCacheK2()) {
+                val lastScriptPath = getLastCompiledScriptPath()
+                if (!cachePresentsChecker.checkPresentInCache(lastScriptPath)) {
                     return@async
                 }
 
