@@ -4,6 +4,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.typing
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.DAEMON_EVENT_TOPIC
 import com.intellij.codeInsight.daemon.impl.InlayHintsPassFactoryInternal
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.thisLogger
@@ -19,7 +20,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.daemon.NotebookHighlightingDaemonListener
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.state.NotebookCaretStateProcessor
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 
 interface NotebookCellHighlightingTrigger {
     fun performRangedUpdate(reducedIndexes: Collection<Int>, context: CoroutineScope? = null)
@@ -52,7 +52,7 @@ class NotebookCaretListener(
             .connect(this)
             .subscribe(DAEMON_EVENT_TOPIC,
                        NotebookHighlightingDaemonListener(caretStateProcessor)
-        )
+            )
     }
 
     override fun caretPositionChanged(event: CaretEvent) {

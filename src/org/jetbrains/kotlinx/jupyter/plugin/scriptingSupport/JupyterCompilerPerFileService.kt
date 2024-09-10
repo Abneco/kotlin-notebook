@@ -43,6 +43,7 @@ import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.notifications.notebookNotifications
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
@@ -488,18 +489,26 @@ class JupyterCompilerPerFileService(
     }
 
     private inner class ScriptingSupportUpdateEventProcessor : ScriptingSupportUpdateEventsListener {
+        // means external dependencies are present, time to restart
+        private fun ScriptCompilationConfiguration.restartHLIfNeeded() {
+            if (this != project.baseScriptingCompilationConfiguration) return
+
+            NotebookHighlightingService.getForFile(project, virtualFile).restartAnalysing()
+        }
         private fun updateLastKnownConfiguration() {
             while (true) {
                 val lastStableConf = lastStableConfiguration.get()
                 val updatedConfiguration = handleBeforeCompiling(project.baseScriptingCompilationConfiguration)
 
                 if (lastStableConfiguration.compareAndSet(lastStableConf, updatedConfiguration)) {
+                    lastStableConf.restartHLIfNeeded()
                     LOG.info("Cached configuration updated for ${virtualFile.file.name}!")
                     break
                 }
             }
         }
 
+        // todo: convert to function
         private fun checkLastDependenciesPresentInCacheK2(): Boolean {
             val cache = project.workSpaceSnapshot
             val lastCompiledSnippetPath = classesDir

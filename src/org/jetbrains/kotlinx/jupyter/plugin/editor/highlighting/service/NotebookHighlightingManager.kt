@@ -1,12 +1,10 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service
 
-import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.editor.getAllIntervalPointers
-import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.EDT
@@ -16,7 +14,6 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.ex.MarkupModelEx
-import com.intellij.openapi.editor.ex.RangeHighlighterEx
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.editor.impl.event.MarkupModelListener
 import com.intellij.openapi.editor.markup.HighlighterLayer
@@ -41,10 +38,14 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtPackageDirective
 import org.jetbrains.kotlin.utils.addIfNotNull
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.markup.MarkupModelListenerPluginAwareProvider
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
+import org.jetbrains.kotlinx.jupyter.plugin.ide.handlers.createPluginModeAwareInstance
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.k2.NotebookAfterScriptsUpdatePluginAwareHandler
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ImpatientNotebookChangeListener
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
@@ -138,9 +139,10 @@ class NotebookHighlightingManager(
         }
     }
 
-    private fun Disposable.addListener() {
+    private fun Disposable.addListeners() {
         val targetFile = virtualFile
-        project.messageBus.connect(this).subscribe(
+        val messageBus = project.messageBus
+        messageBus.connect(this).subscribe(
             NotebookSessionEventListener.TOPIC,
             object : NotebookSessionEventListener {
                 override fun sessionStarted(virtualFile: BackedNotebookVirtualFile, isAfterRestart: Boolean) {
@@ -154,26 +156,52 @@ class NotebookHighlightingManager(
                 }
             }
         )
+
+        messageBus.connect(this).subscribe(
+            NotebookCodeSnippetsChangeListener.TOPIC,
+            createPluginModeAwareInstance(
+                ::createK1Instance,
+                ::createK2Instance
+            )
+        )
     }
 
-    private fun addNewMarkupListener(editor: Editor) {
-        activeMarkupModelListener = object : MarkupModelListener {
-            override fun afterAdded(highlighter: RangeHighlighterEx) {
-                val info = HighlightInfo.fromRangeHighlighter(highlighter) ?: return
-                // ignore parsing errors for now, only from KT factories
-                if (info.severity == HighlightSeverity.ERROR && info.description.startsWith('[')) {
-                    targetErrorHighlighters.add(highlighter)
+    private fun createK1Instance() : NotebookAfterScriptsUpdatePluginAwareHandler {
+        return NotebookAfterScriptsUpdatePluginAwareHandler { file ->
+            if (file != virtualFile) return@NotebookAfterScriptsUpdatePluginAwareHandler
+        }
+    }
+
+    /**
+     * Since shadowing does not work, just perform complete restart after the main execution effect took place
+     */
+    private fun createK2Instance() : NotebookAfterScriptsUpdatePluginAwareHandler {
+        return NotebookAfterScriptsUpdatePluginAwareHandler { file ->
+            if (file != virtualFile) return@NotebookAfterScriptsUpdatePluginAwareHandler
+
+            coroutineScope.async {
+                readAction {
+                    restartAnalysing()
                 }
             }
         }
-        (editor as? EditorEx)
-            ?.filteredDocumentMarkupModel?.addMarkupModelListener((editor as? EditorImpl)?.disposable ?: this, activeMarkupModelListener)
+    }
+
+    private fun addNewMarkupListener(editor: Editor) {
+        activeMarkupModelListener = MarkupModelListenerPluginAwareProvider
+            .provideListener(targetErrorHighlighters)
+
+        val editorEx = editor as? EditorEx ?: return
+        val suitableParent = (editor as? EditorImpl)?.disposable ?: this
+        editorEx
+            .filteredDocumentMarkupModel
+            .addMarkupModelListener(suitableParent, activeMarkupModelListener)
     }
 
     init {
         Disposer.register(projectService, this)
         initializeData()
-        projectService.addListener()
+        projectService.addListeners()
     }
 
     private val fileToInjectionData = ConcurrentHashMap<KtFile, InjectedFileData>()

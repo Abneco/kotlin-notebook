@@ -5,10 +5,7 @@
         <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookValuesHintProvider" language="Jupyter"/>
         <codeInsight.inlayProvider implementationClass="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.NotebookChainCallHintProvider" language="Jupyter"/>
 
-        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.BeforeResolveHighlightingVisitorAdapter"/>
-        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.KotlinNotebookBeforeHighlightingVisitor"
-                          id="kotlinNotebookBeforeHighlightingVisitor"
-                          order="first"/>
+        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.visitors.BeforeResolveHighlightingVisitorAdapter"/>
         <daemon.highlightInfoFilter implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.KotlinNotebookHighlightingErrorFilter"/>
     </extensions>
 </idea-plugin>

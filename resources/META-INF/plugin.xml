@@ -219,6 +219,11 @@
                 language="kotlin"
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.codeInsight.KotlinNotebookFilePathReferenceProvider"/>
 
+        <!--common for both K1 and K2 -->
+        <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.KotlinNotebookBeforeHighlightingVisitor"
+                          id="kotlinNotebookBeforeHighlightingVisitor"
+                          order="first"/>
+
         <projectConfigurable groupId="tools"
                              bundle="messages.KotlinNotebookBundle"
                              key="kotlin.jupyter.settings.title"

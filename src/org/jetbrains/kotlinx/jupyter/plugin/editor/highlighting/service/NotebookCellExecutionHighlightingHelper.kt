@@ -1,6 +1,10 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.utils.ifEmpty
@@ -10,10 +14,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.events.NotebookE
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -125,9 +125,7 @@ class NotebookCellExecutionHighlightingHelper(
             !jupyterNotebookSession.isKernelBusy() && executionState.compareAndSet(ExecutionState.PENDING_REQUEST, ExecutionState.IDLE)
 
         val size = event.remainingExecutions.size
-        /*if (event.isAfterSeriesOfRuns || !event.isSingleErrorRun && size < cellToHighlightLimit) {
-            updateMetaStorageForHL(project, notebookFile, event.cellOrd)
-        } else*/
+
         if (size > 0 && (!event.isAfterSeriesOfRuns || size > cellToHighlightLimit)) {
             // LOG.warn("Unregister callback, but size is: $size")
             queueCurrentCell(project, notebookFile, event.cellOrd)
