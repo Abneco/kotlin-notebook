@@ -1,6 +1,10 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.settings
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterChangeListener
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
+import com.intellij.jupyter.core.jupyter.nbformat.NotebookChanged
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
@@ -34,12 +38,6 @@ import org.jetbrains.annotations.CalledInAny
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.util.JUPYTER_NOTEBOOK_EXTENSION
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.core.impl.file.notebook
-import com.intellij.jupyter.core.core.impl.file.originFile
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterChangeListener
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
-import com.intellij.jupyter.core.jupyter.nbformat.NotebookChanged
 import kotlin.reflect.KMutableProperty0
 
 @Service(Service.Level.PROJECT)

@@ -2,8 +2,8 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.export
 
 import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
-import com.intellij.jupyter.core.jupyter.context.jupyterNotebookFile
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
+import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
 import com.intellij.notebooks.visualization.context.NotebookDataContext.hoveredOrSelectedInterval
 import com.intellij.openapi.actionSystem.ActionUpdateThread

@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.test.notebook
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.openapi.application.runWriteActionAndWait
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.roots.OrderRootType
@@ -22,8 +23,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.test.createEmptyNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.test.delete
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.core.impl.file.notebook
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.pathString

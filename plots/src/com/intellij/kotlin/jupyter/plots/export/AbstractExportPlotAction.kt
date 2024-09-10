@@ -3,9 +3,9 @@ package com.intellij.kotlin.jupyter.plots.export
 
 import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.context.jupyterNotebookFile
 import com.intellij.jupyter.core.jupyter.editor.getJupyterVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
+import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
 import com.intellij.kotlin.jupyter.plots.LetsPlotComponent
 import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey

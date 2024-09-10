@@ -3,6 +3,7 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring
 
 import com.intellij.injected.editor.DocumentWindow
 import com.intellij.injected.editor.EditorWindow
+import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.visualization.getCell
 import com.intellij.openapi.application.runReadAction
@@ -39,11 +40,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.find.KotlinNotebookElementFin
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.NotebookReferenceFinder
 import org.jetbrains.kotlinx.jupyter.plugin.editor.find.isIdentifier
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
-import org.jetbrains.kotlinx.jupyter.plugin.notifications.notebookNotifications
 import org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
+import org.jetbrains.kotlinx.jupyter.plugin.notifications.notebookNotifications
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
-import com.intellij.jupyter.core.core.impl.file.notebookOrNull
 
 
 class NotebookMemberInplaceRenamer(
@@ -93,7 +93,7 @@ class NotebookMemberInplaceRenamer(
                 is EditorWindow -> (myEditor as EditorWindow).delegate
                 else -> myEditor
             }
-            private val notebookHighlightingService = topLevelEditor.notebookOrNull?.let {
+            private val notebookHighlightingService = topLevelEditor.notebookFileOrNull?.let {
                 NotebookHighlightingService.getForFile(element.project, it)
             }
 

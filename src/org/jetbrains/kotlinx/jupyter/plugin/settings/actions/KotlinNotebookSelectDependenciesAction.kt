@@ -1,6 +1,8 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.settings.actions
 
+import com.intellij.jupyter.core.jupyter.editor.getJupyterVirtualFile
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -23,9 +25,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.getSuitableLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
-import com.intellij.jupyter.core.core.impl.file.notebook
-import com.intellij.jupyter.core.jupyter.editor.getJupyterVirtualFile
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import java.awt.event.ActionEvent
 import java.util.*
 import javax.swing.AbstractAction

@@ -2,11 +2,11 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.error
 
 import com.intellij.execution.filters.Filter
+import com.intellij.jupyter.core.jupyter.helper.notebookFile
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebookBase
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.DumbAware
-import com.intellij.jupyter.core.core.impl.file.notebook
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebookBase
 
 /**
  * Class responsible for adding a link from a kernel stack trace to the relevant line in the
@@ -16,14 +16,14 @@ import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebookBase
  * to the offending code inside the Notebook.
  */
 internal class KotlinNotebookLineLinkFilter(val editor: EditorImpl) : Filter, DumbAware, Disposable {
-  private val backedNotebookVirtualFile = editor.notebook
-  val notebook = backedNotebookVirtualFile.notebook as JupyterNotebookBase
+    private val backedNotebookVirtualFile = editor.notebookFile
+    val notebook = backedNotebookVirtualFile.notebook as JupyterNotebookBase
 
-  override fun dispose() {}
+    override fun dispose() {}
 
-  override fun applyFilter(line: String, entireLength: Int): Filter.Result? {
-    val stackLineInfo = linkifyStackLine(line, entireLength) ?: return null
-    val hyperlinkInfo = KotlinCellHyperlinkInfo(stackLineInfo.executionCount, stackLineInfo.cellLine, this)
-    return Filter.Result(stackLineInfo.highlightRange.first, stackLineInfo.highlightRange.last, hyperlinkInfo)
-  }
+    override fun applyFilter(line: String, entireLength: Int): Filter.Result? {
+        val stackLineInfo = linkifyStackLine(line, entireLength) ?: return null
+        val hyperlinkInfo = KotlinCellHyperlinkInfo(stackLineInfo.executionCount, stackLineInfo.cellLine, this)
+        return Filter.Result(stackLineInfo.highlightRange.first, stackLineInfo.highlightRange.last, hyperlinkInfo)
+    }
 }

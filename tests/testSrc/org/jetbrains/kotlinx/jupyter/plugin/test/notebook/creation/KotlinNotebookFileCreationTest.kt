@@ -4,6 +4,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.creation
 import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.ide.scratch.ScratchFileActions
 import com.intellij.ide.scratch.ScratchFileCreationHelper
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.helper.notebookLanguage
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.psi.PsiFile
@@ -13,8 +15,6 @@ import io.kotest.matchers.types.shouldBeTypeOf
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.language.JupyterKotlinFileType
 import org.jetbrains.kotlinx.jupyter.plugin.test.KotlinNotebookBaseTestCase
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.core.impl.file.notebookLanguage
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.tests.SingleFileImplRule
 import org.junit.ClassRule

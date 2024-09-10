@@ -3,6 +3,11 @@ package org.jetbrains.kotlinx.jupyter.plugin.util
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.injected.editor.VirtualFileWindow
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.find
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+import com.intellij.jupyter.core.jupyter.helper.notebookLanguage
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.readAction
@@ -27,11 +32,6 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlin.psi.psiUtil.getChildOfType
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.find
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
-import com.intellij.jupyter.core.core.impl.file.notebookLanguage
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 

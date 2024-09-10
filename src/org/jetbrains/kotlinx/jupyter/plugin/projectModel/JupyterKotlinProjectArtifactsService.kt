@@ -5,6 +5,11 @@ import com.intellij.build.BuildProgressListener
 import com.intellij.build.BuildViewManager
 import com.intellij.java.workspace.entities.JavaModuleSettingsEntity
 import com.intellij.java.workspace.entities.JavaSourceRootPropertiesEntity
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.jupyter.helper.getOriginalVirtualFile
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
@@ -52,11 +57,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.isEmpty
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
 import org.jetbrains.kotlinx.jupyter.plugin.util.parentsWithSelf
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.core.impl.file.getOriginalVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 

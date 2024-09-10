@@ -1,6 +1,11 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionTask
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
+import com.intellij.jupyter.core.jupyter.helper.JupyterHelper
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
@@ -10,12 +15,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.events.NotebookSessionEventListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionTask
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
-import com.intellij.jupyter.core.jupyter.editor.getCells
-import java.util.PriorityQueue
+import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.write
 
@@ -80,8 +80,8 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
         if (!file.file.isKotlinNotebook) return null
 
         val jupyterPsiCellData = runReadAction {
-            val cellIndex = task.options.cellPointer?.get()?.ordinal ?: return@runReadAction null
-            getCells(cellProject, task.notebookVirtualFile)?.getOrNull(cellIndex) to cellIndex
+          val cellIndex = task.options.cellPointer?.get()?.ordinal ?: return@runReadAction null
+          JupyterHelper.getPsiCells(cellProject, task.notebookVirtualFile)?.getOrNull(cellIndex) to cellIndex
         }
         val cell = jupyterPsiCellData?.first ?: return null
 

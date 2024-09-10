@@ -9,9 +9,10 @@ import com.intellij.codeInsight.hints.InlayHintsSink
 import com.intellij.codeInsight.hints.presentation.InlayPresentation
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.codeInsight.hints.presentation.RecursivelyUpdatingRootPresentation
-import com.intellij.notebooks.jupyter.core.jupyter.JupyterLanguage
+import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.notebooks.jupyter.core.jupyter.JupyterLanguage
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -34,7 +35,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.isEither
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.util.getKtFileStartOffset
-import com.intellij.jupyter.core.core.impl.file.notebookOrNull
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterPsiCellImpl
 
 
@@ -53,7 +53,7 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
                 if (DumbService.isDumb(project) || element !is JupyterPsiCellImpl || !element.isValid) return true
 
-                val highlightingManager = editor.notebookOrNull?.let {
+                val highlightingManager = editor.notebookFileOrNull?.let {
                     NotebookHighlightingService.getForFile(project, it)
                 }
                 val modificationArea = highlightingManager?.dataController?.completeHighlightingRange

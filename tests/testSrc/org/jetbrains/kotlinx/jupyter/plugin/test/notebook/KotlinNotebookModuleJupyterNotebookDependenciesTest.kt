@@ -26,7 +26,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.test.createEmptyNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.test.delete
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.core.impl.file.notebook
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.pathString
