@@ -17,5 +17,5 @@ val Project.isKernelVersionEnoughForInstrumentation: Boolean
     get() = (selectedKernelVersion?.isKernelVersionEnoughForInstrumentation ?: false)
             && debugFeaturesEnabled
 
-val MavenVersionComboBox.toKotlinKernelVersion: KotlinKernelVersion?
+val MavenVersionComboBox.selectedKernelVersion: KotlinKernelVersion?
     get() = KotlinKernelVersion.fromMavenVersion(version)

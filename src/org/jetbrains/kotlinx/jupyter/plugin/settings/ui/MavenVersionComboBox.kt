@@ -10,8 +10,11 @@ import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.Row
 import org.jetbrains.kotlinx.jupyter.plugin.resources.ArtifactDescription
+import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.resources.toIntellijModelDescription
 import javax.swing.ComboBoxModel
+import javax.swing.JLabel
+import javax.swing.ListCellRenderer
 import kotlin.reflect.KMutableProperty0
 
 private fun interface MavenVersionModelProvider {
@@ -26,8 +29,9 @@ abstract class MavenVersionComboBox : ComboBox<String>() {
 private class MavenVersionComboBoxImpl(
     private val project: Project,
     private val artifactDescription: ArtifactDescription,
+    private val remoteRepositories: List<RemoteRepositoryDescription>,
     private val modelProvider: MavenVersionModelProvider,
-    private val remoteRepositories: List<RemoteRepositoryDescription>
+    private val listCellRendererProvider: (defaultRenderer: ListCellRenderer<in String>) -> ListCellRenderer<in String> = { it },
 ) : MavenVersionComboBox() {
     private var state = State.NOT_LOADED
 
@@ -61,6 +65,7 @@ private class MavenVersionComboBoxImpl(
 
     private fun initializeComboBox(versions: Collection<String>) {
         setModel(modelProvider.provideModel(versions))
+        setRenderer(listCellRendererProvider(renderer))
         state = State.LOADED
         selectedItemChanged()
     }
@@ -90,6 +95,7 @@ private class MavenVersionModelProviderImpl(
 fun Row.mavenVersionComboBox(
     project: Project,
     artifactDescription: ArtifactDescription,
+    defaultVersion: String?,
     versionProperty: KMutableProperty0<String>,
     versionComparator: Comparator<String> = Comparator.naturalOrder(),
     remoteArtifactsRepositories: List<RemoteRepositoryDescription> = listOf(),
@@ -97,9 +103,25 @@ fun Row.mavenVersionComboBox(
     val initialVersion = versionProperty.get()
 
     val comboBox = MavenVersionComboBoxImpl(
-        project, artifactDescription,
+        project,
+        artifactDescription,
+        remoteArtifactsRepositories,
         MavenVersionModelProviderImpl(initialVersion, versionComparator),
-        remoteArtifactsRepositories
+        listCellRendererProvider = { defaultRenderer ->
+            ListCellRenderer<String> { list, value, index, isSelected, cellHasFocus ->
+
+                @Suppress("HardCodedStringLiteral")
+                defaultRenderer
+                    .getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
+                    .also { itemComponent ->
+                        if (value == defaultVersion) {
+                            if (itemComponent is JLabel) {
+                                itemComponent.text = KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.version.default", value)
+                            }
+                        }
+                    }
+            }
+        }
     )
     return cell(comboBox)
         .onReset {

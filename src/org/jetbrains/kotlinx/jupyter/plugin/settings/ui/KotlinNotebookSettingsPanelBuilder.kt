@@ -3,23 +3,26 @@ package org.jetbrains.kotlinx.jupyter.plugin.settings.ui
 
 import com.intellij.execution.ExecutionBundle
 import com.intellij.execution.configuration.EnvironmentVariablesTextFieldWithBrowseButton
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.observable.properties.AtomicProperty
 import com.intellij.openapi.observable.properties.ObservableMutableProperty
 import com.intellij.openapi.observable.util.transform
+import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ui.configuration.SdkComboBox
 import com.intellij.openapi.roots.ui.configuration.SdkComboBoxModel
 import com.intellij.openapi.roots.ui.configuration.SdkListItem
 import com.intellij.openapi.ui.DialogPanel
+import com.intellij.openapi.util.CheckedDisposable
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsContexts
-import com.intellij.openapi.util.Ref
 import com.intellij.ui.dsl.builder.ButtonsGroup
-import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.Row
+import com.intellij.ui.dsl.builder.actionButton
 import com.intellij.ui.dsl.builder.bind
 import com.intellij.ui.dsl.builder.bindIntValue
 import com.intellij.ui.dsl.builder.bindSelected
@@ -27,9 +30,14 @@ import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
-import com.intellij.ui.layout.ComponentPredicate
 import com.intellij.util.execution.ParametersListUtil
+import com.intellij.util.messages.ListenerDescriptor
+import com.intellij.util.messages.MessageBus
+import com.intellij.util.messages.MessageBusFactory
+import com.intellij.util.messages.MessageBusOwner
+import com.intellij.util.messages.Topic
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
+import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.defaultRemoteArtifactsRepositories
@@ -43,43 +51,41 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelProcessEmbeddingEna
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelVersionEnoughForInstrumentation
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isSuitableForStartingKernel
 import org.jetbrains.kotlinx.jupyter.plugin.settings.minJdkVersion
-import org.jetbrains.kotlinx.jupyter.plugin.settings.toKotlinKernelVersion
+import org.jetbrains.kotlinx.jupyter.plugin.settings.selectedKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.util.revealKotlinNotebookLocalKernelsFolder
 import kotlin.reflect.KMutableProperty0
 
-object KotlinNotebookSettingsPanel {
-    fun createPanel(
-        project: Project,
-        parentDisposable: Disposable,
-    ): DialogPanel {
-        val applicationOptions = KotlinNotebookApplicationOptions.get()
-        val sessionOptions = service<SessionOptionsProvider>()
-        val projectOptions = KotlinNotebookProjectOptionsProvider.getInstance(project)
-        val mavenSelectorCellRef: Ref<Cell<MavenVersionComboBox>> = Ref.create(null)
+class KotlinNotebookSettingsPanelBuilder(
+    private val project: Project,
+    disposable: Disposable,
+) {
+    private val parentDisposable = Disposer.newCheckedDisposable(disposable)
+    private val applicationOptions = KotlinNotebookApplicationOptions.get()
+    private val sessionOptions = service<SessionOptionsProvider>()
+    private val projectOptions = KotlinNotebookProjectOptionsProvider.getInstance(project)
+    private val messageBus = createMessageBus(parentDisposable)
+    private val kernelModeObservable = getKernelRunModeObservable(projectOptions)
 
+    fun createPanel(): DialogPanel {
         return panel {
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.build")) {
-                createKernelVersionSelector(project, projectOptions, mavenSelectorCellRef)
-
-                val kernelModeObservable = getKernelRunModeObservable(projectOptions)
-
+                createKernelVersionSelector()
                 if (isKernelProcessEmbeddingEnabled) {
-                    createKernelModeSelector(projectOptions, kernelModeObservable)
+                    createKernelModeSelector()
                 }
 
                 val showSeparateProcessSettings = kernelModeObservable.transform { it == KotlinNotebookSessionRunMode.SEPARATE_PROCESS }
                 fun Row.showForSeparateProcess(): Row = visibleIf(showSeparateProcessSettings)
 
-                createJdkComboBox(project, projectOptions, parentDisposable).showForSeparateProcess()
-                createJvmTargetForSnippetsComboBox(projectOptions)
-                createMaxHeapSizeSpinner(projectOptions).showForSeparateProcess()
-                createExtraJvmArgumentsField(projectOptions).showForSeparateProcess()
-                createEnvironmentVariablesField(projectOptions).showForSeparateProcess()
+                createJdkComboBox().showForSeparateProcess()
+                createJvmTargetForSnippetsComboBox()
+                createMaxHeapSizeSpinner().showForSeparateProcess()
+                createExtraJvmArgumentsField().showForSeparateProcess()
+                createEnvironmentVariablesField().showForSeparateProcess()
             }
             if (debugFeaturesEnabled) {
                 group(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug")) {
-                    createDebugOptions(projectOptions, mavenSelectorCellRef.get())
-                    mavenSelectorCellRef.set(null)
+                    createDebugOptions()
                 }
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session")) {
@@ -127,31 +133,53 @@ object KotlinNotebookSettingsPanel {
         return AtomicProperty(modeProperty.invoke())
     }
 
-    private fun Panel.createKernelVersionSelector(
-        project: Project,
-        optionsProvider: KotlinNotebookProjectOptionsProvider,
-        cellReference: Ref<Cell<MavenVersionComboBox>>
-    ): Row {
+    private fun Panel.createKernelVersionSelector(): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.version")) {
-            mavenVersionComboBox(
+            val defaultVersion = currentKernelVersion.toMavenVersion()
+
+            val comboBoxCell = mavenVersionComboBox(
                 project,
                 KotlinNotebookMavenArtifacts.KERNEL_SHADOWED,
-                optionsProvider::kernelVersion,
+                defaultVersion,
+                projectOptions::kernelVersion,
                 KotlinKernelVersion.STRING_VERSION_COMPARATOR.reversed(),
                 defaultRemoteArtifactsRepositories
-            ).apply {
-                cellReference.set(this)
+            ).onChanged { comboBox ->
+                messageBus
+                    .syncPublisher(KernelVersionSelectionChangedListener.TOPIC)
+                    .onKernelVersionSelectionChanged(comboBox.selectedKernelVersion)
+            }.comment(
+                KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.version.description")
+            )
+
+            actionButton(
+                DumbAwareAction.create(
+                    KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.restore.default.version"),
+                    AllIcons.General.Reset
+                ) {
+                    comboBoxCell.component.version = defaultVersion
+                }
+            ).applyToComponent {
+                val button = this
+                subscribeOnKernelVersionSelectionChange { newVersion ->
+                    button.isEnabled = newVersion?.toMavenVersion() != defaultVersion
+                }
             }
-            button(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.explore.button.name")) {
-                project.revealKotlinNotebookLocalKernelsFolder()
-            }.visibleIf(ComponentPredicate.fromValue(ApplicationManager.getApplication().isInternal))
+
+            if (ApplicationManager.getApplication().isInternal) {
+                actionButton(
+                    DumbAwareAction.create(
+                        KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.explore.button.name"),
+                        AllIcons.General.OpenDisk
+                    ) {
+                        project.revealKotlinNotebookLocalKernelsFolder()
+                    }
+                )
+            }
         }
     }
 
-    private fun Panel.createKernelModeSelector(
-        optionsProvider: KotlinNotebookProjectOptionsProvider,
-        kernelModeObservable: ObservableMutableProperty<KotlinNotebookSessionRunMode>
-    ): ButtonsGroup {
+    private fun Panel.createKernelModeSelector(): ButtonsGroup {
         return buttonsGroup(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.mode")) {
             for (value in KotlinNotebookSessionRunMode.entries) {
                 row {
@@ -162,13 +190,13 @@ object KotlinNotebookSettingsPanel {
                     }
                 }
             }
-        }.bind(optionsProvider::kernelRunMode)
+        }.bind(projectOptions::kernelRunMode)
     }
 
-    private fun Panel.createMaxHeapSizeSpinner(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
+    private fun Panel.createMaxHeapSizeSpinner(): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.max.heap")) {
             spinner(0..99999, 100)
-                .bindIntValue(optionsProvider::heapMaxLimitInMib)
+                .bindIntValue(projectOptions::heapMaxLimitInMib)
                 .also {
                     it.validationRequestor { callback -> it.onChanged { callback() } }
                 }
@@ -176,7 +204,7 @@ object KotlinNotebookSettingsPanel {
         }
     }
 
-    private fun Panel.createExtraJvmArgumentsField(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
+    private fun Panel.createExtraJvmArgumentsField(): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.extra.args")) {
             expandableTextField()
                 .columns(DEFAULT_COLUMNS_COUNT)
@@ -185,13 +213,13 @@ object KotlinNotebookSettingsPanel {
                     setMonospaced(true)
                 }
                 .bindText(
-                    { ParametersListUtil.DEFAULT_LINE_JOINER.`fun`(optionsProvider.extraJvmArguments) },
-                    { text -> optionsProvider.extraJvmArguments = ParametersListUtil.parse(text) }
+                    { ParametersListUtil.DEFAULT_LINE_JOINER.`fun`(projectOptions.extraJvmArguments) },
+                    { text -> projectOptions.extraJvmArguments = ParametersListUtil.parse(text) }
                 )
         }
     }
 
-    private fun Panel.createEnvironmentVariablesField(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
+    private fun Panel.createEnvironmentVariablesField(): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.environment.variables")) {
             cell(EnvironmentVariablesTextFieldWithBrowseButton())
                 .widthGroup(BUILD_WIDTH_GROUP)
@@ -199,16 +227,16 @@ object KotlinNotebookSettingsPanel {
                 .bind(
                     { component -> component.envs },
                     { component, value -> component.envs = value },
-                    optionsProvider::extraEnvironmentVariables.toMutableProperty()
+                    projectOptions::extraEnvironmentVariables.toMutableProperty()
                 )
         }
     }
 
-    private fun Panel.createJdkComboBox(project: Project, optionsProvider: KotlinNotebookProjectOptionsProvider, disposable: Disposable): Row {
+    private fun Panel.createJdkComboBox(): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.JDK.path")) {
             val sdkComboBox = SdkComboBox(
                 SdkComboBoxModel.createProjectJdkComboBoxModel(
-                    project, disposable,
+                    project, parentDisposable,
                     sdkFilter = ::isSuitableForStartingKernel
                 )
             )
@@ -222,7 +250,7 @@ object KotlinNotebookSettingsPanel {
                     )
                 )
                 .onReset {
-                    val jdkName = optionsProvider.jdkName
+                    val jdkName = projectOptions.jdkName
                     if (jdkName != null) {
                         sdkComboBox.setSelectedSdk(jdkName)
                     } else {
@@ -230,35 +258,34 @@ object KotlinNotebookSettingsPanel {
                     }
                 }
                 .onIsModified {
-                    sdkModel.isModified || optionsProvider.jdkName != sdkComboBox.selectedSdkName
+                    sdkModel.isModified || projectOptions.jdkName != sdkComboBox.selectedSdkName
                 }
                 .onApply {
                     if (sdkModel.isModified) {
                         sdkModel.apply()
                     }
-                    optionsProvider.jdkName = sdkComboBox.selectedSdkName
+                    projectOptions.jdkName = sdkComboBox.selectedSdkName
                 }
         }
     }
 
-    private fun Panel.createJvmTargetForSnippetsComboBox(optionsProvider: KotlinNotebookProjectOptionsProvider): Row {
+    private fun Panel.createJvmTargetForSnippetsComboBox(): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.target.for.snippets")) {
-            snippetsLanguageLevelComboBox(optionsProvider::jvmTargetForSnippets)
+            snippetsLanguageLevelComboBox(projectOptions::jvmTargetForSnippets)
                 .widthGroup(BUILD_WIDTH_GROUP)
         }
     }
 
-    private fun Panel.createDebugOptions(optionsProvider: KotlinNotebookProjectOptionsProvider, selectorRef: Cell<MavenVersionComboBox>?) {
+    private fun Panel.createDebugOptions() {
         row {
             checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables"))
                 .accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.description"))
                 .comment(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.comment", DEBUG_SUPPORTED.toMavenVersion()))
-                .bindSelected(optionsProvider::shouldShowNotebookVariables)
+                .bindSelected(projectOptions::shouldShowNotebookVariables)
                 .applyToComponent {
                     toolTipText = KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.comment")
-
-                    selectorRef?.onChanged {
-                        isEnabled = it.toKotlinKernelVersion?.isKernelVersionEnoughForInstrumentation ?: false
+                    subscribeOnKernelVersionSelectionChange { newVersion ->
+                        isEnabled = newVersion?.isKernelVersionEnoughForInstrumentation ?: false
                     }
                 }
         }
@@ -289,6 +316,31 @@ object KotlinNotebookSettingsPanel {
             return getSelectedSdk()?.name
         }
 
-    private const val DEFAULT_COLUMNS_COUNT = 48
-    private const val BUILD_WIDTH_GROUP = "kotlin.notebook.build"
+    private fun createMessageBus(parentDisposable: CheckedDisposable): MessageBus {
+        return MessageBusFactory.newMessageBus(object : MessageBusOwner {
+            override fun createListener(descriptor: ListenerDescriptor): Any {
+                throw UnsupportedOperationException()
+            }
+
+            override fun isDisposed() = parentDisposable.isDisposed
+        })
+    }
+
+    private fun subscribeOnKernelVersionSelectionChange(listener: KernelVersionSelectionChangedListener) {
+        messageBus.connect(parentDisposable).subscribe(KernelVersionSelectionChangedListener.TOPIC, listener)
+    }
+
+    private fun interface KernelVersionSelectionChangedListener {
+        fun onKernelVersionSelectionChanged(newVersion: KotlinKernelVersion?)
+
+        companion object {
+            @Topic.ProjectLevel
+            val TOPIC = Topic(KernelVersionSelectionChangedListener::class.java, Topic.BroadcastDirection.NONE)
+        }
+    }
+
+    companion object {
+        private const val DEFAULT_COLUMNS_COUNT = 48
+        private const val BUILD_WIDTH_GROUP = "kotlin.notebook.build"
+    }
 }

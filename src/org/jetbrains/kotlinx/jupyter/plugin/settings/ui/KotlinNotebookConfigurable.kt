@@ -13,7 +13,8 @@ internal class KotlinNotebookConfigurable(private val project: Project) :
     override fun getId(): String = ID
 
     override fun createPanel(): DialogPanel {
-        return KotlinNotebookSettingsPanel.createPanel(project, disposable!!)
+        val parentDisposable = disposable ?: error("Panel disposable must not be null in createPanel()")
+        return KotlinNotebookSettingsPanelBuilder(project, parentDisposable).createPanel()
     }
 
     companion object {
