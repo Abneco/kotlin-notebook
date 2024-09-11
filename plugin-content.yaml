@@ -23,8 +23,6 @@
   - name: intellij.kotlin.jupyter.plots
     libraries:
       jetbrains.lets.plot.export.shadowed:
-      - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.3.3-16/lets-plot-export-shadowed-4.3.3-16.jar
-        size: 583131
+      - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4/lets-plot-export-shadowed-4.jar
       ggdsl-util:
-      - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10.jar
-        size: 5242
+      - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0/ggdsl-util-0.jar
