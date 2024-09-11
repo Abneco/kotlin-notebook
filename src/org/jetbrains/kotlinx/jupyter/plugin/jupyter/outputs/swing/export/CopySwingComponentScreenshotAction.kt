@@ -5,7 +5,7 @@ import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
-import com.intellij.notebooks.visualization.context.NotebookDataContext.hoveredOrSelectedInterval
+import com.intellij.notebooks.visualization.context.NotebookDataContext.selectedCellInterval
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
@@ -83,7 +83,7 @@ class CopySwingComponentScreenshotAction : NotebookEditorActionBase() {
 
         val project = event.project
         val notebookVirtualFile = event.dataContext.jupyterNotebookFile ?: return emptyList()
-        val hoveredInterval = event.dataContext.hoveredOrSelectedInterval ?: return emptyList()
+        val hoveredInterval = event.dataContext.selectedCellInterval ?: return emptyList()
         val cellIndex = hoveredInterval.ordinal
         val notebook = notebookVirtualFile.notebook
         val jupyterCell = notebook.computeCells()[cellIndex]
