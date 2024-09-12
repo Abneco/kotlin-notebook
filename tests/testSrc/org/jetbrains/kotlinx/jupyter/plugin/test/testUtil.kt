@@ -186,10 +186,18 @@ fun cartesianProduct(vararg lists: List<Any>): List<Array<Any>> {
     }
 }
 
-fun CodeInsightTestFixture.configureBySimpleNotebook(notebookName: String) =
-    configureByJupyterFile("$notebookName.ipynb", "$baseTestDataPath/notebooks/simple")
+fun CodeInsightTestFixture.configureBySimpleNotebook(
+    notebookName: String,
+    copyToProject: Boolean = false
+) = configureByJupyterFile("$notebookName.ipynb", "$baseTestDataPath/notebooks/simple", isCopyToProject = copyToProject)
 
-fun CodeInsightTestFixture.configureBySingleEmptyCellNotebook() = configureBySimpleNotebook("singleEmptyCell")
+fun CodeInsightTestFixture.configureBySingleEmptyCellNotebook(
+    copyToProject: Boolean = false
+) = configureBySimpleNotebook("singleEmptyCell", copyToProject = copyToProject)
+
+fun CodeInsightTestFixture.configureBySingleEmptyCellNoCaretNotebook(
+    copyToProject: Boolean = false
+) = configureBySimpleNotebook("singleEmptyCellNoCaret", copyToProject = copyToProject)
 
 fun setUpScriptingDependencies(fixture: CodeInsightTestFixture) {
     val ktFiles = when(val psiFile = fixture.file) {

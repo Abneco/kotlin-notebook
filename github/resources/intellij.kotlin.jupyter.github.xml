@@ -2,7 +2,16 @@
     <dependencies>
         <plugin id="org.jetbrains.plugins.kotlin.jupyter"/>
         <plugin id="org.jetbrains.plugins.github"/>
+        <module name="intellij.jupyter.core"/>
+        <module name="intellij.notebooks.jupyter.core"/>
     </dependencies>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <vcs.github.gistContentsCollector
+                implementation="com.intellij.kotlin.jupyter.github.actions.KotlinNotebookGithubGistContentsCollector"
+                order="before default"/>
+    </extensions>
+
     <actions resource-bundle="messages.KotlinNotebookBundle">
         <action id="KotlinNotebookGithubCreateGistAction"
                 class="com.intellij.kotlin.jupyter.github.actions.KotlinNotebookGithubCreateGistAction"
