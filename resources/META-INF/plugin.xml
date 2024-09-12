@@ -126,7 +126,6 @@
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <renameHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.KotlinNotebookPropertiesRenameHandler"/>
         <scriptDefinitionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.definitions.JupyterScriptDefinitionProvider"/>
-        <scriptDefinitionsSource implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.k2.KotlinNotebookScriptDefinitionsSource"/>
         <scriptDependenciesSource implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.k2.NotebookScriptDependenciesSource"/>
         <idea.caches.resolve.resolveOptimizingOptionsProvider
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.resolve.KotlinNotebookOptimizingOptionsProvider"/>
@@ -401,4 +400,5 @@
     </extensions>
 
     <xi:include href="plugin.k1.xml" includeUnless="idea.kotlin.plugin.use.k2"/>
+    <xi:include href="plugin.k2.xml" includeIf="idea.kotlin.plugin.use.k2"/>
 </idea-plugin>

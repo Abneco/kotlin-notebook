@@ -1,0 +1,5 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <scriptDefinitionsSource implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.k2.KotlinNotebookScriptDefinitionsSource"/>
+    </extensions>
+</idea-plugin>

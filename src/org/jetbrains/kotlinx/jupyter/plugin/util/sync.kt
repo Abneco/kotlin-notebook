@@ -3,7 +3,9 @@ package org.jetbrains.kotlinx.jupyter.plugin.util
 
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReadWriteLock
-import kotlin.concurrent.withLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -33,17 +35,17 @@ inline fun <T : Any> Lock.tryWithLock(action: () -> T): T? {
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun <T> ReadWriteLock.withReadLock(action: () -> T): T {
+inline fun <T> ReentrantReadWriteLock.withReadLock(action: () -> T): T {
     contract { callsInPlace(action, InvocationKind.EXACTLY_ONCE) }
-    return readLock().withLock {
+    return read {
         action()
     }
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun <T> ReadWriteLock.withWriteLock(action: () -> T): T {
+inline fun <T> ReentrantReadWriteLock.withWriteLock(action: () -> T): T {
     contract { callsInPlace(action, InvocationKind.EXACTLY_ONCE) }
-    return writeLock().withLock {
+    return write {
         action()
     }
 }

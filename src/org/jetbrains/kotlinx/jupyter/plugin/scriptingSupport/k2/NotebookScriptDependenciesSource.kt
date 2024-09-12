@@ -15,12 +15,12 @@ import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
 import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.idea.core.script.SCRIPT_DEPENDENCIES_SOURCES
-import org.jetbrains.kotlin.idea.core.script.createLibraryDependency
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptDependenciesData
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptDependenciesSource
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
+import org.jetbrains.kotlinx.jupyter.plugin.projectModel.createOrUpdateLibraryDependency
 import java.nio.file.Path
 import kotlin.script.experimental.api.asSuccess
 import kotlin.script.experimental.api.valueOrNull
@@ -90,7 +90,7 @@ class NotebookScriptDependenciesSource(override val project: Project) : ScriptDe
             sourcesToUpdate += source
 
             val dependencies = listOfNotNull(
-                mutableEntityStorage.createLibraryDependency(moduleName, project, source, configuration),
+                mutableEntityStorage.createOrUpdateLibraryDependency(moduleName, project, source, configuration),
                 sdkDependency
             )
 

@@ -124,7 +124,7 @@ class K2ScriptingSupportUpdater(private val project: Project) : ScriptingSupport
             scripts.addAll(perFileScripts)
             // rethrow if present
             if (exception != null) {
-                throw exception!!
+                throw exception
             }
         }
 
