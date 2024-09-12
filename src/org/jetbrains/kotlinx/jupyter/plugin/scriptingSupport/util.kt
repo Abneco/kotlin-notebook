@@ -8,7 +8,7 @@ import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfig
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 
 val Project.baseScriptingCompilationConfiguration: ScriptCompilationConfiguration
-    get() = JupyterCompilerService.getInstance(this).scriptDefinition.compilationConfiguration
+    get() = JupyterCompilerService.getInstance(this).scriptDefinitionsWrapper.scriptDefinitionData.compilationConfiguration
 
 val Project.scriptConfigurationsClassCache
     get() = (ScriptConfigurationManager.getInstance(this) as CompositeScriptConfigurationManager)

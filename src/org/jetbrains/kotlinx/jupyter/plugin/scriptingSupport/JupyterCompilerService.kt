@@ -21,6 +21,7 @@ import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.ide.handlers.ScriptingSupportUpdater
 import org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.serialization.serializationPluginEnabled
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.definitions.createNotebookScriptDefinitionsWrapper
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookProjectLevelService
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import java.io.File
@@ -33,7 +34,6 @@ import kotlin.script.experimental.api.ide
 import kotlin.script.experimental.api.refineConfiguration
 import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.jvm.baseClassLoader
-import kotlin.script.experimental.jvm.defaultJvmScriptingHostConfiguration
 import kotlin.script.experimental.jvm.jvm
 
 /**
@@ -56,6 +56,15 @@ class JupyterCompilerService(
 
     private val initialClasspath: List<File> by lazy {
        emptyList()
+    }
+
+    internal val scriptDefinitionsWrapper by lazy {
+        createNotebookScriptDefinitionsWrapper(
+            ScriptDefinition(
+                initialCompileConfiguration,
+                evaluationConfiguration
+            )
+        )
     }
 
     private val initialCompileConfiguration by lazy {
@@ -84,21 +93,6 @@ class JupyterCompilerService(
                 baseClassLoader(this@JupyterCompilerService::class.java.classLoader)
             }
         }
-    }
-
-    val scriptDefinition by lazy {
-        ScriptDefinition(
-            initialCompileConfiguration,
-            evaluationConfiguration
-        )
-    }
-
-    val scriptDefinitionNew by lazy {
-        org.jetbrains.kotlin.scripting.definitions.ScriptDefinition.FromConfigurations(
-            defaultJvmScriptingHostConfiguration,
-            initialCompileConfiguration,
-            evaluationConfiguration
-        )
     }
 
     val fileExtension: String by lazy {

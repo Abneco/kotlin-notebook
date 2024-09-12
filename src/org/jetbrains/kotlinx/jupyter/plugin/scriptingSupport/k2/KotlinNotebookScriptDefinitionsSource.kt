@@ -8,5 +8,9 @@ import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerServ
 
 class KotlinNotebookScriptDefinitionsSource(val project: Project) : ScriptDefinitionsSource {
     override val definitions: Sequence<ScriptDefinition>
-        get() = sequenceOf(JupyterCompilerService.getInstance(project).scriptDefinitionNew)
+        get() = sequenceOf(
+            JupyterCompilerService.getInstance(project)
+                .scriptDefinitionsWrapper
+                .compilationScriptDefinition
+        )
 }

@@ -1,9 +1,10 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.definitions
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import java.io.File
 import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.host.ScriptingHostConfiguration
@@ -31,10 +32,10 @@ class JupyterScriptDefinitionProvider(project: Project) : ScriptDefinitionsProvi
         baseHostConfiguration: ScriptingHostConfiguration,
         loadedScriptDefinitions: List<ScriptDefinition>
     ): Iterable<ScriptDefinition> {
-        return loadedScriptDefinitions + projectCompilerService.scriptDefinition
+        return loadedScriptDefinitions + projectCompilerService.scriptDefinitionsWrapper.scriptDefinitionData
     }
 
     override fun dispose() {
-        disposable.dispose()
+        Disposer.dispose(disposable)
     }
 }

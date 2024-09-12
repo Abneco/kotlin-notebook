@@ -11,10 +11,9 @@ import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.workspaceModel
 import com.intellij.platform.workspace.jps.entities.*
 import com.intellij.platform.workspace.storage.MutableEntityStorage
-import com.intellij.workspaceModel.ide.impl.legacyBridge.library.LibraryBridgeImpl
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
-import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySourceK2
+import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.idea.core.script.SCRIPT_DEPENDENCIES_SOURCES
 import org.jetbrains.kotlin.idea.core.script.createLibraryDependency
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptDependenciesData
@@ -22,7 +21,6 @@ import org.jetbrains.kotlin.idea.core.script.k2.ScriptDependenciesSource
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
-import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanentIndexService
 import java.nio.file.Path
 import kotlin.script.experimental.api.asSuccess
 import kotlin.script.experimental.api.valueOrNull
@@ -64,10 +62,7 @@ class NotebookScriptDependenciesSource(override val project: Project) : ScriptDe
         dependenciesData: ScriptDependenciesData,
         mutableEntityStorage: MutableEntityStorage
     ) {
-        val sourcesToUpdate: MutableSet<KotlinScriptEntitySourceK2> = mutableSetOf()
-        val scriptDependenciesIndex = KotlinNotebookPermanentIndexService.getInstance(project).getPermanentScriptingLibrary()
-        val libraryId = LibraryId(scriptDependenciesIndex.name!!, LibraryTableId.ProjectLibraryTableId)
-        val libraryStorage = (scriptDependenciesIndex as LibraryBridgeImpl).entityStorage.current
+        val sourcesToUpdate: MutableSet<KotlinScriptEntitySource> = mutableSetOf()
 
         for ((scriptFile, configurationWrapper) in dependenciesData.configurations) {
             if (ScratchUtil.isScratch(scriptFile)) {
@@ -91,7 +86,7 @@ class NotebookScriptDependenciesSource(override val project: Project) : ScriptDe
                     ?.let { dependenciesData.sdks[it] }
                     ?.let { SdkDependency(SdkId(it.name, it.sdkType.name)) }
 
-            val source = KotlinScriptEntitySourceK2(scriptFile.toVirtualFileUrl(WorkspaceModel.getInstance(project).getVirtualFileUrlManager()))
+            val source = KotlinScriptEntitySource(scriptFile.toVirtualFileUrl(WorkspaceModel.getInstance(project).getVirtualFileUrlManager()))
             sourcesToUpdate += source
 
             val dependencies = listOfNotNull(
