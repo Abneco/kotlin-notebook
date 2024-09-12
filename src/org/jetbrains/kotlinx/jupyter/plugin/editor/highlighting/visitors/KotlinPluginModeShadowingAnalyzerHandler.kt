@@ -1,0 +1,100 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.visitors
+
+import com.intellij.codeInsight.daemon.impl.HighlightInfo
+import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
+import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.psi.PsiFile
+import org.jetbrains.kotlin.diagnostics.Severity
+import org.jetbrains.kotlin.idea.caches.resolve.analyzeWithAllCompilerChecks
+import org.jetbrains.kotlin.idea.highlighter.AbstractKotlinHighlightVisitor.Companion.suppressHighlight
+import org.jetbrains.kotlin.idea.highlighter.AbstractKotlinHighlightVisitor.Companion.unsuppressHighlight
+import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.InjectedFileHighlightingHelper
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.convertToShadowedDeclaration
+import org.jetbrains.kotlinx.jupyter.plugin.ide.handlers.KotlinPluginModeAwareHandler
+import org.jetbrains.kotlinx.jupyter.plugin.ide.handlers.createPluginModeAwareInstance
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
+
+sealed class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareHandler {
+    var highlightingHelper: InjectedFileHighlightingHelper? = null
+
+    protected fun prepareForFile(injectedFile: PsiFile) {
+        highlightingHelper = InjectedFileHighlightingHelper(injectedFile)
+
+        highlightingHelper?.markTargetHost()
+    }
+
+    protected fun shouldAbortProcess(file: PsiFile): Boolean {
+        if (file !is KtFile) return true
+        prepareForFile(file)
+
+        return highlightingHelper!!.topLevelFile !is JupyterFile
+    }
+
+    abstract fun performShadowing(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, afterAnalysis: () -> Unit = {}): Boolean
+
+    companion object {
+        fun create(): KotlinPluginModeShadowingAnalyzerHandler {
+            return createPluginModeAwareInstance(
+                { K1ShadowingAnalyzerHandler },
+                { K2ShadowingAnalyzerHandler }
+            )
+        }
+    }
+}
+
+object K1ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
+    override fun performShadowing(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, afterAnalysis: () -> Unit): Boolean {
+        if (shouldAbortProcess(file)) return true
+
+        val helper = highlightingHelper!!
+        val isTargetHost = helper.isCurrentFileTarget
+        file as KtFile
+
+        if (isTargetHost) {
+            file.unsuppressHighlight()
+            return true
+        }
+
+        try {
+            val seenInfos = mutableSetOf<HighlightInfo>()
+            file.analyzeWithAllCompilerChecks(
+                {
+                    if (it.severity == Severity.ERROR) {
+                        val element = it.psiElement as? KtElement
+                        element?.suppressHighlight()
+                        if (!helper.shouldAcceptDiagnostic(it)) return@analyzeWithAllCompilerChecks
+
+                        val info = convertToShadowedDeclaration(it)
+
+                        if (info != null) {
+                            seenInfos.add(info)
+                        } else thisLogger().warn("Cannot convert diagnostic to shadowed: $it")
+                    }
+                }
+            )
+
+        } catch (e: Throwable) {
+            if (e is ProcessCanceledException) {
+                throw e
+            }
+            thisLogger().warn("Exception during analyze", e)
+            return false
+        } finally {
+            afterAnalysis()
+            highlightingHelper = null
+        }
+
+        return true
+    }
+}
+
+
+object K2ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
+    override fun performShadowing(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, afterAnalysis: () -> Unit) : Boolean {
+        return true
+    }
+}

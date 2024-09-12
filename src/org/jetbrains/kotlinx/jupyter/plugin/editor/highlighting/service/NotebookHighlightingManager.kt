@@ -9,6 +9,7 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -48,6 +49,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.Impatient
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
+import org.jetbrains.kotlinx.jupyter.plugin.util.isCurrentlySelectedInEditor
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import java.util.concurrent.ConcurrentHashMap
@@ -127,6 +129,8 @@ class NotebookHighlightingManager(
             dataController.update {
                 notebookRangesQueuedForHL = targetData
                 notebookDocumentStructureNontrivialChanged.set(false)
+                renamingEnclosedRange = null
+                notebookDocumentTargetRanges = null
             }
         }
 
@@ -148,11 +152,7 @@ class NotebookHighlightingManager(
                 override fun sessionStarted(virtualFile: BackedNotebookVirtualFile, isAfterRestart: Boolean) {
                     if (targetFile != virtualFile || !isAfterRestart) return
 
-                    coroutineScope.launch {
-                        readAction {
-                            restartAnalysing()
-                        }
-                    }
+                    restartAnalysing()
                 }
             }
         )
@@ -179,10 +179,9 @@ class NotebookHighlightingManager(
         return NotebookAfterScriptsUpdatePluginAwareHandler { file ->
             if (file != virtualFile) return@NotebookAfterScriptsUpdatePluginAwareHandler
 
-            coroutineScope.async {
-                readAction {
-                    restartAnalysing()
-                }
+            val isCurrentFileOpened = virtualFile.isCurrentlySelectedInEditor(project)
+            if (isCurrentFileOpened) {
+                restartAnalysing()
             }
         }
     }
@@ -373,8 +372,8 @@ class NotebookHighlightingManager(
         }
     }
 
-    private fun determineHighlightedFiles(markupModel: MarkupModelEx) {
-        fileToInjectionData.forEach { (ktFile, data) ->
+    private fun determineHighlightedFiles(markupModel: MarkupModelEx, injectionData: Map<KtFile, InjectedFileData>, skippedFiles: MutableSet<Int>) {
+        injectionData.forEach { (ktFile, data) ->
             val range = data.ktFileRange
             if (ktFile.text.isBlank()) return@forEach
             data.processedTokens.set(0)
@@ -387,10 +386,10 @@ class NotebookHighlightingManager(
                 }
                 true
             }
-            val token = data.processedTokens.get().floorDiv(2)
+            val tokens = seenHighlighters.size
 
-            if (token < data.totalTokens - 1) {
-                finishedFiles.remove(data.notebookCellIndex)
+            if (tokens < data.totalTokens - 1) {
+                skippedFiles.add(data.notebookCellIndex)
             }
         }
     }
@@ -412,8 +411,17 @@ class NotebookHighlightingManager(
     }
 
     fun restartAnalysing() {
-        initializeData(true)
-        NotebookHighlightingRestarter.scheduleRegularUpdate(jupyterPsiFile!!)
+        coroutineScope.async {
+            runCatching {
+                smartReadAction(project) {
+                    initializeData(true)
+                }
+
+                NotebookHighlightingRestarter.scheduleRegularUpdate(jupyterPsiFile!!)
+            }.onFailure {
+                LOG.warn("Problem during restarting analysis for $virtualFile: ", it)
+            }
+        }
     }
 
     override fun dispose() {
@@ -438,14 +446,15 @@ class NotebookHighlightingManager(
             val executionRequestsDone = dataController
                 .executionHighlightingHelper
                 .daemonFinished(completedIndexes, queue, canModifyRequests)
-            val remaining = remainingIndexesToProcess
+            val remaining = remainingIndexesToProcess.toMutableSet()
 
             determineFilesWithLeftErrors(markup, completeRangeInd)
             val manager = InjectedLanguageManager.getInstance(project)
             val seenNewFiles = unrecognizedFiles.isNotEmpty()
+            val injectionData = fileToInjectionData
 
             readAction {
-                determineHighlightedFiles(markup)
+                determineHighlightedFiles(markup, injectionData, remaining)
 
                 if (seenNewFiles) {
                     queue?.addAll(unrecognizedFiles.toCellsIndexes(manager))

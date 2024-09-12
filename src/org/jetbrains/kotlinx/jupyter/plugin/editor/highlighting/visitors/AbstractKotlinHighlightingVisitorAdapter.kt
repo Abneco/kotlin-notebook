@@ -10,15 +10,16 @@ import org.jetbrains.kotlin.idea.highlighter.visitor.AbstractHighlightingVisitor
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.highlightingManagerFor
 import org.jetbrains.kotlinx.jupyter.plugin.util.getTopLevelFile
+import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 
-abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingVisitor>(
-    private val shouldUseNewHighlighting: Boolean = true // 0 if default
-) : HighlightVisitor {
+abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingVisitor> : HighlightVisitor {
     private var visitor: T? = null
 
     protected abstract fun createVisitor(holder: HighlightInfoHolder): T
     override fun suitableForFile(file: PsiFile): Boolean {
-        return file is KtFile && InjectedLanguageManager.getInstance(file.project).isInjectedFragment(file)
+        return file is KtFile
+                && InjectedLanguageManager.getInstance(file.project).isInjectedFragment(file)
+                && InjectedLanguageManager.getInstance(file.project).getTopLevelFile(file).virtualFile.isKotlinNotebook
     }
 
     override fun visit(element: PsiElement) {
