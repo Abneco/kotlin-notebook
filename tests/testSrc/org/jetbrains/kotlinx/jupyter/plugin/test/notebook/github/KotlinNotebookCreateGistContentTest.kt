@@ -12,11 +12,8 @@ import org.jetbrains.plugins.github.GithubGistContentsCollector
 import org.jetbrains.plugins.notebooks.tests.SingleFileImplRule
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 
 
-@RunWith(JUnit4::class)
 class KotlinNotebookCreateGistContentTest: KotlinNotebookBaseTestCase() {
     companion object {
         @get:ClassRule
