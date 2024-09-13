@@ -86,7 +86,7 @@ class CopySwingComponentScreenshotAction : NotebookEditorActionBase() {
         val hoveredInterval = event.dataContext.selectedCellInterval ?: return emptyList()
         val cellIndex = hoveredInterval.ordinal
         val notebook = notebookVirtualFile.notebook
-        val jupyterCell = notebook.computeCells()[cellIndex]
+        val jupyterCell = notebook.getCell(cellIndex)
         val outputs = jupyterCell.outputs ?: return emptyList()
         val extractor =
             NotebookDisplayOutputDataKeyExtractor.EP_NAME.findExtension(SwingOutputDataKeyExtractor::class.java) ?: return emptyList()

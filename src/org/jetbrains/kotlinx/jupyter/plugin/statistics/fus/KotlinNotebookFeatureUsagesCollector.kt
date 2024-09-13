@@ -6,6 +6,15 @@ import com.intellij.internal.statistic.eventLog.EventLogGroup
 import com.intellij.internal.statistic.eventLog.events.EventFields
 import com.intellij.internal.statistic.libraryUsage.LibraryUsageDescriptors
 import com.intellij.internal.statistic.service.fus.collectors.FeatureUsagesCollector
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionStatus
+import com.intellij.jupyter.core.jupyter.connections.execution.executionCount
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.status
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterErrorOutput
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutput
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterStreamOutput
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.exceptions.ReplCompilerException
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
@@ -18,16 +27,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.util.KOTLIN_DATAFRAME_MIME
 import org.jetbrains.kotlinx.jupyter.plugin.util.LETS_PLOT_MIME
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionStatus
-import com.intellij.jupyter.core.jupyter.connections.execution.executionCount
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.status
 import org.jetbrains.plugins.notebooks.psi.jupyter.nbformat.JupyterCellType
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterErrorOutput
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutput
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterStreamOutput
 
 class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
     override fun getGroup(): EventLogGroup {
@@ -65,7 +65,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
 
         fun registerOpenNotebook(project: Project, file: BackedNotebookVirtualFile) {
             val notebook = file.notebook
-            val cellsCount = notebook.computeCells().size
+            val cellsCount = notebook.cellsCount()
 
             var markdownCellsCount = 0
             var codeCellsCount = 0
