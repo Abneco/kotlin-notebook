@@ -1,7 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.github.actions
 
-import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
@@ -21,8 +20,7 @@ internal class KotlinNotebookGithubCreateGistAction : GithubCreateGistAction() {
         //  and we don't want that.
 
         /** We're hiding this action from search so that we won't show it alongside [GithubCreateGistAction] */
-        val fromSearch = ActionPlaces.isMainMenuOrActionSearch(e.place)
-        if (fromSearch) {
+        if (e.isFromSearchPopup) {
             e.presentation.isEnabledAndVisible = false
             return
         }
