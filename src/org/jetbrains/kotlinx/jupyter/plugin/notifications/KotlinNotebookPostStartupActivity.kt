@@ -17,7 +17,7 @@ class KotlinNotebookPostStartupActivity : ProjectActivity {
         project.service<KotlinNotebookProjectOptionsProvider>().apply {
             addListener(object : Listener {
                 override fun onKernelRunModeChanged() {
-                    project.notebookNotifications.showSessionRunModeChanged()
+                    project.notebookNotifications.showKernelRunModeChanged()
                 }
 
                 override fun onKernelVersionChanged() {
