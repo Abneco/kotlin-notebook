@@ -3,6 +3,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.settings.ui
 
 import com.intellij.jarRepository.JarRepositoryManager
 import com.intellij.jarRepository.RemoteRepositoryDescription
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.util.NlsSafe
@@ -64,10 +66,14 @@ private class MavenVersionComboBoxImpl(
     }
 
     private fun initializeComboBox(versions: Collection<String>) {
-        setModel(modelProvider.provideModel(versions))
-        setRenderer(listCellRendererProvider(renderer))
-        state = State.LOADED
-        selectedItemChanged()
+        runInEdt(ModalityState.stateForComponent(this)) {
+            setModel(modelProvider.provideModel(versions))
+            setRenderer(listCellRendererProvider(renderer))
+            updateUI()
+
+            state = State.LOADED
+            selectedItemChanged()
+        }
     }
 
     private enum class State {
@@ -114,10 +120,8 @@ fun Row.mavenVersionComboBox(
                 defaultRenderer
                     .getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
                     .also { itemComponent ->
-                        if (value == defaultVersion) {
-                            if (itemComponent is JLabel) {
-                                itemComponent.text = KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.version.default", value)
-                            }
+                        if (value == defaultVersion && itemComponent is JLabel) {
+                            itemComponent.text = KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.version.default", value)
                         }
                     }
             }
