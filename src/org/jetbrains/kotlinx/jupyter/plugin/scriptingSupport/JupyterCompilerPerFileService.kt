@@ -1,8 +1,13 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.diagnostic.Attachment
@@ -15,12 +20,13 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.io.delete
 import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.core.script.ClasspathToVfsConverter
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
@@ -31,6 +37,7 @@ import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.plugin.debug.variables.KotlinNotebookSessionVariablesService
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
 import org.jetbrains.kotlinx.jupyter.plugin.notifications.notebookNotifications
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
@@ -53,10 +60,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.runSafelyTyped
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import java.io.File
 import java.net.URLClassLoader
@@ -308,27 +311,35 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    @RequiresEdt
     fun addCompiledSnippet(
       snippetMetadata: EvaluatedSnippetMetadata,
       psiCell: JupyterPsiCell?,
-      updateAction: () -> Unit
     ) {
-        KotlinNotebookPluginUpdater.getInstance().pluginUsed()
-        // execute not on EDT
         coroutineScope.async {
+            withContext(Dispatchers.EDT) {
+                KotlinNotebookPluginUpdater.getInstance().pluginUsed()
+            }
+
+            // execute not on EDT
             try {
                 val sessionId = getSession()?.sessionId
                 writeData {
                     addNewDependencies(sessionId, snippetMetadata, psiCell)
                 }
-                updateAction()
+                updateScriptingIfNeeded()
             } catch (e: Exception) {
                 if (e is ProcessCanceledException) {
                     throw e
                 }
                 LOG.error(e)
             }
+        }
+    }
+
+    private fun updateScriptingIfNeeded() {
+        val hasNoExecutionsScheduled = KotlinNotebookCellExecutionCallbackFactory.getInstance().hasCompletedExecutionRequestsFor(virtualFile)
+        if (hasNoExecutionsScheduled) {
+            requestScriptingUpdateTestAware()
         }
     }
 

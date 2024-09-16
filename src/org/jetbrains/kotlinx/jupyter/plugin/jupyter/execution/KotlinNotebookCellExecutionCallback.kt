@@ -1,13 +1,15 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.execution
 
-import com.intellij.openapi.application.EDT
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputsBase
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.statistics.fus.KotlinNotebookFeatureUsagesCollector
@@ -15,11 +17,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
 import org.jetbrains.kotlinx.jupyter.plugin.util.deserialize
 import org.jetbrains.kotlinx.jupyter.plugin.util.logListInfo
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputsBase
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import kotlin.system.measureTimeMillis
 
@@ -45,7 +42,7 @@ class KotlinNotebookCellExecutionCallback(
     override var finalizeCallback = {}
 
     override fun expire() {
-        updateScriptingIfNeeded()
+        unregisterCallback()
     }
 
     override fun onExecuteReply(message: JupyterMessage) {
@@ -74,22 +71,19 @@ class KotlinNotebookCellExecutionCallback(
 
                     snippetMetadata
                 }
+                val metadataIsPresent = snippetMetadata != null
+                unregisterCallback(!metadataIsPresent)
 
-                if (snippetMetadata != null) {
+                if (metadataIsPresent) {
                     /**
                      * Acquire an instance of [JupyterCompilerPerFileService] for this notebook
                      * and pass the metadata we received to it.
                      */
                     val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-                    withContext(Dispatchers.EDT) {
-                        compilerService.addCompiledSnippet(snippetMetadata, psiCell) {
-                            updateScriptingIfNeeded(false)
-                        }
-                    }
+                    compilerService.addCompiledSnippet(snippetMetadata, psiCell)
                 } else {
                     NotebookHighlightingService.getForFile(project, virtualFile)
                         .dataController.notebookDocumentStructureNontrivialChanged.compareAndSet(false, true)
-                    updateScriptingIfNeeded(true)
                 }
             } catch (e: Throwable) {
                 if (e is ProcessCanceledException) {
@@ -107,14 +101,9 @@ class KotlinNotebookCellExecutionCallback(
         KotlinNotebookFeatureUsagesCollector.registerOutputUpdated(project, output)
     }
 
-    private fun updateScriptingIfNeeded(onError: Boolean = false) {
+    private fun unregisterCallback(snippetMetadataIsEmpty: Boolean = false) {
         val factory = KotlinNotebookCellExecutionCallbackFactory.getInstance()
-        val shouldUpdateDependencies = factory.unregisterCallback(project, virtualFile, index, onError)
-
-        if (shouldUpdateDependencies) {
-            val compilerService = JupyterCompilerService.getInstance(project)
-            compilerService.requestScriptingUpdate()
-        }
+        factory.unregisterCallback(project, virtualFile, index, snippetMetadataIsEmpty)
     }
 
 

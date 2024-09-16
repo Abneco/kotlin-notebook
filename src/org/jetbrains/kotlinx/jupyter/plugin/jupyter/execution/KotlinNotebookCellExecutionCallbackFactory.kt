@@ -17,6 +17,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
 import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
 import kotlin.concurrent.write
 
 /**
@@ -56,21 +57,27 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
         }
     }
 
-    // returns true if it was the last registered callback and was not after single run with error
-    fun unregisterCallback(project: Project, file: BackedNotebookVirtualFile, index: Int, onError: Boolean = false): Boolean {
-        return executionDataLock.write {
-            val (_, pq) = callbacksCounters[file] ?: return@write false
+    /**
+     * Returns true if there is no pending execution requests for [file]
+     */
+    fun hasCompletedExecutionRequestsFor(file: BackedNotebookVirtualFile): Boolean {
+        return executionDataLock.read {
+            callbacksCounters[file]?.second?.isEmpty() == true
+        }
+    }
+
+    fun unregisterCallback(project: Project, file: BackedNotebookVirtualFile, index: Int, metadataIsEmpty: Boolean = false) {
+        executionDataLock.write {
+            val (_, pq) = callbacksCounters[file] ?: return@write
             pq.remove(index)
             val isAfterSeriesRuns = pq.size == 1 && pq.contains(-1)
             if (isAfterSeriesRuns) pq.remove(-1)
-            val singleErrorRun = onError && !isAfterSeriesRuns
+            val emptyDependenciesUpdate = metadataIsEmpty && !isAfterSeriesRuns
 
             with(NotebookHighlightingService.getForFile(project, file).dataController.executionHighlightingHelper) {
-                val eventData =  ExecutionCallbackUnregistered(index, isAfterSeriesRuns, singleErrorRun, pq)
+                val eventData = ExecutionCallbackUnregistered(index, isAfterSeriesRuns, emptyDependenciesUpdate, pq)
                 onEventHappened(eventData)
             }
-
-            pq.isEmpty() && !singleErrorRun
         }
     }
 
