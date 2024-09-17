@@ -4,8 +4,9 @@ package org.jetbrains.kotlinx.jupyter.plugin.settings.actions
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.project.DumbAware
 
-class KotlinNotebookSettingsActions : DefaultActionGroup() {
+class KotlinNotebookSettingsActions : DefaultActionGroup(), DumbAware {
     init {
         templatePresentation.isHideGroupIfEmpty = true
     }
