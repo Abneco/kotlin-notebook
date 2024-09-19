@@ -1,5 +1,8 @@
 <idea-plugin>
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <scriptDefinitionsSource implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.k2.KotlinNotebookScriptDefinitionsSource"/>
+        <kotlinInjectedFilesAnalysisProvider
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.KotlinNotebookInjectedFilesAnalysisPromoter"
+        />
     </extensions>
 </idea-plugin>
