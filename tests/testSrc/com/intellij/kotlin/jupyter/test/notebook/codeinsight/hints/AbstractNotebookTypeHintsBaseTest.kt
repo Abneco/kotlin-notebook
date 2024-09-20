@@ -76,10 +76,16 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
         val collector = provider.getCollectorFor(file, editor, settings, sink) ?: error("Collector is expected")
         val collectorWithSettings = CollectorWithSettings(collector, provider.key, file.language, sink)
         collectorWithSettings.collectTraversingAndApply(editor, file, true)
-        return InlayDumpUtil.dumpHintsInternal(sourceText, filter = {r -> r.widthInPixels > 0 }, offsetShift = -injectionOffset, renderer = { renderer, _ ->
-            if (renderer !is PresentationRenderer && renderer !is LinearOrderInlayRenderer<*>) error("renderer not supported")
-            renderer.toString()
-        }, file = myFixture.file!!, editor = myFixture.editor, document = myFixture.getDocument(myFixture.file!!))
+        return InlayDumpUtil.dumpHintsInternal(
+            sourceText,
+            editor = myFixture.editor,
+            filter = { r -> r.widthInPixels > 0 },
+            renderer = { renderer, _ ->
+                if (renderer !is PresentationRenderer && renderer !is LinearOrderInlayRenderer<*>) error("renderer not supported")
+                renderer.toString()
+            },
+            offsetShift = -injectionOffset
+        )
     }
 
     protected fun enableLimitByActiveCell() {
