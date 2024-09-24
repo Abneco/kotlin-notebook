@@ -2,7 +2,10 @@
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service
 
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.notebooks.visualization.NotebookCellLines
+import com.intellij.notebooks.visualization.getCell
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -14,19 +17,13 @@ import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.getCellRangesInDocumentOrNull
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.looksLikeNotebookFile
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
-import com.intellij.notebooks.visualization.NotebookCellLines
-import com.intellij.notebooks.visualization.getCell
 
 
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
 
     override fun reduceRange(file: PsiFile, editor: Editor): List<TextRange>? {
-        if (!file.looksLikeNotebookFile()) return null
-
         val jupyterFile = file as? JupyterFile ?: return null
         val document = FileDocumentManager.getInstance().getDocument(jupyterFile.virtualFile) ?: return null
         if (!NotebookCellLines.hasSupport(editor)) return null

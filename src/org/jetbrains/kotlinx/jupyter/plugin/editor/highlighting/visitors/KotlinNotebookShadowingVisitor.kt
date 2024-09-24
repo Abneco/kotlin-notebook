@@ -17,9 +17,13 @@ internal class KotlinNotebookShadowingVisitor : AbstractKotlinHighlightingVisito
     }
 
     override fun analyze(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, action: Runnable): Boolean {
-        return KotlinPluginModeShadowingAnalyzerHandler
+        val result = KotlinPluginModeShadowingAnalyzerHandler
             .create()
-            .performShadowing(file, updateWholeFile, holder, { analysisFinished(file, holder) })
+            .performShadowing(file, updateWholeFile, holder) { analysisFinished(file, holder) }
+
+        action.run()
+
+        return result
     }
 }
 

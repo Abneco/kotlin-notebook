@@ -220,7 +220,7 @@
 
         <!--common for both K1 and K2 -->
         <highlightVisitor implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.visitors.KotlinNotebookShadowingVisitor"
-                          id="kotlinNotebookShadowingVisitor"/>
+                          id="kotlinNotebookShadowingVisitor" order="first"/>
 
         <projectConfigurable groupId="tools"
                              bundle="messages.KotlinNotebookBundle"

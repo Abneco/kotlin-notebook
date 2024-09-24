@@ -1,8 +1,12 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.application.runReadAction
+import com.intellij.notebooks.visualization.NotebookCellLines
+import com.intellij.notebooks.visualization.getCell
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -22,22 +26,16 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.Notebook
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingService
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.InjectedHostHasErrors
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.LOG
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.NOTEBOOK_DOCUMENT_FILE_EXTENSION
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
-import com.intellij.notebooks.visualization.NotebookCellLines
-import com.intellij.notebooks.visualization.getCell
 import java.util.concurrent.atomic.AtomicReference
 
 
 internal object NotebookHighlightingUtilityObject {
     const val NOTEBOOK_INJECTED_FILE_EXTENSION: String = "jupyter.kts"
-    internal const val NOTEBOOK_DOCUMENT_FILE_EXTENSION: String = "ipynb"
     internal val LOG = thisLogger()
 
     const val SCRIPTING_MISSING_DEPENDENCY_PREFIX = "MISSING"
@@ -64,9 +62,6 @@ internal object NotebookHighlightingUtilityObject {
         return true
     }
 }
-
-internal fun PsiFile.looksLikeNotebookFile(): Boolean =
-    fileType.defaultExtension == NOTEBOOK_DOCUMENT_FILE_EXTENSION
 
 internal fun getCellRangesInDocumentOrNull(notebookCells: List<JupyterPsiCell>, targets: Collection<Int>?): List<TextRange>? = if (targets?.isNotEmpty() == true) {
     targets.mapNotNull { notebookCells.getOrNull(it)?.textRange }
@@ -95,7 +90,6 @@ internal fun Document.retrieveCellIntervalUnderCaret(virtualFile: VirtualFile, p
 
 /**
  * [get] ReadAction
- * [get] EDT
  */
 internal fun resetSessionMetaInformation(vFile: VirtualFile, project: Project) {
     if (project.isDisposed) return
@@ -105,7 +99,7 @@ internal fun resetSessionMetaInformation(vFile: VirtualFile, project: Project) {
     val hlManager = highlightingManagerFor(project, vFile)
 
     if (project.isDisposed) return
-    runReadAction {
+    ReadAction.run<Throwable> {
         val psiFile = vFile.toPsiFile(project)
         val cells = psiFile?.getNotebookCells()
         hlManager?.dataController?.invalidateStateAfterCellExecution(null)

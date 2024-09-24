@@ -16,22 +16,13 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.Inj
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.convertToShadowedDeclaration
 import org.jetbrains.kotlinx.jupyter.plugin.ide.handlers.KotlinPluginModeAwareHandler
 import org.jetbrains.kotlinx.jupyter.plugin.ide.handlers.createPluginModeAwareInstance
-import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 
 sealed class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareHandler {
-    var highlightingHelper: InjectedFileHighlightingHelper? = null
+    protected fun prepareForFile(injectedFile: PsiFile) : InjectedFileHighlightingHelper {
+        val helper =  InjectedFileHighlightingHelper(injectedFile)
+        helper.markTargetHost()
 
-    protected fun prepareForFile(injectedFile: PsiFile) {
-        highlightingHelper = InjectedFileHighlightingHelper(injectedFile)
-
-        highlightingHelper?.markTargetHost()
-    }
-
-    protected fun shouldAbortProcess(file: PsiFile): Boolean {
-        if (file !is KtFile) return true
-        prepareForFile(file)
-
-        return highlightingHelper!!.topLevelFile !is JupyterFile
+        return helper
     }
 
     abstract fun performShadowing(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, afterAnalysis: () -> Unit = {}): Boolean
@@ -48,11 +39,10 @@ sealed class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareHan
 
 object K1ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
     override fun performShadowing(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, afterAnalysis: () -> Unit): Boolean {
-        if (shouldAbortProcess(file)) return true
+        if (file !is KtFile) return true
 
-        val helper = highlightingHelper!!
+        val helper = prepareForFile(file)
         val isTargetHost = helper.isCurrentFileTarget
-        file as KtFile
 
         if (isTargetHost) {
             file.unsuppressHighlight()
@@ -77,6 +67,7 @@ object K1ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
                 }
             )
 
+            helper.applyReceivedHighlightInfos(seenInfos, holder)
         } catch (e: Throwable) {
             if (e is ProcessCanceledException) {
                 throw e
@@ -85,7 +76,6 @@ object K1ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
             return false
         } finally {
             afterAnalysis()
-            highlightingHelper = null
         }
 
         return true
