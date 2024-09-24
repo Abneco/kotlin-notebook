@@ -14,6 +14,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMe
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageBase
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterProtocolSchemaFactory
+import kotlinx.serialization.json.buildJsonObject
 
 private val messageBytePrefix = listOf(byteArrayOf(1))
 
@@ -26,11 +27,20 @@ internal fun <T> JupyterMessage.asRawMessage(
     action: (rawMessage: RawMessage, socketType: JupyterSocketType) -> T
 ): T? {
     val socketType = channel.socketType ?: return null
+
+    val metadataKeys = getKeys()
+    val metadataObject = buildJsonObject {
+        for (key in metadataKeys) {
+            val value = getMetadata(key)?.toKotlinSerializationJson() ?: continue
+            put(key, value)
+        }
+    }.takeIf { it.isNotEmpty() }
+
     val rawMessage = RawMessageImpl(
         messageBytePrefix,
         header.json.toKotlinSerializationJson().jsonObject,
         parentHeader?.json?.toKotlinSerializationJson()?.jsonObject,
-        null,
+        metadataObject,
         messageContent.toKotlinSerializationJson(),
     )
 

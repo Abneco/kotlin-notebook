@@ -2,6 +2,10 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterClient
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServer
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFileManager
@@ -10,24 +14,19 @@ import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.mode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory
+import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.ModeAwareKernelRunnableFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.extensions.KernelVmCommandCustomizer
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.kotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.toolwindow.KotlinNotebookToolWindowManager
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
+import org.jetbrains.kotlinx.jupyter.plugin.settings.selectedKernelVersionAsString
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterClient
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServer
-import org.jetbrains.kotlinx.jupyter.plugin.settings.selectedKernelVersionAsString
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolute
@@ -40,15 +39,16 @@ import kotlin.io.path.invariantSeparatorsPathString
  *
  * For kernels running in the same process, see [EmbeddedKernelRunnableFactory].
  */
-class KernelProcessFactory : KernelRunnableFactory {
+class KernelProcessFactory : ModeAwareKernelRunnableFactory(
+    KotlinNotebookSessionRunMode.SEPARATE_PROCESS
+) {
     @RequiresBackgroundThread
     override fun createKernelRunnableHandler(
         project: Project,
         kernelId: JupyterKernelId,
         notebookPath: Path,
-    ): KotlinKernelProcessHandler? {
-        if (project.kotlinNotebookSessionRunMode != KotlinNotebookSessionRunMode.SEPARATE_PROCESS) return null
-
+        notebookVirtualFile: BackedNotebookVirtualFile?,
+    ): KotlinKernelProcessHandler {
         val kernelPorts = getKernelPorts()
         val kernelConfig = DefaultKotlinKernelConfigFactory(project, kernelPorts, notebookPath).create()
 
@@ -83,9 +83,9 @@ class KernelProcessFactory : KernelRunnableFactory {
         }
 
         return KotlinKernelProcessHandler(
-            project, kernelId, commandLine, kernelConfig, notebookPath
+            project, kernelId, commandLine, kernelConfig, notebookPath, notebookVirtualFile
         ).apply {
-            addKernelProcessListener(object : KotlinKernelProcessListener {
+            addSpecificKernelListener(object : KotlinKernelProcessListener {
                 override fun beforeNotificationStarted(event: KotlinKernelNotificationStartedEvent) {
                     KotlinNotebookToolWindowManager.getInstance(project)
                         .showKotlinNotebookServerManagementToolWindow(
@@ -95,7 +95,7 @@ class KernelProcessFactory : KernelRunnableFactory {
                         )
                 }
             })
-            startNotify()
+            process.startNotify()
         }
     }
 

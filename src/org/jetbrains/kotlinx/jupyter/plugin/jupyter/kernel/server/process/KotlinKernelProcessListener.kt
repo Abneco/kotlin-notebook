@@ -5,10 +5,9 @@ import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.util.NlsSafe
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelEvent
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
-import java.util.EventListener
 import java.util.EventObject
 
-interface KotlinKernelProcessListener : EventListener {
+interface KotlinKernelProcessListener : KotlinKernelListener {
     fun kernelWillTerminate(event: KotlinKernelProcessEvent) {}
     fun kernelTerminated(event: KotlinKernelProcessEvent) {}
     fun beforeNotificationStarted(event: KotlinKernelNotificationStartedEvent) {}
@@ -30,7 +29,7 @@ class KotlinKernelProcessEventImpl(
     override val exitCode: Int = 0,
 ): KotlinKernelProcessEvent, EventObject(source) {
     constructor(processEvent: ProcessEvent): this(
-        processEvent.processHandler as KotlinKernelProcessHandler,
+        (processEvent.processHandler as KotlinKernelProcessHandler.KernelProcessHandler).runnableHandler,
         processEvent.text,
         processEvent.exitCode
     )
@@ -38,7 +37,7 @@ class KotlinKernelProcessEventImpl(
 
 fun KotlinKernelListener.toProcessListener(): KotlinKernelProcessListener {
     val listener = this
-    return object : KotlinKernelProcessListener {
+    return object : KotlinKernelProcessListener, KotlinKernelListener by listener {
         override fun kernelTerminated(event: KotlinKernelProcessEvent) {
             listener.kernelTerminated(event)
         }

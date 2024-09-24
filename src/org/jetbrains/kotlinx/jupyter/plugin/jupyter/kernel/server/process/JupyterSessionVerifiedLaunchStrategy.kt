@@ -88,6 +88,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
 
         session.sendMessageOnPooledThread(zmqMessage, object : JupyterExecutionCallbackAdapter() {
             override fun onKernelInfoReply(message: JupyterMessage) {
+                kernel?.onKernelInfoReply(message)
                 verificationDeferred.complete(true)
             }
         })

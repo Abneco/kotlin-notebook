@@ -4,7 +4,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.config.defaultRuntimeProperties
 import org.jetbrains.kotlinx.jupyter.libraries.createLibraryHttpUtil
-import org.jetbrains.kotlinx.jupyter.libraries.getDefaultClasspathResolutionInfoProvider
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.asRawMessage
@@ -18,6 +17,7 @@ import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelCommunicationClient
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import org.jetbrains.kotlinx.jupyter.libraries.DefaultResolutionInfoProviderFactory
 import java.nio.file.Path
 
 class EmbeddedKotlinKernelSession(
@@ -38,7 +38,7 @@ class EmbeddedKotlinKernelSession(
         ).create()
 
         val replConfig: ReplConfig = ReplConfig.create(
-            ::getDefaultClasspathResolutionInfoProvider,
+            DefaultResolutionInfoProviderFactory,
             loggerFactory,
             createLibraryHttpUtil(loggerFactory, IdeaHttpClient),
             kernelConfig.homeDir,

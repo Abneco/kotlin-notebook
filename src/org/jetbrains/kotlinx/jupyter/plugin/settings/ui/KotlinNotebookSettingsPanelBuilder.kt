@@ -9,6 +9,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.observable.properties.AtomicProperty
 import com.intellij.openapi.observable.properties.ObservableMutableProperty
+import com.intellij.openapi.observable.properties.ObservableProperty
 import com.intellij.openapi.observable.util.transform
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
@@ -24,6 +25,7 @@ import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.builder.actionButton
 import com.intellij.ui.dsl.builder.bind
+import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindIntValue
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
@@ -37,6 +39,7 @@ import com.intellij.util.messages.MessageBusFactory
 import com.intellij.util.messages.MessageBusOwner
 import com.intellij.util.messages.Topic
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
+import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
 import org.jetbrains.kotlinx.jupyter.plugin.debug.util.debugFeaturesEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
@@ -44,10 +47,12 @@ import org.jetbrains.kotlinx.jupyter.plugin.resources.defaultRemoteArtifactsRepo
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinKernelVersions.DEBUG_SUPPORTED
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookAttachedModeOptions
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.settings.SessionOptionsProvider
-import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelProcessEmbeddingEnabled
+import org.jetbrains.kotlinx.jupyter.plugin.settings.isAvailable
+import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelRunModeSelectionEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelVersionEnoughForInstrumentation
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isSuitableForStartingKernel
 import org.jetbrains.kotlinx.jupyter.plugin.settings.minJdkVersion
@@ -63,6 +68,7 @@ class KotlinNotebookSettingsPanelBuilder(
     private val applicationOptions = KotlinNotebookApplicationOptions.get()
     private val sessionOptions = service<SessionOptionsProvider>()
     private val projectOptions = KotlinNotebookProjectOptionsProvider.getInstance(project)
+    private val attachedProcessOptions = KotlinNotebookAttachedModeOptions.getInstance(project)
     private val messageBus = createMessageBus(parentDisposable)
     private val kernelModeObservable = getKernelRunModeObservable(projectOptions)
 
@@ -70,18 +76,26 @@ class KotlinNotebookSettingsPanelBuilder(
         return panel {
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.build")) {
                 createKernelVersionSelector()
-                if (isKernelProcessEmbeddingEnabled) {
+                if (isKernelRunModeSelectionEnabled) {
                     createKernelModeSelector()
                 }
 
-                val showSeparateProcessSettings = kernelModeObservable.transform { it == KotlinNotebookSessionRunMode.SEPARATE_PROCESS }
-                fun Row.showForSeparateProcess(): Row = visibleIf(showSeparateProcessSettings)
+                fun <T: Any> T.showForMode(modePredicate: (KotlinNotebookSessionRunMode) -> Boolean): T {
+                    val visibilityPredicate = kernelModeObservable.transform(modePredicate)
+                    setVisibility(visibilityPredicate)
+                    return this
+                }
+
+                fun <T: Any> T.showForSeparateProcess() = showForMode { it == KotlinNotebookSessionRunMode.SEPARATE_PROCESS }
+                fun <T: Any> T.showForAttachedMode() = showForMode { it == KotlinNotebookSessionRunMode.ATTACHED_PROCESS }
+                fun <T: Any> T.hideForAttachedMode() = showForMode { it != KotlinNotebookSessionRunMode.ATTACHED_PROCESS }
 
                 createJdkComboBox().showForSeparateProcess()
-                createJvmTargetForSnippetsComboBox()
+                createJvmTargetForSnippetsComboBox().hideForAttachedMode()
                 createMaxHeapSizeSpinner().showForSeparateProcess()
                 createExtraJvmArgumentsField().showForSeparateProcess()
                 createEnvironmentVariablesField().showForSeparateProcess()
+                createZmqPortsSelector().showForAttachedMode()
             }
             if (debugFeaturesEnabled) {
                 group(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug")) {
@@ -181,11 +195,12 @@ class KotlinNotebookSettingsPanelBuilder(
 
     private fun Panel.createKernelModeSelector(): ButtonsGroup {
         return buttonsGroup(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.mode")) {
-            for (value in KotlinNotebookSessionRunMode.entries) {
+            for (runMode in KotlinNotebookSessionRunMode.entries) {
+                if (!runMode.isAvailable) continue
                 row {
-                    radioButton(value.description, value).onChanged { button ->
+                    radioButton(runMode.description, runMode).onChanged { button ->
                         if (button.isSelected) {
-                            kernelModeObservable.set(value)
+                            kernelModeObservable.set(runMode)
                         }
                     }
                 }
@@ -276,8 +291,8 @@ class KotlinNotebookSettingsPanelBuilder(
         }
     }
 
-    private fun Panel.createDebugOptions() {
-        row {
+    private fun Panel.createDebugOptions(): Row {
+        return row {
             checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables"))
                 .accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.description"))
                 .comment(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.comment", DEBUG_SUPPORTED.toMavenVersion()))
@@ -288,6 +303,20 @@ class KotlinNotebookSettingsPanelBuilder(
                         isEnabled = newVersion?.isKernelVersionEnoughForInstrumentation ?: false
                     }
                 }
+        }
+    }
+
+    private fun Panel.createZmqPortsSelector(): Row {
+        return group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session.attached.ports")) {
+            for (socketType in JupyterSocketType.entries) {
+                @Suppress("HardCodedStringLiteral")
+                val socketName = socketType.name
+                row(socketName) {
+                    textField()
+                        .bindIntText(attachedProcessOptions.getSocketProperty(socketType))
+                        .widthGroup(BUILD_WIDTH_GROUP)
+                }
+            }
         }
     }
 
@@ -307,6 +336,14 @@ class KotlinNotebookSettingsPanelBuilder(
                     comment(commentMessage)
                 }
                 .bindSelected(property)
+        }
+    }
+
+    private fun <T : Any> T.setVisibility(visibilityPredicate: ObservableProperty<Boolean>) {
+        when (val obj = this) {
+            is Row -> obj.visibleIf(visibilityPredicate)
+            is Panel -> obj.visibleIf(visibilityPredicate)
+            else -> throw IllegalStateException("Visibility isn't supported for ${obj::class.simpleName}")
         }
     }
 

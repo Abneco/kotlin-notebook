@@ -16,6 +16,8 @@ interface KotlinKernelRunnableHandler: Disposable {
     val notebookVirtualFile: BackedNotebookVirtualFile?
     val kernelState: KernelState
 
+    fun onKernelInfoReply(message: JupyterMessage) {}
+
     fun addKernelListener(listener: KotlinKernelListener)
 
     fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession

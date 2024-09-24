@@ -149,6 +149,9 @@
         <registryKey key="kotlin.notebook.allow.embedded.kernel" defaultValue="false"
                      description="When enabled, Kotlin Notebook sessions can be run inside the IDE process"/>
 
+        <registryKey key="kotlin.notebook.allow.attached.kernel" defaultValue="false"
+                     description="When enabled, Kotlin Notebook may attach to he running kernel sessions"/>
+
         <registryKey key="kotlin.notebook.debug.enabled" defaultValue="false"
                      description="When enabled, establishing debug session with Kernel is possible"/>
 
@@ -332,6 +335,8 @@
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory"/>
         <kernel.kernelRunnableFactory
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory"/>
+        <kernel.kernelRunnableFactory
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.attached.AttachedKernelProcessFactory"/>
     </extensions>
 
     <actions resource-bundle="messages/KotlinNotebookBundle">

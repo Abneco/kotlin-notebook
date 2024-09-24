@@ -20,12 +20,12 @@ class KotlinKernelProcessToolWindow(
             newContent,
             project,
             KotlinNotebookBundle.message("kotlin.jupyter.toolbar.session.name"),
-            handler
+            handler.process
         )
    }
 
     override fun consoleWindowCreated(console: ConsoleViewImpl) {
-        console.attachToProcess(handler)
+        console.attachToProcess(handler.process)
     }
 
     override fun shouldShowVariablesView(): Boolean = true

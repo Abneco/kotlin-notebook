@@ -1,14 +1,15 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.kotlinx.jupyter.plugin.settings.DEFAULT
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
-import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelProcessEmbeddingEnabled
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
+import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelRunModeSelectionEnabled
 import java.nio.file.Path
 
 /**
@@ -18,6 +19,8 @@ import java.nio.file.Path
  * @see [org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory]
  */
 interface KernelRunnableFactory {
+
+    @RequiresBackgroundThread
     fun createKernelRunnableHandler(
         project: Project,
         kernelId: JupyterKernelId,
@@ -41,7 +44,7 @@ interface KernelRunnableFactory {
 
 val Project.kotlinNotebookSessionRunMode : KotlinNotebookSessionRunMode
     get() {
-        return if (isKernelProcessEmbeddingEnabled || ApplicationManager.getApplication().isUnitTestMode) {
+        return if (isKernelRunModeSelectionEnabled || ApplicationManager.getApplication().isUnitTestMode) {
             KotlinNotebookProjectOptionsProvider.getInstance(this).kernelRunMode
         } else {
             KotlinNotebookSessionRunMode.DEFAULT

@@ -48,43 +48,7 @@ class KotlinNotebookCellExecutionCallback(
     override fun onExecuteReply(message: JupyterMessage) {
         KotlinNotebookPluginScope.getForProject(project).async {
             try {
-                val executionFinishedMs = System.currentTimeMillis()
-                val snippetMetadata = message.getMetadata("eval_metadata").let { metadataObject ->
-                    var snippetMetadata: EvaluatedSnippetMetadata? = null
-
-                    if (metadataObject != null) {
-                        val deserializationTime = measureTimeMillis {
-                            snippetMetadata = metadataObject.deserialize()
-                        }
-                        LOG.logListInfo(
-                            "Cell executed. Deserialization took $deserializationTime ms. New classpath received",
-                            snippetMetadata?.newClasspath.orEmpty()
-                        )
-                    }
-
-                    KotlinNotebookFeatureUsagesCollector.registerCellExecuted(
-                        project,
-                        message,
-                        executionFinishedMs - executionStartedMs,
-                        snippetMetadata ?: EvaluatedSnippetMetadata.EMPTY
-                    )
-
-                    snippetMetadata
-                }
-                val metadataIsPresent = snippetMetadata != null
-                unregisterCallback(!metadataIsPresent)
-
-                if (metadataIsPresent) {
-                    /**
-                     * Acquire an instance of [JupyterCompilerPerFileService] for this notebook
-                     * and pass the metadata we received to it.
-                     */
-                    val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-                    compilerService.addCompiledSnippet(snippetMetadata, psiCell)
-                } else {
-                    NotebookHighlightingService.getForFile(project, virtualFile)
-                        .dataController.notebookDocumentStructureNontrivialChanged.compareAndSet(false, true)
-                }
+                onExecuteReplyImpl(message)
             } catch (e: Throwable) {
                 if (e is ProcessCanceledException) {
                     throw e
@@ -93,6 +57,46 @@ class KotlinNotebookCellExecutionCallback(
             } finally {
                 finalizeCallback()
             }
+        }
+    }
+
+    private fun onExecuteReplyImpl(message: JupyterMessage) {
+        val executionFinishedMs = System.currentTimeMillis()
+        val snippetMetadata = message.getMetadata("eval_metadata").let { metadataObject ->
+            var snippetMetadata: EvaluatedSnippetMetadata? = null
+
+            if (metadataObject != null) {
+                val deserializationTime = measureTimeMillis {
+                    snippetMetadata = metadataObject.deserialize()
+                }
+                LOG.logListInfo(
+                    "Cell executed. Deserialization took $deserializationTime ms. New classpath received",
+                    snippetMetadata?.newClasspath.orEmpty()
+                )
+            }
+
+            KotlinNotebookFeatureUsagesCollector.registerCellExecuted(
+                project,
+                message,
+                executionFinishedMs - executionStartedMs,
+                snippetMetadata ?: EvaluatedSnippetMetadata.EMPTY
+            )
+
+            snippetMetadata
+        }
+        val metadataIsPresent = snippetMetadata != null
+        unregisterCallback(!metadataIsPresent)
+
+        if (metadataIsPresent) {
+            /**
+             * Acquire an instance of [JupyterCompilerPerFileService] for this notebook
+             * and pass the metadata we received to it.
+             */
+            val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
+            compilerService.addCompiledSnippet(snippetMetadata, psiCell)
+        } else {
+            NotebookHighlightingService.getForFile(project, virtualFile)
+                .dataController.notebookDocumentStructureNontrivialChanged.compareAndSet(false, true)
         }
     }
 

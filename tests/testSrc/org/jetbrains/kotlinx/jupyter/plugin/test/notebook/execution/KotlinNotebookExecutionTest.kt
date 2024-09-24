@@ -3,7 +3,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.test.notebook.execution
 
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.waitForSmartMode
-import junit.framework.TestCase
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory
@@ -64,11 +63,11 @@ class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
             )))
 
             when(project.kotlinNotebookSessionRunMode) {
-                KotlinNotebookSessionRunMode.SEPARATE_PROCESS -> {
-                    TestCase.assertTrue("Kernel restart was not attempted, attempts count: $attemptCount", attemptCount >= 2)
+                KotlinNotebookSessionRunMode.SEPARATE_PROCESS, KotlinNotebookSessionRunMode.ATTACHED_PROCESS -> {
+                    assertTrue("Kernel restart was not attempted, attempts count: $attemptCount", attemptCount >= 2)
                 }
                 KotlinNotebookSessionRunMode.IDE_PROCESS -> {
-                    TestCase.assertTrue("Bound socket shouldn't be a problem for embedded kernel, but $attemptCount restart attempt(s) were made", attemptCount == 0)
+                    assertTrue("Bound socket shouldn't be a problem for embedded kernel, but $attemptCount restart attempt(s) were made", attemptCount == 0)
                 }
             }
         } finally {

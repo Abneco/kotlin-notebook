@@ -26,7 +26,10 @@ class RunModeAwareTestRunner(klass: Class<*>) : BlockJUnit4ClassRunner(klass) {
             return
         }
 
-        KotlinNotebookSessionRunMode.entries.forEach { mode ->
+        listOf(
+            KotlinNotebookSessionRunMode.SEPARATE_PROCESS,
+            KotlinNotebookSessionRunMode.IDE_PROCESS,
+        ).forEach { mode ->
             runTestMethodWithMode(method, notifier, mode)
         }
     }
