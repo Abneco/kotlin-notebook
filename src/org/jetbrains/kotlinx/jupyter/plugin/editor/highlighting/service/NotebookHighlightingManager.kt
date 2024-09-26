@@ -4,6 +4,8 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.concurrency.ConcurrentCollectionFactory
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.editor.getAllIntervalPointers
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
@@ -47,16 +49,14 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.NotebookPerFileChildService
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
-import org.jetbrains.kotlinx.jupyter.plugin.util.withReadLock
-import org.jetbrains.kotlinx.jupyter.plugin.util.withWriteLock
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.core.impl.file.doubleFile.NotebookVirtualFileSystem
-import com.intellij.jupyter.core.editor.getAllIntervalPointers
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 class NotebookHighlightingManager(
     virtualFile: BackedNotebookVirtualFile,
@@ -87,7 +87,20 @@ class NotebookHighlightingManager(
         private const val INJECTED_SYNTAX_LAYER_BORDER = HighlighterLayer.CARET_ROW - 1
     }
     private val project: Project = projectService.project
-    private val iterationLock = ReentrantReadWriteLock()
+
+    private val iterationLock = Semaphore(1, true)
+
+    @OptIn(ExperimentalContracts::class)
+    private inline fun <T> withLock(action: () -> T): T {
+        contract { callsInPlace(action, InvocationKind.EXACTLY_ONCE) }
+        iterationLock.acquire()
+        return try {
+            action()
+        } finally {
+            iterationLock.release()
+        }
+    }
+
     private val iterationState = AtomicReference(DaemonState.IDLE)
 
     val dataController = NotebookPerFileHighlightingMetaDataController(
@@ -99,12 +112,9 @@ class NotebookHighlightingManager(
     val jupyterPsiFile: PsiFile? get() = _jupyterFile
 
     private fun initializeData(restart: Boolean = false) {
-        iterationLock.withWriteLock {
+        withLock {
             val targetData = mutableSetOf<Int>()
-            // if NotebookVirtualFileSystem is not ready yet
-            val currentVFile = if (virtualFile !is BackedNotebookVirtualFile) {
-                NotebookVirtualFileSystem.getNotebookVirtualFileSystem().refreshAndFindFileByPath(virtualFile.originFile.path)!!
-            } else virtualFile.file
+            val currentVFile = virtualFile.file
 
             val editorState = (FileEditorManager.getInstance(project).getSelectedEditor(currentVFile) as? TextEditor)?.editor
             val cells = if (editorState != null) {
@@ -175,7 +185,7 @@ class NotebookHighlightingManager(
     private val targetErrorHighlighters = ConcurrentCollectionFactory.createConcurrentSet<RangeHighlighter>()
     private val knownErrorInd = ConcurrentHashMap<Int, MutableSet<RangeHighlighter>>()
     private val targetIndexes: Set<Int>
-        get() = iterationLock.withReadLock { fileToInjectionData.mapTo(mutableSetOf()) { it.value.notebookCellIndex } }
+        get() = fileToInjectionData.mapTo(mutableSetOf()) { it.value.notebookCellIndex }
     private val finishedHighlighting: Set<Int>
         get() = try {
             finishedFiles - (knownErrorInd.keys - (completeRangeInd ?: -1))
@@ -280,10 +290,6 @@ class NotebookHighlightingManager(
         return mapNotNull { injected -> cells.indexOf(manager.getInjectionHost(injected)) }
     }
 
-    fun resetCaretListenerState() {
-        activeCaretListener?.resetState()
-    }
-
     fun finishedAnalysisForFile(psiFile: PsiFile, holder: HighlightInfoHolder) = coroutineScope.async {
         val ind = fileToInjectionData[psiFile]?.notebookCellIndex
         if (ind == null) {
@@ -296,7 +302,7 @@ class NotebookHighlightingManager(
             LOG.info("Not allowed to change $ind, will redo")
             return@async
         }
-        iterationLock.withWriteLock {
+        withLock {
             finishedFiles.addIfNotNull(ind)
             LOG.info("Finished for $ind")
         }
@@ -392,9 +398,9 @@ class NotebookHighlightingManager(
         val canModifyRequests = isCanModifyHLRequests(project)
         val target = completeRangeInd
 
-        iterationLock.withWriteLock {
+        withLock {
             if (iterationState.get() == DaemonState.IDLE) {
-                return@withWriteLock
+                return@withLock
             }
             reduceQueue(canModifyRequests)
             queue?.addIfNotNull(target)
