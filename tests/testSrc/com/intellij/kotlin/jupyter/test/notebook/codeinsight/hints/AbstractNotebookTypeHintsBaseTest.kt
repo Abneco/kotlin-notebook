@@ -80,7 +80,7 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
             sourceText,
             editor = myFixture.editor,
             filter = { r -> r.widthInPixels > 0 },
-            renderer = { renderer, _ ->
+            renderer = { renderer, _, _ ->
                 if (renderer !is PresentationRenderer && renderer !is LinearOrderInlayRenderer<*>) error("renderer not supported")
                 renderer.toString()
             },
