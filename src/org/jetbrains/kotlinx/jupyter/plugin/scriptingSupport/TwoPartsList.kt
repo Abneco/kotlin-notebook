@@ -27,6 +27,10 @@ internal class TwoPartsList<T>(
         lock.withWriteLock { snippetsPart.addAll(items) }
     }
 
+    fun removeSnippet(items: Collection<T>) {
+        lock.withWriteLock { snippetsPart.removeAll(items) }
+    }
+
     fun getList(): List<T> {
         return lock.withReadLock { (initialPart + snippetsPart).distinct() }
     }

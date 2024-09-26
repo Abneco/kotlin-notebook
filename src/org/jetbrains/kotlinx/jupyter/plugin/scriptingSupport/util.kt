@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.workspace.WorkspaceModel
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
+import org.jetbrains.kotlinx.jupyter.repl.result.SerializedCompiledScript
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 
 val Project.baseScriptingCompilationConfiguration: ScriptCompilationConfiguration
@@ -16,3 +17,7 @@ val Project.scriptConfigurationsClassCache
 
 val Project.workSpaceSnapshot
     get() = WorkspaceModel.getInstance(this).currentSnapshot
+
+
+val SerializedCompiledScript.classFQN: String
+    get() = fileName.removeSuffix(".class").replace('$', '.')

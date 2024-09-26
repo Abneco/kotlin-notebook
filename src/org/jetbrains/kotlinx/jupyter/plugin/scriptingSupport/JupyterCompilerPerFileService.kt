@@ -49,6 +49,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArt
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanentIndexService
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.resources.KotlinNotebookMavenArtifactsDownloader
+import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.k2.CompiledClassifiersDefaultImportsEnhancer
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.ScriptingSupportUpdateEventsListener
@@ -147,6 +148,7 @@ class JupyterCompilerPerFileService(
             addInitial(defaultGlobalImports)
         }
     }
+    private val defaultImportsEnhancer = CompiledClassifiersDefaultImportsEnhancer.create(this)
 
     private val externalDependenciesProvider = ExecutedOnceBackgroundTask.create(
         3,
@@ -410,9 +412,14 @@ class JupyterCompilerPerFileService(
             }
         }
 
+        val compiledClassifiers = snippetMetadata.compiledData.scripts.filterNot { it.isImplicitReceiver }
         val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
-        loadReceiverClassesIfAny(lineClassesDir, kClassNames)
-        //LOG.warn("Added new classes to load: $kClassNames")
+
+        if (loadReceiverClassesIfAny(lineClassesDir, kClassNames)) {
+            defaultImportsEnhancer.updateDefaultImports(
+                compiledClassifiers, additionalDefaultImports
+            )
+        }
     }
 
     fun provideDefaultConfiguration(sourceCode: SourceCode): ScriptCompilationConfigurationResult {
@@ -468,6 +475,7 @@ class JupyterCompilerPerFileService(
         additionalDefaultImports.clear()
         implicitsList.clear()
         lastStableConfiguration.set(project.baseScriptingCompilationConfiguration)
+        defaultImportsEnhancer.clear()
         if (!project.isDisposed) {
             NotebookStructureTrackerService.getForFile(project, virtualFile).notebookDataCleared()
         }
