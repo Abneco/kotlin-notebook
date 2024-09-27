@@ -262,7 +262,6 @@
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">
-        <!--<listener implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.listeners.JupyterKtScriptChangeListener"/>-->
         <!--suppress PluginXmlDynamicPlugin -->
         <scriptingSupport implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport"/>
     </extensions>
