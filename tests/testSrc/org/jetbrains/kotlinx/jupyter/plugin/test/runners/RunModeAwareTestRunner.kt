@@ -9,8 +9,8 @@ import org.junit.runners.BlockJUnit4ClassRunner
 import org.junit.runners.model.FrameworkMethod
 
 object TestContext {
-    private val modeThreadLocal = ThreadLocal<KotlinNotebookSessionRunMode>().apply {
-        set(KotlinNotebookSessionRunMode.DEFAULT)
+    private val modeThreadLocal = object : ThreadLocal<KotlinNotebookSessionRunMode>() {
+        override fun initialValue() = KotlinNotebookSessionRunMode.DEFAULT
     }
 
     var kernelRunMode: KotlinNotebookSessionRunMode

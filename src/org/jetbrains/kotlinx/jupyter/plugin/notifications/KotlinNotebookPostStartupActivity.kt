@@ -16,10 +16,6 @@ class KotlinNotebookPostStartupActivity : ProjectActivity {
     private fun installProjectOptionsListener(project: Project) {
         project.service<KotlinNotebookProjectOptionsProvider>().apply {
             addListener(object : Listener {
-                override fun onKernelRunModeChanged() {
-                    project.notebookNotifications.showKernelRunModeChanged()
-                }
-
                 override fun onKernelVersionChanged() {
                     ignoreOutdatedKernelVersion = false
                     showOutdatedKernelWarningIfNeeded(project)

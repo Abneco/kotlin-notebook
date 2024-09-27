@@ -23,8 +23,10 @@ import org.jetbrains.kotlinx.jupyter.plugin.test.withDisabledJcef
 import com.intellij.jupyter.core.jackson
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServers
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookOrNull
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
+import org.jetbrains.kotlinx.jupyter.plugin.settings.sessionRunMode
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Rule
 import org.junit.jupiter.api.Assertions
@@ -74,7 +76,6 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
 
     override fun setUp() {
         super.setUp()
-        KotlinNotebookProjectOptionsProvider.getInstance(project).kernelRunMode = TestContext.kernelRunMode
         Disposer.register(testRootDisposable, JupyterServers.getInstance())
     }
 
@@ -106,6 +107,9 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
             myFixture.editor.setMode(NotebookEditorMode.EDIT)
         }
         originalVirtualFile = myFixture.file.virtualFile // `myFixture.file` may return the file which is injected inside one of the cells
+        val notebook = myFixture.editor.virtualFile.jupyterNotebookOrNull
+            ?: error("Couldn't find Jupyter Notebook for ${originalVirtualFile.path}")
+        notebook.sessionRunMode = TestContext.kernelRunMode
         val notebookFile = runReadAction {
             FileContextUtil.getFileContext(myFixture.file)?.containingFile ?: myFixture.file
         }

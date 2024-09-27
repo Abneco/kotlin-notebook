@@ -7,10 +7,6 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
-import com.intellij.openapi.observable.properties.AtomicProperty
-import com.intellij.openapi.observable.properties.ObservableMutableProperty
-import com.intellij.openapi.observable.properties.ObservableProperty
-import com.intellij.openapi.observable.util.transform
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ui.configuration.SdkComboBox
@@ -20,11 +16,9 @@ import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.util.CheckedDisposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsContexts
-import com.intellij.ui.dsl.builder.ButtonsGroup
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.builder.actionButton
-import com.intellij.ui.dsl.builder.bind
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindIntValue
 import com.intellij.ui.dsl.builder.bindSelected
@@ -52,7 +46,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOption
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.settings.SessionOptionsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isAvailable
-import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelRunModeSelectionEnabled
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelVersionEnoughForInstrumentation
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isSuitableForStartingKernel
 import org.jetbrains.kotlinx.jupyter.plugin.settings.minJdkVersion
@@ -70,33 +63,23 @@ class KotlinNotebookSettingsPanelBuilder(
     private val projectOptions = KotlinNotebookProjectOptionsProvider.getInstance(project)
     private val attachedProcessOptions = KotlinNotebookAttachedModeOptions.getInstance(project)
     private val messageBus = createMessageBus(parentDisposable)
-    private val kernelModeObservable = getKernelRunModeObservable(projectOptions)
 
     fun createPanel(): DialogPanel {
         return panel {
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.build")) {
                 createKernelVersionSelector()
-                if (isKernelRunModeSelectionEnabled) {
-                    createKernelModeSelector()
+
+                createJdkComboBox()
+                createJvmTargetForSnippetsComboBox()
+                createMaxHeapSizeSpinner()
+                createExtraJvmArgumentsField()
+                createEnvironmentVariablesField()
+            }
+            if (KotlinNotebookSessionRunMode.ATTACHED_PROCESS.isAvailable) {
+                group(KotlinNotebookBundle.message("kotlin.jupyter.attached.process.mode.settings.group")) {
+                    createKernelHostField()
+                    createZmqPortsSelector()
                 }
-
-                fun <T: Any> T.showForMode(modePredicate: (KotlinNotebookSessionRunMode) -> Boolean): T {
-                    val visibilityPredicate = kernelModeObservable.transform(modePredicate)
-                    setVisibility(visibilityPredicate)
-                    return this
-                }
-
-                fun <T: Any> T.showForSeparateProcess() = showForMode { it == KotlinNotebookSessionRunMode.SEPARATE_PROCESS }
-                fun <T: Any> T.showForAttachedMode() = showForMode { it == KotlinNotebookSessionRunMode.ATTACHED_PROCESS }
-                fun <T: Any> T.hideForAttachedMode() = showForMode { it != KotlinNotebookSessionRunMode.ATTACHED_PROCESS }
-
-                createJdkComboBox().showForSeparateProcess()
-                createJvmTargetForSnippetsComboBox().hideForAttachedMode()
-                createMaxHeapSizeSpinner().showForSeparateProcess()
-                createExtraJvmArgumentsField().showForSeparateProcess()
-                createEnvironmentVariablesField().showForSeparateProcess()
-                createKernelHostField().showForAttachedMode()
-                createZmqPortsSelector().showForAttachedMode()
             }
             if (debugFeaturesEnabled) {
                 group(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug")) {
@@ -139,13 +122,6 @@ class KotlinNotebookSettingsPanelBuilder(
                 )
             }
         }
-    }
-
-    private fun getKernelRunModeObservable(
-        optionsProvider: KotlinNotebookProjectOptionsProvider
-    ): ObservableMutableProperty<KotlinNotebookSessionRunMode> {
-        val modeProperty = optionsProvider::kernelRunMode
-        return AtomicProperty(modeProperty.invoke())
     }
 
     private fun Panel.createKernelVersionSelector(): Row {
@@ -192,21 +168,6 @@ class KotlinNotebookSettingsPanelBuilder(
                 )
             }
         }
-    }
-
-    private fun Panel.createKernelModeSelector(): ButtonsGroup {
-        return buttonsGroup(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.mode")) {
-            for (runMode in KotlinNotebookSessionRunMode.entries) {
-                if (!runMode.isAvailable) continue
-                row {
-                    radioButton(runMode.description, runMode).onChanged { button ->
-                        if (button.isSelected) {
-                            kernelModeObservable.set(runMode)
-                        }
-                    }
-                }
-            }
-        }.bind(projectOptions::kernelRunMode)
     }
 
     private fun Panel.createMaxHeapSizeSpinner(): Row {
@@ -345,14 +306,6 @@ class KotlinNotebookSettingsPanelBuilder(
                     comment(commentMessage)
                 }
                 .bindSelected(property)
-        }
-    }
-
-    private fun <T : Any> T.setVisibility(visibilityPredicate: ObservableProperty<Boolean>) {
-        when (val obj = this) {
-            is Row -> obj.visibleIf(visibilityPredicate)
-            is Panel -> obj.visibleIf(visibilityPredicate)
-            else -> throw IllegalStateException("Visibility isn't supported for ${obj::class.simpleName}")
         }
     }
 

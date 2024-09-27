@@ -1,7 +1,9 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.settings
 
-import com.intellij.openapi.util.NlsContexts
+import com.intellij.openapi.util.NlsActions.ActionText
+import com.intellij.openapi.util.NlsContexts.Command
+import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
 
 private val isKernelProcessEmbeddingEnabled by registryFlag("kotlin.notebook.allow.embedded.kernel", false)
@@ -9,12 +11,10 @@ private val isKernelAttachedModeEnabled by registryFlag("kotlin.notebook.allow.a
 
 val isKernelRunModeSelectionEnabled get() = isKernelProcessEmbeddingEnabled || isKernelAttachedModeEnabled
 
-enum class KotlinNotebookSessionRunMode(
-    @NlsContexts.Label val description: String
-) {
-    SEPARATE_PROCESS(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.mode.separate.process")),
-    IDE_PROCESS(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.mode.ide.process")),
-    ATTACHED_PROCESS(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.mode.attached.process"));
+enum class KotlinNotebookSessionRunMode(@ActionText val title: String) {
+    SEPARATE_PROCESS(KotlinNotebookBundle.message("action.KotlinNotebookEnableSeparateProcessMode.text")),
+    IDE_PROCESS(KotlinNotebookBundle.message("action.KotlinNotebookEnableIdeProcessMode.text")),
+    ATTACHED_PROCESS(KotlinNotebookBundle.message("action.KotlinNotebookEnableAttachedProcessMode.text"));
 
     companion object
 }

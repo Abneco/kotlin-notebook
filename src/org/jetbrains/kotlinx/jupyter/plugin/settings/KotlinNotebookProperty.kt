@@ -5,10 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.node.TextNode
 import org.jetbrains.annotations.Nls
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.jupyter.core.jupyter.nbformat.notifyNotebookChanged
 import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
 private const val METADATA_KEY = "ktnbPluginMetadata"
@@ -65,5 +67,21 @@ internal class KotlinNotebookBooleanProperty(name: @Nls String, defaultValue: Bo
 
     override fun Boolean.toNode(): JsonNode {
         return if (this) BooleanNode.TRUE else BooleanNode.FALSE
+    }
+}
+
+internal class KotlinNotebookEnumProperty<T : Enum<T>>(
+    name: @Nls String,
+    defaultValue: T,
+    private val kClass: KClass<T>,
+) : KotlinNotebookProperty<T>(name, defaultValue) {
+    override fun JsonNode.toValue(): T {
+        return this.textValue()?.let { value ->
+            kClass.java.enumConstants.find { it.name.equals(value, ignoreCase = true) }
+        } ?: defaultValue
+    }
+
+    override fun T.toNode(): JsonNode {
+        return TextNode(name)
     }
 }

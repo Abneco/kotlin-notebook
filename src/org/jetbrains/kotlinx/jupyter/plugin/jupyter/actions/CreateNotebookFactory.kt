@@ -15,6 +15,7 @@ import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.config.notebookLanguageInfo
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSettings
 import org.jetbrains.kotlinx.jupyter.plugin.settings.asJson
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
@@ -88,7 +89,8 @@ object CreateNotebookFactory {
 
         return KotlinNotebookSettings(
             projectDependencies = if (includeModules) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None,
-            projectLibraries = if (includeLibraries) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None
+            projectLibraries = if (includeLibraries) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None,
+            sessionRunMode = KotlinNotebookSessionRunMode.SEPARATE_PROCESS,
         )
     }
 

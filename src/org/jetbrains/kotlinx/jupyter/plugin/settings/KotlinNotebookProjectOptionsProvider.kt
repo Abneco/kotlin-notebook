@@ -52,9 +52,6 @@ class KotlinNotebookProjectOptionsProvider :
     var extraEnvironmentVariables by prop(State::extraEnvironmentVariables)
         internal set
 
-    var kernelRunMode by prop(State::kernelRunMode)
-        .onChange(Listener::onKernelRunModeChanged)
-
     var shouldLimitTypeHintsByActiveCell by prop(State::shouldLimitTypeHintsByActiveCell)
         internal set
     var shouldBuildProject by prop(State::shouldBuildProject)
@@ -73,7 +70,6 @@ class KotlinNotebookProjectOptionsProvider :
         var extraJvmArguments by list<String>()
         var extraEnvironmentVariables by linkedMap<String, String>()
 
-        var kernelRunMode by enum(KotlinNotebookSessionRunMode.DEFAULT)
         var shouldLimitTypeHintsByActiveCell by property(false)
 
         // default settings for new notebooks
@@ -92,7 +88,6 @@ class KotlinNotebookProjectOptionsProvider :
         fun onJdkChanged() {}
         fun onJvmTargetForSnippetsChanged() {}
         fun onKernelVersionChanged() {}
-        fun onKernelRunModeChanged() {}
     }
 
 

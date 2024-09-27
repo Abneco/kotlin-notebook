@@ -2,14 +2,9 @@
 package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server
 
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import org.jetbrains.kotlinx.jupyter.plugin.settings.DEFAULT
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookProjectOptionsProvider
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
-import org.jetbrains.kotlinx.jupyter.plugin.settings.isKernelRunModeSelectionEnabled
 import java.nio.file.Path
 
 /**
@@ -41,12 +36,3 @@ interface KernelRunnableFactory {
         }
     }
 }
-
-val Project.kotlinNotebookSessionRunMode : KotlinNotebookSessionRunMode
-    get() {
-        return if (isKernelRunModeSelectionEnabled || ApplicationManager.getApplication().isUnitTestMode) {
-            KotlinNotebookProjectOptionsProvider.getInstance(this).kernelRunMode
-        } else {
-            KotlinNotebookSessionRunMode.DEFAULT
-        }
-    }

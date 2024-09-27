@@ -9,19 +9,28 @@ private val isBuildProjectProperty = KotlinNotebookBooleanProperty("isBuildProje
 private val isAddProjectLibrariesToClasspathProperty = KotlinNotebookBooleanProperty("isAddProjectLibrariesToClasspath", true)
 private val projectDependenciesProperty = KotlinNotebookDependenciesProperty("projectDependencies", KotlinNotebookDependencies.None)
 private val projectLibrariesProperty = KotlinNotebookDependenciesProperty("projectLibraries", KotlinNotebookDependencies.All)
+private val sessionRunModeProperty = KotlinNotebookEnumProperty(
+    name = "sessionRunMode",
+    defaultValue = KotlinNotebookSessionRunMode.DEFAULT,
+    kClass = KotlinNotebookSessionRunMode::class
+)
 
 var JupyterNotebook.isBuildProject by isBuildProjectProperty
 var JupyterNotebook.isAddProjectLibrariesToClasspath by isAddProjectLibrariesToClasspathProperty
 var JupyterNotebook.projectDependencies by projectDependenciesProperty
 var JupyterNotebook.projectLibraries by projectLibrariesProperty
+var JupyterNotebook.sessionRunMode by sessionRunModeProperty
 
 data class KotlinNotebookSettings(
     val projectDependencies: KotlinNotebookDependencies,
-    val projectLibraries: KotlinNotebookDependencies) {
+    val projectLibraries: KotlinNotebookDependencies,
+    val sessionRunMode: KotlinNotebookSessionRunMode,
+) {
     companion object {
         val DEFAULT = KotlinNotebookSettings(
             projectDependenciesProperty.defaultValue,
             projectLibrariesProperty.defaultValue,
+            sessionRunModeProperty.defaultValue,
         )
     }
 }
@@ -36,7 +45,11 @@ fun KotlinNotebookSettings.asJson(): String? {
 
 @RequiresEdt
 fun JupyterNotebook.readSettings(): KotlinNotebookSettings {
-    return KotlinNotebookSettings(projectDependencies, projectLibraries)
+    return KotlinNotebookSettings(
+        projectDependencies = projectDependencies,
+        projectLibraries = projectLibraries,
+        sessionRunMode = sessionRunMode
+    )
 }
 
 @RequiresEdt

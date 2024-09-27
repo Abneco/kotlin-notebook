@@ -6,11 +6,11 @@ import com.intellij.openapi.project.waitForSmartMode
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelRunnableFactory
-import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.kotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelPortsProvider
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelProcessFactory
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
+import org.jetbrains.kotlinx.jupyter.plugin.test.runners.TestContext
 import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
 import org.jetbrains.kotlinx.jupyter.startup.create
 import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
@@ -62,7 +62,7 @@ class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
                 listOf()
             )))
 
-            when(project.kotlinNotebookSessionRunMode) {
+            when (TestContext.kernelRunMode) {
                 KotlinNotebookSessionRunMode.SEPARATE_PROCESS, KotlinNotebookSessionRunMode.ATTACHED_PROCESS -> {
                     assertTrue("Kernel restart was not attempted, attempts count: $attemptCount", attemptCount >= 2)
                 }

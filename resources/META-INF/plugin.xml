@@ -356,6 +356,11 @@
         <action id="ShowKotlinNotebookPreferencesAction"
                 class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookShowPreferencesAction"
                 icon="AllIcons.General.Settings"/>
+        <action id="KotlinNotebookSessionModeComboBox"
+                class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookSessionModeComboBox">
+            <add-to-group group-id="JupyterEditorRightToolbarActions"
+                          anchor="first"/>
+        </action>
         <action id="ToggleShowExecutionCount"
                 class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookToggleShowExecutionCountAction">
             <add-to-group group-id="JupyterEditorGutterPopupActions"/>
@@ -379,6 +384,15 @@
             <reference id="KotlinNotebookSettingsActions"/>
             <add-to-group group-id="JupyterEditorPopupActions"/>
             <add-to-group group-id="JupyterEditorLeftToolbarActions"/>
+        </group>
+
+        <group id="KotlinNotebookChangeSessionModeActions">
+            <action id="KotlinNotebookEnableSeparateProcessMode"
+                    class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookEnableSeparateProcessMode"/>
+            <action id="KotlinNotebookEnableIdeProcessMode"
+                    class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookEnableIdeProcessMode"/>
+            <action id="KotlinNotebookEnableAttachedProcessMode"
+                    class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookEnableAttachedProcessMode"/>
         </group>
 
         <action id="RestartKotlinNotebookHighlighting"
