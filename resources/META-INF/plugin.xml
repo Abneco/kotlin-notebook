@@ -291,6 +291,8 @@
         <themeChangedListener implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.appearance.KotlinNotebookEditorColorsListener"/>
         <jupyter.output.error.filters.provider
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.error.KotlinJupyterErrorOutputFiltersProvider"/>
+        <server.chooser.action.presentation.updater
+                implementation="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookServerChooserActionPresentationUpdater"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.jupyter.core.jupyter">
