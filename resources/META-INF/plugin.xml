@@ -126,7 +126,6 @@
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <renameHandler implementation="org.jetbrains.kotlinx.jupyter.plugin.editor.refactoring.KotlinNotebookPropertiesRenameHandler"/>
         <scriptDefinitionsProvider implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.definitions.JupyterScriptDefinitionProvider"/>
-        <scriptDependenciesSource implementation="org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.k2.NotebookScriptDependenciesSource"/>
         <idea.caches.resolve.resolveOptimizingOptionsProvider
                 implementation="org.jetbrains.kotlinx.jupyter.plugin.language.kotlin.resolve.KotlinNotebookOptimizingOptionsProvider"/>
         <postInsertDeclarationCallback

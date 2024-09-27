@@ -6,6 +6,9 @@ import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionsSource
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 
+/**
+ * Kotlin Notebook main class to provide the plugin main script definition.
+ */
 class KotlinNotebookScriptDefinitionsSource(val project: Project) : ScriptDefinitionsSource {
     override val definitions: Sequence<ScriptDefinition>
         get() = sequenceOf(

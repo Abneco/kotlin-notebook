@@ -9,7 +9,12 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.platform.backend.workspace.WorkspaceModel
 import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.workspaceModel
-import com.intellij.platform.workspace.jps.entities.*
+import com.intellij.platform.workspace.jps.entities.ModuleEntity
+import com.intellij.platform.workspace.jps.entities.ModuleId
+import com.intellij.platform.workspace.jps.entities.SdkDependency
+import com.intellij.platform.workspace.jps.entities.SdkId
+import com.intellij.platform.workspace.jps.entities.modifyModuleEntity
+import com.intellij.platform.workspace.jps.entities.sourceRoots
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
@@ -26,6 +31,18 @@ import kotlin.script.experimental.api.asSuccess
 import kotlin.script.experimental.api.valueOrNull
 
 
+/**
+ * K2 entry point that manages script dependencies for Kotlin notebooks within a given project.
+ *
+ * Basically, it's the replacement for [org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport] in K2 mode.
+ *
+ * Update handles steps:
+ *  - preparation of script configurations
+ *  - updating internal modules for scripts and its dependency as libraries.
+ *
+ *  Note that now for each script a separate module is created, and for each module there are its own dependencies.
+ *  This is about to change.
+ */
 class NotebookScriptDependenciesSource(override val project: Project) : ScriptDependenciesSource<KotlinNotebookScriptModel>(project) {
     override fun resolveDependencies(scripts: Iterable<KotlinNotebookScriptModel>): ScriptDependenciesData {
         val sdk = ProjectRootManager.getInstance(project).projectSdk

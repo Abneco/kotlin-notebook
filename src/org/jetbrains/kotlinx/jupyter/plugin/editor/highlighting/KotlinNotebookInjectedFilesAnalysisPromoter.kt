@@ -6,7 +6,11 @@ import com.intellij.psi.FileViewProvider
 import org.jetbrains.kotlin.idea.base.analysis.KotlinIdeInjectedFilesAnalysisPromoter
 import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 
-
+/**
+ * Promotes analysis of injected [org.jetbrains.kotlin.psi.KtFile] inside Kotlin Notebook.
+ *
+ * If analysis is promoted, it will be analyzed by the base Kotlin visitor.
+ */
 internal class KotlinNotebookInjectedFilesAnalysisPromoter : KotlinIdeInjectedFilesAnalysisPromoter {
     override fun shouldRunAnalysisForInjectedFile(viewProvider: FileViewProvider): Boolean {
         val virtualFile = viewProvider.virtualFile

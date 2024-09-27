@@ -89,7 +89,6 @@ class K2ScriptingSupportUpdater(private val project: Project) : ScriptingSupport
         val scripts = mutableListOf<KotlinNotebookScriptModel>()
         for (notebook in notebooks) {
             val notebookService = JupyterCompilerService.getForFile(project, notebook)
-            var exception: Throwable? = null
             val perFileScripts = readAction {
                 val scriptsToRefine = notebookService.getFilesToRefine()
                 scriptsToRefine.map { ktFileScriptSource ->
@@ -98,9 +97,6 @@ class K2ScriptingSupportUpdater(private val project: Project) : ScriptingSupport
                     val defaultConfiguration = try {
                         getConfiguration(ktFile)?.valueOrNull()?.configuration!!
                     } catch (e: Throwable) {
-                        if (e !is ProcessCanceledException) {
-                            exception = e
-                        }
                         throw e
                     }
 
@@ -122,10 +118,6 @@ class K2ScriptingSupportUpdater(private val project: Project) : ScriptingSupport
             }
 
             scripts.addAll(perFileScripts)
-            // rethrow if present
-            if (exception != null) {
-                throw exception
-            }
         }
 
         NotebookScriptDependenciesSource.getInstance(project)

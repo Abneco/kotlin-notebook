@@ -6,6 +6,13 @@ import com.intellij.openapi.editor.markup.RangeHighlighter
 import org.jetbrains.kotlinx.jupyter.plugin.ide.handlers.KotlinPluginModeAwareHandler
 import org.jetbrains.kotlinx.jupyter.plugin.ide.handlers.createPluginModeAwareInstance
 
+/**
+ * Provides instances of `MarkupModelListener` based on the current mode of the Kotlin plugin.
+ * This is a part of introducing our own highlighting style for errors in cells
+ * which are not inside the cell of the focus, aka "Shadowing" errors.
+ *
+ * Listener is necessary to keep track of error highlighters which are effectively applied to the model.
+ */
 object MarkupModelListenerPluginAwareProvider : KotlinPluginModeAwareHandler {
     fun provideListener(highlighters: MutableSet<RangeHighlighter>): MarkupModelListener {
         return createPluginModeAwareInstance(
@@ -20,6 +27,7 @@ object MarkupModelListenerPluginAwareProvider : KotlinPluginModeAwareHandler {
     }
 
     private fun createK2Listener(highlighters: MutableSet<RangeHighlighter>) : MarkupModelListener {
+        // shadowing is not yet supported
         return object : MarkupModelListener { }
     }
 }

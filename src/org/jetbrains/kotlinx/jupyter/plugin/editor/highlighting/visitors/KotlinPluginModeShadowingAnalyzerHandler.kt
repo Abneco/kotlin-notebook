@@ -17,6 +17,14 @@ import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.util.con
 import org.jetbrains.kotlinx.jupyter.plugin.ide.handlers.KotlinPluginModeAwareHandler
 import org.jetbrains.kotlinx.jupyter.plugin.ide.handlers.createPluginModeAwareInstance
 
+
+/**
+ * Base class for managing analysis outside the focus cell.
+ * The handlers are aware of the plugin's operation mode (e.g., K1 or K2).
+ *
+ * This analysis involves detecting errors and creating a special highlighter for it.
+ * All instances of this class should be stateless, ideally, objects.
+ */
 sealed class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareHandler {
     protected fun prepareForFile(injectedFile: PsiFile) : InjectedFileHighlightingHelper {
         val helper =  InjectedFileHighlightingHelper(injectedFile)
@@ -84,6 +92,7 @@ object K1ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
 
 
 object K2ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
+    // not yet supported
     override fun performShadowing(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, afterAnalysis: () -> Unit) : Boolean {
         return true
     }

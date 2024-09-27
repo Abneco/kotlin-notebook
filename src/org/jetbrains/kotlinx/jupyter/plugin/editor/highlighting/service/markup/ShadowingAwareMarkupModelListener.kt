@@ -7,6 +7,10 @@ import com.intellij.openapi.editor.ex.RangeHighlighterEx
 import com.intellij.openapi.editor.impl.event.MarkupModelListener
 import com.intellij.openapi.editor.markup.RangeHighlighter
 
+/**
+ * Base implementation for keeping track of error highlighters from K1 errors factory.
+ * Might be reused for K2.
+ */
 internal class ShadowingAwareMarkupModelListener(private val errorHighlighters: MutableSet<RangeHighlighter>) : MarkupModelListener {
     override fun afterAdded(highlighter: RangeHighlighterEx) {
         val info = HighlightInfo.fromRangeHighlighter(highlighter) ?: return

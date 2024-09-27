@@ -7,6 +7,15 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.idea.highlighter.visitor.AbstractHighlightingVisitor
 
+/**
+ * `KotlinNotebookShadowingVisitor` is responsible for managing and performing
+ *  special highlighting style for errors outside the focus cell.
+ *
+ *  This special style is referred to as "Shadowing".
+ *
+ *  Since inside main logic front-end api is used, there is no need to specifically traverse the file;
+ *  hence, KotlinNotebookDummyVisitor is used as a visitor.
+ */
 internal class KotlinNotebookShadowingVisitor : AbstractKotlinHighlightingVisitorAdapter<KotlinNotebookDummyVisitor>() {
     override fun clone(): HighlightVisitor {
         return KotlinNotebookShadowingVisitor()
