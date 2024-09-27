@@ -2,7 +2,21 @@
 package com.intellij.kotlin.jupyter.tables
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.intellij.jupyter.core.jackson
+import com.intellij.jupyter.core.jupyter.editor.isJupyter
+import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputDataKey
+import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterOutputDataKeyExtractor
+import com.intellij.jupyter.core.jupyter.editor.outputs.getOutputsForIndex
+import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.JupyterWebOutputInfo
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterExecuteResultOutput
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputType
+import com.intellij.jupyter.tables.JupyterTableOutputDataKey
 import com.intellij.jupyter.tables.createTableOutputDataKey
+import com.intellij.notebooks.visualization.NotebookCellLines
+import com.intellij.notebooks.visualization.NotebookIntervalPointer
+import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
+import com.intellij.notebooks.visualization.outputs.NotebookOutputDataKey
+import com.intellij.notebooks.visualization.outputs.NotebookOutputDataKeyExtractor
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.scientific.tables.api.DSTableDataType
 import com.intellij.scientific.tables.api.DSTableText
@@ -10,19 +24,6 @@ import com.intellij.util.asSafely
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import org.jetbrains.kotlinx.jupyter.plugin.util.KOTLIN_DATAFRAME_MIME
-import com.intellij.jupyter.core.jupyter.editor.isJupyter
-import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputDataKey
-import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterOutputDataKeyExtractor
-import com.intellij.jupyter.tables.JupyterTableOutputDataKey
-import com.intellij.jupyter.core.jupyter.editor.outputs.getOutputsForIndex
-import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.JupyterWebOutputInfo
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterExecuteResultOutput
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputType
-import com.intellij.notebooks.visualization.NotebookCellLines
-import com.intellij.notebooks.visualization.NotebookIntervalPointer
-import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
-import com.intellij.notebooks.visualization.outputs.NotebookOutputDataKey
-import com.intellij.notebooks.visualization.outputs.NotebookOutputDataKeyExtractor
 
 /**
  * Extract [JupyterTableOutputDataKey] from Kotlin Dataframe produced cell output
@@ -50,7 +51,8 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
         val info = key.info
         if (info !is JupyterWebOutputInfo.Output) return false
 
-        return info.output[KOTLIN_DATAFRAME_MIME] != null
+        val jsonOutput = jackson.readTree(info.output) as ObjectNode
+        return jsonOutput[KOTLIN_DATAFRAME_MIME] != null
     }
 
     private fun extractImpl(
