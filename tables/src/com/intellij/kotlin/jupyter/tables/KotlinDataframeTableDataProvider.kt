@@ -117,7 +117,7 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
     ): DSTableData {
         @NlsSafe
         val response = commandExecutor.executeCommand(
-            SliceTableCommand(tableVariable, format, start, end),
+            SliceTableCommand(tableVariable, false, format, start, end),
             ::getCommandCode
         )
 
