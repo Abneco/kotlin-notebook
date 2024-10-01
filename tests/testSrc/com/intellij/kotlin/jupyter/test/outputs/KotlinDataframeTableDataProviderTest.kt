@@ -57,7 +57,7 @@ class KotlinDataframeTableDataProviderTest : BasePlatformTestCase() {
         KotlinNotebookApplicationOptions.get().showDataFrameAsSwing = true
         val provider = dataframeProvider.getDataProviderCapableToParseData(project, data.toString())
 
-        val frameInfo = provider.parseTextToFrameInfo(data.toString())
+        val frameInfo = provider.parseStaticTableToFrameInfo(data.toString())
 
         Assert.assertEquals(frameInfo.rows, 20)
         Assert.assertEquals(frameInfo.columnNames, actualColumns)
@@ -70,7 +70,7 @@ class KotlinDataframeTableDataProviderTest : BasePlatformTestCase() {
         KotlinNotebookApplicationOptions.get().showDataFrameAsSwing = true
         val provider = dataframeProvider.getDataProviderCapableToParseData(project, data.toString())
 
-        val tableData = provider.parseTextToTableData(DataId(19), data.toString())
+        val tableData = provider.parseStaticTableToTableData(DataId(19), data.toString())
 
         Assert.assertEquals(tableData.cols!!.size, 14)
 
@@ -134,7 +134,7 @@ class KotlinDataframeTableDataProviderTest : BasePlatformTestCase() {
         KotlinNotebookApplicationOptions.get().showDataFrameAsSwing = true
         val provider = dataframeProvider.getDataProviderCapableToParseData(project, data.toString())
 
-        val tableData = provider.parseTextToTableData(DataId(19), data.toString())
+        val tableData = provider.parseStaticTableToTableData(DataId(19), data.toString())
 
         Assert.assertEquals(tableData.cols!!.size, 11)
     }

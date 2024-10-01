@@ -18,7 +18,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.scientific.tables.DSTableBundle
-import com.intellij.scientific.tables.DSTableData
+import com.intellij.scientific.tables.DSTableRawData
 import com.intellij.scientific.tables.DSTableDataException
 import com.intellij.scientific.tables.DataId
 import com.intellij.scientific.tables.api.DSDataFrameInfo
@@ -84,16 +84,16 @@ const val NULL: String = "null"
 class KotlinDataFrameProvider(private val project: Project, private val parser: KotlinDataframeParser, private val columnsLimit: Int) : NestedTableDataProvider {
     override val type: DSTableDataType = DSTableDataType.EXTERNAL
 
-    override fun parseTextToFrameInfo(text: String): DSDataFrameInfo {
+    override fun parseStaticTableToFrameInfo(text: String): DSDataFrameInfo {
         return parseFrameInfoFromKotlinDataframeOutput(text, isPreview = true)
     }
 
-    override fun parseTextToTableData(id: DataId, table: String): DSTableData {
+    override fun parseStaticTableToTableData(id: DataId, table: String): DSTableRawData {
         return parseDataFromKotlinDataframeOutput(id, table)
     }
 
     @Throws(DSTableDataException::class)
-    override fun getTableInfo(
+    override fun loadDynamicTableDataFrameInfo(
         commandExecutor: DSTableCommandExecutor,
         tableVariable: String,
         textTableOutput: String
@@ -107,14 +107,14 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
     }
 
     @Throws(DSTableDataException::class)
-    override fun dataFrameGetData(
+    override fun loadDynamicTableData(
         commandExecutor: DSTableCommandExecutor,
         dataId: DataId,
         tableVariable: String,
         format: String?,
         start: Int,
         end: Int
-    ): DSTableData {
+    ): DSTableRawData {
         @NlsSafe
         val response = commandExecutor.executeCommand(
             SliceTableCommand(tableVariable, false, format, start, end),
@@ -278,11 +278,11 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
         return info
     }
 
-    private fun parseDataFromKotlinDataframeOutput(id: DataId, text: String): DSTableData {
+    private fun parseDataFromKotlinDataframeOutput(id: DataId, text: String): DSTableRawData {
         val columnValues = parser.parseDataFrameData(text)
         requireNumberOfColumnsLessThenLimit(columnValues.size)
 
-        return DSTableData(id, columnValues)
+        return DSTableRawData(id, columnValues)
     }
 
     private fun requireNumberOfColumnsLessThenLimit(numberOfColumns: Int) {
