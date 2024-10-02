@@ -41,6 +41,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtPackageDirective
 import org.jetbrains.kotlin.utils.addIfNotNull
+import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.components.DaemonIterationState
 import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.markup.MarkupModelListenerPluginAwareProvider
 import org.jetbrains.kotlinx.jupyter.plugin.editor.typing.NotebookCaretListener
 import org.jetbrains.kotlinx.jupyter.plugin.ide.handlers.createPluginModeAwareInstance
@@ -57,7 +58,6 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 
 class NotebookHighlightingManager(
     virtualFile: BackedNotebookVirtualFile,
@@ -79,19 +79,16 @@ class NotebookHighlightingManager(
             val processedTokens = AtomicInteger(0)
         }
 
-        enum class DaemonState {
-            IDLE,
-            SETUP,
-            IN_PROGRESS,
-        }
-
         private const val INJECTED_SYNTAX_LAYER_BORDER = HighlighterLayer.CARET_ROW - 1
     }
     private val project: Project = projectService.project
 
     private val iterationLock = Mutex(false)
 
-    private val iterationState = AtomicReference(DaemonState.IDLE)
+    /**
+     * components
+     */
+    private val iterationStateIndicator = DaemonIterationState()
 
     val dataController = NotebookPerFileHighlightingMetaDataController(
         virtualFile,
@@ -236,16 +233,12 @@ class NotebookHighlightingManager(
         addNewMarkupListener(editor)
     }
 
-    private fun enterSetupPhase(): Boolean {
-        return iterationState.compareAndSet(DaemonState.IDLE, DaemonState.SETUP)
-    }
-
     fun passCreated(project: Project, targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
         if (cells == null) {
             LOG.warn("Cells are null, nothing can be done")
         }
 
-        if (!enterSetupPhase()) {
+        if (!iterationStateIndicator.enterSetupPhase()) {
             LOG.info("Another pass is in setup, aborting")
             return
         }
@@ -274,7 +267,7 @@ class NotebookHighlightingManager(
                 } ?: finishedFiles.add(ind)
             }
         }
-        iterationState.compareAndSet(DaemonState.SETUP, DaemonState.IN_PROGRESS)
+        iterationStateIndicator.enterProgressPhase()
         unrecognizedFiles.clear()
         this.completeRangeInd = completeRangeInd
     }
@@ -391,10 +384,10 @@ class NotebookHighlightingManager(
     // returns true if all updates are processed
     fun daemonFinished(editor: Editor, psiFile: PsiFile?) {
         val markup = (editor as? EditorEx)?.filteredDocumentMarkupModel ?: return
-        if (iterationState.get() == DaemonState.IDLE) return
+        if (iterationStateIndicator.isIdle) return
 
         coroutineScope.launch {
-            if (iterationState.get() == DaemonState.IDLE) return@launch
+            if (iterationStateIndicator.isIdle) return@launch
 
             processDaemonFinished(editor, psiFile, markup)
         }
@@ -427,12 +420,12 @@ class NotebookHighlightingManager(
         val target = completeRangeInd
 
         iterationLock.withLock {
-            if (iterationState.get() == DaemonState.IDLE) {
+            if (iterationStateIndicator.isIdle) {
                 return@withLock
             }
             reduceQueue(canModifyRequests)
             queue?.addIfNotNull(target)
-            iterationState.set(DaemonState.IDLE)
+            iterationStateIndicator.setIdle()
 
             val completedIndexes = finishedHighlighting
             val executionRequestsDone = dataController
@@ -448,7 +441,10 @@ class NotebookHighlightingManager(
             determineHighlightedFiles(markup, injectionData, remaining)
 
             if (seenNewFiles) {
-                queue?.addAll(unrecognizedFiles.toCellsIndexes(manager))
+                val unseenFiles = readAction {
+                    unrecognizedFiles.toCellsIndexes(manager)
+                }
+                queue?.addAll(unseenFiles)
                 unrecognizedFiles.clear()
             }
 
