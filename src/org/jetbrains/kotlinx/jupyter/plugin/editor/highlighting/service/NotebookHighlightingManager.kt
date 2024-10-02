@@ -35,6 +35,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtPackageDirective
@@ -54,12 +56,8 @@ import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.util.toPsiFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
-import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 
 class NotebookHighlightingManager(
     virtualFile: BackedNotebookVirtualFile,
@@ -91,18 +89,7 @@ class NotebookHighlightingManager(
     }
     private val project: Project = projectService.project
 
-    private val iterationLock = Semaphore(1, true)
-
-    @OptIn(ExperimentalContracts::class)
-    private inline fun <T> withLock(action: () -> T): T {
-        contract { callsInPlace(action, InvocationKind.EXACTLY_ONCE) }
-        iterationLock.acquire()
-        return try {
-            action()
-        } finally {
-            iterationLock.release()
-        }
-    }
+    private val iterationLock = Mutex(false)
 
     private val iterationState = AtomicReference(DaemonState.IDLE)
 
@@ -114,16 +101,18 @@ class NotebookHighlightingManager(
     private var _jupyterFile: PsiFile? = null
     val jupyterPsiFile: PsiFile? get() = _jupyterFile
 
-    private fun initializeData(restart: Boolean = false) {
-        withLock {
-            val targetData = mutableSetOf<Int>()
+    private suspend fun initializeData(restart: Boolean = false) {
+        val cells = smartReadAction(project) {
             val currentVFile = virtualFile.file
-
             val editorState = (FileEditorManager.getInstance(project).getSelectedEditor(currentVFile) as? TextEditor)?.editor
-            val cells = if (editorState != null) {
+
+            if (editorState != null) {
                 getAllIntervalPointers(editorState).mapNotNull { it.get()?.ordinal }
             } else virtualFile.file.toPsiFile(project).getNotebookCells().indices
+        }
 
+        iterationLock.withLock {
+            val targetData = mutableSetOf<Int>()
             targetData.addAll(cells)
 
             dataController.update {
@@ -135,7 +124,10 @@ class NotebookHighlightingManager(
         }
 
         if (virtualFile.file.isKotlinNotebook && !restart) {
-            _jupyterFile = virtualFile.file.toPsiFile(project)
+            val notebookPsiFile = readAction {
+                virtualFile.file.toPsiFile(project)
+            }
+            _jupyterFile = notebookPsiFile
             document.addDocumentListener(
                 ImpatientNotebookChangeListener(project, virtualFile),
                 this
@@ -199,7 +191,9 @@ class NotebookHighlightingManager(
 
     init {
         Disposer.register(projectService, this)
-        initializeData()
+        coroutineScope.async {
+            initializeData()
+        }
         projectService.addListeners()
     }
 
@@ -329,7 +323,7 @@ class NotebookHighlightingManager(
             LOG.info("Not allowed to change $ind, will redo")
             return@async
         }
-        withLock {
+        iterationLock.withLock {
             finishedFiles.addIfNotNull(ind)
             LOG.info("Finished for $ind")
         }
@@ -375,7 +369,7 @@ class NotebookHighlightingManager(
     private fun determineHighlightedFiles(markupModel: MarkupModelEx, injectionData: Map<KtFile, InjectedFileData>, skippedFiles: MutableSet<Int>) {
         injectionData.forEach { (ktFile, data) ->
             val range = data.ktFileRange
-            if (ktFile.text.isBlank()) return@forEach
+            if (range.length == 0) return@forEach
             data.processedTokens.set(0)
             val seenHighlighters = mutableSetOf<RangeHighlighter>()
 
@@ -413,9 +407,7 @@ class NotebookHighlightingManager(
     fun restartAnalysing() {
         coroutineScope.async {
             runCatching {
-                smartReadAction(project) {
-                    initializeData(true)
-                }
+                initializeData(true)
 
                 NotebookHighlightingRestarter.scheduleRegularUpdate(jupyterPsiFile!!)
             }.onFailure {
@@ -434,7 +426,7 @@ class NotebookHighlightingManager(
         val canModifyRequests = isCanModifyHLRequests(project)
         val target = completeRangeInd
 
-        withLock {
+        iterationLock.withLock {
             if (iterationState.get() == DaemonState.IDLE) {
                 return@withLock
             }
@@ -453,13 +445,11 @@ class NotebookHighlightingManager(
             val seenNewFiles = unrecognizedFiles.isNotEmpty()
             val injectionData = fileToInjectionData
 
-            readAction {
-                determineHighlightedFiles(markup, injectionData, remaining)
+            determineHighlightedFiles(markup, injectionData, remaining)
 
-                if (seenNewFiles) {
-                    queue?.addAll(unrecognizedFiles.toCellsIndexes(manager))
-                    unrecognizedFiles.clear()
-                }
+            if (seenNewFiles) {
+                queue?.addAll(unrecognizedFiles.toCellsIndexes(manager))
+                unrecognizedFiles.clear()
             }
 
             val project = editor.project
