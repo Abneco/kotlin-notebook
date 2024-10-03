@@ -238,7 +238,7 @@ class NotebookHighlightingManager(
             LOG.warn("Cells are null, nothing can be done")
         }
 
-        if (!iterationStateIndicator.enterSetupPhase()) {
+        if (!iterationStateIndicator.enterSetupPhase() && !iterationStateIndicator.isInProgress) {
             LOG.info("Another pass is in setup, aborting")
             return
         }
