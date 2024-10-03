@@ -79,7 +79,7 @@ class NotebookHighlightingManager(
             val processedTokens = AtomicInteger(0)
         }
 
-        private const val INJECTED_SYNTAX_LAYER_BORDER = HighlighterLayer.CARET_ROW - 1
+        internal const val INJECTED_SYNTAX_LAYER_BORDER = HighlighterLayer.CARET_ROW - 1
     }
     private val project: Project = projectService.project
 
