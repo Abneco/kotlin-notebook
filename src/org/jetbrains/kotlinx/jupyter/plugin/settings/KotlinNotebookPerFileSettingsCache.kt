@@ -18,13 +18,7 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.backend.workspace.WorkspaceModelChangeListener
 import com.intellij.platform.ide.progress.withBackgroundProgress
-import com.intellij.platform.workspace.jps.entities.LibraryEntity
-import com.intellij.platform.workspace.jps.entities.LibraryTableId
-import com.intellij.platform.workspace.jps.serialization.impl.LibraryNameGenerator
-import com.intellij.platform.workspace.storage.EntityChange
-import com.intellij.platform.workspace.storage.VersionedStorageChange
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.ProjectScope
 import com.intellij.util.Function
@@ -82,12 +76,8 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
     @CalledInAny
     fun getCachedSettings(file: VirtualFile) = cache[file]
 
-    internal fun onLibrariesRenamed(oldToNewNames: Map<String, String>) = performRefactoring {
-        onDependenciesRenamed(this::projectLibraries, oldToNewNames)
-    }
-
     internal fun onModulesRenamed(oldToNewNames: Map<String, String>) = performRefactoring {
-        onDependenciesRenamed(this::projectDependencies, oldToNewNames)
+        onModulesRenamed(this::notebookDependencies, oldToNewNames)
     }
 
     private fun performRefactoring(operation: JupyterNotebook.() -> Unit) {
@@ -120,17 +110,9 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
         }
     }
 
-    private fun onDependenciesRenamed(property: KMutableProperty0<KotlinNotebookDependencies>, oldToNewNames: Map<String, String>) {
-        val oldDependencies = property.get()
-        if (oldDependencies is KotlinNotebookDependencies.Selection) {
-            val newDependencies = oldToNewNames.values.toMutableSet()
-            oldToNewNames.forEach { (oldName, newName) ->
-                if (newDependencies.remove(oldName)) {
-                    newDependencies.add(newName)
-                }
-            }
-            property.set(KotlinNotebookDependencies.Selection(newDependencies))
-        }
+    private fun onModulesRenamed(property: KMutableProperty0<KotlinNotebookDependencies>, oldToNewNames: Map<String, String>) {
+        val oldModule = property.get() as? KotlinNotebookDependencies.SingleModule ?: return
+        property.set(KotlinNotebookDependencies.SingleModule(oldToNewNames[oldModule.moduleName] ?: oldModule.moduleName))
     }
 
     override fun dispose() {
@@ -146,28 +128,5 @@ class KotlinNotebookModuleRenameListener : ModuleListener {
     override fun modulesRenamed(project: Project, modules: List<Module>, oldNameProvider: Function<in Module, String>) {
         val oldToNewModuleNames = modules.associateBy { oldNameProvider.`fun`(it) }.mapValues { it.value.name }
         KotlinNotebookPerFileSettingsCache.getInstance(project).onModulesRenamed(oldToNewModuleNames)
-    }
-}
-
-class KotlinNotebookLibraryRenameListener(val project: Project) : WorkspaceModelChangeListener {
-    override fun changed(event: VersionedStorageChange) {
-        val libraryRenames = event.getChanges(LibraryEntity::class.java).filterIsInstance<EntityChange.Replaced<LibraryEntity>>().filter {
-            it.oldEntity.tableId is LibraryTableId.ProjectLibraryTableId
-        }
-        if (libraryRenames.isEmpty()) return
-
-        val oldToNewLibraryNames = libraryRenames.mapNotNull { rename ->
-            val idBefore = rename.oldEntity.symbolicId
-            val idAfter = rename.newEntity.symbolicId
-            if (idBefore == idAfter) return@mapNotNull null
-
-            val oldName = LibraryNameGenerator.getLegacyLibraryName(idBefore) ?: return@mapNotNull null
-            val newName = LibraryNameGenerator.getLegacyLibraryName(idAfter) ?: return@mapNotNull null
-
-            oldName to newName
-        }.toMap()
-        if (oldToNewLibraryNames.isEmpty()) return
-
-        KotlinNotebookPerFileSettingsCache.getInstance(project).onLibrariesRenamed(oldToNewLibraryNames)
     }
 }

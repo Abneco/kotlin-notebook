@@ -20,12 +20,11 @@ import com.intellij.util.containers.forEachGuaranteed
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
-import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
-import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.test.createEmptyNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.test.delete
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
+import org.jetbrains.kotlinx.jupyter.plugin.settings.notebookDependencies
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.pathString
@@ -39,21 +38,20 @@ class KotlinNotebookModuleDependenciesTest : UsefulTestCase() {
     private val notebookVirtualFile get() = _notebookVirtualFile!!
 
     fun `test one module`() {
-        doTest(listOf(ModuleManager.getInstance(project).modules.first()))
+        doTest(ModuleManager.getInstance(project).modules.first())
     }
 
-    fun `test two modules`() {
-        doTest(ModuleManager.getInstance(project).modules.toList().drop(1))
+    fun `test no modules`() {
+        doTest(module = null)
     }
 
-    fun `test all modules`() {
-        doTest(ModuleManager.getInstance(project).modules.toList())
-    }
-
-    private fun doTest(modules: List<Module>) {
+    private fun doTest(module: Module?) {
         runInEdtAndWait {
-            notebookVirtualFile.notebook.projectDependencies = KotlinNotebookDependencies.fromModules(modules)
-            notebookVirtualFile.notebook.projectLibraries = KotlinNotebookDependencies.None
+            notebookVirtualFile.notebook.notebookDependencies = if (module != null) {
+                KotlinNotebookDependencies.SingleModule(module)
+            } else {
+                KotlinNotebookDependencies.None
+            }
 
             FileEditorManager.getInstance(project).openFile(notebookVirtualFile.file)
         }
@@ -62,9 +60,9 @@ class KotlinNotebookModuleDependenciesTest : UsefulTestCase() {
             JupyterKotlinProjectArtifactsService.getInstance(project).buildProjectAndGetLibraries(notebookVirtualFile)
         }
 
-        val moduleClassPaths = modules.flatMap {
+        val moduleClassPaths = module?.let {
             ModuleRootManager.getInstance(it).orderEntries().withoutSdk().classes().pathsList.pathList
-        }
+        } ?: emptyList()
         assertEquals(moduleClassPaths, classpath)
     }
 

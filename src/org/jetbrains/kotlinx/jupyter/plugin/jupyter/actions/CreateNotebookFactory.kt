@@ -84,12 +84,10 @@ object CreateNotebookFactory {
         // Standard Notebooks should make the choice based on the default value for the property.
         fun disabledInLightMode(flag: Boolean) = flag && mode != NotebookMode.LIGHT
 
-        val includeModules = disabledInLightMode(options.shouldBuildProject)
         val includeLibraries = disabledInLightMode(options.shouldAddProjectLibrariesToClasspath)
 
         return KotlinNotebookSettings(
-            projectDependencies = if (includeModules) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None,
-            projectLibraries = if (includeLibraries) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None,
+            notebookDependencies = if (includeLibraries) KotlinNotebookDependencies.AllLibraries else KotlinNotebookDependencies.None,
             sessionRunMode = KotlinNotebookSessionRunMode.SEPARATE_PROCESS,
         )
     }

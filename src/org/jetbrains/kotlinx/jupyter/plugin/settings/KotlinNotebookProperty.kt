@@ -13,11 +13,11 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
-private const val METADATA_KEY = "ktnbPluginMetadata"
+internal const val METADATA_KEY = "ktnbPluginMetadata"
 
 internal abstract class KotlinNotebookProperty<T>(val name: String, val defaultValue: T) : ReadWriteProperty<JupyterNotebook, T> {
-    abstract fun JsonNode.toValue(): T
-    abstract fun T.toNode(): JsonNode
+    protected abstract fun JsonNode.toValue(): T
+    protected abstract fun T.toNode(): JsonNode
 
     override fun getValue(thisRef: JupyterNotebook, property: KProperty<*>): T {
         val metadata = thisRef.getMetadata(METADATA_KEY) ?: return defaultValue
@@ -38,11 +38,6 @@ internal abstract class KotlinNotebookProperty<T>(val name: String, val defaultV
 
     private fun doWriteValue(metadata: ObjectNode, value: T) {
         metadata.set<ObjectNode>(name, value.toNode())
-    }
-
-    internal fun writeValue(metadata: ObjectNode, value: T) {
-        if (value == defaultValue) return
-        doWriteValue(metadata, value)
     }
 
     private fun removeValue(thisRef: JupyterNotebook) {

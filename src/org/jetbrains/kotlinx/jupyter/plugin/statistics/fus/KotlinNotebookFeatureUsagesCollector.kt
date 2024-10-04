@@ -19,15 +19,14 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.exceptions.ReplCompilerException
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.NotebookMode
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.mode
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isAddProjectLibrariesToClasspath
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isBuildProject
-import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
-import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.util.KOTLIN_DATAFRAME_MIME
 import org.jetbrains.kotlinx.jupyter.plugin.util.LETS_PLOT_MIME
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.psi.jupyter.nbformat.JupyterCellType
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
+import org.jetbrains.kotlinx.jupyter.plugin.settings.notebookDependencies
 
 class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
     override fun getGroup(): EventLogGroup {
@@ -87,8 +86,12 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
                 CODE_CELLS_COUNT.with(codeCellsCount),
                 MARKDOWN_CELLS_COUNT.with(markdownCellsCount),
                 NOTEBOOK_LANGUAGE.with(notebook.language),
-                INCLUDED_PROJECT_MODULES_COUNT.with(notebook.projectDependencies.count()),
-                INCLUDED_PROJECT_LIBRARIES_COUNT.with(notebook.projectLibraries.count()),
+                INCLUDED_PROJECT_MODULES_COUNT.with(
+                    if (notebook.notebookDependencies is KotlinNotebookDependencies.SingleModule) 1 else 0
+                ),
+                INCLUDED_PROJECT_LIBRARIES_COUNT.with(
+                    if (notebook.notebookDependencies is KotlinNotebookDependencies.AllLibraries) ALL_LIBRARIES_COUNT else 0
+                ),
                 ARE_PROJECT_SOURCE_DEPENDENCIES_INCLUDED.with(notebook.isBuildProject),
                 ARE_PROJECT_LIBRARY_DEPENDENCIES_INCLUDED.with(notebook.isAddProjectLibrariesToClasspath),
                 NOTEBOOK_MODE.with(file.mode)
@@ -251,11 +254,6 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
 
         // We need some negative special value for "all" dependencies to avoid requesting them
         // Note that all the special values should be negative powers of 2
-        private const val ALL_DEPENDENCIES_COUNT = -2
-
-        private fun KotlinNotebookDependencies.count() = when(this) {
-            is KotlinNotebookDependencies.All -> ALL_DEPENDENCIES_COUNT
-            is KotlinNotebookDependencies.Selection -> this.values.size
-        }
+        private const val ALL_LIBRARIES_COUNT = -2
     }
 }

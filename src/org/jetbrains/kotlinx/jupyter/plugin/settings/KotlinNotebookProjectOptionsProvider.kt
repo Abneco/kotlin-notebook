@@ -54,8 +54,6 @@ class KotlinNotebookProjectOptionsProvider :
 
     var shouldLimitTypeHintsByActiveCell by prop(State::shouldLimitTypeHintsByActiveCell)
         internal set
-    var shouldBuildProject by prop(State::shouldBuildProject)
-        internal set
     var shouldAddProjectLibrariesToClasspath by prop(State::shouldAddProjectLibrariesToClasspath)
         internal set
     var shouldShowNotebookVariables by prop(State::shouldShowNotebookVariables)
@@ -73,7 +71,6 @@ class KotlinNotebookProjectOptionsProvider :
         var shouldLimitTypeHintsByActiveCell by property(false)
 
         // default settings for new notebooks
-        var shouldBuildProject by property(false)
         var shouldAddProjectLibrariesToClasspath by property(true)
         var shouldShowNotebookVariables by property(false)
     }

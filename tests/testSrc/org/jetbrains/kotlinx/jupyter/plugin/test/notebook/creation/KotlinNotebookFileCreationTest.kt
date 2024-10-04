@@ -19,10 +19,7 @@ import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.tests.SingleFileImplRule
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 
-@RunWith(JUnit4::class)
 class KotlinNotebookFileCreationTest : KotlinNotebookBaseTestCase() {
     companion object {
         @get:ClassRule

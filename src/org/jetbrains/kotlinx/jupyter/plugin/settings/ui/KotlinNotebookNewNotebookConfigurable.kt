@@ -25,11 +25,6 @@ private class KotlinNotebookNewNotebookConfigurable(private val project: Project
             panel {
                 group(KotlinNotebookBundle.message("kotlin.jupyter.settings.build")) {
                     row {
-                        checkBox(KotlinNotebookBundle.message("checkbox.should.build.project"))
-                            .comment(KotlinNotebookBundle.message("checkbox.should.build.project.comment"))
-                            .bindSelected(optionsProvider::shouldBuildProject)
-                    }
-                    row {
                         checkBox(KotlinNotebookBundle.message("checkbox.should.add.libraries"))
                             .bindSelected(optionsProvider::shouldAddProjectLibrariesToClasspath)
                     }

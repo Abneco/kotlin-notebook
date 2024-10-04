@@ -8,8 +8,7 @@
         <action id="KotlinNotebookGithubCreateGistAction"
                 class="com.intellij.kotlin.jupyter.github.actions.KotlinNotebookGithubCreateGistAction"
                 icon="AllIcons.Vcs.Vendors.Github">
-            <add-to-group group-id="KotlinNotebookEditorActions"
-                          anchor="before" relative-to-action="KotlinNotebookSettingsActions"/>
+            <add-to-group group-id="KotlinNotebookEditorActions" anchor="last"/>
         </action>
     </actions>
 </idea-plugin>

@@ -107,8 +107,6 @@
                   topic="com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService$Listener"/>
         <listener class="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookModuleRenameListener"
                   topic="com.intellij.openapi.project.ModuleListener"/>
-        <listener class="org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookLibraryRenameListener"
-                  topic="com.intellij.platform.backend.workspace.WorkspaceModelChangeListener"/>
     </projectListeners>
 
     <extensionPoints>
@@ -349,17 +347,21 @@
                 icon="icons.KotlinJupyterIcons.FileIcon">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="JupyterCreateFileAction"/>
         </action>
-        <action id="SelectKotlinNotebookModuleDependencies"
-                class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookSelectModulesAction"/>
-        <action id="SelectKotlinNotebookProjectLibraries"
-                class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookSelectLibrariesAction"/>
-        <action id="ShowKotlinNotebookPreferencesAction"
-                class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookShowPreferencesAction"
-                icon="AllIcons.General.Settings"/>
+        <action id="KotlinNotebookDependenciesComboBoxAction"
+                class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookDependenciesComboBoxAction">
+            <add-to-group group-id="JupyterEditorRightToolbarActions"
+                          anchor="first"/>
+        </action>
         <action id="KotlinNotebookSessionModeComboBox"
                 class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.actions.KotlinNotebookSessionModeComboBox">
             <add-to-group group-id="JupyterEditorRightToolbarActions"
-                          anchor="first"/>
+                          anchor="after" relative-to-action="KotlinNotebookDependenciesComboBoxAction"/>
+        </action>
+        <action id="ShowKotlinNotebookPreferencesAction"
+                class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookShowPreferencesAction"
+                icon="AllIcons.General.Settings">
+            <add-to-group group-id="JupyterEditorRightToolbarActions"
+                          anchor="after" relative-to-action="KotlinNotebookSessionModeComboBox"/>
         </action>
         <action id="ToggleShowExecutionCount"
                 class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookToggleShowExecutionCountAction">
@@ -371,17 +373,8 @@
                 icon="AllIcons.Actions.Copy">
         </action>
 
-        <group id="KotlinNotebookSettingsActions" popup="true" icon="AllIcons.General.GearPlain"
-               class="org.jetbrains.kotlinx.jupyter.plugin.settings.actions.KotlinNotebookSettingsActions">
-            <reference id="SelectKotlinNotebookModuleDependencies"/>
-            <reference id="SelectKotlinNotebookProjectLibraries"/>
-            <separator/>
-            <reference id="ShowKotlinNotebookPreferencesAction"/>
-        </group>
-
         <group id="KotlinNotebookEditorActions">
             <separator/>
-            <reference id="KotlinNotebookSettingsActions"/>
             <add-to-group group-id="JupyterEditorPopupActions"/>
             <add-to-group group-id="JupyterEditorLeftToolbarActions"/>
         </group>

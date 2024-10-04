@@ -17,6 +17,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtilCore
+import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectLocator
 import com.intellij.openapi.roots.ModuleRootManager
@@ -43,17 +44,15 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.asDeferred
 import org.jetbrains.kotlinx.jupyter.plugin.notifications.notebookNotifications
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookPerFileSettingsCache
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSettings
-import org.jetbrains.kotlinx.jupyter.plugin.settings.findLibraries
-import org.jetbrains.kotlinx.jupyter.plugin.settings.findModules
+import org.jetbrains.kotlinx.jupyter.plugin.settings.findModule
+import org.jetbrains.kotlinx.jupyter.plugin.settings.getSuitableLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.settings.isAffectedBy
-import org.jetbrains.kotlinx.jupyter.plugin.settings.isEmpty
 import org.jetbrains.kotlinx.jupyter.plugin.util.ProjectArtifacts
 import org.jetbrains.kotlinx.jupyter.plugin.util.isNotEmptyDirectory
 import org.jetbrains.kotlinx.jupyter.plugin.util.parentsWithSelf
@@ -87,8 +86,9 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private fun addProjectStructureListeners() {
+        val model = WorkspaceModel.getInstance(project)
         coroutineScope.launch(Dispatchers.Default) {
-            WorkspaceModel.getInstance(project).eventLog.collect { event ->
+            model.eventLog.collect { event ->
                 handleWorkspaceModelChange(event)
             }
         }
@@ -157,14 +157,14 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private fun invalidateCaches(
-        settingGetter: KotlinNotebookSettings.() -> KotlinNotebookDependencies,
-        changedDependencies: KotlinNotebookDependencies
+        changedLibrary: Library? = null,
+        changedModules: Collection<Module> = emptyList(),
     ) {
-        if (changedDependencies == KotlinNotebookDependencies.None) return
+        if (changedLibrary != null && changedModules.isEmpty()) return
         val fileSettingsCache = KotlinNotebookPerFileSettingsCache.getInstance(project)
         sessionData.values.map { it.file.file }.forEach { file ->
             val settings = fileSettingsCache.getCachedSettings(file)
-            if (settings == null || settings.settingGetter().isAffectedBy(changedDependencies)) {
+            if (settings == null || settings.notebookDependencies.isAffectedBy(changedLibrary, changedModules)) {
                 coroutineScope.launch(Dispatchers.EDT) {
                     project.service<JupyterKotlinOutdatedDependenciesNotificationService>()
                         .notify(NotebookId(file.getOriginalVirtualFile()))
@@ -175,10 +175,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
 
     private fun invalidateLibrariesCaches(changedLibrary: Library) {
         coroutineScope.async {
-            invalidateCaches(
-                KotlinNotebookSettings::projectLibraries,
-                KotlinNotebookDependencies.fromLibraries(listOf(changedLibrary))
-            )
+            invalidateCaches(changedLibrary = changedLibrary)
         }
     }
 
@@ -187,10 +184,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
             addAll(changedModules)
             changedModules.forEach { ModuleUtilCore.collectModulesDependsOn(it, this@buildSet) }
         }
-        invalidateCaches(
-            KotlinNotebookSettings::projectDependencies,
-            KotlinNotebookDependencies.fromModules(allAffectedModules)
-        )
+        invalidateCaches(changedModules = allAffectedModules)
     }
 
     private fun addSessionListener() {
@@ -206,15 +200,15 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private suspend fun buildProject(settings: KotlinNotebookSettings): BuildResult {
-        if (settings.projectDependencies.isEmpty()) return BuildResult.EMPTY
+        if (settings.notebookDependencies !is KotlinNotebookDependencies.SingleModule) return BuildResult.EMPTY
         return withContext(Dispatchers.Default) {
-            buildModules(settings.projectDependencies.findModules(project))
+            buildModule(settings.notebookDependencies.findModule(project))
         }
     }
 
     private fun getLibraries(settings: KotlinNotebookSettings): ProjectArtifacts {
-        if (settings.projectLibraries.isEmpty()) return emptyList()
-        return if (settings.projectLibraries.isEmpty()) emptyList() else settings.projectLibraries.findLibraries(project)
+        if (settings.notebookDependencies !is KotlinNotebookDependencies.AllLibraries) return emptyList()
+        return getSuitableLibraries(project)
             .flatMap { library ->
                 library.getFiles(OrderRootType.CLASSES)
                     // nio can't be used here since JarFileSystemImpl#getNioPath returns null for a jar root file
@@ -246,7 +240,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         if (session.alreadyReturnedArtifacts) return emptyList()
         session.alreadyReturnedArtifacts = true
 
-        val (buildProjectResult, libraries) = runBlocking { session.artifacts.await() }
+        val (buildProjectResult, libraries) = runBlockingMaybeCancellable { session.artifacts.await() }
 
         when (buildProjectResult.state) {
             DependenciesState.OUTDATED ->
@@ -269,11 +263,11 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         var alreadyReturnedArtifacts: Boolean = false,
     )
 
-    private suspend fun buildModules(modules: Collection<Module>): BuildResult {
-        if (modules.isEmpty()) return BuildResult.EMPTY
+    private suspend fun buildModule(module: Module?): BuildResult {
+        if (module == null) return BuildResult.EMPTY
 
         val taskManager = ProjectTaskManager.getInstance(project)
-        val buildTask = taskManager.createModulesBuildTask(modules.toTypedArray(), true, true, false)
+        val buildTask = taskManager.createModulesBuildTask(module, true, true, false)
         val buildTaskContext = ProjectTaskContext().apply {
             enableCollectionOfGeneratedFiles()
         }
@@ -281,7 +275,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         val buildResultDeferred = taskManager.run(buildTaskContext, buildTask).asDeferred()
         buildResultDeferred.cancelOnDispose(this)
 
-        val allModules = getDependencies(modules)
+        val allModules = getDependencies(module)
         val projectClasspath = allModules.flatMap {
             ModuleRootManager.getInstance(it).orderEntries().withoutSdk().classes().pathsList.pathList
         }.distinct()
@@ -294,10 +288,9 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         return BuildResult(projectClasspath, state)
     }
 
-    private fun getDependencies(modules: Collection<Module>): Array<Module> {
-        val result = mutableSetOf<Module>()
-        result.addAll(modules)
-        for (m in modules) ModuleUtilCore.getDependencies(m, result)
+    private fun getDependencies(module: Module): Array<Module> {
+        val result = mutableSetOf(module)
+        ModuleUtilCore.getDependencies(module, result)
         return result.toTypedArray()
     }
 

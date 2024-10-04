@@ -19,8 +19,7 @@ import com.intellij.util.containers.forEachGuaranteed
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookDependencies
-import org.jetbrains.kotlinx.jupyter.plugin.settings.projectDependencies
-import org.jetbrains.kotlinx.jupyter.plugin.settings.projectLibraries
+import org.jetbrains.kotlinx.jupyter.plugin.settings.notebookDependencies
 import org.jetbrains.kotlinx.jupyter.plugin.test.createEmptyNotebook
 import org.jetbrains.kotlinx.jupyter.plugin.test.delete
 import java.nio.file.Files
@@ -37,12 +36,8 @@ class KotlinNotebookLibraryDependenciesTest : UsefulTestCase() {
     private val projectLibraries get() = LibraryTablesRegistrar.getInstance().getLibraryTable(project).libraries.toList()
     private val notebookVirtualFile get() = _notebookVirtualFile!!
 
-    fun `test one library`() {
-        doTest(listOf(projectLibraries.first()))
-    }
-
-    fun `test two libraries`() {
-        doTest(projectLibraries.slice(listOf(1, 2)))
+    fun `test no libraries`() {
+        doTest(emptyList())
     }
 
     fun `test all libraries`() {
@@ -50,8 +45,11 @@ class KotlinNotebookLibraryDependenciesTest : UsefulTestCase() {
     }
 
     private fun doTest(libraries: List<Library>) {
-        notebookVirtualFile.notebook.projectDependencies = KotlinNotebookDependencies.None
-        notebookVirtualFile.notebook.projectLibraries = KotlinNotebookDependencies.fromLibraries(libraries)
+        notebookVirtualFile.notebook.notebookDependencies = if (libraries.isEmpty()) {
+            KotlinNotebookDependencies.None
+        } else {
+            KotlinNotebookDependencies.AllLibraries
+        }
 
         FileEditorManager.getInstance(project).openFile(notebookVirtualFile.file)
 

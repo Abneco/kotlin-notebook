@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
+import com.intellij.jupyter.core.jupyter.nbformat.notifyNotebookChanged
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
@@ -14,56 +17,120 @@ import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
+import org.jetbrains.kotlin.idea.base.projectStructure.productionSourceInfo
+import org.jetbrains.kotlin.idea.base.projectStructure.testSourceInfo
 import org.jetbrains.kotlin.idea.framework.KotlinSdkType
 import org.jetbrains.kotlinx.jupyter.plugin.projectModel.KotlinNotebookPermanentIndexService
-import java.util.*
+import kotlin.collections.filter
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 
-sealed interface KotlinNotebookDependencies {
-    object All : KotlinNotebookDependencies
-    data class Selection(val values: Set<String>) : KotlinNotebookDependencies
+sealed class KotlinNotebookDependencies {
+    data object None : KotlinNotebookDependencies()
 
+    data object AllLibraries : KotlinNotebookDependencies()
+
+    data class SingleModule(val moduleName: String) : KotlinNotebookDependencies() {
+        constructor(module: Module) : this(module.name)
+    }
+}
+
+internal class KotlinNotebookDependenciesProperty(
+    private val projectDependenciesPropertyName: String,
+    private val projectLibrariesPropertyName: String,
+) : ReadWriteProperty<JupyterNotebook, KotlinNotebookDependencies> {
     companion object {
-        val None = Selection(emptySet())
-
-        fun fromModules(modules: Collection<Module>) = Selection(modules.map { it.name }.toSortedSet())
-        fun fromLibraries(libraries: Collection<Library>) = Selection(libraries.mapNotNull { it.name }.toSortedSet())
+        val defaultValue = KotlinNotebookDependencies.AllLibraries
     }
-}
 
-internal class KotlinNotebookDependenciesProperty(name: String, defaultValue: KotlinNotebookDependencies) :
-    KotlinNotebookProperty<KotlinNotebookDependencies>(name, defaultValue) {
+    override fun getValue(thisRef: JupyterNotebook, property: KProperty<*>): KotlinNotebookDependencies {
+        val metadata = thisRef.getMetadata(METADATA_KEY) ?: return defaultValue
+        return toValue(
+            projectDependenciesNode = metadata[projectDependenciesPropertyName],
+            projectLibrariesNode = metadata[projectLibrariesPropertyName],
+        )
+    }
 
-    override fun JsonNode.toValue(): KotlinNotebookDependencies {
-        if (this is BooleanNode)
-            return if (this == BooleanNode.TRUE) KotlinNotebookDependencies.All else KotlinNotebookDependencies.None
-        if (this !is ArrayNode) return KotlinNotebookDependencies.None
-
-        val result = TreeSet<String>()
-        for (i in 0 until size()) {
-            result.add(this[i].asText())
+    override fun setValue(thisRef: JupyterNotebook, property: KProperty<*>, value: KotlinNotebookDependencies) {
+        val metadata = thisRef.getMetadata(METADATA_KEY) as? ObjectNode
+            ?: JsonNodeFactory.instance.objectNode().also { thisRef.setMetadata(METADATA_KEY, it) }
+        writeValue(metadata, value)
+        if (metadata.isEmpty) {
+            thisRef.removeMetadata(METADATA_KEY)
         }
-        return KotlinNotebookDependencies.Selection(result)
+        thisRef.notifyNotebookChanged()
     }
 
-    override fun KotlinNotebookDependencies.toNode(): JsonNode {
+    internal fun writeValue(metadata: ObjectNode, value: KotlinNotebookDependencies) {
+        val nodes = value.toNodes()
+        writeNode(metadata, projectDependenciesPropertyName, nodes.projectDependenciesNode)
+        writeNode(metadata, projectLibrariesPropertyName, nodes.projectLibrariesNode)
+    }
+
+    private fun writeNode(metadata: ObjectNode, name: String, node: JsonNode?) {
+        if (node != null) {
+            metadata.set(name, node)
+        } else {
+            metadata.remove(name)
+        }
+    }
+
+    private fun projectLibrariesUsed(projectLibrariesNode: JsonNode?): Boolean {
+        if (projectLibrariesNode == null) return true // the default value is to use all libraries
+        if (projectLibrariesNode is BooleanNode) return projectLibrariesNode == BooleanNode.TRUE
+        if (projectLibrariesNode !is ArrayNode) return false
+        return projectLibrariesNode.size() > 0
+    }
+
+    private fun toValue(projectDependenciesNode: JsonNode?, projectLibrariesNode: JsonNode?): KotlinNotebookDependencies {
+        val fallbackValue = if (projectLibrariesUsed(projectLibrariesNode)) {
+            KotlinNotebookDependencies.AllLibraries
+        } else {
+            KotlinNotebookDependencies.None
+        }
+
+        if (projectDependenciesNode is BooleanNode) {
+            // we do not support depending on multiple modules anymore
+            return fallbackValue
+        }
+        if (projectDependenciesNode !is ArrayNode) return fallbackValue
+        // we do not support depending on multiple modules anymore
+        if (projectDependenciesNode.size() > 1) return fallbackValue
+
+        // possibly discarding libraries, as we do not support depending on a module and on libraries simultaneously
+        return KotlinNotebookDependencies.SingleModule(projectDependenciesNode[0].asText())
+    }
+
+    private class Nodes(
+        val projectDependenciesNode: JsonNode?,
+        val projectLibrariesNode: JsonNode?,
+    )
+
+    private fun KotlinNotebookDependencies.toNodes(): Nodes {
         return when (this) {
-            KotlinNotebookDependencies.All -> BooleanNode.TRUE
-            is KotlinNotebookDependencies.Selection -> ArrayNode(JsonNodeFactory(false)).also { arrayNode ->
-                arrayNode.addAll(values.map { TextNode(it) })
-            }
+            KotlinNotebookDependencies.AllLibraries -> Nodes(
+                projectDependenciesNode = null, // default value
+                projectLibrariesNode = null, // default value
+            )
+            KotlinNotebookDependencies.None -> Nodes(
+                projectDependenciesNode = null, // default value
+                projectLibrariesNode = BooleanNode.FALSE,
+            )
+            is KotlinNotebookDependencies.SingleModule -> Nodes(
+                projectDependenciesNode = ArrayNode(JsonNodeFactory(false)).also { arrayNode ->
+                    arrayNode.add(TextNode(moduleName))
+                },
+                projectLibrariesNode = BooleanNode.FALSE,
+            )
         }
     }
 }
 
-fun KotlinNotebookDependencies.findModules(project: Project): List<Module> {
-    return when (this) {
-        KotlinNotebookDependencies.All -> getSuitableModules(project)
-        is KotlinNotebookDependencies.Selection -> values.mapNotNull {
-            ModuleManager.getInstance(project).findModuleByName(it) ?: run {
-                thisLogger<KotlinNotebookDependencies>().warn("Could not find module by name $it in project ${project.name}")
-                null
-            }
-        }
+fun KotlinNotebookDependencies.findModule(project: Project): Module? {
+    if (this !is KotlinNotebookDependencies.SingleModule) return null
+    return ModuleManager.getInstance(project).findModuleByName(moduleName) ?: run {
+        thisLogger<KotlinNotebookDependencies>().warn("Could not find module by name $moduleName in project ${project.name}")
+        null
     }
 }
 
@@ -80,18 +147,10 @@ internal fun getSuitableModules(project: Project): List<Module> {
     return ModuleManager.getInstance(project).modules.filter {
         if (it.isProbablyBuildSrc()) return@filter false
         val sdk = ModuleRootManager.getInstance(it).sdk ?: return@filter false
-        sdk.sdkType == KotlinSdkType.INSTANCE || sdk.sdkType is JavaSdkType
+        val hasSdk = sdk.sdkType == KotlinSdkType.INSTANCE || sdk.sdkType is JavaSdkType
+        val hasSources = it.productionSourceInfo != null || it.testSourceInfo != null
+        hasSdk && hasSources
     }
-}
-
-fun KotlinNotebookDependencies.findLibraries(project: Project): List<Library> {
-    if (isEmpty()) return emptyList()
-
-    val allLibraries = getSuitableLibraries(project)
-    if (this is KotlinNotebookDependencies.Selection) {
-        return allLibraries.filter { values.contains(it.name) }
-    }
-    return allLibraries
 }
 
 /**
@@ -108,13 +167,11 @@ internal fun getSuitableLibraries(project: Project): List<Library> {
     }
 }
 
-fun KotlinNotebookDependencies.isEmpty(): Boolean {
-    if (this is KotlinNotebookDependencies.Selection) return values.isEmpty()
-    return false
-}
-
-fun KotlinNotebookDependencies.isAffectedBy(dependencies: KotlinNotebookDependencies): Boolean {
-    if (this == KotlinNotebookDependencies.None || dependencies == KotlinNotebookDependencies.None) return false
-    if (this == KotlinNotebookDependencies.All || dependencies == KotlinNotebookDependencies.All) return true
-    return (this as KotlinNotebookDependencies.Selection).values.any { (dependencies as KotlinNotebookDependencies.Selection).values.contains(it) }
+fun KotlinNotebookDependencies.isAffectedBy(changedLibrary: Library?, changedModules: Collection<Module>): Boolean {
+    if (changedLibrary == null && changedModules.isEmpty()) return false
+    return when (this) {
+        KotlinNotebookDependencies.None -> false
+        KotlinNotebookDependencies.AllLibraries -> changedLibrary != null
+        is KotlinNotebookDependencies.SingleModule -> changedModules.any { it.name == moduleName }
+    }
 }
