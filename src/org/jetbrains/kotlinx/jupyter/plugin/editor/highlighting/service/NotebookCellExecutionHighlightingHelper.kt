@@ -121,26 +121,20 @@ class NotebookCellExecutionHighlightingHelper(
     }
 
     override fun unregisterCallback(event: ExecutionCallbackUnregistered) {
-        fun ifKernelDoneProcessingRequests() =
-            !jupyterNotebookSession.isKernelBusy() && executionState.compareAndSet(ExecutionState.PENDING_REQUEST, ExecutionState.IDLE)
-
         val size = event.remainingExecutions.size
 
         if (size > 0 && (!event.isAfterSeriesOfRuns || size > cellToHighlightLimit)) {
             // LOG.warn("Unregister callback, but size is: $size")
             queueCurrentCell(project, notebookFile, event.cellOrd)
         }
-        if (size == 0 && ifKernelDoneProcessingRequests()) {
+        if (size == 0) {
+            executionState.set(ExecutionState.IDLE)
             LOG.info("Set execution state to IDLE")
         }
     }
 
     private fun JupyterNotebookSession?.isKernelBusy(): Boolean =
         if (this == null) false else kernelClient.executionState == JupyterExecutionState.BUSY
-
-    @Deprecated("Unused logic, to be removed")
-    private fun updateMetaStorageForHL(project: Project, file: BackedNotebookVirtualFile, index: Int) = Unit
-
 
     private fun queueCurrentCell(project: Project, file: BackedNotebookVirtualFile, index: Int) {
         val highlightingManager = NotebookHighlightingService.getForFile(project, file)
