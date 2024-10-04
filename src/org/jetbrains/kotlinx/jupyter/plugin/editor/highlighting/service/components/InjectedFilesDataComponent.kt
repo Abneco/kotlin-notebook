@@ -1,13 +1,14 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.components
 
+import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.ex.MarkupModelEx
 import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.RangeHighlighter
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
@@ -19,10 +20,8 @@ import com.intellij.util.containers.TreeTraversal
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtPackageDirective
 import org.jetbrains.kotlin.utils.addIfNotNull
-import org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.NotebookHighlightingManager.Companion.INJECTED_SYNTAX_LAYER_BORDER
 import org.jetbrains.kotlinx.jupyter.plugin.util.getNotebookCells
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -50,14 +49,17 @@ internal class InjectedFilesDataComponent(
         ) {
             val processedTokens = AtomicInteger(0)
         }
+
+        internal const val INJECTED_SYNTAX_LAYER_BORDER = HighlighterLayer.CARET_ROW - 1
     }
     init {
         Disposer.register(parentDisposable, this)
     }
 
-    val finishedFiles = mutableSetOf<Int>()
+    val finishedFiles = ConcurrentCollectionFactory.createConcurrentSet<Int>()
     private val fileToInjectionData = ConcurrentHashMap<KtFile, InjectedFileData>()
-    private val unrecognizedFiles = ConcurrentLinkedDeque<PsiFile>()
+    private val unrecognizedFiles = ConcurrentHashMap.newKeySet<PsiFile>()
+    @Volatile
     private var targetPsiFile: PsiFile? = null
 
     val targetIndexes: Set<Int>
@@ -65,8 +67,7 @@ internal class InjectedFilesDataComponent(
             it.value.notebookCellIndex
         }
 
-
-    fun passCreated(project: Project, targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
+    fun passCreated(targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
         if (cells == null) {
             return
         }
@@ -99,27 +100,28 @@ internal class InjectedFilesDataComponent(
                 }
             }
         }
-
+        //sharedLogger.warn("Created pass for $targetIndexes")
         unrecognizedFiles.clear()
     }
 
     fun finishedForFile(psiFile: PsiFile) {
         val ind = fileToInjectionData[psiFile]?.notebookCellIndex
         if (ind == null) {
-            sharedLogger.info("Seen unrecognized file, will redo")
-            unrecognizedFiles.add(psiFile)
+            sharedLogger.info("Seen unrecognized file during pass")
+            //unrecognizedFiles.add(psiFile)
             return
         }
 
-        if (!isCanModifyHLRequests(psiFile.project)) {
-            sharedLogger.info("Not allowed to change $ind, will redo")
-            return
-        }
         finishedFiles.addIfNotNull(ind)
         sharedLogger.info("Finished visitors for $ind")
 
+        return
     }
 
+
+    fun getFileInjectionData(psiFile: PsiFile): InjectedFileData? {
+        return fileToInjectionData[psiFile]
+    }
 
     fun determineFilesLeftToHighlight(markupModel: MarkupModelEx, skippedFiles: MutableSet<Int>) {
         val data = fileToInjectionData
@@ -147,12 +149,16 @@ internal class InjectedFilesDataComponent(
     }
 
 
-    fun processUnrecognizedFiles(topLevelFile: PsiFile, highlightingQueue: MutableSet<Int>?) {
+    fun processUnrecognizedFiles(topLevelFile: PsiFile?, highlightingQueue: MutableSet<Int>?) {
         val unrecognizedFiles = unrecognizedFiles
 
         if (unrecognizedFiles.isNotEmpty()) {
-            highlightingQueue?.addAll(
+            val unseenFiles = ReadAction.compute<List<Int>, Throwable> {
                 unrecognizedFiles.toCellsIndexes(topLevelFile, injectedLanguageManager)
+            }
+
+            highlightingQueue?.addAll(
+                unseenFiles
             )
             unrecognizedFiles.clear()
         }
@@ -171,18 +177,21 @@ internal class InjectedFilesDataComponent(
             }
     }
 
-    private fun Collection<PsiFile>.toCellsIndexes(jupyterPsiFile: PsiFile, manager: InjectedLanguageManager): List<Int> {
+    private fun Collection<PsiFile>.toCellsIndexes(jupyterPsiFile: PsiFile?, manager: InjectedLanguageManager): List<Int> {
         val cells = jupyterPsiFile.getNotebookCells()
         return mapNotNull { injected -> cells.indexOf(manager.getInjectionHost(injected)) }
     }
 
-    fun clear() {
+    fun clear(complete: Boolean = false) {
+        if (complete) {
+            unrecognizedFiles.clear()
+        }
+        targetPsiFile = null
         fileToInjectionData.clear()
         finishedFiles.clear()
-        unrecognizedFiles.clear()
     }
 
     override fun dispose() {
-        clear()
+        clear(complete = true)
     }
 }

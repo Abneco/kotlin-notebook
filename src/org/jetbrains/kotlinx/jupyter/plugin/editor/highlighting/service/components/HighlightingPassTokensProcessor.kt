@@ -1,7 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.components
 
-import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.thisLogger
@@ -12,7 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
-import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterKtScriptingSupport
+import org.jetbrains.kotlin.utils.addIfNotNull
 
 
 /**
@@ -39,29 +38,53 @@ internal class HighlightingPassTokensProcessor(
         Disposer.register(parentDisposable, this)
     }
 
-    private val targetErrorHighlighters = ConcurrentCollectionFactory.createConcurrentSet<RangeHighlighter>()
-    val errorHighlighterComponent = ErrorHighlighterComponent(this, LOG)
-    val injectedFilesDataComponent = InjectedFilesDataComponent(
+    private val errorHighlighterComponent = ErrorHighlighterComponent(this, LOG)
+    private val injectedFilesDataComponent = InjectedFilesDataComponent(
         InjectedLanguageManager.getInstance(project),
         LOG,
         this
     )
 
-    // make it mutable by default?
     val remainingIndexesToProcess: Set<Int>
-        get() = injectedFilesDataComponent.targetIndexes - injectedFilesDataComponent.finishedFiles - errorHighlighterComponent.knownErrorIndices.keys
+        get() = injectedFilesDataComponent.targetIndexes - finishedFiles
 
-    fun passCreated(project: Project, targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
-        injectedFilesDataComponent.passCreated(project, targetIndexes, cells, completeRangeInd)
+    val finishedFiles: Set<Int>
+        get() = injectedFilesDataComponent.finishedFiles - errorHighlighterComponent.knownErrorIndices.keys
 
+    fun passCreated(targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
+        injectedFilesDataComponent.passCreated(targetIndexes, cells, completeRangeInd)
     }
 
-    fun determineHighlightedFilesLeftToHighlight(
+    fun getInjectionHost(psiFile: PsiFile): PsiLanguageInjectionHost? {
+        return injectedFilesDataComponent.getFileInjectionData(psiFile)?.injectionHost
+    }
+
+    fun isFileTarget(psiFile: PsiFile): Boolean {
+        return injectedFilesDataComponent.isFileTarget(psiFile)
+    }
+
+    fun injectedFileProcessed(psiFile: PsiFile) {
+        injectedFilesDataComponent.finishedForFile(psiFile)
+    }
+
+    fun getErrorHighlighters(psiFile: PsiFile): Set<RangeHighlighter> {
+        val errorHighlighters = errorHighlighterComponent.knownErrorIndices
+        val cellInd = injectedFilesDataComponent.getFileInjectionData(psiFile)?.notebookCellIndex ?: return emptySet()
+
+        if (isFileTarget(psiFile)) {
+            errorHighlighters.putIfAbsent(cellInd, mutableSetOf())
+        }
+
+        return errorHighlighters[cellInd] ?: emptySet()
+    }
+
+    fun determineCellIndexesLeftToHighlight(
         queue: MutableSet<Int>?,
-        topLevelFile: PsiFile,
+        topLevelFile: PsiFile?,
         markupModel: MarkupModelEx,
         cellFocusIndex: Int?
     ): MutableSet<Int> {
+        injectedFilesDataComponent.finishedFiles.addIfNotNull(cellFocusIndex)
         val finishedFiles = injectedFilesDataComponent.finishedFiles
         val remaining = remainingIndexesToProcess.toMutableSet()
         remaining.remove(cellFocusIndex)
@@ -79,17 +102,22 @@ internal class HighlightingPassTokensProcessor(
         errorHighlighterComponent.addMarkupListener(editor)
     }
 
-    fun clear() {
-        targetErrorHighlighters.clear()
-        errorHighlighterComponent.clear()
-        injectedFilesDataComponent.clear()
+    fun clearState(cellFocusIndex: Int?, onRestart: Boolean = false) {
+        injectedFilesDataComponent.clear(onRestart)
+
+        if (onRestart) {
+            errorHighlighterComponent.clear()
+        } else {
+            val highlighted = errorHighlighterComponent.targetErrorHighlighters
+            if (cellFocusIndex != null) {
+                errorHighlighterComponent.knownErrorIndices[cellFocusIndex]?.addAll(highlighted)
+            }
+            highlighted.clear()
+        }
+
     }
 
     override fun dispose() {
-        clear()
+        clearState(null, true)
     }
 }
-
-
-internal fun isCanModifyHLRequests(project: Project): Boolean =
-    !JupyterKtScriptingSupport.isInTheTransaction(project)

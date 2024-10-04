@@ -78,7 +78,6 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                     }
                     highlightingQueue?.addIfNotNull(correctUnderEditorInd)
                     highlightingManager.passCreated(
-                        project,
                         highlightingQueue ?: setOf(correctUnderEditorInd),
                         cells,
                         correctUnderEditorInd
@@ -115,7 +114,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
             if (highlightingQueue != null && cells != null) {
                 highlightingQueue.addIfNotNull(cellIndx)
                 if (severalUpdates == null) {
-                    highlightingManager.passCreated(project, highlightingQueue, cells, cellUnderEditor.ordinal)
+                    highlightingManager.passCreated(highlightingQueue, cells, cellUnderEditor.ordinal)
                     return getCellRangesInDocumentOrNull(cells, highlightingQueue)
                 }
                 highlightingQueue.addAll(severalUpdates)
@@ -146,7 +145,6 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                 highlightingQueue?.add(cellUnderEditor.ordinal)
                 //LOG.warn("Run on ind: ${mergedUpdates}, targetIndKey: $cellIndx, underCaret: ${cellUnderEditor}")
                 highlightingManager?.passCreated(
-                    project,
                     highlightingQueue ?: setOf(cellUnderEditor.ordinal),
                     cells,
                     cellUnderEditor.ordinal

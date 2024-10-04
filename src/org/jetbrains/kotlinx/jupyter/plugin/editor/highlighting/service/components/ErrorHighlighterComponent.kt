@@ -29,7 +29,7 @@ internal class ErrorHighlighterComponent(
     }
 
     val knownErrorIndices = ConcurrentHashMap<Int, MutableSet<RangeHighlighter>>()
-    private val targetErrorHighlighters = ConcurrentCollectionFactory.createConcurrentSet<RangeHighlighter>()
+    val targetErrorHighlighters = ConcurrentCollectionFactory.createConcurrentSet<RangeHighlighter>()
 
     private lateinit var activeMarkupModelListener: MarkupModelListener
 

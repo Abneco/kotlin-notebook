@@ -94,6 +94,7 @@ object K1ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
 object K2ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
     // not yet supported
     override fun performShadowing(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, afterAnalysis: () -> Unit) : Boolean {
+        afterAnalysis()
         return true
     }
 }
