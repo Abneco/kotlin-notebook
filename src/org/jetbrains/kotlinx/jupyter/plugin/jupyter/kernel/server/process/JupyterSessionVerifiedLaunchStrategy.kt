@@ -73,7 +73,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
 
         val verificationDeferred = CompletableDeferred<Boolean>()
 
-        kernel?.addKernelListener(object: KotlinKernelListener {
+        kernel?.addBaseKernelListener(object: KotlinKernelListener {
             override fun kernelTerminated(event: KotlinKernelEvent) {
                 verificationDeferred.complete(false)
             }

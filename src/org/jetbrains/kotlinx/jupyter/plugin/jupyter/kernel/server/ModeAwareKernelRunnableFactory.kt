@@ -8,6 +8,13 @@ import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMod
 import org.jetbrains.kotlinx.jupyter.plugin.util.findNotebookVirtualFileOrNull
 import java.nio.file.Path
 
+/**
+ * Implementation of [KernelRunnableFactory] that only creates [KotlinKernelRunnableHandler] if
+ * the current mode is equal to [mode].
+ * Current mode is currently taken from the project settings but will be taken
+ * from the notebook settings in the future,
+ * see [KTNB-750](https://youtrack.jetbrains.com/issue/KTNB-750/)
+ */
 abstract class ModeAwareKernelRunnableFactory(
     private val mode: KotlinNotebookSessionRunMode,
 ) : KernelRunnableFactory {
@@ -16,7 +23,7 @@ abstract class ModeAwareKernelRunnableFactory(
         kernelId: JupyterKernelId,
         notebookPath: Path
     ): KotlinKernelRunnableHandler? {
-        // In the future, mode should be obtained from file, not from the project
+        // In the future, mode should be obtained from a file, not from the project
         val notebookVirtualFile = notebookPath.findNotebookVirtualFileOrNull()
 
         val currentMode = project.kotlinNotebookSessionRunMode

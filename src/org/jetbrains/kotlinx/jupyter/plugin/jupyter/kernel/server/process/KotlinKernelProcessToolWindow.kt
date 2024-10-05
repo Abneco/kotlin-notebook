@@ -12,7 +12,7 @@ import com.intellij.jupyter.core.jupyter.server.ui.attachJupyterServerContentClo
  * separate process.
  */
 class KotlinKernelProcessToolWindow(
-    override val handler: KotlinKernelProcessHandler,
+  override val handler: SeparateProcessKotlinKernelRunnableHandler,
 ): KotlinNotebookToolWindowSettings() {
     override fun toolWindowContentCreated(newContent: Content) {
         super.toolWindowContentCreated(newContent)

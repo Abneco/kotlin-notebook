@@ -72,7 +72,7 @@ class KotlinNotebookToolWindowManager(
         val oldContent = stoppedSessions.remove(notebookPath)
         manager.replaceContent(oldContent, newContent)
 
-        runnableHandler.addKernelListener(object : KotlinKernelListener {
+        runnableHandler.addBaseKernelListener(object : KotlinKernelListener {
             override fun kernelWillTerminate(event: KotlinKernelEvent) {
                 handleKernelTermination(notebookPath, newContent)
             }

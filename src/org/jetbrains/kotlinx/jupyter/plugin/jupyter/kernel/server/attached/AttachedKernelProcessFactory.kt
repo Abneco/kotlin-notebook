@@ -4,7 +4,6 @@ package org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.attached
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import com.intellij.openapi.project.Project
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import org.jetbrains.kotlinx.jupyter.messaging.KernelInfoReplyMetadata
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KernelInfoReplyReceivedEvent
@@ -14,6 +13,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.ModeAwareKerne
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.asRawMessage
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
+import org.jetbrains.kotlinx.jupyter.plugin.util.jsonConfig
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import java.nio.file.Path
 
@@ -29,7 +29,7 @@ class AttachedKernelProcessFactory : ModeAwareKernelRunnableFactory(
         return AttachedKernelProcessHandler(
             project, kernelId, notebookPath, notebookVirtualFile,
         ).apply {
-            addKernelListener(MyListener)
+            addBaseKernelListener(MyListener)
         }
     }
 
@@ -43,7 +43,7 @@ class AttachedKernelProcessFactory : ModeAwareKernelRunnableFactory(
             val message = event.message
             val replyMetadata = message.asRawMessage { rawMessage, _ ->
                 val metadata = rawMessage.metadata ?: return@asRawMessage null
-                Json.decodeFromJsonElement<KernelInfoReplyMetadata>(metadata)
+                jsonConfig.decodeFromJsonElement<KernelInfoReplyMetadata>(metadata)
             } ?: return
 
             val classpathInfo = EvaluatedSnippetMetadata(

@@ -24,13 +24,13 @@
             Firstly, they allow you to save the entire session to a file, preserving both the code and the execution results.
             Secondly, the execution results can include more than just plain text;
             they can also encompass images in various formats, arbitrary HTML (including JavaScript and CSS),
-            and even specifications for Swing outputs that are rendered directly within the IntelliJ IDE.
+            and even specifications for Swing outputs that are rendered directly within IntelliJ IDEA.
             To learn more about the diverse range of outputs and their rendering, please refer to
             <a href="https://github.com/Kotlin/kotlin-jupyter/tree/master/docs#rich-output">this link</a>.
             Additionally, there is <a href="https://github.com/Kotlin/kotlin-jupyter/tree/master/samples/outputs.ipynb">a sample notebook</a>,
             showcasing different types of outputs.</p>
 
-            <p>With the Kotlin Notebook plugin, you can easily add binary dependencies from a remote
+            <p>With the Kotlin Notebook plugin, you can add binary dependencies from a remote
             Maven repository or a local one. For this, use
             <a href="https://github.com/Kotlin/kotlin-jupyter#dependencies-resolving"><code>@file:DependsOn</code> annotation or Gradle-like syntax</a>.
             <a href="https://github.com/Kotlin/kotlin-jupyter#list-of-supported-libraries">Some libraries</a> have special
@@ -62,7 +62,7 @@
         <![CDATA[
             <h1>What's New in Kotlin Notebook 2024.3</h1>
 
-            <p>In this release we introduced a number of features</p>
+            <p>In this release, we introduced a number of features</p>
             <ul>
                 <li></li>
             </ul>
@@ -150,7 +150,7 @@
                      description="When enabled, Kotlin Notebook sessions can be run inside the IDE process"/>
 
         <registryKey key="kotlin.notebook.allow.attached.kernel" defaultValue="false"
-                     description="When enabled, Kotlin Notebook may attach to he running kernel sessions"/>
+                     description="When enabled, Kotlin Notebook may attach to running kernel sessions"/>
 
         <registryKey key="kotlin.notebook.debug.enabled" defaultValue="false"
                      description="When enabled, establishing debug session with Kernel is possible"/>

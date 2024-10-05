@@ -48,7 +48,7 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
         kernelId: JupyterKernelId,
         notebookPath: Path,
         notebookVirtualFile: BackedNotebookVirtualFile?,
-    ): KotlinKernelProcessHandler {
+    ): SeparateProcessKotlinKernelRunnableHandler {
         val kernelPorts = getKernelPorts()
         val kernelConfig = DefaultKotlinKernelConfigFactory(project, kernelPorts, notebookPath).create()
 
@@ -82,10 +82,10 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
             KernelProcessCommandLineCustomizer.customize(this)
         }
 
-        return KotlinKernelProcessHandler(
+        return SeparateProcessKotlinKernelRunnableHandler(
             project, kernelId, commandLine, kernelConfig, notebookPath, notebookVirtualFile
         ).apply {
-            addSpecificKernelListener(object : KotlinKernelProcessListener {
+            addKernelListener(object : KotlinKernelProcessListener {
                 override fun beforeNotificationStarted(event: KotlinKernelNotificationStartedEvent) {
                     KotlinNotebookToolWindowManager.getInstance(project)
                         .showKotlinNotebookServerManagementToolWindow(

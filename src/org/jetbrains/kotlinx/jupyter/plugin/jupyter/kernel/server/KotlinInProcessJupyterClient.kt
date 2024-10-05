@@ -97,7 +97,7 @@ class KotlinInProcessJupyterClient(
             kernelId,
             notebookPath,
         )
-        kernel.addKernelListener(MyKernelListener())
+        kernel.addBaseKernelListener(MyKernelListener())
 
         Disposer.register(this, kernel)
         kernels[kernelId] = kernel

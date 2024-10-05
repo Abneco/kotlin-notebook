@@ -23,6 +23,10 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import com.intellij.jupyter.core.jackson
 
+val jsonConfig = Json {
+    ignoreUnknownKeys = true
+}
+
 fun JsonNode.toKotlinSerializationJson(): JsonElement {
     return when (this) {
         is ValueNode -> convertPrimitive(this)
@@ -61,7 +65,7 @@ fun convertObject(objectNode: ObjectNode): JsonObject {
 inline fun <reified T> JsonNode.deserialize(): T? {
     val json = toKotlinSerializationJson()
     if (json is JsonNull) return null
-    return Json.decodeFromJsonElement(json)
+    return jsonConfig.decodeFromJsonElement(json)
 }
 
 class JacksonJsonConversionException(node: JsonNode) :

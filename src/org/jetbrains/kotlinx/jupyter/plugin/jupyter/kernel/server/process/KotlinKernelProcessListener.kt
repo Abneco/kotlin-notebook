@@ -14,22 +14,22 @@ interface KotlinKernelProcessListener : KotlinKernelListener {
 }
 
 interface KotlinKernelProcessEvent : KotlinKernelEvent {
-    override val source: KotlinKernelProcessHandler
+    override val source: SeparateProcessKotlinKernelRunnableHandler
     val text: String?
     val exitCode: Int
 }
 
 class KotlinKernelNotificationStartedEvent(
-    val source: KotlinKernelProcessHandler,
+  val source: SeparateProcessKotlinKernelRunnableHandler,
 ): EventObject(source)
 
 class KotlinKernelProcessEventImpl(
-    override val source: KotlinKernelProcessHandler,
-    @NlsSafe override val text: String? = null,
-    override val exitCode: Int = 0,
+  override val source: SeparateProcessKotlinKernelRunnableHandler,
+  @NlsSafe override val text: String? = null,
+  override val exitCode: Int = 0,
 ): KotlinKernelProcessEvent, EventObject(source) {
     constructor(processEvent: ProcessEvent): this(
-        (processEvent.processHandler as KotlinKernelProcessHandler.KernelProcessHandler).runnableHandler,
+        (processEvent.processHandler as SeparateProcessKotlinKernelRunnableHandler.KernelOsProcessHandler).runnableHandler,
         processEvent.text,
         processEvent.exitCode
     )
