@@ -19,6 +19,11 @@
   - name: intellij.kotlin.jupyter.tables
   - name: intellij.kotlin.jupyter.liveTemplates
 - name: lib/modules/intellij.kotlin.jupyter.plots.jar
+  projectLibraries:
+  - name: jetbrains.lets.plot.shadowed
+    files:
+    - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/4/lets-plot-shadowed-4.jar
+    reason: <- intellij.kotlin.jupyter.plots
   contentModules:
   - name: intellij.kotlin.jupyter.plots
     libraries:
