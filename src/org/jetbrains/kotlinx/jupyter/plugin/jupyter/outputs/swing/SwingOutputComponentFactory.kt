@@ -31,7 +31,7 @@ class SwingOutputComponentFactory: NotebookOutputComponentFactory<SwingComponent
             output.createGutterPainter(),
             limitHeight = false,
             resizable = true,
-            { KotlinNotebookBundle.message("kotlin.notebook.collapsed.swingcomponent.output.text") },
+            { KotlinNotebookBundle.message("kotlin.notebook.collapsed.swing.component.output.text") },
             null
         )
     }

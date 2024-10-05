@@ -18,7 +18,7 @@ import javax.swing.JPanel
  * created by the user of the notebook.
  *
  * Note, this component will inherit the Editors look and feel
- * which might be different than when the code is run independently.
+ * which might be different from when the code is run independently.
  */
 class SwingComponent : JPanel(FlowLayout(FlowLayout.LEFT)) {
     private var _dataKey: SwingOutputDataKey? = null
@@ -43,7 +43,7 @@ class SwingComponent : JPanel(FlowLayout(FlowLayout.LEFT)) {
             }
             is JComponent -> {
                 if (isInvisible(component)) {
-                    val labelText = KotlinNotebookBundle.message("kotlin.notebook.collapsed.swingcomponent.no_size.text")
+                    val labelText = KotlinNotebookBundle.message("kotlin.notebook.collapsed.swing.component.no_size.text")
                     val label = createLabel(editor, labelText)
                     add(label,  -1)
                 } else {
@@ -51,7 +51,7 @@ class SwingComponent : JPanel(FlowLayout(FlowLayout.LEFT)) {
                 }
             }
             else -> {
-                throw IllegalStateException("Unsupport Swing component: $component")
+                throw IllegalStateException("Unsupported Swing component: $component")
             }
         }
         invalidate()
@@ -61,12 +61,12 @@ class SwingComponent : JPanel(FlowLayout(FlowLayout.LEFT)) {
 
     private fun jDialogLabelText(dialog: JDialog): String {
         val invisible = isInvisible(dialog)
-        return KotlinNotebookBundle.message("kotlin.notebook.outputs.swingcomponent.dialog${if (invisible) ".no.size" else ""}.text")
+        return KotlinNotebookBundle.message("kotlin.notebook.outputs.swing.component.dialog${if (invisible) ".no.size" else ""}.text")
     }
 
     private fun jFrameLabelText(frame: JFrame): String {
         val invisible: Boolean = isInvisible(frame)
-        return KotlinNotebookBundle.message("kotlin.notebook.outputs.swingcomponent.frame${if (invisible) ".no.size" else ""}.text", frame.title)
+        return KotlinNotebookBundle.message("kotlin.notebook.outputs.swing.component.frame${if (invisible) ".no.size" else ""}.text", frame.title)
     }
 
     private fun createLabel(editor: EditorImpl, @NlsSafe labelText: String): JBLabel {

@@ -17,7 +17,7 @@ object JupyterKotlinLanguage : Language(JupyterLanguage, "Kotlin Notebook")
 
 object JupyterKotlinFileType: LanguageFileType(JupyterKotlinLanguage) {
     override fun getName(): String = "JupyterKotlinFile"
-    override fun getDescription(): String = KotlinNotebookBundle.message("jupyterkotlin.file.type.description")
+    override fun getDescription(): String = KotlinNotebookBundle.message("jupyter.kotlin.file.type.description")
     override fun getDefaultExtension(): String = "ipynb"
     override fun getIcon(): Icon = KotlinJupyterIcons.FileIcon
 }

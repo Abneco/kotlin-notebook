@@ -15,7 +15,7 @@ internal fun showSwingScreenshotFailedNotification(throwable: Throwable) {
 
     val notification = Notification(
         SWING_NOTIFICATIONS_GROUP,
-        KotlinNotebookBundle.message("kotlin.notebook.outputs.swingcomponent.export.failed.notification.message"),
+        KotlinNotebookBundle.message("kotlin.notebook.outputs.swing.component.export.failed.notification.message"),
         exceptionText,
         NotificationType.ERROR
     )
