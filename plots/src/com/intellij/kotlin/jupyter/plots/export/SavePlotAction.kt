@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.plots.export
 import com.intellij.kotlin.jupyter.plots.LetsPlotFlavor
 import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey
 import com.intellij.kotlin.jupyter.plots.i18n.KotlinNotebookPlotsBundle
-import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
@@ -15,14 +15,15 @@ import com.intellij.ui.EnumComboBoxModel
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.bindItem
-import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.dsl.builder.toNullableProperty
 import com.intellij.ui.dsl.listCellRenderer.textListCellRenderer
 import com.intellij.ui.layout.selectedValueMatches
 import com.intellij.ui.util.preferredWidth
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindComparableIntervalToTextWithFixer
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindStringText
 import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.enumComboBox
@@ -33,16 +34,7 @@ import java.io.File
 import javax.swing.AbstractAction
 
 
-class SavePlotAction : AbstractExportPlotAction() {
-    override fun doUpdate(event: AnActionEvent, letsPlotOutputs: List<LetsPlotOutputDataKey>) {
-        super.doUpdate(event, letsPlotOutputs)
-        val multipleOutputs = letsPlotOutputs.size > 1
-        if (multipleOutputs) {
-            event.presentation.text = KotlinNotebookPlotsBundle.message("action.ExportLetsPlot.text.multiple")
-            event.presentation.description = KotlinNotebookPlotsBundle.message("action.ExportLetsPlot.description.multiple")
-        }
-    }
-
+abstract class SavePlotAction : AbstractExportPlotAction() {
     override fun doExport(
         letsPlotOutputs: List<LetsPlotOutputDataKey>,
         project: Project,
@@ -52,15 +44,23 @@ class SavePlotAction : AbstractExportPlotAction() {
         val exportModel = showExportDialog(project, notebookDir, letsPlotOutputs.size > 1) ?: return
 
         KotlinNotebookPluginScope.getForProject(project).async {
-            val files = mutableListOf<File>()
+            val savedFiles = mutableListOf<File>()
+            val skippedFiles = mutableListOf<File>()
             val errors = mutableListOf<Throwable>()
 
             for ((outputIndex, output) in letsPlotOutputs.withIndex()) {
+                val isLastFile = outputIndex == letsPlotOutputs.lastIndex
                 runSafely (
                     {
-                        val file = exportModel.prepareFile(outputIndex)
-                        savePlot(output, exportModel, file)
-                        files.add(file)
+                        val fileSaveRequest = exportModel.createFileSaveRequest(outputIndex + 1, isLastFile)
+                        val file = fileSaveRequest.file
+                        if (fileSaveRequest.shouldSave) {
+                            file.parentFile.mkdirs()
+                            savePlot(output, exportModel, file)
+                            savedFiles.add(file)
+                        } else {
+                            skippedFiles.add(file)
+                        }
                     },
                     { throwable ->
                         errors.add(throwable)
@@ -68,7 +68,7 @@ class SavePlotAction : AbstractExportPlotAction() {
                 )
             }
 
-            showPlotSaveNotification(files, errors)
+            showPlotSaveNotification(savedFiles, skippedFiles, errors)
         }
     }
 
@@ -171,10 +171,6 @@ class SavePlotAction : AbstractExportPlotAction() {
                         OUTPUT_INDEX_TEMPLATE
                     ))
             }
-            row(panelMessage("kotlin.jupyter.dialog.outputs.plot.export.overwrite.existing")) {
-                checkBox("")
-                    .bindSelected(model::overwriteExistingFiles.toMutableProperty())
-            }
         }
 
         // There is no way for now to get rid of it
@@ -201,15 +197,6 @@ class SavePlotAction : AbstractExportPlotAction() {
         return model.takeIf { isOk }
     }
 
-    private fun MutablePlotSaveModel.prepareFile(outputIndex: Int): File {
-        val file = getFile(outputIndex + 1)
-        if (!overwriteExistingFiles && file.exists()) {
-            throw FileAlreadyExistsException(file)
-        }
-        file.parentFile.mkdirs()
-        return file
-    }
-
     private data class MutablePlotSaveModel(
       private val options: PlotExportOptions,
       var directory: String = System.getProperty("user.home"),
@@ -221,14 +208,54 @@ class SavePlotAction : AbstractExportPlotAction() {
             }
         override var letsPlotFlavor by options::letsPlotFlavor
         var fileName by options::fileName
-        var overwriteExistingFiles by options::overwriteExistingFiles
         override var scalingFactor by options::scalingFactor
         override var targetDPI by options::targetDPI
 
-        fun getFile(outputIndex: Int): File {
+        private var fileAlreadyExistsStrategy = FileAlreadyExistsStrategy.ASK
+        private var rememberStrategyChoice: Boolean = false
+
+        suspend fun createFileSaveRequest(outputIndex: Int, isLastFile: Boolean): FileSaveRequest {
             val myDirectory = directory
             val fileNameTemplate = fileName.replace(OUTPUT_INDEX_TEMPLATE, outputIndex.toString())
-            return File(myDirectory, fileNameTemplate)
+            val file = File(myDirectory, fileNameTemplate)
+            val newFile = ensureFileDoesntExist(file, !isLastFile)
+            return FileSaveRequest(newFile ?: file, newFile != null)
+        }
+
+        /**
+         * Depending on file existence and the strategy chosen by the user,
+         * returns the file where the plot should be saved or null if it shouldn't be saved
+         */
+        suspend fun ensureFileDoesntExist(file: File, showRememberChoiceCheckbox: Boolean): File? {
+            if (!file.exists()) return file
+
+            if (fileAlreadyExistsStrategy == FileAlreadyExistsStrategy.ASK) {
+                withContext(Dispatchers.EDT) {
+                    showFileAlreadyExistsDialog(
+                        file = file,
+                        showRememberChoiceCheckbox = showRememberChoiceCheckbox,
+                        rememberChoiceProperty = ::rememberStrategyChoice.toMutableProperty(),
+                        strategyProperty = ::fileAlreadyExistsStrategy.toMutableProperty(),
+                    )
+                }
+            }
+
+            val currentStrategy = fileAlreadyExistsStrategy
+
+            if (!rememberStrategyChoice) {
+                fileAlreadyExistsStrategy = FileAlreadyExistsStrategy.ASK
+            }
+
+            return when (currentStrategy) {
+                FileAlreadyExistsStrategy.ASK,
+                FileAlreadyExistsStrategy.SKIP -> null
+                FileAlreadyExistsStrategy.OVERWRITE -> file
+                FileAlreadyExistsStrategy.CREATE_NEW -> {
+                    generateSequence(1) { it + 1 }
+                        .map { File(file.parentFile, "${file.nameWithoutExtension} ($it).${file.extension}")  }
+                        .first { !it.exists() }
+                }
+            }
         }
 
         private fun changeFormat(newFormat: ExportFormat) {
@@ -245,6 +272,11 @@ class SavePlotAction : AbstractExportPlotAction() {
             }
         }
     }
+
+    private class FileSaveRequest(
+        val file: File,
+        val shouldSave: Boolean,
+    )
 
     companion object {
         private const val OUTPUT_INDEX_TEMPLATE = "%idx%"

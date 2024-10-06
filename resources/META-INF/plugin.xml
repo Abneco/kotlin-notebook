@@ -362,7 +362,6 @@
         <action id="CopySwingComponentScreenshot"
                 class="org.jetbrains.kotlinx.jupyter.plugin.jupyter.outputs.swing.export.CopySwingComponentScreenshotAction"
                 icon="AllIcons.Actions.Copy">
-            <add-to-group group-id="JupyterCellOutputMenu"/>
         </action>
 
         <group id="KotlinNotebookSettingsActions" popup="true" icon="AllIcons.General.GearPlain"

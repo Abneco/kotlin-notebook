@@ -33,17 +33,20 @@ fun showPlotExportFailedNotification(throwable: Throwable) {
  * If multiple plots were exported, shows first failure if any
  * and suggests to open the folder containing new files (if any).
  *
- * @param files The collection of files that were successfully saved.
+ * @param savedFiles The collection of files that were successfully saved.
+ * @param skippedFiles The collection of files which were not saved because they already exist
  * @param errors The collection of errors that occurred during saving the plots.
  */
 fun showPlotSaveNotification(
-    files: Collection<File>,
+    savedFiles: Collection<File>,
+    skippedFiles: Collection<File>,
     errors: Collection<Throwable>,
 ) {
-    val allExportsSucceeded = errors.isEmpty()
-    val allExportsFailed = files.isEmpty()
+    val allExportsSucceeded = errors.isEmpty() && skippedFiles.isEmpty()
+    val allExportsFailed = errors.isNotEmpty() && savedFiles.isEmpty()
+    val allExportsSkipped = !allExportsFailed && savedFiles.isEmpty()
 
-    val singleFile = files.singleOrNull()?.takeIf { allExportsSucceeded }
+    val singleFile = savedFiles.singleOrNull()?.takeIf { allExportsSucceeded }
     if (singleFile != null) {
         showPlotExportedNotification(singleFile)
         return
@@ -55,10 +58,15 @@ fun showPlotSaveNotification(
         return
     }
 
-    val notificationType = if (allExportsSucceeded) NotificationType.INFORMATION else NotificationType.ERROR
+    val notificationType = when {
+        allExportsSucceeded -> NotificationType.INFORMATION
+        allExportsSkipped -> NotificationType.WARNING
+        else -> NotificationType.ERROR
+    }
     val notificationTitle = when {
         allExportsSucceeded -> KotlinNotebookPlotsBundle.message("kotlin.notebook.outputs.kandy.export.all.succeeded.notification.message")
         allExportsFailed -> KotlinNotebookPlotsBundle.message("kotlin.notebook.outputs.kandy.export.all.failed.notification.message")
+        allExportsSkipped -> KotlinNotebookPlotsBundle.message("kotlin.notebook.outputs.kandy.export.all.skipped.notification.message")
         else -> KotlinNotebookPlotsBundle.message("kotlin.notebook.outputs.kandy.export.some.failed.notification.message")
     }
     val notificationContent = errors.firstOrNull()?.asDescription()
@@ -69,7 +77,7 @@ fun showPlotSaveNotification(
         kandyGroup.createNotification(notificationTitle, notificationContent, notificationType)
     }
 
-    notification.addPlotOpenAction(files)
+    notification.addPlotOpenAction(savedFiles)
 
     Notifications.Bus.notify(notification)
 }

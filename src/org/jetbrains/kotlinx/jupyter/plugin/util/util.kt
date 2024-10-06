@@ -24,16 +24,16 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.PsiManager
-import com.intellij.psi.util.childLeafs
 import com.intellij.psi.util.parentOfType
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtScript
-import org.jetbrains.kotlin.psi.psiUtil.getChildOfType
 import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 const val JUPYTER_NOTEBOOK_EXTENSION = "ipynb"
 const val DEFAULT_KOTLIN_KERNEL_NAME = "kotlin"
@@ -101,9 +101,6 @@ fun PsiFile?.getNotebookValidCells() = getNotebookCells().filter { it.isValid &&
 fun PsiFile?.getNotebookCells() =
   (this?.children?.first() as? JupyterNotebook)?.psiCellList.orEmpty()
 
-fun KtFile.isNonEmptyScript() =
-    getChildOfType<KtScript>()?.childLeafs()?.any() ?: false
-
 fun PsiLanguageInjectionHost.getInjectedKtFiles(injectedLanguageManager: InjectedLanguageManager) =
     injectedLanguageManager.getInjectedPsiFiles(this)?.map { it.first }?.filterIsInstance<KtFile>().orEmpty()
 
@@ -167,7 +164,12 @@ suspend inline fun anyOf(vararg actions: suspend () -> Boolean): Boolean {
     return result
 }
 
-inline fun <R> runSafely(crossinline action: () -> R, crossinline onFailure: (Throwable) -> Unit): R? {
+@OptIn(ExperimentalContracts::class)
+inline fun <R> runSafely(action: () -> R, onFailure: (Throwable) -> Unit): R? {
+    contract {
+        callsInPlace(action, InvocationKind.EXACTLY_ONCE)
+        callsInPlace(onFailure, InvocationKind.AT_MOST_ONCE)
+    }
     return try {
         action()
     } catch (e: Throwable) {

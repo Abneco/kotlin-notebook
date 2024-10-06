@@ -7,10 +7,12 @@ import com.intellij.jupyter.core.jupyter.editor.getJupyterVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
+import com.intellij.jupyter.core.jupyter.ui.traverseChildrenBreadthFirst
 import com.intellij.kotlin.jupyter.plots.LetsPlotComponent
 import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey
 import com.intellij.kotlin.jupyter.plots.PlotDataKeyExtractor
 import com.intellij.notebooks.visualization.context.NotebookDataContext.selectedCellInterval
+import com.intellij.notebooks.visualization.outputs.impl.InnerComponent
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
@@ -41,6 +43,8 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         return outputs.isNotEmpty()
     }
 
+    protected open fun supportsMultiplePlots(): Boolean = false
+
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun update(event: AnActionEvent) {
@@ -55,9 +59,23 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
 
     private fun getLetsPlotOutputs(event: AnActionEvent): List<LetsPlotOutputDataKey> {
         val contextComponent = event.dataContext.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT)
-        val letsPlotComponent = contextComponent?.firstAncestorOfType<LetsPlotComponent>()
-        if (letsPlotComponent != null) {
-            return listOfNotNull(letsPlotComponent.dataKey)
+        if (supportsMultiplePlots()) {
+            val innerComponent = contextComponent?.firstAncestorOfType<InnerComponent>()
+            if (innerComponent != null) {
+                val result = innerComponent
+                    .traverseChildrenBreadthFirst()
+                    .asSequence()
+                    .filterIsInstance<LetsPlotComponent>()
+                    .mapNotNull { it.dataKey }
+                    .toList()
+                    .takeIf { it.isNotEmpty() }
+                if (result != null) return result
+            }
+        } else {
+            val letsPlotComponent = contextComponent?.firstAncestorOfType<LetsPlotComponent>()
+            if (letsPlotComponent != null) {
+                return listOfNotNull(letsPlotComponent.dataKey)
+            }
         }
 
         val notebookVirtualFile = event.dataContext.jupyterNotebookFile ?: return emptyList()

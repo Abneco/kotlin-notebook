@@ -27,18 +27,21 @@
     </extensions>
 
     <actions resource-bundle="messages/KotlinNotebookPlotsBundle">
-        <action id="ExportLetsPlot"
-                class="com.intellij.kotlin.jupyter.plots.export.SavePlotAction"
-                icon="AllIcons.Actions.Download">
-            <add-to-group group-id="JupyterCellOutputMenu"/>
-        </action>
+        <action id="SaveLetsPlot"
+                class="com.intellij.kotlin.jupyter.plots.export.SaveOnePlotAction"
+                icon="AllIcons.Actions.Download"/>
+
+        <action id="SaveAllLetsPlots"
+                class="com.intellij.kotlin.jupyter.plots.export.SaveAllPlotsAction"
+                icon="AllIcons.Actions.Download"/>
 
         <action id="CopyLetsPlot"
                 class="com.intellij.kotlin.jupyter.plots.export.CopyPlotAction"
                 icon="AllIcons.Actions.Copy"/>
 
         <group id="LetsPlotActions">
-            <reference id="ExportLetsPlot"/>
+            <reference id="SaveLetsPlot"/>
+            <reference id="SaveAllLetsPlots"/>
             <reference id="CopyLetsPlot"/>
         </group>
     </actions>
