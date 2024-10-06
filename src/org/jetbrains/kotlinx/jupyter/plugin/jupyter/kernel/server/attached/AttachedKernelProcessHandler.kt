@@ -10,9 +10,7 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.AbstractKotlin
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelListener
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelSession
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.process.KernelZMQClientSession
-import org.jetbrains.kotlinx.jupyter.startup.DEFAULT_SPRING_SIGNATURE_KEY
-import org.jetbrains.kotlinx.jupyter.startup.createKotlinKernelConfig
-import org.jetbrains.kotlinx.jupyter.startup.defaultSpringAppPorts
+import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import java.nio.file.Path
 
 class AttachedKernelProcessHandler(
@@ -20,15 +18,11 @@ class AttachedKernelProcessHandler(
     kernelId: JupyterKernelId,
     notebookPath: Path,
     notebookVirtualFile: BackedNotebookVirtualFile?,
+    private val kernelConfig: KernelConfig,
 ) : AbstractKotlinKernelRunnableHandler<KotlinKernelListener>(
     KotlinKernelListener::class,
     project, kernelId, notebookPath, notebookVirtualFile
 ) {
-    private val kernelConfig = createKotlinKernelConfig(
-        defaultSpringAppPorts,
-        DEFAULT_SPRING_SIGNATURE_KEY,
-    )
-
     override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession {
         return KernelZMQClientSession(
             sessionId,

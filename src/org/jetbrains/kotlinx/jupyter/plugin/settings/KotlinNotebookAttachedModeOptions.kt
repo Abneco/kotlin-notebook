@@ -10,6 +10,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.plugin.resources.i18n.KotlinNotebookBundle
+import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.defaultSpringAppPorts
 import java.util.*
 import kotlin.reflect.KMutableProperty1
@@ -27,6 +28,8 @@ class KotlinNotebookAttachedModeOptions:
         Listener::class.java
     )
 {
+
+    var host by propNarrowing(State::host) { it ?: "*" }
 
     var hb by socket(State::hb, JupyterSocketType.HB)
     var shell by socket(State::shell, JupyterSocketType.SHELL)
@@ -46,9 +49,15 @@ class KotlinNotebookAttachedModeOptions:
         JupyterSocketType.IOPUB to ::iopub,
     )
 
+    fun getKernelPorts(): KernelPorts {
+        return socketProperties.mapValues { (_, prop) -> prop.get() }
+    }
+
     fun getSocketProperty(socketType: JupyterSocketType) = socketProperties[socketType]!!
 
     class State : BaseState() {
+        var host by string("*")
+
         var hb by socket(JupyterSocketType.HB)
         var shell by socket(JupyterSocketType.SHELL)
         var control by socket(JupyterSocketType.CONTROL)

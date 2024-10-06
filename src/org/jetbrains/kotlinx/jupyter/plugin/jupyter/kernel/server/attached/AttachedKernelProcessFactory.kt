@@ -12,9 +12,12 @@ import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.KotlinKernelRu
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.ModeAwareKernelRunnableFactory
 import org.jetbrains.kotlinx.jupyter.plugin.jupyter.kernel.server.asRawMessage
 import org.jetbrains.kotlinx.jupyter.plugin.scriptingSupport.JupyterCompilerService
+import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookAttachedModeOptions
 import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookSessionRunMode
 import org.jetbrains.kotlinx.jupyter.plugin.util.jsonConfig
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
+import org.jetbrains.kotlinx.jupyter.startup.DEFAULT_SPRING_SIGNATURE_KEY
+import org.jetbrains.kotlinx.jupyter.startup.createClientKotlinKernelConfig
 import java.nio.file.Path
 
 class AttachedKernelProcessFactory : ModeAwareKernelRunnableFactory(
@@ -26,8 +29,18 @@ class AttachedKernelProcessFactory : ModeAwareKernelRunnableFactory(
         notebookPath: Path,
         notebookVirtualFile: BackedNotebookVirtualFile?,
     ): KotlinKernelRunnableHandler {
+        val options = KotlinNotebookAttachedModeOptions.getInstance(project)
+        val host = options.host
+        val ports = options.getKernelPorts()
+
+        val kernelConfig = createClientKotlinKernelConfig(
+            host,
+            ports,
+            DEFAULT_SPRING_SIGNATURE_KEY,
+        )
+
         return AttachedKernelProcessHandler(
-            project, kernelId, notebookPath, notebookVirtualFile,
+            project, kernelId, notebookPath, notebookVirtualFile, kernelConfig
         ).apply {
             addBaseKernelListener(MyListener)
         }

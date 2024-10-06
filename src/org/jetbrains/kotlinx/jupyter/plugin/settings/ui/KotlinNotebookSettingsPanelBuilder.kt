@@ -95,6 +95,7 @@ class KotlinNotebookSettingsPanelBuilder(
                 createMaxHeapSizeSpinner().showForSeparateProcess()
                 createExtraJvmArgumentsField().showForSeparateProcess()
                 createEnvironmentVariablesField().showForSeparateProcess()
+                createKernelHostField().showForAttachedMode()
                 createZmqPortsSelector().showForAttachedMode()
             }
             if (debugFeaturesEnabled) {
@@ -303,6 +304,14 @@ class KotlinNotebookSettingsPanelBuilder(
                         isEnabled = newVersion?.isKernelVersionEnoughForInstrumentation ?: false
                     }
                 }
+        }
+    }
+
+    private fun Panel.createKernelHostField(): Row {
+        return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.session.attached.host")) {
+            textField()
+                .bindText(attachedProcessOptions::host)
+                .widthGroup(BUILD_WIDTH_GROUP)
         }
     }
 
