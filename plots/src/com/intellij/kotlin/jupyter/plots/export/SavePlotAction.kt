@@ -21,6 +21,7 @@ import com.intellij.ui.dsl.builder.toNullableProperty
 import com.intellij.ui.dsl.listCellRenderer.textListCellRenderer
 import com.intellij.ui.layout.selectedValueMatches
 import com.intellij.ui.util.preferredWidth
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
@@ -44,32 +45,40 @@ abstract class SavePlotAction : AbstractExportPlotAction() {
         val exportModel = showExportDialog(project, notebookDir, letsPlotOutputs.size > 1) ?: return
 
         KotlinNotebookPluginScope.getForProject(project).async {
-            val savedFiles = mutableListOf<File>()
-            val skippedFiles = mutableListOf<File>()
-            val errors = mutableListOf<Throwable>()
-
-            for ((outputIndex, output) in letsPlotOutputs.withIndex()) {
-                val isLastFile = outputIndex == letsPlotOutputs.lastIndex
-                runSafely (
-                    {
-                        val fileSaveRequest = exportModel.createFileSaveRequest(outputIndex + 1, isLastFile)
-                        val file = fileSaveRequest.file
-                        if (fileSaveRequest.shouldSave) {
-                            file.parentFile.mkdirs()
-                            savePlot(output, exportModel, file)
-                            savedFiles.add(file)
-                        } else {
-                            skippedFiles.add(file)
-                        }
-                    },
-                    { throwable ->
-                        errors.add(throwable)
-                    }
-                )
-            }
-
-            showPlotSaveNotification(savedFiles, skippedFiles, errors)
+            savePlots(letsPlotOutputs, exportModel)
         }
+    }
+
+    @RequiresBackgroundThread
+    private suspend fun savePlots(
+        letsPlotOutputs: List<LetsPlotOutputDataKey>,
+        exportModel: MutablePlotSaveModel
+    ) {
+        val savedFiles = mutableListOf<File>()
+        val skippedFiles = mutableListOf<File>()
+        val errors = mutableListOf<Throwable>()
+
+        for ((outputIndex, output) in letsPlotOutputs.withIndex()) {
+            val isLastFile = outputIndex == letsPlotOutputs.lastIndex
+            runSafely(
+                {
+                    val fileSaveRequest = exportModel.createFileSaveRequest(outputIndex + 1, isLastFile)
+                    val file = fileSaveRequest.file
+                    if (fileSaveRequest.shouldSave) {
+                        file.parentFile.mkdirs()
+                        savePlot(output, exportModel, file)
+                        savedFiles.add(file)
+                    } else {
+                        skippedFiles.add(file)
+                    }
+                },
+                { throwable ->
+                    errors.add(throwable)
+                }
+            )
+        }
+
+        showPlotSaveNotification(savedFiles, skippedFiles, errors)
     }
 
     private fun showExportDialog(
@@ -218,7 +227,7 @@ abstract class SavePlotAction : AbstractExportPlotAction() {
             val myDirectory = directory
             val fileNameTemplate = fileName.replace(OUTPUT_INDEX_TEMPLATE, outputIndex.toString())
             val file = File(myDirectory, fileNameTemplate)
-            val newFile = ensureFileDoesntExist(file, !isLastFile)
+            val newFile = ensureFileDoesNotExist(file, !isLastFile)
             return FileSaveRequest(newFile ?: file, newFile != null)
         }
 
@@ -226,7 +235,7 @@ abstract class SavePlotAction : AbstractExportPlotAction() {
          * Depending on file existence and the strategy chosen by the user,
          * returns the file where the plot should be saved or null if it shouldn't be saved
          */
-        suspend fun ensureFileDoesntExist(file: File, showRememberChoiceCheckbox: Boolean): File? {
+        suspend fun ensureFileDoesNotExist(file: File, showRememberChoiceCheckbox: Boolean): File? {
             if (!file.exists()) return file
 
             if (fileAlreadyExistsStrategy == FileAlreadyExistsStrategy.ASK) {
