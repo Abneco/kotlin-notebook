@@ -26,37 +26,30 @@ import java.util.concurrent.atomic.AtomicInteger
 
 
 /**
- * Component responsible for managing data related to files injected into a notebook cell within a Kotlin plugin environment.
- * This component handles the registration, processing, and cleanup of injected files, particularly for those relevant to Kotlin.
+ * Processor responsible for managing data related to files injected into a notebook cell within a Kotlin plugin environment.
+ * This class handles the registration, processing, and cleanup of injected files, particularly for those relevant to Kotlin.
  *
- * @property injectedLanguageManager Manager to handle language injections in the PSI tree.
- * @property sharedLogger Logger used for logging relevant events and information.
- * @property finishedFiles Set of indexes representing completed notebook cells.
- * @property targetIndexes Set of target indexes derived from the injected file data.
+ * Its state lifecycle is per-pass.
  */
-internal class InjectedFilesDataComponent(
+internal class InjectedFilesDataProcessor(
     private val injectedLanguageManager: InjectedLanguageManager,
     private val sharedLogger: Logger,
     parentDisposable: Disposable,
 ) : Disposable  {
-    companion object {
-        data class InjectedFileData(
-          val notebookCellIndex: Int,
-          val file: KtFile,
-          val ktFileRange: TextRange,
-          val injectionHost: PsiLanguageInjectionHost,
-          val totalTokens: Int
-        ) {
-            val processedTokens = AtomicInteger(0)
-        }
-
-        internal const val INJECTED_SYNTAX_LAYER_BORDER = HighlighterLayer.CARET_ROW - 1
+    data class InjectedFileData(
+        val notebookCellIndex: Int,
+        val file: KtFile,
+        val ktFileRange: TextRange,
+        val injectionHost: PsiLanguageInjectionHost,
+        val totalTokens: Int
+    ) {
+        val processedTokens = AtomicInteger(0)
     }
     init {
         Disposer.register(parentDisposable, this)
     }
 
-    val finishedFiles = ConcurrentCollectionFactory.createConcurrentSet<Int>()
+    val finishedFilesIndexes = ConcurrentCollectionFactory.createConcurrentSet<Int>()
     private val fileToInjectionData = ConcurrentHashMap<KtFile, InjectedFileData>()
     private val unrecognizedFiles = ConcurrentHashMap.newKeySet<PsiFile>()
     @Volatile
@@ -76,13 +69,13 @@ internal class InjectedFilesDataComponent(
             val psiCell = cells.getOrNull(ind) ?: continue
             val injectedPsiFiles = injectedLanguageManager.getInjectedPsiFiles(psiCell)
             if (injectedPsiFiles == null) {
-                finishedFiles.add(ind)
+                finishedFilesIndexes.add(ind)
                 continue
             }
 
             // skip non Kt
             if (injectedPsiFiles.none { f -> f.first is KtFile }) {
-                finishedFiles.add(ind)
+                finishedFilesIndexes.add(ind)
                 continue
             }
             injectedPsiFiles.firstOrNull { f -> f.first is KtFile }?.first?.let { ktFile ->
@@ -112,7 +105,7 @@ internal class InjectedFilesDataComponent(
             return
         }
 
-        finishedFiles.addIfNotNull(ind)
+        finishedFilesIndexes.addIfNotNull(ind)
         sharedLogger.info("Finished visitors for $ind")
 
         return
@@ -182,16 +175,22 @@ internal class InjectedFilesDataComponent(
         return mapNotNull { injected -> cells.indexOf(manager.getInjectionHost(injected)) }
     }
 
-    fun clear(complete: Boolean = false) {
-        if (complete) {
-            unrecognizedFiles.clear()
-        }
+    /**
+     * Resets operational data before new HL pass.
+     * The state should be cleared out.
+     */
+    fun clear() {
+        unrecognizedFiles.clear()
         targetPsiFile = null
         fileToInjectionData.clear()
-        finishedFiles.clear()
+        finishedFilesIndexes.clear()
     }
 
     override fun dispose() {
-        clear(complete = true)
+        clear()
+    }
+
+    companion object {
+        internal const val INJECTED_SYNTAX_LAYER_BORDER = HighlighterLayer.CARET_ROW - 1
     }
 }

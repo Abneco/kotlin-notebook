@@ -18,9 +18,11 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Manages error highlighting within editors, including adding markup listeners and tracking error indices.
  *
- * This class's main goal is to keep track of files which have left error highlighters and dispose them, if Shadowing is required.
+ * This class's main goal is to keep track of error highlighters inside files during Shadowing.
+ * On cell focus change, old error highlighters should be disposed of as a part of considering
+ * this class being highlighted.
  */
-internal class ErrorHighlighterComponent(
+internal class ErrorHighlightersProcessor(
     parentDisposable: Disposable,
     private val sharedLogger: Logger
 ) : Disposable {
@@ -28,7 +30,11 @@ internal class ErrorHighlighterComponent(
         Disposer.register(parentDisposable, this)
     }
 
-    val knownErrorIndices = ConcurrentHashMap<Int, MutableSet<RangeHighlighter>>()
+    /**
+     * Associates injected file indexes with their respective sets of error highlighters.
+     * This information is used to dispose of old highlighters during Shadowing
+     */
+    val fileIndexesToErrors = ConcurrentHashMap<Int, MutableSet<RangeHighlighter>>()
     val targetErrorHighlighters = ConcurrentCollectionFactory.createConcurrentSet<RangeHighlighter>()
 
     private lateinit var activeMarkupModelListener: MarkupModelListener
@@ -47,13 +53,13 @@ internal class ErrorHighlighterComponent(
 
     fun determineFilesWithLeftErrors(
         markupModel: MarkupModelEx,
-        finishedFiles: MutableSet<Int>,
+        finishedFilesIndexes: MutableSet<Int>,
         completeIndexTarget: Int?
     ) {
-        val keys = knownErrorIndices.filterKeys { it != completeIndexTarget }
+        val keys = fileIndexesToErrors.filterKeys { it != completeIndexTarget }
         val toRemove = mutableSetOf<Int>()
         keys.forEach { entry ->
-            val data = knownErrorIndices[entry.key]
+            val data = fileIndexesToErrors[entry.key]
             data?.removeIf {
                 it.layer == -1 || !it.isValid || !markupModel.containsHighlighter(it)
             }
@@ -61,25 +67,25 @@ internal class ErrorHighlighterComponent(
         }
 
         completeIndexTarget?.let {
-            knownErrorIndices[it]?.addAll(targetErrorHighlighters)
+            fileIndexesToErrors[it]?.addAll(targetErrorHighlighters)
         }
-        toRemove.forEach { knownErrorIndices.remove(it) }
-        val targetPassed = completeIndexTarget in finishedFiles
+        toRemove.forEach { fileIndexesToErrors.remove(it) }
+        val targetPassed = completeIndexTarget in finishedFilesIndexes
 
-        knownErrorIndices.filter {
+        fileIndexesToErrors.filter {
             if (it.key != completeIndexTarget) it.value.isNotEmpty() else !targetPassed
         }.keys.also {
             // not yet counted
             if (it.isNotEmpty()) {
-                finishedFiles.removeAll(it)
-                sharedLogger.debug("Daemon finished, knownErrorInd: ${knownErrorIndices.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
+                finishedFilesIndexes.removeAll(it)
+                sharedLogger.debug("Daemon finished, knownErrorInd: ${fileIndexesToErrors.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
             }
         }
     }
 
     fun clear() {
         targetErrorHighlighters.clear()
-        knownErrorIndices.clear()
+        fileIndexesToErrors.clear()
     }
 
     override fun dispose() {

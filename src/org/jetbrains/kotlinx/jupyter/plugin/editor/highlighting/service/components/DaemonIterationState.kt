@@ -4,12 +4,10 @@ package org.jetbrains.kotlinx.jupyter.plugin.editor.highlighting.service.compone
 import java.util.concurrent.atomic.AtomicReference
 
 internal class DaemonIterationState {
-    companion object {
-        enum class DaemonState {
-            IDLE,
-            SETUP,
-            IN_PROGRESS,
-        }
+    enum class DaemonState {
+        IDLE,
+        SETUP,
+        IN_PROGRESS,
     }
     private val state = AtomicReference(DaemonState.IDLE)
 

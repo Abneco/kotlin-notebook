@@ -182,7 +182,7 @@ class NotebookHighlightingManager(
 
         // pass can be started earlier than call back about the daemon end could fire
         if (!iterationStateIndicator.enterSetupPhase() && !iterationStateIndicator.isInProgress) {
-            LOG.warn("Another pass is in setup, aborting, state: ${iterationStateIndicator.get()}")
+            LOG.debug("Another pass is in setup, aborting, state: ${iterationStateIndicator.get()}")
             return
         }
 
@@ -258,6 +258,9 @@ class NotebookHighlightingManager(
         clearState(true)
     }
 
+    /**
+     * Should be called before each HL pass
+     */
     private fun clearState(complete: Boolean = false) {
         highlightingPassTokensProcessor.clearState(completeRangeInd, complete)
         if (complete) {

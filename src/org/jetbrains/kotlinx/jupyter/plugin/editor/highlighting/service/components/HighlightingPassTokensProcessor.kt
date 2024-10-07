@@ -38,38 +38,38 @@ internal class HighlightingPassTokensProcessor(
         Disposer.register(parentDisposable, this)
     }
 
-    private val errorHighlighterComponent = ErrorHighlighterComponent(this, LOG)
-    private val injectedFilesDataComponent = InjectedFilesDataComponent(
+    private val errorHighlightersProcessor = ErrorHighlightersProcessor(this, LOG)
+    private val injectedFilesDataProcessor = InjectedFilesDataProcessor(
         InjectedLanguageManager.getInstance(project),
         LOG,
         this
     )
 
     val remainingIndexesToProcess: Set<Int>
-        get() = injectedFilesDataComponent.targetIndexes - finishedFiles
+        get() = injectedFilesDataProcessor.targetIndexes - finishedFiles
 
     val finishedFiles: Set<Int>
-        get() = injectedFilesDataComponent.finishedFiles - errorHighlighterComponent.knownErrorIndices.keys
+        get() = injectedFilesDataProcessor.finishedFilesIndexes - errorHighlightersProcessor.fileIndexesToErrors.keys
 
     fun passCreated(targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
-        injectedFilesDataComponent.passCreated(targetIndexes, cells, completeRangeInd)
+        injectedFilesDataProcessor.passCreated(targetIndexes, cells, completeRangeInd)
     }
 
     fun getInjectionHost(psiFile: PsiFile): PsiLanguageInjectionHost? {
-        return injectedFilesDataComponent.getFileInjectionData(psiFile)?.injectionHost
+        return injectedFilesDataProcessor.getFileInjectionData(psiFile)?.injectionHost
     }
 
     fun isFileTarget(psiFile: PsiFile): Boolean {
-        return injectedFilesDataComponent.isFileTarget(psiFile)
+        return injectedFilesDataProcessor.isFileTarget(psiFile)
     }
 
     fun injectedFileProcessed(psiFile: PsiFile) {
-        injectedFilesDataComponent.finishedForFile(psiFile)
+        injectedFilesDataProcessor.finishedForFile(psiFile)
     }
 
     fun getErrorHighlighters(psiFile: PsiFile): Set<RangeHighlighter> {
-        val errorHighlighters = errorHighlighterComponent.knownErrorIndices
-        val cellInd = injectedFilesDataComponent.getFileInjectionData(psiFile)?.notebookCellIndex ?: return emptySet()
+        val errorHighlighters = errorHighlightersProcessor.fileIndexesToErrors
+        val cellInd = injectedFilesDataProcessor.getFileInjectionData(psiFile)?.notebookCellIndex ?: return emptySet()
 
         if (isFileTarget(psiFile)) {
             errorHighlighters.putIfAbsent(cellInd, mutableSetOf())
@@ -84,37 +84,44 @@ internal class HighlightingPassTokensProcessor(
         markupModel: MarkupModelEx,
         cellFocusIndex: Int?
     ): MutableSet<Int> {
-        injectedFilesDataComponent.finishedFiles.addIfNotNull(cellFocusIndex)
-        val finishedFiles = injectedFilesDataComponent.finishedFiles
+        injectedFilesDataProcessor.finishedFilesIndexes.addIfNotNull(cellFocusIndex)
+        val finishedFilesIndexes = injectedFilesDataProcessor.finishedFilesIndexes
         val remaining = remainingIndexesToProcess.toMutableSet()
         remaining.remove(cellFocusIndex)
 
-        errorHighlighterComponent.determineFilesWithLeftErrors(markupModel, finishedFiles, cellFocusIndex)
+        errorHighlightersProcessor.determineFilesWithLeftErrors(markupModel, finishedFilesIndexes, cellFocusIndex)
 
-        injectedFilesDataComponent.determineFilesLeftToHighlight(markupModel, remaining)
-        injectedFilesDataComponent.processUnrecognizedFiles(topLevelFile, queue)
+        injectedFilesDataProcessor.determineFilesLeftToHighlight(markupModel, remaining)
+        injectedFilesDataProcessor.processUnrecognizedFiles(topLevelFile, queue)
 
         return remaining
     }
 
 
     fun editorCreated(editor: Editor) {
-        errorHighlighterComponent.addMarkupListener(editor)
+        errorHighlightersProcessor.addMarkupListener(editor)
     }
 
+    /**
+     * Reset processor state before new HL pass.
+     *
+     * If no kernel restart performed, the information from [errorHighlightersProcessor] should be kept
+     * between iterations as some errors might not be HL-ed/disposed of if analysis was interrupted.
+     */
     fun clearState(cellFocusIndex: Int?, onRestart: Boolean = false) {
-        injectedFilesDataComponent.clear(onRestart)
+        injectedFilesDataProcessor.clear()
 
         if (onRestart) {
-            errorHighlighterComponent.clear()
+            errorHighlightersProcessor.clear()
         } else {
-            val highlighted = errorHighlighterComponent.targetErrorHighlighters
+            // transfer seen errors to a proper storage
+            val highlighters = errorHighlightersProcessor.targetErrorHighlighters
             if (cellFocusIndex != null) {
-                errorHighlighterComponent.knownErrorIndices[cellFocusIndex]?.addAll(highlighted)
+                val focusCellHighlighters = errorHighlightersProcessor.fileIndexesToErrors[cellFocusIndex]
+                focusCellHighlighters?.addAll(highlighters)
             }
-            highlighted.clear()
+            highlighters.clear()
         }
-
     }
 
     override fun dispose() {
