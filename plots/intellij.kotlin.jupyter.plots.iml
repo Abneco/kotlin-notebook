@@ -58,5 +58,6 @@
     <orderEntry type="module" module-name="intellij.notebooks.visualization" />
     <orderEntry type="module" module-name="intellij.notebooks.ui" />
     <orderEntry type="module" module-name="intellij.kotlin.jupyter" />
+    <orderEntry type="module" module-name="intellij.platform.ide.ui" />
   </component>
 </module>
