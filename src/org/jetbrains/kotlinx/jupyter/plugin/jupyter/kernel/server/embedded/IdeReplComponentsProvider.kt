@@ -21,11 +21,16 @@ class IdeReplComponentsProvider(
     commManager,
     inMemoryHolder,
 ) {
-    override fun provideMagicsHandler(): LibrariesAwareMagicsHandler {
-        return EmbeddedFullMagicsHandler(replOptions, librariesProcessor, libraryInfoSwitcher, _loggerFactory)
-    }
-
     override fun provideLoggerFactory(): KernelLoggerFactory {
         return _loggerFactory
+    }
+
+    override fun provideMagicsHandler(): LibrariesAwareMagicsHandler {
+        return EmbeddedFullMagicsHandler(
+            replOptions,
+            librariesProcessor,
+            libraryInfoSwitcher,
+            _loggerFactory,
+        )
     }
 }

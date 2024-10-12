@@ -18,6 +18,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelComm
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import org.jetbrains.kotlinx.jupyter.libraries.DefaultResolutionInfoProviderFactory
+import org.jetbrains.kotlinx.jupyter.messaging.MessageHandler
 import java.nio.file.Path
 
 class EmbeddedKotlinKernelSession(
@@ -28,9 +29,25 @@ class EmbeddedKotlinKernelSession(
     private val onMessage: (JupyterMessage) -> Unit
 ) : KotlinKernelSession, JupyterKernelCommunicationClient {
 
-    private val inMemoryHolderService = InMemoryReplResultsHolderService.getInstance(project)
+    private val messageHandler = createMessageHandler()
 
-    private val messageHandler = run {
+    override fun send(content: JupyterMessage) {
+        content.asRawMessage { rawMessage, socketType ->
+            messageHandler.handleMessage(socketType, rawMessage)
+        }
+    }
+
+    override fun dispose() {
+        close()
+    }
+
+    override fun close() {
+        inMemoryHolderService.removeHolder(sessionId)
+    }
+
+    private val inMemoryHolderService get() = InMemoryReplResultsHolderService.getInstance(project)
+
+    private fun createMessageHandler(): MessageHandler {
         val kernelConfig: KernelConfig = DefaultKotlinKernelConfigFactory(
             project,
             createKernelPorts { 0 },
@@ -49,7 +66,8 @@ class EmbeddedKotlinKernelSession(
 
         val kernelVersion = project.selectedKernelVersion!!
 
-        val jvmTargetForSnippets = chooseJvmTargetForSnippets(project)?.toCanonicalString() ?: defaultRuntimeProperties.jvmTargetForSnippets
+        val jvmTargetForSnippets =
+            chooseJvmTargetForSnippets(project)?.toCanonicalString() ?: defaultRuntimeProperties.jvmTargetForSnippets
         val runtimeProperties = IdeReplRuntimeProperties(
             kernelVersion,
             jvmTargetForSnippets
@@ -62,7 +80,7 @@ class EmbeddedKotlinKernelSession(
         )
 
         val inMemoryResultHolder = inMemoryHolderService.getOrCreateHolder(sessionId)
-        createEmbeddedMessageHandler(
+        return createEmbeddedMessageHandler(
             project,
             replSettings,
             loggerFactory,
@@ -70,20 +88,5 @@ class EmbeddedKotlinKernelSession(
             inMemoryResultHolder,
             kernelVersion.toMavenVersion(),
         )
-    }
-
-
-    override fun send(content: JupyterMessage) {
-        content.asRawMessage { rawMessage, socketType ->
-            messageHandler.handleMessage(socketType, rawMessage)
-        }
-    }
-
-    override fun dispose() {
-        close()
-    }
-
-    override fun close() {
-        inMemoryHolderService.removeHolder(sessionId)
     }
 }
