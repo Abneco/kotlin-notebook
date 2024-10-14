@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.core.editor.highlighting.service
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingRestarter.UpdateSteps.performHLStartupTemplate
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService.Companion.HL_DELAY_PAUSE
+import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.DaemonAnalyzerStatusService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.shouldStartAfterPreChecks
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
@@ -15,13 +16,12 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.util.coroutines.namedChildScope
+import com.intellij.platform.util.coroutines.childScope
 import com.intellij.psi.PsiFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 
 @Service(Service.Level.PROJECT)
 class NotebookHighlightingService(
@@ -56,7 +56,7 @@ class NotebookHighlightingService(
 internal object NotebookHighlightingRestarter {
     private var updateJob: Job? = null
     private val regularUpdateScope = KotlinNotebookPluginScope.global
-        .namedChildScope("NotebookHighlightingRestarter")
+        .childScope("NotebookHighlightingRestarter")
 
     object UpdateSteps {
 
@@ -64,7 +64,7 @@ internal object NotebookHighlightingRestarter {
             file: PsiFile, delayDelta: Long,
             crossinline afterRequest: () -> Unit = {}
         ) {
-            val analyzer = DaemonCodeAnalyzerStatusService.getInstance(file.project)
+            val analyzer = DaemonAnalyzerStatusService.getInstance(file.project)
             delay(delayDelta)
             while (analyzer.daemonRunning) {
                 delay(150)

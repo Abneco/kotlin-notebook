@@ -27,7 +27,6 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.ProperTextRange
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
-import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.end
 import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.start
 import org.jetbrains.kotlin.psi.KtFile
@@ -104,11 +103,9 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
                 notebookDocumentTargetRanges = targets
             }
 
-            if (!DaemonCodeAnalyzerStatusService.getInstance(project).daemonRunning) {
-                KotlinNotebookPluginScope.getForProject(project).invokeNow {
-                    readAction {
-                        jupyterPsiFile.restartAnalyzing()
-                    }
+            KotlinNotebookPluginScope.getForProject(project).invokeNow {
+                readAction {
+                    jupyterPsiFile.restartAnalyzing()
                 }
             }
         }

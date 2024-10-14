@@ -28,7 +28,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import kotlinx.coroutines.Job
-import org.jetbrains.kotlin.base.fe10.analysis.DaemonCodeAnalyzerStatusService
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import java.util.concurrent.atomic.AtomicReference
@@ -49,7 +48,7 @@ internal object NotebookHighlightingUtilityObject {
     inline fun shouldStartAfterPreChecks(file: PsiFile, associatedJob: Job?,
                                          crossinline afterRequest: () -> Unit = {},
                                          crossinline undoRequest: () -> Unit = {}): Boolean {
-        val analyzer = DaemonCodeAnalyzerStatusService.getInstance(file.project)
+        val analyzer = DaemonAnalyzerStatusService.getInstance(file.project)
         if (associatedJob?.isActive == true) {
             undoRequest()
             return false
