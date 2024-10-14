@@ -2,8 +2,11 @@
 package com.intellij.kotlin.jupyter.core.editor.highlighting
 
 import com.intellij.injected.editor.VirtualFileWindow
+import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
+import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
 import com.intellij.psi.FileViewProvider
+import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.idea.base.analysis.KotlinIdeInjectedFilesAnalysisPromoter
 
 /**
@@ -15,5 +18,11 @@ internal class KotlinNotebookInjectedFilesAnalysisPromoter : KotlinIdeInjectedFi
     override fun shouldRunAnalysisForInjectedFile(viewProvider: FileViewProvider): Boolean {
         val virtualFile = viewProvider.virtualFile
         return (virtualFile as? VirtualFileWindow)?.delegate?.isKotlinNotebook == true
+    }
+
+    override fun shouldRunOnlyEssentialHighlightingForInjectedFile(psiFile: PsiFile): Boolean {
+        val backedNotebook = (psiFile.viewProvider.virtualFile as? VirtualFileWindow)?.delegate?.toBackedNotebookFile() ?: return false
+
+        return !NotebookHighlightingService.getForFile(psiFile.project, backedNotebook).isFileTarget(psiFile)
     }
 }
