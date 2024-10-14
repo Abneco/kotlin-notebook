@@ -1,0 +1,129 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.core.editor.find
+
+import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceExpressionResolver.leafPsiManipulator
+import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceExpressionResolver.referenceExpressionManipulator
+import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.TextRange
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiRecursiveElementVisitor
+import com.intellij.psi.PsiReferenceBase
+import com.intellij.psi.impl.source.tree.LeafPsiElement
+import com.intellij.psi.util.elementType
+import com.intellij.psi.util.parentOfType
+import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtDeclaration
+import org.jetbrains.kotlin.psi.KtLambdaExpression
+import org.jetbrains.kotlin.psi.KtNameReferenceExpression
+import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.psi.KtReferenceExpression
+import org.jetbrains.kotlin.psi.KtSimpleNameExpression
+import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
+
+
+internal class NotebookReferenceWrapper(
+    private val resolvedTo: PsiElement,
+    element: PsiElement,
+    private val range: TextRange,
+    private val soft: Boolean
+): PsiReferenceBase<PsiElement>(element) {
+    override fun resolve(): PsiElement {
+        return resolvedTo
+    }
+
+    override fun getValue(): String {
+        return element.text
+    }
+
+    override fun calculateDefaultRangeInElement(): TextRange {
+        return range
+    }
+
+    override fun getRangeInElement(): TextRange {
+        return range
+    }
+
+    override fun isSoft(): Boolean = soft
+
+    override fun handleElementRename(newElementName: String): PsiElement? {
+        return when (val el = element) {
+            is KtReferenceExpression -> referenceExpressionManipulator.handleContentChange(el, newElementName)
+            is LeafPsiElement -> leafPsiManipulator.handleContentChange(el, newElementName)
+            else -> error("Can't handle rename for $element")
+        }
+    }
+
+}
+
+internal class ScriptDeclarationsCollectingVisitor : PsiRecursiveElementVisitor() {
+    private val seenDeclarations = mutableSetOf<KtDeclaration>()
+
+    fun collectAllNestedDeclarationsPresent(elements: Array<KtDeclaration>): Collection<KtDeclaration>
+        = collectAllNestedDeclarationsPresent(elements.toList())
+
+    fun collectAllNestedDeclarationsPresent(elements: List<PsiElement>): Collection<KtDeclaration> {
+        seenDeclarations.clear()
+        elements.forEach {
+            it.accept(this)
+        }
+        return seenDeclarations
+    }
+
+    override fun visitElement(element: PsiElement) {
+        if (element is KtDeclaration) seenDeclarations.add(element)
+        super.visitElement(element)
+    }
+}
+
+internal object NotebookReferenceExpressionResolver {
+    val leafPsiManipulator = LeafElementManipulator()
+    val referenceExpressionManipulator = KotlinNotebookElementManipulator()
+
+    fun tryResolveQualifier(element: PsiElement): PsiElement? {
+        val referenceExpression = element.getParentOfType<KtNameReferenceExpression>(false) ?: return null
+        val adjusted = retrieveNameReference(referenceExpression)
+        referenceExpression.references.firstOrNull { it.resolve() != null }?.let {
+            return it.resolve()
+        }
+        adjusted?.references?.firstOrNull {
+            it.resolve() != null
+        }?.let { return it.resolve() } // optimise?
+
+        return null
+    }
+
+    private fun retrieveNameReference(element: PsiElement): PsiElement? {
+        var foundElement: PsiElement? = null
+        element.acceptChildren(object : PsiRecursiveElementVisitor() {
+            override fun visitElement(element: PsiElement) {
+                if (element is KtSimpleNameExpression) {
+                    foundElement = element
+                    return
+                }
+                super.visitElement(element)
+            }
+        })
+        return foundElement
+    }
+
+}
+
+internal data class ProvidedReferenceInfo(val resolvedTo: PsiElement) {
+    val enclosingClass: KtClass? by lazy {
+        resolvedTo.parentOfType()
+    }
+
+    val type = resolvedTo.elementType
+}
+
+internal val IN_EDITOR_ELEM_REF_KEY: Key<PsiElement> = Key.create("notebook.psi.resolved.ref")
+
+internal fun isItGeneratedNameInsideLambdaCall(targetElement: PsiElement, underCaret: PsiElement?): Boolean {
+    if (targetElement !is KtProperty) return false
+    underCaret ?: return false
+
+    val typeRef = targetElement.typeReference ?: return false
+    if (!typeRef.text.contains(NotebookUsagesContributorFactory.DATAFRAME_PREFIX)) return false
+
+    return underCaret.parentOfType<KtLambdaExpression>() != null
+}

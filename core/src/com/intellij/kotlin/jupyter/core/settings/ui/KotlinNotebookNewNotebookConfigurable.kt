@@ -1,0 +1,39 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.core.settings.ui
+
+import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
+import com.intellij.openapi.options.BoundConfigurable
+import com.intellij.openapi.options.SearchableConfigurable
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.DialogPanel
+import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.dsl.builder.panel
+
+private class KotlinNotebookNewNotebookConfigurable(private val project: Project) :
+    BoundConfigurable(KotlinNotebookBundle.message("kotlin.jupyter.settings.new.notebook.title")),
+    SearchableConfigurable {
+
+    override fun getId(): String = ID
+
+    override fun createPanel(): DialogPanel {
+        val optionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
+        return panel {
+            row {
+                text(KotlinNotebookBundle.message("kotlin.jupyter.settings.new.notebook.description"))
+            }
+            panel {
+                group(KotlinNotebookBundle.message("kotlin.jupyter.settings.build")) {
+                    row {
+                        checkBox(KotlinNotebookBundle.message("checkbox.should.add.libraries"))
+                            .bindSelected(optionsProvider::shouldAddProjectLibrariesToClasspath)
+                    }
+                }
+            }
+        }
+    }
+
+    companion object {
+        const val ID = "kotlinNotebook.newNotebook"
+    }
+}

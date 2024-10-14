@@ -7,7 +7,9 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="intellij.kotlin.jupyter" />
+    <orderEntry type="module" module-name="intellij.kotlin.jupyter.core" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.kotlin.jupyter.github" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.kotlin.jupyter.tables" scope="TEST" />
     <orderEntry type="module" module-name="kotlin.core" scope="PROVIDED" />
     <orderEntry type="module" module-name="kotlin.scripting" />
     <orderEntry type="module" module-name="intellij.platform.testFramework" scope="TEST" />
@@ -35,11 +37,9 @@
     <orderEntry type="library" scope="TEST" name="kotlinx-coroutines-debug" level="project" />
     <orderEntry type="module" module-name="kotlin.code-insight.impl-base" scope="TEST" />
     <orderEntry type="module" module-name="kotlin.base.plugin" scope="TEST" />
-    <orderEntry type="module" module-name="intellij.kotlin.jupyter.tables" scope="TEST" />
     <orderEntry type="module" module-name="intellij.jupyter.plugin" scope="TEST" />
     <orderEntry type="module" module-name="intellij.notebooks.plugin" scope="TEST" />
     <orderEntry type="module" module-name="intellij.vcs.github" scope="TEST" />
-    <orderEntry type="module" module-name="intellij.kotlin.jupyter.github" scope="TEST" />
     <orderEntry type="module" module-name="intellij.jupyter.github" scope="TEST" />
   </component>
 </module>

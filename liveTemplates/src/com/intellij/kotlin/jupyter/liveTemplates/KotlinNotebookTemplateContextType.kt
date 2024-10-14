@@ -5,12 +5,12 @@ import com.intellij.codeInsight.template.EverywhereContextType
 import com.intellij.codeInsight.template.TemplateActionContext
 import com.intellij.codeInsight.template.TemplateContextType
 import com.intellij.injected.editor.EditorWindow
+import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.liveTemplates.i18n.KotlinNotebookLiveTemplatesBundle
 import com.intellij.openapi.fileTypes.SyntaxHighlighter
 import com.intellij.openapi.util.NlsContexts
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.liveTemplates.KotlinTemplateContextType
-import org.jetbrains.kotlinx.jupyter.plugin.util.isKotlinNotebook
 
 sealed class KotlinNotebookTemplateContextType private constructor(
     private val templateContextTypeDelegate: TemplateContextType,

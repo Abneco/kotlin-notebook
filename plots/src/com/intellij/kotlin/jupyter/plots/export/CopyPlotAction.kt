@@ -1,13 +1,13 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.plots.export
 
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.util.runSafely
 import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey
 import com.intellij.kotlin.jupyter.plots.getCurrentLetsPlotFlavor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.async
-import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
-import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
 
 class CopyPlotAction : AbstractExportPlotAction() {
     override fun isActionApplicable(outputs: List<LetsPlotOutputDataKey>): Boolean {

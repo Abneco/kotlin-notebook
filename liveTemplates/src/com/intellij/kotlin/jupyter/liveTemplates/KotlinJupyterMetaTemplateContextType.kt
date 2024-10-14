@@ -3,8 +3,8 @@ package com.intellij.kotlin.jupyter.liveTemplates
 
 import com.intellij.codeInsight.template.TemplateActionContext
 import com.intellij.codeInsight.template.TemplateContextType
+import com.intellij.kotlin.jupyter.core.language.meta.psi.JKTMetaPSIFile
 import com.intellij.kotlin.jupyter.liveTemplates.i18n.KotlinNotebookLiveTemplatesBundle
-import org.jetbrains.kotlinx.jupyter.plugin.language.meta.psi.JKTMetaPSIFile
 
 // We can show this context type to users, but it might be confusing
 object KotlinJupyterMetaTemplateContextType : TemplateContextType(KotlinNotebookLiveTemplatesBundle.message("kotlin.jupyter.template.context.type.meta")) {

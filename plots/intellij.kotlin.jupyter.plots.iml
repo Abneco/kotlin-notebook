@@ -9,6 +9,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="intellij.kotlin.jupyter.core" />
     <orderEntry type="library" name="jetbrains.lets.plot.shadowed" level="project" />
     <orderEntry type="module-library">
       <library name="jetbrains.lets.plot.export.shadowed" type="repository">
@@ -57,7 +58,6 @@
     <orderEntry type="module" module-name="intellij.jupyter.psi" />
     <orderEntry type="module" module-name="intellij.notebooks.visualization" />
     <orderEntry type="module" module-name="intellij.notebooks.ui" />
-    <orderEntry type="module" module-name="intellij.kotlin.jupyter" />
     <orderEntry type="module" module-name="intellij.platform.ide.ui" />
   </component>
 </module>

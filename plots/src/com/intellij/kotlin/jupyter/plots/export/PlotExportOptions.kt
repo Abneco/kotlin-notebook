@@ -1,6 +1,9 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.plots.export
 
+import com.intellij.kotlin.jupyter.core.settings.DelegatingOptionsProvider
+import com.intellij.kotlin.jupyter.core.settings.prop
+import com.intellij.kotlin.jupyter.core.settings.propNarrowing
 import com.intellij.kotlin.jupyter.plots.LetsPlotFlavor
 import com.intellij.kotlin.jupyter.plots.getCurrentLetsPlotFlavor
 import com.intellij.kotlin.jupyter.plots.i18n.KotlinNotebookPlotsBundle
@@ -11,9 +14,6 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlinx.jupyter.plugin.settings.DelegatingOptionsProvider
-import org.jetbrains.kotlinx.jupyter.plugin.settings.prop
-import org.jetbrains.kotlinx.jupyter.plugin.settings.propNarrowing
 import org.jetbrains.letsPlot.core.plot.export.PlotImageExport.buildImageFromRawSpecs
 import java.util.*
 

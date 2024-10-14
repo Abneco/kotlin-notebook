@@ -4,15 +4,15 @@ package com.intellij.kotlin.jupyter.plots
 import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
-import com.intellij.openapi.editor.impl.EditorImpl
-import com.intellij.util.asSafely
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
-import org.jetbrains.kotlinx.jupyter.plugin.util.LETS_PLOT_MIME
-import org.jetbrains.kotlinx.jupyter.plugin.util.convertObject
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.nbformat.DisplayDataContainer
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
+import com.intellij.kotlin.jupyter.core.util.LETS_PLOT_MIME
+import com.intellij.kotlin.jupyter.core.util.convertObject
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
+import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.util.asSafely
 
 
 class PlotDataKeyExtractor: NotebookDisplayOutputDataKeyExtractor {

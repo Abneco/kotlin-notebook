@@ -1,0 +1,19 @@
+// This is a generated file. Not intended for manual editing.
+package com.intellij.kotlin.jupyter.core.psi.meta;
+
+import java.util.List;
+import org.jetbrains.annotations.*;
+import com.intellij.psi.PsiElement;
+
+public interface JKTMetaStatements extends PsiElement {
+
+  @Nullable
+  JKTMetaCommandStatement getCommandStatement();
+
+  @NotNull
+  List<JKTMetaEmptyStatements> getEmptyStatementsList();
+
+  @Nullable
+  JKTMetaRepeatableStatements getRepeatableStatements();
+
+}

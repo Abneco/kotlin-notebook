@@ -8,6 +8,9 @@ import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDat
 import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
 import com.intellij.jupyter.core.jupyter.ui.traverseChildrenBreadthFirst
+import com.intellij.kotlin.jupyter.core.util.LETS_PLOT_MIME
+import com.intellij.kotlin.jupyter.core.util.filterIsInstanceAnd
+import com.intellij.kotlin.jupyter.core.util.firstAncestorOfType
 import com.intellij.kotlin.jupyter.plots.LetsPlotComponent
 import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey
 import com.intellij.kotlin.jupyter.plots.PlotDataKeyExtractor
@@ -18,9 +21,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlinx.jupyter.plugin.util.LETS_PLOT_MIME
-import org.jetbrains.kotlinx.jupyter.plugin.util.filterIsInstanceAnd
-import org.jetbrains.kotlinx.jupyter.plugin.util.firstAncestorOfType
 
 
 abstract class AbstractExportPlotAction : NotebookEditorActionBase() {

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.intellij.jupyter.core.jackson
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.scientific.tables.api.ColumnDescriptionStatistics
@@ -17,7 +18,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import com.intellij.jupyter.core.jackson
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Service(Service.Level.APP)

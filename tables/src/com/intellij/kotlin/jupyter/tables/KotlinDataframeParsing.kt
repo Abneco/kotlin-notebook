@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.database.datagrid.DynamicNestedTable
 import com.intellij.database.datagrid.StaticNestedTable
 import com.intellij.database.extractors.ImageInfo
+import com.intellij.kotlin.jupyter.core.util.KOTLIN_DATAFRAME_MIME
 import com.intellij.scientific.tables.ColumnTreeNode
-import org.jetbrains.kotlinx.jupyter.plugin.util.KOTLIN_DATAFRAME_MIME
 import java.io.ByteArrayOutputStream
 import java.util.*
 import java.util.zip.GZIPInputStream

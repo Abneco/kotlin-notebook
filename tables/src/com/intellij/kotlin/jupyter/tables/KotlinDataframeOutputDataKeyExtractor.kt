@@ -12,6 +12,8 @@ import com.intellij.jupyter.core.jupyter.nbformat.JupyterExecuteResultOutput
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputType
 import com.intellij.jupyter.tables.JupyterTableOutputDataKey
 import com.intellij.jupyter.tables.createTableOutputDataKey
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
+import com.intellij.kotlin.jupyter.core.util.KOTLIN_DATAFRAME_MIME
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
@@ -22,8 +24,6 @@ import com.intellij.scientific.tables.api.DSTableDataType
 import com.intellij.scientific.tables.api.DSTableText
 import com.intellij.util.asSafely
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
-import org.jetbrains.kotlinx.jupyter.plugin.util.KOTLIN_DATAFRAME_MIME
 
 /**
  * Extract [JupyterTableOutputDataKey] from Kotlin Dataframe produced cell output

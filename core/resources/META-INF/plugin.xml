@@ -1,0 +1,411 @@
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude" package="com.intellij.kotlin.jupyter">
+    <name>Kotlin Notebook</name>
+    <id>org.jetbrains.plugins.kotlin.jupyter</id>
+    <category>Tools Integration</category>
+    <vendor>JetBrains</vendor>
+    <description>
+        <![CDATA[
+            <p>Kotlin notebooks are interactive worksheets with rich outputs that allow you to explore and experiment with your
+            Kotlin code without additional environment setup. The Kotlin Notebook plugin is a client for
+            <a href="https://github.com/Kotlin/kotlin-jupyter">the Kotlin Jupyter kernel</a>
+            that enables you to create and edit notebooks directly within IntelliJ IDEA.
+            There are other clients that support Kotlin notebooks, including
+            <a href="https://www.jetbrains.com/datalore/">Datalore</a>,
+            <a href="https://jupyter.org/">Jupyter Notebook</a>,
+            and <a href="https://jupyterlab.readthedocs.io/en/stable/#">JupyterLab</a>.</p>
+
+            <p>The plugin comes with various features that are available in ordinary Kotlin files in the IDE,
+            as well as additional Kotlin notebook-specific extensions. These include enhanced syntax highlighting,
+            inlay hints, inspections, find usages, and refactorings, all of which help you write Kotlin code more efficiently.
+            Many features are state-aware, meaning that finding usages or renaming
+            will consider your current definitions and loaded libraries.</p>
+
+            <p>Notebooks have two key distinguishing features compared to regular REPLs.
+            Firstly, they allow you to save the entire session to a file, preserving both the code and the execution results.
+            Secondly, the execution results can include more than just plain text;
+            they can also encompass images in various formats, arbitrary HTML (including JavaScript and CSS),
+            and even specifications for Swing outputs that are rendered directly within IntelliJ IDEA.
+            To learn more about the diverse range of outputs and their rendering, please refer to
+            <a href="https://github.com/Kotlin/kotlin-jupyter/tree/master/docs#rich-output">this link</a>.
+            Additionally, there is <a href="https://github.com/Kotlin/kotlin-jupyter/tree/master/samples/outputs.ipynb">a sample notebook</a>,
+            showcasing different types of outputs.</p>
+
+            <p>With the Kotlin Notebook plugin, you can add binary dependencies from a remote
+            Maven repository or a local one. For this, use
+            <a href="https://github.com/Kotlin/kotlin-jupyter#dependencies-resolving"><code>@file:DependsOn</code> annotation or Gradle-like syntax</a>.
+            <a href="https://github.com/Kotlin/kotlin-jupyter#list-of-supported-libraries">Some libraries</a> have special
+            notebook integrations and can be imported with
+            the <code>%use</code> line magic that comes with code insights to help you choose the correct library version.
+            You can create a library descriptor or an integration for any library using
+            <a href="https://github.com/Kotlin/kotlin-jupyter/blob/master/docs/libraries.md">this guide</a>.
+            Integrations allow libraries to have rich outputs, add default imports,
+            provide reflection-based code generation, and more.</p>
+
+            <p>You can also use notebooks to explore the code in your current project – sources and
+            binary dependencies can easily be added to the notebook context.
+            To set this up or to adjust the Kotlin Notebook plugin appearance, use the following navigation in the IDE:</p>
+
+            <pre><code>
+            File -> Settings... -> Tools -> Kotlin Notebook
+            </code></pre>
+
+            <p>To learn more about using Kotlin notebooks, check out
+            <a href="https://github.com/Kotlin/kotlin-jupyter">the Kotlin Jupyter kernel documentation</a>.
+            If you have any questions or want to connect with other Kotlin developers who use notebooks,
+            join the <a href="https://kotlinlang.slack.com/archives/C05333T208Y">#notebooks channel in the Kotlin Slack</a>.
+            To file an issue, use <a href="https://youtrack.jetbrains.com/issues/KTNB">Kotlin Notebook YouTrack</a>. Stay tuned!</p>
+        ]]>
+    </description>
+
+    <!--suppress PluginXmlValidity -->
+    <change-notes>
+        <![CDATA[
+            <h1>What's New in Kotlin Notebook 2024.3</h1>
+
+            <p>In this release, we introduced a number of features</p>
+            <ul>
+                <li></li>
+            </ul>
+
+            <p>This release also addresses several bug fixes, including:</p>
+            <ul>
+                <li></li>
+            </ul>
+        ]]>
+    </change-notes>
+
+    <content>
+        <module name="intellij.kotlin.jupyter.github"/>
+        <module name="intellij.kotlin.jupyter.tables"/>
+        <module name="intellij.kotlin.jupyter.plots"/>
+        <module name="intellij.kotlin.jupyter.liveTemplates"/>
+    </content>
+
+    <dependencies>
+        <plugin id="org.jetbrains.kotlin"/>
+
+        <plugin id="com.intellij.notebooks.core"/>
+        <module name="intellij.notebooks.ui"/>
+        <module name="intellij.notebooks.visualization"/>
+        <module name="intellij.notebooks.jupyter.core"/>
+
+        <plugin id="intellij.jupyter"/>
+        <module name="intellij.jupyter.psi"/>
+        <module name="intellij.jupyter.core"/>
+
+        <plugin id="com.intellij.modules.platform"/>
+        <plugin id="com.intellij.modules.java"/>
+        <plugin id="com.intellij.modules.ultimate"/>
+    </dependencies>
+
+    <applicationListeners>
+        <listener class="com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFusActionListener"
+                  topic="com.intellij.openapi.actionSystem.ex.AnActionListener"/>
+    </applicationListeners>
+
+    <projectListeners>
+        <listener class="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinRuntimeServiceListener"
+                  topic="com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService$Listener"/>
+        <listener class="com.intellij.kotlin.jupyter.core.settings.KotlinNotebookModuleRenameListener"
+                  topic="com.intellij.openapi.project.ModuleListener"/>
+    </projectListeners>
+
+    <extensionPoints>
+        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.kernel.kernelVmCommandCustomizer"
+                        interface="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.extensions.KernelVmCommandCustomizer"
+                        dynamic="true"/>
+        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.kernel.kernelProcessCommandLineCustomizer"
+                        interface="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer"
+                        dynamic="true"/>
+        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.kernel.kernelRunnableFactory"
+                        interface="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelRunnableFactory"
+                        dynamic="true"/>
+    </extensionPoints>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <renameHandler implementation="com.intellij.kotlin.jupyter.core.editor.refactoring.KotlinNotebookPropertiesRenameHandler"/>
+        <scriptDefinitionsProvider implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.JupyterScriptDefinitionProvider"/>
+        <idea.caches.resolve.resolveOptimizingOptionsProvider
+                implementation="com.intellij.kotlin.jupyter.core.language.kotlin.resolve.KotlinNotebookOptimizingOptionsProvider"/>
+        <postInsertDeclarationCallback
+                implementation="com.intellij.kotlin.jupyter.core.editor.refactoring.KotlinNotebookPostInsertDeclarationCallback"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij.codeInsight.daemon.impl">
+        <!--suppress PluginXmlDynamicPlugin, PluginXmlValidity -->
+        <injectedLanguageHighlightingRangeReducer
+                implementation="com.intellij.kotlin.jupyter.core.editor.highlighting.service.KotlinNotebookInjectedRangeReducer"
+                id="kotlinNotebookRangeReducer"
+                order="first"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <registryKey key="kotlin.notebook.disable.jupyter.core.actions" defaultValue="false"
+                     description="Disable some of core Jupyter Notebook actions such as creation of Python Jupyter Notebook"/>
+        <registryKey key="lets.plot.swing.outputs.enabled" defaultValue="true"
+                     description="When enabled, outputs of LetsPlot plotting library in Kotlin Notebooks will be rendered using no-browser approach. Deprecated, use Kotlin Notebook options"/>
+
+        <registryKey key="kotlin.notebook.allow.embedded.kernel" defaultValue="false"
+                     description="When enabled, Kotlin Notebook sessions can be run inside the IDE process"/>
+
+        <registryKey key="kotlin.notebook.allow.attached.kernel" defaultValue="false"
+                     description="When enabled, Kotlin Notebook may attach to running kernel sessions"/>
+
+        <registryKey key="kotlin.notebook.debug.enabled" defaultValue="false"
+                     description="When enabled, establishing debug session with Kernel is possible"/>
+
+        <registryKey key="kotlin.notebook.outdated.dependencies.hints" defaultValue="true"
+                     description="When enabled, a hint will be displayed each time notebook dependencies become outdated"/>
+
+        <postStartupActivity implementation="com.intellij.kotlin.jupyter.core.notifications.KotlinNotebookPostStartupActivity"/>
+
+        <multiHostInjector implementation="com.intellij.kotlin.jupyter.core.editor.inject.JupyterKotlinIntoCellsInjector"/>
+        <fileIconProvider implementation="com.intellij.kotlin.jupyter.core.ide.KotlinNotebookFileIconProvider"/>
+        <formatting.injectedOptions
+                implementation="com.intellij.kotlin.jupyter.core.editor.formatting.KotlinInjectedFormattingOptionsProvider"/>
+
+        <fileType name="Jupyter Kotlin meta language"
+                  language="JKTMeta"
+                  extensions="juktm"
+                  implementationClass="com.intellij.kotlin.jupyter.core.language.meta.JKTMetaFileType"
+                  fieldName="INSTANCE"/>
+
+        <lang.parserDefinition language="JKTMeta"
+                               implementationClass="com.intellij.kotlin.jupyter.core.language.meta.grammar.JKTMetaParserDefinition"/>
+
+        <!-- Custom language for Jupyter Notebooks using the Kotlin kernel. It is only used to populate
+             the "Create New Scratch File"-dialog, so it re-uses the parser definition for normal Jupyter Notebooks,
+             to fake being a "proper" language. A `ScratchCreationHelper` is used to make sure that Scratch files are
+             created with the proper JSON structure.
+          -->
+        <fileType name="JupyterKotlinFile"
+                  language="Kotlin Notebook"
+                  implementationClass="com.intellij.kotlin.jupyter.core.language.JupyterKotlinFileType"
+                  fieldName="INSTANCE"/>
+        <lang.parserDefinition language="Kotlin Notebook"
+                               implementationClass="org.jetbrains.plugins.notebooks.psi.jupyter.JupyterParserDefinition"/>
+        <scratch.creationHelper language="Kotlin Notebook"
+                                implementationClass="com.intellij.kotlin.jupyter.core.language.JupyterKotlinScratchCreationHelper"/>
+
+        <debugger.sourcePositionProvider
+                implementation="com.intellij.kotlin.jupyter.core.debug.variables.NotebookFieldSourcePositionProvider" order="first"/>
+
+        <completion.contributor language="JKTMeta" id="JKTMetaBasic"
+                                implementationClass="com.intellij.kotlin.jupyter.core.editor.codeInsight.metaLanguage.JKTMetaCompletionContributor"/>
+        <!--<completion.contributor language="JKTMeta" implementationClass="com.intellij.kotlin.jupyter.core.lang.codeInsight.KotlinMagicsRuntimeCompletionContributor" order="first"/>-->
+        <annotator language="JKTMeta"
+                   implementationClass="com.intellij.kotlin.jupyter.core.editor.codeInsight.metaLanguage.JKTMetaAnnotator"/>
+        <lang.commenter language="JKTMeta"
+                        implementationClass="com.intellij.kotlin.jupyter.core.editor.codeInsight.metaLanguage.JKTMetaCommenter"/>
+        <typedHandler implementation="com.intellij.kotlin.jupyter.core.editor.codeInsight.metaLanguage.JKTMetaTypedHandlerDelegate"/>
+        <gotoDeclarationHandler implementation="com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookGotoDeclarationProvider"/>
+        <!--<searcher forClass="com.intellij.psi.search.searches.ReferencesSearch$SearchParameters"-->
+        <!--          implementationClass="com.intellij.kotlin.jupyter.core.file.psi.NotebookReferencesProvider"/>-->
+        <renamePsiElementProcessor implementation="com.intellij.kotlin.jupyter.core.editor.refactoring.NotebookPropertyRenameProcessor"
+                                   id="kotlinNotebookRenamePsiElementProcessor"
+                                   order="first"/>
+        <!--<renameHandler implementation= />-->
+        <findUsagesHandlerFactory implementation="com.intellij.kotlin.jupyter.core.editor.find.NotebookFindUsagesHandlerFactory"
+                                  id="kotlinNotebookFindUsagesHandlerFactory"
+                                  order="before kotlinFindUsagesHandlerFactory"/>
+        <!--<lang.elementManipulator forClass="com.intellij.lang.elementManipulator" implementationClass="com.intellij.kotlin.jupyter.core.file.psi.KotlinNotebookElementManipulator"/>-->
+        <formattingService implementation="com.intellij.kotlin.jupyter.core.editor.formatting.KotlinNotebookFileFormattingService"/>
+
+        <psi.referenceContributor
+                id="kotlinNotebookFilePathReferenceContributor"
+                language="kotlin"
+                implementation="com.intellij.kotlin.jupyter.core.editor.codeInsight.KotlinNotebookFilePathReferenceProvider"/>
+
+        <!--common for both K1 and K2 -->
+        <highlightVisitor implementation="com.intellij.kotlin.jupyter.core.editor.highlighting.visitors.KotlinNotebookShadowingVisitor"
+                          id="kotlinNotebookShadowingVisitor" order="first"/>
+
+        <projectConfigurable groupId="tools"
+                             bundle="messages.KotlinNotebookBundle"
+                             key="kotlin.jupyter.settings.title"
+                             id="kotlinNotebook"
+                             instance="com.intellij.kotlin.jupyter.core.settings.ui.KotlinNotebookConfigurable"/>
+
+        <projectConfigurable groupId="tools"
+                             bundle="messages.KotlinNotebookBundle"
+                             key="kotlin.jupyter.settings.new.notebook.title"
+                             id="kotlinNotebook.newNotebook"
+                             parentId="kotlinNotebook"
+                             instance="com.intellij.kotlin.jupyter.core.settings.ui.KotlinNotebookNewNotebookConfigurable"/>
+
+        <notificationGroup
+                id="Kotlin Notebook plugin updates"
+                displayType="STICKY_BALLOON"
+                bundle="messages.KotlinNotebookBundle"
+                key="plugin.updater.notification.group"
+        />
+
+        <notificationGroup
+                id="Kotlin Notebook session info"
+                displayType="BALLOON"
+                bundle="messages.KotlinNotebookBundle"
+                key="kotlin.notebook.session.notification.group"
+        />
+
+        <notificationGroup
+                id="Kotlin Notebook output error"
+                displayType="BALLOON"
+                bundle="messages.KotlinNotebookBundle"
+                key="kotlin.jupyter.output.error.notification.group"
+        />
+
+        <statistics.counterUsagesCollector
+                implementationClass="com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector"/>
+        <editorNotificationProvider
+                implementation="com.intellij.kotlin.jupyter.core.settings.ui.KotlinNotebookMissingJdkEditorNotification"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">
+        <!--suppress PluginXmlDynamicPlugin -->
+        <scriptingSupport implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin.idea.compilerPlugin.kotlinxSerialization">
+        <kotlinSerializationEnabledChecker
+                implementation="com.intellij.kotlin.jupyter.core.language.kotlin.serialization.KotlinScriptingSerializationEnabledChecker"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">
+        <jupyterLanguageBasedFileViewProviderChooser
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.psi.JupyterKotlinFileViewProviderChooser"/>
+        <editor.notebookEditorAppearanceProvider
+                implementation="com.intellij.kotlin.jupyter.core.editor.appearance.KotlinNotebookEditorAppearanceProvider"
+                order="before JupyterNotebookEditorAppearanceProvider"/>
+        <editor.outputs.notebookOutputComponentFactory
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.outputs.swing.SwingOutputComponentFactory"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij.jupyter.core">
+        <editor.notebookEditorCreatedCallback
+                implementation="com.intellij.kotlin.jupyter.core.editor.creating.KotlinNotebookEditorFactoryListener"/>
+        <editor.outputs.notebookObjectOutputDataKeyExtractor
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.outputs.swing.SwingOutputDataKeyExtractor"/>
+        <editor.outputs.notebookObjectOutputDataKeyExtractor
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.outputs.swing.SwingOutputDataKeyExtractor"/>
+        <themeChangedListener implementation="com.intellij.kotlin.jupyter.core.editor.appearance.KotlinNotebookEditorColorsListener"/>
+        <jupyter.output.error.filters.provider
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.outputs.error.KotlinJupyterErrorOutputFiltersProvider"/>
+        <server.chooser.action.presentation.updater
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookServerChooserActionPresentationUpdater"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij.jupyter.core.jupyter">
+        <jupyterCellExecutionCallbackFactory
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory"/>
+        <connections.execution.preExecutionSourceModifier
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinPreExecutionSourceModifier"/>
+        <editorCustomizer implementation="com.intellij.kotlin.jupyter.core.editor.creating.KotlinJupyterEditorCustomizer"/>
+        <notebookToolWindowSelector
+                implementation="com.intellij.kotlin.jupyter.core.editor.appearance.KotlinNotebookToolWindowSelector"/>
+        <notebookVarsToolWindowPanelProvider
+                implementation="com.intellij.kotlin.jupyter.core.variables.NotebookVarsToolWindowProvider"/>
+        <jupyterActionPresentationModifier
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookActionPresentationModifier"/>
+        <connections.execution.core.jupyterServersFactory
+                order="before default"
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinServersFactory"/>
+        <connections.execution.core.managedJupyterServerRunner
+                order="before default"
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ManagedKotlinNotebookServerRunner"/>
+        <connections.execution.notebookPathProvider
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinNotebookPathProvider"/>
+        <connections.execution.core.jupyterSessionLaunchStrategy
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KotlinNotebookSessionLaunchStrategy"/>
+        <csvDropHandler
+                id="KotlinCsvDropHandler"
+                implementation="com.intellij.kotlin.jupyter.core.editor.dnd.KotlinCsvDropHandler"/>
+        <csvDropHandler
+                id="KotlinXlsDropHandler"
+                implementation="com.intellij.kotlin.jupyter.core.editor.dnd.KotlinXlsDropHandler"/>
+        <csvDropHandler
+                id="KotlinJsonDropHandler"
+                implementation="com.intellij.kotlin.jupyter.core.editor.dnd.KotlinJsonDropHandler"/>
+        <errorOutputContentProvider
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.outputs.error.KotlinErrorOutputContentProvider"/>
+        <executionSettingsProvider
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.KotlinJupyterExecutionSettingsProvider"/>
+    </extensions>
+    <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.core">
+        <kernel.kernelVmCommandCustomizer
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>
+        <kernel.kernelVmCommandCustomizer
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.dataframe.KotlinDataframeKernelVmCommandCustomizer"/>
+        <kernel.kernelRunnableFactory
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProcessFactory"/>
+        <kernel.kernelRunnableFactory
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory"/>
+        <kernel.kernelRunnableFactory
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.attached.AttachedKernelProcessFactory"/>
+    </extensions>
+
+    <actions resource-bundle="messages/KotlinNotebookBundle">
+        <action id="CreateNewKotlinNotebook" class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookCreateAction"
+                icon="icons.KotlinJupyterIcons.FileIcon">
+            <add-to-group group-id="NewGroup" anchor="after" relative-to-action="JupyterCreateFileAction"/>
+        </action>
+        <action id="KotlinNotebookDependenciesComboBoxAction"
+                class="com.intellij.kotlin.jupyter.core.settings.actions.KotlinNotebookDependenciesComboBoxAction">
+            <add-to-group group-id="JupyterEditorRightToolbarActions"
+                          anchor="first"/>
+        </action>
+        <action id="KotlinNotebookSessionModeComboBox"
+                class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookSessionModeComboBox">
+            <add-to-group group-id="JupyterEditorRightToolbarActions"
+                          anchor="after" relative-to-action="KotlinNotebookDependenciesComboBoxAction"/>
+        </action>
+        <action id="ShowKotlinNotebookPreferencesAction"
+                class="com.intellij.kotlin.jupyter.core.settings.actions.KotlinNotebookShowPreferencesAction"
+                icon="AllIcons.General.Settings">
+            <add-to-group group-id="JupyterEditorRightToolbarActions"
+                          anchor="after" relative-to-action="KotlinNotebookSessionModeComboBox"/>
+        </action>
+        <action id="ToggleShowExecutionCount"
+                class="com.intellij.kotlin.jupyter.core.settings.actions.KotlinNotebookToggleShowExecutionCountAction">
+            <add-to-group group-id="JupyterEditorGutterPopupActions"/>
+        </action>
+
+        <action id="CopySwingComponentScreenshot"
+                class="com.intellij.kotlin.jupyter.core.jupyter.outputs.swing.export.CopySwingComponentScreenshotAction"
+                icon="AllIcons.Actions.Copy">
+        </action>
+
+        <group id="KotlinNotebookEditorActions">
+            <separator/>
+            <add-to-group group-id="JupyterEditorPopupActions"/>
+            <add-to-group group-id="JupyterEditorLeftToolbarActions"/>
+        </group>
+
+        <group id="KotlinNotebookChangeSessionModeActions">
+            <action id="KotlinNotebookEnableSeparateProcessMode"
+                    class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookEnableSeparateProcessMode"/>
+            <action id="KotlinNotebookEnableIdeProcessMode"
+                    class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookEnableIdeProcessMode"/>
+            <action id="KotlinNotebookEnableAttachedProcessMode"
+                    class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookEnableAttachedProcessMode"/>
+        </group>
+
+        <action id="RestartKotlinNotebookHighlighting"
+                class="com.intellij.kotlin.jupyter.core.scriptingSupport.RestartKotlinNotebookHighlightingAction"/>
+
+        <group id="Notebook.XDebugger.StateValueGroup" popup="false">
+            <reference ref="XDebugger.CopyValue"/>
+            <reference ref="XDebugger.CompareValueWithClipboard"/>
+            <reference ref="XDebugger.CopyName"/>
+            <reference ref="Debugger.CustomizeContextView"/>
+            <separator/>
+            <reference ref="Debugger.ViewText"/>
+        </group>
+    </actions>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK2="true"/>
+    </extensions>
+
+    <xi:include href="plugin.k1.xml" includeUnless="idea.kotlin.plugin.use.k2"/>
+    <xi:include href="plugin.k2.xml" includeIf="idea.kotlin.plugin.use.k2"/>
+</idea-plugin>

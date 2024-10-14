@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.database.datagrid.HierarchicalColumnsDataGridModel.HierarchicalGridColumn
 import com.intellij.database.datagrid.NestedTablesDataGridModel.NestedTableCellCoordinate
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.tables.i18n.KotlinNotebookTablesBundle
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
@@ -34,7 +35,6 @@ import com.intellij.scientific.tables.api.TableCommand
 import com.intellij.scientific.tables.api.TableDataProviderFactory
 import com.intellij.scientific.tables.api.TableDataTypeDetector
 import com.intellij.scientific.tables.api.VisualizationDataTableCommand
-import org.jetbrains.kotlinx.jupyter.plugin.settings.KotlinNotebookApplicationOptions
 import java.io.IOException
 import javax.swing.RowSorter
 import javax.swing.SortOrder

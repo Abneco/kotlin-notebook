@@ -1,15 +1,15 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.plots
 
+import com.intellij.kotlin.jupyter.core.util.MouseEventDeepReDispatcher
+import com.intellij.kotlin.jupyter.core.util.RetargetingCursorProvider
+import com.intellij.kotlin.jupyter.core.util.addCursorProvider
+import com.intellij.kotlin.jupyter.core.util.addDispatchingMouseListener
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.components.JBLayeredPane
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
-import org.jetbrains.kotlinx.jupyter.plugin.util.MouseEventDeepReDispatcher
-import org.jetbrains.kotlinx.jupyter.plugin.util.RetargetingCursorProvider
-import org.jetbrains.kotlinx.jupyter.plugin.util.addCursorProvider
-import org.jetbrains.kotlinx.jupyter.plugin.util.addDispatchingMouseListener
 import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
 import org.jetbrains.letsPlot.core.spec.FigKind
 import org.jetbrains.letsPlot.core.spec.config.PlotConfig

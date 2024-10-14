@@ -1,6 +1,11 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.plots.export
 
+import com.intellij.kotlin.jupyter.core.settings.ui.bindComparableIntervalToTextWithFixer
+import com.intellij.kotlin.jupyter.core.settings.ui.bindStringText
+import com.intellij.kotlin.jupyter.core.settings.ui.enumComboBox
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.util.runSafely
 import com.intellij.kotlin.jupyter.plots.LetsPlotFlavor
 import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey
 import com.intellij.kotlin.jupyter.plots.i18n.KotlinNotebookPlotsBundle
@@ -25,11 +30,6 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
-import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindComparableIntervalToTextWithFixer
-import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.bindStringText
-import org.jetbrains.kotlinx.jupyter.plugin.settings.ui.enumComboBox
-import org.jetbrains.kotlinx.jupyter.plugin.util.KotlinNotebookPluginScope
-import org.jetbrains.kotlinx.jupyter.plugin.util.runSafely
 import java.awt.event.ActionEvent
 import java.io.File
 import javax.swing.AbstractAction
