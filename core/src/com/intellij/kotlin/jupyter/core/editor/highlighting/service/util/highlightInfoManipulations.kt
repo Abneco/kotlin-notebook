@@ -5,27 +5,23 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.editor.colors.CodeInsightColors
-import org.jetbrains.kotlin.diagnostics.Diagnostic
+import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.diagnostics.Errors
-import org.jetbrains.kotlin.diagnostics.Severity
 
 private val shadowedSymbolSeverity = HighlightInfo.convertSeverity(HighlightSeverity.INFORMATION)
 
-fun convertToShadowedDeclaration(diagnostic: Diagnostic): HighlightInfo? {
-    if (diagnostic.severity != Severity.ERROR) return null
-    val element = diagnostic.psiElement
-
+fun convertToShadowedDeclaration(psiElement: PsiElement, factoryName: String): HighlightInfo {
     return HighlightInfo.newHighlightInfo(shadowedSymbolSeverity)
-        .range(element.textRange)
+        .range(psiElement.textRange)
         .textAttributes(CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES)
         .needsUpdateOnTyping(false)
         .group(0)
-        .fillInProperDescription(diagnostic)
+        .fillInProperDescription(factoryName)
         .createUnconditionally()
 }
 
-private fun HighlightInfo.Builder.fillInProperDescription(diagnostic: Diagnostic): HighlightInfo.Builder {
-    return if (diagnostic.factory.name == Errors.UNRESOLVED_REFERENCE.name) {
+private fun HighlightInfo.Builder.fillInProperDescription(factoryName: String): HighlightInfo.Builder {
+    return if (factoryName == Errors.UNRESOLVED_REFERENCE.name) {
         val unresolvedMessage = KotlinNotebookBundle.message("kotlin.jupyter.highlighting.symbols.styles.shadowed.unresolved.description")
         this.description(
             unresolvedMessage

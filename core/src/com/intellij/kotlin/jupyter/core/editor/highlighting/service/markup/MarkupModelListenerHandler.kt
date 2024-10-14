@@ -28,6 +28,6 @@ object MarkupModelListenerPluginAwareProvider : KotlinPluginModeAwareHandler {
 
     private fun createK2Listener(highlighters: MutableSet<RangeHighlighter>) : MarkupModelListener {
         // shadowing is not yet supported
-        return object : MarkupModelListener { }
+        return ShadowingAwareMarkupModelListener(highlighters)
     }
 }

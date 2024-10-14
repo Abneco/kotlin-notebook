@@ -10,10 +10,17 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstan
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.psi.PsiFile
+import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter
+import org.jetbrains.kotlin.analysis.api.diagnostics.KaDiagnosticWithPsi
+import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity
+import org.jetbrains.kotlin.diagnostics.Errors.UNRESOLVED_REFERENCE
 import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.idea.caches.resolve.analyzeWithAllCompilerChecks
 import org.jetbrains.kotlin.idea.highlighter.AbstractKotlinHighlightVisitor.Companion.suppressHighlight
 import org.jetbrains.kotlin.idea.highlighter.AbstractKotlinHighlightVisitor.Companion.unsuppressHighlight
+import org.jetbrains.kotlin.idea.highlighter.clearAllKotlinUnresolvedReferenceKinds
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 
@@ -33,9 +40,15 @@ sealed class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareHan
         return helper
     }
 
+    protected fun reportFailedShadowing(diagnostic: Any) {
+        LOG.warn("Cannot convert diagnostic to shadowed: $diagnostic")
+    }
+
     abstract fun performShadowing(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, afterAnalysis: () -> Unit = {}): Boolean
 
     companion object {
+        internal val LOG = thisLogger()
+
         fun create(): KotlinPluginModeShadowingAnalyzerHandler {
             return createPluginModeAwareInstance(
                 { K1ShadowingAnalyzerHandler },
@@ -66,11 +79,11 @@ object K1ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
                         element?.suppressHighlight()
                         if (!helper.shouldAcceptDiagnostic(it)) return@analyzeWithAllCompilerChecks
 
-                        val info = convertToShadowedDeclaration(it)
+                        val info = convertToShadowedDeclaration(it.psiElement, it.factory.name)
 
                         if (info != null) {
                             seenInfos.add(info)
-                        } else thisLogger().warn("Cannot convert diagnostic to shadowed: $it")
+                        } else reportFailedShadowing(it)
                     }
                 }
             )
@@ -80,7 +93,7 @@ object K1ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
             if (e is ProcessCanceledException) {
                 throw e
             }
-            thisLogger().warn("Exception during analyze", e)
+            LOG.warn("Exception during analyze", e)
             return false
         } finally {
             afterAnalysis()
@@ -92,9 +105,56 @@ object K1ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
 
 
 object K2ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
-    // not yet supported
+    private fun KaSession.gatherDiagnostics(file: KtFile) :  List<KaDiagnosticWithPsi<*>> {
+        return file.collectDiagnostics(KaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS)
+            .onEach { diagnostic -> diagnostic.psi.clearAllKotlinUnresolvedReferenceKinds() }
+            // might not use strings?
+            .filter { d ->
+                d.severity == KaSeverity.ERROR &&
+                        d.factoryName == UNRESOLVED_REFERENCE.name
+            }
+    }
+
+    private fun convertToShadowed(diagnostics: List<KaDiagnosticWithPsi<*>>) : Collection<HighlightInfo> {
+        return diagnostics.mapNotNull { diagnostic ->
+            val info = convertToShadowedDeclaration(
+                diagnostic.psi, diagnostic.factoryName
+            )
+
+            if (info == null) {
+                reportFailedShadowing(diagnostic)
+            }
+            info
+        }
+    }
+
     override fun performShadowing(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, afterAnalysis: () -> Unit) : Boolean {
-        afterAnalysis()
+        if (file !is KtFile) return true
+
+        val helper = prepareForFile(file)
+        val isTargetHost = helper.isCurrentFileTarget
+
+        if (isTargetHost) {
+            return true
+        }
+
+        try {
+            analyze(file) {
+                val diagnostics = gatherDiagnostics(file)
+                val seenInfos = convertToShadowed(diagnostics)
+
+                helper.applyReceivedHighlightInfos(seenInfos, holder)
+            }
+        } catch (e: Throwable) {
+            if (e is ProcessCanceledException) {
+                throw e
+            }
+            LOG.warn("Exception during analyze", e)
+            return false
+        } finally {
+            afterAnalysis()
+        }
+
         return true
     }
 }

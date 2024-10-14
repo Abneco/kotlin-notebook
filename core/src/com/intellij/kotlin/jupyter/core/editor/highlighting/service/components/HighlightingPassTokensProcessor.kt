@@ -117,7 +117,7 @@ internal class HighlightingPassTokensProcessor(
             // transfer seen errors to a proper storage
             val highlighters = errorHighlightersProcessor.targetErrorHighlighters
             if (cellFocusIndex != null) {
-                val focusCellHighlighters = errorHighlightersProcessor.fileIndexesToErrors[cellFocusIndex]
+                val focusCellHighlighters = errorHighlightersProcessor.fileIndexesToErrors.getOrPut(cellFocusIndex) { mutableSetOf() }
                 focusCellHighlighters?.addAll(highlighters)
             }
             highlighters.clear()
