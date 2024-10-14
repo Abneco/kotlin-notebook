@@ -9,6 +9,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.jupyter.core.jupyter.nbformat.CELL_MARKER
 import com.intellij.jupyter.core.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
+import org.jetbrains.plugins.notebooks.tests.withSwingMarkdownRenderMode
 import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import com.intellij.kotlin.jupyter.test.setUpScriptingDependencies
@@ -17,7 +18,6 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.ExpectedHighlightingData
-import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.util.ArrayUtilRt
@@ -71,6 +71,15 @@ abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTes
     }
 
     protected fun doTest(strategy: ResultCheckStrategy, notebookAftermathAction: (PsiFile) -> Unit = {}) {
+        withSwingMarkdownRenderMode {
+            doTestImpl(strategy, notebookAftermathAction)
+        }
+    }
+
+    private fun doTestImpl(
+        strategy: ResultCheckStrategy,
+        notebookAftermathAction: (PsiFile) -> Unit
+    ) {
         val notebookFile = configureExecutionTest()
         setUpScriptingDependencies(myFixture)
         val filter = createFilterForStrategy(strategy)
@@ -78,18 +87,19 @@ abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTes
         val results = runInEdtAndGet {
             doHighlighting()
         }
-        UsefulTestCase.assertTrue(results.none { it.description != null && it.description == scriptingMissingClassError })
+        assertTrue(results.none { it.description != null && it.description == scriptingMissingClassError })
 
-        val isHasShadowed = results.any { it.description != null && (it.description.startsWith("Not yet provided symbol") || it.description.startsWith("Improper usage")) }
-        UsefulTestCase.assertTrue(results.none { it.text.contains(CELL_MARKER) || it.text.contains("$CELL_MARKER $MARKDOWN_CELL_SUFFIX") })
+        val isHasShadowed =
+            results.any { it.description != null && (it.description.startsWith("Not yet provided symbol") || it.description.startsWith("Improper usage")) }
+        assertTrue(results.none { it.text.contains(CELL_MARKER) || it.text.contains("$CELL_MARKER $MARKDOWN_CELL_SUFFIX") })
 
         if (strategy.isOnlyValidSyntax()) {
-            UsefulTestCase.assertTrue(results.none { it.severity == HighlightSeverity.ERROR })
-            UsefulTestCase.assertTrue(!isHasShadowed)
+            assertTrue(results.none { it.severity == HighlightSeverity.ERROR })
+            assertTrue(!isHasShadowed)
         }
         if (strategy.isShadowedErrors()) {
-            UsefulTestCase.assertTrue(isHasShadowed)
-            UsefulTestCase.assertTrue(results.none { it.severity == HighlightSeverity.ERROR })
+            assertTrue(isHasShadowed)
+            assertTrue(results.none { it.severity == HighlightSeverity.ERROR })
         }
 
         val actualData = results.filter { filter(it) }
@@ -97,7 +107,7 @@ abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTes
             expectedData.checkResult(notebookFile, actualData, myFixture.editor.document.text)
         }
         if (strategy == ResultCheckStrategy.WithErrors) {
-            UsefulTestCase.assertTrue(results.any { it.severity == HighlightSeverity.ERROR })
+            assertTrue(results.any { it.severity == HighlightSeverity.ERROR })
         }
 
         notebookAftermathAction(notebookFile)

@@ -9,19 +9,17 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.service.components.H
 import com.intellij.kotlin.jupyter.core.editor.typing.NotebookCaretListener
 import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
+import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport
 import com.intellij.kotlin.jupyter.core.scriptingSupport.k2.NotebookAfterScriptsUpdatePluginAwareHandler
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.ImpatientNotebookChangeListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
-import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.isCurrentlySelectedInEditor
-import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.toPsiFile
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -30,11 +28,14 @@ import com.intellij.openapi.editor.ex.MarkupModelEx
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
+import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -74,43 +75,34 @@ class NotebookHighlightingManager(
         this
     )
 
-    private suspend fun initializeData(restart: Boolean = false) {
-        val cells = smartReadAction(project) {
-            val currentVFile = virtualFile.file
-            val editorState = (FileEditorManager.getInstance(project).getSelectedEditor(currentVFile) as? TextEditor)?.editor
-
-            if (editorState != null) {
-                getAllIntervalPointers(editorState).mapNotNull { it.get()?.ordinal }
-            } else virtualFile.file.toPsiFile(project).getNotebookCells().indices
-        }
-
+    private suspend fun updateData(cellsIndices: List<Int>) {
         iterationLock.withLock {
-            val targetData = mutableSetOf<Int>()
-            targetData.addAll(cells)
-
             dataController.update {
-                notebookRangesQueuedForHL = targetData
+                notebookRangesQueuedForHL = mutableSetOf<Int>().apply { addAll(cellsIndices) }
                 notebookDocumentStructureNontrivialChanged.set(false)
                 renamingEnclosedRange = null
                 notebookDocumentTargetRanges = null
             }
         }
+    }
 
-        if (virtualFile.file.isKotlinNotebook && !restart) {
-            val notebookPsiFile = readAction {
-                virtualFile.file.toPsiFile(project)
-            }
-            _jupyterFile = notebookPsiFile
-            document.addDocumentListener(
-                ImpatientNotebookChangeListener(project, virtualFile),
-                this
-            )
-        }
+    @RequiresReadLock
+    private fun getAllCellsIndexes(): List<Int>? {
+        ThreadingAssertions.assertReadAccess()
+        val currentVFile = virtualFile.file
+        val textEditor = FileEditorManager.getInstance(project).getSelectedEditor(currentVFile) as? TextEditor ?: return null
+        val editorState = textEditor.editor
+        val cells = getAllIntervalPointers(editorState).mapNotNull { it.get()?.ordinal }
+        return cells
     }
 
     private fun Disposable.addListeners() {
         val targetFile = virtualFile
         val messageBus = project.messageBus
+        document.addDocumentListener(
+            ImpatientNotebookChangeListener(project, virtualFile),
+            this
+        )
         messageBus.connect(this).subscribe(
             NotebookSessionEventListener.TOPIC,
             object : NotebookSessionEventListener {
@@ -153,9 +145,17 @@ class NotebookHighlightingManager(
 
     init {
         Disposer.register(projectService, this)
-        coroutineScope.async {
-            initializeData()
+        runBlockingMaybeCancellable {
+            val cells = getAllCellsIndexes()
+            if (cells == null) {
+                LOG.warn(KotlinNotebookBundle.message("kotlin.jupyter.highlighting.service.null.cells.warning"))
+                return@runBlockingMaybeCancellable
+            }
+
+            updateData(cells)
         }
+        val notebookPsiFile = virtualFile.file.toPsiFile(project)
+        _jupyterFile = notebookPsiFile
         projectService.addListeners()
     }
 
@@ -177,7 +177,7 @@ class NotebookHighlightingManager(
 
     fun passCreated(targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
         if (cells == null) {
-            LOG.warn("Cells are null, nothing can be done")
+            LOG.warn(KotlinNotebookBundle.message("kotlin.jupyter.highlighting.service.null.cells.warning"))
         }
 
         // pass can be started earlier than call back about the daemon end could fire
@@ -245,7 +245,14 @@ class NotebookHighlightingManager(
     fun restartAnalysing() {
         coroutineScope.async {
             runCatching {
-                initializeData(true)
+                val cells = readAction {
+                    getAllCellsIndexes()
+                }
+                if (cells == null) {
+                    LOG.warn(KotlinNotebookBundle.message("kotlin.jupyter.highlighting.service.null.cells.warning"))
+                    return@async
+                }
+                updateData(cells)
 
                 NotebookHighlightingRestarter.scheduleRegularUpdate(jupyterPsiFile!!)
             }.onFailure {
