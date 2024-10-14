@@ -9,14 +9,17 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.reactOn
 import com.intellij.kotlin.jupyter.core.editor.typing.NotebookCaretListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.colors.EditorColorsListener
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.async
 
 class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
     override fun onEditorCreated(project: Project, textEditor: TextEditor, virtualFile: BackedNotebookVirtualFile) {
@@ -30,10 +33,15 @@ class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
         if (editor.isJupyter) {
             val compilerService = JupyterCompilerService.getInstance(project)
             val parentDisposable: Disposable = (editor as? EditorImpl)?.disposable ?: compilerService
-            editor.caretModel.addCaretListener(
-                NotebookCaretListener(project, virtualFile, editor, parentDisposable),
-                parentDisposable
-            )
+            KotlinNotebookPluginScope.getForProject(project).async {
+                // do not init on edt
+                readAction {
+                    editor.caretModel.addCaretListener(
+                        NotebookCaretListener(project, virtualFile, editor, parentDisposable),
+                        parentDisposable
+                    )
+                }
+            }
             ApplicationManager.getApplication().messageBus.connect(parentDisposable)
                 .subscribe(EditorColorsManager.TOPIC,
                            EditorColorsListener {
