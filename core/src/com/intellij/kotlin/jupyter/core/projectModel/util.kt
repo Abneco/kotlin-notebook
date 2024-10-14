@@ -46,7 +46,8 @@ fun MutableEntityStorage.createOrUpdateLibraryForNotebookDependencies(
 ): LibraryEntity {
     val roots = getLibraryRoots(project, configurationWrapper)
     val libraryTableId = LibraryTableId.ProjectLibraryTableId
-    val entity = resolve(LibraryId("$notebookName dependencies", libraryTableId))
+    val name = "$notebookName dependencies"
+    val entity = resolveLibraryDependencies(notebookName, libraryTableId)
 
     return if (entity != null) {
         modifyLibraryEntity(entity) {
@@ -56,10 +57,17 @@ fun MutableEntityStorage.createOrUpdateLibraryForNotebookDependencies(
     } else {
         addEntity(
             LibraryEntity(
-                "$notebookName dependencies", libraryTableId, roots, notebookEntitySource
+                name, libraryTableId, roots, notebookEntitySource
             )
         )
     }
+}
+
+internal fun MutableEntityStorage.resolveLibraryDependencies(
+    notebookName: String,
+    libraryTableId: LibraryTableId
+): LibraryEntity? {
+    return resolve(LibraryId("$notebookName dependencies", libraryTableId))
 }
 
 /**
@@ -81,6 +89,9 @@ fun VirtualFile.injectedScriptLibraryDependencies(project: Project, workSpaceSna
     return dependencies.filterIsInstance<LibraryDependency>()
 }
 
+internal fun VirtualFile.toK2RuntimeDependencyLibraryName(): String {
+    return "$KOTLIN_SCRIPTS_MODULE_NAME.Notebook.Dependencies for ${nameWithoutExtension}"
+}
 
 internal fun VirtualFileUrlManager.getNotebookDependenciesAsLibraryEntity(
     entityStorage: MutableEntityStorage,
@@ -90,7 +101,7 @@ internal fun VirtualFileUrlManager.getNotebookDependenciesAsLibraryEntity(
 ): LibraryEntity {
     val url = notebookFile.toVirtualFileUrl(this)
     val notebookEntity = KotlinScriptEntitySource(url)
-    val name = "$KOTLIN_SCRIPTS_MODULE_NAME.Notebook.Dependencies for ${notebookFile.nameWithoutExtension}"
+    val name = notebookFile.toK2RuntimeDependencyLibraryName()
     return entityStorage
         .createOrUpdateLibraryForNotebookDependencies(name, project, notebookEntity, configuration)
 }

@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.ide.handlers
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.actions.JupyterRestartKernelListener
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport.Companion.getConfiguration
@@ -48,11 +49,31 @@ class K1ScriptingSupportUpdater(private val project: Project) : ScriptingSupport
 }
 
 class K2ScriptingSupportUpdater(private val project: Project) : ScriptingSupportUpdater {
+    init {
+        val parentDisposable = JupyterCompilerService.getInstance(project)
+        project.messageBus.connect(parentDisposable)
+            .subscribe(JupyterRestartKernelListener.TOPIC,
+                JupyterRestartKernelListener { notebookFile ->
+                    clearRuntimeDependenciesFor(notebookFile)
+                }
+            )
+    }
+
     override fun updateScripts() {
         val editorManager = FileEditorManager.getInstance(project) ?: return
         val scope = KotlinNotebookPluginScope.getForProject(project)
         scope.async {
             updateK2Configurations(editorManager, project)
+        }
+    }
+
+    private fun clearRuntimeDependenciesFor(notebookFile: BackedNotebookVirtualFile) {
+        val scope = KotlinNotebookPluginScope.getForProject(project)
+        scope.async {
+            NotebookScriptDependenciesSource.getInstance(project)
+                ?.clearNotebookLibraryDependencies(
+                    notebookFile
+                )
         }
     }
 

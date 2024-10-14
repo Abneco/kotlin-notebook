@@ -1,7 +1,10 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.scriptingSupport.k2
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.projectModel.getNotebookDependenciesAsLibraryEntity
+import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
+import com.intellij.kotlin.jupyter.core.projectModel.toK2RuntimeDependencyLibraryName
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ProjectRootManager
@@ -13,10 +16,12 @@ import com.intellij.platform.backend.workspace.workspaceModel
 import com.intellij.platform.workspace.jps.entities.DependencyScope
 import com.intellij.platform.workspace.jps.entities.LibraryDependency
 import com.intellij.platform.workspace.jps.entities.LibraryEntity
+import com.intellij.platform.workspace.jps.entities.LibraryTableId
 import com.intellij.platform.workspace.jps.entities.ModuleEntity
 import com.intellij.platform.workspace.jps.entities.ModuleId
 import com.intellij.platform.workspace.jps.entities.SdkDependency
 import com.intellij.platform.workspace.jps.entities.SdkId
+import com.intellij.platform.workspace.jps.entities.modifyLibraryEntity
 import com.intellij.platform.workspace.jps.entities.modifyModuleEntity
 import com.intellij.platform.workspace.jps.entities.sourceRoots
 import com.intellij.platform.workspace.storage.MutableEntityStorage
@@ -92,6 +97,25 @@ class NotebookScriptDependenciesSource(override val project: Project) : ScriptDe
             )
 
             updateNotebookConfiguration(project, mutableEntityStorage, moduleConfigurations, notebookRuntimeDependencies)
+        }
+    }
+
+    suspend fun clearNotebookLibraryDependencies(notebookFile: BackedNotebookVirtualFile) {
+        val workspaceModel = project.workspaceModel
+        val workspaceSnapshot = workspaceModel.currentSnapshot
+        val tmpSnapshot = MutableEntityStorage.from(workspaceSnapshot)
+
+        val libraryEntity = tmpSnapshot.resolveLibraryDependencies(
+            notebookFile.file.toK2RuntimeDependencyLibraryName(),
+            LibraryTableId.ProjectLibraryTableId
+        )
+        if (libraryEntity == null) return
+
+        tmpSnapshot.modifyLibraryEntity(libraryEntity) {
+            this.roots = mutableListOf()
+        }
+        workspaceModel.update("Clearing Kotlin Notebook scripting modules") { model ->
+            model.applyChangesFrom(tmpSnapshot)
         }
     }
 
