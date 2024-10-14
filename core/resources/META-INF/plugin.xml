@@ -129,6 +129,9 @@
                 implementation="com.intellij.kotlin.jupyter.core.language.kotlin.resolve.KotlinNotebookOptimizingOptionsProvider"/>
         <postInsertDeclarationCallback
                 implementation="com.intellij.kotlin.jupyter.core.editor.refactoring.KotlinNotebookPostInsertDeclarationCallback"/>
+        <kotlinInjectedFilesAnalysisProvider
+                implementation="com.intellij.kotlin.jupyter.core.editor.highlighting.KotlinNotebookInjectedFilesAnalysisPromoter"
+        />
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.codeInsight.daemon.impl">
