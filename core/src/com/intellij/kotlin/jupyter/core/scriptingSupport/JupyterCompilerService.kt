@@ -141,7 +141,7 @@ class JupyterCompilerService(
         }
     }
 
-    private val updateActionHandler = ScriptingSupportUpdater.create(project)
+    private val updateActionHandler = ScriptingSupportUpdater.create(project, this)
 
     private val scriptingSupportUpdateScheduler = ScriptingSupportUpdateScheduler(
         project,

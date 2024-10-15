@@ -12,6 +12,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUP
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -27,19 +28,27 @@ import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrap
 import kotlin.script.experimental.api.valueOrNull
 
 
+data class UpdaterConstructorData(
+    val project: Project,
+    val parentDisposable: Disposable
+)
+
 interface ScriptingSupportUpdater : KotlinPluginModeAwareHandler {
     fun updateScripts()
 
     companion object {
-        fun create(project: Project) = createPluginModeAwareInstance(
-            project,
+        fun create(project: Project, parentDisposable: Disposable) = createPluginModeAwareInstance(
+            UpdaterConstructorData(
+                project, parentDisposable
+            ),
             ::K1ScriptingSupportUpdater,
             ::K2ScriptingSupportUpdater,
         )
     }
 }
 
-class K1ScriptingSupportUpdater(private val project: Project) : ScriptingSupportUpdater {
+class K1ScriptingSupportUpdater(updaterConstructor: UpdaterConstructorData) : ScriptingSupportUpdater {
+    private val project = updaterConstructor.project
     override fun updateScripts() {
         val updater = (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
         RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
@@ -48,9 +57,11 @@ class K1ScriptingSupportUpdater(private val project: Project) : ScriptingSupport
     }
 }
 
-class K2ScriptingSupportUpdater(private val project: Project) : ScriptingSupportUpdater {
+class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) : ScriptingSupportUpdater {
+    private val project = updaterConstructorData.project
+
     init {
-        val parentDisposable = JupyterCompilerService.getInstance(project)
+        val parentDisposable = updaterConstructorData.parentDisposable
         project.messageBus.connect(parentDisposable)
             .subscribe(JupyterRestartKernelListener.TOPIC,
                 JupyterRestartKernelListener { notebookFile ->
