@@ -77,20 +77,11 @@ sealed class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareHan
     }
 
     protected fun convertToShadowed(diagnostics: List<KaDiagnosticData>) : Collection<HighlightInfo> {
-        return diagnostics.mapNotNull { diagnostic ->
-            val info = convertToShadowedDeclaration(
+        return diagnostics.map { diagnostic ->
+            convertToShadowedDeclaration(
                 diagnostic.psiElement, diagnostic.factoryName
             )
-
-            if (info == null) {
-                reportFailedShadowing(diagnostic)
-            }
-            info
         }
-    }
-
-    protected fun reportFailedShadowing(diagnostic: Any) {
-        LOG.warn("Cannot convert diagnostic to shadowed: $diagnostic")
     }
 
     open fun performShadowing(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, afterAnalysis: () -> Unit = {}): Boolean {
@@ -110,8 +101,7 @@ sealed class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareHan
                     helper.shouldAcceptDiagnostic(it.psiElement, it.factoryName)
                 }
                 val seenInfos = convertToShadowed(diagnostics)
-                if (seenInfos == null) {
-                    LOG.debug("All conversion attempts failed for ${diagnostics.size} diagnostics")
+                if (seenInfos.isEmpty()) {
                     return true
                 }
 

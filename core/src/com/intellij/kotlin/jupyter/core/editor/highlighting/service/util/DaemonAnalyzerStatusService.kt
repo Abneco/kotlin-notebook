@@ -9,6 +9,12 @@ import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.project.Project
 import org.jetbrains.annotations.ApiStatus
 
+/**
+ * This service serves as an entry point to get
+ * current status of [DaemonCodeAnalyzer].
+ * Kotlin Notebook plugin uses this info to schedule HL restarts.
+ * Replication of [DaemonCodeAnalyzerStatusService] from K1-specific module to remove dependency on it.
+ */
 @Service(Service.Level.PROJECT)
 @ApiStatus.Internal
 internal class DaemonAnalyzerStatusService(project: Project) : Disposable {
