@@ -7,6 +7,8 @@ import com.intellij.jupyter.core.jupyter.actions.JupyterRestartKernelListener
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
 import com.intellij.kotlin.jupyter.core.language.kotlin.serialization.serializationPluginEnabled
+import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
+import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.createNotebookScriptDefinitionsWrapper
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
@@ -156,6 +158,19 @@ class JupyterCompilerService(
                            removeSession(notebookFile)
                        }
             )
+    }
+
+    private fun removeRuntimeDependenciesFromIndex() {
+        val paths = KotlinNotebookMavenArtifacts.all().mapTo(HashSet()) {
+            it.artifact
+        }
+        KotlinNotebookPermanentIndexService.getInstance(project)
+            .removeFromPermanentIndex(paths)
+    }
+
+    override fun dispose() {
+        super.dispose()
+        removeRuntimeDependenciesFromIndex()
     }
 
     companion object {

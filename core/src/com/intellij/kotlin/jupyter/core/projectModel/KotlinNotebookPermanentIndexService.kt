@@ -24,6 +24,21 @@ class KotlinNotebookPermanentIndexService(val project: Project) {
     }
   }
 
+  fun removeFromPermanentIndex(artifactsPaths: Collection<String>) {
+      val newLibrary = getPermanentScriptingLibrary()
+      val model = newLibrary.modifiableModel
+      val existingRoots = getLibraryRoots(newLibrary)
+
+      for (rootType in listOf(OrderRootType.CLASSES, OrderRootType.SOURCES)) {
+          for (rootPath in existingRoots[rootType]!!) {
+              if (artifactsPaths.any { rootPath.contains(it) }) {
+                  model.removeRoot(rootPath, rootType)
+              }
+          }
+      }
+      model.commit()
+  }
+
   private fun getPermanentScriptingLibrary(): Library {
     val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
     val library = libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
@@ -31,15 +46,19 @@ class KotlinNotebookPermanentIndexService(val project: Project) {
     return libraryTable.createLibrary(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
   }
 
+  private fun getLibraryRoots(library: Library): Map<OrderRootType, Set<String>> {
+      return buildMap<OrderRootType, Set<String>> {
+          for (rootType in listOf(OrderRootType.CLASSES, OrderRootType.SOURCES)) {
+              put(rootType, library.rootProvider.getUrls(rootType).toSet())
+          }
+      }
+  }
+
   private fun addToPermanentIndexImpl(classpath: List<String>, sourceClasspath: List<String>) {
     val newLibrary = getPermanentScriptingLibrary()
 
     val model = newLibrary.modifiableModel
-    val existingRoots = buildMap<OrderRootType, Set<String>> {
-      for (rootType in listOf(OrderRootType.CLASSES, OrderRootType.SOURCES)) {
-        put(rootType, newLibrary.rootProvider.getUrls(rootType).toSet())
-      }
-    }
+    val existingRoots = getLibraryRoots(newLibrary)
 
     fun addPath(path: String, rootType: OrderRootType) {
       if (path.endsWith(".jar")) {
