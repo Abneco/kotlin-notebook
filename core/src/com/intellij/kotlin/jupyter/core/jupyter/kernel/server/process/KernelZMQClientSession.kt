@@ -5,8 +5,8 @@ import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelComm
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageType
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.JupyterMessageFilter
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toJupyterMessage
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toRawMessageWithSocket
 import com.intellij.kotlin.jupyter.core.util.errorUnderDebug
@@ -26,7 +26,8 @@ import kotlin.concurrent.withLock
 class KernelZMQClientSession(
   override val sessionId: JupyterNotebookSessionId,
   kernelConfig: KernelConfig,
-  private val onMessageCallback: (JupyterMessage) -> Unit
+  private val onMessageCallback: (JupyterMessage) -> Unit,
+  private val outgoingMessagesFilter: JupyterMessageFilter,
 ): AbstractJupyterConnection(), JupyterKernelCommunicationClient, KotlinKernelSession {
     private val receiveMessageLock = ReentrantLock(true)
 
@@ -39,8 +40,7 @@ class KernelZMQClientSession(
     }
 
     override fun send(content: JupyterMessage) {
-        val messageType = content.header.messageType
-        if (dontSendMessageOfType(messageType)) return
+        if (!outgoingMessagesFilter.accepts(content)) return
 
         val (rawMessage, socketType) = content.toRawMessageWithSocket() ?: return
         try {
@@ -48,14 +48,6 @@ class KernelZMQClientSession(
             socket.sendRawMessage(rawMessage)
         } catch (e: Exception) {
             LOG.errorUnderDebug(e)
-        }
-    }
-
-    private fun dontSendMessageOfType(messageType: JupyterMessageType): Boolean {
-        return when (messageType) {
-            // Don't send shutdown requests: kernel is killed by our own means anyway
-            JupyterMessageType.SHUTDOWN_REQUEST -> true
-            else -> false
         }
     }
 

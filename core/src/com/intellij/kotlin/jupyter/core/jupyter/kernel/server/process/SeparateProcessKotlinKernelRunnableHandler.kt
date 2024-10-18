@@ -12,6 +12,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMe
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.AbstractKotlinKernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.DONT_ACCEPT_SHUTDOWN
 import com.intellij.kotlin.jupyter.core.util.warnInTests
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
@@ -59,7 +60,7 @@ class SeparateProcessKotlinKernelRunnableHandler(
     }
 
     override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession {
-        return KernelZMQClientSession(sessionId, kernelConfig, onMessage)
+        return KernelZMQClientSession(sessionId, kernelConfig, onMessage, DONT_ACCEPT_SHUTDOWN)
     }
 
     override fun stopKernel() {

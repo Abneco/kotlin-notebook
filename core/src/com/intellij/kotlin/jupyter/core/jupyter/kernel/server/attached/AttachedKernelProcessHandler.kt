@@ -8,6 +8,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMe
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.AbstractKotlinKernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.ACCEPT_ALL_MESSAGES
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelZMQClientSession
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
@@ -28,6 +29,7 @@ class AttachedKernelProcessHandler(
             sessionId,
             kernelConfig,
             onMessage,
+            ACCEPT_ALL_MESSAGES,
         )
     }
 
