@@ -15,7 +15,6 @@ import com.intellij.kotlin.jupyter.core.util.jsonConfig
 import com.intellij.openapi.project.Project
 import kotlinx.serialization.json.decodeFromJsonElement
 import org.jetbrains.kotlinx.jupyter.messaging.KernelInfoReplyMetadata
-import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.kotlinx.jupyter.startup.DEFAULT_SPRING_SIGNATURE_KEY
 import org.jetbrains.kotlinx.jupyter.startup.createClientKotlinKernelConfig
 import java.nio.file.Path
@@ -59,11 +58,8 @@ class AttachedKernelProcessFactory : ModeAwareKernelRunnableFactory(
                 jsonConfig.decodeFromJsonElement<KernelInfoReplyMetadata>(metadata)
             } ?: return
 
-            val classpathInfo = EvaluatedSnippetMetadata(
-                newClasspath = replyMetadata.classpath
-            )
-
-            compilerService.addCompiledSnippet(classpathInfo, null)
+            val allSnippetsMetadata = replyMetadata.state
+            compilerService.addCompiledSnippet(allSnippetsMetadata, null)
         }
     }
 }
