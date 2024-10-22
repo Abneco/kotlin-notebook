@@ -170,7 +170,9 @@ class JupyterCompilerService(
 
     override fun dispose() {
         super.dispose()
-        removeRuntimeDependenciesFromIndex()
+        if (!project.isDisposed) {
+            removeRuntimeDependenciesFromIndex()
+        }
     }
 
     companion object {
