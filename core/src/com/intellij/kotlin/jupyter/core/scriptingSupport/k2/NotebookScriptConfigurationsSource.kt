@@ -28,9 +28,11 @@ import com.intellij.platform.workspace.storage.MutableEntityStorage
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
 import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
-import org.jetbrains.kotlin.idea.core.script.SCRIPT_DEPENDENCIES_SOURCES
-import org.jetbrains.kotlin.idea.core.script.k2.ScriptDependenciesData
-import org.jetbrains.kotlin.idea.core.script.k2.ScriptDependenciesSource
+import org.jetbrains.kotlin.idea.core.script.SCRIPT_CONFIGURATIONS_SOURCES
+import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurations
+import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource
+import org.jetbrains.kotlin.idea.core.script.scriptDefinitionsSourceOfType
+import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionsSource
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import java.nio.file.Path
 import kotlin.script.experimental.api.asSuccess
@@ -48,8 +50,11 @@ import kotlin.script.experimental.api.asSuccess
  *  Note that now for each script a separate module is created, and for each module there are its own dependencies.
  *  This is about to change.
  */
-class NotebookScriptDependenciesSource(override val project: Project) : ScriptDependenciesSource<KotlinNotebookScriptModel>(project) {
-    override fun resolveDependencies(scripts: Iterable<KotlinNotebookScriptModel>): ScriptDependenciesData {
+class NotebookScriptConfigurationsSource(override val project: Project) : ScriptConfigurationsSource<KotlinNotebookScriptModel>(project) {
+    override fun getScriptDefinitionsSource(): ScriptDefinitionsSource? =
+        project.scriptDefinitionsSourceOfType<KotlinNotebookScriptDefinitionsSource>()
+
+    override fun resolveDependencies(scripts: Iterable<KotlinNotebookScriptModel>): ScriptConfigurations {
         val sdk = ProjectRootManager.getInstance(project).projectSdk
 
         val configurations = scripts.associate { ktScript ->
@@ -59,18 +64,18 @@ class NotebookScriptDependenciesSource(override val project: Project) : ScriptDe
             virtualFile to configuration
         }
 
-        return ScriptDependenciesData(
+        return ScriptConfigurations(
             configurations,
             sdks = sdk?.homePath?.let<@NonNls String, Map<Path, Sdk>> { mapOf(Path.of(it) to sdk) } ?: emptyMap()
         )
     }
 
-    override suspend fun updateModules(dependencies: ScriptDependenciesData, storage: MutableEntityStorage?) {
+    override suspend fun updateModules(configurationsData: ScriptConfigurations, storage: MutableEntityStorage?) {
         val workspaceModel = project.workspaceModel
         val workspaceSnapshot = storage?.toSnapshot() ?: workspaceModel.currentSnapshot
         val tmp = MutableEntityStorage.from(workspaceSnapshot)
 
-        val configurationsByNotebook = dependencies.toConfigurationInfoPerNotebook()
+        val configurationsByNotebook = configurationsData.toConfigurationInfoPerNotebook()
         creteOrUpdateScriptModules(project, configurationsByNotebook, tmp)
 
         workspaceModel.update("Updating Kotlin Notebook scripting modules") { model ->
@@ -164,9 +169,9 @@ class NotebookScriptDependenciesSource(override val project: Project) : ScriptDe
     companion object {
         const val NOTEBOOK_MODULE_NAME_PREFIX = "$KOTLIN_SCRIPTS_MODULE_NAME.Kotlin Notebooks"
 
-        fun getInstance(project: Project): NotebookScriptDependenciesSource? =
-            SCRIPT_DEPENDENCIES_SOURCES.getExtensions(project)
-                .filterIsInstance<NotebookScriptDependenciesSource>().firstOrNull()
-                .safeAs<NotebookScriptDependenciesSource>()
+        fun getInstance(project: Project): NotebookScriptConfigurationsSource? =
+            SCRIPT_CONFIGURATIONS_SOURCES.getExtensions(project)
+                .filterIsInstance<NotebookScriptConfigurationsSource>().firstOrNull()
+                .safeAs<NotebookScriptConfigurationsSource>()
     }
 }

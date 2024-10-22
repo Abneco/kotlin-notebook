@@ -7,7 +7,7 @@ import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport.Companion.getConfiguration
 import com.intellij.kotlin.jupyter.core.scriptingSupport.k2.KotlinNotebookScriptModel
-import com.intellij.kotlin.jupyter.core.scriptingSupport.k2.NotebookScriptDependenciesSource
+import com.intellij.kotlin.jupyter.core.scriptingSupport.k2.NotebookScriptConfigurationsSource
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
@@ -81,7 +81,7 @@ class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) 
     private fun clearRuntimeDependenciesFor(notebookFile: BackedNotebookVirtualFile) {
         val scope = KotlinNotebookPluginScope.getForProject(project)
         scope.async {
-            NotebookScriptDependenciesSource.getInstance(project)
+            NotebookScriptConfigurationsSource.getInstance(project)
                 ?.clearNotebookLibraryDependencies(
                     notebookFile
                 )
@@ -151,7 +151,7 @@ class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) 
             scripts.addAll(perFileScripts)
         }
 
-        NotebookScriptDependenciesSource.getInstance(project)
+        NotebookScriptConfigurationsSource.getInstance(project)
             ?.updateDependenciesAndCreateModules(
                 scripts
             )

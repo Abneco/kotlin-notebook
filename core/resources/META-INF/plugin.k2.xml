@@ -1,7 +1,7 @@
 <idea-plugin>
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <scriptDefinitionsSource implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.k2.KotlinNotebookScriptDefinitionsSource"/>
-        <scriptDependenciesSource implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.k2.NotebookScriptDependenciesSource"/>
+        <scriptConfigurationsSource implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.k2.NotebookScriptConfigurationsSource"/>
         <scriptAdditionalIdeaDependenciesProvider implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.k2.KotlinNotebookScriptLibrariesProvider"/>
     </extensions>
 </idea-plugin>

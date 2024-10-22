@@ -6,16 +6,16 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.idea.core.script.k2.BaseScriptModel
-import org.jetbrains.kotlin.idea.core.script.k2.ScriptDependenciesData
+import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurations
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import kotlin.script.experimental.api.valueOrNull
 import kotlin.script.experimental.api.valueOrThrow
 
 /**
  * K2-based plugin abstraction for describing configuration data for the script.
- * This class is heavily used in [org.jetbrains.kotlin.idea.core.script.k2.ScriptDependenciesSource]
+ * This class is heavily used in [org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource]
  *
- * @see [NotebookScriptDependenciesSource]
+ * @see [NotebookScriptConfigurationsSource]
  */
 class KotlinNotebookScriptModel(
     virtualFile: VirtualFile,
@@ -30,10 +30,10 @@ data class KotlinNotebookScriptsModuleConfigurationInfo(
 )
 
 /**
- * Transforms all passed [ScriptDependenciesData] to a map separated by [com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile]
+ * Transforms all passed [ScriptConfigurations] to a map separated by [com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile]
  * Each [KotlinNotebookScriptsModuleConfigurationInfo] contains all necessary information for each cell.
  */
-internal fun ScriptDependenciesData.toConfigurationInfoPerNotebook(): Map<VirtualFile, KotlinNotebookScriptsModuleConfigurationInfo> {
+internal fun ScriptConfigurations.toConfigurationInfoPerNotebook(): Map<VirtualFile, KotlinNotebookScriptsModuleConfigurationInfo> {
     val sdk = sdks.values.firstOrNull()
 
     return configurations.filterNot {
