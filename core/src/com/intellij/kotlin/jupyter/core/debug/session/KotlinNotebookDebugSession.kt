@@ -26,7 +26,8 @@ import com.intellij.kotlin.jupyter.core.debug.util.connection.NotebookDebugProce
 import com.intellij.kotlin.jupyter.core.debug.util.debugFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
+import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
+import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.Companion.isIncomplete
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.openapi.Disposable
@@ -94,10 +95,13 @@ class KotlinNotebookDebugSession(
     private fun Project.initServiceListeners(parentDisposable: Disposable) {
         val messageBus = messageBus
         messageBus.connect(parentDisposable).subscribe(
-            NotebookCodeSnippetsChangeListener.TOPIC,
-            object : NotebookCodeSnippetsChangeListener {
-                override fun scriptsClassesChanged(file: BackedNotebookVirtualFile) {
-                    if (debuggerSession?.isConnecting == true) return
+            NotebookScriptsStateListener.TOPIC,
+            object : NotebookScriptsStateListener {
+                override fun scriptsConfigurationUpdated(
+                    file: BackedNotebookVirtualFile,
+                    updateState: NotebookScriptsStateListener.UpdateState
+                ) {
+                    if (debuggerSession?.isConnecting == true || updateState.isIncomplete) return
 
                     messageBus.syncPublisher(JupyterRuntimeProcessListener.TOPIC)
                         .notebookSessionEnvironmentUpdated(virtualFile.file, null)

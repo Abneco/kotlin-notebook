@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test
 
+import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.extensions.JupyterPsiCellExt.getJupyterBackedVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionQueueManager
@@ -14,7 +15,9 @@ import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterR
 import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
 import com.intellij.kotlin.jupyter.core.jupyter.actions.CreateNotebookFactory
 import com.intellij.kotlin.jupyter.core.language.meta.psi.JKTMetaPSIFile
+import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
+import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesBuilder
@@ -47,8 +50,17 @@ import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.jupiter.api.Assertions
 import kotlin.time.Duration.Companion.minutes
 
-val baseTestDataPath = PathManager.getHomePath() + "/plugins/kotlin/jupyter/tests/testData"
+val baseTestDataPathWithHome = PathManager.getHomePath() + "/plugins/kotlin/jupyter/tests/testData"
+const val baseTestDataPath = "/plugins/kotlin/jupyter/tests/testData"
 
+val CodeInsightTestFixture.kotlinNotebookFile: BackedNotebookVirtualFile?
+    get() {
+        val virtualFile = file.virtualFile ?: return null
+        return when {
+            virtualFile is VirtualFileWindow -> virtualFile.delegate
+            else -> virtualFile
+        }.toKotlinNotebookBackedFile()
+    }
 
 fun PsiFile.getCells(): List<JupyterPsiCell> = descendantsOfType<JupyterPsiCell>().toList()
 
@@ -58,7 +70,7 @@ val defaultTestDuration = 3.minutes
 
 fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     val project = notebookFile.project
-    val backedFile = BackedNotebookVirtualFile.takeIfBacked(notebookFile.virtualFile)!!
+    val backedFile = notebookFile.virtualFile.toKotlinNotebookBackedFile()!!
     val session = runBlocking {
         JupyterRuntimeService.getInstance(project).getOrCreateSession(backedFile)
     }
@@ -66,6 +78,8 @@ fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
         action()
     } finally {
         session.deleteSession()
+        // make sure to drop previous data
+        JupyterCompilerService.getInstance(project).removeSession(backedFile)
     }
 }
 
@@ -189,7 +203,7 @@ fun cartesianProduct(vararg lists: List<Any>): List<Array<Any>> {
 fun CodeInsightTestFixture.configureBySimpleNotebook(
     notebookName: String,
     copyToProject: Boolean = false
-) = configureByJupyterFile("$notebookName.ipynb", "$baseTestDataPath/notebooks/simple", isCopyToProject = copyToProject)
+) = configureByJupyterFile("$notebookName.ipynb", "$baseTestDataPathWithHome/notebooks/simple", isCopyToProject = copyToProject)
 
 fun CodeInsightTestFixture.configureBySingleEmptyCellNotebook(
     copyToProject: Boolean = false
@@ -198,6 +212,12 @@ fun CodeInsightTestFixture.configureBySingleEmptyCellNotebook(
 fun CodeInsightTestFixture.configureBySingleEmptyCellNoCaretNotebook(
     copyToProject: Boolean = false
 ) = configureBySimpleNotebook("singleEmptyCellNoCaret", copyToProject = copyToProject)
+
+fun waitForReadyIndexes(fixture: CodeInsightTestFixture) {
+    runInEdtAndWait {
+        IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
+    }
+}
 
 fun setUpScriptingDependencies(fixture: CodeInsightTestFixture) {
     val ktFiles = when(val psiFile = fixture.file) {

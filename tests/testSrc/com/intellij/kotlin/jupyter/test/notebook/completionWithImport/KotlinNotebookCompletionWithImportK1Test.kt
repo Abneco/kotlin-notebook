@@ -5,7 +5,7 @@ import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTester
 import org.junit.Test
 
-class KotlinNotebookCompletionWithImportK1Test: AbstractKotlinNotebookCompletionWithImportTest() {
+class KotlinNotebookCompletionWithImportK1Test : AbstractKotlinNotebookCompletionWithImportTest() {
     @Test(timeout = 300_000)
     fun testCompletionWithImport() = doTest(
         object : ReceivedMessagesTester {
@@ -23,14 +23,37 @@ class KotlinNotebookCompletionWithImportK1Test: AbstractKotlinNotebookCompletion
         tester.typeAndFinishLookup("DASH") {
             it.lookupString.contains("DASHED")
         }
-        assertActualText("""
+
+        //val handler = CodeCompletionHandlerBase.createHandler(CompletionType.BASIC)
+        //
+        //handler.invokeCompletion(myFixture.project, myFixture.editor, 1)
+        //val element = myFixture.lookupElements.orEmpty().first { it.lookupString.contains("DASHED") }
+        //myFixture.lookup.currentItem = element
+        //runInEdtAndWait {
+        //    myFixture.finishLookup(com.intellij.codeInsight.lookup.Lookup.NORMAL_SELECT_CHAR)
+        //}
+
+/*        myFixture.completeBasic()
+        val filter = myFixture.lookupElements.orEmpty().first { it.lookupString.contains("DASHED") }
+        myFixture.lookup.currentItem = filter
+        runInEdtAndWait {
+            myFixture.finishLookup(com.intellij.codeInsight.lookup.Lookup.NORMAL_SELECT_CHAR)
+        }*/
+
+
+        //tester.typeAndFinishLookup("DASH") {
+        //    it.lookupString.contains("DASHED")
+        //}
+        assertActualText(
+            """
             plot {
                 line {
                     type(LineType.DASHED)
                 }
             }
             
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 
     @Test(timeout = 300_000)
@@ -46,12 +69,14 @@ class KotlinNotebookCompletionWithImportK1Test: AbstractKotlinNotebookCompletion
         }
     ) { tester ->
         tester.typeAndFinishLookup("fail") { it.lookupString == "fail" && it.userDataString.contains("fail  {...}") }
-        assertActualText("""
+        assertActualText(
+            """
             import org.junit.jupiter.api.fail
 
             val someVar = 123 + x
             fail {  }id(x)
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 
     @Test(timeout = 300_000)
@@ -65,12 +90,14 @@ class KotlinNotebookCompletionWithImportK1Test: AbstractKotlinNotebookCompletion
         }
     ) { tester ->
         tester.typeAndFinishLookup("ai") { it.lookupString == "fail" && it.userDataString.contains("fail  {...}") }
-        assertActualText("""
+        assertActualText(
+            """
             import org.junit.jupiter.api.fail
 
             fail {  }
             123
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 
     @Test(timeout = 300_000)
@@ -82,9 +109,11 @@ class KotlinNotebookCompletionWithImportK1Test: AbstractKotlinNotebookCompletion
         }
     ) { tester ->
         tester.typeAndFinishLookup("n") { it.lookupString == "runBlocking" && it.userDataString.contains("runBlocking  {...}") }
-        assertActualText("""
+        assertActualText(
+            """
             runBlocking {  }
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 
     @Test(timeout = 300_000)
@@ -100,7 +129,8 @@ class KotlinNotebookCompletionWithImportK1Test: AbstractKotlinNotebookCompletion
             import kotlinx.coroutines.runBlocking
             
             runBlocking {  }
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 
     @Test(timeout = 300_000)

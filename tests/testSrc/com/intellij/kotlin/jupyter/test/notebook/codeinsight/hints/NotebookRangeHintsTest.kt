@@ -5,8 +5,7 @@ package com.intellij.kotlin.jupyter.test.notebook.codeinsight.hints
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookValuesHintProvider
 import org.junit.Test
 
-class NotebookRangeHintsTest : AbstractNotebookTypeHintsBaseTest() {
-    override fun getTestDataPath() = "${super.getTestDataPath()}/ranges"
+class NotebookRangeHintsTest : AbstractNotebookTypeHintsBaseTest("ranges") {
     override val provider = NotebookValuesHintProvider()
 
     @Test

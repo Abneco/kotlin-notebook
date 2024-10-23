@@ -8,7 +8,7 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOption
 import com.intellij.kotlin.jupyter.tables.KotlinDataframeParserFormatV2
 import com.intellij.kotlin.jupyter.tables.KotlinDataframeParsing
 import com.intellij.kotlin.jupyter.tables.KotlinDataframeTableDataProvider
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
+import com.intellij.kotlin.jupyter.test.baseTestDataPathWithHome
 import com.intellij.scientific.tables.DataId
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.asSafely
@@ -148,7 +148,7 @@ class KotlinDataframeTableDataProviderTest : BasePlatformTestCase() {
     }
 
     private fun readData(fileName: String): ObjectNode {
-        val jupyterDataframeResponseFile = File("$baseTestDataPath/outputs/$fileName")
+        val jupyterDataframeResponseFile = File("$baseTestDataPathWithHome/outputs/$fileName")
         return ObjectMapper().readTree(jupyterDataframeResponseFile).asSafely<ObjectNode>()
             ?: throw RuntimeException("${jupyterDataframeResponseFile.path} not found")
     }

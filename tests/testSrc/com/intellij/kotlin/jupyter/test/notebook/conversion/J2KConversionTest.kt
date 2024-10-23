@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.test.notebook.conversion
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.kotlin.jupyter.test.cartesianProduct
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.ide.CopyPasteManager
@@ -31,10 +30,7 @@ class MarkedTestParameter<T: Any>(
 class J2KConversionTest(
     private val templateFileName: MarkedTestParameter<String>,
     private val fromJavaFile: MarkedTestParameter<Boolean>,
-) : KotlinNotebookTransformerBaseTestCase() {
-
-    override fun getTestDataPath() = "$baseTestDataPath/notebooks/conversion"
-
+) : KotlinNotebookTransformerBaseTestCase("notebooks/conversion") {
     @Test
     fun testSimpleConversion() = doTest()
 

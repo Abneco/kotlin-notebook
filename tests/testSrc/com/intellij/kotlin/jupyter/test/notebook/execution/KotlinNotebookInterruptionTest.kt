@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.seconds
 
 
-class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest(){
+class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest() {
     @JvmField
     @Rule
     val jdkVersionRule = JDKVersionRule { it <= JavaSdkVersion.JDK_17 }

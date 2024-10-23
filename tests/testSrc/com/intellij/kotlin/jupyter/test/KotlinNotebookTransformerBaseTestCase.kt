@@ -11,10 +11,10 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 
-abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCase() {
+abstract class KotlinNotebookTransformerBaseTestCase(testDataPath: String) : KotlinNotebookBaseTestCase(testDataPath) {
     override lateinit var originalVirtualFile: VirtualFile
 
-    val notebookFile: BackedNotebookVirtualFile get() = _notebookFile!!
+    override val notebookFile: BackedNotebookVirtualFile get() = _notebookFile!!
     private var _notebookFile: BackedNotebookVirtualFile? = null
 
     protected class TestOptions(

@@ -10,11 +10,25 @@ import com.intellij.util.messages.Topic
  *
  * @see JupyterCompilerPerFileService
  */
-fun interface NotebookCodeSnippetsChangeListener {
+fun interface NotebookScriptsStateListener {
     companion object {
         @Topic.ProjectLevel
-        val TOPIC: Topic<NotebookCodeSnippetsChangeListener> = Topic(NotebookCodeSnippetsChangeListener::class.java, Topic.BroadcastDirection.NONE)
+        val TOPIC: Topic<NotebookScriptsStateListener> = Topic(NotebookScriptsStateListener::class.java, Topic.BroadcastDirection.NONE)
+
+        val UpdateState.isComplete: Boolean
+            get() = this == UpdateState.COMPLETE
+
+        val UpdateState.isIncomplete: Boolean
+            get() = this == UpdateState.INCOMPLETE
     }
 
-    fun scriptsClassesChanged(file: BackedNotebookVirtualFile)
+    enum class UpdateState {
+        COMPLETE,
+        INCOMPLETE
+    }
+
+    // todo: comments
+    // add enum to function
+    fun scriptsConfigurationUpdated(file: BackedNotebookVirtualFile, updateState: UpdateState)
+
 }

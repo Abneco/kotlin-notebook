@@ -1,7 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.metaLanguage
 
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
+import com.intellij.kotlin.jupyter.test.baseTestDataPathWithHome
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
 import junit.framework.TestCase
 import org.junit.Test
@@ -13,7 +13,7 @@ class JKTMetaCodeInsightTest : LightJavaCodeInsightFixtureTestCase() {
     /**
      * @return path to test data file directory relative to root of this module.
      */
-    override fun getTestDataPath() = "$baseTestDataPath/metaLanguage/codeInsight"
+    override fun getTestDataPath() = "$baseTestDataPathWithHome/metaLanguage/codeInsight"
 
     @Test
     fun `test magics completion`() {

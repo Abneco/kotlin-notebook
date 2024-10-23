@@ -3,15 +3,12 @@ package com.intellij.kotlin.jupyter.test.notebook.formatting
 
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFile
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.psi.codeStyle.CodeStyleManager
 import org.junit.Test
 
-class KotlinNotebookFormattingTest : KotlinNotebookTransformerBaseTestCase() {
-    override fun getTestDataPath() = "$baseTestDataPath/notebooks/formatting"
-
+class KotlinNotebookFormattingTest : KotlinNotebookTransformerBaseTestCase("notebooks/formatting") {
     @Test
     fun testFormatKotlinCell() = doTest(
         false,

@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.test.notebook.codeinsight.quickfix
 
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.intention.IntentionActionDelegate
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.kotlin.jupyter.test.getCells
 import com.intellij.kotlin.jupyter.test.isInjectedKtFile
 import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
@@ -23,13 +22,7 @@ import org.jetbrains.kotlin.idea.test.ConfigLibraryUtil
 import org.junit.ComparisonFailure
 
 
-abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() {
-    override fun getTestDataPath() = "$baseTestDataPath/notebooks/codeinsight/quickfix"
-
-    override fun getBasePath(): String {
-        return testDataPath
-    }
-
+abstract class NotebookQuickFixBaseTest(testDataPath: String) : KotlinNotebookExecutionBaseTestCase("notebooks/codeinsight/quickfix/$testDataPath") {
     override fun getProject(): Project {
         return myFixture.project
     }

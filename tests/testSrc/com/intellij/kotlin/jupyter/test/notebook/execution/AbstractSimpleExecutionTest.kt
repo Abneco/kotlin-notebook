@@ -2,16 +2,13 @@
 package com.intellij.kotlin.jupyter.test.notebook.execution
 
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.kotlin.jupyter.test.executeCellsAndShutdownKernel
 import com.intellij.kotlin.jupyter.test.runners.RunModeAwareTestRunner
 import org.junit.runner.RunWith
 
 @Suppress("Junit4RunWithInspection")
 @RunWith(RunModeAwareTestRunner::class)
-abstract class AbstractSimpleExecutionTest : KotlinNotebookExecutionBaseTestCase() {
-    override fun getTestDataPath() = "$baseTestDataPath/notebooks/execution"
-
+abstract class AbstractSimpleExecutionTest : KotlinNotebookExecutionBaseTestCase("notebooks/execution") {
     protected fun doTest(tester: ReceivedMessagesTester, executionCallback: JupyterExecutionCallback? = null) {
         val notebookFile = configureExecutionTest()
         executeCellsAndShutdownKernel(tester, notebookFile, executionCallback)

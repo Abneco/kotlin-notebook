@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.test.notebook.highlighting
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTester
@@ -11,9 +10,7 @@ import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.runInEdtAndWait
 import org.junit.Test
 
-class NotebookHighlightingAfterExecutionTest: KotlinNotebookExecutionBaseTestCase() {
-    override fun getTestDataPath() = "$baseTestDataPath/notebooks/highlighting"
-
+class NotebookHighlightingAfterExecutionTest: KotlinNotebookExecutionBaseTestCase("notebooks/highlighting") {
     @Test
     fun serializationHighlighting() = doTest(object : ReceivedMessagesTester {
         override val expectedCellsCount = 2

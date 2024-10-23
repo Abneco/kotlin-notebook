@@ -11,7 +11,6 @@ import com.intellij.codeInsight.hints.presentation.PresentationRenderer
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.kotlin.jupyter.test.getCells
 import com.intellij.kotlin.jupyter.test.isInjectedKtFile
 import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
@@ -27,9 +26,8 @@ import com.intellij.util.containers.isEmpty
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 
 
-abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTestCase() {
+abstract class AbstractNotebookTypeHintsBaseTest(testDataPath: String) : KotlinNotebookExecutionBaseTestCase("notebooks/codeinsight/hints/$testDataPath") {
     override lateinit var originalVirtualFile: VirtualFile
-    override fun getTestDataPath() = "$baseTestDataPath/notebooks/codeinsight/hints"
     abstract val provider: InlayHintsProvider<*>
 
     companion object {

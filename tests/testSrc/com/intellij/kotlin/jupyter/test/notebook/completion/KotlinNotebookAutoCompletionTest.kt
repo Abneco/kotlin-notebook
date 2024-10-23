@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.test.notebook.completion
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
 import com.intellij.kotlin.jupyter.test.LookupFinishMode
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.kotlin.jupyter.test.setUpScriptingDependencies
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
@@ -13,10 +12,8 @@ import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Test
 
-class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
+class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase("notebooks/autocompletion") {
     override lateinit var originalVirtualFile: VirtualFile
-
-    override fun getTestDataPath() = "$baseTestDataPath/notebooks/autocompletion"
 
     @Test
     fun testCommandCompletion() = doTest { tester ->

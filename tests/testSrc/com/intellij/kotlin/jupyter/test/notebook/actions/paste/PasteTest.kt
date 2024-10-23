@@ -2,15 +2,12 @@
 package com.intellij.kotlin.jupyter.test.notebook.actions.paste
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.ide.CopyPasteManager
 import org.junit.Test
 import java.awt.datatransfer.StringSelection
 
-class PasteTest : KotlinNotebookTransformerBaseTestCase() {
-    override fun getTestDataPath() = "$baseTestDataPath/notebooks/actions/paste"
-
+class PasteTest : KotlinNotebookTransformerBaseTestCase("notebooks/actions/paste") {
     @Test
     fun testIndentsAfterPaste() = doTest(
         """

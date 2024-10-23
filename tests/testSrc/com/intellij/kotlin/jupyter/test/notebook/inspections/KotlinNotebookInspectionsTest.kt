@@ -2,13 +2,10 @@
 package com.intellij.kotlin.jupyter.test.notebook.inspections
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Test
 
-class KotlinNotebookInspectionsTest : KotlinNotebookBaseTestCase() {
-    override fun getTestDataPath() = "${baseTestDataPath}/notebooks/inspections"
-
+class KotlinNotebookInspectionsTest : KotlinNotebookBaseTestCase("notebooks/inspections") {
     @Test
     fun testUnresolvedVarInAnotherCell() = doTest()
 

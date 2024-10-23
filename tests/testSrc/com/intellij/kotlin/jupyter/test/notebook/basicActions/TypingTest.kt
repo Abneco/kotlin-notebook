@@ -5,7 +5,7 @@ import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
 import com.intellij.kotlin.jupyter.test.configureBySingleEmptyCellNotebook
 import org.junit.Test
 
-class TypingTest: KotlinNotebookTransformerBaseTestCase() {
+class TypingTest: KotlinNotebookTransformerBaseTestCase("notebooks/actions/typing") {
 
     @Test
     fun testQuoteHandlingInTheEndOfFile() = doTest(

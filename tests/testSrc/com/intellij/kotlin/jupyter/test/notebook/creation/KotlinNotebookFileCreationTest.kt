@@ -20,7 +20,7 @@ import org.jetbrains.plugins.notebooks.tests.SingleFileImplRule
 import org.junit.ClassRule
 import org.junit.Test
 
-class KotlinNotebookFileCreationTest : KotlinNotebookBaseTestCase() {
+class KotlinNotebookFileCreationTest : KotlinNotebookBaseTestCase("") {
     companion object {
         @get:ClassRule
         @JvmStatic

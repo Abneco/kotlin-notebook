@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.scriptingSupport.k2
 
 import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandler
-import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
+import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 
 
 /**
@@ -11,4 +11,4 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookCodeS
  *
  * @see NotebookHighlightingManager and it's [addListeners]
  */
-internal fun interface NotebookAfterScriptsUpdatePluginAwareHandler : KotlinPluginModeAwareHandler, NotebookCodeSnippetsChangeListener
+internal fun interface NotebookAfterScriptsUpdatePluginAwareHandler : KotlinPluginModeAwareHandler, NotebookScriptsStateListener

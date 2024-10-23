@@ -13,7 +13,7 @@ import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport
 import com.intellij.kotlin.jupyter.core.scriptingSupport.k2.NotebookAfterScriptsUpdatePluginAwareHandler
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.ImpatientNotebookChangeListener
-import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
+import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.isCurrentlySelectedInEditor
 import com.intellij.kotlin.jupyter.core.util.toPsiFile
@@ -115,7 +115,7 @@ class NotebookHighlightingManager(
         )
 
         messageBus.connect(this).subscribe(
-            NotebookCodeSnippetsChangeListener.TOPIC,
+            NotebookScriptsStateListener.TOPIC,
             createPluginModeAwareInstance(
                 ::createK1Instance,
                 ::createK2Instance
@@ -124,7 +124,7 @@ class NotebookHighlightingManager(
     }
 
     private fun createK1Instance() : NotebookAfterScriptsUpdatePluginAwareHandler {
-        return NotebookAfterScriptsUpdatePluginAwareHandler { file ->
+        return NotebookAfterScriptsUpdatePluginAwareHandler { file, updateState ->
             if (file != virtualFile) return@NotebookAfterScriptsUpdatePluginAwareHandler
         }
     }
@@ -133,7 +133,7 @@ class NotebookHighlightingManager(
      * Since shadowing does not work, just perform complete restart after the main execution effect took place
      */
     private fun createK2Instance() : NotebookAfterScriptsUpdatePluginAwareHandler {
-        return NotebookAfterScriptsUpdatePluginAwareHandler { file ->
+        return NotebookAfterScriptsUpdatePluginAwareHandler { file, updateState ->
             if (file != virtualFile) return@NotebookAfterScriptsUpdatePluginAwareHandler
 
             val isCurrentFileOpened = virtualFile.isCurrentlySelectedInEditor(project)

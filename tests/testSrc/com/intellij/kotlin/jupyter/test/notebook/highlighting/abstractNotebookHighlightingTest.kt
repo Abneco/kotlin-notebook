@@ -9,8 +9,6 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.jupyter.core.jupyter.nbformat.CELL_MARKER
 import com.intellij.jupyter.core.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
-import org.jetbrains.plugins.notebooks.tests.withSwingMarkdownRenderMode
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import com.intellij.kotlin.jupyter.test.setUpScriptingDependencies
 import com.intellij.lang.annotation.HighlightSeverity
@@ -21,10 +19,9 @@ import com.intellij.testFramework.ExpectedHighlightingData
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.util.ArrayUtilRt
+import org.jetbrains.plugins.notebooks.tests.withSwingMarkdownRenderMode
 
-abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTestCase() {
-    override fun getTestDataPath() = "$baseTestDataPath/notebooks/highlighting"
-
+abstract class AbstractNotebookHighlightingTest : KotlinNotebookExecutionBaseTestCase("notebooks/highlighting") {
     abstract val canChangeDocumentDuringHighlighting: Boolean
     open val shouldDoInspections: Boolean = true
     open val shouldDoFolding: Boolean = true

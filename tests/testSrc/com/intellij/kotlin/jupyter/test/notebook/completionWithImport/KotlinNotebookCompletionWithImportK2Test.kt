@@ -4,15 +4,15 @@ package com.intellij.kotlin.jupyter.test.notebook.completionWithImport
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTester
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
-import org.junit.Ignore
+import org.junit.Test
 
-@Ignore
+//@Ignore
 class KotlinNotebookCompletionWithImportK2Test: AbstractKotlinNotebookCompletionWithImportTest() {
     override val pluginMode: KotlinPluginMode
         get() = KotlinPluginMode.K2
 
     // This test is expected to work in K2, but it does not
-    // @Test
+     @Test
     fun testCompletionWithImport() = doTest(
         object : ReceivedMessagesTester {
             override val expectedCellsCount: Int

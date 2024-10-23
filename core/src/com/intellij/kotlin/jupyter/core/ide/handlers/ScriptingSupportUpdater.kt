@@ -3,14 +3,13 @@ package com.intellij.kotlin.jupyter.core.ide.handlers
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.actions.JupyterRestartKernelListener
-import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport.Companion.getConfiguration
 import com.intellij.kotlin.jupyter.core.scriptingSupport.k2.KotlinNotebookScriptModel
 import com.intellij.kotlin.jupyter.core.scriptingSupport.k2.NotebookScriptConfigurationsSource
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
-import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
+import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.readAction
@@ -93,13 +92,12 @@ class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) 
         if (project.isDisposed) return
 
         val editors = editorManager.allEditors
-        val openFiles = editors.mapNotNull { (it as? JupyterFileEditor)?.getNotebookFile() }
+        val openFiles = editors.mapNotNull { it.file }
         val publisher = project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC)
 
         val notebooks = openFiles
             .filter { it.fileType is JupyterFileType }
-            .mapNotNull { BackedNotebookVirtualFile.takeIfBacked(it) }
-            .filter { it.file.isKotlinNotebook }
+            .mapNotNull { it.toKotlinNotebookBackedFile() }
 
         runCatching {
             updateK2Impl(project, notebooks)

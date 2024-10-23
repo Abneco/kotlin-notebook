@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.test.notebook.notebookCellLanguageProvider
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.notebooks.visualization.CodeCellLinesChecker
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.openapi.editor.impl.EditorImpl
@@ -13,11 +12,9 @@ import org.jetbrains.plugins.notebooks.tests.MarkdownRenderModeTestHelper
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Test
 
-class KotlinNotebookCellLanguageProviderTest : KotlinNotebookBaseTestCase() {
+class KotlinNotebookCellLanguageProviderTest : KotlinNotebookBaseTestCase("notebooks/cellLanguageProvider") {
 
     private val markdownRenderModeHelper = MarkdownRenderModeTestHelper()
-
-    override fun getTestDataPath() = "${baseTestDataPath}/notebooks/cellLanguageProvider"
 
     override fun setUp() {
         super.setUp()

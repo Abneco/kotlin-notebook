@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.test.notebook.basicActions
 
 import com.intellij.jupyter.core.jupyter.actions.JupyterCopyCellOutputAction
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTester
@@ -14,10 +13,7 @@ import org.junit.Test
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
 
-class CopyCellOutputTest: KotlinNotebookExecutionBaseTestCase() {
-
-    override fun getTestDataPath() = "$baseTestDataPath/notebooks/basicActions/copyCellOutput"
-
+class CopyCellOutputTest: KotlinNotebookExecutionBaseTestCase("notebooks/basicActions/copyCellOutput") {
     @Test
     fun testTextPlain() = doTest("This is my output")
 

@@ -4,9 +4,7 @@ package com.intellij.kotlin.jupyter.test.notebook.codeinsight.quickfix.extension
 import com.intellij.kotlin.jupyter.test.notebook.codeinsight.quickfix.NotebookQuickFixBaseTest
 import org.junit.Test
 
-class NotebookQuickFixIntentionsExtensionTest : NotebookQuickFixBaseTest() {
-    override fun getTestDataPath() = "${super.getTestDataPath()}/extensions"
-
+class NotebookQuickFixIntentionsExtensionTest : NotebookQuickFixBaseTest("extensions") {
     @Test
     fun testExtensionForClass() {
         doTest(1)

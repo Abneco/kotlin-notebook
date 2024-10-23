@@ -16,7 +16,7 @@ import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentInde
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDownloader
 import com.intellij.kotlin.jupyter.core.scriptingSupport.k2.CompiledClassifiersDefaultImportsEnhancer
-import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookCodeSnippetsChangeListener
+import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.ScriptingSupportUpdateEventsListener
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersionAsString
@@ -109,7 +109,7 @@ class JupyterCompilerPerFileService(
     parent: Disposable
 ) : NotebookPerFileChildService(virtualFile, scope) {
     private val scriptsChangePublisher get() =
-        project.messageBus.syncPublisher(NotebookCodeSnippetsChangeListener.TOPIC)
+        project.messageBus.syncPublisher(NotebookScriptsStateListener.TOPIC)
 
     private var isDisposed = false
 
@@ -126,6 +126,7 @@ class JupyterCompilerPerFileService(
     }
 
     private val directoryCounter = AtomicInteger(0)
+    private val lastClasspathUpdate = AtomicReference<String>()
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -249,9 +250,15 @@ class JupyterCompilerPerFileService(
                 ::updateClasspathWithKernelJars,
                 ::updateClasspathWithProjectArtifactsAsync,
             )) {
-                scriptsChangePublisher.scriptsClassesChanged(virtualFile)
                 requestScriptingUpdateTestAware()
             }
+        }
+    }
+
+    private fun Collection<String>.updateLastClasspathArtifact() {
+        val lastClasspathUpdateValue = lastOrNull()
+        if (lastClasspathUpdateValue != null) {
+            lastClasspathUpdate.set(lastClasspathUpdateValue)
         }
     }
 
@@ -277,8 +284,10 @@ class JupyterCompilerPerFileService(
             _sourceRoots.addInitial(sourcesJars)
         }
 
+        val kernelArtifactPaths = jars.map { it.absolutePath }
         KotlinNotebookPermanentIndexService.getInstance(project)
-                .addToPermanentIndex(jars.map { it.absolutePath }, sourcesJars.map { it.absolutePath })
+                .addToPermanentIndex(kernelArtifactPaths, sourcesJars.map { it.absolutePath })
+        kernelArtifactPaths.updateLastClasspathArtifact()
 
         return jars.isNotEmpty() || sourcesJars.isNotEmpty()
     }
@@ -353,17 +362,16 @@ class JupyterCompilerPerFileService(
     private fun updateScriptingIfNeeded() {
         val hasNoExecutionsScheduled = KotlinNotebookCellExecutionCallbackFactory.getInstance().hasCompletedExecutionRequestsFor(virtualFile)
         if (hasNoExecutionsScheduled) {
-            requestScriptingUpdateTestAware()
+            coroutineScope.async {
+                JupyterCompilerService.getInstance(project).requestScriptingUpdate()
+            }
         }
     }
 
     private fun getLineFolderName(lineNumber: Int) = "line_$lineNumber"
 
-    private fun getLastCompiledScriptPath(): String {
-        return classesDir
-            .resolve(
-                getLineFolderName(directoryCounter.get())
-            ).toString()
+    private fun getLastScriptArtifactPath(): String? {
+        return lastClasspathUpdate.get()
     }
 
     private fun addNewDependencies(
@@ -377,6 +385,7 @@ class JupyterCompilerPerFileService(
             previousSessionId = sessionId
         }
 
+
         // TODO: compare text in snippet metadata with cell source and add a source file to directory and to the container
         val nextCounter = directoryCounter.incrementAndGet()
 
@@ -387,18 +396,9 @@ class JupyterCompilerPerFileService(
         val lineSourcesDir = classesDir.resolve("sources_$nextCounter")
 
         KotlinNotebookPermanentIndexService.getInstance(project).addToPermanentIndex(snippetMetadata.newClasspath, snippetMetadata.newSources)
-        _currentClasspath.addSnippet(ArrayList<File>(snippetMetadata.newClasspath.size + 1).apply {
-            add(lineClassesDirAsFile)
-            snippetMetadata.newClasspath.forEach {
-                add(File(it))
-            }
-        })
-        _sourceRoots.addSnippet(ArrayList<File>(snippetMetadata.newSources.size + 1).apply {
-            add(lineSourcesDir.toFile())
-            snippetMetadata.newSources.forEach {
-                add(File(it))
-            }
-        })
+        _currentClasspath.addSnippetFromData(snippetMetadata.newClasspath.map { File(it) }, lineClassesDirAsFile)
+        _sourceRoots.addSnippetFromData(snippetMetadata.newSources.map { File(it) }, lineSourcesDir.toFile())
+        snippetMetadata.newClasspath.updateLastClasspathArtifact()
         additionalDefaultImports.addSnippet(snippetMetadata.newImports)
 
         if (psiCell != null) {
@@ -429,6 +429,20 @@ class JupyterCompilerPerFileService(
             sourceCode,
             lastStableConfiguration.get()
         ).asSuccess()
+    }
+
+    private fun <T> TwoPartsList<T>.addSnippetFromData(collection: Collection<T>, vararg elements: T) {
+        val listToAdd = ArrayList<T>(collection.size + elements.size).apply {
+            elements.forEach { el ->
+                add(el)
+            }
+
+            collection.forEach { el ->
+                add(el)
+            }
+        }
+
+        addSnippet(listToAdd)
     }
 
     private fun createNextClassLoader(classesDirPath: Path): ClassLoader = URLClassLoader(
@@ -506,6 +520,7 @@ class JupyterCompilerPerFileService(
         // means external dependencies are present, time to restart
         private fun ScriptCompilationConfiguration.restartHLIfNeeded() {
             if (this != project.baseScriptingCompilationConfiguration) return
+            if (ApplicationManager.getApplication().isUnitTestMode) return
 
             NotebookHighlightingService.getForFile(project, virtualFile).restartAnalysing()
         }
@@ -524,15 +539,16 @@ class JupyterCompilerPerFileService(
 
         override fun afterUpdate() {
             coroutineScope.async {
-                if (previousSessionId == null) return@async
+                // return if afterUpdate triggerred for another service
+                val lastScriptPath = getLastScriptArtifactPath() ?: return@async
 
-                val lastScriptPath = getLastCompiledScriptPath()
                 if (!cachePresentsChecker.checkPresentInCache(lastScriptPath)) {
+                    scriptsChangePublisher.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.INCOMPLETE)
                     return@async
                 }
 
                 updateLastKnownConfiguration()
-                scriptsChangePublisher.scriptsClassesChanged(virtualFile)
+                scriptsChangePublisher.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.COMPLETE)
 
                 readAction {
                     virtualFile.file.toPsiFile(project)?.let { psiFile ->

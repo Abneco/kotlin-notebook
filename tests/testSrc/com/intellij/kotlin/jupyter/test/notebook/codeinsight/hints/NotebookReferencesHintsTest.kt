@@ -5,8 +5,7 @@ import com.intellij.kotlin.jupyter.core.editor.codeInsight.KotlinNotebookReferen
 import org.junit.Ignore
 import org.junit.Test
 
-class NotebookReferencesHintsTest : AbstractNotebookTypeHintsBaseTest() {
-    override fun getTestDataPath() = "${super.getTestDataPath()}/references"
+class NotebookReferencesHintsTest : AbstractNotebookTypeHintsBaseTest("references") {
     override val provider = KotlinNotebookReferencesTypeHintsProvider()
 
     @Test

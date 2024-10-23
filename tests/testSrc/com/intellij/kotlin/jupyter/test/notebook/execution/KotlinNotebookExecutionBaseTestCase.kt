@@ -10,7 +10,7 @@ import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
 import com.intellij.kotlin.jupyter.test.executeCells
 import com.intellij.kotlin.jupyter.test.runWithJupyterSession
 import com.intellij.kotlin.jupyter.test.runners.TestContext
-import com.intellij.kotlin.jupyter.test.setUpScriptingDependencies
+import com.intellij.kotlin.jupyter.test.waitForReadyIndexes
 import com.intellij.kotlin.jupyter.test.withDisabledJcef
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
@@ -62,7 +62,7 @@ fun textPlainOutput(content: String): ObjectNode = buildJacksonObject {
     put("text/plain", content)
 }
 
-abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase() {
+abstract class KotlinNotebookExecutionBaseTestCase(testDataPath: String) : KotlinNotebookBaseTestCase(testDataPath) {
     @JvmField
     @Rule
     var timeout: TestRule = DisableOnDebug(
@@ -127,7 +127,8 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
 
             runWithJupyterSession(notebookFile) {
                 executeCells(executionTester, notebookFile)
-                setUpScriptingDependencies(myFixture)
+                setUpDependenciesSynchronously(executionTester.cellsToExecute)
+                waitForReadyIndexes(myFixture)
                 testAction()
             }
         }

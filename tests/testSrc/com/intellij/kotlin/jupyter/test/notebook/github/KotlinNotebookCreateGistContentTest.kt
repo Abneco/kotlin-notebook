@@ -14,7 +14,7 @@ import org.junit.ClassRule
 import org.junit.Test
 
 
-class KotlinNotebookCreateGistContentTest: KotlinNotebookBaseTestCase() {
+class KotlinNotebookCreateGistContentTest: KotlinNotebookBaseTestCase("") {
     companion object {
         @get:ClassRule
         @JvmStatic

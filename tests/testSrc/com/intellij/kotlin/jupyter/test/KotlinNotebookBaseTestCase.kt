@@ -2,11 +2,15 @@
 package com.intellij.kotlin.jupyter.test
 
 import com.intellij.codeInsight.lookup.LookupElement
-import com.intellij.kotlin.jupyter.test.notebook.completion.finishLookup
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.Disposer.newDisposable
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.util.concurrency.ThreadingAssertions
+import io.kotest.common.runBlocking
+import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
 import org.jetbrains.kotlin.idea.test.setUpWithKotlinPlugin
@@ -18,7 +22,28 @@ import org.junit.runners.JUnit4
 import java.io.File
 
 @RunWith(JUnit4::class)
-abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPluginModeProvider{
+abstract class KotlinNotebookBaseTestCase(private val dataPath: String) : JupyterBaseTestCase(), ExpectedPluginModeProvider {
+    protected open val notebookFile: BackedNotebookVirtualFile
+        get() = when (val file = myFixture.kotlinNotebookFile) {
+            is BackedNotebookVirtualFile -> file
+            else -> error("Null notebook file found for ${myFixture.file.virtualFile}")
+        }
+
+    override fun getBasePath(): @NonNls String {
+        return "$baseTestDataPath/$dataPath"
+    }
+
+    protected fun setUpDependenciesSynchronously(cellsToExecute: List<Int> = emptyList()) {
+        val testCaseDisposable = newDisposable(testRootDisposable, "setUpScriptingDependencies")
+        val updater = TestNotebookScriptsDependenciesUpdater(project, notebookFile, testCaseDisposable)
+        runBlocking {
+            updater.setUpDependenciesSynchronously(cellsToExecute)
+        }
+        waitForReadyIndexes(myFixture)
+
+        Disposer.dispose(testCaseDisposable)
+    }
+
     @JvmField
     @Rule
     val kotlinNotebookCommonRule = JupyterCommonRule(
@@ -48,7 +73,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
         joinCommit()
         invokeAndWaitIfNeeded {
             val firstLookupElement = myFixture?.lookupElements?.firstOrNull(filter)
-            lookup.finishLookup(mode, firstLookupElement)
+            lookup.finishLookup(mode.completionChar, firstLookupElement)
         }
         joinCommit()
     }

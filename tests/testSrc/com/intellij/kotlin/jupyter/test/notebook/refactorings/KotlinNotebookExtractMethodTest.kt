@@ -2,14 +2,11 @@
 package com.intellij.kotlin.jupyter.test.notebook.refactorings
 
 import com.intellij.codeInsight.template.impl.TemplateManagerImpl
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import com.intellij.openapi.editor.CaretState
 import com.intellij.openapi.editor.LogicalPosition
 import org.junit.Test
 
-class KotlinNotebookExtractMethodTest : RefactoringTestBase("ExtractFunction") {
-
-    override fun getTestDataPath() = "$baseTestDataPath/notebooks/refactorings/extractMethod"
+class KotlinNotebookExtractMethodTest : RefactoringTestBase("ExtractFunction", "notebooks/refactorings/extractMethod") {
 
     @Test
     fun testExtractPair() = doTest { caretModel ->

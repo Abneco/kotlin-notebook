@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.test.metaLanguage
 
 import com.intellij.kotlin.jupyter.core.language.meta.JKTMetaFileType
 import com.intellij.kotlin.jupyter.core.language.meta.grammar.JKTMetaParserDefinition
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
+import com.intellij.kotlin.jupyter.test.baseTestDataPathWithHome
 import com.intellij.testFramework.ParsingTestCase
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -14,7 +14,7 @@ class JKTMetaParserTest : ParsingTestCase("", JKTMetaFileType.EXTENSION, JKTMeta
     /**
      * @return path to test data file directory relative to root of this module.
      */
-    override fun getTestDataPath() = "$baseTestDataPath/metaLanguage/parsing"
+    override fun getTestDataPath() = "$baseTestDataPathWithHome/metaLanguage/parsing"
 
     override fun skipSpaces() = false
     override fun includeRanges() = true

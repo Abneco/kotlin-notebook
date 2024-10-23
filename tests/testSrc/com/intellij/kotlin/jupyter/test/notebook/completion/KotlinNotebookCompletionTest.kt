@@ -2,13 +2,10 @@
 package com.intellij.kotlin.jupyter.test.notebook.completion
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
-import com.intellij.kotlin.jupyter.test.baseTestDataPath
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Test
 
-class KotlinNotebookCompletionTest : KotlinNotebookBaseTestCase() {
-    override fun getTestDataPath() = "$baseTestDataPath/notebooks/completion"
-
+class KotlinNotebookCompletionTest : KotlinNotebookBaseTestCase("notebooks/completion") {
     @Test
     fun testCommandCompletion() = doTest { elements ->
         assertEquals(listOf("classpath", "help", "vars"), elements)
