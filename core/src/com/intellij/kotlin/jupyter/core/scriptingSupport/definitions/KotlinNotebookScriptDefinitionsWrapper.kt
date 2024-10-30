@@ -1,8 +1,13 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.scriptingSupport.definitions
 
+import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandler
 import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
+import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
+import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
+import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
+import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.jvm.defaultJvmScriptingHostConfiguration
 
@@ -20,6 +25,15 @@ internal sealed class KotlinNotebookScriptDefinitionsWrapper(
         scriptDefinition
     }
 
+    protected fun isNotebookInjectedScript(script: SourceCode): Boolean {
+        val virtualFile = (script as? VirtualFileScriptSource)?.virtualFile ?: return false
+
+        return when (virtualFile) {
+            is VirtualFileWindow -> virtualFile.delegate.toKotlinNotebookBackedFile() != null
+            else -> virtualFile.isKotlinNotebook
+        }
+    }
+
     abstract val compilationScriptDefinition: org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 }
 
@@ -28,10 +42,14 @@ internal class K1NotebookScriptDefinitionsWrapper(
     scriptDefinition: ScriptDefinition
 ) : KotlinNotebookScriptDefinitionsWrapper(scriptDefinition) {
     override val compilationScriptDefinition by lazy {
-        org.jetbrains.kotlin.scripting.definitions.ScriptDefinition.FromNewDefinition(
+        object : org.jetbrains.kotlin.scripting.definitions.ScriptDefinition.FromNewDefinition(
             defaultJvmScriptingHostConfiguration,
             scriptDefinitionData
-        )
+        ) {
+            init {
+                order = Int.MIN_VALUE
+            }
+        }
     }
 }
 
@@ -39,11 +57,19 @@ internal class K2NotebookScriptDefinitionsWrapper(
     scriptDefinition: ScriptDefinition
 ) : KotlinNotebookScriptDefinitionsWrapper(scriptDefinition) {
     override val compilationScriptDefinition by lazy {
-        org.jetbrains.kotlin.scripting.definitions.ScriptDefinition.FromConfigurations(
+        object : org.jetbrains.kotlin.scripting.definitions.ScriptDefinition.FromConfigurations(
             defaultJvmScriptingHostConfiguration,
             scriptDefinition.compilationConfiguration,
             scriptDefinition.evaluationConfiguration
-        )
+        ) {
+            init {
+              order = Int.MIN_VALUE
+            }
+
+            override fun isScript(script: SourceCode): Boolean {
+                return super.isScript(script) && isNotebookInjectedScript(script)
+            }
+        }
     }
 }
 

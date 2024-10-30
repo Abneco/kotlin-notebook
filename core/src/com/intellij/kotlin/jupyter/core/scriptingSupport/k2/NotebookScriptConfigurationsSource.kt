@@ -5,6 +5,7 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.projectModel.getNotebookDependenciesAsLibraryEntity
 import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
 import com.intellij.kotlin.jupyter.core.projectModel.toK2RuntimeDependencyLibraryName
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ProjectRootManager
@@ -56,6 +57,9 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
 
     override fun resolveDependencies(scripts: Iterable<KotlinNotebookScriptModel>): ScriptConfigurations {
         val sdk = ProjectRootManager.getInstance(project).projectSdk
+        if (sdk == null) {
+            thisLogger().warn("No SDK is set for the project")
+        }
 
         val configurations = scripts.associate { ktScript ->
             val virtualFile = ktScript.virtualFile
@@ -130,7 +134,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
         notebookModuleConfiguration: KotlinNotebookScriptsModuleConfigurationInfo,
         runtimeLibrary: LibraryEntity
     ) {
-        for ((scriptFile, configuration) in notebookModuleConfiguration.scripts) {
+        for ((scriptFile, _) in notebookModuleConfiguration.scripts) {
             val file = Path.of(scriptFile.path).toFile()
             val relativeLocation = file.nameWithoutExtension
 
@@ -138,8 +142,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
             val moduleName = "$NOTEBOOK_MODULE_NAME_PREFIX.$locationName"
 
             val sdkDependency =
-                configuration.javaHome?.toPath()
-                    ?.let { notebookModuleConfiguration.sdkInfo }
+                notebookModuleConfiguration.sdkInfo
                     ?.let { SdkDependency(SdkId(it.name, it.sdkType.name)) }
 
             val source = KotlinScriptEntitySource(scriptFile.toVirtualFileUrl(WorkspaceModel.getInstance(project).getVirtualFileUrlManager()))
