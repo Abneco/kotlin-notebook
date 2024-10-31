@@ -4,7 +4,6 @@ package com.intellij.kotlin.jupyter.test.notebook.refactorings
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServers
 import com.intellij.jupyter.core.jupyter.editor.JupyterDSFileEditorProvider
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
-import com.intellij.kotlin.jupyter.test.runWithJupyterSession
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.openapi.application.impl.NonBlockingReadActionImpl
@@ -50,8 +49,7 @@ abstract class RefactoringTestBase(private val refactoringActionId: String, test
     }
 
     private fun doEditorActionWithSession(psiFile: PsiFile) {
-        runWithJupyterSession(psiFile) {
-            setUpDependenciesSynchronously(emptyList())
+        doTestWithJupyterSessionAndBaseDependencies(psiFile) {
             myFixture.performEditorAction(refactoringActionId)
 
             invokeAndWaitIfNeeded {

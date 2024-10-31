@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.test.notebook.execution
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.jupyter.core.jackson
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServers
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
@@ -14,18 +13,23 @@ import com.intellij.kotlin.jupyter.test.waitForReadyIndexes
 import com.intellij.kotlin.jupyter.test.withDisabledJcef
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
+import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.projectRoots.ProjectJdkTable
+import com.intellij.openapi.projectRoots.Sdk
+import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.resolve.FileContextUtil
+import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.TestLoggerFactory
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.util.containers.forEachGuaranteed
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
+import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Rule
 import org.junit.jupiter.api.Assertions
@@ -75,7 +79,6 @@ abstract class KotlinNotebookExecutionBaseTestCase(testDataPath: String) : Kotli
 
     override fun setUp() {
         super.setUp()
-        Disposer.register(testRootDisposable, JupyterServers.getInstance())
     }
 
     @Suppress("MoveLambdaOutsideParentheses")
@@ -115,13 +118,31 @@ abstract class KotlinNotebookExecutionBaseTestCase(testDataPath: String) : Kotli
         val notebookFile = runReadAction {
             FileContextUtil.getFileContext(myFixture.file)?.containingFile ?: myFixture.file
         }
+        if (pluginMode == KotlinPluginMode.K2) {
+            setUpProjectSDK()
+        }
+
         return notebookFile
+    }
+
+    protected fun setUpProjectSDK(sdk: Sdk = IdeaTestUtil.getMockJdk18()) {
+        invokeAndWaitIfNeeded {
+            WriteAction.run<Throwable> {
+                val registeredJdk = ProjectJdkTable.getInstance().findJdk(sdk.name)
+                if (registeredJdk == null) {
+                    ProjectJdkTable.getInstance().addJdk(sdk, myFixture.projectDisposable)
+
+                    ProjectRootManager.getInstance(project).projectSdk = sdk
+                }
+            }
+        }
     }
 
     protected fun doTestAfterExecution(
         executionTester: ReceivedMessagesTester,
         testAction: () -> Unit
     ) {
+
         withDisabledJcef {
             val notebookFile = configureExecutionTest(copyNotebookToProject = false)
 

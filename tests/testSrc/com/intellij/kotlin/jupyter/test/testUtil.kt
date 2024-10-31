@@ -41,6 +41,7 @@ import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
@@ -67,6 +68,16 @@ fun PsiFile.getCells(): List<JupyterPsiCell> = descendantsOfType<JupyterPsiCell>
 fun PsiFile.isInjectedKtFile(): Boolean = name.endsWith("kts")
 
 val defaultTestDuration = 3.minutes
+
+val currentKotlinPluginMode: KotlinPluginMode
+    get() {
+        val vmValue = System.getProperty("idea.kotlin.plugin.use.k2") ?: return KotlinPluginMode.K1
+
+        return when (vmValue) {
+            "true" -> KotlinPluginMode.K2
+            else -> KotlinPluginMode.K1
+        }
+    }
 
 fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     val project = notebookFile.project

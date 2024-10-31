@@ -1,9 +1,9 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.completion
 
+import com.intellij.kotlin.jupyter.core.util.toPsiFile
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
 import com.intellij.kotlin.jupyter.test.LookupFinishMode
-import com.intellij.kotlin.jupyter.test.setUpScriptingDependencies
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
@@ -82,17 +82,17 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase("notebooks/a
     private val lookupStrings: List<String> get() = myFixture?.lookupElementStrings.orEmpty()
 
     private fun doTest(action: (CompletionAutoPopupTester) -> Unit) {
-        myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
-        invokeAndWaitIfNeeded {
+        val notebookFile = myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
+        val psiFile = invokeAndWaitIfNeeded {
             myFixture.editor.setMode(NotebookEditorMode.EDIT)
+            notebookFile.file.toPsiFile(project)!!
         }
-        originalVirtualFile = myFixture.file.virtualFile
 
-        setUpScriptingDependencies(myFixture)
-
-        val completionTester = CompletionAutoPopupTester(myFixture)
-        completionTester.runWithAutoPopupEnabled {
-            action(completionTester)
+        doTestWithJupyterSessionAndBaseDependencies(psiFile) {
+            val completionTester = CompletionAutoPopupTester(myFixture)
+            completionTester.runWithAutoPopupEnabled {
+                action(completionTester)
+            }
         }
     }
 

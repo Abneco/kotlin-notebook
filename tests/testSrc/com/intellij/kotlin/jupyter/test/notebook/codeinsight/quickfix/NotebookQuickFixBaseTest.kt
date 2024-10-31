@@ -6,7 +6,6 @@ import com.intellij.codeInsight.intention.IntentionActionDelegate
 import com.intellij.kotlin.jupyter.test.getCells
 import com.intellij.kotlin.jupyter.test.isInjectedKtFile
 import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
-import com.intellij.kotlin.jupyter.test.setUpScriptingDependencies
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.command.CommandProcessor
@@ -111,18 +110,26 @@ abstract class NotebookQuickFixBaseTest(testDataPath: String) : KotlinNotebookEx
         KotlinTestHelpers.registerChooserInterceptor(myFixture.testRootDisposable)
 
         val notebookFile = configureExecutionTest()
-        // todo: move call inside KotlinNotebookExecutionBaseTestCase
-        setUpScriptingDependencies(myFixture)
-        val cells = notebookFile.getCells()
-        val neededCell = (if (cellInd != null) cells.getOrNull(cellInd) else null) ?: error("Invalid cell index provided")
-
-        val injectedFile = ReadAction.compute<PsiFile, Throwable> {
-            (InjectedLanguageManager.getInstance(project)
-                .getInjectedPsiFiles(neededCell)?.firstOrNull { it.first.containingFile.isInjectedKtFile() }?.first as? PsiFile)
-        } ?: error("No suitable KtFile found in a host")
+        val injectedFile = getInjectedFile(notebookFile, cellInd) ?: error("No suitable KtFile found in a host")
         val rawContent = FileUtil.loadFile(getTestFile(".ipynb"), true)
 
-        doKotlinQuickFixTest(injectedFile, rawContent)
+        doTestWithJupyterSessionAndBaseDependencies(notebookFile) {
+            doKotlinQuickFixTest(injectedFile, rawContent)
+        }
+    }
+
+    protected fun getInjectedFile(notebookFile: PsiFile, targetCellInd: Int? = null): PsiFile? {
+        val cells = notebookFile.getCells()
+        val neededCell = if (targetCellInd != null) {
+            cells.getOrNull(targetCellInd)!!
+        } else {
+            error("Invalid cell index provided")
+        }
+
+        return ReadAction.compute<PsiFile, Throwable> {
+            (InjectedLanguageManager.getInstance(project)
+                .getInjectedPsiFiles(neededCell)?.firstOrNull { it.first.containingFile.isInjectedKtFile() }?.first as? PsiFile)
+        }
     }
 
 }

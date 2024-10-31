@@ -113,7 +113,7 @@ fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
     takeIfBacked(this) ?: find(this)
 
 @RequiresReadLock
-internal fun VirtualFile.toPsiFile(project: Project): PsiFile? =
+fun VirtualFile.toPsiFile(project: Project): PsiFile? =
     PsiManager.getInstance(project).findFile(this)
 
 internal fun PsiFile.toDocument(): Document? =

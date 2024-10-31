@@ -24,26 +24,6 @@ class KotlinNotebookCompletionWithImportK1Test : AbstractKotlinNotebookCompletio
             it.lookupString.contains("DASHED")
         }
 
-        //val handler = CodeCompletionHandlerBase.createHandler(CompletionType.BASIC)
-        //
-        //handler.invokeCompletion(myFixture.project, myFixture.editor, 1)
-        //val element = myFixture.lookupElements.orEmpty().first { it.lookupString.contains("DASHED") }
-        //myFixture.lookup.currentItem = element
-        //runInEdtAndWait {
-        //    myFixture.finishLookup(com.intellij.codeInsight.lookup.Lookup.NORMAL_SELECT_CHAR)
-        //}
-
-/*        myFixture.completeBasic()
-        val filter = myFixture.lookupElements.orEmpty().first { it.lookupString.contains("DASHED") }
-        myFixture.lookup.currentItem = filter
-        runInEdtAndWait {
-            myFixture.finishLookup(com.intellij.codeInsight.lookup.Lookup.NORMAL_SELECT_CHAR)
-        }*/
-
-
-        //tester.typeAndFinishLookup("DASH") {
-        //    it.lookupString.contains("DASHED")
-        //}
         assertActualText(
             """
             plot {

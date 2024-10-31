@@ -17,6 +17,9 @@ import java.util.concurrent.atomic.AtomicInteger
  * Main class for updating scripting using our update scheduling logic
  * for both K1 and K2 modes.
  *
+ * [cellsToExecute] is the minimum estimate of updates needed, given that very first one
+ * is for initial dependencies
+ *
  * Use this class if [junit.framework.TestCase] requires any scripting dependencies.
  */
 class TestNotebookScriptsDependenciesUpdater(
@@ -32,7 +35,7 @@ class TestNotebookScriptsDependenciesUpdater(
     }
 
     private val scriptsUpdateCompleted = MutableStateFlow(false)
-    private val scriptingUpdatesLeft = AtomicInteger(1)
+    private val scriptingUpdatesLeft = AtomicInteger(cellsToExecute)
 
     /**
      * Processes events about scripts changes after updates.
@@ -70,10 +73,8 @@ class TestNotebookScriptsDependenciesUpdater(
 
     /**
      * Performs scripting updates and waits for their completion.
-     * [cellsToExecute] is an minimum estimate of updates needed, given that very first one
-     * is for initial dependencies
      */
-    suspend fun setUpDependenciesSynchronously(cellsToExecute: List<Int> = emptyList()) {
+    suspend fun setUpDependenciesSynchronously() {
         try {
             val updatesFromCells = if (cellsToExecute.isNotEmpty()) 1 else 0
             scriptingUpdatesLeft.set(1 + updatesFromCells)
@@ -91,8 +92,6 @@ class TestNotebookScriptsDependenciesUpdater(
         } catch (ex: Exception) {
             LOG.warn("Exception while updating dependencies", ex)
             throw ex
-        } finally {
-            scriptsUpdateCompleted.value = true
         }
     }
 

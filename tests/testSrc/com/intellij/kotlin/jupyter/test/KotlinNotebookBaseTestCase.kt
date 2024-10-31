@@ -3,10 +3,12 @@ package com.intellij.kotlin.jupyter.test
 
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServers
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Disposer.newDisposable
+import com.intellij.psi.PsiFile
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.util.concurrency.ThreadingAssertions
 import io.kotest.common.runBlocking
@@ -33,11 +35,19 @@ abstract class KotlinNotebookBaseTestCase(private val dataPath: String) : Jupyte
         return "$baseTestDataPath/$dataPath"
     }
 
+    protected fun doTestWithJupyterSessionAndBaseDependencies(psiFile: PsiFile,  action: () -> Unit) {
+        runWithJupyterSession(psiFile) {
+            setUpDependenciesSynchronously(emptyList())
+            action()
+        }
+    }
+
     protected fun setUpDependenciesSynchronously(cellsToExecute: List<Int> = emptyList()) {
         val testCaseDisposable = newDisposable(testRootDisposable, "setUpScriptingDependencies")
-        val updater = TestNotebookScriptsDependenciesUpdater(project, notebookFile, testCaseDisposable)
+        val cellEstimation = 1 + cellsToExecute.size
+        val updater = TestNotebookScriptsDependenciesUpdater(project, notebookFile, testCaseDisposable, cellEstimation)
         runBlocking {
-            updater.setUpDependenciesSynchronously(cellsToExecute)
+            updater.setUpDependenciesSynchronously()
         }
         waitForReadyIndexes(myFixture)
 
@@ -53,10 +63,11 @@ abstract class KotlinNotebookBaseTestCase(private val dataPath: String) : Jupyte
     )
 
     override val pluginMode: KotlinPluginMode
-        get() = KotlinPluginMode.K1
+        get() = currentKotlinPluginMode
 
     override fun setUp() {
         setUpWithKotlinPlugin { super.setUp() }
+        Disposer.register(testRootDisposable, JupyterServers.getInstance())
     }
 
     fun getTestFile(suffix: String): File {
