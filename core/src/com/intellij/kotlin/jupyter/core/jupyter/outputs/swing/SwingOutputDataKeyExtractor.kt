@@ -8,7 +8,7 @@ import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDat
 import com.intellij.jupyter.core.jupyter.nbformat.DisplayDataContainer
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded.InMemoryReplResultsHolderService
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
-import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.api.InMemoryMimeTypes
 
@@ -36,7 +36,7 @@ class SwingOutputDataKeyExtractor : NotebookDisplayOutputDataKeyExtractor {
     }
 
     override fun extractKey(
-        editor: EditorImpl,
+        editor: Editor,
         file: BackedNotebookVirtualFile?,
         data: DisplayDataContainer,
         executionCount: Int?,

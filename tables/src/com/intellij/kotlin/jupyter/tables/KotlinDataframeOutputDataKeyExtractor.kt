@@ -19,6 +19,7 @@ import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
 import com.intellij.notebooks.visualization.outputs.NotebookOutputDataKey
 import com.intellij.notebooks.visualization.outputs.NotebookOutputDataKeyExtractor
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.scientific.tables.api.DSTableDataType
 import com.intellij.scientific.tables.api.DSTableText
@@ -31,12 +32,12 @@ import org.jetbrains.kotlin.idea.KotlinLanguage
 class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
     private val jupyterDelegate: JupyterOutputDataKeyExtractor = JupyterOutputDataKeyExtractor()
 
-    override fun extract(editor: EditorImpl, interval: NotebookCellLines.Interval): List<NotebookOutputDataKey>? {
+    override fun extract(editor: Editor, interval: NotebookCellLines.Interval): List<NotebookOutputDataKey>? {
         val res = when {
             !KotlinNotebookApplicationOptions.get().showDataFrameAsSwing -> null
             !editor.isJupyter -> null
             interval.language != KotlinLanguage.INSTANCE -> null
-            else -> extractImpl(editor, interval)
+            else -> extractImpl(editor as EditorImpl, interval)
         }
 
         if (res.isNullOrEmpty()) return null

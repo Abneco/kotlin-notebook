@@ -11,7 +11,7 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOption
 import com.intellij.kotlin.jupyter.core.util.LETS_PLOT_MIME
 import com.intellij.kotlin.jupyter.core.util.convertObject
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
-import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.openapi.editor.Editor
 import com.intellij.util.asSafely
 
 
@@ -25,12 +25,12 @@ class PlotDataKeyExtractor: NotebookDisplayOutputDataKeyExtractor {
         val dataObject = data.toV4Json()
         if (!dataObject.has(LETS_PLOT_MIME)) return null
         val plotValue = dataObject[LETS_PLOT_MIME].asSafely<ObjectNode>() ?: return null
-        val swingEnabled = plotValue[SWING_ENABLED_KEY].asSafely<BooleanNode>()?.asBoolean() ?: true
+        val swingEnabled = plotValue[SWING_ENABLED_KEY].asSafely<BooleanNode>()?.asBoolean() != false
         if (!swingEnabled) return null
         val plotType = plotValue[PLOT_TYPE_KEY].asSafely<TextNode>()?.asText() ?: return null
         return when(plotType) {
             "lets_plot_spec" -> plotValue["output"].asSafely<ObjectNode>()?.let { outputSpec ->
-                val applyColorScheme = plotValue[APPLY_COLOR_SCHEME_KEY].asSafely<BooleanNode>()?.asBoolean() ?: true
+                val applyColorScheme = plotValue[APPLY_COLOR_SCHEME_KEY].asSafely<BooleanNode>()?.asBoolean() != false
                 LetsPlotOutputDataKey(
                     convertObject(outputSpec),
                     executionCount,
@@ -42,7 +42,7 @@ class PlotDataKeyExtractor: NotebookDisplayOutputDataKeyExtractor {
     }
 
     override fun extractKey(
-        editor: EditorImpl,
+        editor: Editor,
         file: BackedNotebookVirtualFile?,
         data: DisplayDataContainer,
         executionCount: Int?,
