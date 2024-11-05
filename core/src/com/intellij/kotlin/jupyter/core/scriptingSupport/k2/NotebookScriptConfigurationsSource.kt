@@ -55,7 +55,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
     override fun getScriptDefinitionsSource(): ScriptDefinitionsSource? =
         project.scriptDefinitionsSourceOfType<KotlinNotebookScriptDefinitionsSource>()
 
-    override fun resolveDependencies(scripts: Iterable<KotlinNotebookScriptModel>): ScriptConfigurations {
+    override suspend fun resolveDependencies(scripts: Iterable<KotlinNotebookScriptModel>): ScriptConfigurations {
         val sdk = ProjectRootManager.getInstance(project).projectSdk
         if (sdk == null) {
             thisLogger().warn("No SDK is set for the project")
