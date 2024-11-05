@@ -5,11 +5,16 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.UpdateState
+import com.intellij.kotlin.jupyter.test.scripting.PostScriptingUpdateKotlinModeAwareHandler
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
+import com.intellij.testFramework.fixtures.CodeInsightTestFixture
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -25,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class TestNotebookScriptsDependenciesUpdater(
     private val project: Project,
     private val notebookFile: BackedNotebookVirtualFile,
+    private val cellsToExecute: Int,
     parentDisposable: Disposable
 ) {
     init {
@@ -32,9 +38,11 @@ class TestNotebookScriptsDependenciesUpdater(
             NotebookScriptsStateListener.TOPIC,
             ScriptingUpdateListener()
         )
+
+        JupyterCompilerService.getInstance(project).requestScriptingUpdate()
     }
 
-    private val scriptsUpdateCompleted = MutableStateFlow(false)
+    private val scriptsUpdateCompleted = MutableSharedFlow<Boolean>()
     private val scriptingUpdatesLeft = AtomicInteger(cellsToExecute)
 
     /**
@@ -58,36 +66,45 @@ class TestNotebookScriptsDependenciesUpdater(
         }
 
         private fun updateCompleted() {
-            if (scriptsUpdateCompleted.compareAndSet(false, true)) {
-                scriptingUpdatesLeft.decrementAndGet()
-                LOG.debug("Scripts changed for file $notebookFile, releasing lock")
+            val counter = scriptingUpdatesLeft.get()
+            if (counter <= 0) {
+                return
+            }
+
+            if (counter == 1) {
+                scriptsUpdateCompleted.tryEmit(true)
+            } else {
+                scriptingUpdatesLeft.set(counter - 1)
+                JupyterCompilerService.getInstance(project).requestScriptingUpdate()
             }
         }
 
         private fun updateNotCompleted() {
-            if (scriptsUpdateCompleted.value) {
-                scriptingUpdatesLeft.incrementAndGet()
-            }
+            scriptsUpdateCompleted.tryEmit(false)
+            scriptingUpdatesLeft.incrementAndGet()
         }
     }
 
     /**
      * Performs scripting updates and waits for their completion.
      */
-    suspend fun setUpDependenciesSynchronously() {
+    suspend fun setUpDependenciesSynchronously(testFixture: CodeInsightTestFixture) {
         try {
-            val updatesFromCells = if (cellsToExecute.isNotEmpty()) 1 else 0
-            scriptingUpdatesLeft.set(1 + updatesFromCells)
+            scriptingUpdatesLeft.set(cellsToExecute)
 
-            // Loop until all updates are completed
-            while (scriptingUpdatesLeft.get() > 0) {
-                // Indicate that a new iteration of the update is pending
-                scriptsUpdateCompleted.value = false
+             //Loop until all updates are completed
+            scriptsUpdateCompleted.takeWhile { value: Boolean ->
+                if (value) {
+                    true
+                } else {
+                    JupyterCompilerService.getInstance(project).requestScriptingUpdate()
+                    false
+                }
+            }
 
-                scriptsUpdateCompleted.first { it }
-
-                // Schedule new update request
-                JupyterCompilerService.getInstance(project).requestScriptingUpdate()
+            // Index is up to date, invoke needed handler
+            withContext(Dispatchers.EDT) {
+                PostScriptingUpdateKotlinModeAwareHandler.handleAfterScriptingUpdate(testFixture)
             }
         } catch (ex: Exception) {
             LOG.warn("Exception while updating dependencies", ex)

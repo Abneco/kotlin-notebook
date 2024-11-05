@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.test.notebook.codeinsight.quickfix.extension
 import com.intellij.kotlin.jupyter.test.notebook.codeinsight.quickfix.NotebookQuickFixBaseTest
 import org.junit.Test
 
+//@Ignore
 class NotebookQuickFixIntentionsExtensionTest : NotebookQuickFixBaseTest("extensions") {
     @Test
     fun testExtensionForClass() {

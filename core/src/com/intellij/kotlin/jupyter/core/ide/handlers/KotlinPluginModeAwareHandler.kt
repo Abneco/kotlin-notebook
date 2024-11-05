@@ -21,7 +21,7 @@ interface KotlinPluginModeAwareHandler
 val isK2ModeEnabled: Boolean
     get() = KotlinPluginModeProvider.isK2Mode()
 
-internal inline fun <A, T> createPluginModeAwareInstance(
+inline fun <A, T> createPluginModeAwareInstance(
     arguments: A,
     k1InstanceFactory: (A) -> T,
     k2InstanceFactory: (A) -> T

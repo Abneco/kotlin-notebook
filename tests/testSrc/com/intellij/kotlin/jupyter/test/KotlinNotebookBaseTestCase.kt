@@ -45,9 +45,9 @@ abstract class KotlinNotebookBaseTestCase(private val dataPath: String) : Jupyte
     protected fun setUpDependenciesSynchronously(cellsToExecute: List<Int> = emptyList()) {
         val testCaseDisposable = newDisposable(testRootDisposable, "setUpScriptingDependencies")
         val cellEstimation = 1 + cellsToExecute.size
-        val updater = TestNotebookScriptsDependenciesUpdater(project, notebookFile, testCaseDisposable, cellEstimation)
+        val updater = TestNotebookScriptsDependenciesUpdater(project, notebookFile, cellEstimation, testCaseDisposable)
         runBlocking {
-            updater.setUpDependenciesSynchronously()
+            updater.setUpDependenciesSynchronously(myFixture)
         }
         waitForReadyIndexes(myFixture)
 
@@ -83,7 +83,10 @@ abstract class KotlinNotebookBaseTestCase(private val dataPath: String) : Jupyte
         typeWithPauses(string)
         joinCommit()
         invokeAndWaitIfNeeded {
-            val firstLookupElement = myFixture?.lookupElements?.firstOrNull(filter)
+            // updating HL should update configurations
+            myFixture.doHighlighting()
+            val elements = myFixture.completeBasic()
+            val firstLookupElement = elements.firstOrNull(filter)
             lookup.finishLookup(mode.completionChar, firstLookupElement)
         }
         joinCommit()

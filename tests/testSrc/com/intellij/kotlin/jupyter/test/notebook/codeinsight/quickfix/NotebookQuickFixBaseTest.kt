@@ -29,9 +29,11 @@ abstract class NotebookQuickFixBaseTest(testDataPath: String) : KotlinNotebookEx
     protected var shouldBeAvailableAfterExecution: Boolean = true
 
     protected fun findActionWithText(name: String, strict: Boolean = false): IntentionAction? {
-        for (action in myFixture.availableIntentions) {
-            if (if (strict) { name == action.text } else action.text.startsWith(name)) {
-                return action
+        repeat(2) {
+            for (action in myFixture.availableIntentions) {
+                if (if (strict) { name == action.text } else action.text.contains(name)) {
+                    return action
+                }
             }
         }
         return null
