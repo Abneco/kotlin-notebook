@@ -83,8 +83,6 @@ abstract class KotlinNotebookBaseTestCase(private val dataPath: String) : Jupyte
         typeWithPauses(string)
         joinCommit()
         invokeAndWaitIfNeeded {
-            // updating HL should update configurations
-            myFixture.doHighlighting()
             val elements = myFixture.completeBasic()
             val firstLookupElement = elements.firstOrNull(filter)
             lookup.finishLookup(mode.completionChar, firstLookupElement)

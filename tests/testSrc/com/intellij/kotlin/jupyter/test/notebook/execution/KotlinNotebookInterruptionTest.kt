@@ -33,6 +33,8 @@ class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest() {
     @Rule
     val stopExecutionOnFailureRule = StopExecutionOnFailureRule(false)
 
+    // From JDK21+ it is no longer possible to interrupt at Thread from the outside.
+    // It is only possible if the Tread itself is listening for the interrupt flag.
     @Test
     fun testInterruption() {
         val sessionDeferred = getSessionDeferred(project, testRootDisposable)
