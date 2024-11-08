@@ -73,5 +73,6 @@
     <orderEntry type="module" module-name="intellij.notebooks.ui" />
     <orderEntry type="module" module-name="intellij.notebooks.visualization" />
     <orderEntry type="module" module-name="kotlin.base.plugin" />
+    <orderEntry type="module" module-name="intellij.java.debugger.impl.shared" />
   </component>
 </module>
