@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.test
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.extensions.JupyterPsiCellExt.getJupyterBackedVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionQueueManager
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionTask
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
@@ -26,6 +25,7 @@ import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
 import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory
 import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.application.impl.NonBlockingReadActionImpl.waitForAsyncTaskCompletion
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
@@ -37,12 +37,14 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.util.descendantsOfType
 import com.intellij.testFramework.HeavyTestHelper
 import com.intellij.testFramework.IndexingTestUtil
+import com.intellij.testFramework.PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.configuration.DefaultScriptingSupport
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
@@ -105,6 +107,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
     val document = PsiDocumentManager.getInstance(project).getDocument(notebookFile)!!
     val executionManager = JupyterExecutionQueueManager.getInstance(project)
     val notebookCells = notebookFile.getCells()
+    val backedNotebookFile = notebookFile.virtualFile.toKotlinNotebookBackedFile()!!
     val cellsCount = notebookCells.size
     Assertions.assertEquals(tester.expectedCellsCount, cellsCount)
 
@@ -157,7 +160,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
                             messages.outputs.add(message)
                         }
                     }, executionCallback),
-                  notebookVirtualFile = cell.getJupyterBackedVirtualFile()!!,
+                  notebookVirtualFile = backedNotebookFile,
                   project = project
                 )
             task
@@ -230,21 +233,23 @@ fun waitForReadyIndexes(fixture: CodeInsightTestFixture) {
     }
 }
 
-fun setUpScriptingDependencies(fixture: CodeInsightTestFixture) {
-    val ktFiles = when(val psiFile = fixture.file) {
-        is KtFile -> {
-            listOf(psiFile)
-        }
-        is JupyterFile -> {
-            runReadAction { psiFile.getInjectedKtFiles() }
-        }
-        is JKTMetaPSIFile -> {
-            return
-        }
-        else -> {
-            error("Only KtFiles are expected, file passed: ${psiFile}")
-        }
+fun PsiFile.getKtFiles(): List<KtFile>? = when(val psiFile = this) {
+    is KtFile -> {
+        listOf(psiFile)
     }
+    is JupyterFile -> {
+        runReadAction { psiFile.getInjectedKtFiles() }
+    }
+    is JKTMetaPSIFile -> {
+        null
+    }
+    else -> {
+        error("Only KtFiles are expected, file passed: ${psiFile}")
+    }
+}
+
+fun setUpScriptingDependencies(fixture: CodeInsightTestFixture) {
+    val ktFiles = fixture.file.getKtFiles() ?: return
 
     runInEdtAndWait {
         IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
@@ -256,6 +261,27 @@ fun setUpScriptingDependencies(fixture: CodeInsightTestFixture) {
             }
         }
         IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
+    }
+}
+
+/**
+ * In production code, we make sure configurations are warmed up during the highlighting.
+ * This is especially important for K1 mode
+ */
+fun ensureScriptConfigurations(fixture: CodeInsightTestFixture) {
+    val ktFiles = fixture.file.getKtFiles() ?: return
+
+    runInEdtAndWait {
+        IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
+        runReadAction {
+            for (file in ktFiles) {
+                DefaultScriptingSupport.getInstance(fixture.project)
+                    .getOrLoadConfiguration(file.virtualFile, null)
+            }
+        }
+
+        dispatchAllInvocationEventsInIdeEventQueue()
+        waitForAsyncTaskCompletion()
     }
 }
 

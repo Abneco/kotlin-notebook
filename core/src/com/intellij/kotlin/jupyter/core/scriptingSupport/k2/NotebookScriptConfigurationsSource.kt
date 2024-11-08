@@ -58,7 +58,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
     override suspend fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
         val sdk = ProjectRootManager.getInstance(project).projectSdk
         if (sdk == null) {
-            thisLogger().warn("No SDK is set for the project")
+            thisLogger().warn("No JDK SDK is set for the project")
         }
 
         val configurations = scripts.associate { ktScript ->

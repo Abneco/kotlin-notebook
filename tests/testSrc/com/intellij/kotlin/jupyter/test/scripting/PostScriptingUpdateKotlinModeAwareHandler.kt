@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.test.scripting
 
 import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
-import com.intellij.kotlin.jupyter.test.setUpScriptingDependencies
+import com.intellij.kotlin.jupyter.test.ensureScriptConfigurations
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 
 /**
@@ -21,7 +21,7 @@ fun interface PostScriptingUpdateKotlinModeAwareHandler {
 
         // Required to provide script configurations into base cache
         private fun createK1Handler(testFixture: CodeInsightTestFixture) = PostScriptingUpdateKotlinModeAwareHandler {
-            setUpScriptingDependencies(testFixture)
+            ensureScriptConfigurations(testFixture)
         }
 
         private fun createK2Handler(testFixture: CodeInsightTestFixture) = PostScriptingUpdateKotlinModeAwareHandler {}

@@ -7,7 +7,6 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProc
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.test.runners.TestContext
-import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.waitForSmartMode
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
@@ -115,7 +114,7 @@ class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
     // KTNB-552
     @Test
     fun testSetupInDefaultProject() {
-        val project = ProjectManager.getInstance().defaultProject
+        val project = myFixture.project
         runBlocking {
             try {
                 project.waitForSmartMode()

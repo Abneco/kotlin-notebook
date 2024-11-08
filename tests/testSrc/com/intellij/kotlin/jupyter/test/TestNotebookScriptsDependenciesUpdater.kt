@@ -71,7 +71,7 @@ class TestNotebookScriptsDependenciesUpdater(
                 return
             }
 
-            if (counter == 1) {
+            if (counter == 1) { // it's the last update
                 scriptsUpdateCompleted.tryEmit(true)
             } else {
                 scriptingUpdatesLeft.set(counter - 1)
@@ -96,13 +96,13 @@ class TestNotebookScriptsDependenciesUpdater(
             scriptsUpdateCompleted.takeWhile { value: Boolean ->
                 if (value) {
                     true
-                } else {
+                } else { // incomplete update handling
                     JupyterCompilerService.getInstance(project).requestScriptingUpdate()
                     false
                 }
             }
 
-            // Index is up to date, invoke needed handler
+            // Index is up to date, invoke post-handler
             withContext(Dispatchers.EDT) {
                 PostScriptingUpdateKotlinModeAwareHandler.handleAfterScriptingUpdate(testFixture)
             }

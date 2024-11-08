@@ -4,7 +4,9 @@ package com.intellij.kotlin.jupyter.test.notebook.conversion
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
 import com.intellij.kotlin.jupyter.test.cartesianProduct
 import com.intellij.openapi.actionSystem.IdeActions
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import org.jetbrains.kotlin.idea.conversion.copy.ConvertTextJavaCopyPasteProcessor
 import org.jetbrains.kotlin.idea.editor.KotlinEditorOptions
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
@@ -33,6 +35,10 @@ class J2KConversionTest(
 ) : KotlinNotebookTransformerBaseTestCase("notebooks/conversion") {
     @Test
     fun testSimpleConversion() = doTest()
+
+    override fun runInDispatchThread(): Boolean {
+        return false
+    }
 
     companion object {
         @Parameterized.Parameters(name = "{index}. Parameters: <{0}>, <{1}>")
@@ -73,11 +79,9 @@ class J2KConversionTest(
             val javaCode = File(testDataPath).resolve("${myTestName()}.txt").readText()
 
             if (fromJavaFile.value) {
-                val javaPsi = myFixture.addFileToProject("MyJavaFile.java", javaCode)
-                myFixture.openFileInEditor(javaPsi.virtualFile)
-                myFixture.performEditorAction(IdeActions.ACTION_SELECT_ALL)
-                myFixture.performEditorAction(IdeActions.ACTION_COPY)
-                myFixture.openFileInEditor(notebookFile.file)
+                invokeAndWaitIfNeeded {
+                    copyContentFromJavaFile(javaCode)
+                }
             } else {
                 CopyPasteManager.getInstance().setContents(StringSelection(javaCode))
             }
@@ -89,6 +93,15 @@ class J2KConversionTest(
             myFixture.performEditorAction(IdeActions.ACTION_PASTE)
         }
     }
+
+    @RequiresEdt
+    private fun copyContentFromJavaFile(javaFile: String) {
+        val javaPsi = myFixture.addFileToProject("MyJavaFile.java", javaFile)
+        myFixture.openFileInEditor(javaPsi.virtualFile)
+        myFixture.performEditorAction(IdeActions.ACTION_SELECT_ALL)
+        myFixture.performEditorAction(IdeActions.ACTION_COPY)
+    }
+
 
     private fun String.prepareText() = lines().joinToString("\n") { it.trimEnd() }
 }

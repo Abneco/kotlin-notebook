@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.test
 
 import com.intellij.injected.editor.DocumentWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.util.toPsiFile
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
@@ -36,17 +37,21 @@ abstract class KotlinNotebookTransformerBaseTestCase(testDataPath: String) : Kot
     ) {
         myFixture.setCaresAboutInjection(testOptions.caresAboutInjection)
         _notebookFile = notebookFactory()
-      invokeAndWaitIfNeeded {
-        myFixture.editor.setMode(NotebookEditorMode.EDIT)
-      }
+
+        val notebookPsiFile = invokeAndWaitIfNeeded {
+            myFixture.editor.setMode(NotebookEditorMode.EDIT)
+            _notebookFile?.file?.toPsiFile(project)!!
+        }
         originalVirtualFile = myFixture.file.virtualFile
-      setUpScriptingDependencies(myFixture)
 
         if (!testOptions.caresAboutInjection) {
             // Cache injection on current offset
             InjectedLanguageManager.getInstance(project).findInjectedElementAt(myFixture.file, myFixture.caretOffset)
         }
-        transformer()
+
+        doTestWithJupyterSessionAndBaseDependencies(notebookPsiFile) {
+            transformer()
+        }
 
         val doc = myFixture.editor.document
         val docToCheck = if (testOptions.checkTopLevelDocument && doc is DocumentWindow) {
@@ -56,8 +61,8 @@ abstract class KotlinNotebookTransformerBaseTestCase(testDataPath: String) : Kot
         }
 
         val actualText = runReadAction {
-          docToCheck.text
+            docToCheck.text
         }.replace("\r\n", "\n")
-      assertEquals(expectedDocumentText, actualText)
+        assertEquals(expectedDocumentText, actualText)
     }
 }

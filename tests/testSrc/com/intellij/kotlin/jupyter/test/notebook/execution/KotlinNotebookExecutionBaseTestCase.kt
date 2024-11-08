@@ -118,6 +118,7 @@ abstract class KotlinNotebookExecutionBaseTestCase(testDataPath: String) : Kotli
         val notebookFile = runReadAction {
             FileContextUtil.getFileContext(myFixture.file)?.containingFile ?: myFixture.file
         }
+        // since JDK is considered as a module dependency in K2, it should be provided in the project
         if (pluginMode == KotlinPluginMode.K2) {
             setUpProjectSDK()
         }
