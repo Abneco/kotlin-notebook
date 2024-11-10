@@ -6,7 +6,7 @@ import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsActions.ActionText
 
-private val isKernelProcessEmbeddingEnabled by registryFlag("kotlin.notebook.allow.embedded.kernel", false)
+private val isKernelProcessEmbeddingEnabled by registryFlag("kotlin.notebook.allow.embedded.kernel", true)
 private val isKernelAttachedModeEnabled by registryFlag("kotlin.notebook.allow.attached.kernel", false)
 
 val isKernelRunModeSelectionEnabled get() = isKernelProcessEmbeddingEnabled || isKernelAttachedModeEnabled

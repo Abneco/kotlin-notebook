@@ -148,7 +148,7 @@
         <registryKey key="lets.plot.swing.outputs.enabled" defaultValue="true"
                      description="When enabled, outputs of LetsPlot plotting library in Kotlin Notebooks will be rendered using no-browser approach. Deprecated, use Kotlin Notebook options"/>
 
-        <registryKey key="kotlin.notebook.allow.embedded.kernel" defaultValue="false"
+        <registryKey key="kotlin.notebook.allow.embedded.kernel" defaultValue="true"
                      description="When enabled, Kotlin Notebook sessions can be run inside the IDE process"/>
 
         <registryKey key="kotlin.notebook.allow.attached.kernel" defaultValue="false"
