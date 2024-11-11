@@ -23,6 +23,7 @@ import kotlinx.coroutines.async
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.k2.K2ScriptDefinitionProvider
+import org.jetbrains.kotlin.idea.core.script.scriptConfigurationsSourceOfType
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import kotlin.script.experimental.api.valueOrNull
@@ -81,7 +82,7 @@ class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) 
     private fun clearRuntimeDependenciesFor(notebookFile: BackedNotebookVirtualFile) {
         val scope = KotlinNotebookPluginScope.getForProject(project)
         scope.async {
-            NotebookScriptConfigurationsSource.getInstance(project)
+            project.scriptConfigurationsSourceOfType<NotebookScriptConfigurationsSource>()
                 ?.clearNotebookLibraryDependencies(
                     notebookFile
                 )
@@ -151,7 +152,7 @@ class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) 
             scripts.addAll(perFileScripts)
         }
 
-        NotebookScriptConfigurationsSource.getInstance(project)
+        project.scriptConfigurationsSourceOfType<NotebookScriptConfigurationsSource>()
             ?.updateDependenciesAndCreateModules(
                 scripts
             )

@@ -55,7 +55,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
     override fun getScriptDefinitionsSource(): ScriptDefinitionsSource? =
         project.scriptDefinitionsSourceOfType<KotlinNotebookScriptDefinitionsSource>()
 
-    override suspend fun resolveDependencies(scripts: Iterable<KotlinNotebookScriptModel>): ScriptConfigurations {
+    override suspend fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
         val sdk = ProjectRootManager.getInstance(project).projectSdk
         if (sdk == null) {
             thisLogger().warn("No SDK is set for the project")
@@ -68,18 +68,20 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
             virtualFile to configuration
         }
 
-        return ScriptConfigurations(
+        val scriptConfigurations = ScriptConfigurations(
             configurations,
             sdks = sdk?.homePath?.let<@NonNls String, Map<Path, Sdk>> { mapOf(Path.of(it) to sdk) } ?: emptyMap()
         )
+
+        data.set(scriptConfigurations)
     }
 
-    override suspend fun updateModules(configurationsData: ScriptConfigurations, storage: MutableEntityStorage?) {
+    override suspend fun updateModules(storage: MutableEntityStorage?) {
         val workspaceModel = project.workspaceModel
         val workspaceSnapshot = storage?.toSnapshot() ?: workspaceModel.currentSnapshot
         val tmp = MutableEntityStorage.from(workspaceSnapshot)
 
-        val configurationsByNotebook = configurationsData.toConfigurationInfoPerNotebook()
+        val configurationsByNotebook = data.get().toConfigurationInfoPerNotebook()
         creteOrUpdateScriptModules(project, configurationsByNotebook, tmp)
 
         workspaceModel.update("Updating Kotlin Notebook scripting modules") { model ->
@@ -171,10 +173,5 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
 
     companion object {
         const val NOTEBOOK_MODULE_NAME_PREFIX = "$KOTLIN_SCRIPTS_MODULE_NAME.Kotlin Notebooks"
-
-        fun getInstance(project: Project): NotebookScriptConfigurationsSource? =
-            SCRIPT_CONFIGURATIONS_SOURCES.getExtensions(project)
-                .filterIsInstance<NotebookScriptConfigurationsSource>().firstOrNull()
-                .safeAs<NotebookScriptConfigurationsSource>()
     }
 }
