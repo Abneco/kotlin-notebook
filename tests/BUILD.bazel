@@ -1,0 +1,54 @@
+### auto-generated section `build intellij.kotlin.jupyter.tests` start
+load("@rules_java//java:defs.bzl", "java_library")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_test")
+
+java_library(
+  name = "kotlin-jupyter-tests",
+  visibility = ["//visibility:public"]
+)
+
+kt_jvm_test(
+  name = "kotlin-jupyter-tests_test",
+  visibility = ["//visibility:public"],
+  srcs = glob(["testSrc/**/*.kt", "testSrc/**/*.java"], allow_empty = True, exclude = ["**/module-info.java"]),
+  javac_opts = "@rules_jvm//:j17",
+  kotlinc_opts = "@rules_jvm//:k17",
+  deps = [
+    "//plugins/kotlin/jupyter/core:kotlin-jupyter-core",
+    "//plugins/kotlin/jupyter/github:kotlin-jupyter-github",
+    "//plugins/kotlin/jupyter/tables:kotlin-jupyter-tables",
+    "@community//plugins/kotlin/scripting",
+    "@community//platform/testFramework",
+    "@community//platform/testFramework:testFramework_test",
+    "@community//java/testFramework",
+    "//plugins/jupyter/testFramework",
+    "//plugins/jupyter/core",
+    "//plugins/jupyter/psi",
+    "@lib//:jackson-databind",
+    "@lib//:jackson",
+    "@community//plugins/kotlin/base/scripting:kotlin-base-scripting",
+    "@community//platform/lang-api:lang",
+    "@community//notebooks/notebook-ui:ui",
+    "@community//plugins/kotlin/test-framework",
+    "@lib//:kotlin-test-assertions-core-jvm",
+    "@community//platform/platform-tests:tests_test",
+    "@community//notebooks/visualization",
+    "@community//notebooks/visualization:visualization_test",
+    "@community//plugins/kotlin/idea",
+    "//python/scientific-tables",
+    "@community//plugins/markdown/core:markdown",
+    "@lib//:kotlinc_kotlin-compiler-common",
+    "@ultimate_lib//:jetbrains_kotlin-jupyter-shared-compiler",
+    "@community//plugins/kotlin/base/code-insight/minimal:kotlin-base-code-insight-minimal",
+    "@lib//:kotlinx-coroutines-debug",
+    "@community//plugins/kotlin/code-insight/impl-base:kotlin-code-insight-impl-base",
+    "@community//plugins/kotlin/base/plugin:kotlin-base-plugin",
+    "@community//plugins/kotlin/base/plugin:kotlin-base-plugin_test",
+    "//plugins/jupyter/plugin",
+    "//notebooks/plugin",
+    "@community//plugins/github:vcs-github",
+    "@community//plugins/github:vcs-github_test",
+    "//plugins/jupyter/github",
+  ]
+)
+### auto-generated section `build intellij.kotlin.jupyter.tests` end

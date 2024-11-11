@@ -1,0 +1,19 @@
+### auto-generated section `build intellij.kotlin.jupyter.build` start
+load("@rules_jvm//:rules.bzl", "jvm_library")
+
+jvm_library(
+  name = "kotlin-jupyter-build",
+  module_name = "intellij.kotlin.jupyter.build",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True, exclude = ["**/module-info.java"]),
+  javac_opts = "@rules_jvm//:j17",
+  kotlinc_opts = "@rules_jvm//:k17",
+  deps = [
+    "@lib//:kotlin-stdlib",
+    "@lib//:kotlinx-coroutines-core",
+    "//build:idea-ultimate-build",
+    "@community//platform/build-scripts:buildScripts",
+    "@community//platform/build-scripts/downloader:buildScripts-downloader",
+  ]
+)
+### auto-generated section `build intellij.kotlin.jupyter.build` end

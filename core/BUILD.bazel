@@ -1,0 +1,96 @@
+### auto-generated section `build intellij.kotlin.jupyter.core` start
+load("@rules_jvm//:jvm.bzl", "jvm_resources")
+load("@rules_jvm//:rules.bzl", "jvm_library")
+
+jvm_resources(
+  name = "kotlin-jupyter-core_resources",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_resources(
+  name = "kotlin-jupyter-core_resources_1",
+  files = glob(["resources-en/**/*"]),
+  strip_prefix = "resources-en"
+)
+
+jvm_library(
+  name = "kotlin-jupyter-core",
+  module_name = "intellij.kotlin.jupyter.core",
+  visibility = ["//visibility:public"],
+  srcs = glob(["generated/**/*.kt", "generated/**/*.java", "src/**/*.kt", "src/**/*.java"], allow_empty = True, exclude = ["**/module-info.java"]),
+  javac_opts = "@rules_jvm//:j17",
+  kotlinc_opts = "@rules_jvm//:k17",
+  plugins = ["@lib//:serialization_plugin"],
+  deps = [
+    "@ultimate_lib//:jetbrains-annotations.provided",
+    "@ultimate_lib//:jetbrains_kotlin-jupyter-shared-compiler",
+    "@ultimate_lib//:kotlin-reflect.provided",
+    "@lib//:kotlinx-serialization-core",
+    "@lib//:kotlinx-serialization-json",
+    "@lib//:kotlinx-coroutines-core",
+    "@lib//:jackson",
+    "@lib//:jackson-databind",
+    "@lib//:kotlinc_analysis-api.provided",
+    "@lib//:kotlinc_kotlin-compiler-common.provided",
+    "@lib//:kotlinc_kotlin-compiler-fe10.provided",
+    "@ultimate_lib//:kotlinc_kotlin-scripting-common.provided",
+    "@lib//:kotlinc_kotlin-scripting-compiler-impl.provided",
+    "@ultimate_lib//:kotlinc_kotlin-scripting-jvm.provided",
+    "@community//platform/core-api:core",
+    "//ultimate/platform-ultimate:commercial",
+    "//ultimate/ultimate-verifier:commercial-verifier",
+    "@community//platform/analysis-api:analysis",
+    "@community//platform/analysis-impl",
+    "@community//platform/code-style-impl:codeStyle-impl",
+    "@community//platform/xdebugger-api:debugger",
+    "@community//platform/xdebugger-impl:debugger-impl",
+    "@community//platform/platform-api:ide",
+    "@community//platform/platform-util-io:ide-util-io",
+    "@community//platform/lang-api:lang",
+    "@community//platform/lang-impl",
+    "@community//platform/util/concurrency",
+    "@community//platform/core-ui",
+    "@community//platform/statistics",
+    "@community//platform/util",
+    "@community//platform/util/coroutines",
+    "@community//platform/util-ex",
+    "@community//platform/util:util-ui",
+    "@community//plugins/kotlin/core",
+    "@community//plugins/kotlin/base/analysis:kotlin-base-analysis",
+    "@community//plugins/kotlin/base/scripting:kotlin-base-scripting",
+    "@community//plugins/kotlin/base/facet:kotlin-base-facet",
+    "@community//plugins/kotlin/base/code-insight:kotlin-base-code-insight",
+    "@community//plugins/kotlin/base/fe10/analysis:kotlin-base-fe10-analysis",
+    "@community//plugins/kotlin/base/project-structure:kotlin-base-project-structure",
+    "@community//plugins/kotlin/idea",
+    "@community//plugins/kotlin/highlighting/highlighting-shared:kotlin-highlighting-shared",
+    "@community//plugins/kotlin/refactorings/kotlin.refactorings.common:kotlin-refactorings-common",
+    "@community//plugins/kotlin/scripting",
+    "@community//plugins/kotlin/jvm-debugger/core:kotlin-jvm-debugger-core",
+    "@community//plugins/kotlin/jvm-debugger/evaluation:kotlin-jvm-debugger-evaluation",
+    "@community//plugins/kotlin/jvm-debugger/evaluation/k1:kotlin-jvm-debugger-evaluation-k1",
+    "@community//plugins/kotlin/compiler-plugins/kotlinx-serialization/common:kotlin-compiler-plugins-kotlinx-serialization-common",
+    "@community//java/openapi:java",
+    "@community//java/java-impl:impl",
+    "@community//java/compiler/openapi:java-compiler",
+    "@community//java/java-psi-api:psi",
+    "@community//java/debugger/impl:java-debugger-impl",
+    "@community//java/execution/openapi:java-execution",
+    "@community//java/execution/impl:java-execution-impl",
+    "@community//java/idea-ui:ui",
+    "@community//aether-dependency-resolver:java-aetherDependencyResolver",
+    "//plugins/jupyter/core",
+    "//plugins/jupyter/psi",
+    "@community//jupyter:notebooks-jupyter-core",
+    "@community//notebooks/notebook-ui:ui",
+    "@community//notebooks/visualization",
+    "@community//plugins/kotlin/base/plugin:kotlin-base-plugin",
+    "@community//java/debugger/shared:java-debugger-impl-shared",
+  ],
+  runtime_deps = [
+    ":kotlin-jupyter-core_resources",
+    ":kotlin-jupyter-core_resources_1",
+  ]
+)
+### auto-generated section `build intellij.kotlin.jupyter.core` end

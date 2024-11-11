@@ -1,0 +1,28 @@
+### auto-generated section `build intellij.kotlin.jupyter.github` start
+load("@rules_jvm//:jvm.bzl", "jvm_resources")
+load("@rules_jvm//:rules.bzl", "jvm_library")
+
+jvm_resources(
+  name = "kotlin-jupyter-github_resources",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_library(
+  name = "kotlin-jupyter-github",
+  module_name = "intellij.kotlin.jupyter.github",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True, exclude = ["**/module-info.java"]),
+  javac_opts = "@rules_jvm//:j17",
+  kotlinc_opts = "@rules_jvm//:k17",
+  deps = [
+    "@lib//:kotlin-stdlib.provided",
+    "//plugins/kotlin/jupyter/core:kotlin-jupyter-core",
+    "@community//plugins/github:vcs-github",
+    "@community//platform/ide-core",
+    "@community//platform/editor-ui-api:editor",
+    "@community//platform/core-ui",
+  ],
+  runtime_deps = [":kotlin-jupyter-github_resources"]
+)
+### auto-generated section `build intellij.kotlin.jupyter.github` end
