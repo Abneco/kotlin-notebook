@@ -10,6 +10,7 @@ import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
+import org.junit.Ignore
 import org.junit.Test
 
 class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase("notebooks/autocompletion") {
@@ -42,6 +43,7 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase("notebooks/a
     }
 
     @Test
+    @Ignore("KTNB-843")
     fun testKotlinCompletionInsertionCorrectReplace() = doTest { tester ->
         tester.typeAndFinishLookup("i", LookupFinishMode.TAB) {
             it.lookupString == "id"

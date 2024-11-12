@@ -55,8 +55,4 @@ class KotlinNotebookFormattingTest : KotlinNotebookTransformerBaseTestCase("note
             }
         }
     }
-
-    override fun runInDispatchThread(): Boolean {
-        return false
-    }
 }

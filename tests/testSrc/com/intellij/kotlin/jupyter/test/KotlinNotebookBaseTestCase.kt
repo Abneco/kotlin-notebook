@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.test
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServers
+import com.intellij.kotlin.jupyter.test.runners.KotlinPluginAwareRunner
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.util.Disposer
@@ -11,6 +12,7 @@ import com.intellij.openapi.util.Disposer.newDisposable
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.util.concurrency.ThreadingAssertions
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import io.kotest.common.runBlocking
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
@@ -20,15 +22,14 @@ import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
 import org.junit.Rule
 import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 import java.io.File
 
-@RunWith(JUnit4::class)
+@RunWith(KotlinPluginAwareRunner::class)
 abstract class KotlinNotebookBaseTestCase(private val dataPath: String) : JupyterBaseTestCase(), ExpectedPluginModeProvider {
     protected open val notebookFile: BackedNotebookVirtualFile
         get() = when (val file = myFixture.kotlinNotebookFile) {
             is BackedNotebookVirtualFile -> file
-            else -> error("Null notebook file found for ${myFixture.file.virtualFile}")
+            else -> error("Null notebook file found for ${myFixture.file?.virtualFile}")
         }
 
     override fun getBasePath(): @NonNls String {
@@ -42,10 +43,21 @@ abstract class KotlinNotebookBaseTestCase(private val dataPath: String) : Jupyte
         }
     }
 
-    protected fun setUpDependenciesSynchronously(cellsToExecute: List<Int> = emptyList()) {
+    /**
+     * Waits until all dependencies are set up.
+     * This method should not be called on [EDT] as it will cause a deadlock.
+     */
+    @RequiresBackgroundThread
+    protected fun setUpDependenciesSynchronously(
+        cellsToExecute: List<Int> = emptyList(),
+        updateMode: ScriptingUpdateMode = ScriptingUpdateMode.NotebookFileFocused
+    ) {
         val testCaseDisposable = newDisposable(testRootDisposable, "setUpScriptingDependencies")
         val cellEstimation = 1 + cellsToExecute.size
-        val updater = TestNotebookScriptsDependenciesUpdater(project, notebookFile, cellEstimation, testCaseDisposable)
+        val fileOrNull = if (updateMode == ScriptingUpdateMode.NotebookFileFocused) {
+            notebookFile
+        } else null
+        val updater = TestNotebookScriptsDependenciesUpdater(project, fileOrNull, cellEstimation, testCaseDisposable)
         runBlocking {
             updater.setUpDependenciesSynchronously(myFixture)
         }

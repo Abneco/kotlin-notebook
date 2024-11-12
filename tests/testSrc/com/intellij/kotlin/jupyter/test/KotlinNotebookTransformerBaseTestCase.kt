@@ -7,8 +7,8 @@ import com.intellij.kotlin.jupyter.core.util.toPsiFile
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 
@@ -25,6 +25,14 @@ abstract class KotlinNotebookTransformerBaseTestCase(testDataPath: String) : Kot
         companion object {
             val DEFAULT = TestOptions()
         }
+    }
+
+    /**
+     * This test should not be on EDT as they are using [setUpDependenciesSynchronously],
+     * which would block EDT otherwise.
+     */
+    override fun runInDispatchThread(): Boolean {
+        return false
     }
 
     protected fun doSimpleTransformerTest(
@@ -46,7 +54,9 @@ abstract class KotlinNotebookTransformerBaseTestCase(testDataPath: String) : Kot
 
         if (!testOptions.caresAboutInjection) {
             // Cache injection on current offset
-            InjectedLanguageManager.getInstance(project).findInjectedElementAt(myFixture.file, myFixture.caretOffset)
+            ReadAction.run<Throwable> {
+                InjectedLanguageManager.getInstance(project).findInjectedElementAt(myFixture.file, myFixture.caretOffset)
+            }
         }
 
         doTestWithJupyterSessionAndBaseDependencies(notebookPsiFile) {
@@ -60,7 +70,7 @@ abstract class KotlinNotebookTransformerBaseTestCase(testDataPath: String) : Kot
             doc
         }
 
-        val actualText = runReadAction {
+        val actualText = ReadAction.compute<String, Throwable> {
             docToCheck.text
         }.replace("\r\n", "\n")
         assertEquals(expectedDocumentText, actualText)

@@ -29,8 +29,4 @@ class PasteTest : KotlinNotebookTransformerBaseTestCase("notebooks/actions/paste
             myFixture.performEditorAction(IdeActions.ACTION_PASTE)
         }
     }
-
-    override fun runInDispatchThread(): Boolean {
-        return false
-    }
 }

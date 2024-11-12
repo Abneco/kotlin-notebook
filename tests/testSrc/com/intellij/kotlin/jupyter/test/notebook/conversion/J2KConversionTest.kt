@@ -36,10 +36,6 @@ class J2KConversionTest(
     @Test
     fun testSimpleConversion() = doTest()
 
-    override fun runInDispatchThread(): Boolean {
-        return false
-    }
-
     companion object {
         @Parameterized.Parameters(name = "{index}. Parameters: <{0}>, <{1}>")
         @JvmStatic
@@ -81,6 +77,7 @@ class J2KConversionTest(
             if (fromJavaFile.value) {
                 invokeAndWaitIfNeeded {
                     copyContentFromJavaFile(javaCode)
+                    myFixture.openFileInEditor(notebookFile.file)
                 }
             } else {
                 CopyPasteManager.getInstance().setContents(StringSelection(javaCode))

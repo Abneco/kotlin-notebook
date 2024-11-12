@@ -58,7 +58,7 @@ const val baseTestDataPath = "/plugins/kotlin/jupyter/tests/testData"
 
 val CodeInsightTestFixture.kotlinNotebookFile: BackedNotebookVirtualFile?
     get() {
-        val virtualFile = file.virtualFile ?: return null
+        val virtualFile = file?.virtualFile ?: return null
         return when {
             virtualFile is VirtualFileWindow -> virtualFile.delegate
             else -> virtualFile
@@ -269,7 +269,7 @@ fun setUpScriptingDependencies(fixture: CodeInsightTestFixture) {
  * This is especially important for K1 mode
  */
 fun ensureScriptConfigurations(fixture: CodeInsightTestFixture) {
-    val ktFiles = fixture.file.getKtFiles() ?: return
+    val ktFiles = fixture.file?.getKtFiles() ?: return
 
     runInEdtAndWait {
         IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)

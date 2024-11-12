@@ -5,6 +5,8 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.UpdateState
+import com.intellij.kotlin.jupyter.test.ScriptingUpdateMode.FileAgnostic
+import com.intellij.kotlin.jupyter.test.ScriptingUpdateMode.NotebookFileFocused
 import com.intellij.kotlin.jupyter.test.scripting.PostScriptingUpdateKotlinModeAwareHandler
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.EDT
@@ -17,6 +19,15 @@ import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 
+/**
+ * Options to invoke [setUpDependenciesSynchronously] with.
+ * [NotebookFileFocused] should be used when a notebook file is opened in the Editor,
+ * while [FileAgnostic] targets no file, but a project.
+ */
+enum class ScriptingUpdateMode {
+    NotebookFileFocused,
+    FileAgnostic
+}
 
 /**
  * Main class for updating scripting using our update scheduling logic
@@ -29,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class TestNotebookScriptsDependenciesUpdater(
     private val project: Project,
-    private val notebookFile: BackedNotebookVirtualFile,
+    private val notebookFile: BackedNotebookVirtualFile?,
     private val cellsToExecute: Int,
     parentDisposable: Disposable
 ) {
@@ -55,7 +66,8 @@ class TestNotebookScriptsDependenciesUpdater(
             file: BackedNotebookVirtualFile,
             updateState: UpdateState
         ) {
-            if (file != notebookFile) {
+            val vFile = notebookFile
+            if (vFile != null && file != vFile) {
                 return
             }
 
@@ -71,7 +83,7 @@ class TestNotebookScriptsDependenciesUpdater(
                 return
             }
 
-            if (counter == 1) { // it's the last update
+            if (counter == 1) { // it's the last update, emit signal
                 scriptsUpdateCompleted.tryEmit(true)
             } else {
                 scriptingUpdatesLeft.set(counter - 1)
@@ -104,7 +116,7 @@ class TestNotebookScriptsDependenciesUpdater(
 
             // Index is up to date, invoke post-handler
             withContext(Dispatchers.EDT) {
-                PostScriptingUpdateKotlinModeAwareHandler.handleAfterScriptingUpdate(testFixture)
+                PostScriptingUpdateKotlinModeAwareHandler.afterScriptingUpdate(testFixture)
             }
         } catch (ex: Exception) {
             LOG.warn("Exception while updating dependencies", ex)

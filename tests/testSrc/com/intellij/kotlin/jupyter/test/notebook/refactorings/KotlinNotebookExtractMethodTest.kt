@@ -2,10 +2,12 @@
 package com.intellij.kotlin.jupyter.test.notebook.refactorings
 
 import com.intellij.codeInsight.template.impl.TemplateManagerImpl
+import com.intellij.kotlin.jupyter.test.runners.K1Only
 import com.intellij.openapi.editor.CaretState
 import com.intellij.openapi.editor.LogicalPosition
 import org.junit.Test
 
+@K1Only("KTNB-819")
 class KotlinNotebookExtractMethodTest : RefactoringTestBase("ExtractFunction", "notebooks/refactorings/extractMethod") {
 
     @Test

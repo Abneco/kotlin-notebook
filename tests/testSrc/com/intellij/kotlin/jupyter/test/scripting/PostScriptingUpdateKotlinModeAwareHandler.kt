@@ -10,14 +10,14 @@ import com.intellij.testFramework.fixtures.CodeInsightTestFixture
  * like loading and updating configurations, etc.
  */
 fun interface PostScriptingUpdateKotlinModeAwareHandler {
-    fun handleAfterScriptingUpdate(testFixture: CodeInsightTestFixture)
+    fun afterScriptingUpdate(testFixture: CodeInsightTestFixture)
 
     companion object {
-        fun handleAfterScriptingUpdate(testFixture: CodeInsightTestFixture) = createPluginModeAwareInstance(
+        fun afterScriptingUpdate(testFixture: CodeInsightTestFixture) = createPluginModeAwareInstance(
             testFixture,
             ::createK1Handler,
             ::createK2Handler,
-        ).handleAfterScriptingUpdate(testFixture)
+        ).afterScriptingUpdate(testFixture)
 
         // Required to provide script configurations into base cache
         private fun createK1Handler(testFixture: CodeInsightTestFixture) = PostScriptingUpdateKotlinModeAwareHandler {

@@ -8,21 +8,26 @@ import com.intellij.codeInsight.hints.InlayHintsProvider
 import com.intellij.codeInsight.hints.InlayHintsSinkImpl
 import com.intellij.codeInsight.hints.LinearOrderInlayRenderer
 import com.intellij.codeInsight.hints.presentation.PresentationRenderer
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
+import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.test.getCells
-import com.intellij.kotlin.jupyter.test.isInjectedKtFile
+import com.intellij.kotlin.jupyter.test.kotlinNotebookFile
 import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.SyntaxTraverser
-import com.intellij.testFramework.runInEdtAndWait
+import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.intellij.util.containers.isEmpty
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 
 
@@ -43,6 +48,7 @@ abstract class AbstractNotebookTypeHintsBaseTest(testDataPath: String) : KotlinN
     open val isLimitTypeHintsByActiveCell: Boolean = false
 
     @JvmOverloads
+    @RequiresEdt
     fun <T : Any> runTestProvider(injectionOffset: Int,
                                   injectedFileContents: String,
                                   expectedText: String,
@@ -106,40 +112,69 @@ abstract class AbstractNotebookTypeHintsBaseTest(testDataPath: String) : KotlinN
         }
     }
 
+    @RequiresReadLock
+    protected fun JupyterPsiCell.toInjectedKtFiles(): List<KtFile> {
+        val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
+        return getInjectedKtFiles(injectedLanguageManager).ifEmpty {
+            error("No suitable KtFile found in a host")
+        }
+    }
 
     protected fun <T: Any> doTest(provider: InlayHintsProvider<T>, cellInd: Int, limitedAreaTargetInd: Int? = null,
-                                  setupAction: (T) -> Unit = {}) = runInEdtAndWait {
+                                  setupAction: (T) -> Unit = {}) {
         val notebookFile = configureExecutionTest()
         val cells = notebookFile.getCells()
         val neededCell = cells.getOrNull(cellInd) ?: error("Invalid cell index provided")
-        val backedNotebook = BackedNotebookVirtualFile.takeIfBacked(originalVirtualFile)
-            ?: error("Couldn't find BackedNotebookFile for $originalVirtualFile")
-        val hlManager = NotebookHighlightingService.getForFile(project, backedNotebook)
-        limitedAreaTargetInd?.let {
-            enableLimitByActiveCell()
-            val completeAnalysis = cells.getOrNull(limitedAreaTargetInd) ?: error("Provided complete highlighting area is invalid")
-            hlManager.dataController.update {
-                completeHighlightingRange = completeAnalysis.textRange
-            }
+        setCompleteAnalysisArea(neededCell)
+        val ktFile = ReadAction.compute<KtFile, Throwable> {
+            neededCell.toInjectedKtFiles().first()
         }
-        val injectedLanguageManager = InjectedLanguageManager.getInstance(notebookFile.project)
 
-        val injectedFile = runReadAction {
-            (injectedLanguageManager
-                .getInjectedPsiFiles(neededCell)?.firstOrNull { it.first.containingFile.isInjectedKtFile() }?.first as? PsiFile)
-        } ?: error("No suitable KtFile found in a host")
+        val fileOffset = InjectedLanguageManager.getInstance(project).injectedToHost(ktFile, 0)
 
-        val fileOffset = injectedLanguageManager.injectedToHost(injectedFile, 0)
-
-        with(provider) {
-            val expectedFileContents = FileUtil.loadFile(getTestFile(".kt"), true)
-            val settings = createSettings()
-            setupAction(settings)
-            runTestProvider(fileOffset, injectedFile.text, expectedFileContents, this, settings, verifyHintPresence = true)
+        doTestWithJupyterSessionAndBaseDependencies(notebookFile) {
+            provider.doProviderTest(
+                ktFile,
+                fileOffset,
+                setupAction
+            )
         }
 
         limitedAreaTargetInd?.let {
             disableLimitByActiveCell()
+        }
+    }
+
+    protected fun setCompleteAnalysisArea(targetCellInd: JupyterPsiCell?) {
+        if (targetCellInd == null) {
+            return
+        }
+        val backedNotebook = myFixture.kotlinNotebookFile
+            ?: error("Couldn't find BackedNotebookFile for $originalVirtualFile")
+        val hlManager = NotebookHighlightingService.getForFile(project, backedNotebook)
+
+        enableLimitByActiveCell()
+        val cellRange = ReadAction.compute<TextRange, Exception> {
+            targetCellInd.textRange
+        }
+        hlManager.dataController.update {
+            completeHighlightingRange = cellRange
+        }
+    }
+
+    private inline fun <T: Any> InlayHintsProvider<T>.doProviderTest(
+        injectedFile: KtFile,
+        fileOffset: Int,
+        crossinline setupAction: (T) -> Unit,
+    ) {
+        with(this) {
+            val expectedFileContents = FileUtil.loadFile(getTestFile(".kt"), true)
+            val settings = createSettings()
+            setupAction(settings)
+
+            invokeAndWaitIfNeeded {
+                runTestProvider(fileOffset, injectedFile.text, expectedFileContents, this, settings, verifyHintPresence = true)
+            }
         }
     }
 }

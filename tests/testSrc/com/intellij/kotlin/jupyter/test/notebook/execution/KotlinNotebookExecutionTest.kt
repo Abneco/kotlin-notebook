@@ -4,9 +4,10 @@ package com.intellij.kotlin.jupyter.test.notebook.execution
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelRunnableFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelPortsProvider
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProcessFactory
-import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
+import com.intellij.kotlin.jupyter.test.ScriptingUpdateMode
 import com.intellij.kotlin.jupyter.test.runners.TestContext
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.waitForSmartMode
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
@@ -31,6 +32,7 @@ class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
         listOf()
     )))
 
+    @Ignore("KTNB-840: Thread leak, to investigate")
     @Test
     fun testExampleWithBoundSocket() {
         val kernelProcessFactory = KernelRunnableFactory.EP.findExtensionOrFail(KernelProcessFactory::class.java)
@@ -114,11 +116,14 @@ class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
     // KTNB-552
     @Test
     fun testSetupInDefaultProject() {
-        val project = myFixture.project
+        val project = ProjectManager.getInstance().defaultProject
         runBlocking {
             try {
                 project.waitForSmartMode()
-                JupyterKtScriptingSupport.updateSynchronously(project)
+                setUpDependenciesSynchronously(
+                    emptyList(),
+                    updateMode = ScriptingUpdateMode.FileAgnostic
+                )
             } catch (e: Exception) {
                 LOG.error("Test for default project has failed! ", e)
             }

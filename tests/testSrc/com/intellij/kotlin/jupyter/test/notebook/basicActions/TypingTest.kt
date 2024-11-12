@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.test.notebook.basicActions
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
 import com.intellij.kotlin.jupyter.test.configureBySingleEmptyCellNotebook
+import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import org.junit.Test
 
 class TypingTest: KotlinNotebookTransformerBaseTestCase("notebooks/actions/typing") {
@@ -29,7 +30,9 @@ class TypingTest: KotlinNotebookTransformerBaseTestCase("notebooks/actions/typin
             testOptions = TestOptions(caresAboutInjection = false, checkTopLevelDocument = true),
             notebookFactory = { myFixture.configureBySingleEmptyCellNotebook() }
         ) {
-            myFixture.type(textToType)
+            invokeAndWaitIfNeeded {
+                myFixture.type(textToType)
+            }
         }
     }
 }
