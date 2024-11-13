@@ -46,6 +46,10 @@ class KotlinPluginAwareRunner(klass: Class<*>) : BlockJUnit4ClassRunner(klass) {
     }
 
     override fun isIgnored(child: FrameworkMethod?): Boolean {
+        // consider Junit
+        if (super.isIgnored(child)) {
+            return true
+        }
         return when (currentKotlinPluginMode) {
             KotlinPluginMode.K1 -> child?.getMethodOrClassAnnotation<K2Only>() != null
             KotlinPluginMode.K2 -> child?.getMethodOrClassAnnotation<K1Only>() != null
