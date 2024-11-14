@@ -52,3 +52,9 @@ internal fun ScriptConfigurations.toConfigurationInfoPerNotebook(): Map<VirtualF
         )
     }
 }
+
+internal fun ScriptConfigurations.getConfigurationsForNotebook(notebookFile: VirtualFile): Collection<ScriptCompilationConfigurationWrapper>? {
+    return configurations.filter { (vFile, configurationWrapper) ->
+        (vFile as? VirtualFileWindow)?.delegate == notebookFile && configurationWrapper.valueOrNull() != null
+    }.map { it.value.valueOrThrow() }
+}

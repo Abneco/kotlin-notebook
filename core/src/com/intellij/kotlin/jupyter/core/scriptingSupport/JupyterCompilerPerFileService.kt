@@ -156,7 +156,7 @@ class JupyterCompilerPerFileService(
         this,
         ComputableWithName("Updating of Kotlin notebook dependencies", ::updateClasspathWithExternalDependencies)
     )
-    private val cachePresentsChecker = PluginModeAwareScriptPresenceChecker.create(project)
+    private val cachePresentsChecker = PluginModeAwareScriptPresenceChecker.create(project, virtualFile)
 
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterKotlinPluginScriptClassGetter(ScriptTemplateWithDisplayHelpers::class) {
