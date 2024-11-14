@@ -95,9 +95,9 @@ class KotlinNotebookVariablesFrame(
             return
         }
 
-        debugProcess.managerThread.invoke(PrioritizedTask.Priority.HIGH) {
+        context.suspendContext.managerThread.invoke(PrioritizedTask.Priority.HIGH) {
             try {
-                val virtualMachine = debugProcess.virtualMachineProxy
+                val virtualMachine = context.suspendContext.virtualMachineProxy
 
                 node.addChildren(
                     variablesService.representVariablesStateAsXContainer(virtualMachine, context),
