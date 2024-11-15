@@ -15,31 +15,21 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnab
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.JupyterSessionVerifiedListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toJupyterMessage
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.util.messages.Topic
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.kotlinx.jupyter.messaging.KernelInfoRequest
 import org.jetbrains.kotlinx.jupyter.messaging.MessageType
 import org.jetbrains.kotlinx.jupyter.messaging.makeSimpleMessage
 import org.jetbrains.kotlinx.jupyter.messaging.toRawMessage
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
 import kotlin.time.Duration.Companion.seconds
 
 abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: Int) : JupyterSessionLaunchStrategy {
-    companion object {
-        /**
-         * Topic about notifying what session is verified 
-         */
-        @Topic.ProjectLevel
-        val TOPIC: Topic<JupyterSessionVerifiedLaunchStrategy> = Topic(JupyterSessionVerifiedLaunchStrategy::class.java, Topic.BroadcastDirection.NONE)
-    }
     override suspend fun createAndVerifySession(jupyterClient: JupyterClient,
                                         sessionDataFactory: JupyterClient.() -> JupyterSessionData,
                                         sessionFactory: (JupyterSessionData) -> JupyterNotebookSession?): JupyterNotebookSession? {
         repeat(attemptsCount) {
             val sessionData = jupyterClient.sessionDataFactory()
-            val session = sessionFactory(sessionData)
+            val session = sessionFactory(sessionData) ?: return null
 
             val kernel = (jupyterClient as? KotlinKernelRunnableProvider)?.getKernel(sessionData.kernelId)
 
@@ -61,16 +51,10 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
             .verifiedSessionStarting(session.project, vFile)
     }
 
-    @OptIn(ExperimentalContracts::class)
     private suspend fun verifySession(
-      session: JupyterNotebookSession?,
+      session: JupyterNotebookSession,
       kernel: KotlinKernelRunnableHandler?
     ): Boolean {
-        contract {
-            returns(true) implies (session != null)
-        }
-        if (session == null) return false
-
         val verificationDeferred = CompletableDeferred<Boolean>()
 
         kernel?.addBaseKernelListener(object: KotlinKernelListener {
@@ -86,12 +70,29 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
         )
         val zmqMessage = message.toRawMessage().toJupyterMessage(JupyterMessageChannel.SHELL)
 
-        session.sendMessageOnPooledThread(zmqMessage, object : JupyterExecutionCallbackAdapter() {
+        val callback = object : JupyterExecutionCallbackAdapter() {
+            private val myFinalizeCallback = {
+                verificationDeferred.complete(false)
+            }
+
+            private var externalFinalizeCallback: () -> Unit = {}
+
+            override var finalizeCallback: () -> Unit
+                get() = {
+                    externalFinalizeCallback()
+                    myFinalizeCallback()
+                }
+                set(value) {
+                    externalFinalizeCallback = value
+                }
+
             override fun onKernelInfoReply(message: JupyterMessage) {
                 kernel?.onKernelInfoReply(message)
                 verificationDeferred.complete(true)
             }
-        })
+        }
+
+        session.sendMessageOnPooledThread(zmqMessage, callback)
 
         return withTimeoutOrNull(80.seconds) {
             verificationDeferred.await()

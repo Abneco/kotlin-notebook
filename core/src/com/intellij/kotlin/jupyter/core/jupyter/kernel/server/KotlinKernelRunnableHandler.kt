@@ -53,7 +53,7 @@ interface KotlinKernelRunnableHandler: Disposable {
      * @param onMessage A callback function to handle incoming Jupyter messages.
      * @return A new instance of `KotlinKernelSession` representing the created session.
      */
-    fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession
+    fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession?
 
     /**
      * Checks if the kernel can be stopped based on the current kernel state.

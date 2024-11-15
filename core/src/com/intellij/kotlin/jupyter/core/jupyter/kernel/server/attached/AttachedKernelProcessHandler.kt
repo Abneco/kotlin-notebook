@@ -10,6 +10,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListen
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.ACCEPT_ALL_MESSAGES
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelZMQClientSession
+import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import java.nio.file.Path
@@ -24,7 +25,12 @@ class AttachedKernelProcessHandler(
     KotlinKernelListener::class,
     project, kernelId, notebookPath, notebookVirtualFile
 ) {
-    override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession {
+    override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession? {
+        if (!kernelConfig.areAllSocketsOpen()) {
+            project.notebookNotifications.showNoKernelToAttach()
+            return null
+        }
+
         return KernelZMQClientSession(
             sessionId,
             kernelConfig,

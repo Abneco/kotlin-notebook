@@ -186,9 +186,9 @@ class KotlinInProcessJupyterClient(
         kernelId: JupyterKernelId,
         sessionId: JupyterNotebookSessionId,
         onMessage: (JupyterMessage) -> Unit
-    ): JupyterKernelCommunicationClient {
+    ): JupyterKernelCommunicationClient? {
         val processHandler = kernels[kernelId] ?: throw RuntimeException("No kernel with id $kernelId")
-        val session = processHandler.createSession(sessionId, onMessage)
+        val session = processHandler.createSession(sessionId, onMessage) ?: return null
         clientSessions[kernelId] = session
         Disposer.register(this, session)
         return session

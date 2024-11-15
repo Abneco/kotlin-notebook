@@ -85,7 +85,7 @@ fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     val project = notebookFile.project
     val backedFile = notebookFile.virtualFile.toKotlinNotebookBackedFile()!!
     val session = runBlocking {
-        JupyterRuntimeService.getInstance(project).getOrCreateSession(backedFile)
+        JupyterRuntimeService.getInstance(project).getOrCreateSession(backedFile)!!
     }
     return try {
         action()

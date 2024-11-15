@@ -38,7 +38,7 @@ internal class KotlinNotebookNotifications(private val project: Project) {
         ABSENT_INITIAL_BASE_DEPENDENCIES_INFO(NotificationType.INFORMATION),
         KERNEL_JDK_INCONSISTENT_ERROR(NotificationType.WARNING),
         KERNEL_RESTART(NotificationType.INFORMATION),
-        KERNEL_RUN_MODE_CHANGED(NotificationType.INFORMATION),
+        NO_KERNEL_TO_ATTACH(NotificationType.ERROR),
         RERUN_ACTION_NEEDED(NotificationType.INFORMATION),
         BYTECODE_REFACTORING_WARNING(NotificationType.WARNING),
         REFACTORING_EXISTING_USAGES_MESSAGE(NotificationType.INFORMATION),
@@ -153,6 +153,13 @@ internal class KotlinNotebookNotifications(private val project: Project) {
                 }
             )
         }
+    }
+
+    fun showNoKernelToAttach() {
+        notify(
+            KotlinNotebookNotificationType.NO_KERNEL_TO_ATTACH,
+            KotlinNotebookBundle.message("kotlin.notebook.no.kernel.to.attach")
+        )
     }
 
     /**
