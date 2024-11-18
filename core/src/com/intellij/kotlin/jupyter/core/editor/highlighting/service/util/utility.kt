@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicReference
 
 
 internal object NotebookHighlightingUtilityObject {
-    const val NOTEBOOK_INJECTED_FILE_EXTENSION: String = "jupyter.kts"
     internal val LOG = thisLogger()
 
     const val SCRIPTING_MISSING_DEPENDENCY_PREFIX = "MISSING"

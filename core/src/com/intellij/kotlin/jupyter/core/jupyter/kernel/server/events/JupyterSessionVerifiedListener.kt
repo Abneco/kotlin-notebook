@@ -5,6 +5,10 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.openapi.project.Project
 import com.intellij.util.messages.Topic
 
+/**
+ * Listens to event once JupyterSession became `verified`, e.g.,
+ * when the handshake with kernel is done.
+ */
 fun interface JupyterSessionVerifiedListener {
     companion object {
         /**

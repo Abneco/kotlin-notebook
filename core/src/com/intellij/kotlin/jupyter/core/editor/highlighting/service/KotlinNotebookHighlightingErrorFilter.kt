@@ -6,6 +6,7 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_BASE_CLASS_ERROR
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_DEPENDENCY_PREFIX
+import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.util.reportErrorTestAware
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.diagnostic.Attachment
@@ -14,8 +15,14 @@ import com.intellij.openapi.util.NlsSafe
 import com.intellij.psi.PsiFile
 
 class KotlinNotebookHighlightingErrorFilter: HighlightInfoFilter {
+    private fun PsiFile.shouldAcceptFile(): Boolean {
+        val notebookExtension = JupyterCompilerService.getInstance(project).fileExtension
+
+        return name.endsWith(notebookExtension)
+    }
+
     override fun accept(highlightInfo: HighlightInfo, file: PsiFile?): Boolean {
-        if (file == null || !file.name.endsWith(NotebookHighlightingUtilityObject.NOTEBOOK_INJECTED_FILE_EXTENSION)) return true
+        if (file == null || !file.shouldAcceptFile()) return true
 
         val isTargetHost = file.getUserData(NotebookHighlightingUtilityObject.NonTargetHostErrorMark) == null
         if (!isTargetHost) return true
