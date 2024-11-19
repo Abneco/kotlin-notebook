@@ -32,6 +32,16 @@ inline fun <A, T> createPluginModeAwareInstance(
     }
 }
 
+inline fun <T> createPluginModeAwareInstance(
+    k1InstanceFactory: () -> T,
+    k2InstanceFactory: () -> T
+): T {
+    return when (KotlinPluginModeProvider.currentPluginMode) {
+        KotlinPluginMode.K1 -> k1InstanceFactory()
+        KotlinPluginMode.K2 -> k2InstanceFactory()
+    }
+}
+
 internal inline fun <T : KotlinPluginModeAwareHandler> createPluginModeAwareInstance(
     k1InstanceFactory: () -> T,
     k2InstanceFactory: () -> T

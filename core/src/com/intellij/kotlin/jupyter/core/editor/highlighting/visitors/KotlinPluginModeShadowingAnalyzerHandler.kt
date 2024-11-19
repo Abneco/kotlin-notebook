@@ -67,10 +67,12 @@ abstract class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareH
         }
     }
 
+    protected open fun beforeLeavingAnalysisSession(ktFile: KtFile): Unit = Unit
+
     protected fun KaSession.collectErrorDiagnostics(file: KtFile) : List<KaDiagnosticData> {
         return collectDiagnostics(file)
-            .onEach(::applyBeforeProcessingDiagnostic)
             .filter(::filterDiagnostic)
+            .onEach(::applyBeforeProcessingDiagnostic)
     }
 
     protected fun prepareForFile(injectedFile: PsiFile) : InjectedFileHighlightingHelper {
@@ -95,6 +97,7 @@ abstract class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareH
         val isTargetHost = helper.isCurrentFileTarget
 
         if (isTargetHost) {
+            beforeLeavingAnalysisSession(file)
             afterAnalysis()
             return true
         }
