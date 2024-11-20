@@ -117,7 +117,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             return (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
         }
 
-        fun isInTheTransaction(project: Project) = getUpdater(project).isTransactionAboutToHappen()
+        fun isInTheTransaction(project: Project): Boolean = getUpdater(project).isTransactionAboutToHappen()
 
         fun updateSynchronously(project: Project) {
             val updater = getUpdater(project)

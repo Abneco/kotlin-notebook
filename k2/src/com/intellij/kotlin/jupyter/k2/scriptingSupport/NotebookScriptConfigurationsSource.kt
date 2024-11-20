@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
+import com.intellij.kotlin.jupyter.core.util.getRelativePathFromProjectRoot
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
@@ -81,8 +82,8 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
         creteOrUpdateScriptModules(project, configurationsByNotebook, tmp)
 
         workspaceModel.update("Updating Kotlin Notebook scripting modules") { model ->
-            // add new data
-            model.applyChangesFrom(tmp)
+            // add new data, target only the base K2 script source
+            model.replaceBySource({ it is KotlinScriptEntitySource }, tmp)
         }
     }
 
@@ -113,7 +114,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
         val tmpSnapshot = MutableEntityStorage.from(workspaceSnapshot)
 
         val libraryEntity = tmpSnapshot.resolveLibraryDependencies(
-            notebookFile.file.toK2RuntimeDependencyLibraryName(),
+            notebookFile.file.toK2RuntimeDependencyLibraryName(project),
             LibraryTableId.ProjectLibraryTableId
         )
         if (libraryEntity == null) return
@@ -132,12 +133,19 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
         notebookModuleConfiguration: KotlinNotebookScriptsModuleConfigurationInfo,
         runtimeLibrary: LibraryEntity
     ) {
+        val prefixFromProjectRoot = notebookModuleConfiguration.notebookFile.getRelativePathFromProjectRoot(project)?.parent
+        val moduleNamePrefix = if (prefixFromProjectRoot != null) {
+            "$NOTEBOOK_MODULE_NAME_PREFIX.$prefixFromProjectRoot"
+        } else {
+            NOTEBOOK_MODULE_NAME_PREFIX
+        }
+
         for ((scriptFile, _) in notebookModuleConfiguration.scripts) {
             val file = Path.of(scriptFile.path).toFile()
             val relativeLocation = file.nameWithoutExtension
 
             val locationName = relativeLocation.replace(VfsUtilCore.VFS_SEPARATOR_CHAR, ':')
-            val moduleName = "$NOTEBOOK_MODULE_NAME_PREFIX.$locationName"
+            val moduleName = "$moduleNamePrefix.$locationName"
 
             val sdkDependency =
                 notebookModuleConfiguration.sdkInfo

@@ -8,9 +8,13 @@ import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.fileEditor.impl.EditorTabPresentationUtil
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.util.NlsSafe
+import com.intellij.openapi.util.io.toNioPathOrNull
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.vfs.toNioPathOrNull
 import com.intellij.ui.content.ContentManager
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
@@ -71,4 +75,16 @@ fun VirtualFile?.toKotlinNotebookBackedFile(): BackedNotebookVirtualFile? {
     } else {
         toBackedNotebookFile()
     }
+}
+
+/**
+ * Returns relative [Path] from [Project] root, or plain path otherwise
+ */
+fun VirtualFile.getRelativePathFromProjectRoot(project: Project): Path? {
+    val projectRoot = project.guessProjectDir()
+    if (projectRoot == null) {
+        return toNioPathOrNull()
+    }
+
+    return VfsUtilCore.getRelativePath(this, projectRoot)?.toNioPathOrNull()
 }

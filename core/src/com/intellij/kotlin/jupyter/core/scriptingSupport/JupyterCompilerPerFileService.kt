@@ -397,8 +397,12 @@ class JupyterCompilerPerFileService(
         KotlinNotebookPermanentIndexService.getInstance(project).addToPermanentIndex(snippetMetadata.newClasspath, snippetMetadata.newSources)
         _currentClasspath.addSnippetFromData(snippetMetadata.newClasspath.map { File(it) }, lineClassesDirAsFile)
         _sourceRoots.addSnippetFromData(snippetMetadata.newSources.map { File(it) }, lineSourcesDir.toFile())
-        snippetMetadata.newClasspath.updateLastClasspathArtifact()
         additionalDefaultImports.addSnippet(snippetMetadata.newImports)
+        if (snippetMetadata.newClasspath.isEmpty()) {
+            lastClasspathUpdate.set(lineClassesDirAsFile.absolutePath)
+        } else {
+            snippetMetadata.newClasspath.updateLastClasspathArtifact()
+        }
 
         if (psiCell != null) {
             coroutineScope.async {

@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.kotlin.jupyter.core.projectModel.createOrUpdateLibraryForNotebookDependencies
+import com.intellij.kotlin.jupyter.core.util.getRelativePathFromProjectRoot
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.backend.workspace.toVirtualFileUrl
@@ -12,8 +13,10 @@ import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
 import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 
-internal fun VirtualFile.toK2RuntimeDependencyLibraryName(): String {
-    return "$KOTLIN_SCRIPTS_MODULE_NAME.Notebook.Dependencies for ${nameWithoutExtension}"
+fun VirtualFile.toK2RuntimeDependencyLibraryName(project: Project): String {
+    val presentableName = getRelativePathFromProjectRoot(project)?.toString() ?: nameWithoutExtension
+
+    return "$KOTLIN_SCRIPTS_MODULE_NAME.Notebook.Dependencies for ${presentableName}"
 }
 
 internal fun VirtualFileUrlManager.getNotebookDependenciesAsLibraryEntity(
@@ -24,7 +27,7 @@ internal fun VirtualFileUrlManager.getNotebookDependenciesAsLibraryEntity(
 ): LibraryEntity {
     val url = notebookFile.toVirtualFileUrl(this)
     val notebookEntity = KotlinScriptEntitySource(url)
-    val name = notebookFile.toK2RuntimeDependencyLibraryName()
+    val name = notebookFile.toK2RuntimeDependencyLibraryName(project)
     return entityStorage
         .createOrUpdateLibraryForNotebookDependencies(name, project, notebookEntity, configuration)
 }
