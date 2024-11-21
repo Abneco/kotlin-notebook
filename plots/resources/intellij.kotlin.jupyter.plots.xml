@@ -40,9 +40,9 @@
                 icon="AllIcons.Actions.Copy"/>
 
         <group id="LetsPlotActions">
-            <reference id="SaveLetsPlot"/>
-            <reference id="SaveAllLetsPlots"/>
-            <reference id="CopyLetsPlot"/>
+            <reference ref="SaveLetsPlot"/>
+            <reference ref="SaveAllLetsPlots"/>
+            <reference ref="CopyLetsPlot"/>
         </group>
     </actions>
 </idea-plugin>
