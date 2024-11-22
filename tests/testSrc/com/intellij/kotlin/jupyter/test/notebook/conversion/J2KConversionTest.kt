@@ -84,7 +84,7 @@ class J2KConversionTest(
             }
 
             KotlinEditorOptions.getInstance().isDonTShowConversionDialog = true
-            ConvertTextJavaCopyPasteProcessor.conversionPerformed = false
+            ConvertTextJavaCopyPasteProcessor.Util.conversionPerformed = false
 
             myFixture.performEditorAction(IdeActions.ACTION_EDITOR_MOVE_CARET_DOWN)
             myFixture.performEditorAction(IdeActions.ACTION_PASTE)
