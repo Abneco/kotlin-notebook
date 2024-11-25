@@ -55,7 +55,7 @@ abstract class AbstractNotebookTypeHintsBaseTest(testDataPath: String) : KotlinN
                                   provider: InlayHintsProvider<T>,
                                   settings: T = provider.createSettings(),
                                   verifyHintPresence: Boolean = false) {
-        val sourceText = InlayDumpUtil.removeHints(expectedText)
+        val sourceText = InlayDumpUtil.removeInlays(expectedText)
         val actualText = runReadAction {
             dumpInlayHints(sourceText, provider, injectionOffset, settings)
         }
@@ -80,11 +80,11 @@ abstract class AbstractNotebookTypeHintsBaseTest(testDataPath: String) : KotlinN
         val collector = provider.getCollectorFor(file, editor, settings, sink) ?: error("Collector is expected")
         val collectorWithSettings = CollectorWithSettings(collector, provider.key, file.language, sink)
         collectorWithSettings.collectTraversingAndApply(editor, file, true)
-        return InlayDumpUtil.dumpHintsInternal(
+        return InlayDumpUtil.dumpInlays(
             sourceText,
             editor = myFixture.editor,
             filter = { r -> r.widthInPixels > 0 },
-            renderer = { renderer, _, _ ->
+            renderer = { renderer, _ ->
                 if (renderer !is PresentationRenderer && renderer !is LinearOrderInlayRenderer<*>) error("renderer not supported")
                 renderer.toString()
             },
