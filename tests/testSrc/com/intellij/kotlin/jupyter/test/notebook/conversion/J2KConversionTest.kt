@@ -7,7 +7,7 @@ import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import org.jetbrains.kotlin.idea.conversion.copy.ConvertTextJavaCopyPasteProcessor
+import org.jetbrains.kotlin.j2k.copyPaste.ConvertTextJavaCopyPasteProcessor
 import org.jetbrains.kotlin.idea.editor.KotlinEditorOptions
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Assume
