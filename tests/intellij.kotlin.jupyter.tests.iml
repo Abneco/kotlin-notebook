@@ -41,6 +41,7 @@
     <orderEntry type="module" module-name="intellij.notebooks.plugin" scope="TEST" />
     <orderEntry type="module" module-name="intellij.vcs.github" scope="TEST" />
     <orderEntry type="module" module-name="intellij.jupyter.github" scope="TEST" />
+    <orderEntry type="module" module-name="kotlin.j2k.shared" scope="TEST" />
     <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-scripting-compiler-impl" level="project" />
   </component>
 </module>
