@@ -46,7 +46,8 @@ val VirtualFile?.isKotlinNotebook: Boolean
 
 val BackedNotebookVirtualFile.isKotlinNotebook: Boolean
     get() {
-        return notebookOrNull?.language === KotlinLanguage.INSTANCE
+        val myNotebook = notebookOrNull ?: return file.isKotlinNotebook
+        return myNotebook.language === KotlinLanguage.INSTANCE
     }
 
 val Editor.isKotlinNotebook: Boolean
