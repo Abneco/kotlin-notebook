@@ -1,4 +1,4 @@
-<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude" package="com.intellij.kotlin.jupyter">
+<idea-plugin package="com.intellij.kotlin.jupyter">
     <name>Kotlin Notebook</name>
     <id>org.jetbrains.plugins.kotlin.jupyter</id>
     <category>Tools Integration</category>
@@ -79,6 +79,8 @@
         <module name="intellij.kotlin.jupyter.tables"/>
         <module name="intellij.kotlin.jupyter.plots"/>
         <module name="intellij.kotlin.jupyter.liveTemplates"/>
+        <module name="intellij.kotlin.jupyter.k1"/>
+        <module name="intellij.kotlin.jupyter.k2"/>
     </content>
 
     <dependencies>
@@ -408,7 +410,4 @@
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <supportsKotlinPluginMode supportsK2="true"/>
     </extensions>
-
-    <xi:include href="plugin.k1.xml" includeUnless="idea.kotlin.plugin.use.k2"/>
-    <xi:include href="plugin.k2.xml" includeIf="idea.kotlin.plugin.use.k2"/>
 </idea-plugin>

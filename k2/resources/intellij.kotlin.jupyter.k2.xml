@@ -1,4 +1,9 @@
-<idea-plugin>
+<idea-plugin package="com.intellij.kotlin.jupyter.k2">
+
+    <dependencies>
+        <plugin id="kotlin.plugin.k2"/>
+    </dependencies>
+
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <scriptDefinitionsSource implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.k2.KotlinNotebookScriptDefinitionsSource"/>
         <scriptConfigurationsSource implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.k2.NotebookScriptConfigurationsSource"/>
