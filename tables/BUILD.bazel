@@ -1,6 +1,5 @@
 ### auto-generated section `build intellij.kotlin.jupyter.tables` start
-load("@rules_jvm//:jvm.bzl", "jvm_resources")
-load("@rules_jvm//:rules.bzl", "jvm_library")
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources")
 
 jvm_resources(
   name = "kotlin-jupyter-tables_resources",
@@ -18,20 +17,18 @@ jvm_library(
   name = "kotlin-jupyter-tables",
   module_name = "intellij.kotlin.jupyter.tables",
   visibility = ["//visibility:public"],
-  srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True, exclude = ["**/module-info.java"]),
-  javac_opts = "@rules_jvm//:j17",
-  kotlinc_opts = "@rules_jvm//:k17",
+  srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
   deps = [
-    "@lib//:kotlin-stdlib.provided",
+    "@lib//:kotlin-stdlib-provided",
     "//plugins/kotlin/jupyter/core:kotlin-jupyter-core",
     "@community//notebooks/visualization",
     "//plugins/jupyter/core",
     "@community//platform/platform-impl:ide-impl",
     "//python/scientific-tables",
     "//dbe/grid:grid-core-impl",
-    "@ultimate_lib//:jackson-databind.provided",
-    "@ultimate_lib//:jackson.provided",
-    "@lib//:kotlinc_kotlin-compiler-common.provided",
+    "@lib//:jackson-databind-provided",
+    "@lib//:jackson-provided",
+    "@lib//:kotlinc_kotlin-compiler-common-provided",
     "//plugins/jupyter/tables",
     "@community//platform/code-style-api:codeStyle",
   ],

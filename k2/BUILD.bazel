@@ -1,0 +1,46 @@
+### auto-generated section `build intellij.kotlin.jupyter.k2` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_provided_library", "jvm_resources")
+
+jvm_resources(
+  name = "kotlin-jupyter-k2_resources",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_provided_library(
+  name = "scripting_provided",
+  lib = "@community//plugins/kotlin/scripting"
+)
+
+jvm_library(
+  name = "kotlin-jupyter-k2",
+  module_name = "intellij.kotlin.jupyter.k2",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
+  deps = [
+    "@ultimate_lib//:jetbrains_kotlin-jupyter-shared-compiler-provided",
+    "@lib//:kotlinc_kotlin-scripting-common-provided",
+    "@lib//:kotlinc_kotlin-scripting-compiler-impl-provided",
+    "@lib//:kotlinc_analysis-api-provided",
+    "@lib//:kotlinc_kotlin-compiler-common-provided",
+    "@lib//:kotlinc_kotlin-scripting-jvm-provided",
+    "@lib//:kotlin-stdlib-provided",
+    "//plugins/kotlin/jupyter/core:kotlin-jupyter-core",
+    "@community//platform/core-api:core",
+    "@community//plugins/kotlin/base/scripting:kotlin-base-scripting",
+    "@community//platform/backend/workspace",
+    "@community//platform/projectModel-api:projectModel",
+    "@community//platform/projectModel-impl",
+    "@community//platform/analysis-api:analysis",
+    "//plugins/workspace:ide-workspace",
+    "@community//platform/workspace/storage",
+    "@community//platform/workspace/jps",
+    "//plugins/jupyter/core",
+    "@community//jupyter:notebooks-jupyter-core",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//plugins/kotlin/base/code-insight:kotlin-base-code-insight",
+    ":scripting_provided",
+  ],
+  runtime_deps = [":kotlin-jupyter-k2_resources"]
+)
+### auto-generated section `build intellij.kotlin.jupyter.k2` end

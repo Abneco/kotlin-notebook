@@ -1,6 +1,5 @@
 ### auto-generated section `build intellij.kotlin.jupyter.plots` start
-load("@rules_jvm//:jvm.bzl", "jvm_resources")
-load("@rules_jvm//:rules.bzl", "jvm_library")
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources")
 
 jvm_resources(
   name = "kotlin-jupyter-plots_resources",
@@ -18,18 +17,15 @@ jvm_library(
   name = "kotlin-jupyter-plots",
   module_name = "intellij.kotlin.jupyter.plots",
   visibility = ["//visibility:public"],
-  srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True, exclude = ["**/module-info.java"]),
-  javac_opts = "@rules_jvm//:j17",
-  kotlinc_opts = "@rules_jvm//:k17",
-  plugins = ["@lib//:serialization_plugin"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
   deps = [
     "//plugins/kotlin/jupyter/core:kotlin-jupyter-core",
     "@ultimate_lib//:jetbrains_lets_plot_shadowed",
     "@ultimate_lib//:kotlin_jupyter_plots_jetbrains_lets_plot_export_shadowed",
     "@ultimate_lib//:kotlin_jupyter_plots_ggdsl-util",
-    "@lib//:kotlin-stdlib.provided",
-    "@ultimate_lib//:jackson.provided",
-    "@ultimate_lib//:jackson-databind.provided",
+    "@lib//:kotlin-stdlib-provided",
+    "@lib//:jackson-provided",
+    "@lib//:jackson-databind-provided",
     "@lib//:kotlinx-serialization-core",
     "@lib//:kotlinx-serialization-json",
     "@community//platform/core-ui",
