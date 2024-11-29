@@ -264,7 +264,8 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
 
     override fun getFilteringCommand(
         tableVariable: String,
-        filters: FilterExpression?
+        filters: FilterExpression?,
+        tableColumnsNumber: Int
     ): String {
         return tableVariable
     }
