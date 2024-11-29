@@ -16,9 +16,9 @@ import java.nio.file.Path
 
 @Service(Service.Level.PROJECT)
 internal class KotlinNotebookDebugSessionManager(
-    private val project: Project,
+    project: Project,
     coroutineScope: CoroutineScope
-) : NotebookProjectLevelService<KotlinNotebookDebugSession>(coroutineScope) {
+) : NotebookProjectLevelService<KotlinNotebookDebugSession>(project, coroutineScope) {
     private val portsGenerator = DebugConnectionUtility.debugPortsGenerator
 
     private val nextTargetDebugPortOrNull: Int?

@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.editor.highlighting.service
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import org.jetbrains.kotlin.utils.ifEmpty
 import java.util.concurrent.ConcurrentHashMap
@@ -12,27 +12,39 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Contract for providing meta-data related to Notebook highlighting.
  * Implementations should be [thread-safe].
+ * Configuration should be done via help of [NotebookFileHighlightingDataConfigurator].
  *
  * @see NotebookPerFileHighlightingMetaDataController
  * @see NotebookHighlightingManager
  */
+// todo: split by layers
 internal interface NotebookFileHighlightingDataProvider {
+    /**
+     * todo: comments for each property
+     */
     val completeHighlightingRange: TextRange?
     val notebookChangedCellIndex: Int?
+    // todo: this is actually queuedRanges, remove
     val renamingRanges: Collection<TextRange>?
     val notebookRangesQueuedForHL: MutableSet<Int>?
     val notebookDocumentTargetRanges: MutableSet<Int>?
+    // todo: not needed
     val reformatDocumentTargets: MutableSet<Int>?
+    // todo: input event, not a part of [cells]
     val lastExecutedCellsBatch: Set<Int>?
+    // todo: can be transformed
     val notebookDocumentStructureNontrivialChanged: AtomicBoolean
+    // todo: should not be a part of data
     val notebookCellsUpdatesAllowedToChange: AtomicBoolean
 }
 
 
 class NotebookPerFileHighlightingMetaDataController(
-    val executionHighlightingHelper: NotebookCellExecutionHighlightingHelper,
-    parentDisposable: Disposable
+    project: Project,
+    notebookFile: BackedNotebookVirtualFile,
 ): NotebookFileHighlightingDataProvider, Disposable {
+    val executionHighlightingHelper: NotebookCellExecutionHighlightingHelper = NotebookCellExecutionHighlightingHelper(project, notebookFile)
+
     private enum class KeysValues {
         CompleteRange,
         ChangedCellIndex,

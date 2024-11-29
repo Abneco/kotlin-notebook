@@ -1,17 +1,16 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.editor.highlighting.service.components
+package com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass
 
 import com.intellij.concurrency.ConcurrentCollectionFactory
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.markup.MarkupModelListenerPluginAwareProvider
+import com.intellij.kotlin.jupyter.core.editor.highlighting.service.markup.MarkupModelListenerPluginAwareFactory
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.ex.MarkupModelEx
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.editor.impl.event.MarkupModelListener
 import com.intellij.openapi.editor.markup.RangeHighlighter
-import com.intellij.openapi.util.Disposer
 import java.util.concurrent.ConcurrentHashMap
 
 
@@ -22,14 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
  * On cell focus change, old error highlighters should be disposed of as a part of considering
  * this class being highlighted.
  */
-internal class ErrorHighlightersProcessor(
-    parentDisposable: Disposable,
-    private val sharedLogger: Logger
-) : Disposable {
-    init {
-        Disposer.register(parentDisposable, this)
-    }
-
+internal class ErrorHighlightersTracker : Disposable {
     /**
      * Associates injected file indexes with their respective sets of error highlighters.
      * This information is used to dispose of old highlighters during Shadowing
@@ -40,18 +32,21 @@ internal class ErrorHighlightersProcessor(
     private lateinit var activeMarkupModelListener: MarkupModelListener
 
     fun addMarkupListener(editor: Editor) {
-        activeMarkupModelListener = MarkupModelListenerPluginAwareProvider
-            .provideListener(targetErrorHighlighters)
+        activeMarkupModelListener = MarkupModelListenerPluginAwareFactory
+            .createListener(targetErrorHighlighters)
 
         val editorEx = editor as? EditorEx ?: return
-        val suitableParent = (editor as? EditorImpl)?.disposable ?: this
+        // todo: can really editor does not have a disposable? throw error then?
+        val parentDisposable = (editor as? EditorImpl)?.disposable ?: this
         editorEx
             .filteredDocumentMarkupModel
-            .addMarkupModelListener(suitableParent, activeMarkupModelListener)
+            .addMarkupModelListener(parentDisposable, activeMarkupModelListener)
     }
 
-
-    fun determineFilesWithLeftErrors(
+    /**
+     * This method should be called on daemonFinished event
+     */
+    fun determineFilesWithRemainingErrors(
         markupModel: MarkupModelEx,
         finishedFilesIndexes: MutableSet<Int>,
         completeIndexTarget: Int?
@@ -72,13 +67,14 @@ internal class ErrorHighlightersProcessor(
         toRemove.forEach { fileIndexesToErrors.remove(it) }
         val targetPassed = completeIndexTarget in finishedFilesIndexes
 
+        // todo: can it be checked without finishedFilesIndexes?
         fileIndexesToErrors.filter {
             if (it.key != completeIndexTarget) it.value.isNotEmpty() else !targetPassed
         }.keys.also {
             // not yet counted
             if (it.isNotEmpty()) {
                 finishedFilesIndexes.removeAll(it)
-                sharedLogger.debug("Daemon finished, knownErrorInd: ${fileIndexesToErrors.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
+                notebookLogger().debug("Daemon finished, knownErrorInd: ${fileIndexesToErrors.keys}, recycled errors in ind: $toRemove, remaining: ${it}")
             }
         }
     }

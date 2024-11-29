@@ -10,12 +10,12 @@ import kotlinx.coroutines.CoroutineScope
 
 @Service(Service.Level.PROJECT)
 class NotebookStructureTrackerService(
-    val project: Project,
+    project: Project,
     coroutineScope: CoroutineScope
-) : NotebookProjectLevelService<NotebookStructureClassTracker>(coroutineScope) {
+) : NotebookProjectLevelService<NotebookStructureClassTracker>(project, coroutineScope) {
 
-    override fun createInstance(backedFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookStructureClassTracker {
-        return NotebookStructureClassTracker(project, backedFile, fileScope)
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookStructureClassTracker {
+        return NotebookStructureClassTracker(project, virtualFile, fileScope)
     }
 
     companion object {

@@ -1,15 +1,13 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.editor.highlighting.service.components
+package com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass
 
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
-import com.intellij.kotlin.jupyter.core.logging.notebookLogger
-import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.kotlin.jupyter.core.util.addDisposableChild
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.MarkupModelEx
 import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.utils.addIfNotNull
@@ -27,45 +25,37 @@ import org.jetbrains.kotlin.utils.addIfNotNull
  * to [com.intellij.openapi.editor.markup.MarkupModel].
  *
  */
-internal class HighlightingPassTokensProcessor(
+internal class HighlightingPassStateTracker(
     project: Project,
-    parentDisposable: Disposable
 ) : Disposable {
-    companion object {
-        private val LOG = notebookLogger()
-    }
-
-    init {
-        Disposer.register(parentDisposable, this)
-    }
-
-    private val errorHighlightersProcessor = ErrorHighlightersProcessor(this, LOG)
-    private val injectedFilesDataProcessor = InjectedFilesDataProcessor(
-        InjectedLanguageManager.getInstance(project),
-        LOG,
-        this
+    private val myErrorHighlightersTracker = addDisposableChild(
+        ErrorHighlightersTracker()
+    )
+    private val myInjectedFilesDataTracker = addDisposableChild(
+        InjectedFilesDataTracker()
     )
 
     val remainingIndexesToProcess: Set<Int>
-        get() = injectedFilesDataProcessor.targetIndexes - finishedFiles
+        get() = myInjectedFilesDataTracker.targetIndexes - finishedFiles
 
     val finishedFiles: Set<Int>
-        get() = injectedFilesDataProcessor.finishedFilesIndexes - errorHighlightersProcessor.fileIndexesToErrors.keys
+        get() = myInjectedFilesDataTracker.finishedFilesIndexes - myErrorHighlightersTracker.fileIndexesToErrors.keys
 
     fun passCreated(targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
-        injectedFilesDataProcessor.passCreated(targetIndexes, cells, completeRangeInd)
+        // redirection is not appreciated
+        myInjectedFilesDataTracker.passCreated(targetIndexes, cells, completeRangeInd)
     }
 
     fun getInjectionHost(psiFile: PsiFile): PsiLanguageInjectionHost? {
-        return injectedFilesDataProcessor.getFileInjectionData(psiFile)?.injectionHost
+        return myInjectedFilesDataTracker.getFileInjectionData(psiFile)?.injectionHost
     }
 
     /**
      * Disposes any stored error highlighters outside current [cellInFocus] index
      */
     fun disposeErrorHighlighters(cellInFocus: Int?) {
-        val errorData = errorHighlightersProcessor.fileIndexesToErrors.filter { entry ->
-            entry.key in injectedFilesDataProcessor.targetIndexes
+        val errorData = myErrorHighlightersTracker.fileIndexesToErrors.filter { entry ->
+            entry.key in myInjectedFilesDataTracker.targetIndexes
                     && entry.value.isNotEmpty()
                     && entry.key != cellInFocus
         }
@@ -80,16 +70,16 @@ internal class HighlightingPassTokensProcessor(
     }
 
     fun isFileTarget(psiFile: PsiFile): Boolean {
-        return injectedFilesDataProcessor.isFileTarget(psiFile)
+        return myInjectedFilesDataTracker.isFileTarget(psiFile)
     }
 
     fun injectedFileProcessed(psiFile: PsiFile) {
-        injectedFilesDataProcessor.finishedForFile(psiFile)
+        myInjectedFilesDataTracker.finishedForFile(psiFile)
     }
 
     fun getErrorHighlighters(psiFile: PsiFile): Set<RangeHighlighter> {
-        val errorHighlighters = errorHighlightersProcessor.fileIndexesToErrors
-        val cellInd = injectedFilesDataProcessor.getFileInjectionData(psiFile)?.notebookCellIndex ?: return emptySet()
+        val errorHighlighters = myErrorHighlightersTracker.fileIndexesToErrors
+        val cellInd = myInjectedFilesDataTracker.getFileInjectionData(psiFile)?.notebookCellIndex ?: return emptySet()
 
         if (isFileTarget(psiFile)) {
             errorHighlighters.putIfAbsent(cellInd, mutableSetOf())
@@ -104,40 +94,40 @@ internal class HighlightingPassTokensProcessor(
         markupModel: MarkupModelEx,
         cellFocusIndex: Int?
     ): MutableSet<Int> {
-        injectedFilesDataProcessor.finishedFilesIndexes.addIfNotNull(cellFocusIndex)
-        val finishedFilesIndexes = injectedFilesDataProcessor.finishedFilesIndexes
+        myInjectedFilesDataTracker.finishedFilesIndexes.addIfNotNull(cellFocusIndex)
+        val finishedFilesIndexes = myInjectedFilesDataTracker.finishedFilesIndexes
         val remaining = remainingIndexesToProcess.toMutableSet()
         remaining.remove(cellFocusIndex)
 
-        errorHighlightersProcessor.determineFilesWithLeftErrors(markupModel, finishedFilesIndexes, cellFocusIndex)
+        myErrorHighlightersTracker.determineFilesWithRemainingErrors(markupModel, finishedFilesIndexes, cellFocusIndex)
 
-        injectedFilesDataProcessor.determineFilesLeftToHighlight(markupModel, remaining)
-        injectedFilesDataProcessor.processUnrecognizedFiles(topLevelFile, queue)
+        myInjectedFilesDataTracker.determineFilesLeftToHighlight(markupModel, remaining)
+        myInjectedFilesDataTracker.processUnrecognizedFiles(topLevelFile, queue)
 
         return remaining
     }
 
 
     fun editorCreated(editor: Editor) {
-        errorHighlightersProcessor.addMarkupListener(editor)
+        myErrorHighlightersTracker.addMarkupListener(editor)
     }
 
     /**
      * Reset processor state before new HL pass.
      *
-     * If no kernel restart performed, the information from [errorHighlightersProcessor] should be kept
+     * If no kernel restart performed, the information from [myErrorHighlightersTracker] should be kept
      * between iterations as some errors might not be HL-ed/disposed of if analysis was interrupted.
      */
     fun clearState(cellFocusIndex: Int?, onRestart: Boolean = false) {
-        injectedFilesDataProcessor.clear()
+        myInjectedFilesDataTracker.clear()
 
         if (onRestart) {
-            errorHighlightersProcessor.clear()
+            myErrorHighlightersTracker.clear()
         } else {
             // transfer seen errors to a proper storage
-            val highlighters = errorHighlightersProcessor.targetErrorHighlighters
+            val highlighters = myErrorHighlightersTracker.targetErrorHighlighters
             if (cellFocusIndex != null) {
-                val focusCellHighlighters = errorHighlightersProcessor.fileIndexesToErrors.getOrPut(cellFocusIndex) { mutableSetOf() }
+                val focusCellHighlighters = myErrorHighlightersTracker.fileIndexesToErrors.getOrPut(cellFocusIndex) { mutableSetOf() }
                 focusCellHighlighters?.addAll(highlighters)
             }
             highlighters.clear()

@@ -94,9 +94,9 @@ abstract class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareH
         if (file !is KtFile) return true
 
         val helper = prepareForFile(file)
-        val isTargetHost = helper.isCurrentFileTarget
+        val isCellInFocus = helper.isCurrentFileInFocus
 
-        if (isTargetHost) {
+        if (isCellInFocus) {
             beforeLeavingAnalysisSession(file)
             afterAnalysis()
             return true

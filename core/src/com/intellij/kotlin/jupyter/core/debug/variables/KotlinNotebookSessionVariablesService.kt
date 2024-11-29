@@ -27,9 +27,9 @@ import kotlinx.coroutines.withContext
  */
 @Service(Service.Level.PROJECT)
 class KotlinNotebookSessionVariablesService(
-    private val project: Project,
+    project: Project,
     coroutineScope: CoroutineScope
-): NotebookProjectLevelService<NotebookVariablesPerFileStateService>(coroutineScope) {
+): NotebookProjectLevelService<NotebookVariablesPerFileStateService>(project, coroutineScope) {
     init {
         project.messageBus.connect(this).subscribe(
             FileEditorManagerListener.FILE_EDITOR_MANAGER,

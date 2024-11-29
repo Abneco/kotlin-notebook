@@ -14,7 +14,11 @@ import com.intellij.openapi.editor.markup.RangeHighlighter
 internal class ShadowingAwareMarkupModelListener(private val errorHighlighters: MutableSet<RangeHighlighter>) : MarkupModelListener {
     override fun afterAdded(highlighter: RangeHighlighterEx) {
         val info = HighlightInfo.fromRangeHighlighter(highlighter) ?: return
-        // ignore parsing errors for now, only from KT factories
+        /*
+         Hack: ignore parsing errors for now, only from KT factories, as [HighlightInfo]
+         does not contain info about from which factory it was created.They are in the form of
+         [Factory]: <error>
+         */
         if (info.severity == HighlightSeverity.ERROR && info.description.startsWith('[')) {
             errorHighlighters.add(highlighter)
         }

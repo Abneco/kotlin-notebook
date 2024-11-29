@@ -3,17 +3,18 @@ package com.intellij.kotlin.jupyter.core.editor.highlighting.service
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.editor.getAllIntervalPointers
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.components.DaemonIterationState
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.components.HighlightingPassTokensProcessor
+import com.intellij.jupyter.execution.listeners.NotebookSessionEventListener
+import com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass.DaemonIterationState
+import com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass.HighlightingPassStateTracker
 import com.intellij.kotlin.jupyter.core.editor.typing.NotebookCaretListener
 import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
-import com.intellij.jupyter.execution.listeners.NotebookSessionEventListener
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookAfterScriptsUpdatePluginAwareHandler
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.ImpatientNotebookChangeListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
+import com.intellij.kotlin.jupyter.core.util.createDisposableChild
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.isCurrentlySelectedInEditor
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
@@ -46,15 +47,14 @@ import org.jetbrains.kotlin.utils.addIfNotNull
  * and keeping track of applied highlighters to [MarkupModelEx]
  */
 class NotebookHighlightingManager(
+    private val project: Project,
     virtualFile: BackedNotebookVirtualFile,
-    private val projectService: NotebookHighlightingService,
     childScope: CoroutineScope,
     var completeRangeInd: Int?
 ): NotebookPerFileChildService(virtualFile, childScope) {
     companion object {
         private val LOG = notebookLogger()
     }
-    private val project: Project = projectService.project
     private val document by lazy {
         withReadAccess {
             FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
@@ -62,16 +62,21 @@ class NotebookHighlightingManager(
     }
 
     private val iterationLock = Mutex(false)
+    // todo: fields can be lazily initialized?
     private val iterationStateIndicator = DaemonIterationState()
-    private val highlightingPassTokensProcessor = HighlightingPassTokensProcessor(project, this)
+    private val highlightingPassStateTracker = createDisposableChild {
+        HighlightingPassStateTracker(project)
+    }
 
     private var _jupyterFile: PsiFile? = null
     val jupyterPsiFile: PsiFile? get() = _jupyterFile
 
-    val dataController: NotebookPerFileHighlightingMetaDataController = NotebookPerFileHighlightingMetaDataController(
-      NotebookCellExecutionHighlightingHelper(project, virtualFile),
-        this
-    )
+    val dataController = createDisposableChild {
+        NotebookPerFileHighlightingMetaDataController(
+            project,
+            virtualFile,
+        )
+    }
 
     private suspend fun updateData(cellsIndices: List<Int>) {
         iterationLock.withLock {
@@ -97,6 +102,7 @@ class NotebookHighlightingManager(
     private fun Disposable.addListeners() {
         val targetFile = virtualFile
         val messageBus = project.messageBus
+        // todo: move to document layer
         document.addDocumentListener(
             ImpatientNotebookChangeListener(project, virtualFile),
             this
@@ -159,7 +165,7 @@ class NotebookHighlightingManager(
 
         readAction {
             _jupyterFile = virtualFile.file.findPsiFile(project)
-            projectService.addListeners()
+            addListeners()
         }
     }
 
@@ -167,16 +173,16 @@ class NotebookHighlightingManager(
 
     fun tryGetKnownHostFor(file: PsiFile): PsiLanguageInjectionHost? {
         if (file !is KtFile) return null
-        return highlightingPassTokensProcessor.getInjectionHost(file)
+        return highlightingPassStateTracker.getInjectionHost(file)
     }
 
     fun isFileTarget(file: PsiFile): Boolean {
-        return highlightingPassTokensProcessor.isFileTarget(file)
+        return highlightingPassStateTracker.isFileTarget(file)
     }
 
     fun associateWithNewCaretListener(listener: NotebookCaretListener, editor: Editor) {
         activeCaretListener = listener
-        highlightingPassTokensProcessor.editorCreated(editor)
+        highlightingPassStateTracker.editorCreated(editor)
     }
 
     fun passCreated(targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
@@ -192,7 +198,8 @@ class NotebookHighlightingManager(
 
         try {
             clearState()
-            highlightingPassTokensProcessor.passCreated(targetIndexes, cells, completeRangeInd)
+            //context.myHighlightingPassStateTracker.passCreated()
+            highlightingPassStateTracker.passCreated(targetIndexes, cells, completeRangeInd)
             iterationStateIndicator.enterProgressPhase()
             this.completeRangeInd = completeRangeInd
         } catch (ex: Exception) {
@@ -205,7 +212,7 @@ class NotebookHighlightingManager(
     }
 
     fun finishedAnalysisForFile(psiFile: PsiFile): Deferred<Unit> = coroutineScope.async {
-        highlightingPassTokensProcessor.injectedFileProcessed(psiFile)
+        highlightingPassStateTracker.injectedFileProcessed(psiFile)
     }
 
     fun daemonFinished(editor: Editor, psiFile: PsiFile?) {
@@ -235,6 +242,7 @@ class NotebookHighlightingManager(
                     LOG.warn(KotlinNotebookBundle.message("kotlin.jupyter.highlighting.service.null.cells.warning"))
                     return@async
                 }
+                // todo: go to doc + combine everything else needed
                 updateData(cells)
 
                 NotebookHighlightingRestarter.scheduleRegularUpdate(jupyterPsiFile!!)
@@ -252,7 +260,7 @@ class NotebookHighlightingManager(
      * Should be called before each HL pass
      */
     private fun clearState(complete: Boolean = false) {
-        highlightingPassTokensProcessor.clearState(completeRangeInd, complete)
+        highlightingPassStateTracker.clearState(completeRangeInd, complete)
         if (complete) {
             activeCaretListener = null
             _jupyterFile = null
@@ -271,9 +279,9 @@ class NotebookHighlightingManager(
 
             // can be cas
             iterationStateIndicator.setIdle()
-            highlightingPassTokensProcessor.disposeErrorHighlighters(target)
+            highlightingPassStateTracker.disposeErrorHighlighters(target)
 
-            val remaining = highlightingPassTokensProcessor
+            val remaining = highlightingPassStateTracker
                 .determineCellIndexesLeftToHighlight(
                     queue,
                     jupyterPsiFile,
@@ -281,7 +289,7 @@ class NotebookHighlightingManager(
                     target
                 )
 
-            val finishedFiles = highlightingPassTokensProcessor.finishedFiles
+            val finishedFiles = highlightingPassStateTracker.finishedFiles
             reduceQueue(finishedFiles)
             queue?.addIfNotNull(target)
 

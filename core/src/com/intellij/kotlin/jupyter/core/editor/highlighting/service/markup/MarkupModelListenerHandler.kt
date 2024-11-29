@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.core.editor.highlighting.service.markup
 
 import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandler
-import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
 import com.intellij.openapi.editor.impl.event.MarkupModelListener
 import com.intellij.openapi.editor.markup.RangeHighlighter
 
@@ -13,21 +12,8 @@ import com.intellij.openapi.editor.markup.RangeHighlighter
  *
  * Listener is necessary to keep track of error highlighters which are effectively applied to the model.
  */
-object MarkupModelListenerPluginAwareProvider : KotlinPluginModeAwareHandler {
-    fun provideListener(highlighters: MutableSet<RangeHighlighter>): MarkupModelListener {
-        return createPluginModeAwareInstance(
-            highlighters,
-            ::createK1Listener,
-            ::createK2Listener,
-        )
-    }
-
-    private fun createK1Listener(highlighters: MutableSet<RangeHighlighter>): MarkupModelListener {
-        return ShadowingAwareMarkupModelListener(highlighters)
-    }
-
-    private fun createK2Listener(highlighters: MutableSet<RangeHighlighter>) : MarkupModelListener {
-        // shadowing is not yet supported
+object MarkupModelListenerPluginAwareFactory : KotlinPluginModeAwareHandler {
+    fun createListener(highlighters: MutableSet<RangeHighlighter>): MarkupModelListener {
         return ShadowingAwareMarkupModelListener(highlighters)
     }
 }

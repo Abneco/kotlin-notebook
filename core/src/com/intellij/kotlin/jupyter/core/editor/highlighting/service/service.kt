@@ -21,17 +21,20 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * docs
+ */
 @Service(Service.Level.PROJECT)
 class NotebookHighlightingService(
-    val project: Project, coroutineScope: CoroutineScope
-) : NotebookProjectLevelService<NotebookHighlightingManager>(coroutineScope) {
+    project: Project, coroutineScope: CoroutineScope
+) : NotebookProjectLevelService<NotebookHighlightingManager>(project, coroutineScope) {
 
-    override fun createInstance(backedFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookHighlightingManager {
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookHighlightingManager {
         return NotebookHighlightingManager(
-                backedFile,
-                this@NotebookHighlightingService,
-                fileScope,
-                null,
+            project,
+            virtualFile,
+            fileScope,
+            null,
         )
     }
 

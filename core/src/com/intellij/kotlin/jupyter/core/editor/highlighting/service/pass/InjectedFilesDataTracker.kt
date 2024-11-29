@@ -1,17 +1,16 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.editor.highlighting.service.components
+package com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass
 
 import com.intellij.concurrency.ConcurrentCollectionFactory
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.ex.MarkupModelEx
 import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.RangeHighlighter
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
@@ -27,16 +26,14 @@ import java.util.concurrent.atomic.AtomicInteger
 
 
 /**
- * Processor responsible for managing data related to files injected into a notebook cell within a Kotlin plugin environment.
- * This class handles the registration, processing, and cleanup of injected files, particularly for those relevant to Kotlin.
- *
- * Its state lifecycle is per-pass.
+ * doc should be about what and how is tracked, e,g. why we count injections
  */
-internal class InjectedFilesDataProcessor(
-    private val injectedLanguageManager: InjectedLanguageManager,
-    private val sharedLogger: Logger,
-    parentDisposable: Disposable,
-) : Disposable  {
+// TODO: refactor doc
+/**
+ * injected
+ */
+internal class InjectedFilesDataTracker
+: Disposable  {
     data class InjectedFileData(
         val notebookCellIndex: Int,
         val file: KtFile,
@@ -45,9 +42,6 @@ internal class InjectedFilesDataProcessor(
         val totalTokens: Int
     ) {
         val processedTokens = AtomicInteger(0)
-    }
-    init {
-        Disposer.register(parentDisposable, this)
     }
 
     val finishedFilesIndexes = ConcurrentCollectionFactory.createConcurrentSet<Int>()
@@ -62,7 +56,7 @@ internal class InjectedFilesDataProcessor(
         }
 
     fun passCreated(targetIndexes: Set<Int>, cells: List<PsiLanguageInjectionHost>?, completeRangeInd: Int?) {
-        if (cells == null) {
+        if (cells == null || cells.isEmpty()) {
             return
         }
         if (targetIndexes.isEmpty() && completeRangeInd != null) {
@@ -70,6 +64,9 @@ internal class InjectedFilesDataProcessor(
             targetPsiFile = psiCell.getInjectedKtFiles(injectedLanguageManager).firstOrNull()
             return
         }
+
+        val project = cells.first().project
+        val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
 
         for (ind in targetIndexes) {
             val psiCell = cells.getOrNull(ind) ?: continue
@@ -102,13 +99,13 @@ internal class InjectedFilesDataProcessor(
     fun finishedForFile(psiFile: PsiFile) {
         val ind = fileToInjectionData[psiFile]?.notebookCellIndex
         if (ind == null) {
-            sharedLogger.info("Seen unrecognized file during pass")
+            notebookLogger().info("Seen unrecognized file during pass")
             //unrecognizedFiles.add(psiFile)
             return
         }
 
         finishedFilesIndexes.addIfNotNull(ind)
-        sharedLogger.debug("Finished visitors for $ind")
+        notebookLogger().debug("Finished visitors for $ind")
 
         return
     }
@@ -148,6 +145,8 @@ internal class InjectedFilesDataProcessor(
         val unrecognizedFiles = unrecognizedFiles
 
         if (unrecognizedFiles.isNotEmpty()) {
+            val project = unrecognizedFiles.first().project
+            val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
             val unseenFiles = ReadAction.compute<List<Int>, Throwable> {
                 unrecognizedFiles.toCellsIndexes(topLevelFile, injectedLanguageManager)
             }

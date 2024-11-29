@@ -53,9 +53,9 @@ import kotlin.script.experimental.jvm.jvm
  */
 @Service(Service.Level.PROJECT)
 class JupyterCompilerService(
-    val project: Project,
+    project: Project,
     coroutineScope: CoroutineScope
-) : NotebookProjectLevelService<JupyterCompilerPerFileService>(coroutineScope) {
+) : NotebookProjectLevelService<JupyterCompilerPerFileService>(project, coroutineScope) {
     private val scriptingForceUpdater: NotebookScriptingForceUpdateRequestor by lazy {
         NotebookScriptingForceUpdateRequestor.create(project)
     }
@@ -152,10 +152,10 @@ class JupyterCompilerService(
 
     val language: Language = Language.findLanguageByID("kotlin")!!
 
-    override fun createInstance(backedFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): JupyterCompilerPerFileService {
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): JupyterCompilerPerFileService {
         return JupyterCompilerPerFileService(
             this,
-            backedFile,
+            virtualFile,
             initialClasspath,
             fileScope
         )

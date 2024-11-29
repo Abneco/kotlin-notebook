@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
     private val project = injectedFile.project
-    private lateinit var targetHost: PsiLanguageInjectionHost
+    private lateinit var hostInFocus: PsiLanguageInjectionHost
     private val injectedManager = InjectedLanguageManager.getInstance(project)
     private var completeAnalysisRange: TextRange? = null
     val topLevelFile: PsiFile? = injectedManager.getTopLevelFile(injectedFile)
@@ -30,7 +30,7 @@ class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
         val highlightingManager =
             topLevelFile?.virtualFile?.let(BackedNotebookVirtualFile.Companion::takeIfBacked)
                 ?.let { NotebookHighlightingService.getForFile(project, it) }
-        targetHost = highlightingManager?.tryGetKnownHostFor(injectedFile)
+        hostInFocus = highlightingManager?.tryGetKnownHostFor(injectedFile)
             ?: injectedManager.getInjectionHost(injectedFile) ?: return false
 
         shouldHighlightErrors = highlightingManager?.isFileTarget(injectedFile)
@@ -43,7 +43,6 @@ class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
         val project = injectedFile.project
         val manager = InjectedLanguageManager.getInstance(project)
         val topLevelFile = manager.getTopLevelFile(injectedFile)
-        topLevelFile.virtualFile.toBackedNotebookFile()
         return topLevelFile.virtualFile.toBackedNotebookFile()?.let {
             NotebookHighlightingService.getForFile(project, it).dataController.completeHighlightingRange
         }
@@ -51,20 +50,20 @@ class InjectedFileHighlightingHelper(private val injectedFile: PsiFile) {
 
     private fun checkIfHostIsTargetManually(): Boolean {
         completeAnalysisRange = getCompleteAnalysisRangeForWholeNotebook(injectedFile)
-        return completeAnalysisRange?.contains(targetHost.textRange)
+        return completeAnalysisRange?.contains(hostInFocus.textRange)
                 ?:
-               (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange!!, targetHost.textRange))
+               (completeAnalysisRange != null && isEitherSymmetricallyContainedRange(completeAnalysisRange!!, hostInFocus.textRange))
     }
 
-    val isCurrentFileTarget: Boolean get() = shouldHighlightErrors
+    val isCurrentFileInFocus: Boolean get() = shouldHighlightErrors
 
     fun markTargetHost() {
         injectedFile.putUserData(NotebookHighlightingUtilityObject.NonTargetHostErrorMark, if (shouldHighlightErrors) null else true)
     }
 
     fun applyReceivedHighlightInfos(foundData: Collection<HighlightInfo>, holder: HighlightInfoHolder) {
-        val errorRef = targetHost.getErrorPresenceIndicator()
-                       ?: AtomicReference(foundData.isNotEmpty()).also { targetHost.putUserData(
+        val errorRef = hostInFocus.getErrorPresenceIndicator()
+                       ?: AtomicReference(foundData.isNotEmpty()).also { hostInFocus.putUserData(
                            NotebookHighlightingUtilityObject.InjectedHostHasErrors, it) }
 
         val seenInfosOffsets = mutableSetOf<Int>()

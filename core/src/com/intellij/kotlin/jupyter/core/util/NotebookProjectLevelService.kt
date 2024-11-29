@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.core.util
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.coroutines.childScope
@@ -31,32 +32,33 @@ abstract class NotebookPerFileChildService(
  * Abstract class representing a notebook project-level service.
  * Every such class contains a collection of per-file [Child] services instantiated by a demand.
  *
- * Note that for every [Child], its own [CoroutineScope] is created as a child scope of `this.coroutineScope`.
+ * Note that for every [Child], its own [CoroutineScope] is created as a child scope of 'this.coroutineScope'.
  */
 abstract class NotebookProjectLevelService<Child : NotebookPerFileChildService>(
+    val project: Project,
     protected val coroutineScope: CoroutineScope
-): Disposable {
+) : Disposable {
     protected val mapping: MutableMap<VirtualFile, Child> = ConcurrentHashMap()
 
     /**
-     * Creates a new [Child] service for the given [backedFile]
+     * Creates a new [Child] service for the given [virtualFile]
      * with its own [CoroutineScope].
      */
     protected abstract fun createInstance(
-        backedFile: BackedNotebookVirtualFile,
+        virtualFile: BackedNotebookVirtualFile,
         fileScope: CoroutineScope
     ): Child
 
     fun getOrCreate(backedFile: BackedNotebookVirtualFile): Child {
         return mapping.getOrPut(backedFile.file) {
-            createInstance(
-                backedFile,
-                coroutineScope.childScope(
-                    "Child scope for ${backedFile.file.name} of service ${this::class.simpleName}"
+            addDisposableChild(
+                createInstance(
+                    backedFile,
+                    coroutineScope.childScope(
+                        "Child scope for ${backedFile.file.name} of service ${this::class.simpleName}"
+                    )
                 )
-            ).also { child ->
-                Disposer.register(this, child)
-            }
+            )
         }
     }
 
@@ -70,4 +72,16 @@ abstract class NotebookProjectLevelService<Child : NotebookPerFileChildService>(
         coroutineScope.cancel()
         mapping.clear()
     }
+}
+
+/**
+ * docs
+ */
+internal inline fun <T : Disposable> Disposable.createDisposableChild(crossinline factory: () -> T): T {
+    return addDisposableChild(factory())
+}
+
+internal fun <T : Disposable> Disposable.addDisposableChild(child: T): T {
+    Disposer.register(this, child)
+    return child
 }
