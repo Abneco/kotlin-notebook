@@ -6,9 +6,10 @@ import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.editor.colors.CodeInsightColors
 import com.intellij.psi.PsiElement
-import org.jetbrains.kotlin.diagnostics.Errors
 
 private val shadowedSymbolSeverity = HighlightInfo.convertSeverity(HighlightSeverity.INFORMATION)
+private const val unresolvedReferenceFactoryName = "UNRESOLVED_REFERENCE"
+
 
 fun convertToShadowedDeclaration(psiElement: PsiElement, factoryName: String): HighlightInfo {
     return HighlightInfo.newHighlightInfo(shadowedSymbolSeverity)
@@ -21,7 +22,7 @@ fun convertToShadowedDeclaration(psiElement: PsiElement, factoryName: String): H
 }
 
 private fun HighlightInfo.Builder.fillInProperDescription(factoryName: String): HighlightInfo.Builder {
-    return if (factoryName == Errors.UNRESOLVED_REFERENCE.name) {
+    return if (factoryName == unresolvedReferenceFactoryName) {
         val unresolvedMessage = KotlinNotebookBundle.message("kotlin.jupyter.highlighting.symbols.styles.shadowed.unresolved.description")
         this.description(
             unresolvedMessage

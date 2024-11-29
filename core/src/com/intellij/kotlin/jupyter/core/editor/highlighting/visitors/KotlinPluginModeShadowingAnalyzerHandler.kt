@@ -6,8 +6,8 @@ import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.InjectedFileHighlightingHelper
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.convertToShadowedDeclaration
 import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandler
-import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
 import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.IntellijInternalApi
 import com.intellij.psi.PsiElement
@@ -17,8 +17,6 @@ import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity
 import org.jetbrains.kotlin.diagnostics.Severity
-import org.jetbrains.kotlin.idea.caches.resolve.analyzeWithAllCompilerChecks
-import org.jetbrains.kotlin.idea.highlighter.clearAllKotlinUnresolvedReferenceKinds
 import org.jetbrains.kotlin.psi.KtFile
 
 /**
@@ -32,7 +30,7 @@ data class KaDiagnosticData(
     val factoryName: String,
 )
 
-internal fun Severity.toKaSeverity(): KaSeverity {
+fun Severity.toKaSeverity(): KaSeverity {
     return when (this) {
         Severity.INFO -> KaSeverity.INFO
         Severity.ERROR -> KaSeverity.ERROR
@@ -46,9 +44,15 @@ internal fun Severity.toKaSeverity(): KaSeverity {
  *
  * This analysis involves detecting errors and creating a special highlighter for it.
  * All instances of this class should be stateless, ideally, objects.
+ *
+ * [Factory] is used to create a proper instance for each of K1/K2 modes.
  */
-sealed class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareHandler {
+abstract class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareHandler {
     abstract fun applyBeforeProcessingDiagnostic(diagnostic: KaDiagnosticData)
+
+    fun interface Factory {
+        fun create(): KotlinPluginModeShadowingAnalyzerHandler
+    }
 
     protected fun filterDiagnostic(diagnostic: KaDiagnosticData): Boolean {
         return diagnostic.severity == KaSeverity.ERROR
@@ -124,34 +128,10 @@ sealed class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareHan
     companion object {
         internal val LOG = thisLogger()
 
+        private val EP: ExtensionPointName<Factory> = ExtensionPointName.create("com.intellij.kotlin.jupyter.core.shadowingVisitorFactory")
+
         fun create(): KotlinPluginModeShadowingAnalyzerHandler {
-            return createPluginModeAwareInstance(
-                { K1ShadowingAnalyzerHandler },
-                { K2ShadowingAnalyzerHandler }
-            )
+            return EP.extensionList.first().create()
         }
-    }
-}
-
-object K1ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
-    override fun applyBeforeProcessingDiagnostic(diagnostic: KaDiagnosticData) = Unit
-
-    //todo:  Use of K1-specific API as there is no way to invoke with AnalysisMode == ALL_COMPILER_CHECKS from analysis api
-    override fun KaSession.collectDiagnostics(file: KtFile) : Collection<KaDiagnosticData> {
-        return file.analyzeWithAllCompilerChecks().bindingContext.diagnostics.all().map {
-            KaDiagnosticData(
-                it.psiElement,
-                it.severity.toKaSeverity(),
-                it.factory.name
-            )
-        }
-    }
-}
-
-
-object K2ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
-    @OptIn(IntellijInternalApi::class)
-    override fun applyBeforeProcessingDiagnostic(diagnostic: KaDiagnosticData) {
-        diagnostic.psiElement.clearAllKotlinUnresolvedReferenceKinds()
     }
 }

@@ -2,15 +2,30 @@
 
     <dependencies>
         <plugin id="kotlin.plugin.k1"/>
+        <plugin id="org.jetbrains.plugins.kotlin.jupyter"/>
+        <module name="intellij.jupyter.psi"/>
+        <module name="intellij.jupyter.core"/>
+        <module name="intellij.notebooks.jupyter.core"/>
     </dependencies>
 
     <extensions defaultExtensionNs="com.intellij">
-        <codeInsight.inlayProvider implementationClass="com.intellij.kotlin.jupyter.core.editor.codeInsight.KotlinNotebookReferencesTypeHintsProvider" language="Jupyter"/>
-        <codeInsight.inlayProvider implementationClass="com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookLambdaTypeHintsProvider" language="Jupyter"/>
-        <codeInsight.inlayProvider implementationClass="com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookValuesHintProvider" language="Jupyter"/>
-        <codeInsight.inlayProvider implementationClass="com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookChainCallHintProvider" language="Jupyter"/>
+        <codeInsight.inlayProvider implementationClass="com.intellij.kotlin.jupyter.k1.codeinsight.hints.KotlinNotebookReferencesTypeHintsProvider" language="Jupyter"/>
+        <codeInsight.inlayProvider implementationClass="com.intellij.kotlin.jupyter.k1.codeinsight.hints.NotebookLambdaTypeHintsProvider" language="Jupyter"/>
+        <codeInsight.inlayProvider implementationClass="com.intellij.kotlin.jupyter.k1.codeinsight.hints.NotebookValuesHintProvider" language="Jupyter"/>
+        <codeInsight.inlayProvider implementationClass="com.intellij.kotlin.jupyter.k1.codeinsight.hints.NotebookChainCallHintProvider" language="Jupyter"/>
 
-        <highlightVisitor implementation="com.intellij.kotlin.jupyter.core.editor.highlighting.visitors.BeforeResolveHighlightingVisitorAdapter"/>
-        <daemon.highlightInfoFilter implementation="com.intellij.kotlin.jupyter.core.editor.highlighting.service.KotlinNotebookHighlightingErrorFilter"/>
+        <highlightVisitor implementation="com.intellij.kotlin.jupyter.k1.highlighting.BeforeResolveHighlightingVisitorAdapter"/>
+        <daemon.highlightInfoFilter implementation="com.intellij.kotlin.jupyter.k1.highlighting.KotlinNotebookHighlightingErrorFilter"/>
+    </extensions>
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <idea.caches.resolve.resolveOptimizingOptionsProvider
+                implementation="com.intellij.kotlin.jupyter.k1.resolve.KotlinNotebookOptimizingOptionsProvider"/>
+    </extensions>
+    <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.core">
+        <scriptPresenceCheckerFactory implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.PluginModeAwareScriptPresenceCheckerFactoryK1"/>
+        <scriptingSupportUpdaterFactory implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.ScriptingSupportUpdaterFactoryK1"/>
+        <classifiersDefaultImportsEnhancerFactory implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.CompiledClassifiersDefaultImportsEnhancerFactoryK1"/>
+        <scriptDefinitionWrapperFactory implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.definition.NotebookScriptDefinitionsWrapperFactoryK1"/>
+        <shadowingVisitorFactory implementation="com.intellij.kotlin.jupyter.k1.highlighting.ShadowingVisitorFactoryK1"/>
     </extensions>
 </idea-plugin>

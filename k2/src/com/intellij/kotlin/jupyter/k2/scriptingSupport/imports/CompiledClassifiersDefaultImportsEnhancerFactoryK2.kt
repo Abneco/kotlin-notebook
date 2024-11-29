@@ -1,8 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.scriptingSupport.k2
+package com.intellij.kotlin.jupyter.k2.scriptingSupport.imports
 
-import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandler
-import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
+import com.intellij.kotlin.jupyter.core.scriptingSupport.CompiledClassifiersDefaultImportsEnhancer
 import com.intellij.kotlin.jupyter.core.scriptingSupport.TwoPartsList
 import com.intellij.kotlin.jupyter.core.scriptingSupport.classFQN
 import com.intellij.openapi.Disposable
@@ -10,36 +9,9 @@ import com.intellij.openapi.util.Disposer
 import org.jetbrains.kotlinx.jupyter.repl.result.SerializedCompiledScript
 
 
-/**
- * Keeps track of the classifiers that have been obtained from compiled scripts.
- *
- * Its main method aims to amend, if needed, additional imports configuration.
- */
-internal interface CompiledClassifiersDefaultImportsEnhancer : KotlinPluginModeAwareHandler {
-    fun updateDefaultImports(
-        compiledClassifiers: List<SerializedCompiledScript>,
-        additionalDefaultImports: TwoPartsList<String>
-    )
-
-    fun clear()
-
-    companion object {
-        private val TRACKER_K1 = object : CompiledClassifiersDefaultImportsEnhancer {
-            // do nothing
-
-            override fun updateDefaultImports(
-                compiledClassifiers: List<SerializedCompiledScript>,
-                additionalDefaultImports: TwoPartsList<String>
-            ) = Unit
-
-            override fun clear() = Unit
-        }
-
-        fun create(parentDisposable: Disposable) = createPluginModeAwareInstance(
-            parentDisposable,
-            { TRACKER_K1 },
-            ::CompiledClassifiersDefaultImportsEnhancerK2
-        )
+class CompiledClassifiersDefaultImportsEnhancerFactoryK2 : CompiledClassifiersDefaultImportsEnhancer.Factory {
+    override fun create(parentDisposable: Disposable): CompiledClassifiersDefaultImportsEnhancer {
+        return CompiledClassifiersDefaultImportsEnhancerK2(parentDisposable)
     }
 }
 

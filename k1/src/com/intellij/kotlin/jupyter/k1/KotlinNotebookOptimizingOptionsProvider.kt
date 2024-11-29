@@ -1,5 +1,5 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.language.kotlin.resolve
+package com.intellij.kotlin.jupyter.k1.resolve
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
@@ -12,16 +12,16 @@ import org.jetbrains.kotlin.resolve.scopes.optimization.OptimizingOptions
 
 class KotlinNotebookOptimizingOptionsProvider: ResolveOptimizingOptionsProvider {
     override fun getOptimizingOptions(
-        project: Project,
-        descriptor: ModuleDescriptor,
-        moduleInfo: IdeaModuleInfo
+      project: Project,
+      descriptor: ModuleDescriptor,
+      moduleInfo: IdeaModuleInfo
     ): OptimizingOptions? {
         if (moduleInfo !is ScriptModuleInfo) return null
 
         val scriptFile = moduleInfo.scriptFile
         if (scriptFile !is VirtualFileWindow) return null
 
-        val service = JupyterCompilerService.getInstance(project)
+        val service = JupyterCompilerService.Companion.getInstance(project)
         if (!scriptFile.name.endsWith(service.fileSuffix)) return null
 
         return KotlinNotebookOptimizingOptions

@@ -6,10 +6,9 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.actions.JupyterRestartKernelListener
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
-import com.intellij.kotlin.jupyter.core.language.kotlin.serialization.serializationPluginEnabled
 import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
-import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.createNotebookScriptDefinitionsWrapper
+import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.lang.Language
@@ -60,8 +59,8 @@ class JupyterCompilerService(
        emptyList()
     }
 
-    internal val scriptDefinitionsWrapper by lazy {
-        createNotebookScriptDefinitionsWrapper(
+    val scriptDefinitionsWrapper: KotlinNotebookScriptDefinitionsWrapper by lazy {
+        KotlinNotebookScriptDefinitionsWrapper.create(
             ScriptDefinition(
                 initialCompileConfiguration,
                 evaluationConfiguration
@@ -105,7 +104,7 @@ class JupyterCompilerService(
         ".$fileExtension"
     }
 
-    val language = Language.findLanguageByID("kotlin")!!
+    val language: Language = Language.findLanguageByID("kotlin")!!
 
     override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): JupyterCompilerPerFileService {
         return JupyterCompilerPerFileService(
@@ -117,7 +116,7 @@ class JupyterCompilerService(
         )
     }
 
-    fun requestScriptingUpdate() = scriptingSupportUpdateScheduler.requestUpdate()
+    fun requestScriptingUpdate(): Unit = scriptingSupportUpdateScheduler.requestUpdate()
 
     fun removeSession(virtualFile: BackedNotebookVirtualFile) {
         mapping.remove(virtualFile.file)?.let { Disposer.dispose(it) }
@@ -176,7 +175,7 @@ class JupyterCompilerService(
     }
 
     companion object {
-        fun getInstance(project: Project) = project.service<JupyterCompilerService>()
+        fun getInstance(project: Project): JupyterCompilerService = project.service<JupyterCompilerService>()
 
         fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService {
             return getInstance(project).getOrCreate(virtualFile)

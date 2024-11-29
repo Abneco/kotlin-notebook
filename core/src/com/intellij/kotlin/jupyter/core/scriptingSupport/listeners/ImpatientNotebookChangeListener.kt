@@ -8,6 +8,7 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.getErro
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
 import com.intellij.kotlin.jupyter.core.util.getJupyterFileEditor
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
+import com.intellij.kotlin.jupyter.core.util.splitToRanges
 import com.intellij.kotlin.jupyter.core.util.toPsiFile
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.notebooks.visualization.getCell
@@ -15,7 +16,6 @@ import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.js.translate.utils.splitToRanges
 import kotlin.math.min
 
 
