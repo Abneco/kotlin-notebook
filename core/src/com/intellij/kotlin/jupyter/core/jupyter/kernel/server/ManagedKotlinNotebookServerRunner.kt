@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 
 import com.intellij.jupyter.core.jupyter.connections.execution.core.ManagedJupyterServerRunner
-import com.intellij.jupyter.core.jupyter.connections.settings.ManagedServerJupyterModuleConnectionSettings
+import com.intellij.jupyter.core.jupyter.connections.settings.config.JupyterManagedServerConfig
 import com.intellij.jupyter.core.jupyter.server.common.JupyterServerExecution
 import com.intellij.kotlin.jupyter.core.util.isKotlinKernelName
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
@@ -14,7 +14,7 @@ class ManagedKotlinNotebookServerRunner : ManagedJupyterServerRunner {
         project: Project,
         virtualFile: VirtualFile,
         kernelName: String?,
-        settings: ManagedServerJupyterModuleConnectionSettings?
+        settings: JupyterManagedServerConfig?
     ): JupyterServerExecution? {
         if (isKotlinKernelName(kernelName) || virtualFile.isKotlinNotebook) {
             return KotlinNotebookServerExecution()

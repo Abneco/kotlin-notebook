@@ -2,9 +2,9 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 
 import com.intellij.concurrency.ConcurrentCollectionFactory
+import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.exceptions.JupyterKernelDoesNotExistsException
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelCommunicationClient
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterSessionData
@@ -30,7 +30,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.Version
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import java.io.File
@@ -200,7 +199,6 @@ class KotlinInProcessJupyterClient(
         clientSessions.clear()
     }
 
-    override suspend fun getServerVersions(): Iterable<Pair<JupyterClient.VersionKind, Version>> = emptyList()
 
     private fun removeSessionAndRelatedState(kernelHandler: KotlinKernelRunnableHandler) {
         if (removeSession(kernelHandler.kernelId) && kernelHandler.kernelState != KernelState.STARTING) {
@@ -227,7 +225,7 @@ class KotlinInProcessJupyterClient(
         return clientSessions.remove(kernelId)?.let { session ->
             Disposer.dispose(session)
             true
-        } ?: false
+        } == true
     }
 
     private inner class MyKernelListener: KotlinKernelListener {

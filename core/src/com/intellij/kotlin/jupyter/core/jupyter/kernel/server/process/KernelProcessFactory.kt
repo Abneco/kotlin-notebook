@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterClient
+import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServer
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
@@ -120,7 +120,7 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
             NotebookMode.LIGHT -> {
                 try {
                     project.guessProjectDir()?.toNioPath()
-                } catch (ex: Exception) {
+                } catch (_: Exception) {
                     notebookParentDir
                 }
             }

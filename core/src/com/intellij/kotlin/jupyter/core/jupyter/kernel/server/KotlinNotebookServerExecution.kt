@@ -2,10 +2,11 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 
 import com.intellij.jupyter.core.jupyter.connections.JupyterConnectionParameters
-import com.intellij.jupyter.core.jupyter.connections.JupyterConnectionParameters.Location.Direct
+import com.intellij.jupyter.core.jupyter.connections.auth.token.JupyterTokenAuthParams
+import com.intellij.jupyter.core.jupyter.connections.managed.state.JupyterServerStarted
+import com.intellij.jupyter.core.jupyter.connections.managed.state.JupyterServerState
+import com.intellij.jupyter.core.jupyter.connections.runtime.JupyterHttpParams
 import com.intellij.jupyter.core.jupyter.server.common.JupyterServerExecution
-import com.intellij.jupyter.core.jupyter.server.common.JupyterServerStarted
-import com.intellij.jupyter.core.jupyter.server.common.JupyterServerState
 import com.intellij.jupyter.core.jupyter.server.common.JupyterServerStateListener
 import com.intellij.kotlin.jupyter.core.util.DEFAULT_KOTLIN_KERNEL_NAME
 import kotlinx.coroutines.CompletableDeferred
@@ -14,12 +15,12 @@ import kotlinx.coroutines.Job
 import java.net.URI
 
 private val emptyKotlinConnectionParameters = JupyterConnectionParameters(
-    location = Direct(URI.create("")),
-    kernelName = DEFAULT_KOTLIN_KERNEL_NAME,
+    httpParams = JupyterHttpParams(URI.create(""), JupyterTokenAuthParams("")),
     serverPath = null,
+    kernelName = DEFAULT_KOTLIN_KERNEL_NAME,
 )
 
-class KotlinNotebookServerExecution: JupyterServerExecution {
+class KotlinNotebookServerExecution : JupyterServerExecution {
     override val connectionDeferred: Deferred<JupyterConnectionParameters>
         get() = CompletableDeferred(emptyKotlinConnectionParameters)
     override val state: JupyterServerState
