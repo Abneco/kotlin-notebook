@@ -15,7 +15,7 @@
     <orderEntry type="module" module-name="intellij.jupyter.core" />
     <orderEntry type="module" module-name="intellij.platform.ide.impl" />
     <orderEntry type="module" module-name="intellij.scientific.tables" />
-    <orderEntry type="module" module-name="intellij.grid.core.impl" />
+    <orderEntry type="module" module-name="intellij.grid.core.plugin" />
     <orderEntry type="library" scope="PROVIDED" name="jackson-databind" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="jackson" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-compiler-common" level="project" />
