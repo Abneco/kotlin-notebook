@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.outputs.error
 import com.intellij.execution.filters.Filter
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.outputs.error.JupyterErrorOutputFiltersProvider
+import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
 import com.intellij.openapi.editor.impl.EditorImpl
 
@@ -13,11 +14,12 @@ import com.intellij.openapi.editor.impl.EditorImpl
  * [com.intellij.jupyter.core.jupyter.editor.outputs.error.JupyterErrorOutputConsoleView]
  */
 class KotlinJupyterErrorOutputFiltersProvider: JupyterErrorOutputFiltersProvider {
-  override fun getFilters(editor: EditorImpl, exceptionType: String, exceptionValue: String): List<Filter> {
-      val notebook: BackedNotebookVirtualFile? = editor.virtualFile.toBackedNotebookFile()
-      return when(notebook?.notebook?.language?.id) {
-          "kotlin" -> listOf(KotlinNotebookLineLinkFilter(editor))
-          else -> emptyList()
-      }
-  }
+    override fun getFilters(editor: EditorImpl, exceptionType: String, exceptionValue: String): List<Filter> {
+        val notebookFile: BackedNotebookVirtualFile? = editor.virtualFile?.toBackedNotebookFile()
+        return if (notebookFile?.isKotlinNotebook == true) {
+          listOf(KotlinNotebookLineLinkFilter(editor))
+        } else {
+          emptyList()
+        }
+    }
 }

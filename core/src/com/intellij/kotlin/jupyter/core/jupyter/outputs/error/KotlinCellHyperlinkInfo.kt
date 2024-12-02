@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.outputs.error
 import com.intellij.execution.filters.HyperlinkInfo
 import com.intellij.jupyter.core.editor.JupyterExecutionHistoryProvider
 import com.intellij.jupyter.core.fus.JupyterFeaturesCollector
+import com.intellij.jupyter.core.jupyter.helper.notebookOrNull
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.notebooks.visualization.NotebookCellLines
@@ -23,7 +24,7 @@ internal class KotlinCellHyperlinkInfo(
   filter: KotlinNotebookLineLinkFilter,
 ) : HyperlinkInfo {
   private val editor: EditorImpl = filter.editor
-  private val notebook = filter.notebook
+  private val notebookOrNull get() = editor.notebookOrNull
   private val cellLines = NotebookCellLines.get(editor)
 
   override fun navigate(project: Project) {
@@ -46,6 +47,7 @@ internal class KotlinCellHyperlinkInfo(
    * the returned cell index should be correct.
    */
   private fun getCurrentSessionIndex(): Int? {
+      val notebook = notebookOrNull ?: return null
       val executionHistoryManager = JupyterExecutionHistoryProvider.getOrInstall(editor)
       val cellId = executionHistoryManager.getIdForExecutionCount(executionCount) ?: return null
       val cell = notebook.computeCells().firstOrNull { it.id == cellId }
@@ -65,6 +67,7 @@ internal class KotlinCellHyperlinkInfo(
    * of behavior, so we accept that risk.
    */
   private fun suggestCellIndex(): Int? {
+    val notebook = notebookOrNull ?: return null
     val supportedCells = notebook.computeCells().filter { it.executionCount == executionCount }
     val enoughLongCells = supportedCells.filter {
       val index = it.index ?: return@filter false

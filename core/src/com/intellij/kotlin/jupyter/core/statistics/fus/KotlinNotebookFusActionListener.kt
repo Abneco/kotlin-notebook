@@ -30,7 +30,7 @@ class KotlinNotebookFusActionListener : AnActionListener {
             }
             is NotebookRunAllAction -> {
                 val backedFile = getBackedFile() ?: return
-                val cellCountToRun = backedFile.notebook.cellsCount()
+                val cellCountToRun = backedFile.notebookOrNull?.cellsCount() ?: -1
                 KotlinNotebookFeatureUsagesCollector.registerRunAllCells(project, cellCountToRun)
             }
         }

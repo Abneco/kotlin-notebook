@@ -43,7 +43,8 @@ class KotlinNotebookSessionModeComboBox : DumbAwareAction(), CustomComponentActi
     private fun DataContext.getRunMode(): KotlinNotebookSessionRunMode? {
         val notebookFile = notebookFile
         if (notebookFile?.isKotlinNotebook != true) return null
-        return notebookFile.notebook.readSettings().sessionRunMode
+        val notebook = notebookFile.notebookOrNull ?: return null
+        return notebook.readSettings().sessionRunMode
     }
 
     override fun actionPerformed(e: AnActionEvent) {

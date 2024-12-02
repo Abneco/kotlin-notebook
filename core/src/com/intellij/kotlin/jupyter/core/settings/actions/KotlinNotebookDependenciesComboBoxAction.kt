@@ -108,7 +108,8 @@ class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomCompon
             val editor = e.editor ?: return
 
             promptSessionShutdownIfNeeded(KotlinNotebookDependenciesComboBoxAction::class, editor) {
-                editor.notebookFile.notebook.notebookDependencies = dependencies
+                val notebook = editor.notebookFile.notebookOrNull
+                notebook?.notebookDependencies = dependencies
             }
         }
 
@@ -149,7 +150,7 @@ class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomCompon
                 return null
             }
 
-            return notebookFile.notebook.notebookDependencies
+            return notebookFile.notebookOrNull?.notebookDependencies
         }
     }
 }

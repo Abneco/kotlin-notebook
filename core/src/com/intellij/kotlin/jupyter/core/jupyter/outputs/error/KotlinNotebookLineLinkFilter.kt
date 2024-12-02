@@ -2,8 +2,6 @@
 package com.intellij.kotlin.jupyter.core.jupyter.outputs.error
 
 import com.intellij.execution.filters.Filter
-import com.intellij.jupyter.core.jupyter.helper.notebookFile
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebookBase
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.project.DumbAware
@@ -16,9 +14,6 @@ import com.intellij.openapi.project.DumbAware
  * to the offending code inside the Notebook.
  */
 internal class KotlinNotebookLineLinkFilter(val editor: EditorImpl) : Filter, DumbAware, Disposable {
-    private val backedNotebookVirtualFile = editor.notebookFile
-    val notebook = backedNotebookVirtualFile.notebook as JupyterNotebookBase
-
     override fun dispose() {}
 
     override fun applyFilter(line: String, entireLength: Int): Filter.Result? {

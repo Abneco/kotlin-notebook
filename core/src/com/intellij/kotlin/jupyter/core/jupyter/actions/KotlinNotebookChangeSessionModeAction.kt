@@ -32,7 +32,7 @@ sealed class KotlinNotebookChangeSessionModeAction(
 
     private fun AnActionEvent.getKotlinNotebook(): JupyterNotebook? {
         val notebookFile = this.dataContext.notebookFile ?: return null
-        return if (notebookFile.isKotlinNotebook) notebookFile.notebook else null
+        return if (notebookFile.isKotlinNotebook) notebookFile.notebookOrNull else null
     }
 
     override fun actionPerformed(event: AnActionEvent) {
