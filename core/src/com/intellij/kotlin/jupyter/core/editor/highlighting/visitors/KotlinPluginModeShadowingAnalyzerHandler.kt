@@ -9,6 +9,7 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandle
 import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.util.IntellijInternalApi
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.analysis.api.KaSession
@@ -149,6 +150,7 @@ object K1ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
 
 
 object K2ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
+    @OptIn(IntellijInternalApi::class)
     override fun applyBeforeProcessingDiagnostic(diagnostic: KaDiagnosticData) {
         diagnostic.psiElement.clearAllKotlinUnresolvedReferenceKinds()
     }

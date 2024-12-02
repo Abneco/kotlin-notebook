@@ -8,11 +8,13 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.jetbrains.kotlin.utils.addToStdlib.UnsafeCastFunction
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 internal fun Project.getJupyterFileEditor(vFile: VirtualFile): JupyterFileEditor?
         = FileEditorManager.getInstance(this).getSelectedEditor(vFile) as? JupyterFileEditor
 
+@OptIn(UnsafeCastFunction::class)
 internal fun Project.getCurrentEditorOrNull(): Editor? {
     return FileEditorManager.getInstance(this).selectedEditor?.safeAs<TextEditor>()?.editor
 }

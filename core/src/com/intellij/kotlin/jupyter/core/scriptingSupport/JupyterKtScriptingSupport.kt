@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfiguration
+import org.jetbrains.kotlin.utils.addToStdlib.UnsafeCastFunction
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import kotlin.script.experimental.api.valueOrNull
 
@@ -130,6 +131,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             return refineScriptCompilationConfiguration(KtFileScriptSource(psiFile), scriptDef, psiFile.project)
         }
 
+        @OptIn(UnsafeCastFunction::class)
         fun getDefaultConfiguration(psiFile: KtFile): ScriptCompilationConfigurationResult? {
             val virtualFile = psiFile.virtualFile?.safeAs<VirtualFileWindow>()
             if (virtualFile == null) {
