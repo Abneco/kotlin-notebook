@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.actions
 
 import com.intellij.icons.AllIcons
-import com.intellij.jupyter.core.jupyter.actions.shutdownNotebook
+import com.intellij.jupyter.core.jupyter.connections.action.shutdownNotebook
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.actionSystem.ActionUpdateThread

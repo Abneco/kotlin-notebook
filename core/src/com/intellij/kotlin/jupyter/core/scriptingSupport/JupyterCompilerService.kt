@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.actions.JupyterRestartKernelListener
+import com.intellij.jupyter.core.jupyter.connections.action.JupyterRestartKernelListener
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
 import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService

@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.k2.scriptingSupport.updater
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.actions.JupyterRestartKernelListener
+import com.intellij.jupyter.core.jupyter.connections.action.JupyterRestartKernelListener
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
 import com.intellij.kotlin.jupyter.core.ide.handlers.UpdaterConstructorData
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
@@ -32,10 +32,11 @@ class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) 
     init {
         val parentDisposable = updaterConstructorData.parentDisposable
         project.messageBus.connect(parentDisposable)
-            .subscribe(JupyterRestartKernelListener.TOPIC,
-                       JupyterRestartKernelListener { notebookFile ->
-                           clearRuntimeDependenciesFor(notebookFile)
-                       }
+            .subscribe(
+                JupyterRestartKernelListener.TOPIC,
+                JupyterRestartKernelListener { notebookFile ->
+                    clearRuntimeDependenciesFor(notebookFile)
+                }
             )
     }
 
@@ -96,8 +97,7 @@ class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) 
 
                     val defaultConfiguration = try {
                         JupyterKtScriptingSupport.getConfiguration(ktFile)?.valueOrNull()?.configuration!!
-                    }
-                    catch (e: Throwable) {
+                    } catch (e: Throwable) {
                         throw e
                     }
 

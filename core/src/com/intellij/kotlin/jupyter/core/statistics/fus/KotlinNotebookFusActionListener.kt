@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.statistics.fus
 
 import com.intellij.jupyter.core.core.impl.actions.run.NotebookRunAllAction
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.notebook.actions.JupyterRestartKernelAction
+import com.intellij.jupyter.core.jupyter.connections.action.JupyterRestartKernelAction
 import com.intellij.jupyter.core.jupyter.editor.getJupyterVirtualFile
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook

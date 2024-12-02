@@ -1,7 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.settings.actions
 
-import com.intellij.jupyter.core.jupyter.actions.shutdownNotebook
+import com.intellij.jupyter.core.jupyter.connections.action.shutdownNotebook
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
