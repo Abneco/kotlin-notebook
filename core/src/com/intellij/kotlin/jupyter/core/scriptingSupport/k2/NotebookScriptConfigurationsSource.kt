@@ -1,8 +1,10 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.k2.scriptingSupport
+package com.intellij.kotlin.jupyter.core.scriptingSupport.k2
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.projectModel.getNotebookDependenciesAsLibraryEntity
 import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
+import com.intellij.kotlin.jupyter.core.projectModel.toK2RuntimeDependencyLibraryName
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.Sdk
@@ -27,10 +29,12 @@ import com.intellij.platform.workspace.storage.MutableEntityStorage
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
 import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
+import org.jetbrains.kotlin.idea.core.script.SCRIPT_CONFIGURATIONS_SOURCES
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurations
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource
 import org.jetbrains.kotlin.idea.core.script.scriptDefinitionsSourceOfType
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionsSource
+import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import java.nio.file.Path
 import kotlin.script.experimental.api.asSuccess
 

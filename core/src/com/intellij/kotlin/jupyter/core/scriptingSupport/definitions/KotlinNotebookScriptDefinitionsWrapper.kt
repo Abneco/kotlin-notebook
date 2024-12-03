@@ -3,12 +3,13 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport.definitions
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandler
+import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
-import com.intellij.openapi.extensions.ExtensionPointName
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.host.ScriptDefinition
+import kotlin.script.experimental.jvm.defaultJvmScriptingHostConfiguration
 
 /**
  * Class representing a wrapper around script definitions for Kotlin notebook scripts,
@@ -16,16 +17,10 @@ import kotlin.script.experimental.host.ScriptDefinition
  *
  * Note that [scriptDefinitionData] is basically data holder used in some IDEA logic, while
  * [compilationScriptDefinition] is an integral compiler representation for the Script definition itself.
- *
- * [Factory] is used to create an instance for each of the Kotlin modes.
  */
-abstract class KotlinNotebookScriptDefinitionsWrapper(
+internal sealed class KotlinNotebookScriptDefinitionsWrapper(
     scriptDefinition: ScriptDefinition
 ) : KotlinPluginModeAwareHandler {
-    fun interface Factory {
-        fun create(scriptDefinition: ScriptDefinition): KotlinNotebookScriptDefinitionsWrapper
-    }
-
     val scriptDefinitionData: ScriptDefinition by lazy {
         scriptDefinition
     }
@@ -40,12 +35,49 @@ abstract class KotlinNotebookScriptDefinitionsWrapper(
     }
 
     abstract val compilationScriptDefinition: org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
+}
 
-    companion object {
-        private val EP: ExtensionPointName<Factory> = ExtensionPointName.create("com.intellij.kotlin.jupyter.core.scriptDefinitionWrapperFactory")
 
-        fun create(scriptDefinition: ScriptDefinition): KotlinNotebookScriptDefinitionsWrapper {
-            return EP.extensionList.first().create(scriptDefinition)
+internal class K1NotebookScriptDefinitionsWrapper(
+    scriptDefinition: ScriptDefinition
+) : KotlinNotebookScriptDefinitionsWrapper(scriptDefinition) {
+    override val compilationScriptDefinition by lazy {
+        object : org.jetbrains.kotlin.scripting.definitions.ScriptDefinition.FromNewDefinition(
+            defaultJvmScriptingHostConfiguration,
+            scriptDefinitionData
+        ) {
+            init {
+                order = Int.MIN_VALUE
+            }
         }
     }
+}
+
+internal class K2NotebookScriptDefinitionsWrapper(
+    scriptDefinition: ScriptDefinition
+) : KotlinNotebookScriptDefinitionsWrapper(scriptDefinition) {
+    override val compilationScriptDefinition by lazy {
+        object : org.jetbrains.kotlin.scripting.definitions.ScriptDefinition.FromConfigurations(
+            defaultJvmScriptingHostConfiguration,
+            scriptDefinition.compilationConfiguration,
+            scriptDefinition.evaluationConfiguration
+        ) {
+            init {
+              order = Int.MIN_VALUE
+            }
+
+            override fun isScript(script: SourceCode): Boolean {
+                return super.isScript(script) && isNotebookInjectedScript(script)
+            }
+        }
+    }
+}
+
+
+internal fun createNotebookScriptDefinitionsWrapper(scriptDefinition: ScriptDefinition): KotlinNotebookScriptDefinitionsWrapper {
+    return createPluginModeAwareInstance(
+        scriptDefinition,
+        ::K1NotebookScriptDefinitionsWrapper,
+        ::K2NotebookScriptDefinitionsWrapper,
+    )
 }

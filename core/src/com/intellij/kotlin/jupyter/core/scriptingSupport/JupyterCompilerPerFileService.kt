@@ -15,6 +15,7 @@ import com.intellij.kotlin.jupyter.core.projectModel.JupyterKotlinProjectArtifac
 import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDownloader
+import com.intellij.kotlin.jupyter.core.scriptingSupport.k2.CompiledClassifiersDefaultImportsEnhancer
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.ScriptingSupportUpdateEventsListener

@@ -1,5 +1,5 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.k1.codeinsight.hints
+package com.intellij.kotlin.jupyter.core.editor.codeInsight
 
 import com.intellij.codeInsight.hints.FactoryInlayHintsCollector
 import com.intellij.codeInsight.hints.ImmediateConfigurable
@@ -9,14 +9,13 @@ import com.intellij.codeInsight.hints.InlayHintsSink
 import com.intellij.codeInsight.hints.SettingsKey
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
+import com.intellij.kotlin.jupyter.core.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.getBindingContext
+import com.intellij.kotlin.jupyter.core.editor.codeInsight.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.putBindingContext
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookTypeHintsRegistry.Companion.psiHostChainHintsRegistry
-import com.intellij.kotlin.jupyter.core.editor.codeInsight.PsiHostChainCallTypeHintsRegistry
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.isEitherSymmetricallyContainedRange
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.util.getKtFileStartOffset
-import com.intellij.kotlin.jupyter.k1.codeinsight.hints.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.getBindingContext
-import com.intellij.kotlin.jupyter.k1.codeinsight.hints.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.putBindingContext
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.diagnostic.thisLogger

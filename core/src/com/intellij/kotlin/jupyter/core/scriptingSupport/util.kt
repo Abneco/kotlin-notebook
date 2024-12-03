@@ -6,9 +6,7 @@ import com.intellij.platform.backend.workspace.WorkspaceModel
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlinx.jupyter.repl.result.SerializedCompiledScript
-import kotlin.script.experimental.api.IdeScriptCompilationConfigurationKeys
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
-import kotlin.script.experimental.util.PropertiesCollection
 
 val Project.baseScriptingCompilationConfiguration: ScriptCompilationConfiguration
     get() = JupyterCompilerService.getInstance(this).scriptDefinitionsWrapper.scriptDefinitionData.compilationConfiguration
@@ -23,7 +21,3 @@ val Project.workSpaceSnapshot
 
 val SerializedCompiledScript.classFQN: String
     get() = fileName.removeSuffix(".class").replace('$', '.')
-
-
-val IdeScriptCompilationConfigurationKeys.serializationPluginEnabled: PropertiesCollection.Key<Boolean>
-        by PropertiesCollection.key(false)

@@ -2,22 +2,11 @@
 
     <dependencies>
         <plugin id="kotlin.plugin.k2"/>
-        <plugin id="org.jetbrains.plugins.kotlin.jupyter"/>
-        <module name="intellij.notebooks.jupyter.core"/>
-        <module name="intellij.jupyter.core"/>
     </dependencies>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
-        <scriptDefinitionsSource implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptDefinitionsSource"/>
-        <scriptConfigurationsSource implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsSource"/>
-        <scriptAdditionalIdeaDependenciesProvider implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptLibrariesProvider"/>
-    </extensions>
-
-    <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.core">
-        <scriptPresenceCheckerFactory implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.PluginModeAwareScriptPresenceCheckerFactoryK2"/>
-        <scriptingSupportUpdaterFactory implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.updater.ScriptingSupportUpdaterFactoryK2"/>
-        <classifiersDefaultImportsEnhancerFactory implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.imports.CompiledClassifiersDefaultImportsEnhancerFactoryK2"/>
-        <scriptDefinitionWrapperFactory implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.definition.NotebookScriptDefinitionsWrapperFactoryK2"/>
-        <shadowingVisitorFactory implementation="com.intellij.kotlin.jupyter.k2.highlighting.ShadowingVisitorHandlerFactory"/>
+        <scriptDefinitionsSource implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.k2.KotlinNotebookScriptDefinitionsSource"/>
+        <scriptConfigurationsSource implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.k2.NotebookScriptConfigurationsSource"/>
+        <scriptAdditionalIdeaDependenciesProvider implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.k2.KotlinNotebookScriptLibrariesProvider"/>
     </extensions>
 </idea-plugin>

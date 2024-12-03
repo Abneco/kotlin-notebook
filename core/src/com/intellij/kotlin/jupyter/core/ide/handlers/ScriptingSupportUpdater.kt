@@ -1,9 +1,31 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.ide.handlers
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.actions.JupyterRestartKernelListener
+import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
+import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport.Companion.getConfiguration
+import com.intellij.kotlin.jupyter.core.scriptingSupport.k2.KotlinNotebookScriptModel
+import com.intellij.kotlin.jupyter.core.scriptingSupport.k2.NotebookScriptConfigurationsSource
+import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
+import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.extensions.ExtensionPointName
+import com.intellij.openapi.application.readAction
+import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.RecursionManager
+import kotlinx.coroutines.async
+import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.k2.K2ScriptDefinitionProvider
+import org.jetbrains.kotlin.idea.core.script.scriptConfigurationsSourceOfType
+import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
+import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
+import kotlin.script.experimental.api.valueOrNull
 
 
 data class UpdaterConstructorData(
@@ -11,24 +33,128 @@ data class UpdaterConstructorData(
     val parentDisposable: Disposable
 )
 
-/**
- * Updater is required to handle scripting dependencies update for either of Kotlin modes.
- * [Factory] is used to find implementation in each of modules (k1 or k2).
- */
 interface ScriptingSupportUpdater : KotlinPluginModeAwareHandler {
     fun updateScripts()
 
-    fun interface Factory {
-        fun create(updaterConstructor: UpdaterConstructorData): ScriptingSupportUpdater
-    }
-
     companion object {
-        private val EP: ExtensionPointName<Factory> = ExtensionPointName.create("com.intellij.kotlin.jupyter.core.scriptingSupportUpdaterFactory")
+        fun create(project: Project, parentDisposable: Disposable) = createPluginModeAwareInstance(
+            UpdaterConstructorData(
+                project, parentDisposable
+            ),
+            ::K1ScriptingSupportUpdater,
+            ::K2ScriptingSupportUpdater,
+        )
+    }
+}
 
-        fun create(project: Project, parentDisposable: Disposable): ScriptingSupportUpdater {
-            val configuration = UpdaterConstructorData(project, parentDisposable)
-            return EP.extensionList.first().create(configuration)
+class K1ScriptingSupportUpdater(updaterConstructor: UpdaterConstructorData) : ScriptingSupportUpdater {
+    private val project = updaterConstructor.project
+    override fun updateScripts() {
+        val updater = (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
+        RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
+            updater.invalidateAndCommit()
         }
     }
+}
+
+class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) : ScriptingSupportUpdater {
+    private val project = updaterConstructorData.project
+
+    init {
+        val parentDisposable = updaterConstructorData.parentDisposable
+        project.messageBus.connect(parentDisposable)
+            .subscribe(JupyterRestartKernelListener.TOPIC,
+                JupyterRestartKernelListener { notebookFile ->
+                    clearRuntimeDependenciesFor(notebookFile)
+                }
+            )
+    }
+
+    override fun updateScripts() {
+        val editorManager = FileEditorManager.getInstance(project) ?: return
+        val scope = KotlinNotebookPluginScope.getForProject(project)
+        scope.async {
+            updateK2Configurations(editorManager, project)
+        }
+    }
+
+    private fun clearRuntimeDependenciesFor(notebookFile: BackedNotebookVirtualFile) {
+        val scope = KotlinNotebookPluginScope.getForProject(project)
+        scope.async {
+            project.scriptConfigurationsSourceOfType<NotebookScriptConfigurationsSource>()
+                ?.clearNotebookLibraryDependencies(
+                    notebookFile
+                )
+        }
+    }
+
+    private suspend fun updateK2Configurations(editorManager: FileEditorManager, project: Project) {
+        if (project.isDisposed) return
+
+        val editors = editorManager.allEditors
+        val openFiles = editors.mapNotNull { it.file }
+        val publisher = project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC)
+
+        val notebooks = openFiles
+            .filter { it.fileType is JupyterFileType }
+            .mapNotNull { it.toKotlinNotebookBackedFile() }
+
+        runCatching {
+            updateK2Impl(project, notebooks)
+        }.onFailure {
+            if (it is ProcessCanceledException || project.isDisposed) {
+                return@onFailure
+            }
+            thisLogger().warn("Exception during update k2 configuration for notebooks", it)
+            publisher.onUpdateException(Exception(it))
+        }.onSuccess {
+            K2ScriptDefinitionProvider.getInstance(project).reloadDefinitionsFromSources()
+            publisher.afterUpdate()
+        }
+
+        //K2ScriptDefinitionProvider.getInstance(project).reloadDefinitionsFromSources()
+    }
+
+
+    private suspend fun updateK2Impl(project: Project, notebooks: Collection<BackedNotebookVirtualFile>) {
+        val scripts = mutableListOf<KotlinNotebookScriptModel>()
+        for (notebook in notebooks) {
+            val notebookService = JupyterCompilerService.getForFile(project, notebook)
+            val perFileScripts = readAction {
+                val scriptsToRefine = notebookService.getFilesToRefine()
+                scriptsToRefine.map { ktFileScriptSource ->
+                    val ktFile = ktFileScriptSource.ktFile
+
+                    val defaultConfiguration = try {
+                        getConfiguration(ktFile)?.valueOrNull()?.configuration!!
+                    } catch (e: Throwable) {
+                        throw e
+                    }
+
+                    val source = KtFileScriptSource(ktFile)
+                    val refinedConf = notebookService.handleBeforeCompiling(
+                        defaultConfiguration,
+                        source
+                    )
+
+                    KotlinNotebookScriptModel(
+                      ktFileScriptSource.virtualFile,
+                      ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
+                          source,
+                          refinedConf
+                      )
+                    )
+                }
+            }
+
+            scripts.addAll(perFileScripts)
+        }
+
+        project.scriptConfigurationsSourceOfType<NotebookScriptConfigurationsSource>()
+            ?.updateDependenciesAndCreateModules(
+                scripts
+            )
+    }
+
 }
 

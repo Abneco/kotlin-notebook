@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.test.notebook.codeinsight.hints
 
 
-import com.intellij.kotlin.jupyter.k1.codeinsight.hints.NotebookValuesHintProvider
+import com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookValuesHintProvider
 import com.intellij.kotlin.jupyter.test.runners.K1Only
 import org.junit.Test
 

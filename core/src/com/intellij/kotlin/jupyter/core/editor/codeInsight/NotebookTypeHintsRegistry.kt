@@ -32,7 +32,7 @@ sealed class NotebookTypeHintsRegistry<T: Collection<*>> {
 
     companion object {
         internal val psiHostHintsRegistry = Key.create<PsiHostTypeHintsRegistry>("jupyter.kotlin.inlay.hints.registry")
-        val psiHostChainHintsRegistry: Key<PsiHostChainCallTypeHintsRegistry?> = Key.create("jupyter.kotlin.inlay.hints.chain.call.registry")
+        internal val psiHostChainHintsRegistry = Key.create<PsiHostChainCallTypeHintsRegistry>("jupyter.kotlin.inlay.hints.chain.call.registry")
 
         internal fun PsiLanguageInjectionHost.invalidateTypeHintsRegistry() {
             if (this !is JupyterPsiCell) return
@@ -46,7 +46,7 @@ sealed class NotebookTypeHintsRegistry<T: Collection<*>> {
 
 class PsiHostTypeHintsRegistry : NotebookTypeHintsRegistry<MutableSet<HintType>>() {
     companion object {
-        fun getOrCreateTypeHintsRegistry(host: PsiLanguageInjectionHost): PsiHostTypeHintsRegistry = synchronized(host) {
+        internal fun getOrCreateTypeHintsRegistry(host: PsiLanguageInjectionHost): PsiHostTypeHintsRegistry = synchronized(host) {
             val stored = host.getUserData(psiHostHintsRegistry)
             if (stored == null) {
                 host.putUserData(psiHostHintsRegistry, PsiHostTypeHintsRegistry())
@@ -58,7 +58,7 @@ class PsiHostTypeHintsRegistry : NotebookTypeHintsRegistry<MutableSet<HintType>>
 
 class PsiHostChainCallTypeHintsRegistry : NotebookTypeHintsRegistry<List<Pair<PsiElement, InlayPresentation>>>() {
     companion object {
-        fun getOrCreateChainCallTypeHintsRegistry(host: PsiLanguageInjectionHost): PsiHostChainCallTypeHintsRegistry = synchronized(host) {
+        internal fun getOrCreateChainCallTypeHintsRegistry(host: PsiLanguageInjectionHost): PsiHostChainCallTypeHintsRegistry = synchronized(host) {
             val stored = host.getUserData(psiHostChainHintsRegistry)
             if (stored == null) {
                 host.putUserData(psiHostChainHintsRegistry, PsiHostChainCallTypeHintsRegistry())

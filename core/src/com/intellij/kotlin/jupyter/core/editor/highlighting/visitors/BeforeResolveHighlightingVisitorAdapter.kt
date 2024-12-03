@@ -1,9 +1,8 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.k1.highlighting
+package com.intellij.kotlin.jupyter.core.editor.highlighting.visitors
 
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
-import com.intellij.kotlin.jupyter.core.editor.highlighting.visitors.AbstractKotlinHighlightingVisitorAdapter
 import org.jetbrains.kotlin.idea.highlighter.BeforeResolveHighlightingVisitor
 
 class BeforeResolveHighlightingVisitorAdapter: AbstractKotlinHighlightingVisitorAdapter<BeforeResolveHighlightingVisitor>() {

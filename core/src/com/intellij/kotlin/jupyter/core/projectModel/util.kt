@@ -17,6 +17,9 @@ import com.intellij.platform.workspace.storage.EntitySource
 import com.intellij.platform.workspace.storage.EntityStorage
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.WorkspaceEntity
+import com.intellij.platform.workspace.storage.url.VirtualFileUrlManager
+import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
+import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager.Companion.toVfsRoots
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
@@ -60,7 +63,7 @@ fun MutableEntityStorage.createOrUpdateLibraryForNotebookDependencies(
     }
 }
 
-fun MutableEntityStorage.resolveLibraryDependencies(
+internal fun MutableEntityStorage.resolveLibraryDependencies(
     notebookName: String,
     libraryTableId: LibraryTableId
 ): LibraryEntity? {
@@ -84,6 +87,23 @@ fun VirtualFile.injectedScriptLibraryDependencies(project: Project, workSpaceSna
         .firstIsInstanceOrNull<ModuleEntity>()?.dependencies ?: return emptyList()
 
     return dependencies.filterIsInstance<LibraryDependency>()
+}
+
+internal fun VirtualFile.toK2RuntimeDependencyLibraryName(): String {
+    return "$KOTLIN_SCRIPTS_MODULE_NAME.Notebook.Dependencies for ${nameWithoutExtension}"
+}
+
+internal fun VirtualFileUrlManager.getNotebookDependenciesAsLibraryEntity(
+    entityStorage: MutableEntityStorage,
+    notebookFile: VirtualFile,
+    project: Project,
+    configuration: ScriptCompilationConfigurationWrapper
+): LibraryEntity {
+    val url = notebookFile.toVirtualFileUrl(this)
+    val notebookEntity = KotlinScriptEntitySource(url)
+    val name = notebookFile.toK2RuntimeDependencyLibraryName()
+    return entityStorage
+        .createOrUpdateLibraryForNotebookDependencies(name, project, notebookEntity, configuration)
 }
 
 

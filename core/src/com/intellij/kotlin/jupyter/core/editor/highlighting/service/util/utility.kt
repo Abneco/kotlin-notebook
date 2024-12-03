@@ -33,7 +33,7 @@ import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import java.util.concurrent.atomic.AtomicReference
 
 
-object NotebookHighlightingUtilityObject {
+internal object NotebookHighlightingUtilityObject {
     internal val LOG = thisLogger()
 
     const val SCRIPTING_MISSING_DEPENDENCY_PREFIX = "MISSING"
@@ -42,7 +42,7 @@ object NotebookHighlightingUtilityObject {
     const val SCRIPTING_MISSING_BASE_CLASS_ERROR = "[${SCRIPTING_MISSING_DEPENDENCY_PREFIX}_SCRIPT_BASE_CLASS]"
 
     internal val InjectedHostHasErrors = Key.create<AtomicReference<Boolean>>("injected.element.errors.found")
-    val NonTargetHostErrorMark: Key<Boolean> = Key.create("injected.element.actual.errors.registry")
+    internal val NonTargetHostErrorMark: Key<Boolean> = Key.create("injected.element.actual.errors.registry")
 
     inline fun shouldStartAfterPreChecks(file: PsiFile, associatedJob: Job?,
                                          crossinline afterRequest: () -> Unit = {},

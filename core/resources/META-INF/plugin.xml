@@ -122,30 +122,13 @@
         <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.kernel.kernelRunnableFactory"
                         interface="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelRunnableFactory"
                         dynamic="true"/>
-
-        <!-- Kotlin Mode Specific Factories -->
-        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.scriptPresenceCheckerFactory"
-                        interface="com.intellij.kotlin.jupyter.core.scriptingSupport.PluginModeAwareScriptPresenceChecker$Factory"
-                        dynamic="true"/>
-        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.scriptingSupportUpdaterFactory"
-                        interface="com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater$Factory"
-                        dynamic="true"/>
-        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.classifiersDefaultImportsEnhancerFactory"
-                        interface="com.intellij.kotlin.jupyter.core.scriptingSupport.CompiledClassifiersDefaultImportsEnhancer$Factory"
-                        dynamic="true"/>
-        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.scriptDefinitionWrapperFactory"
-                        interface="com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper$Factory"
-                        dynamic="true"/>
-
-        <!-- shadowing -->
-        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.shadowingVisitorFactory"
-                        interface="com.intellij.kotlin.jupyter.core.editor.highlighting.visitors.KotlinPluginModeShadowingAnalyzerHandler$Factory"
-                        dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <renameHandler implementation="com.intellij.kotlin.jupyter.core.editor.refactoring.KotlinNotebookPropertiesRenameHandler"/>
         <scriptDefinitionsProvider implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.JupyterScriptDefinitionProvider"/>
+        <idea.caches.resolve.resolveOptimizingOptionsProvider
+                implementation="com.intellij.kotlin.jupyter.core.language.kotlin.resolve.KotlinNotebookOptimizingOptionsProvider"/>
         <postInsertDeclarationCallback
                 implementation="com.intellij.kotlin.jupyter.core.editor.refactoring.KotlinNotebookPostInsertDeclarationCallback"/>
         <kotlinInjectedFilesAnalysisProvider
@@ -289,7 +272,7 @@
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.idea.compilerPlugin.kotlinxSerialization">
         <kotlinSerializationEnabledChecker
-                implementation="com.intellij.kotlin.jupyter.k1.serialization.KotlinScriptingSerializationEnabledChecker"/>
+                implementation="com.intellij.kotlin.jupyter.core.language.kotlin.serialization.KotlinScriptingSerializationEnabledChecker"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">

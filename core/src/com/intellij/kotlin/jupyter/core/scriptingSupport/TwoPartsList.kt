@@ -5,7 +5,7 @@ import com.intellij.kotlin.jupyter.core.util.withReadLock
 import com.intellij.kotlin.jupyter.core.util.withWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-class TwoPartsList<T>(
+internal class TwoPartsList<T>(
     private val initialPart: MutableSet<T> = mutableSetOf(),
     private val snippetsPart: MutableSet<T> = mutableSetOf(),
 ) {

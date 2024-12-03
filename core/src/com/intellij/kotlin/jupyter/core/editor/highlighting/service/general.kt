@@ -173,4 +173,4 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
     }
 }
 
-fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(lhs)
+internal fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(lhs)
