@@ -1,5 +1,5 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.editor.codeInsight
+package com.intellij.kotlin.jupyter.k1.codeinsight.hints
 
 import com.intellij.codeInsight.hints.FactoryInlayHintsCollector
 import com.intellij.codeInsight.hints.HorizontalConstraints
@@ -10,6 +10,7 @@ import com.intellij.codeInsight.hints.presentation.InlayPresentation
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.codeInsight.hints.presentation.RecursivelyUpdatingRootPresentation
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
+import com.intellij.kotlin.jupyter.core.editor.codeInsight.PsiHostTypeHintsRegistry
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.PsiHostTypeHintsRegistry.Companion.getOrCreateTypeHintsRegistry
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.isEitherSymmetricallyContainedRange

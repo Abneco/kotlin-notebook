@@ -9,7 +9,7 @@ import org.jetbrains.annotations.PropertyKey
 @NonNls
 private const val BUNDLE = "messages.KotlinNotebookBundle"
 
-internal object KotlinNotebookBundle {
+object KotlinNotebookBundle {
     private val bundle = DynamicBundle(KotlinNotebookBundle::class.java, BUNDLE)
 
     @JvmStatic

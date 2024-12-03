@@ -17,7 +17,7 @@ import org.jetbrains.annotations.ApiStatus
  */
 @Service(Service.Level.PROJECT)
 @ApiStatus.Internal
-internal class DaemonAnalyzerStatusService(project: Project) : Disposable {
+class DaemonAnalyzerStatusService(project: Project) : Disposable {
     @Volatile
     var daemonRunning: Boolean = false
         private set
