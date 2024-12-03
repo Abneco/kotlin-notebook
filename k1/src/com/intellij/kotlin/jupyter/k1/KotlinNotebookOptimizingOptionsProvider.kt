@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.idea.base.scripting.projectStructure.ScriptModuleInf
 import org.jetbrains.kotlin.idea.caches.resolve.ResolveOptimizingOptionsProvider
 import org.jetbrains.kotlin.resolve.scopes.optimization.OptimizingOptions
 
-class KotlinNotebookOptimizingOptionsProvider: ResolveOptimizingOptionsProvider {
+private class KotlinNotebookOptimizingOptionsProvider: ResolveOptimizingOptionsProvider {
     override fun getOptimizingOptions(
       project: Project,
       descriptor: ModuleDescriptor,

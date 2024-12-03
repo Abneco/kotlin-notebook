@@ -11,7 +11,7 @@ import kotlin.script.experimental.api.ide
 
 // TODO: Better move it to some module that depends on both scripting and serialization
 // and will allow to reuse this configuration property in other script definitions
-class KotlinScriptingSerializationEnabledChecker: KotlinSerializationEnabledChecker {
+private class KotlinScriptingSerializationEnabledChecker: KotlinSerializationEnabledChecker {
     override fun isEnabledFor(moduleDescriptor: ModuleDescriptor): Boolean {
         val moduleInfo = moduleDescriptor.getCapability(ModuleInfo.Capability) ?: return false
         if (moduleInfo !is ScriptModuleInfo) return false
