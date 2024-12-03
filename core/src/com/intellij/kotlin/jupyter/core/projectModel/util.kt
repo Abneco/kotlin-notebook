@@ -86,7 +86,6 @@ fun VirtualFile.injectedScriptLibraryDependencies(project: Project, workSpaceSna
     return dependencies.filterIsInstance<LibraryDependency>()
 }
 
-
 private fun getLibraryRoots(
     project: Project,
     configurationWrapper: ScriptCompilationConfigurationWrapper

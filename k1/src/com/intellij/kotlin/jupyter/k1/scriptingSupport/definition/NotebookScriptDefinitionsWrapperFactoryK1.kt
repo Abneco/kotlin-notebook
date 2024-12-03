@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.k1.scriptingSupport.definition
 
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper
+import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.jvm.defaultJvmScriptingHostConfiguration
 
@@ -22,6 +23,10 @@ internal class K1NotebookScriptDefinitionsWrapper(
         ) {
             init {
                 order = Int.MIN_VALUE
+            }
+
+            override fun isScript(script: SourceCode): Boolean {
+                return super.isScript(script) && isNotebookInjectedScript(script)
             }
         }
     }
