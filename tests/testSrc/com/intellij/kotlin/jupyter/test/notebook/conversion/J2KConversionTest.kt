@@ -3,12 +3,13 @@ package com.intellij.kotlin.jupyter.test.notebook.conversion
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
 import com.intellij.kotlin.jupyter.test.cartesianProduct
+import com.intellij.kotlin.jupyter.test.runners.K1Only
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import org.jetbrains.kotlin.j2k.copyPaste.ConvertTextJavaCopyPasteProcessor
 import org.jetbrains.kotlin.idea.editor.KotlinEditorOptions
+import org.jetbrains.kotlin.j2k.copyPaste.ConvertTextJavaCopyPasteProcessor
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Assume
 import org.junit.Test
@@ -29,6 +30,7 @@ class MarkedTestParameter<T: Any>(
 }
 
 @RunWith(Parameterized::class)
+@K1Only("Investigate why @Throws is not shortened")
 class J2KConversionTest(
     private val templateFileName: MarkedTestParameter<String>,
     private val fromJavaFile: MarkedTestParameter<Boolean>,

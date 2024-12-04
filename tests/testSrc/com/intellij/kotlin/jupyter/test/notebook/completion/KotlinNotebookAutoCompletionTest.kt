@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.test.notebook.completion
 import com.intellij.kotlin.jupyter.core.util.toPsiFile
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
 import com.intellij.kotlin.jupyter.test.LookupFinishMode
+import com.intellij.kotlin.jupyter.test.runners.K1Only
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
@@ -13,6 +14,7 @@ import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Ignore
 import org.junit.Test
 
+@K1Only("Revisit after converting to new test DSL")
 class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase("notebooks/autocompletion") {
     override lateinit var originalVirtualFile: VirtualFile
 
