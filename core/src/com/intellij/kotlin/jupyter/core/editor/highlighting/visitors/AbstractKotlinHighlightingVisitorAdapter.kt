@@ -26,8 +26,8 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
         visitor?.let { element.accept(it) }
     }
 
-    protected fun analysisFinished(file: PsiFile, holder: HighlightInfoHolder) {
-        highlightingManagerFor(file.project, file.virtualFile.getTopLevelFile())?.finishedAnalysisForFile(file, holder)
+    protected fun analysisFinished(file: PsiFile) {
+        highlightingManagerFor(file.project, file.virtualFile.getTopLevelFile())?.finishedAnalysisForFile(file)
     }
 
     override fun analyze(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, action: Runnable): Boolean {
@@ -38,7 +38,7 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
             return true
         } finally {
             try {
-                analysisFinished(file, holder)
+                analysisFinished(file)
             } finally {
                 visitor = null
             }

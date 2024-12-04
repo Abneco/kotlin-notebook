@@ -1,7 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.highlighting.service
 
-import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.editor.getAllIntervalPointers
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.components.DaemonIterationState
@@ -18,7 +17,6 @@ import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.isCurrentlySelectedInEditor
 import com.intellij.kotlin.jupyter.core.util.toPsiFile
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
@@ -37,11 +35,10 @@ import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
 
@@ -200,29 +197,13 @@ class NotebookHighlightingManager(
         }
     }
 
-    fun finishedAnalysisForFile(psiFile: PsiFile, holder: HighlightInfoHolder) = coroutineScope.async {
+    fun finishedAnalysisForFile(psiFile: PsiFile): Deferred<Unit> = coroutineScope.async {
         if (!isCanModifyHLRequests(psiFile.project)) {
             LOG.info("Not allowed to change, will redo")
             return@async
         }
 
         highlightingPassTokensProcessor.injectedFileProcessed(psiFile)
-
-        val isFileTarget = highlightingPassTokensProcessor.isFileTarget(psiFile)
-
-        if (!isFileTarget || holder.hasErrorResults()) {
-            val errors = highlightingPassTokensProcessor.getErrorHighlighters(psiFile)
-                .ifEmpty { return@async }
-            if (isFileTarget) {
-                return@async
-            }
-
-            withContext(Dispatchers.EDT) {
-                errors.forEach { oldError ->
-                    oldError.dispose()
-                }
-            }
-        }
     }
 
     fun daemonFinished(editor: Editor, psiFile: PsiFile?) {
@@ -289,6 +270,7 @@ class NotebookHighlightingManager(
 
             // can be cas
             iterationStateIndicator.setIdle()
+            highlightingPassTokensProcessor.disposeErrorHighlighters(target)
 
             val remaining = highlightingPassTokensProcessor
                 .determineCellIndexesLeftToHighlight(

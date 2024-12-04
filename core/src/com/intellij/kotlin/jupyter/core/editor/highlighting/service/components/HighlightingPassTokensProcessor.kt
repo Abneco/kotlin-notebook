@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.highlighting.service.components
 
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.thisLogger
@@ -57,6 +58,25 @@ internal class HighlightingPassTokensProcessor(
 
     fun getInjectionHost(psiFile: PsiFile): PsiLanguageInjectionHost? {
         return injectedFilesDataProcessor.getFileInjectionData(psiFile)?.injectionHost
+    }
+
+    /**
+     * Disposes any stored error highlighters outside current [cellInFocus] index
+     */
+    fun disposeErrorHighlighters(cellInFocus: Int?) {
+        val errorData = errorHighlightersProcessor.fileIndexesToErrors.filter { entry ->
+            entry.key in injectedFilesDataProcessor.targetIndexes
+                    && entry.value.isNotEmpty()
+                    && entry.key != cellInFocus
+        }
+
+        KotlinNotebookPluginScope.invokeOnEDT {
+            errorData.forEach { entry ->
+                entry.value.forEach { highlighter ->
+                    highlighter.dispose()
+                }
+            }
+        }
     }
 
     fun isFileTarget(psiFile: PsiFile): Boolean {
