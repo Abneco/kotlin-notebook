@@ -5,7 +5,7 @@ import com.intellij.codeInsight.hint.HintUtil
 import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
-import com.intellij.jupyter.core.jupyter.editor.JupyterNotebookDependencies
+import com.intellij.kotlin.jupyter.core.jupyter.actions.JupyterNotebookDependencies
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.registryFlag
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook

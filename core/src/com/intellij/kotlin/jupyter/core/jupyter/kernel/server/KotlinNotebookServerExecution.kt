@@ -18,6 +18,7 @@ private val emptyKotlinConnectionParameters = JupyterConnectionParameters(
     httpParams = JupyterHttpParams(URI.create(""), JupyterTokenAuthParams("")),
     serverPath = null,
     kernelName = DEFAULT_KOTLIN_KERNEL_NAME,
+    configId = ""
 )
 
 class KotlinNotebookServerExecution : JupyterServerExecution {

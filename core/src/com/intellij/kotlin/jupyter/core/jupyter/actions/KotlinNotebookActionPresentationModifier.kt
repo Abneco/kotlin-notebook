@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.actions
 
 import com.intellij.jupyter.core.jupyter.actions.JupyterOpenNotebookInBrowserAction
+import com.intellij.jupyter.core.jupyter.connections.action.JupyterRestartKernelAction
 import com.intellij.jupyter.core.jupyter.editor.actions.JupyterActionPresentationModifier
 import com.intellij.kotlin.jupyter.core.util.getVirtualFile
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
@@ -20,6 +21,7 @@ class KotlinNotebookActionPresentationModifier : JupyterActionPresentationModifi
     )
 
     private val editorActionsToDisableInKotlinNotebook = listOf(JupyterOpenNotebookInBrowserAction::class)
+
 
     private val AnActionEvent.isKotlinNotebookEvent: Boolean get() = getVirtualFile().isKotlinNotebook
     private fun AnActionEvent.disable() {
@@ -46,6 +48,8 @@ class KotlinNotebookActionPresentationModifier : JupyterActionPresentationModifi
             if (disableJupyterCoreActions) {
                 event.disable()
             }
+        } else if (action is JupyterRestartKernelAction && event.isKotlinNotebookEvent) {
+            JupyterKotlinRestartKernelActionUpdater.update(event)
         }
     }
 }

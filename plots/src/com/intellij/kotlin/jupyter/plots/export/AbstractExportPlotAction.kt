@@ -3,9 +3,9 @@ package com.intellij.kotlin.jupyter.plots.export
 
 import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.editor.getJupyterVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookFile
+import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
 import com.intellij.jupyter.core.jupyter.ui.traverseChildrenBreadthFirst
 import com.intellij.kotlin.jupyter.core.util.LETS_PLOT_MIME
@@ -29,7 +29,7 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         val letsPlotOutputs = getLetsPlotOutputs(event)
             .takeIf { isActionApplicable(it) } ?: return
 
-        val notebookFile = event.getJupyterVirtualFile() ?: return
+        val notebookFile = event.notebookFile ?: return
         doExport(letsPlotOutputs, project, notebookFile.file)
     }
 
