@@ -57,7 +57,6 @@
         ]]>
     </description>
 
-    <!--suppress PluginXmlValidity -->
     <change-notes>
         <![CDATA[
             <h1>What's New in Kotlin Notebook 2024.3</h1>
