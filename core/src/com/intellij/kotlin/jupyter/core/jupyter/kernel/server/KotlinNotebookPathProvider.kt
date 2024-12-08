@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 
 import com.intellij.jupyter.core.jupyter.connections.execution.NotebookPathProvider
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServer
+import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
 import com.intellij.kotlin.jupyter.core.util.isKotlinKernelName
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile

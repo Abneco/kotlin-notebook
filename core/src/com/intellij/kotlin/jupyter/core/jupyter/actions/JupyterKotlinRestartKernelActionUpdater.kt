@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.core.jupyter.actions
 
 import com.intellij.jupyter.core.jupyter.JupyterBundle
 import com.intellij.jupyter.core.jupyter.connections.action.getJupyterNotebookRuntimeSettings
-import com.intellij.jupyter.core.jupyter.connections.execution.getJupyterServer
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterNotebookOfflineSettings
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterNotebookSessionSettings
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.ManagedJupyterServerNotebookSessionSettings
@@ -11,6 +10,7 @@ import com.intellij.jupyter.core.jupyter.connections.managed.state.JupyterServer
 import com.intellij.jupyter.core.jupyter.connections.managed.state.JupyterServerStarted
 import com.intellij.jupyter.core.jupyter.connections.managed.state.JupyterServerStarting
 import com.intellij.jupyter.core.jupyter.connections.managed.state.JupyterServerStopped
+import com.intellij.jupyter.core.jupyter.connections.server.JupyterServerUtils.getJupyterServer
 import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookFile
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook

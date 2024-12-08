@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.test
 
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServers
+import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
 import com.intellij.kotlin.jupyter.test.runners.KotlinPluginAwareRunner
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
@@ -45,7 +45,7 @@ abstract class KotlinNotebookBaseTestCase(private val dataPath: String) : Jupyte
 
     /**
      * Waits until all dependencies are set up.
-     * This method should not be called on [EDT] as it will cause a deadlock.
+     * This method should not be called on EDT] as it will cause a deadlock.
      */
     @RequiresBackgroundThread
     protected fun setUpDependenciesSynchronously(

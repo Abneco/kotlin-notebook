@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServer
+import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ModeAwareKernelRunnableFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProcessFactory

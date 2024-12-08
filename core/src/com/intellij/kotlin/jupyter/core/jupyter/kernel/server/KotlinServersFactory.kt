@@ -2,8 +2,8 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 
 import com.intellij.jupyter.core.jupyter.connections.JupyterConnectionParameters
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServer
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServersFactory
+import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
+import com.intellij.jupyter.core.jupyter.connections.server.JupyterServersFactory
 import com.intellij.kotlin.jupyter.core.util.isKotlinKernelName
 
 class KotlinServersFactory: JupyterServersFactory {

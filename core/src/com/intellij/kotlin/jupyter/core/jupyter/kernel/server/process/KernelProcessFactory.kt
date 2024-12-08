@@ -5,7 +5,7 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterServer
+import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.jupyter.actions.mode
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
