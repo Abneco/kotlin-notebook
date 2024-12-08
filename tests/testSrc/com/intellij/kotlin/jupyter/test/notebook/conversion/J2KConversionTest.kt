@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.test.notebook.conversion
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
 import com.intellij.kotlin.jupyter.test.cartesianProduct
 import com.intellij.kotlin.jupyter.test.runners.K1Only
+import com.intellij.kotlin.jupyter.test.runners.PluginModeAwareParametersRunnerFactory
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.ide.CopyPasteManager
@@ -30,6 +31,7 @@ class MarkedTestParameter<T: Any>(
 }
 
 @RunWith(Parameterized::class)
+@Parameterized.UseParametersRunnerFactory(PluginModeAwareParametersRunnerFactory::class)
 @K1Only("Investigate why @Throws is not shortened")
 class J2KConversionTest(
     private val templateFileName: MarkedTestParameter<String>,
