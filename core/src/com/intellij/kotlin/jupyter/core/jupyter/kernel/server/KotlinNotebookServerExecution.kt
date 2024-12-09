@@ -15,7 +15,7 @@ import kotlinx.coroutines.Job
 import java.net.URI
 
 private val emptyKotlinConnectionParameters = JupyterConnectionParameters(
-    httpParams = JupyterHttpParams(URI.create(""), JupyterTokenAuthParams("")),
+    httpParams = JupyterHttpParams(URI.create(""), JupyterTokenAuthParams(""), authority = ""),
     serverPath = null,
     kernelName = DEFAULT_KOTLIN_KERNEL_NAME,
     configId = ""
