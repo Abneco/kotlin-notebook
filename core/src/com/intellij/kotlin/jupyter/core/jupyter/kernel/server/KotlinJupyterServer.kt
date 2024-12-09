@@ -6,13 +6,12 @@ import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
 import com.intellij.openapi.util.Disposer
-import java.io.File
 
 class KotlinJupyterServer(
     override val connectionParameters: JupyterConnectionParameters
 ): JupyterServer {
     override val client: JupyterClient by lazy {
-        KotlinInProcessJupyterClient(File("")).also {
+        KotlinInProcessJupyterClient().also {
             Disposer.register(this, it)
         }
     }

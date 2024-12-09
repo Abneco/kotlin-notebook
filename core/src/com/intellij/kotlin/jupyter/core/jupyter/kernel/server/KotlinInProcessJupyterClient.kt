@@ -13,8 +13,6 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMe
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterShutdownRequestMessageBuilder
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.connections.filecontentsapi.CachingFileContentsApi
-import com.intellij.jupyter.core.jupyter.connections.filecontentsapi.JavaIoFileContentsApi
-import com.intellij.jupyter.core.jupyter.connections.filecontentsapi.TreeCachingFileContentsApi
 import com.intellij.jupyter.core.jupyter.connections.http.HttpSession
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpecBase
@@ -45,14 +43,13 @@ interface KotlinKernelRunnableProvider {
  * Jupyter client that is running in the IDE process.
  */
 class KotlinInProcessJupyterClient(
-    private val rootDir: File
-): JupyterClient, KotlinKernelRunnableProvider, Disposable {
+) : JupyterClient, KotlinKernelRunnableProvider, Disposable {
     init {
-      ApplicationManager.getApplication().messageBus.connect(this)
-          .subscribe(JupyterSessionVerifiedListener.TOPIC, JupyterSessionVerifiedListener { project, virtualFile ->
-              project.messageBus.syncPublisher(NotebookSessionEventListener.TOPIC)
-                  .sessionStarted(virtualFile, isAfterRestart = pendingRestarts.remove(virtualFile.file))
-          })
+        ApplicationManager.getApplication().messageBus.connect(this)
+            .subscribe(JupyterSessionVerifiedListener.TOPIC, JupyterSessionVerifiedListener { project, virtualFile ->
+                project.messageBus.syncPublisher(NotebookSessionEventListener.TOPIC)
+                    .sessionStarted(virtualFile, isAfterRestart = pendingRestarts.remove(virtualFile.file))
+            })
     }
 
     private val idGenerator = IdGenerator()
@@ -67,10 +64,7 @@ class KotlinInProcessJupyterClient(
 
     private val clientSessions = ConcurrentCollectionFactory.createConcurrentMap<JupyterKernelId, KotlinKernelSession>()
 
-    override val fileContentsApi: CachingFileContentsApi by lazy {
-        TreeCachingFileContentsApi(JavaIoFileContentsApi(rootDir))
-    }
-
+    override val fileContentsApi: CachingFileContentsApi = error("Kotlin is not support file contents")
     override suspend fun uploadFile(filePath: String, content: ByteArray): String {
         TODO("Not yet implemented")
     }
@@ -228,7 +222,7 @@ class KotlinInProcessJupyterClient(
         } == true
     }
 
-    private inner class MyKernelListener: KotlinKernelListener {
+    private inner class MyKernelListener : KotlinKernelListener {
         override fun kernelTerminated(event: KotlinKernelEvent) {
             removeSessionAndRelatedState(event.source)
         }
