@@ -64,7 +64,8 @@ class KotlinInProcessJupyterClient(
 
     private val clientSessions = ConcurrentCollectionFactory.createConcurrentMap<JupyterKernelId, KotlinKernelSession>()
 
-    override val fileContentsApi: CachingFileContentsApi = error("Kotlin is not support file contents")
+    override val fileContentsApi: CachingFileContentsApi
+        get() = error("Kotlin is not support file contents")
     override suspend fun uploadFile(filePath: String, content: ByteArray): String {
         TODO("Not yet implemented")
     }
