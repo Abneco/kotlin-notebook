@@ -11,7 +11,7 @@ import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterWebSocketClientClosedException
+import com.intellij.jupyter.core.jupyter.connections.ws.JupyterWebSocketClientClosedException
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterCompleteRequestMessageBuilder
