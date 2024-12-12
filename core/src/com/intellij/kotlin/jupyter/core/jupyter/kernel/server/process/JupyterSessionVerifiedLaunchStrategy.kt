@@ -24,9 +24,11 @@ import org.jetbrains.kotlinx.jupyter.messaging.toRawMessage
 import kotlin.time.Duration.Companion.seconds
 
 abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: Int) : JupyterSessionLaunchStrategy {
-    override suspend fun createAndVerifySession(jupyterClient: JupyterClient,
-                                        sessionDataFactory: JupyterClient.() -> JupyterSessionData,
-                                        sessionFactory: (JupyterSessionData) -> JupyterNotebookSession?): JupyterNotebookSession? {
+    override suspend fun createAndVerifySession(
+        jupyterClient: JupyterClient,
+        sessionDataFactory: suspend JupyterClient.() -> JupyterSessionData,
+        sessionFactory: (JupyterSessionData) -> JupyterNotebookSession?
+    ): JupyterNotebookSession? {
         repeat(attemptsCount) {
             val sessionData = jupyterClient.sessionDataFactory()
             val session = sessionFactory(sessionData) ?: return null
@@ -52,12 +54,12 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
     }
 
     private suspend fun verifySession(
-      session: JupyterNotebookSession,
-      kernel: KotlinKernelRunnableHandler?
+        session: JupyterNotebookSession,
+        kernel: KotlinKernelRunnableHandler?
     ): Boolean {
         val verificationDeferred = CompletableDeferred<Boolean>()
 
-        kernel?.addBaseKernelListener(object: KotlinKernelListener {
+        kernel?.addBaseKernelListener(object : KotlinKernelListener {
             override fun kernelTerminated(event: KotlinKernelEvent) {
                 verificationDeferred.complete(false)
             }
