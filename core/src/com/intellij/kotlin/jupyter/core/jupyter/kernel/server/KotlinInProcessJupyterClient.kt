@@ -54,7 +54,7 @@ class KotlinInProcessJupyterClient(
 
     private val idGenerator = IdGenerator()
 
-    private val kernels = ConcurrentCollectionFactory.createConcurrentMap<JupyterKernelId, KotlinKernelRunnableHandler>()
+    private val kernelsHandlers = ConcurrentCollectionFactory.createConcurrentMap<JupyterKernelId, KotlinKernelRunnableHandler>()
     private val pendingRestarts = ConcurrentCollectionFactory.createConcurrentSet<VirtualFile>()
 
     private val sessions = createConcurrentDoubleKeyMap(
@@ -66,6 +66,13 @@ class KotlinInProcessJupyterClient(
 
     override val fileContentsApi: CachingFileContentsApi
         get() = error("Kotlin is not support file contents")
+
+
+    override val defaultKernel: JupyterKernel
+        get() = kernelSpecs.values.first()
+    override val kernels: List<JupyterKernel>
+        get() = kernelSpecs.values.toList()
+
     override suspend fun uploadFile(filePath: String, content: ByteArray): String {
         TODO("Not yet implemented")
     }
@@ -75,7 +82,7 @@ class KotlinInProcessJupyterClient(
     }
 
     override fun getKernel(kernelId: JupyterKernelId): KotlinKernelRunnableHandler? {
-        return kernels[kernelId]
+        return kernelsHandlers[kernelId]
     }
 
     override fun startKernel(
@@ -94,20 +101,13 @@ class KotlinInProcessJupyterClient(
         kernel.addBaseKernelListener(MyKernelListener())
 
         Disposer.register(this, kernel)
-        kernels[kernelId] = kernel
+        kernelsHandlers[kernelId] = kernel
         return kernelId
     }
 
-    override fun getKernelSpecs(): List<JupyterKernel> {
-        return kernelSpecs.values.toList()
-    }
 
     override fun getKernelSpec(kernelName: KernelName): JupyterKernel {
         return kernelSpecs[kernelName] ?: throw JupyterKernelDoesNotExistsException(null, kernelName)
-    }
-
-    override fun getDefaultKernelSpec(): KernelName {
-        return DEFAULT_KOTLIN_KERNEL_NAME
     }
 
     override suspend fun listSessionsAsync(context: HttpSession.Request.Context): List<JupyterSessionData> {
@@ -136,7 +136,7 @@ class KotlinInProcessJupyterClient(
 
     private fun killKernel(kernelId: JupyterKernelId) {
         sendShutdown(kernelId)
-        val kernelProcess = kernels.remove(kernelId) ?: return
+        val kernelProcess = kernelsHandlers.remove(kernelId) ?: return
         removeSessionAndRelatedState(kernelProcess)
         KotlinNotebookPluginScope.invokeOnEDT {
             Disposer.dispose(kernelProcess)
@@ -164,8 +164,8 @@ class KotlinInProcessJupyterClient(
 
     override fun restart(kernelId: JupyterKernelId) {
         val sessionData = sessions.getBySecondKey(kernelId) ?: return
-        val project = kernels[kernelId]?.project
-        val notebookFile = kernels[kernelId]?.notebookVirtualFile
+        val project = kernelsHandlers[kernelId]?.project
+        val notebookFile = kernelsHandlers[kernelId]?.notebookVirtualFile
         killKernel(kernelId)
         sessions.removeByValue(sessionData)
 
@@ -181,7 +181,7 @@ class KotlinInProcessJupyterClient(
         sessionId: JupyterNotebookSessionId,
         onMessage: (JupyterMessage) -> Unit
     ): JupyterKernelCommunicationClient? {
-        val processHandler = kernels[kernelId] ?: throw RuntimeException("No kernel with id $kernelId")
+        val processHandler = kernelsHandlers[kernelId] ?: throw RuntimeException("No kernel with id $kernelId")
         val session = processHandler.createSession(sessionId, onMessage) ?: return null
         clientSessions[kernelId] = session
         Disposer.register(this, session)
@@ -189,7 +189,7 @@ class KotlinInProcessJupyterClient(
     }
 
     override fun dispose() {
-        kernels.clear()
+        kernelsHandlers.clear()
         sessions.clear()
         clientSessions.clear()
     }
