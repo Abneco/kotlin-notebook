@@ -81,6 +81,8 @@ class KotlinInProcessJupyterClient(
         TODO("Not yet implemented")
     }
 
+    override suspend fun updateKernels() {}
+
     override fun getKernel(kernelId: JupyterKernelId): KotlinKernelRunnableHandler? {
         return kernelsHandlers[kernelId]
     }
