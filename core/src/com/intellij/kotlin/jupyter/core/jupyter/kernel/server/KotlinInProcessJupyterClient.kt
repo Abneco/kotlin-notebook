@@ -14,8 +14,8 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterSh
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.connections.filecontentsapi.CachingFileContentsApi
 import com.intellij.jupyter.core.jupyter.connections.http.HttpSession
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpecBase
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernel
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelBase
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.resetSessionMetaInformation
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.JupyterSessionVerifiedListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
@@ -98,11 +98,11 @@ class KotlinInProcessJupyterClient(
         return kernelId
     }
 
-    override fun getKernelSpecs(): List<JupyterKernelSpec> {
+    override fun getKernelSpecs(): List<JupyterKernel> {
         return kernelSpecs.values.toList()
     }
 
-    override fun getKernelSpec(kernelName: KernelName): JupyterKernelSpec {
+    override fun getKernelSpec(kernelName: KernelName): JupyterKernel {
         return kernelSpecs[kernelName] ?: throw JupyterKernelDoesNotExistsException(null, kernelName)
     }
 
@@ -230,8 +230,8 @@ class KotlinInProcessJupyterClient(
     }
 
     companion object {
-        private val kernelSpecs: Map<KernelName, JupyterKernelSpec> = mapOf(
-            DEFAULT_KOTLIN_KERNEL_NAME to JupyterKernelSpecBase(
+        private val kernelSpecs: Map<KernelName, JupyterKernel> = mapOf(
+            DEFAULT_KOTLIN_KERNEL_NAME to JupyterKernelBase(
                 notebookKernelSpec.displayName,
                 notebookKernelSpec.language,
                 notebookKernelSpec.name

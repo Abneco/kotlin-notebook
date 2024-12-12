@@ -74,7 +74,7 @@ object JupyterKotlinRestartKernelActionUpdater {
         val virtualFile = e.notebookFile?.file ?: return
         val runtimeSettings = e.getJupyterNotebookRuntimeSettings()
         if (runtimeSettings == null) {
-            val kernelSpecs = getJupyterServer(project, virtualFile)?.kernelSpecs
+            val kernelSpecs = getJupyterServer(project, virtualFile)?.kernels
             callback(!kernelSpecs.isNullOrEmpty())
         } else {
             fun serverIsOffline() = callback(false)

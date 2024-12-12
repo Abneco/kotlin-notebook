@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 import com.intellij.jupyter.core.jupyter.connections.JupyterConnectionParameters
 import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernel
 import com.intellij.openapi.util.Disposer
 
 class KotlinJupyterServer(
@@ -16,11 +16,11 @@ class KotlinJupyterServer(
         }
     }
 
-    override val kernelSpecs: List<JupyterKernelSpec>
+    override val kernels: List<JupyterKernel>
         get() = client.getKernelSpecs()
 
-    override val defaultKernelSpec: JupyterKernelSpec?
-        get() = kernelSpecs.find { kernelSpec -> kernelSpec.name == client.getDefaultKernelSpec() }
+    override val defaultKernel: JupyterKernel?
+        get() = kernels.find { kernelSpec -> kernelSpec.name == client.getDefaultKernelSpec() }
 
     override fun updateKernelSpecs() {
     }
