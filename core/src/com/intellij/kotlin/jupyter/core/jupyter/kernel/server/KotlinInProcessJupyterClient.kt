@@ -85,7 +85,7 @@ class KotlinInProcessJupyterClient(
         return kernelsHandlers[kernelId]
     }
 
-    override fun startKernel(
+    fun startKernel(
         project: Project,
         kernelName: String,
         notebookPath: Path
@@ -114,7 +114,7 @@ class KotlinInProcessJupyterClient(
         return sessions.values().toList()
     }
 
-    override fun createSession(project: Project, kernelName: KernelName, notebookPath: String): JupyterSessionData {
+    override suspend fun createSession(project: Project, kernelName: KernelName, notebookPath: String): JupyterSessionData {
         val notebookFile = File(notebookPath).absoluteFile
         val kernelId = startKernel(project, kernelName, notebookFile.toPath()) ?: throw RuntimeException("Unknown kernel: $kernelName")
 
@@ -128,7 +128,7 @@ class KotlinInProcessJupyterClient(
         return data
     }
 
-    override fun deleteSession(sessionId: JupyterNotebookSessionId) {
+    override suspend fun deleteSession(sessionId: JupyterNotebookSessionId) {
         val sessionData = sessions.getByFirstKey(sessionId) ?: return
         killKernel(sessionData.kernelId)
         sessions.removeByFirstKey(sessionId)
@@ -156,13 +156,13 @@ class KotlinInProcessJupyterClient(
         }
     }
 
-    override fun interrupt(kernelId: JupyterKernelId) {
+    override suspend fun interrupt(kernelId: JupyterKernelId) {
         val clientSession = clientSessions[kernelId] ?: return
         val interruptMessage = JupyterInterruptRequestMessageBuilder(clientSession.sessionId).build()
         clientSession.send(interruptMessage)
     }
 
-    override fun restart(kernelId: JupyterKernelId) {
+    override suspend fun restart(kernelId: JupyterKernelId) {
         val sessionData = sessions.getBySecondKey(kernelId) ?: return
         val project = kernelsHandlers[kernelId]?.project
         val notebookFile = kernelsHandlers[kernelId]?.notebookVirtualFile

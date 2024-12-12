@@ -30,6 +30,7 @@ import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
@@ -90,7 +91,9 @@ fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     return try {
         action()
     } finally {
-        session.deleteSession()
+        runBlockingMaybeCancellable {
+            session.deleteSession()
+        }
         // make sure to drop previous data
         JupyterCompilerService.getInstance(project).removeSession(backedFile)
     }
