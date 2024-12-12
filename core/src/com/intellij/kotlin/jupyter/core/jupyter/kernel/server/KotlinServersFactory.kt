@@ -8,6 +8,6 @@ import com.intellij.kotlin.jupyter.core.util.isKotlinKernelName
 
 class KotlinServersFactory: JupyterServersFactory {
     override fun create(connectionParameters: JupyterConnectionParameters): JupyterServer? {
-        return if (isKotlinKernelName(connectionParameters.kernelName)) KotlinJupyterServer(connectionParameters) else null
+        return if (isKotlinKernelName(connectionParameters.serverType)) KotlinJupyterServer(connectionParameters) else null
     }
 }
