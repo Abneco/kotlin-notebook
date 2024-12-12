@@ -8,8 +8,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 
 class KotlinNotebookPathProvider: NotebookPathProvider {
-    override suspend fun getNotebookPath(project: Project, file: VirtualFile, server: JupyterServer, kernelName: String?): String? {
-        if (!isKotlinKernelName(kernelName)) return null
+    override suspend fun getNotebookPath(project: Project, file: VirtualFile, server: JupyterServer): String? {
+        if (!isKotlinKernelName(server.connectionParameters.serverType)) return null
 
         return file.path
     }
