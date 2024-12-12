@@ -14,7 +14,7 @@ class ManagedKotlinNotebookServerRunner : ManagedJupyterServerRunner {
         project: Project,
         virtualFile: VirtualFile,
         kernelName: String?,
-        settings: JupyterManagedServerConfig?
+        settings: JupyterManagedServerConfig
     ): JupyterServerExecution? {
         if (isKotlinKernelName(kernelName) || virtualFile.isKotlinNotebook) {
             return KotlinNotebookServerExecution()
