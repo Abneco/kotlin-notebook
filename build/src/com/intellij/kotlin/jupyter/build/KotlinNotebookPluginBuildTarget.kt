@@ -16,7 +16,7 @@ object KotlinNotebookPluginBuildTarget {
             projectHome = ULTIMATE_HOME,
             productProperties = IdeaUltimateProperties(ULTIMATE_HOME),
         )
-        context.options.enableEmbeddedJetBrainsClient = false
+        context.options.enableEmbeddedFrontend = false
 
         createBuildTasks(context).buildNonBundledPlugins(listOf(
             "intellij.notebooks.plugin",
