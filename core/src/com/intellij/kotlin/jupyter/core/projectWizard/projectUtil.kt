@@ -1,7 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.projectWizard
 
-import com.intellij.openapi.project.ProjectCoreUtil
+import com.intellij.openapi.project.ProjectStorePathManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import java.nio.file.Path
@@ -41,6 +41,6 @@ fun findEnclosingProjectPath(virtualFile: VirtualFile): VirtualFile? {
 }
 
 private fun isProjectDirectory(virtualFile: VirtualFile): Boolean {
-    return ProjectCoreUtil.isKnownProjectDirectory(virtualFile)
+    return ProjectStorePathManager.getInstance().testStoreDirectoryExistsForProjectRoot(virtualFile)
             || KotlinNotebookRootTypeInstance.rootVirtualFile == virtualFile
 }
