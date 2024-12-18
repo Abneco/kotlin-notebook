@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.editor.highlighting.service.util
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
-import com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookTypeHintsRegistry.Companion.invalidateTypeHintsRegistry
+import com.intellij.kotlin.jupyter.core.editor.codeInsight.hints.PsiHostTypeHintsInvalidator
 import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingManager
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
@@ -106,7 +106,7 @@ internal fun resetSessionMetaInformation(vFile: VirtualFile, project: Project) {
         cells?.forEach {
             it.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
             it.putUserData(InjectedHostHasErrors, null)
-            it.invalidateTypeHintsRegistry()
+            PsiHostTypeHintsInvalidator.invalidateTypeHintsRegistry(it)
             injectedManager.getInjectedPsiFiles(it)?.firstOrNull { f ->
                 f.first is KtFile
             }?.first?.putUserData(NonTargetHostErrorMark, null)

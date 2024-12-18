@@ -5,10 +5,10 @@ import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSession
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.util.getKotlinNotebookVirtualFile
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
 import com.intellij.xdebugger.XDebugSession
-import org.jetbrains.kotlin.idea.refactoring.project
 
 internal val DataContext.debugSessionForFile: KotlinNotebookDebugSession?
     get() {
@@ -16,6 +16,7 @@ internal val DataContext.debugSessionForFile: KotlinNotebookDebugSession?
         if (notebookFile == null) {
             return null
         }
+        val project = CommonDataKeys.PROJECT.getData(this)!!
 
         return KotlinNotebookDebugSessionManager.getForFile(project, notebookFile)
     }

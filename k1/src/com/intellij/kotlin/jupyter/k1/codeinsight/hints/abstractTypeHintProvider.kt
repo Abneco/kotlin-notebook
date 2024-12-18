@@ -10,8 +10,7 @@ import com.intellij.codeInsight.hints.presentation.InlayPresentation
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.codeInsight.hints.presentation.RecursivelyUpdatingRootPresentation
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
-import com.intellij.kotlin.jupyter.core.editor.codeInsight.PsiHostTypeHintsRegistry
-import com.intellij.kotlin.jupyter.core.editor.codeInsight.PsiHostTypeHintsRegistry.Companion.getOrCreateTypeHintsRegistry
+import com.intellij.kotlin.jupyter.k1.codeinsight.hints.PsiHostTypeHintsRegistry.Companion.getOrCreateTypeHintsRegistry
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.isEitherSymmetricallyContainedRange
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle

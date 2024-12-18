@@ -27,5 +27,10 @@
         <classifiersDefaultImportsEnhancerFactory implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.CompiledClassifiersDefaultImportsEnhancerFactoryK1"/>
         <scriptDefinitionWrapperFactory implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.definition.NotebookScriptDefinitionsWrapperFactoryK1"/>
         <shadowingVisitorFactory implementation="com.intellij.kotlin.jupyter.k1.highlighting.ShadowingVisitorFactoryK1"/>
+        <psiHostTypeHintsInvalidator implementation="com.intellij.kotlin.jupyter.k1.codeinsight.hints.K1PsiHostTypeHintsInvalidator"/>
+    </extensions>
+    <extensions defaultExtensionNs="org.jetbrains.kotlin.idea.compilerPlugin.kotlinxSerialization">
+        <kotlinSerializationEnabledChecker
+                implementation="com.intellij.kotlin.jupyter.k1.serialization.KotlinScriptingSerializationEnabledChecker"/>
     </extensions>
 </idea-plugin>

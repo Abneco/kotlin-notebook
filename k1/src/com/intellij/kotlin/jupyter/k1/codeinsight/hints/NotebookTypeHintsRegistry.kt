@@ -1,7 +1,10 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.editor.codeInsight
+package com.intellij.kotlin.jupyter.k1.codeinsight.hints
 
 import com.intellij.codeInsight.hints.presentation.InlayPresentation
+import com.intellij.kotlin.jupyter.core.editor.codeInsight.hints.PsiHostTypeHintsInvalidator
+import com.intellij.kotlin.jupyter.k1.codeinsight.hints.NotebookTypeHintsRegistry.Companion.psiHostChainHintsRegistry
+import com.intellij.kotlin.jupyter.k1.codeinsight.hints.NotebookTypeHintsRegistry.Companion.psiHostHintsRegistry
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiLanguageInjectionHost
@@ -33,13 +36,15 @@ sealed class NotebookTypeHintsRegistry<T: Collection<*>> {
     companion object {
         internal val psiHostHintsRegistry = Key.create<PsiHostTypeHintsRegistry>("jupyter.kotlin.inlay.hints.registry")
         val psiHostChainHintsRegistry: Key<PsiHostChainCallTypeHintsRegistry?> = Key.create("jupyter.kotlin.inlay.hints.chain.call.registry")
+    }
+}
 
-        internal fun PsiLanguageInjectionHost.invalidateTypeHintsRegistry() {
-            if (this !is JupyterPsiCell) return
-            synchronized(this) {
-                getUserData(psiHostHintsRegistry)?.clear()
-                getUserData(psiHostChainHintsRegistry)?.clear()
-            }
+class K1PsiHostTypeHintsInvalidator : PsiHostTypeHintsInvalidator {
+    override fun invalidateTypeHintsRegistry(host: PsiLanguageInjectionHost) {
+        if (host !is JupyterPsiCell) return
+        synchronized(this) {
+            host.getUserData(psiHostHintsRegistry)?.clear()
+            host.getUserData(psiHostChainHintsRegistry)?.clear()
         }
     }
 }

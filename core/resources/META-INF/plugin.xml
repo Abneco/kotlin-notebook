@@ -140,6 +140,10 @@
         <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.shadowingVisitorFactory"
                         interface="com.intellij.kotlin.jupyter.core.editor.highlighting.visitors.KotlinPluginModeShadowingAnalyzerHandler$Factory"
                         dynamic="true"/>
+
+        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.psiHostTypeHintsInvalidator"
+                        interface="com.intellij.kotlin.jupyter.core.editor.codeInsight.hints.PsiHostTypeHintsInvalidator"
+                        dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
@@ -284,11 +288,6 @@
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">
         <!--suppress PluginXmlDynamicPlugin -->
         <scriptingSupport implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport"/>
-    </extensions>
-
-    <extensions defaultExtensionNs="org.jetbrains.kotlin.idea.compilerPlugin.kotlinxSerialization">
-        <kotlinSerializationEnabledChecker
-                implementation="com.intellij.kotlin.jupyter.k1.serialization.KotlinScriptingSerializationEnabledChecker"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">

@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.scriptingSupport.listeners
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookTypeHintsRegistry.Companion.invalidateTypeHintsRegistry
+import com.intellij.kotlin.jupyter.core.editor.codeInsight.hints.PsiHostTypeHintsInvalidator
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.getErrorPresenceIndicator
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
@@ -133,7 +133,7 @@ class ImpatientNotebookChangeListener(
 
         cellOfChange.getErrorPresenceIndicator()
             ?.compareAndSet(false, true)
-        cellOfChange.invalidateTypeHintsRegistry()
+        PsiHostTypeHintsInvalidator.invalidateTypeHintsRegistry(cellOfChange)
 
         if (renameRanges == null) {
             notebookDataHolder.update {

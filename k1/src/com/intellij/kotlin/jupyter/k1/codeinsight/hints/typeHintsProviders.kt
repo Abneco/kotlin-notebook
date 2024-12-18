@@ -9,8 +9,7 @@ import com.intellij.codeInsight.hints.InlayHintsSink
 import com.intellij.codeInsight.hints.SettingsKey
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
-import com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookTypeHintsRegistry.Companion.psiHostChainHintsRegistry
-import com.intellij.kotlin.jupyter.core.editor.codeInsight.PsiHostChainCallTypeHintsRegistry
+import com.intellij.kotlin.jupyter.k1.codeinsight.hints.NotebookTypeHintsRegistry.Companion.psiHostChainHintsRegistry
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.isEitherSymmetricallyContainedRange
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
