@@ -278,13 +278,12 @@ class KotlinNotebookDebugSession(
         )
 
         debugConnectionHolder.myDebugSession?.process?.addDebugProcessListener(
-            processListener
+            processListener, this
         )
     }
 
 
     override fun dispose() {
-        debugConnectionHolder.myDebugSession?.process?.removeDebugProcessListener(processListener)
         disposeCurrentSession()
         debugConnectionHolder.clearKnownConnection(project)
         processListener = null
