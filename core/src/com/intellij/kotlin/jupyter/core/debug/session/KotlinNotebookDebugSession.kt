@@ -44,8 +44,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import java.util.concurrent.ExecutionException
 
-
-class KotlinNotebookDebugSession(
+internal class KotlinNotebookDebugSession(
     public override val virtualFile: BackedNotebookVirtualFile,
     private val project: Project,
     projectService: Disposable,

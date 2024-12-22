@@ -47,7 +47,7 @@ data class NotebookDebugConnectionHolder(
     }
 }
 
-object DebugConnectionUtility {
+internal object DebugConnectionUtility {
     fun Project.buildExecutionEnvironment(runnerSettings: RunnerSettings): ExecutionEnvironment =
         ExecutionEnvironmentBuilder(
             this, DefaultDebugExecutor.getDebugExecutorInstance()
@@ -58,12 +58,13 @@ object DebugConnectionUtility {
         ).build()
 
 
-    fun buildRunnerSettings(transport: Int, debugPort: String, local: Boolean = true) =
-        GenericDebuggerRunnerSettings().apply {
+    fun buildRunnerSettings(transport: Int, debugPort: String, local: Boolean = true): GenericDebuggerRunnerSettings {
+        return GenericDebuggerRunnerSettings().apply {
             this.transport = transport
             setLocal(local)
             this.debugPort = debugPort
         }
+    }
 
 
     fun ExecutionEnvironment.buildRemoteRunProfileState(remoteConnection: RemoteConnection): RunProfileState {
@@ -74,7 +75,6 @@ object DebugConnectionUtility {
             }
         }
     }
-
 
     fun ExecutionEnvironment.attachDebuggerCreateSession(@Nls sessionName: String, project: Project, debugEnvironment: DefaultDebugEnvironment, headless: Boolean = false): DebuggerSession {
         fun XDebuggerManager.createSession(debugStarter: XDebugProcessStarter): XDebugSession {

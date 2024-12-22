@@ -15,7 +15,6 @@ import com.intellij.xdebugger.frame.XValueChildrenList
 internal val debugFeaturesEnabled: Boolean
     get() = Registry.`is`("kotlin.notebook.debug.enabled", false)
 
-
 /**
  * Based on current DebugSession of [BackedNotebookVirtualFile],
  * retrieves [JavaValue] by [variableName] in Kernel interpreter state or null.
@@ -36,7 +35,7 @@ suspend fun BackedNotebookVirtualFile.retrieveCurrentSessionVariables(project: P
     return variables
 }
 
-fun KotlinNotebookDebugSession.createScreeningAttachment(): Attachment {
+internal fun KotlinNotebookDebugSession.createScreeningAttachment(): Attachment {
     val debugSession = this.debuggerSession
     val targetDebugPort = targetDebugPort
     val stackFrameProxy = currentStackFrameProxy

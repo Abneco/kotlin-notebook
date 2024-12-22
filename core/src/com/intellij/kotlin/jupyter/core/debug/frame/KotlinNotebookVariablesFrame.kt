@@ -18,14 +18,13 @@ import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
 import com.intellij.xdebugger.frame.XCompositeNode
 import com.intellij.xdebugger.frame.XStackFrame
 
-
 /**
  * This [XStackFrame] represents current interpreter state
  * inside Kotlin Notebook.
  *
- * This means, all the top-level assignments executed by the user at the present moment.
+ * This means all the top-level assignments executed by the user at the present moment.
  */
-class KotlinNotebookVariablesFrame(
+internal class KotlinNotebookVariablesFrame(
     private val project: Project,
     private val sourcePosition: XSourcePosition?,
     private val debugSession: KotlinNotebookDebugSession

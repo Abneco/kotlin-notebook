@@ -15,7 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import java.nio.file.Path
 
 @Service(Service.Level.PROJECT)
-class KotlinNotebookDebugSessionManager(
+internal class KotlinNotebookDebugSessionManager(
     private val project: Project,
     coroutineScope: CoroutineScope
 ) : NotebookProjectLevelService<KotlinNotebookDebugSession>(coroutineScope) {
