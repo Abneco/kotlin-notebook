@@ -5,7 +5,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.PluginModeAwareScriptPr
 import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptCheckerConfiguration
 import com.intellij.kotlin.jupyter.core.scriptingSupport.scriptConfigurationsClassCache
 
-class PluginModeAwareScriptPresenceCheckerFactoryK1 : PluginModeAwareScriptPresenceChecker.Factory {
+private class PluginModeAwareScriptPresenceCheckerFactoryK1 : PluginModeAwareScriptPresenceChecker.Factory {
     override fun create(configuration: ScriptCheckerConfiguration): PluginModeAwareScriptPresenceChecker {
         val project = configuration.project
 

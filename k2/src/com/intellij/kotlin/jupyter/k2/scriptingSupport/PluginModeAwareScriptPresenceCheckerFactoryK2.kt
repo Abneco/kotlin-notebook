@@ -8,7 +8,7 @@ import com.intellij.platform.workspace.jps.entities.LibraryEntity
 import com.intellij.platform.workspace.storage.entities
 import org.jetbrains.kotlin.idea.core.script.scriptConfigurationsSourceOfType
 
-class PluginModeAwareScriptPresenceCheckerFactoryK2: PluginModeAwareScriptPresenceChecker.Factory {
+private class PluginModeAwareScriptPresenceCheckerFactoryK2: PluginModeAwareScriptPresenceChecker.Factory {
     override fun create(configuration: ScriptCheckerConfiguration): PluginModeAwareScriptPresenceChecker {
         val (project, notebookFile) = configuration
 
