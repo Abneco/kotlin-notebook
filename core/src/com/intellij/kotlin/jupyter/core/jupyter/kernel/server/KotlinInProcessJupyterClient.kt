@@ -14,8 +14,8 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterSh
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.connections.filecontentsapi.CachingFileContentsApi
 import com.intellij.jupyter.core.jupyter.connections.http.HttpSession
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelBase
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.resetSessionMetaInformation
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.JupyterSessionVerifiedListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
@@ -72,14 +72,6 @@ class KotlinInProcessJupyterClient(
         get() = kernelSpecs.values.first()
     override val kernels: List<JupyterKernelSpec>
         get() = kernelSpecs.values.toList()
-
-    override suspend fun uploadFile(filePath: String, content: ByteArray): String {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun isFileExists(filePath: String): Boolean {
-        TODO("Not yet implemented")
-    }
 
     override suspend fun updateKernels() {}
 
