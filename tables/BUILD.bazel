@@ -28,7 +28,7 @@ jvm_library(
     "//dbe/grid:grid-core-impl",
     "@lib//:jackson-databind-provided",
     "@lib//:jackson-provided",
-    "@lib//:kotlinc_kotlin-compiler-common-provided",
+    "@lib//:kotlinc-kotlin-compiler-common-provided",
     "//plugins/jupyter/tables",
     "@community//platform/code-style-api:codeStyle",
   ],

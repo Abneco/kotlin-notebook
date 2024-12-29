@@ -4,7 +4,7 @@ load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_provided_library", "jvm_resourc
 
 create_kotlinc_options(
   name = "custom",
-  jvm_target = "17",
+  jvm_target = 17,
   opt_in = [
     "org.jetbrains.kotlin.analysis.api.KaIdeApi",
     "org.jetbrains.kotlin.analysis.api.KaNonPublicApi",
@@ -22,16 +22,6 @@ jvm_resources(
   name = "kotlin-jupyter-core_resources_1",
   files = glob(["resources-en/**/*"]),
   strip_prefix = "resources-en"
-)
-
-jvm_provided_library(
-  name = "kotlin-core_provided",
-  lib = "@community//plugins/kotlin/core"
-)
-
-jvm_provided_library(
-  name = "idea_provided",
-  lib = "@community//plugins/kotlin/idea"
 )
 
 jvm_provided_library(
@@ -63,18 +53,18 @@ jvm_library(
   deps = [
     "@lib//:jetbrains-annotations-provided",
     "@community//platform/ide-core-impl",
-    "@ultimate_lib//:jetbrains_kotlin-jupyter-shared-compiler",
+    "@ultimate_lib//:jetbrains-kotlin-jupyter-shared-compiler",
     "@lib//:kotlin-reflect-provided",
     "@lib//:kotlinx-serialization-core-provided",
     "@lib//:kotlinx-serialization-json",
     "@lib//:kotlinx-coroutines-core",
     "@lib//:jackson",
     "@lib//:jackson-databind",
-    "@lib//:kotlinc_analysis-api-provided",
-    "@lib//:kotlinc_kotlin-compiler-common-provided",
-    "@lib//:kotlinc_kotlin-scripting-common-provided",
-    "@lib//:kotlinc_kotlin-scripting-compiler-impl-provided",
-    "@lib//:kotlinc_kotlin-scripting-jvm-provided",
+    "@lib//:kotlinc-analysis-api-provided",
+    "@lib//:kotlinc-kotlin-compiler-common-provided",
+    "@lib//:kotlinc-kotlin-scripting-common-provided",
+    "@lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
+    "@lib//:kotlinc-kotlin-scripting-jvm-provided",
     "@community//platform/core-api:core",
     "//ultimate/platform-ultimate:commercial",
     "//ultimate/ultimate-verifier:commercial-verifier",
@@ -84,10 +74,12 @@ jvm_library(
     "@community//platform/xdebugger-api:debugger",
     "@community//platform/xdebugger-impl:debugger-impl",
     "@community//platform/platform-api:ide",
+    "@community//platform/platform-impl:ide-impl",
     "@community//platform/platform-util-io:ide-util-io",
     "@community//platform/lang-api:lang",
     "@community//platform/lang-impl",
     "@community//platform/util/concurrency",
+    "@community//platform/backend/workspace",
     "@community//platform/core-ui",
     "@community//platform/statistics",
     "@community//platform/util",
@@ -95,15 +87,16 @@ jvm_library(
     "@community//platform/util-ex",
     "@community//platform/util:util-ui",
     "@community//plugins/kotlin/base/analysis:kotlin-base-analysis",
+    "@community//java/debugger/openapi:java-debugger",
     "@community//plugins/kotlin/base/scripting:kotlin-base-scripting",
     "@community//plugins/kotlin/base/facet:kotlin-base-facet",
     "@community//plugins/kotlin/base/code-insight:kotlin-base-code-insight",
     "@community//plugins/kotlin/base/project-structure:kotlin-base-project-structure",
     "@community//plugins/kotlin/highlighting/highlighting-shared:kotlin-highlighting-shared",
     "@community//plugins/kotlin/refactorings/kotlin.refactorings.common:kotlin-refactorings-common",
+    "@community//platform/editor-ui-ex:editor-ex",
     "@community//plugins/kotlin/jvm-debugger/core:kotlin-jvm-debugger-core",
     "@community//plugins/kotlin/jvm-debugger/evaluation:kotlin-jvm-debugger-evaluation",
-    "@community//plugins/kotlin/compiler-plugins/kotlinx-serialization/common:kotlin-compiler-plugins-kotlinx-serialization-common",
     "@community//java/openapi:java",
     "@community//java/java-impl:impl",
     "@community//java/compiler/openapi:java-compiler",
@@ -117,8 +110,6 @@ jvm_library(
     "@community//notebooks/visualization",
     "@community//plugins/kotlin/base/plugin:kotlin-base-plugin",
     "@community//java/debugger/shared:java-debugger-impl-shared",
-    ":kotlin-core_provided",
-    ":idea_provided",
     ":scripting_provided",
     ":java-psi-api-psi_provided",
     ":jupyter-core_provided",
