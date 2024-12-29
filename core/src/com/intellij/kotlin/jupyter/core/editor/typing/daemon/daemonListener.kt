@@ -7,10 +7,9 @@ import com.intellij.kotlin.jupyter.core.editor.typing.state.NotebookCaretStatePr
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.TextEditor
 
-class NotebookHighlightingDaemonListener(
+internal class NotebookHighlightingDaemonListener(
     private val stateProcessor: NotebookCaretStateProcessor
 ) : DaemonListener {
-
     override fun daemonFinished(fileEditors: MutableCollection<out FileEditor>) {
         fileEditors.firstOrNull { (it as? TextEditor)?.editor == stateProcessor.editor }?.let {
             with(stateProcessor) {

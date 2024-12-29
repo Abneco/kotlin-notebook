@@ -30,8 +30,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.math.min
 
-
-class NotebookCaretStateProcessor(
+internal class NotebookCaretStateProcessor(
     val editor: Editor,
     project: Project,
     private val notebookHighlightingManager: NotebookHighlightingManager?,

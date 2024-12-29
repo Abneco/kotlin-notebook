@@ -9,13 +9,13 @@ import com.intellij.codeInsight.hints.InlayHintsSink
 import com.intellij.codeInsight.hints.SettingsKey
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
-import com.intellij.kotlin.jupyter.k1.codeinsight.hints.NotebookTypeHintsRegistry.Companion.psiHostChainHintsRegistry
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.isEitherSymmetricallyContainedRange
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.util.getKtFileStartOffset
 import com.intellij.kotlin.jupyter.k1.codeinsight.hints.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.getBindingContext
 import com.intellij.kotlin.jupyter.k1.codeinsight.hints.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.putBindingContext
+import com.intellij.kotlin.jupyter.k1.codeinsight.hints.NotebookTypeHintsRegistry.Companion.psiHostChainHintsRegistry
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.diagnostic.thisLogger
@@ -38,8 +38,7 @@ import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterPsiCellImpl
 
-
-class NotebookLambdaTypeHintsProvider: KotlinNotebookAbstractInlayTypeHintsProvider<KotlinLambdasHintsProvider.Settings>() {
+private class NotebookLambdaTypeHintsProvider: KotlinNotebookAbstractInlayTypeHintsProvider<KotlinLambdasHintsProvider.Settings>() {
     private val backingKtLambdaProvider = KotlinLambdasHintsProvider()
 
     override val key: SettingsKey<KotlinLambdasHintsProvider.Settings> = backingKtLambdaProvider.key

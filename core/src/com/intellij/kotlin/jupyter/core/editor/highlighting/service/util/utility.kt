@@ -32,7 +32,6 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import java.util.concurrent.atomic.AtomicReference
 
-
 object NotebookHighlightingUtilityObject {
     internal val LOG = thisLogger()
 
@@ -117,7 +116,7 @@ internal fun resetSessionMetaInformation(vFile: VirtualFile, project: Project) {
     JupyterCompilerService.getInstance(project).requestScriptingUpdate()
 }
 
-fun highlightingManagerFor(project: Project, file: VirtualFile): NotebookHighlightingManager? {
+internal fun highlightingManagerFor(project: Project, file: VirtualFile): NotebookHighlightingManager? {
     return file.let(BackedNotebookVirtualFile::takeIfBacked)?.let {
         NotebookHighlightingService.getForFile(project, it)
     }

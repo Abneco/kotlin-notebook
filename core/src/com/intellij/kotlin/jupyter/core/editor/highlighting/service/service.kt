@@ -41,17 +41,17 @@ class NotebookHighlightingService(
 
     companion object {
         const val HL_DELAY_PAUSE: Long = 300
-        fun getInstance(project: Project) = project.service<NotebookHighlightingService>()
+        fun getInstance(project: Project): NotebookHighlightingService = project.service()
 
         fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): NotebookHighlightingManager {
             return getInstance(project).getOrCreate(virtualFile)
         }
 
-        fun VirtualFile?.getHighlightingManagerForFile(project: Project) =
-            this?.let(BackedNotebookVirtualFile::takeIfBacked)?.let { getForFile(project, it) }
+        fun VirtualFile?.getHighlightingManagerForFile(project: Project): NotebookHighlightingManager? {
+            return this?.let(BackedNotebookVirtualFile::takeIfBacked)?.let { getForFile(project, it) }
+        }
     }
 }
-
 
 internal object NotebookHighlightingRestarter {
     private var updateJob: Job? = null
