@@ -9,7 +9,7 @@ import com.intellij.openapi.components.service
 import icons.KotlinJupyterIcons
 
 @Service(Service.Level.APP)
-class KotlinNotebookPluginUpdater : StandalonePluginUpdateChecker(
+internal class KotlinNotebookPluginUpdater : StandalonePluginUpdateChecker(
     KotlinNotebookResourcesUtil.pluginId,
     "kotlin.notebook.lastRequestTime",
     NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook plugin updates"),
