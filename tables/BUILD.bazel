@@ -25,7 +25,7 @@ jvm_library(
     "//plugins/jupyter/core",
     "@community//platform/platform-impl:ide-impl",
     "//python/scientific-tables",
-    "//dbe/grid:grid-core-impl",
+    "//dbe/grid/core-plugin",
     "@lib//:jackson-databind-provided",
     "@lib//:jackson-provided",
     "@lib//:kotlinc-kotlin-compiler-common-provided",

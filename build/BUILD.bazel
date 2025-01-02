@@ -9,7 +9,7 @@ jvm_library(
   deps = [
     "@lib//:kotlin-stdlib",
     "@lib//:kotlinx-coroutines-core",
-    "//build:idea-ultimate-build",
+    "//build:ultimate-build",
     "@community//platform/build-scripts:buildScripts",
     "@community//platform/build-scripts/downloader:buildScripts-downloader",
   ]
