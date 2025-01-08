@@ -6,6 +6,7 @@ import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecuti
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTester
 import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.asSafely
 import junit.framework.TestCase
@@ -13,7 +14,8 @@ import org.junit.Test
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
 
-class CopyCellOutputTest: KotlinNotebookExecutionBaseTestCase("notebooks/basicActions/copyCellOutput") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/basicActions/copyCellOutput")
+class CopyCellOutputTest: KotlinNotebookExecutionBaseTestCase() {
     @Test
     fun testTextPlain() = doTest("This is my output")
 

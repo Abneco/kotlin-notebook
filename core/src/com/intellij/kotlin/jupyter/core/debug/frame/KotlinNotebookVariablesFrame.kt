@@ -8,10 +8,10 @@ import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSession
 import com.intellij.kotlin.jupyter.core.debug.util.createScreeningAttachment
 import com.intellij.kotlin.jupyter.core.debug.util.shouldShowNotebookVariables
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.errorUnderDebug
 import com.intellij.kotlin.jupyter.core.util.warnUnderDebug
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.xdebugger.XSourcePosition
 import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
@@ -30,7 +30,7 @@ internal class KotlinNotebookVariablesFrame(
     private val debugSession: KotlinNotebookDebugSession
 ) : XStackFrame() {
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
         private val STACK_FRAME_EQUALITY_OBJECT = Any()
     }
     private var evaluator: XDebuggerEvaluator? = null

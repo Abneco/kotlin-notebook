@@ -13,9 +13,9 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.AbstractKotlinKern
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.DONT_ACCEPT_SHUTDOWN
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.warnInTests
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.util.io.BaseOutputReader
@@ -132,6 +132,6 @@ class SeparateProcessKotlinKernelRunnableHandler(
     }
 
     companion object {
-        private val LOG = Logger.getInstance(SeparateProcessKotlinKernelRunnableHandler::class.java)
+        private val LOG = notebookLogger()
     }
 }

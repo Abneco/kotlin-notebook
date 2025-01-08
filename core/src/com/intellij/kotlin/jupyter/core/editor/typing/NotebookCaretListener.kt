@@ -9,10 +9,10 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.events.NotebookCaret
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService.Companion.getHighlightingManagerForFile
 import com.intellij.kotlin.jupyter.core.editor.typing.daemon.NotebookHighlightingDaemonListener
 import com.intellij.kotlin.jupyter.core.editor.typing.state.NotebookCaretStateProcessor
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
@@ -33,7 +33,7 @@ class NotebookCaretListener(
     parentDisposable: Disposable,
 ): CaretListener, NotebookCellHighlightingTrigger, Disposable {
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
     }
     private val projectOptionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
     private val codeAnalyzer = DaemonCodeAnalyzer.getInstance(project)

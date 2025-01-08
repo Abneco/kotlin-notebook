@@ -10,6 +10,7 @@ import com.intellij.formatting.service.FormattingService
 import com.intellij.injected.editor.DocumentWindow
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.retrieveCellIntervalUnderCaret
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.buildFlatMap
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
@@ -21,7 +22,6 @@ import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
 import com.intellij.kotlin.jupyter.core.util.toDocument
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.ProperTextRange
@@ -91,7 +91,7 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
             if (e is ProcessCanceledException) {
                 throw e
             }
-            thisLogger().warn("Error occurred during reformatting of Kotlin Notebook", e)
+            notebookLogger().warn("Error occurred during reformatting of Kotlin Notebook", e)
         } finally {
             // TODO: This logic should be in a listener
             val targets = highlightingDataProvider?.reformatDocumentTargets

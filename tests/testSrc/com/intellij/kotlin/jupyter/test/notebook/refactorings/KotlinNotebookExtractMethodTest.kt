@@ -5,10 +5,12 @@ import com.intellij.codeInsight.template.impl.TemplateManagerImpl
 import com.intellij.kotlin.jupyter.test.runners.K1Only
 import com.intellij.openapi.editor.CaretState
 import com.intellij.openapi.editor.LogicalPosition
+import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 
 @K1Only("KTNB-819")
-class KotlinNotebookExtractMethodTest : RefactoringTestBase("ExtractFunction", "notebooks/refactorings/extractMethod") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/refactorings/extractMethod")
+class KotlinNotebookExtractMethodTest : RefactoringTestBase("ExtractFunction") {
 
     @Test
     fun testExtractPair() = doTest { caretModel ->

@@ -5,6 +5,7 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterChangeListener
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.jupyter.core.jupyter.nbformat.NotebookChanged
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.JUPYTER_NOTEBOOK_EXTENSION
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
@@ -15,7 +16,6 @@ import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.application.writeIntentReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.ModuleListener
@@ -64,7 +64,7 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
     fun getSettings(notebookFile: BackedNotebookVirtualFile): KotlinNotebookSettings {
         val cachedSettings = getCachedSettings(notebookFile.file)
         if (cachedSettings == null) {
-            thisLogger().error("Cached settings unavailable for $notebookFile")
+            notebookLogger().error("Cached settings unavailable for $notebookFile")
             if (ApplicationManager.getApplication().isDispatchThread) {
                 return refreshSettings(notebookFile)
             }

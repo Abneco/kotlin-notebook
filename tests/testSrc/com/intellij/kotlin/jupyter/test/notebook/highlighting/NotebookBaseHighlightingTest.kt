@@ -1,52 +1,53 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.highlighting
 
-import com.intellij.kotlin.jupyter.test.executeCellsAndShutdownKernel
-import com.intellij.kotlin.jupyter.test.getCells
-import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
-import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTester
-import com.intellij.psi.util.startOffset
-import org.jetbrains.kotlin.idea.core.moveCaret
+import com.intellij.kotlin.jupyter.test.HighlightCheckStrategy
+import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
+import com.intellij.kotlin.jupyter.test.runners.K2Only
+import com.intellij.kotlin.jupyter.test.runners.KotlinPluginAwareRunner
+import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.testFramework.TestDataPath
 import org.junit.Test
+import org.junit.runner.RunWith
 
-class NotebookBaseHighlightingTest : AbstractNotebookHighlightingTest() {
-    override val canChangeDocumentDuringHighlighting: Boolean = false
-
-    @Test
-    fun testSimpleNotebook() {
-        doTest(ResultCheckStrategy.OnlyValidSyntax)
-    }
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/highlighting")
+@RunWith(KotlinPluginAwareRunner::class)
+class NotebookBaseHighlightingTest: KotlinNotebookTestCase() {
 
     @Test
-    fun testCorrectHighlightingWithMarkdown() {
-        doTest(ResultCheckStrategy.OnlyValidSyntax)
+    fun simpleNotebook() = runNotebookTest {
+        runHighlighting().assertHighlightResult(HighlightCheckStrategy.OnlyValidSyntax)
     }
 
-    //@Test
-    fun testWithShadowedUnresolved() {
-        doTest(ResultCheckStrategy.ShadowedErrors)
+    @Test
+    fun correctHighlightingWithMarkdown() = runNotebookTest {
+        runHighlighting().assertHighlightResult(HighlightCheckStrategy.OnlyValidSyntax)
     }
 
-    //@Test
-    fun testResolvedAfterExecution() {
-        doTest(ResultCheckStrategy.ShadowedErrors) {
-            executeCellsAndShutdownKernel(object : ReceivedMessagesTester {
-                override val cellsToExecute: List<Int> = listOf(0)
-                override val expectedCellsCount: Int = 2
+    @K2Only("This fails on K1 for unknown reasons")
+    @Test
+    fun withShadowedUnresolved() = runNotebookTest {
+        waitForDependencies()
+        runHighlighting().assertHighlightResult(HighlightCheckStrategy.ShadowedErrors)
+    }
 
-                override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) {
-                    assert(cellNum == cellsToExecute.first())
-                }
+    @K2Only("This fails on K1 for unknown reasons")
+    @Test
+    fun resolvedAfterExecution() = runNotebookTest {
+        runHighlighting().assertHighlightResult(HighlightCheckStrategy.ShadowedErrors)
+        assertEquals(2, cellCount)
+        executeCell(0, waitForDependencies = true)
+        moveCaretToCell(1)
+        runHighlighting().assertHighlightResult(HighlightCheckStrategy.OnlyValidSyntax)
+    }
 
-                override fun doAfterCellRun(cellNum: Int) {
-                    assert(cellNum == cellsToExecute.first())
-                    val nextCell = it.getCells().get(1)
-                    //markHostAsCompleteAnalysisTarget(myFixture.editor.document, nextCell)
-                    myFixture.editor.moveCaret(nextCell.startOffset)
-
-                    doTest(ResultCheckStrategy.OnlyValidSyntax)
-                }
-            }, it)
+    @Test
+    fun serializationHighlighting() = runNotebookTest {
+        executeCell(0, waitForDependencies = true)
+        runHighlighting().let { result ->
+            assertNotEmpty(result)
+            val importantInfos = result.filter { it.severity > HighlightSeverity.INFORMATION }
+            assertEmpty(importantInfos)
         }
     }
 }

@@ -31,7 +31,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 
 
-abstract class AbstractNotebookTypeHintsBaseTest(testDataPath: String) : KotlinNotebookExecutionBaseTestCase("notebooks/codeinsight/hints/$testDataPath") {
+abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile
     abstract val provider: InlayHintsProvider<*>
 

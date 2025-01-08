@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.idea.test.ConfigLibraryUtil
 import org.junit.ComparisonFailure
 
 
-abstract class NotebookQuickFixBaseTest(testDataPath: String) : KotlinNotebookExecutionBaseTestCase("notebooks/codeinsight/quickfix/$testDataPath") {
+abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() {
     override fun getProject(): Project {
         return myFixture.project
     }
@@ -113,7 +113,7 @@ abstract class NotebookQuickFixBaseTest(testDataPath: String) : KotlinNotebookEx
 
         val notebookFile = configureExecutionTest()
         val injectedFile = getInjectedFile(notebookFile, cellInd) ?: error("No suitable KtFile found in a host")
-        val rawContent = FileUtil.loadFile(getTestFile(".ipynb"), true)
+        val rawContent = FileUtil.loadFile(getTestFile(), true)
 
         doTestWithJupyterSessionAndBaseDependencies(notebookFile) {
             doKotlinQuickFixTest(injectedFile, rawContent)

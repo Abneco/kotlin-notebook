@@ -12,6 +12,7 @@ import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder.CELL
 import com.intellij.kotlin.jupyter.core.editor.find.isIdentifier
 import com.intellij.kotlin.jupyter.core.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import com.intellij.kotlin.jupyter.core.editor.refactoring.NotebookRefactoringSupport.tryCastParentToSuitableTarget
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
@@ -25,7 +26,6 @@ import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.command.impl.StartMarkAction
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.CaretModel
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
@@ -142,7 +142,7 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
 
 class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
     internal companion object {
-        private val log = thisLogger()
+        private val log = notebookLogger()
     }
     private fun findNearestActualElementAt(file: PsiFile, caretModel: CaretModel): PsiElement? {
         var shift = 0

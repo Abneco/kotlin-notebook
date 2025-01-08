@@ -4,10 +4,12 @@ package com.intellij.kotlin.jupyter.test.notebook.codeinsight.hints
 
 import com.intellij.kotlin.jupyter.k1.codeinsight.hints.NotebookValuesHintProvider
 import com.intellij.kotlin.jupyter.test.runners.K1Only
+import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 
 @K1Only("Not yet supported in K2")
-class NotebookRangeHintsTest : AbstractNotebookTypeHintsBaseTest("ranges") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/codeinsight/hints/ranges")
+class NotebookRangeHintsTest : AbstractNotebookTypeHintsBaseTest() {
     override val provider = NotebookValuesHintProvider()
 
     @Test

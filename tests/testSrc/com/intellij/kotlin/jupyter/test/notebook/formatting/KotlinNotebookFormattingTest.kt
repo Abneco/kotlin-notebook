@@ -6,9 +6,11 @@ import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.psi.codeStyle.CodeStyleManager
+import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 
-class KotlinNotebookFormattingTest : KotlinNotebookTransformerBaseTestCase("notebooks/formatting") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/formatting")
+class KotlinNotebookFormattingTest : KotlinNotebookTransformerBaseTestCase() {
     @Test
     fun testFormatKotlinCell() = doTest(
         false,

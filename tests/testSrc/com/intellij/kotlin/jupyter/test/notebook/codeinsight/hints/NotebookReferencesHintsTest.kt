@@ -3,11 +3,13 @@ package com.intellij.kotlin.jupyter.test.notebook.codeinsight.hints
 
 import com.intellij.kotlin.jupyter.k1.codeinsight.hints.KotlinNotebookReferencesTypeHintsProvider
 import com.intellij.kotlin.jupyter.test.runners.K1Only
+import com.intellij.testFramework.TestDataPath
 import org.junit.Ignore
 import org.junit.Test
 
 @K1Only("Not yet supported in K2")
-class NotebookReferencesHintsTest : AbstractNotebookTypeHintsBaseTest("references") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/codeinsight/hints/references")
+class NotebookReferencesHintsTest : AbstractNotebookTypeHintsBaseTest() {
     override val provider = KotlinNotebookReferencesTypeHintsProvider()
 
     @Test

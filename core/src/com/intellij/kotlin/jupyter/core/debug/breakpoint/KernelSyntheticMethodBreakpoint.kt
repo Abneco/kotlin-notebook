@@ -7,7 +7,7 @@ import com.intellij.debugger.engine.events.SuspendContextCommandImpl
 import com.intellij.debugger.impl.DebuggerUtilsEx
 import com.intellij.debugger.settings.DebuggerSettings
 import com.intellij.debugger.ui.breakpoints.SyntheticLineBreakpoint
-import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.openapi.project.Project
 import com.sun.jdi.AbsentInformationException
 import com.sun.jdi.Method
@@ -22,7 +22,7 @@ class KernelSyntheticMethodBreakpoint(
     private val eventHandler: (SuspendContextCommandImpl, LocatableEvent?) -> Unit
 ) : SyntheticLineBreakpoint(project) {
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
     }
 
     init {

@@ -5,6 +5,7 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.debug.util.ExecutedPresentCellInfo
 import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookChangeEventsType
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookMoveEvent
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
@@ -12,7 +13,6 @@ import com.intellij.kotlin.jupyter.core.util.toPsiFile
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -216,6 +216,6 @@ class NotebookStructureClassTracker(
     }
 
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
     }
 }

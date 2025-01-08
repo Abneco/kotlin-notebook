@@ -2,10 +2,11 @@
 package com.intellij.kotlin.jupyter.test.notebook.completion
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
-import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
+import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 
-class KotlinNotebookCompletionTest : KotlinNotebookBaseTestCase("notebooks/completion") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/completion")
+class KotlinNotebookCompletionTest : KotlinNotebookBaseTestCase() {
     @Test
     fun testCommandCompletion() = doTest { elements ->
         assertEquals(listOf("classpath", "help", "vars"), elements)
@@ -32,7 +33,7 @@ class KotlinNotebookCompletionTest : KotlinNotebookBaseTestCase("notebooks/compl
     }
 
     private fun doTest(check: (List<String>) -> Unit) {
-        myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
+        configureByJupyterFile()
         val lookupElements = myFixture.completeBasic()
         check(lookupElements.map { it.lookupString })
     }

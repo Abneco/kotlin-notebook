@@ -4,9 +4,11 @@ package com.intellij.kotlin.jupyter.test.notebook.completionWithImport
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTester
 import com.intellij.kotlin.jupyter.test.runners.K1Only
+import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 
 @K1Only("Investigate failures for K2")
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/completionWithImport")
 class KotlinNotebookCompletionWithImportTest : AbstractKotlinNotebookCompletionWithImportTest() {
     @Test(timeout = 300_000)
     @K1Only("KTNB-829: Completion of named arguments does not work in K2")

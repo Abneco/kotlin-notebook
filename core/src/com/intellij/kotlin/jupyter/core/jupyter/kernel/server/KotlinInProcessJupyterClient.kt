@@ -19,13 +19,13 @@ import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.resetSessionMetaInformation
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.JupyterSessionVerifiedListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.util.DEFAULT_KOTLIN_KERNEL_NAME
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.createConcurrentDoubleKeyMap
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
@@ -146,7 +146,7 @@ class KotlinInProcessJupyterClient(
         } catch (_: InterruptedException) {
             // It's fine to have an InterruptedException here in the embedded mode
         } catch (e: Throwable) {
-            thisLogger().error(e)
+            notebookLogger().error(e)
         }
     }
 

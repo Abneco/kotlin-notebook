@@ -7,12 +7,12 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMe
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputsBase
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.deserialize
 import com.intellij.kotlin.jupyter.core.util.logListInfo
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.async
@@ -112,6 +112,6 @@ class KotlinNotebookCellExecutionCallback(
 
 
     companion object {
-        private val LOG = Logger.getInstance(this::class.java)
+        private val LOG = notebookLogger()
     }
 }

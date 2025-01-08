@@ -8,6 +8,7 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.service.components.H
 import com.intellij.kotlin.jupyter.core.editor.typing.NotebookCaretListener
 import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookAfterScriptsUpdatePluginAwareHandler
@@ -18,7 +19,6 @@ import com.intellij.kotlin.jupyter.core.util.isCurrentlySelectedInEditor
 import com.intellij.kotlin.jupyter.core.util.toPsiFile
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
@@ -55,7 +55,7 @@ class NotebookHighlightingManager(
     var completeRangeInd: Int?
 ): NotebookPerFileChildService(virtualFile, childScope) {
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
     }
     private val project: Project = projectService.project
 

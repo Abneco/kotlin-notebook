@@ -3,10 +3,12 @@ package com.intellij.kotlin.jupyter.test.notebook.codeinsight.quickfix.extension
 
 import com.intellij.kotlin.jupyter.test.notebook.codeinsight.quickfix.NotebookQuickFixBaseTest
 import com.intellij.kotlin.jupyter.test.runners.K1Only
+import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 
 @K1Only("KTNB-839: private modifier is added to an extension function")
-class NotebookQuickFixIntentionsExtensionTest : NotebookQuickFixBaseTest("extensions") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/codeinsight/quickfix/extensions")
+class NotebookQuickFixIntentionsExtensionTest : NotebookQuickFixBaseTest() {
     @Test
     fun testExtensionForClass() {
         doTest(1)

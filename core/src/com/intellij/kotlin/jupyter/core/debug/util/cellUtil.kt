@@ -2,10 +2,10 @@
 package com.intellij.kotlin.jupyter.core.debug.util
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiFile
@@ -76,7 +76,7 @@ class ExecutedPresentCellInfo(psiFile: PsiFile?) {
     }
 
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
         // curr, prev
         val NOTEBOOK_CELL_INTERNAL_INFO_KEY = Key.create<Pair<String, String?>>("NOTEBOOK_CELL_INTERNAL_INFO_KEY")
 

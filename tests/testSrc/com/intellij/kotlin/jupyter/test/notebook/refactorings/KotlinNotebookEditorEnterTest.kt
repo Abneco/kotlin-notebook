@@ -3,9 +3,11 @@ package com.intellij.kotlin.jupyter.test.notebook.refactorings
 
 import com.intellij.openapi.editor.CaretState
 import com.intellij.openapi.editor.LogicalPosition
+import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 
-class KotlinNotebookEditorEnterTest : RefactoringTestBase("EditorEnter", "notebooks/refactorings/editorEnter") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/refactorings/editorEnter")
+class KotlinNotebookEditorEnterTest : RefactoringTestBase("EditorEnter") {
 
     @Test
     fun testEnterInLambda() = doTest { caretModel ->

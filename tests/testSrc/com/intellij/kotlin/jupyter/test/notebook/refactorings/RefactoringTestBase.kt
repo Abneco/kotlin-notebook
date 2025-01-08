@@ -14,9 +14,9 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
-import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
+import java.io.File
 
-abstract class RefactoringTestBase(private val refactoringActionId: String, testDataPath: String) : KotlinNotebookBaseTestCase(testDataPath) {
+abstract class RefactoringTestBase(private val refactoringActionId: String) : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile
 
     override fun runInDispatchThread(): Boolean {
@@ -31,7 +31,7 @@ abstract class RefactoringTestBase(private val refactoringActionId: String, test
     protected fun doTest(caretInitializer: (CaretModel) -> Unit) {
         myFixture.setCaresAboutInjection(true)
         val editorProvider = FileEditorProvider.EP_FILE_EDITOR_PROVIDER.findExtension(JupyterDSFileEditorProvider::class.java)!!
-        val notebookFile = myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath, fileEditorProvider = editorProvider)
+        val notebookFile = configureByJupyterFile(fileEditorProvider = editorProvider)
         originalVirtualFile = notebookFile.file
 
         val psiFile = invokeAndWaitIfNeeded {
@@ -45,7 +45,7 @@ abstract class RefactoringTestBase(private val refactoringActionId: String, test
 
         doEditorActionWithSession(psiFile)
 
-        myFixture.checkResultByFile("${getTestName(true)}.txt", true)
+        myFixture.checkResultByFile(getTestFile(".txt").relativeTo(File(testDataPath)).path, true)
     }
 
     private fun doEditorActionWithSession(psiFile: PsiFile) {

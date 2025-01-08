@@ -4,12 +4,14 @@ package com.intellij.kotlin.jupyter.test.notebook.actions.paste
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 import java.awt.datatransfer.StringSelection
 
-class PasteTest : KotlinNotebookTransformerBaseTestCase("notebooks/actions/paste") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/actions/paste")
+class PasteTest : KotlinNotebookTransformerBaseTestCase() {
     @Test
-    fun testIndentsAfterPaste() = doTest(
+    fun indentsAfterPaste() = doTest(
         """
             if (x > 0) {
                 break

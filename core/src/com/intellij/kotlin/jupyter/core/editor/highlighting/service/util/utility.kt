@@ -10,6 +10,7 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHigh
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.InjectedHostHasErrors
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.LOG
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.toPsiFile
@@ -17,7 +18,6 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.getCell
 import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
@@ -33,7 +33,7 @@ import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import java.util.concurrent.atomic.AtomicReference
 
 object NotebookHighlightingUtilityObject {
-    internal val LOG = thisLogger()
+    internal val LOG = notebookLogger()
 
     const val SCRIPTING_MISSING_DEPENDENCY_PREFIX = "MISSING"
     const val SCRIPTING_MISSING_CLASS_ERROR = "${SCRIPTING_MISSING_DEPENDENCY_PREFIX}_SCRIPT_RECEIVER_CLASS"

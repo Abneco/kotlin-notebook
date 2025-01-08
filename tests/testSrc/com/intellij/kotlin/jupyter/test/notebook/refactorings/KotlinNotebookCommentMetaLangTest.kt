@@ -4,9 +4,11 @@ package com.intellij.kotlin.jupyter.test.notebook.refactorings
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.editor.CaretState
 import com.intellij.openapi.editor.LogicalPosition
+import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 
-class KotlinNotebookCommentMetaLangTest: RefactoringTestBase(IdeActions.ACTION_COMMENT_LINE, "notebooks/refactorings/commentMetaLang") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/refactorings/commentMetaLang")
+class KotlinNotebookCommentMetaLangTest : RefactoringTestBase(IdeActions.ACTION_COMMENT_LINE) {
 
     @Test
     fun testLineCommentUse() = doTest { caretModel ->

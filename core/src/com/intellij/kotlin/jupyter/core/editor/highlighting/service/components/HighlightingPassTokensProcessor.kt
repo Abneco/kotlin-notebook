@@ -2,9 +2,9 @@
 package com.intellij.kotlin.jupyter.core.editor.highlighting.service.components
 
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.MarkupModelEx
 import com.intellij.openapi.editor.markup.RangeHighlighter
@@ -32,7 +32,7 @@ internal class HighlightingPassTokensProcessor(
     parentDisposable: Disposable
 ) : Disposable {
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
     }
 
     init {

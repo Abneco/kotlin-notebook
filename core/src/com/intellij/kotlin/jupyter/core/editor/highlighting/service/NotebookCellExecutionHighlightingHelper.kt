@@ -9,9 +9,9 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.events.ExecutionCall
 import com.intellij.kotlin.jupyter.core.editor.highlighting.events.ExecutionCallbackUnregistered
 import com.intellij.kotlin.jupyter.core.editor.highlighting.events.NotebookExecutionRelatedEventsProcessor
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.withReadLock
 import com.intellij.kotlin.jupyter.core.util.withWriteLock
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.utils.ifEmpty
 import java.util.concurrent.atomic.AtomicReference
@@ -23,7 +23,7 @@ class NotebookCellExecutionHighlightingHelper(
     private val notebookFile: BackedNotebookVirtualFile
 ) : NotebookExecutionRelatedEventsProcessor {
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
         private val cellToHighlightLimit: Int = Runtime.getRuntime().availableProcessors() / 2 - 1
 
         private enum class ExecutionState {

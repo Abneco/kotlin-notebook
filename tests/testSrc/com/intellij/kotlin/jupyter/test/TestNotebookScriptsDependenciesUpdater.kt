@@ -53,7 +53,8 @@ class TestNotebookScriptsDependenciesUpdater(
         JupyterCompilerService.getInstance(project).requestScriptingUpdate()
     }
 
-    private val scriptsUpdateCompleted = MutableSharedFlow<Boolean>()
+    // We do not fully control when this flow is subscribed to, so make sure to cache all values.
+    private val scriptsUpdateCompleted = MutableSharedFlow<Boolean>(extraBufferCapacity = Int.MAX_VALUE)
     private val scriptingUpdatesLeft = AtomicInteger(cellsToExecute)
 
     /**
@@ -84,7 +85,9 @@ class TestNotebookScriptsDependenciesUpdater(
             }
 
             if (counter == 1) { // it's the last update, emit signal
-                scriptsUpdateCompleted.tryEmit(true)
+                if (!scriptsUpdateCompleted.tryEmit(true)) {
+                    throw IllegalStateException("Cannot emit to scriptsUpdateCompleted")
+                }
             } else {
                 scriptingUpdatesLeft.set(counter - 1)
                 JupyterCompilerService.getInstance(project).requestScriptingUpdate()
@@ -92,7 +95,9 @@ class TestNotebookScriptsDependenciesUpdater(
         }
 
         private fun updateNotCompleted() {
-            scriptsUpdateCompleted.tryEmit(false)
+            if (!scriptsUpdateCompleted.tryEmit(false)) {
+                throw IllegalStateException("Cannot emit to scriptsUpdateCompleted")
+            }
             scriptingUpdatesLeft.incrementAndGet()
         }
     }
@@ -105,14 +110,11 @@ class TestNotebookScriptsDependenciesUpdater(
             scriptingUpdatesLeft.set(cellsToExecute)
 
              //Loop until all updates are completed
-            scriptsUpdateCompleted.takeWhile { value: Boolean ->
-                if (value) {
-                    true
-                } else { // incomplete update handling
-                    JupyterCompilerService.getInstance(project).requestScriptingUpdate()
-                    false
+            scriptsUpdateCompleted
+                .takeWhile { scriptUpdated: Boolean -> !scriptUpdated }
+                .collect {
+                    LOG.debug("Dependency update note complete yet. Wait for next update")
                 }
-            }
 
             // Index is up to date, invoke post-handler
             withContext(Dispatchers.EDT) {

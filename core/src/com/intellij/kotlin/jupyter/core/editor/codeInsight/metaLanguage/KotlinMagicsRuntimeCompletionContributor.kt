@@ -18,9 +18,9 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterCo
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.connections.http.JupyterRestClientErrorResponseException
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.deserialize
 import com.intellij.openapi.application.ex.ApplicationUtil
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbAware
@@ -111,7 +111,7 @@ class KotlinMagicsRuntimeCompletionContributor: CompletionContributor(), DumbAwa
     }
 
     companion object {
-        private val LOG = Logger.getInstance(KotlinMagicsRuntimeCompletionContributor::class.java)
+        private val LOG = notebookLogger()
         private const val COMPLETION_LOG_MESSAGE = "Failed to send Jupyter completion message:"
 
         private val RUNTIME_COMPLETION = Key.create<Boolean>("ELEMENT_IS_FROM_RUNTIME")

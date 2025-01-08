@@ -9,6 +9,8 @@ import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterR
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
+import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.projectModel.JupyterKotlinProjectArtifactsService
 import com.intellij.kotlin.jupyter.core.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
@@ -37,8 +39,6 @@ import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.diagnostic.Attachment
-import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
@@ -66,6 +66,7 @@ import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
+import java.awt.SystemColor.text
 import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
@@ -171,7 +172,7 @@ class JupyterCompilerPerFileService(
     val executedCellsCount: Int get() = directoryCounter.get()
 
     init {
-        thisLogger().assertTrue(virtualFile.file.isKotlinNotebook) { "$virtualFile is not a Kotlin Jupyter notebook" }
+        notebookLogger().assertTrue(virtualFile.file.isKotlinNotebook) { "$virtualFile is not a Kotlin Jupyter notebook" }
         Disposer.register(parent, this)
 
         project.messageBus.connect(parent).subscribe(
@@ -474,6 +475,7 @@ class JupyterCompilerPerFileService(
             onFailure = { e ->
                 when (e) {
                     is UnsupportedClassVersionError -> {
+                        LOG.warn(e)
                         val msg = e.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
                         project.notebookNotifications.showKernelJDKInconsistentError(msg)
                         true
@@ -563,6 +565,6 @@ class JupyterCompilerPerFileService(
     }
 
     companion object {
-        private val LOG = Logger.getInstance(JupyterCompilerPerFileService::class.java)
+        private val LOG = KotlinNotebookLoggerFactory.getInstance(JupyterCompilerPerFileService::class)
     }
 }

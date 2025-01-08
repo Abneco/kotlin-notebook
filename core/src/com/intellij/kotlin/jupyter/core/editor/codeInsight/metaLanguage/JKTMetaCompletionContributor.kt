@@ -4,8 +4,8 @@ package com.intellij.kotlin.jupyter.core.editor.codeInsight.metaLanguage
 import com.intellij.codeInsight.completion.CompletionContributor
 import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.psi.util.startOffset
 import com.intellij.util.concurrency.annotations.RequiresReadLock
@@ -58,6 +58,6 @@ class JKTMetaCompletionContributor : CompletionContributor() {
     }
 
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
     }
 }

@@ -5,32 +5,35 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelRunnableFact
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelPortsProvider
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProcessFactory
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
+import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.ScriptingUpdateMode
+import com.intellij.kotlin.jupyter.test.runners.RunModeAwareTestRunner
 import com.intellij.kotlin.jupyter.test.runners.TestContext
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.waitForSmartMode
+import com.intellij.testFramework.TestDataPath
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
 import org.jetbrains.kotlinx.jupyter.startup.create
 import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
-import org.jetbrains.plugins.notebooks.tests.withSwingMarkdownRenderMode
 import org.junit.Ignore
 import org.junit.Test
+import org.junit.runner.RunWith
 import java.net.ServerSocket
 
-class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
+
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/execution")
+@RunWith(RunModeAwareTestRunner::class)
+class KotlinNotebookExecutionTest : KotlinNotebookTestCase() {
+
     @Test
-    fun testExample1() = doTest(OutputsTester(listOf(
-        listOf(
-            textPlainOutput("5")
-        ),
-        listOf(),
-        listOf(
-            textPlainOutput("5")
-        ),
-        listOf()
-    )))
+    fun example1() = runNotebookTest {
+        executeCell(0).assertOutput(textPlainOutput("5"))
+        executeCell(1).assertOutput(emptyOutput())
+        executeCell(2).assertOutput(textPlainOutput("5"))
+        executeCell(3).assertOutput(emptyOutput())
+    }
 
     @Ignore("KTNB-840: Thread leak, to investigate")
     @Test
@@ -52,18 +55,12 @@ class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
 
         try {
             kernelProcessFactory.setKernelPortsProvider(portsProvider)
-            doTest(
-                OutputsTester(listOf(
-                listOf(
-                    textPlainOutput("5")
-                ),
-                listOf(),
-                listOf(
-                    textPlainOutput("5")
-                ),
-                listOf()
-            ))
-            )
+            runNotebookTest {
+                executeCell(0).assertOutput(textPlainOutput("5"))
+                executeCell(1).assertOutput(emptyOutput())
+                executeCell(2).assertOutput(textPlainOutput("5"))
+                executeCell(2).assertOutput(emptyOutput())
+            }
 
             when (TestContext.kernelRunMode) {
                 KotlinNotebookSessionRunMode.SEPARATE_PROCESS, KotlinNotebookSessionRunMode.ATTACHED_PROCESS -> {
@@ -80,48 +77,42 @@ class KotlinNotebookExecutionTest : AbstractSimpleExecutionTest() {
     }
 
     @Test
-    fun testSerialization() {
-        withSwingMarkdownRenderMode {
-            doTest(
-                OutputsTester(listOf(
-                listOf(),
-                listOf(
-                    buildJacksonObject {
-                        replace("application/json", buildJacksonObject {
-                            put("x", 3)
-                        })
-                        put("text/plain", "{\n    \"x\": 3\n}")
-                        put("text/markdown", "```json\n{\n    \"x\": 3\n}\n```")
-                    }
-                ),
-                listOf()
-            )))
+    fun serialization() = runNotebookTest {
+        executeCell(0).assertOutput(emptyOutput())
+        executeCell(1).let { output ->
+            val expectedOutput = buildJacksonObject {
+                replace("application/json", buildJacksonObject {
+                    put("x", 3)
+                })
+                put("text/plain", "{\n    \"x\": 3\n}")
+                put("text/markdown", "```json\n{\n    \"x\": 3\n}\n```")
+            }
+            expectedOutput.assertOutput(output)
         }
+        executeCell(2).assertOutput(emptyOutput())
     }
 
     @Ignore("Ignored because of some JCEF problems with project SDK")
     @Test
-    fun testDataframe() = doTest(object: ReceivedMessagesTester {
-        override val expectedCellsCount: Int get() = 3
-
-        override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) {
-            if (cellNum == 1) {
-                val data = messages.outputs.single().messageData
-                val html = data["text/html"].asText()
-                assertTrue("DataFrame.renderTable" in html)
-            }
+    fun dataframe() = runNotebookTest {
+        executeCell(0)
+        executeCell(1).let { output ->
+            val html = output["text/html"].asText()
+            assertTrue("DataFrame.renderTable" in html)
         }
-    })
+    }
 
-    // KTNB-552
+
+    // Test for KTNB-552
+    @Ignore("Ignored, because it doesn't actually test anything in the old implementation, and is now broken with the new dependency update logic")
     @Test
-    fun testSetupInDefaultProject() {
+    fun setupInDefaultProject() {
         val project = ProjectManager.getInstance().defaultProject
         runBlocking {
             try {
                 project.waitForSmartMode()
                 setUpDependenciesSynchronously(
-                    emptyList(),
+                    0,
                     updateMode = ScriptingUpdateMode.FileAgnostic
                 )
             } catch (e: Exception) {

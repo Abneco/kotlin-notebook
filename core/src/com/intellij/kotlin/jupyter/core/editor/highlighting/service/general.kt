@@ -4,11 +4,11 @@ package com.intellij.kotlin.jupyter.core.editor.highlighting.service
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.getCellRangesInDocumentOrNull
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.getCell
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProgressManager
@@ -169,7 +169,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
     }
 
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
     }
 }
 

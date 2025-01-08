@@ -25,6 +25,7 @@ import com.intellij.kotlin.jupyter.core.debug.util.connection.NotebookDebugConne
 import com.intellij.kotlin.jupyter.core.debug.util.connection.NotebookDebugProcessListener
 import com.intellij.kotlin.jupyter.core.debug.util.debugFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.Companion.isIncomplete
@@ -32,7 +33,6 @@ import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageType
 import com.intellij.openapi.util.Disposer
@@ -131,7 +131,7 @@ internal class KotlinNotebookDebugSession(
     }
 
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
     }
 
     val currentXSession: XDebugSession?

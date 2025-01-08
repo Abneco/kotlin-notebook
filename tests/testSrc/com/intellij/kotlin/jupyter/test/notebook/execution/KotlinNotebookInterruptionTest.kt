@@ -14,6 +14,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
+import com.intellij.testFramework.TestDataPath
 import junit.framework.TestCase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -23,7 +24,7 @@ import org.junit.Test
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.seconds
 
-
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/execution")
 class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest() {
     @JvmField
     @Rule

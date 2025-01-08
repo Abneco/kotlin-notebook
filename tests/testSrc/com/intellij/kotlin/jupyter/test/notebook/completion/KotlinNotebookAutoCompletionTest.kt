@@ -9,13 +9,14 @@ import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
-import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Ignore
 import org.junit.Test
 
 @K1Only("Revisit after converting to new test DSL")
-class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase("notebooks/autocompletion") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/autocompletion")
+class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile
 
     @Test
@@ -86,7 +87,7 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase("notebooks/a
     private val lookupStrings: List<String> get() = myFixture?.lookupElementStrings.orEmpty()
 
     private fun doTest(action: (CompletionAutoPopupTester) -> Unit) {
-        val notebookFile = myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
+        val notebookFile = configureByJupyterFile()
         val psiFile = invokeAndWaitIfNeeded {
             myFixture.editor.setMode(NotebookEditorMode.EDIT)
             notebookFile.file.toPsiFile(project)!!

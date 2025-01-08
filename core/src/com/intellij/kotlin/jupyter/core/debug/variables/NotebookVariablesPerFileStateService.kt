@@ -9,12 +9,12 @@ import com.intellij.debugger.jdi.VirtualMachineProxyImpl
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.completion.JupyterRuntimeProcessListener
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.variables.KotlinNotebookToolWindowHandler
 import com.intellij.kotlin.jupyter.core.variables.KotlinNotebookVarsToolWindow
 import com.intellij.kotlin.jupyter.core.variables.NotebookVariablesToolWindowSetup
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.xdebugger.frame.XValueChildrenList
@@ -41,7 +41,7 @@ class NotebookVariablesPerFileStateService(
     parentDisposable: Disposable
 ) : NotebookPerFileChildService(virtualFile, coroutineScope), NotebookAbstractSessionEnvironmentExplorer {
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
 
         data class VariablesStateAccessorData(
             val nextEntryFieldAccessor: Field,

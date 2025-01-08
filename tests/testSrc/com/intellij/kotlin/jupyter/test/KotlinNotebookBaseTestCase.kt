@@ -7,9 +7,12 @@ import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
 import com.intellij.kotlin.jupyter.test.runners.KotlinPluginAwareRunner
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.fileEditor.FileEditorProvider
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Disposer.newDisposable
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.psi.PsiFile
+import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
@@ -18,14 +21,22 @@ import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
 import org.jetbrains.kotlin.idea.test.setUpWithKotlinPlugin
+import org.jetbrains.kotlin.test.TestMetadata
 import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
+import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Rule
 import org.junit.runner.RunWith
 import java.io.File
 
+private const val CONTENT_ROOT_VARIABLE: @NonNls String = "\$CONTENT_ROOT"
+private const val CONTENT_ROOT: @NonNls String = "/plugins/kotlin/jupyter/tests"
+private const val PROJECT_ROOT_VARIABLE: @NonNls String = "\$PROJECT_ROOT"
+private const val PROJECT_ROOT: @NonNls String = ""
+
+// TODO Migrate this class KotlinNotebookTestCase
 @RunWith(KotlinPluginAwareRunner::class)
-abstract class KotlinNotebookBaseTestCase(private val dataPath: String) : JupyterBaseTestCase(), ExpectedPluginModeProvider {
+abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPluginModeProvider {
     protected open val notebookFile: BackedNotebookVirtualFile
         get() = when (val file = myFixture.kotlinNotebookFile) {
             is BackedNotebookVirtualFile -> file
@@ -33,7 +44,30 @@ abstract class KotlinNotebookBaseTestCase(private val dataPath: String) : Jupyte
         }
 
     override fun getBasePath(): @NonNls String {
-        return "$baseTestDataPath/$dataPath"
+        val testDataPath = this::class.java.getAnnotation(TestDataPath::class.java)?.value
+        val testMetadataPath = this::class.java.getAnnotation(TestMetadata::class.java)?.value
+        return FileUtil.toSystemIndependentName(listOfNotNull(testDataPath, testMetadataPath).joinToString(File.separator))
+            .replace(CONTENT_ROOT_VARIABLE, CONTENT_ROOT)
+            .replace(PROJECT_ROOT_VARIABLE, PROJECT_ROOT)
+    }
+
+    protected fun getTestFile(): File {
+        // we're using TestCase.getName() to get the function name, should be safe since the test name isn't customized anywhere
+        val testMetadata = this::class.java.getMethod(name).getAnnotation(TestMetadata::class.java)
+        return File(testDataPath, testMetadata?.value ?: "${getTestName(true)}.ipynb")
+    }
+
+    protected fun configureByJupyterFile(
+        copyToProject: Boolean = false,
+        fileEditorProvider: FileEditorProvider? = null
+    ): BackedNotebookVirtualFile {
+        val testFile = getTestFile()
+        return myFixture.configureByJupyterFile(
+            jupyterFileName = testFile.name,
+            testDataPath = testFile.parentFile.absolutePath,
+            isCopyToProject = copyToProject,
+            fileEditorProvider = fileEditorProvider,
+        )
     }
 
     protected fun doTestWithJupyterSessionAndBaseDependencies(psiFile: PsiFile,  action: () -> Unit) {

@@ -2,19 +2,23 @@
 package com.intellij.kotlin.jupyter.test.notebook.basicActions
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
-import com.intellij.kotlin.jupyter.test.configureBySingleEmptyCellNotebook
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
+import com.intellij.testFramework.TestDataPath
+import org.jetbrains.kotlin.test.TestMetadata
 import org.junit.Test
 
-class TypingTest: KotlinNotebookTransformerBaseTestCase("notebooks/actions/typing") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/")
+class TypingTest : KotlinNotebookTransformerBaseTestCase() {
 
     @Test
+    @TestMetadata("simple/singleEmptyCell.ipynb")
     fun testQuoteHandlingInTheEndOfFile() = doTest(
         "val a = \"",
         "val a = \"\""
     )
 
     @Test
+    @TestMetadata("simple/singleEmptyCell.ipynb")
     fun testBraceHandlingInTheEndOfFile() = doTest(
         "fun f() {\n",
         "fun f() {\n    \n}"
@@ -28,7 +32,6 @@ class TypingTest: KotlinNotebookTransformerBaseTestCase("notebooks/actions/typin
         doSimpleTransformerTest(
             "#%%\n$expectedCellText",
             testOptions = TestOptions(caresAboutInjection = false, checkTopLevelDocument = true),
-            notebookFactory = { myFixture.configureBySingleEmptyCellNotebook() }
         ) {
             invokeAndWaitIfNeeded {
                 myFixture.type(textToType)

@@ -1,9 +1,9 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.util
 
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.progress.util.BackgroundTaskUtil.BackgroundTask
 import com.intellij.openapi.util.Disposer
@@ -169,6 +169,6 @@ open class SingleUpdateScheduler(
     }
 
     companion object {
-        val LOG = thisLogger()
+        val LOG = notebookLogger()
     }
 }

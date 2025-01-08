@@ -6,13 +6,14 @@ import com.intellij.notebooks.visualization.CodeCellLinesChecker
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileTypes.PlainTextLanguage
+import com.intellij.testFramework.TestDataPath
 import org.intellij.plugins.markdown.lang.MarkdownLanguage
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.plugins.notebooks.tests.MarkdownRenderModeTestHelper
-import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Test
 
-class KotlinNotebookCellLanguageProviderTest : KotlinNotebookBaseTestCase("notebooks/cellLanguageProvider") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/cellLanguageProvider")
+class KotlinNotebookCellLanguageProviderTest : KotlinNotebookBaseTestCase() {
 
     private val markdownRenderModeHelper = MarkdownRenderModeTestHelper()
 
@@ -33,7 +34,7 @@ class KotlinNotebookCellLanguageProviderTest : KotlinNotebookBaseTestCase("noteb
 
     @Test
     fun testKotlinNotebook() {
-        myFixture.configureByJupyterFile("kotlinNotebook.ipynb", testDataPath)
+        configureByJupyterFile()
 
         assertCodeCells("kotlin cell, markdown cell, raw cell") {
             markers {

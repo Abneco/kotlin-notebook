@@ -10,9 +10,8 @@ import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 
-abstract class KotlinNotebookTransformerBaseTestCase(testDataPath: String) : KotlinNotebookBaseTestCase(testDataPath) {
+abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile
 
     override val notebookFile: BackedNotebookVirtualFile get() = _notebookFile!!
@@ -38,13 +37,10 @@ abstract class KotlinNotebookTransformerBaseTestCase(testDataPath: String) : Kot
     protected fun doSimpleTransformerTest(
         expectedDocumentText: String,
         testOptions: TestOptions = TestOptions.DEFAULT,
-        notebookFactory: () -> BackedNotebookVirtualFile = {
-            myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
-        },
         transformer: () -> Unit
     ) {
         myFixture.setCaresAboutInjection(testOptions.caresAboutInjection)
-        _notebookFile = notebookFactory()
+        _notebookFile = configureByJupyterFile()
 
         val notebookPsiFile = invokeAndWaitIfNeeded {
             myFixture.editor.setMode(NotebookEditorMode.EDIT)

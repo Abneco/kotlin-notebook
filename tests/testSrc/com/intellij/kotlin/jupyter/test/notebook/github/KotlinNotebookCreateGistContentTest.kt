@@ -4,17 +4,19 @@ package com.intellij.kotlin.jupyter.test.notebook.github
 import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.jupyter.core.jackson
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
-import com.intellij.kotlin.jupyter.test.configureBySingleEmptyCellNoCaretNotebook
+import com.intellij.testFramework.TestDataPath
 import io.kotest.matchers.collections.shouldBeSingleton
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeTypeOf
+import org.jetbrains.kotlin.test.TestMetadata
 import org.jetbrains.plugins.github.GithubGistContentsCollector
 import org.jetbrains.plugins.notebooks.tests.SingleFileImplRule
 import org.junit.ClassRule
 import org.junit.Test
 
 
-class KotlinNotebookCreateGistContentTest: KotlinNotebookBaseTestCase("") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks")
+class KotlinNotebookCreateGistContentTest: KotlinNotebookBaseTestCase() {
     companion object {
         @get:ClassRule
         @JvmStatic
@@ -22,8 +24,9 @@ class KotlinNotebookCreateGistContentTest: KotlinNotebookBaseTestCase("") {
     }
 
     @Test
+    @TestMetadata("simple/singleEmptyCellNoCaret.ipynb")
     fun `gist contents of Jupyter notebook should be JSON, not raw text`() {
-        myFixture.configureBySingleEmptyCellNoCaretNotebook(copyToProject = true)
+        configureByJupyterFile(copyToProject = true)
         val contents = GithubGistContentsCollector.collectContents(project, myFixture.editor, myFixture.file.virtualFile, null)
         contents.shouldBeSingleton {
             val notebookJson = jackson.readTree(it.content)

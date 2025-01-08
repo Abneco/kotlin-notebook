@@ -32,6 +32,7 @@ import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
@@ -43,6 +44,12 @@ import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToStream
+import org.intellij.lang.annotations.Language
+import org.jetbrains.jupyter.builder.NotebookBuilder
+import org.jetbrains.jupyter.builder.buildNotebook
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.DefaultScriptingSupport
@@ -50,12 +57,11 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.tests.awaitBlocking
-import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.jupiter.api.Assertions
+import java.io.File
 import kotlin.time.Duration.Companion.minutes
 
 val baseTestDataPathWithHome = PathManager.getHomePath() + "/plugins/kotlin/jupyter/tests/testData"
-const val baseTestDataPath = "/plugins/kotlin/jupyter/tests/testData"
 
 val CodeInsightTestFixture.kotlinNotebookFile: BackedNotebookVirtualFile?
     get() {
@@ -217,19 +223,6 @@ fun cartesianProduct(vararg lists: List<Any>): List<Array<Any>> {
     }
 }
 
-fun CodeInsightTestFixture.configureBySimpleNotebook(
-    notebookName: String,
-    copyToProject: Boolean = false
-) = configureByJupyterFile("$notebookName.ipynb", "$baseTestDataPathWithHome/notebooks/simple", isCopyToProject = copyToProject)
-
-fun CodeInsightTestFixture.configureBySingleEmptyCellNotebook(
-    copyToProject: Boolean = false
-) = configureBySimpleNotebook("singleEmptyCell", copyToProject = copyToProject)
-
-fun CodeInsightTestFixture.configureBySingleEmptyCellNoCaretNotebook(
-    copyToProject: Boolean = false
-) = configureBySimpleNotebook("singleEmptyCellNoCaret", copyToProject = copyToProject)
-
 fun waitForReadyIndexes(fixture: CodeInsightTestFixture) {
     runInEdtAndWait {
         IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
@@ -251,6 +244,7 @@ fun PsiFile.getKtFiles(): List<KtFile>? = when(val psiFile = this) {
     }
 }
 
+// k1 only
 fun setUpScriptingDependencies(fixture: CodeInsightTestFixture) {
     val ktFiles = fixture.file.getKtFiles() ?: return
 
@@ -291,4 +285,19 @@ fun ensureScriptConfigurations(fixture: CodeInsightTestFixture) {
 enum class LookupFinishMode(val completionChar: Char) {
     ENTER('\n'),
     TAB('\t');
+}
+
+/** Creates a temporary notebook file using [build] builder. The file is deleted on JVM exit. */
+fun buildKotlinNotebookFile(name: String, build: NotebookBuilder.() -> Unit): File {
+    val notebook = buildNotebook("kotlin", "Kotlin", build)
+    val notebookFile = FileUtil.createTempFile(name, ".ipynb", /* deleteOnExit = */ true)
+    notebookFile.outputStream().use { out ->
+        @OptIn(ExperimentalSerializationApi::class)
+        Json.encodeToStream(notebook, out)
+    }
+    return notebookFile
+}
+
+fun NotebookBuilder.kotlinCell(@Language("kotlin") kotlin: String) {
+    codeCell(kotlin)
 }

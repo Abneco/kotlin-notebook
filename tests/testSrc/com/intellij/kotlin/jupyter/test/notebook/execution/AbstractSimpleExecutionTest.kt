@@ -8,7 +8,7 @@ import org.junit.runner.RunWith
 
 @Suppress("Junit4RunWithInspection")
 @RunWith(RunModeAwareTestRunner::class)
-abstract class AbstractSimpleExecutionTest : KotlinNotebookExecutionBaseTestCase("notebooks/execution") {
+abstract class AbstractSimpleExecutionTest : KotlinNotebookExecutionBaseTestCase() {
     protected fun doTest(tester: ReceivedMessagesTester, executionCallback: JupyterExecutionCallback? = null) {
         val notebookFile = configureExecutionTest()
         executeCellsAndShutdownKernel(tester, notebookFile, executionCallback)

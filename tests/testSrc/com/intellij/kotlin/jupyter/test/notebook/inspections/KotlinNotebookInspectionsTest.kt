@@ -2,10 +2,11 @@
 package com.intellij.kotlin.jupyter.test.notebook.inspections
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
-import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
+import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 
-class KotlinNotebookInspectionsTest : KotlinNotebookBaseTestCase("notebooks/inspections") {
+@TestDataPath("\$CONTENT_ROOT/testData/notebooks/inspections")
+class KotlinNotebookInspectionsTest : KotlinNotebookBaseTestCase() {
     @Test
     fun testUnresolvedVarInAnotherCell() = doTest()
 
@@ -14,7 +15,7 @@ class KotlinNotebookInspectionsTest : KotlinNotebookBaseTestCase("notebooks/insp
 
     private fun doTest() {
         myFixture.setCaresAboutInjection(true)
-        myFixture.configureByJupyterFile("${getTestName(true)}.ipynb", testDataPath)
+        configureByJupyterFile()
         val hl = myFixture.doHighlighting()
         myFixture.checkHighlighting(true, true, true)
     }

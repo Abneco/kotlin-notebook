@@ -5,8 +5,9 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.InjectedFileHighlightingHelper
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.convertToShadowedDeclaration
+import com.intellij.kotlin.jupyter.core.editor.highlighting.visitors.KotlinPluginModeShadowingAnalyzerHandler.Factory
 import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandler
-import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.psi.PsiElement
@@ -128,7 +129,7 @@ abstract class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareH
     }
 
     companion object {
-        internal val LOG = thisLogger()
+        internal val LOG = notebookLogger()
 
         private val EP: ExtensionPointName<Factory> = ExtensionPointName.create("com.intellij.kotlin.jupyter.core.shadowingVisitorFactory")
 

@@ -9,7 +9,7 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionManager
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterSessionPath
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
-import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.openapi.project.Project
 
 
@@ -20,7 +20,7 @@ class NotebookDebugProcessListener(
     private val isSilent: Boolean = false
 ) : DebugProcessListener {
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
     }
 
     override fun paused(suspendContext: SuspendContext) {
