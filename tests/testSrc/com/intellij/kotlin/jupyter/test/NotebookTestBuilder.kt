@@ -11,29 +11,23 @@ import com.intellij.injected.editor.EditorWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
-import com.intellij.jupyter.core.jupyter.nbformat.CELL_MARKER
-import com.intellij.jupyter.core.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTester
 import com.intellij.kotlin.jupyter.test.notebook.execution.buildJacksonObject
-import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.startOffset
-import com.intellij.testFramework.ExpectedHighlightingData
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.testFramework.runInEdtAndGet
 import com.intellij.util.ArrayUtilRt
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlin.idea.core.moveCaret
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 
 /**
  * Strategy used when checking highlight information
@@ -60,10 +54,6 @@ class NotebookTestBuilder(
     // Returns the number of cells (of all types) in the notebook
     val cellCount: Int
         get() { return notebookFile.getCells().count() }
-
-    private companion object {
-        const val scriptingMissingClassError = "MISSING_SCRIPT_RECEIVER_CLASS"
-    }
 
     // State required to track if highlighting has been started
     private var highlighterDaemonStarted: Boolean = false
@@ -140,8 +130,8 @@ class NotebookTestBuilder(
      */
     fun executeCell(
         cellIndex: Int,
-        waitForDependencies: Boolean = true,
-    ): ObjectNode {
+        waitForDependencies: Boolean = false,
+    ): ExecutionResult {
         if (!jupyterSessionStarted) {
             jupyterSessionSetup()
             jupyterSessionStarted = true
@@ -169,7 +159,7 @@ class NotebookTestBuilder(
             if (waitForDependencies) {
                 waitForDependencies(executedCells = 1)
             }
-            output!!
+            ExecutionResult(output!!)
         }
     }
 
@@ -187,79 +177,14 @@ class NotebookTestBuilder(
     /**
      * Run highlighting on the notebook and return the result of it.
      */
-    fun runHighlighting(): List<HighlightInfo> {
+    fun runHighlighting(): HighlightingResult {
         if (!highlighterDaemonStarted) {
             highlightSetup()
         }
         val results = runInEdtAndGet {
             doHighlighting()
         }
-        return results
-    }
-
-    /**
-     * Check that the output matches the given output. If not, a test failure
-     * is thrown.
-     */
-    fun ObjectNode.assertOutput(expectedOutput: ObjectNode) {
-        assertEquals(expectedOutput.toPrettyString(), this.toPrettyString())
-    }
-
-    /**
-     * Check that the highlighting result matches the provided [HighlightCheckStrategy].
-     * If not, a test failure is reported
-     */
-    fun List<HighlightInfo>.assertHighlightResult(strategy: HighlightCheckStrategy) {
-        val filter = createFilterForStrategy(strategy)
-        val expectedData = getExpectedHighlightingData(
-            checkWarnings = true,
-            checkWeakWarnings = false,
-            checkInfos = true
-        )
-        assertTrue(this.none { it.description != null && it.description == scriptingMissingClassError })
-
-        val isHasShadowed = this.any { it.description != null && (it.description.startsWith("Not yet provided symbol") || it.description.startsWith("Improper usage")) }
-        assertTrue(this.none { it.text.contains(CELL_MARKER) || it.text.contains("$CELL_MARKER $MARKDOWN_CELL_SUFFIX") })
-
-        when (strategy) {
-            HighlightCheckStrategy.OnlyValidSyntax -> {
-                //assertTrue(!isHasShadowed)
-                assertTrue(this.none { it.severity == HighlightSeverity.ERROR })
-                val actualData = this.filter { filter(it) }
-                expectedData.checkResult(notebookFile, actualData, testFixture.editor.document.text)
-            }
-            HighlightCheckStrategy.ShadowedErrors -> {
-                //assertTrue(isHasShadowed)
-                assertTrue(this.none { it.severity == HighlightSeverity.ERROR })
-                val actualData = this.filter { filter(it) }
-                expectedData.checkResult(notebookFile, actualData, testFixture.editor.document.text)
-            }
-            HighlightCheckStrategy.WithErrors -> {
-                assertTrue(this.any { it.severity == HighlightSeverity.ERROR })
-            }
-        }
-    }
-
-    private fun createFilterForStrategy(strategy: HighlightCheckStrategy): (HighlightInfo) -> Boolean {
-        return when (strategy) {
-            HighlightCheckStrategy.ShadowedErrors -> { {
-                it.severity.displayName == "INJECTED_FRAGMENT_SYNTAX" || it.severity.displayName == "ERROR"
-            } }
-            HighlightCheckStrategy.OnlyValidSyntax -> { {
-                it.severity.displayName == "INJECTED_FRAGMENT_SYNTAX"
-            } }
-            HighlightCheckStrategy.WithErrors -> { {
-                it.severity.displayName == "ERROR"
-            } }
-        }
-    }
-
-    private fun getExpectedHighlightingData(
-        checkWarnings: Boolean,
-        checkWeakWarnings: Boolean,
-        checkInfos: Boolean
-    ): ExpectedHighlightingData {
-        return ExpectedHighlightingData(testFixture.editor.document, checkWarnings, checkWeakWarnings, checkInfos)
+        return HighlightingResult(notebookFile, testFixture, results)
     }
 
     private fun doHighlighting(

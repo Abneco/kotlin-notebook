@@ -9,7 +9,6 @@ import com.intellij.kotlin.jupyter.test.runners.TestContext
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.openapi.actionSystem.ActionUpdateThread
-import com.intellij.openapi.actionSystem.ActionUpdateThread.EDT
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
@@ -188,7 +187,6 @@ abstract class KotlinNotebookTestCase: JupyterBaseTestCase(), ExpectedPluginMode
         cellsToExecute: Int,
         updateMode: ScriptingUpdateMode = ScriptingUpdateMode.NotebookFileFocused
     ) {
-        EDT
         val testCaseDisposable = newDisposable(testRootDisposable, "setUpScriptingDependencies")
         val cellEstimation = 1 + cellsToExecute // Why +1?
         val fileOrNull = if (updateMode == ScriptingUpdateMode.NotebookFileFocused) {

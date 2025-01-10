@@ -79,7 +79,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookTestCase() {
     @Test
     fun serialization() = runNotebookTest {
         executeCell(0).assertOutput(emptyOutput())
-        executeCell(1).let { output ->
+        executeCell(1).let { result ->
             val expectedOutput = buildJacksonObject {
                 replace("application/json", buildJacksonObject {
                     put("x", 3)
@@ -87,7 +87,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookTestCase() {
                 put("text/plain", "{\n    \"x\": 3\n}")
                 put("text/markdown", "```json\n{\n    \"x\": 3\n}\n```")
             }
-            expectedOutput.assertOutput(output)
+            result.assertOutput(expectedOutput)
         }
         executeCell(2).assertOutput(emptyOutput())
     }
@@ -96,8 +96,8 @@ class KotlinNotebookExecutionTest : KotlinNotebookTestCase() {
     @Test
     fun dataframe() = runNotebookTest {
         executeCell(0)
-        executeCell(1).let { output ->
-            val html = output["text/html"].asText()
+        executeCell(1).let { result ->
+            val html = result.output["text/html"].asText()
             assertTrue("DataFrame.renderTable" in html)
         }
     }

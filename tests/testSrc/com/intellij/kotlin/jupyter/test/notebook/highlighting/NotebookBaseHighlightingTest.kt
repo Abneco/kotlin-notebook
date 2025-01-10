@@ -44,7 +44,7 @@ class NotebookBaseHighlightingTest: KotlinNotebookTestCase() {
     @Test
     fun serializationHighlighting() = runNotebookTest {
         executeCell(0, waitForDependencies = true)
-        runHighlighting().let { result ->
+        runHighlighting().result.let { result ->
             assertNotEmpty(result)
             val importantInfos = result.filter { it.severity > HighlightSeverity.INFORMATION }
             assertEmpty(importantInfos)
