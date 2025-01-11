@@ -8,6 +8,8 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
 import com.intellij.kotlin.jupyter.core.settings.notebookDependencies
 import com.intellij.kotlin.jupyter.test.createEmptyNotebook
 import com.intellij.kotlin.jupyter.test.delete
+import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
@@ -85,6 +87,12 @@ class KotlinNotebookModuleDependenciesTest : UsefulTestCase() {
     override fun tearDown() {
         runInEdtAndWait {
             listOf(
+                {
+                    @Suppress("UsagesOfObsoleteApi")
+                    runWriteAction {
+                        FileDocumentManager.getInstance().saveAllDocuments()
+                    }
+                },
                 { JavaAwareProjectJdkTableImpl.removeInternalJdkInTests() }, // remove internal jdk created by BuildManager
                 { notebookVirtualFile.delete() },
                 { fixture.tearDown() },

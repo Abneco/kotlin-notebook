@@ -92,9 +92,10 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
         // it may trigger daemon restarting later asynchronously
         (myFixture as CodeInsightTestFixtureImpl).canChangeDocumentDuringHighlighting(true)
 
-        val backedFile = configureByJupyterFile()
-        invokeAndWaitIfNeeded {
+        val backedFile = invokeAndWaitIfNeeded {
+            val backedNotebookVirtualFile = configureByJupyterFile()
             myFixture.editor.setMode(NotebookEditorMode.EDIT)
+            backedNotebookVirtualFile
         }
         originalVirtualFile = myFixture.file.virtualFile // `myFixture.file` may return the file which is injected inside one of the cells
         val testRunMode = TestContext.kernelRunMode

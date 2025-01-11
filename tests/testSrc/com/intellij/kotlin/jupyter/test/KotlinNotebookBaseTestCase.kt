@@ -58,19 +58,17 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
     }
 
     protected fun configureByJupyterFile(
-        copyToProject: Boolean = false,
         fileEditorProvider: FileEditorProvider? = null
-    ): BackedNotebookVirtualFile {
+    ): BackedNotebookVirtualFile = invokeAndWaitIfNeeded {
         val testFile = getTestFile()
-        return myFixture.configureByJupyterFile(
+        myFixture.configureByJupyterFile(
             jupyterFileName = testFile.name,
             testDataPath = testFile.parentFile.absolutePath,
-            isCopyToProject = copyToProject,
             fileEditorProvider = fileEditorProvider,
         )
     }
 
-    protected fun doTestWithJupyterSessionAndBaseDependencies(psiFile: PsiFile,  action: () -> Unit) {
+    protected fun doTestWithJupyterSessionAndBaseDependencies(psiFile: PsiFile, action: () -> Unit) {
         runWithJupyterSession(psiFile) {
             setUpDependenciesSynchronously(emptyList())
             action()

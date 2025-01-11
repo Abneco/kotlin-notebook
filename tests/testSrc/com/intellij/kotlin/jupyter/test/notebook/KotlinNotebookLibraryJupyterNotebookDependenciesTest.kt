@@ -8,7 +8,9 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
 import com.intellij.kotlin.jupyter.core.settings.notebookDependencies
 import com.intellij.kotlin.jupyter.test.createEmptyNotebook
 import com.intellij.kotlin.jupyter.test.delete
+import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.application.runWriteActionAndWait
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.impl.libraries.LibraryEx
@@ -79,9 +81,15 @@ class KotlinNotebookLibraryDependenciesTest : UsefulTestCase() {
 
     override fun tearDown() {
         listOf(
+            {
+                @Suppress("UsagesOfObsoleteApi")
+                runWriteAction {
+                    FileDocumentManager.getInstance().saveAllDocuments()
+                }
+            },
+            { librariesDirectory.deleteRecursively() },
             { notebookVirtualFile.delete() },
             { fixture.tearDown() },
-            { librariesDirectory.deleteRecursively() },
             { super.tearDown() },
         ).forEachGuaranteed { it() }
     }

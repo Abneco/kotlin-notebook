@@ -44,7 +44,7 @@ import java.io.File
  * Base class for all notebook tests. The entry point is the [runNotebookTest] method which provides
  * access to an API wrapper making it possible to write tests in a more human-readable way.
  */
-abstract class KotlinNotebookTestCase: JupyterBaseTestCase(), ExpectedPluginModeProvider {
+abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginModeProvider {
 
     // We cannot run on the EDT thread as Kernel Execution also runs there, which can result in deadlocks
     // when waiting for kernel status messages.
@@ -108,7 +108,7 @@ abstract class KotlinNotebookTestCase: JupyterBaseTestCase(), ExpectedPluginMode
         val fatalWarningsFound =
             testLogs.filter {
                 it.level == LogLevel.WARNING &&
-                it.message?.contains("has been compiled by a more recent version of the Java Runtime") == true
+                        it.message?.contains("has been compiled by a more recent version of the Java Runtime") == true
             }
 
         if (fatalErrorsFound.isNotEmpty() || fatalWarningsFound.isNotEmpty()) {
@@ -229,17 +229,15 @@ abstract class KotlinNotebookTestCase: JupyterBaseTestCase(), ExpectedPluginMode
         // it may trigger daemon restarting later asynchronously
         (myFixture as CodeInsightTestFixtureImpl).canChangeDocumentDuringHighlighting(true)
 
-        val backedFile = myFixture.configureByJupyterFile(
-            jupyterFileName = notebookFile.name,
-            testDataPath = notebookFile.parentFile.absolutePath,
-            isCopyToProject = false,
-        )
         invokeAndWaitIfNeeded {
+            val backedFile = myFixture.configureByJupyterFile(
+                jupyterFileName = notebookFile.name,
+                testDataPath = notebookFile.parentFile.absolutePath,
+            )
             myFixture.editor.setMode(NotebookEditorMode.EDIT)
-        }
-        originalVirtualFile = myFixture.file.virtualFile // `myFixture.file` may return the file which is injected inside one of the cells
-        val testRunMode = TestContext.kernelRunMode
-        invokeAndWaitIfNeeded {
+            originalVirtualFile = myFixture.file.virtualFile
+            // `myFixture.file` may return the file which is injected inside one of the cells
+            val testRunMode = TestContext.kernelRunMode
             backedFile.notebook.sessionRunMode = testRunMode
             FileDocumentManager.getInstance().saveAllDocuments()
         }

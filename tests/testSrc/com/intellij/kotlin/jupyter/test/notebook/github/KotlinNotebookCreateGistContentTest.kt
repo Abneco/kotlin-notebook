@@ -26,7 +26,7 @@ class KotlinNotebookCreateGistContentTest: KotlinNotebookBaseTestCase() {
     @Test
     @TestMetadata("simple/singleEmptyCellNoCaret.ipynb")
     fun `gist contents of Jupyter notebook should be JSON, not raw text`() {
-        configureByJupyterFile(copyToProject = true)
+        configureByJupyterFile()
         val contents = GithubGistContentsCollector.collectContents(project, myFixture.editor, myFixture.file.virtualFile, null)
         contents.shouldBeSingleton {
             val notebookJson = jackson.readTree(it.content)

@@ -40,9 +40,9 @@ abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCas
         transformer: () -> Unit
     ) {
         myFixture.setCaresAboutInjection(testOptions.caresAboutInjection)
-        _notebookFile = configureByJupyterFile()
 
         val notebookPsiFile = invokeAndWaitIfNeeded {
+            _notebookFile = configureByJupyterFile()
             myFixture.editor.setMode(NotebookEditorMode.EDIT)
             _notebookFile?.file?.toPsiFile(project)!!
         }
