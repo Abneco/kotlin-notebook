@@ -6,7 +6,7 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.idea.core.script.k2.BaseScriptModel
-import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurations
+import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import kotlin.script.experimental.api.valueOrNull
 import kotlin.script.experimental.api.valueOrThrow
@@ -30,11 +30,12 @@ data class KotlinNotebookScriptsModuleConfigurationInfo(
 )
 
 /**
- * Transforms all passed [ScriptConfigurations] to a map separated by [com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile]
+ * Transforms all passed [ScriptConfigurationWithSdk] to a map separated by [com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile]
  * Each [KotlinNotebookScriptsModuleConfigurationInfo] contains all necessary information for each cell.
  */
-internal fun ScriptConfigurations.toConfigurationInfoPerNotebook(): Map<VirtualFile, KotlinNotebookScriptsModuleConfigurationInfo> {
-    val sdk = sdks.values.firstOrNull()
+internal fun Map<VirtualFile, ScriptConfigurationWithSdk>.toConfigurationInfoPerNotebook(): Map<VirtualFile, KotlinNotebookScriptsModuleConfigurationInfo> {
+    val sdk = values.firstOrNull()?.sdk
+    val configurations = this.mapValues { it.value.scriptConfiguration }
 
     return configurations.filterNot {
         ScratchUtil.isScratch(it.key) || it.value.valueOrNull() == null
@@ -53,8 +54,8 @@ internal fun ScriptConfigurations.toConfigurationInfoPerNotebook(): Map<VirtualF
     }
 }
 
-internal fun ScriptConfigurations.getConfigurationsForNotebook(notebookFile: VirtualFile): Collection<ScriptCompilationConfigurationWrapper>? {
-    return configurations.filter { (vFile, configurationWrapper) ->
-        (vFile as? VirtualFileWindow)?.delegate == notebookFile && configurationWrapper.valueOrNull() != null
-    }.map { it.value.valueOrThrow() }
+internal fun Map<VirtualFile, ScriptConfigurationWithSdk>.getConfigurationsForNotebook(notebookFile: VirtualFile): Collection<ScriptCompilationConfigurationWrapper>? {
+    return this.filter { (vFile, configurationWrapper) ->
+        (vFile as? VirtualFileWindow)?.delegate == notebookFile && configurationWrapper.scriptConfiguration.valueOrNull() != null
+    }.map { it.value.scriptConfiguration.valueOrThrow() }
 }

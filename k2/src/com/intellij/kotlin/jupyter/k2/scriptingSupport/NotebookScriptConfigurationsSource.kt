@@ -6,7 +6,6 @@ import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
 import com.intellij.kotlin.jupyter.core.util.getRelativePathFromProjectRoot
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -25,10 +24,9 @@ import com.intellij.platform.workspace.jps.entities.modifyLibraryEntity
 import com.intellij.platform.workspace.jps.entities.modifyModuleEntity
 import com.intellij.platform.workspace.jps.entities.sourceRoots
 import com.intellij.platform.workspace.storage.MutableEntityStorage
-import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
 import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
-import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurations
+import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource
 import org.jetbrains.kotlin.idea.core.script.scriptDefinitionsSourceOfType
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionsSource
@@ -62,15 +60,10 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
             val virtualFile = ktScript.virtualFile
             val configuration = ktScript.refinedConfigurationResult.asSuccess()
 
-            virtualFile to configuration
+            virtualFile to ScriptConfigurationWithSdk(configuration, sdk)
         }
 
-        val scriptConfigurations = ScriptConfigurations(
-            configurations,
-            sdks = sdk?.homePath?.let<@NonNls String, Map<Path, Sdk>> { mapOf(Path.of(it) to sdk) } ?: emptyMap()
-        )
-
-        data.set(scriptConfigurations)
+        data.set(configurations)
     }
 
     override suspend fun updateModules(storage: MutableEntityStorage?) {
