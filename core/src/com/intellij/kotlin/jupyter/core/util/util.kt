@@ -4,7 +4,6 @@ package com.intellij.kotlin.jupyter.core.util
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.find
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.helper.notebookLanguage
@@ -111,7 +110,7 @@ fun PsiLanguageInjectionHost.getKtFileStartOffset(injectedLanguageManager: Injec
 }
 
 fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
-    takeIfBacked(this) ?: find(this)
+    takeIfBacked(this) ?: BackedNotebookVirtualFile.Companion.takeBackend(this)
 
 @RequiresReadLock
 fun VirtualFile.toPsiFile(project: Project): PsiFile? =

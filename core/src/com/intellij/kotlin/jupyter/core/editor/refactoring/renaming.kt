@@ -219,7 +219,7 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
                 && isNotebookRefactoringSupported(resolvedElement)
                 && (isCompiledElem
                 || cell?.getUserData(CELL_CLASS_NAME) != null
-                || NotebookStructureTrackerService.getForFile(psiFile.project, BackedNotebookVirtualFile.create(notebookFile))
+                || NotebookStructureTrackerService.getForFile(psiFile.project, BackedNotebookVirtualFile.takeBackend(notebookFile))
                     .cellOrdinalToClassNameStructure[ind] != null)
     }
 

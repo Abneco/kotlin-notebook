@@ -205,7 +205,7 @@ fun Project.createEmptyNotebook(name: String): BackedNotebookVirtualFile {
     val directoryPsiFile = runReadAction { PsiManager.getInstance(this).findDirectory(projectBaseDir)!! }
 
     val psiFile = CreateNotebookFactory.createFile(name, directoryPsiFile)
-    return BackedNotebookVirtualFile.find(psiFile!!.virtualFile)!!
+    return BackedNotebookVirtualFile.Companion.takeBackend(psiFile!!.virtualFile)!!
 }
 
 fun BackedNotebookVirtualFile.delete() {

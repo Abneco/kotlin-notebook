@@ -10,19 +10,11 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeTypeOf
 import org.jetbrains.kotlin.test.TestMetadata
 import org.jetbrains.plugins.github.GithubGistContentsCollector
-import org.jetbrains.plugins.notebooks.tests.SingleFileImplRule
-import org.junit.ClassRule
 import org.junit.Test
 
 
 @TestDataPath("\$CONTENT_ROOT/testData/notebooks")
-class KotlinNotebookCreateGistContentTest: KotlinNotebookBaseTestCase() {
-    companion object {
-        @get:ClassRule
-        @JvmStatic
-        val singleFileModeRule = SingleFileImplRule(true)
-    }
-
+class KotlinNotebookCreateGistContentTest : KotlinNotebookBaseTestCase() {
     @Test
     @TestMetadata("simple/singleEmptyCellNoCaret.ipynb")
     fun `gist contents of Jupyter notebook should be JSON, not raw text`() {

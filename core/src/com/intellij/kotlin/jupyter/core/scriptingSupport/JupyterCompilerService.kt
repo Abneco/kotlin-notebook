@@ -127,7 +127,7 @@ class JupyterCompilerService(
     }
 
     fun restartHighlighting(files: Collection<VirtualFile>) {
-        val notebookFiles = files.filter { it.isKotlinNotebook }.mapNotNull { BackedNotebookVirtualFile.find(it) }
+        val notebookFiles = files.filter { it.isKotlinNotebook }.map { BackedNotebookVirtualFile.Companion.takeBackend(it) }
         if (notebookFiles.isEmpty()) {
             return
         }

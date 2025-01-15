@@ -96,7 +96,7 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
                 }
                 val closedNotebookFiles = ipynbFiles
                     .filter { !openFiles.contains(it) }
-                    .mapNotNull { BackedNotebookVirtualFile.find(it) }
+                    .mapNotNull { BackedNotebookVirtualFile.Companion.takeBackend(it) }
                     .filter { it.file.isKotlinNotebook }
                 if (closedNotebookFiles.isNotEmpty()) {
                     withContext(Dispatchers.EDT) {

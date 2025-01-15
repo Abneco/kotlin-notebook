@@ -44,7 +44,7 @@ class ImpatientNotebookChangeListener(
     private var cellsAffectedByReformat = mutableSetOf<Int>()
 
     private fun handleNotebookChangeEvent(event: DocumentEvent) {
-        val file = FileDocumentManager.getInstance().getFile(event.document)?.let { BackedNotebookVirtualFile.create(it) } ?: return
+        val file = FileDocumentManager.getInstance().getFile(event.document)?.let { BackedNotebookVirtualFile.takeBackend(it) } ?: return
 
         val (document, psiFile, psiCells) = withReadAccess {
             val document = FileDocumentManager.getInstance().getDocument(file.file)

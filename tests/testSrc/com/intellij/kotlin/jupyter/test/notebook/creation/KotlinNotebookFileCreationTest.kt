@@ -16,18 +16,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeTypeOf
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
-import org.jetbrains.plugins.notebooks.tests.SingleFileImplRule
-import org.junit.ClassRule
 import org.junit.Test
 
 class KotlinNotebookFileCreationTest : KotlinNotebookBaseTestCase() {
-    companion object {
-        @get:ClassRule
-        @JvmStatic
-        val singleFileModeRule = SingleFileImplRule(true)
-    }
-
-
     @Test
     fun `scratch file is created successfully`() = doTest(createFile = {
         invokeAndWaitIfNeeded {
@@ -41,7 +32,7 @@ class KotlinNotebookFileCreationTest : KotlinNotebookBaseTestCase() {
         psiFile.virtualFile.notebookLanguage shouldBe KotlinLanguage.INSTANCE
         psiFile.text shouldBe "#%%\n"
 
-        val backedFile = BackedNotebookVirtualFile.findOrCreate(psiFile.virtualFile)
+        val backedFile = BackedNotebookVirtualFile.Companion.takeBackend(psiFile.virtualFile)
         val notebookJson = backedFile.notebook.json
         val mimetypeNode = notebookJson["metadata"]["language_info"]["mimetype"]
         mimetypeNode.shouldBeTypeOf<TextNode>()
@@ -55,7 +46,7 @@ class KotlinNotebookFileCreationTest : KotlinNotebookBaseTestCase() {
         val psiFile = createFile()
         psiFile.shouldNotBeNull()
         try {
-          assertFile(psiFile)
+            assertFile(psiFile)
         } finally {
             val virtualFile = psiFile.virtualFile
             WriteCommandAction.runWriteCommandAction(project) {

@@ -110,9 +110,8 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
      */
     private fun getWorkingDir(project: Project, notebookPath: Path): Path? {
         val fileManager = VirtualFileManager.getInstance()
-        val mode: NotebookMode = fileManager.findFileByNioPath(notebookPath)?.let { notebookFile ->
-            BackedNotebookVirtualFile.find(notebookFile)?.mode
-        } ?: return null
+        val notebookFile = fileManager.findFileByNioPath(notebookPath) ?: return null
+        val mode: NotebookMode = BackedNotebookVirtualFile.takeIfBacked(notebookFile)?.mode ?: return null
 
         val notebookParentDir = notebookPath.absolute().parent.takeIf { it.exists() }
         return when(mode) {
