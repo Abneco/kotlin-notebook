@@ -28,6 +28,7 @@ import com.intellij.scientific.tables.api.DSTableDataType
 import com.intellij.scientific.tables.api.DSTableText
 import com.intellij.scientific.tables.api.DescribeTableCommand
 import com.intellij.scientific.tables.api.FilterExpression
+import com.intellij.scientific.tables.api.ImageTableCommand
 import com.intellij.scientific.tables.api.InfoTableCommand
 import com.intellij.scientific.tables.api.NestedTableDataProvider
 import com.intellij.scientific.tables.api.SliceTableCommand
@@ -219,7 +220,7 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
 
     private fun getCommandCode(tableCommand: TableCommand): String {
         return when(tableCommand) {
-            is DescribeTableCommand, is InfoTableCommand, is VisualizationDataTableCommand -> throw NotImplementedError()
+            is DescribeTableCommand, is InfoTableCommand, is VisualizationDataTableCommand, is ImageTableCommand -> throw NotImplementedError()
             is SliceTableCommand -> getSliceCommandCode(tableCommand)
         }
     }
