@@ -7,8 +7,8 @@ import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.jupyter.core.jupyter.nbformat.NotebookChanged
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.kotlin.jupyter.core.util.JUPYTER_NOTEBOOK_EXTENSION
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
+import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
@@ -74,7 +74,7 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
     }
 
     @CalledInAny
-    fun getCachedSettings(file: VirtualFile) = cache[file]
+    fun getCachedSettings(file: VirtualFile): KotlinNotebookSettings? = cache[file]
 
     internal fun onModulesRenamed(oldToNewNames: Map<String, String>) = performRefactoring {
         onModulesRenamed(this::notebookDependencies, oldToNewNames)
@@ -92,7 +92,7 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
                 val openFiles = openNotebookFiles.map { it.originFile }
 
                 val ipynbFiles = smartReadAction(project) {
-                    FilenameIndex.getAllFilesByExt(project, JUPYTER_NOTEBOOK_EXTENSION, ProjectScope.getProjectScope(project))
+                    FilenameIndex.getAllFilesByExt(project, JupyterFileType.defaultExtension, ProjectScope.getProjectScope(project))
                 }
                 val closedNotebookFiles = ipynbFiles
                     .filter { !openFiles.contains(it) }
@@ -120,7 +120,7 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
     }
 
     companion object {
-        fun getInstance(project: Project) = project.service<KotlinNotebookPerFileSettingsCache>()
+        fun getInstance(project: Project): KotlinNotebookPerFileSettingsCache = project.service<KotlinNotebookPerFileSettingsCache>()
     }
 }
 

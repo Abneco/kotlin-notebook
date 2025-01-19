@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.ide.scratch.ScratchFileActions
 import com.intellij.ide.scratch.ScratchFileCreationHelper
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.helper.notebookLanguage
+import com.intellij.jupyter.core.jupyter.helper.NotebookLanguageDetector
 import com.intellij.kotlin.jupyter.core.language.JupyterKotlinFileType
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
@@ -29,7 +29,7 @@ class KotlinNotebookFileCreationTest : KotlinNotebookBaseTestCase() {
         }
     }) { psiFile ->
         psiFile.shouldBeTypeOf<JupyterFile>()
-        psiFile.virtualFile.notebookLanguage shouldBe KotlinLanguage.INSTANCE
+        NotebookLanguageDetector.detectLanguage(psiFile.virtualFile) shouldBe KotlinLanguage.INSTANCE
         psiFile.text shouldBe "#%%\n"
 
         val backedFile = BackedNotebookVirtualFile.Companion.takeBackend(psiFile.virtualFile)

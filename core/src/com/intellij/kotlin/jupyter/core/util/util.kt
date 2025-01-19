@@ -6,14 +6,12 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.helper.notebookLanguage
+import com.intellij.jupyter.core.jupyter.helper.NotebookLanguageMatcher
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.ex.EditorEx
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
@@ -34,26 +32,15 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-const val JUPYTER_NOTEBOOK_EXTENSION = "ipynb"
-const val DEFAULT_KOTLIN_KERNEL_NAME = "kotlin"
+const val DEFAULT_KOTLIN_KERNEL_NAME: String = "kotlin"
 
-val VirtualFile?.isKotlinNotebook: Boolean
-    get() {
-        if (this == null || extension != JUPYTER_NOTEBOOK_EXTENSION) return false
-        return notebookLanguage === KotlinLanguage.INSTANCE
-    }
+private val kotlinMatcher by lazy {
+    NotebookLanguageMatcher(KotlinLanguage.INSTANCE)
+}
 
-val BackedNotebookVirtualFile.isKotlinNotebook: Boolean
-    get() {
-        val myNotebook = notebookOrNull ?: return file.isKotlinNotebook
-        return myNotebook.language === KotlinLanguage.INSTANCE
-    }
-
-val Editor.isKotlinNotebook: Boolean
-    get() {
-        if (this !is EditorEx) return false
-        return FileDocumentManager.getInstance().getFile(document).isKotlinNotebook
-    }
+val VirtualFile?.isKotlinNotebook: Boolean get() = kotlinMatcher.matches(this)
+val BackedNotebookVirtualFile.isKotlinNotebook: Boolean get() = kotlinMatcher.matches(this)
+val Editor.isKotlinNotebook: Boolean get() = kotlinMatcher.matches(this)
 
 val KtFile.isInsideKotlinNotebook: Boolean
     get() {
@@ -96,12 +83,13 @@ fun PsiFile?.getInjectedKtFiles(): List<KtFile> {
     }
 }
 
-fun PsiFile?.getNotebookValidCells() = getNotebookCells().filter { it.isValid && it is PsiLanguageInjectionHost }
+fun PsiFile?.getNotebookValidCells(): List<JupyterPsiCell> =
+    getNotebookCells().filter { it.isValid }
 
-fun PsiFile?.getNotebookCells() =
+fun PsiFile?.getNotebookCells(): List<JupyterPsiCell> =
   (this?.children?.first() as? JupyterNotebook)?.psiCellList.orEmpty()
 
-fun PsiLanguageInjectionHost.getInjectedKtFiles(injectedLanguageManager: InjectedLanguageManager) =
+fun PsiLanguageInjectionHost.getInjectedKtFiles(injectedLanguageManager: InjectedLanguageManager): List<KtFile> =
     injectedLanguageManager.getInjectedPsiFiles(this)?.map { it.first }?.filterIsInstance<KtFile>().orEmpty()
 
 fun PsiLanguageInjectionHost.getKtFileStartOffset(injectedLanguageManager: InjectedLanguageManager): Int? {
