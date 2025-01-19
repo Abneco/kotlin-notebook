@@ -4,8 +4,8 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterSessionData
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterSessionLaunchStrategy
+import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
+import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionLaunchStrategy
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelEvent

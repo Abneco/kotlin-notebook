@@ -7,7 +7,7 @@ import com.intellij.jupyter.core.jupyter.connections.exceptions.JupyterKernelDoe
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelCommunicationClient
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterSessionData
+import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterInterruptRequestMessageBuilder
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterShutdownRequestMessageBuilder
