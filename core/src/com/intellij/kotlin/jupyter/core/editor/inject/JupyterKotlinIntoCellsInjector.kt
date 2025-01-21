@@ -13,6 +13,7 @@ import com.intellij.lang.Language
 import com.intellij.lang.injection.MultiHostInjector
 import com.intellij.lang.injection.MultiHostRegistrar
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
@@ -25,7 +26,7 @@ private val NON_CODE_CELL_REGEX = Regex("""$CELL_MARKER(${nonCodeCellSuffixes.jo
 
 val NotebookPsiCell.isNonCode get() = cellMarker.text.matches(NON_CODE_CELL_REGEX)
 
-class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector {
+class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector, DumbAware {
     private val injectedCounter = AtomicInteger()
     private val projectCompilerService = JupyterCompilerService.getInstance(project)
 
