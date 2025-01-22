@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.highlighting.service
 
 import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeReducer
@@ -19,7 +19,6 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
-
 
 internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlightingRangeReducer {
 
@@ -172,5 +171,3 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         private val LOG = notebookLogger()
     }
 }
-
-fun isEitherSymmetricallyContainedRange(lhs: TextRange, rhs: TextRange): Boolean = lhs.contains(rhs) || rhs.contains(lhs)

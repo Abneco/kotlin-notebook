@@ -1,9 +1,9 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.hack.document
 
+import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingComponent
 import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingEvent
 import com.intellij.kotlin.jupyter.core.editor.hack.queue.HighlightingEventsQueue
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
@@ -19,8 +19,7 @@ internal class DocumentInputEventsTransformer(
   private val editor: Editor,
   private val document: Document,
   private val highlightingEventsQueue: HighlightingEventsQueue,
-  parentDisposable: Disposable,
-) : Disposable {
+) : HighlightingComponent() {
 
     inner class NotebookDocumentListener : DocumentListener {
         override fun beforeDocumentChange(event: DocumentEvent) {
@@ -37,7 +36,7 @@ internal class DocumentInputEventsTransformer(
         }
     }
 
-    init {
+    override fun initializeSelf() {
         addListeners()
     }
 
@@ -47,13 +46,10 @@ internal class DocumentInputEventsTransformer(
     }
 
     private fun transformCaretMovement(event: CaretEvent): HighlightingEvent {
-
+        TODO()
     }
 
     private fun transformDocumentChange(event: DocumentEvent): HighlightingEvent {
-
-    }
-
-    override fun dispose() {
+        TODO()
     }
 }

@@ -16,16 +16,9 @@ import org.jetbrains.kotlin.idea.base.analysis.KotlinIdeInjectedFilesAnalysisPro
  * If analysis is promoted, it will be analyzed by the base Kotlin visitor.
  */
 internal class KotlinNotebookInjectedFilesAnalysisPromoter : KotlinIdeInjectedFilesAnalysisPromoter {
-    private val modeAwareFileFilter: (PsiFile) -> Boolean = createPluginModeAwareInstance(
-        { // invoke always complete analysis for K1
-            { false }
-        },
-        ::createK2Handler
-    )
-
-    private fun createK2Handler() = { psiFile: PsiFile ->
+    private fun createK2Handler(psiFile: PsiFile): Boolean {
         val backedNotebook = (psiFile.viewProvider.virtualFile as? VirtualFileWindow)?.delegate?.toBackedNotebookFile()
-        if (backedNotebook == null) {
+        return if (backedNotebook == null) {
             false
         } else {
             !NotebookHighlightingService.getForFile(psiFile.project, backedNotebook).isFileTarget(psiFile)
@@ -38,6 +31,10 @@ internal class KotlinNotebookInjectedFilesAnalysisPromoter : KotlinIdeInjectedFi
     }
 
     override fun shouldRunOnlyEssentialHighlightingForInjectedFile(psiFile: PsiFile): Boolean {
-        return modeAwareFileFilter(psiFile)
+        return createPluginModeAwareInstance(
+            psiFile,
+            { false },
+            ::createK2Handler
+        )
     }
 }

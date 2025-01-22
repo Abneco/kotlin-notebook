@@ -68,7 +68,6 @@ class NotebookPerFileHighlightingMetaDataController(
     }
 
     init {
-        Disposer.register(parentDisposable, this)
         initialiseStorage()
     }
 

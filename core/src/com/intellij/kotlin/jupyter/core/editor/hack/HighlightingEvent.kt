@@ -6,7 +6,7 @@ package com.intellij.kotlin.jupyter.core.editor.hack
  * Representation of a transformed input event
  * containing information about HL pass targets.
  *
- * @see [com.intellij.kotlin.jupyter.core.editor.hack.service.NotebookPassConfiguration]
+ * @see [NotebookPassConfiguration]
  */
 internal data class HighlightingEvent(
     val focusCell: Int,

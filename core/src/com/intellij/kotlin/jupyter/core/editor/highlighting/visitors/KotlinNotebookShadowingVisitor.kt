@@ -3,9 +3,7 @@ package com.intellij.kotlin.jupyter.core.editor.highlighting.visitors
 
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import org.jetbrains.kotlin.idea.highlighter.visitor.AbstractHighlightingVisitor
 
 /**
  * `KotlinNotebookShadowingVisitor` is responsible for managing and performing
@@ -16,13 +14,9 @@ import org.jetbrains.kotlin.idea.highlighter.visitor.AbstractHighlightingVisitor
  *  Since inside main logic front-end api is used, there is no need to specifically traverse the file;
  *  hence, KotlinNotebookDummyVisitor is used as a visitor.
  */
-internal class KotlinNotebookShadowingVisitor : AbstractKotlinHighlightingVisitorAdapter<KotlinNotebookDummyVisitor>() {
+internal class KotlinNotebookShadowingVisitor : AbstractKotlinNotebookHighlightingVisitorAdapter() {
     override fun clone(): HighlightVisitor {
         return KotlinNotebookShadowingVisitor()
-    }
-
-    override fun createVisitor(holder: HighlightInfoHolder): KotlinNotebookDummyVisitor {
-        return KotlinNotebookDummyVisitor(holder)
     }
 
     override fun analyze(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, action: Runnable): Boolean {
@@ -34,11 +28,4 @@ internal class KotlinNotebookShadowingVisitor : AbstractKotlinHighlightingVisito
 
         return result
     }
-}
-
-
-internal class KotlinNotebookDummyVisitor(holder: HighlightInfoHolder) : AbstractHighlightingVisitor(holder) {
-    override fun visitElement(element: PsiElement) = Unit
-
-    override fun visitFile(file: PsiFile) = Unit
 }

@@ -2,22 +2,21 @@
 package com.intellij.kotlin.jupyter.core.editor.hack.queue
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingComponent
 import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingEvent
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingRestarter
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.toPsiFile
-import com.intellij.openapi.Disposable
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import java.util.concurrent.ConcurrentLinkedQueue
 
-internal class NotebookHighlightingEventsQueue(
+internal class HighlightingEventsQueueImpl(
     private val project: Project,
     private val notebookVirtualFile: BackedNotebookVirtualFile,
-    parentDisposable: Disposable,
-) : HighlightingEventsQueue, Disposable {
+) : HighlightingEventsQueue, HighlightingComponent() {
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
     }
 
     private val eventsQueue: MutableCollection<HighlightingEvent> = ConcurrentLinkedQueue()

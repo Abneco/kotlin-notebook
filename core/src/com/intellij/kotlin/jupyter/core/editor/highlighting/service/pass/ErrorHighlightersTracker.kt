@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass
 
 import com.intellij.concurrency.ConcurrentCollectionFactory
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.markup.MarkupModelListenerPluginAwareFactory
+import com.intellij.kotlin.jupyter.core.editor.highlighting.service.markup.ShadowingAwareMarkupModelListener
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
@@ -32,8 +32,7 @@ internal class ErrorHighlightersTracker : Disposable {
     private lateinit var activeMarkupModelListener: MarkupModelListener
 
     fun addMarkupListener(editor: Editor) {
-        activeMarkupModelListener = MarkupModelListenerPluginAwareFactory
-            .createListener(targetErrorHighlighters)
+        activeMarkupModelListener = ShadowingAwareMarkupModelListener(targetErrorHighlighters)
 
         val editorEx = editor as? EditorEx ?: return
         // todo: can really editor does not have a disposable? throw error then?

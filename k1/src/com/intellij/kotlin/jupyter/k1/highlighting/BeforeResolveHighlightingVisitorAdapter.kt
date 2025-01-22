@@ -3,10 +3,10 @@ package com.intellij.kotlin.jupyter.k1.highlighting
 
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
-import com.intellij.kotlin.jupyter.core.editor.highlighting.visitors.AbstractKotlinHighlightingVisitorAdapter
+import com.intellij.kotlin.jupyter.core.editor.highlighting.visitors.AbstractKotlinNotebookDelegatingHighlightingVisitorAdapter
 import org.jetbrains.kotlin.idea.highlighter.BeforeResolveHighlightingVisitor
 
-class BeforeResolveHighlightingVisitorAdapter: AbstractKotlinHighlightingVisitorAdapter<BeforeResolveHighlightingVisitor>() {
+class BeforeResolveHighlightingVisitorAdapter: AbstractKotlinNotebookDelegatingHighlightingVisitorAdapter<BeforeResolveHighlightingVisitor>() {
     override fun clone(): HighlightVisitor {
         return BeforeResolveHighlightingVisitorAdapter()
     }

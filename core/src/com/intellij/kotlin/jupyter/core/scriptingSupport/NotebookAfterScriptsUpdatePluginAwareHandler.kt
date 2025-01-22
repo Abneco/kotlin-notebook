@@ -6,7 +6,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScrip
 
 
 /**
- * A functional interface aimed to process events, after which scripts are indeed updated from Model perspectivr.
+ * A functional interface aimed to process events, after which scripts are indeed updated from Model perspective.
  * Designed to handle scripts update events while being aware of the current Kotlin plugin mode.
  *
  * @see NotebookHighlightingManager and it's [addListeners]

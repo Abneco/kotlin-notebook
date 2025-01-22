@@ -71,7 +71,7 @@ class NotebookHighlightingManager(
     private var _jupyterFile: PsiFile? = null
     val jupyterPsiFile: PsiFile? get() = _jupyterFile
 
-    val dataController = createDisposableChild {
+    val dataController: NotebookPerFileHighlightingMetaDataController = createDisposableChild {
         NotebookPerFileHighlightingMetaDataController(
             project,
             virtualFile,
@@ -100,14 +100,18 @@ class NotebookHighlightingManager(
     }
 
     private fun Disposable.addListeners() {
-        val targetFile = virtualFile
-        val messageBus = project.messageBus
         // todo: move to document layer
         document.addDocumentListener(
             ImpatientNotebookChangeListener(project, virtualFile),
             this
         )
-        messageBus.connect(this).subscribe(
+        addNotebookSessionEventListener()
+        addNotebookScriptsStateListener()
+    }
+
+    private fun addNotebookSessionEventListener() {
+        val targetFile = virtualFile
+        project.messageBus.connect(this).subscribe(
             NotebookSessionEventListener.TOPIC,
             object : NotebookSessionEventListener {
                 override fun sessionStarted(virtualFile: BackedNotebookVirtualFile, isAfterRestart: Boolean) {
@@ -117,8 +121,10 @@ class NotebookHighlightingManager(
                 }
             }
         )
+    }
 
-        messageBus.connect(this).subscribe(
+    private fun addNotebookScriptsStateListener() {
+        project.messageBus.connect(this).subscribe(
             NotebookScriptsStateListener.TOPIC,
             createPluginModeAwareInstance(
                 ::createK1Instance,

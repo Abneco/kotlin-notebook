@@ -12,9 +12,7 @@ internal class NotebookHighlightingDaemonListener(
 ) : DaemonListener {
     override fun daemonFinished(fileEditors: MutableCollection<out FileEditor>) {
         fileEditors.firstOrNull { (it as? TextEditor)?.editor == stateProcessor.editor }?.let {
-            with(stateProcessor) {
-                onEventHappened(NotebookDaemonFinishedEvent)
-            }
+            stateProcessor.onEventHappened(NotebookDaemonFinishedEvent)
         }
     }
 }

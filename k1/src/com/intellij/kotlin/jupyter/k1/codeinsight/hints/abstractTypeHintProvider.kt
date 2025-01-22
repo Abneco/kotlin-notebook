@@ -10,12 +10,12 @@ import com.intellij.codeInsight.hints.presentation.InlayPresentation
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.codeInsight.hints.presentation.RecursivelyUpdatingRootPresentation
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
-import com.intellij.kotlin.jupyter.k1.codeinsight.hints.PsiHostTypeHintsRegistry.Companion.getOrCreateTypeHintsRegistry
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.isEitherSymmetricallyContainedRange
+import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.isEitherSymmetricallyContainedRange
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.util.getKtFileStartOffset
+import com.intellij.kotlin.jupyter.k1.codeinsight.hints.PsiHostTypeHintsRegistry.Companion.getOrCreateTypeHintsRegistry
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterLanguage
