@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.k2.highlighting
 
 import com.intellij.kotlin.jupyter.core.editor.highlighting.visitors.KaDiagnosticData
 import com.intellij.kotlin.jupyter.core.editor.highlighting.visitors.KotlinPluginModeShadowingAnalyzerHandler
-import org.jetbrains.kotlin.idea.highlighter.clearAllKotlinUnresolvedReferenceKinds
+import org.jetbrains.kotlin.idea.highlighter.clearSavedKaDiagnosticsForUnresolvedReference
 
 class ShadowingVisitorHandlerFactory : KotlinPluginModeShadowingAnalyzerHandler.Factory {
     override fun create(): KotlinPluginModeShadowingAnalyzerHandler {
@@ -13,6 +13,6 @@ class ShadowingVisitorHandlerFactory : KotlinPluginModeShadowingAnalyzerHandler.
 
 object K2ShadowingAnalyzerHandler : KotlinPluginModeShadowingAnalyzerHandler() {
     override fun applyBeforeProcessingDiagnostic(diagnostic: KaDiagnosticData) {
-        diagnostic.psiElement.clearAllKotlinUnresolvedReferenceKinds()
+        diagnostic.psiElement.clearSavedKaDiagnosticsForUnresolvedReference()
     }
 }
