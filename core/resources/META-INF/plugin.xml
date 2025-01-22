@@ -96,7 +96,6 @@
 
         <plugin id="com.intellij.modules.platform"/>
         <plugin id="com.intellij.modules.java"/>
-        <plugin id="com.intellij.modules.ultimate"/>
     </dependencies>
 
     <applicationListeners>

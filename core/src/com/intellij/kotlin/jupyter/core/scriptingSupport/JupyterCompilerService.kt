@@ -19,7 +19,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.ultimate.PluginVerifier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
@@ -51,7 +50,6 @@ class JupyterCompilerService(
 ) : NotebookProjectLevelService<JupyterCompilerPerFileService>(coroutineScope) {
 
     init {
-        PluginVerifier.verifyUltimatePlugin()
         registerKernelRestartListener()
     }
 

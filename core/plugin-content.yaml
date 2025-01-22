@@ -12,8 +12,6 @@
     reason: <- intellij.kotlin.jupyter.core
   modules:
   - name: intellij.kotlin.jupyter.core
-  - name: intellij.platform.commercial.verifier
-    reason: <- intellij.kotlin.jupyter.core
   contentModules:
   - name: intellij.kotlin.jupyter.github
   - name: intellij.kotlin.jupyter.tables
