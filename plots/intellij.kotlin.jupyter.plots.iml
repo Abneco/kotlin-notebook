@@ -47,6 +47,8 @@
         </SOURCES>
       </library>
     </orderEntry>
+    <orderEntry type="library" name="xml-apis-ext" level="project" />
+    <orderEntry type="library" name="batik-transcoder" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="kotlin-stdlib" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="jackson" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="jackson-databind" level="project" />
