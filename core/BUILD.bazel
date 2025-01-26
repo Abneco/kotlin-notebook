@@ -66,8 +66,6 @@ jvm_library(
     "@lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
     "@lib//:kotlinc-kotlin-scripting-jvm-provided",
     "@community//platform/core-api:core",
-    "//ultimate/platform-ultimate:commercial",
-    "//ultimate/ultimate-verifier:commercial-verifier",
     "@community//platform/analysis-api:analysis",
     "@community//platform/analysis-impl",
     "@community//platform/code-style-impl:codeStyle-impl",

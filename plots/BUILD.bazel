@@ -23,6 +23,8 @@ jvm_library(
     "@ultimate_lib//:jetbrains-lets-plot-shadowed",
     "@ultimate_lib//:kotlin-jupyter-plots-jetbrains-lets-plot-export-shadowed",
     "@ultimate_lib//:kotlin-jupyter-plots-ggdsl-util",
+    "@ultimate_lib//:xml-apis-ext",
+    "@ultimate_lib//:batik-transcoder",
     "@lib//:kotlin-stdlib-provided",
     "@lib//:jackson-provided",
     "@lib//:jackson-databind-provided",
