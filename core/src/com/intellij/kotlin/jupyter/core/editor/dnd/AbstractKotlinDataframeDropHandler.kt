@@ -22,9 +22,9 @@ abstract class AbstractKotlinDataframeDropHandler(
         dataFilePath: String,
     ): String
 
-    override fun generateCellsCode(editor: Editor, tableDataFile: File, fileIndex: Int): List<String> {
+    override fun generateCellsCode(editor: Editor, tableDataFile: File, fileIndex: Int, dataframeName: String?): List<String> {
         val dataFilePath = createFilePath(tableDataFile, editor)
-        val dfName =
+        val dfName = dataframeName ?:
             createDataframeName(editor.project, tableDataFile, KotlinDataframeVariableNameSuggester)
         val importExpression = generateImportExpression(tableDataFile, dataFilePath)
         return generateCode(importExpression, dfName, editor, fileIndex)
