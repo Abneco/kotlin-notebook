@@ -7,13 +7,13 @@ import com.intellij.jupyter.core.jupyter.connections.exceptions.JupyterKernelDoe
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelCommunicationClient
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
-import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterInterruptRequestMessageBuilder
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterShutdownRequestMessageBuilder
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.connections.filecontentsapi.CachingFileContentsApi
 import com.intellij.jupyter.core.jupyter.connections.http.HttpSession
+import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelBase
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.resetSessionMetaInformation
@@ -173,7 +173,8 @@ class KotlinInProcessJupyterClient(
     override fun createWebSocketClientForKernel(
         kernelId: JupyterKernelId,
         sessionId: JupyterNotebookSessionId,
-        onMessage: (JupyterMessage) -> Unit
+        onMessage: (JupyterMessage) -> Unit,
+        onClose: (code: Int, reason: String?, remote: Boolean) -> Unit
     ): JupyterKernelCommunicationClient? {
         val processHandler = kernelsHandlers[kernelId] ?: throw RuntimeException("No kernel with id $kernelId")
         val session = processHandler.createSession(sessionId, onMessage) ?: return null
