@@ -66,7 +66,6 @@ import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
-import java.awt.SystemColor.text
 import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
