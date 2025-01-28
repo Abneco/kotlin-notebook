@@ -24,6 +24,7 @@ import com.intellij.openapi.vfs.VirtualFile
 
 
 abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
+
     override fun actionPerformed(event: AnActionEvent) {
         val project = event.project ?: return
         val letsPlotOutputs = getLetsPlotOutputs(event)
@@ -48,9 +49,10 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun update(event: AnActionEvent) {
-        super.update(event)
-        val letsPlotOutputs = getLetsPlotOutputs(event)
-        doUpdate(event, letsPlotOutputs)
+        actionUpdater.update(this, event) {
+            val letsPlotOutputs = getLetsPlotOutputs(event)
+            doUpdate(event, letsPlotOutputs)
+        }
     }
 
     protected open fun doUpdate(event: AnActionEvent, letsPlotOutputs: List<LetsPlotOutputDataKey>) {
