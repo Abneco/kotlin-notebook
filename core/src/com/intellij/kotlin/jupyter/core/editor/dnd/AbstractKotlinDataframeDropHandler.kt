@@ -1,10 +1,11 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.dnd
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.editor.handlers.LanguageTableDataFileDropHandler
 import com.intellij.jupyter.core.editor.handlers.createDataframeName
 import com.intellij.jupyter.core.editor.handlers.createFilePath
-import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.project.Project
 import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import java.io.File
@@ -12,7 +13,7 @@ import java.io.File
 abstract class AbstractKotlinDataframeDropHandler(
     @Nls commandName: String,
     fileExtensions: Set<String>
-): LanguageTableDataFileDropHandler(
+) : LanguageTableDataFileDropHandler(
     KotlinLanguage.INSTANCE,
     commandName,
     fileExtensions
@@ -22,11 +23,16 @@ abstract class AbstractKotlinDataframeDropHandler(
         dataFilePath: String,
     ): String
 
-    override fun generateCellsCode(editor: Editor, tableDataFile: File, fileIndex: Int, dataframeName: String?): List<String> {
-        val dataFilePath = createFilePath(tableDataFile, editor)
-        val dfName = dataframeName ?:
-            createDataframeName(editor.project, tableDataFile, KotlinDataframeVariableNameSuggester)
+    override fun generateCellsCode(
+        notebookFile: BackedNotebookVirtualFile,
+        project: Project,
+        tableDataFile: File,
+        fileIndex: Int,
+        dataframeName: String?
+    ): List<String> {
+        val dataFilePath = createFilePath(tableDataFile, notebookFile.file, project)
+        val dfName = dataframeName ?: createDataframeName(project, tableDataFile, KotlinDataframeVariableNameSuggester)
         val importExpression = generateImportExpression(tableDataFile, dataFilePath)
-        return generateCode(importExpression, dfName, editor, fileIndex)
+        return generateCode(importExpression, dfName, notebookFile, project, fileIndex)
     }
 }
