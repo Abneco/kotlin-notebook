@@ -16,6 +16,8 @@ import java.io.File
 
 @Service(Service.Level.PROJECT)
 class KotlinNotebookPermanentIndexService(val project: Project) {
+    private val projectLibraryTable get() = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
+
     fun addToPermanentIndex(classpath: List<String>, sourceClasspath: List<String>) {
         KotlinNotebookPluginScope.getForProject(project).async(Dispatchers.EDT) {
             writeAction {
@@ -25,9 +27,9 @@ class KotlinNotebookPermanentIndexService(val project: Project) {
     }
 
     fun removeFromPermanentIndex(artifactsPaths: Collection<String>) {
-        val newLibrary = getPermanentScriptingLibrary()
-        val model = newLibrary.modifiableModel
-        val existingRoots = getLibraryRoots(newLibrary)
+        val library = getPermanentScriptingLibrary() ?: return
+        val model = library.modifiableModel
+        val existingRoots = getLibraryRoots(library)
 
         for (rootType in listOf(OrderRootType.CLASSES, OrderRootType.SOURCES)) {
             for (rootPath in existingRoots[rootType]!!) {
@@ -39,13 +41,6 @@ class KotlinNotebookPermanentIndexService(val project: Project) {
         model.commit()
     }
 
-    private fun getPermanentScriptingLibrary(): Library {
-        val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
-        val library = libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
-        if (library != null) return library
-        return libraryTable.createLibrary(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
-    }
-
     private fun getLibraryRoots(library: Library): Map<OrderRootType, Set<String>> {
         return buildMap<OrderRootType, Set<String>> {
             for (rootType in listOf(OrderRootType.CLASSES, OrderRootType.SOURCES)) {
@@ -55,7 +50,7 @@ class KotlinNotebookPermanentIndexService(val project: Project) {
     }
 
     private fun addToPermanentIndexImpl(classpath: List<String>, sourceClasspath: List<String>) {
-        val newLibrary = getPermanentScriptingLibrary()
+        val newLibrary = getOrCreatePermanentScriptingLibrary()
 
         val model = newLibrary.modifiableModel
         val existingRoots = getLibraryRoots(newLibrary)
@@ -77,9 +72,18 @@ class KotlinNotebookPermanentIndexService(val project: Project) {
         model.commit()
     }
 
+    private fun getPermanentScriptingLibrary(): Library? {
+        return projectLibraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
+    }
+
+    private fun getOrCreatePermanentScriptingLibrary(): Library {
+        return getPermanentScriptingLibrary() ?:
+            projectLibraryTable.createLibrary(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
+    }
+
     companion object {
         internal const val SCRIPT_DEPENDENCIES_LIBRARY_NAME = "Permanent Script Dependencies"
 
-        fun getInstance(project: Project) = project.service<KotlinNotebookPermanentIndexService>()
+        fun getInstance(project: Project): KotlinNotebookPermanentIndexService = project.service<KotlinNotebookPermanentIndexService>()
     }
 }
