@@ -16,70 +16,70 @@ import java.io.File
 
 @Service(Service.Level.PROJECT)
 class KotlinNotebookPermanentIndexService(val project: Project) {
-  fun addToPermanentIndex(classpath: List<String>, sourceClasspath: List<String>) {
-    KotlinNotebookPluginScope.getForProject(project).async(Dispatchers.EDT) {
-        writeAction {
-            addToPermanentIndexImpl(classpath, sourceClasspath)
+    fun addToPermanentIndex(classpath: List<String>, sourceClasspath: List<String>) {
+        KotlinNotebookPluginScope.getForProject(project).async(Dispatchers.EDT) {
+            writeAction {
+                addToPermanentIndexImpl(classpath, sourceClasspath)
+            }
         }
     }
-  }
 
-  fun removeFromPermanentIndex(artifactsPaths: Collection<String>) {
-      val newLibrary = getPermanentScriptingLibrary()
-      val model = newLibrary.modifiableModel
-      val existingRoots = getLibraryRoots(newLibrary)
+    fun removeFromPermanentIndex(artifactsPaths: Collection<String>) {
+        val newLibrary = getPermanentScriptingLibrary()
+        val model = newLibrary.modifiableModel
+        val existingRoots = getLibraryRoots(newLibrary)
 
-      for (rootType in listOf(OrderRootType.CLASSES, OrderRootType.SOURCES)) {
-          for (rootPath in existingRoots[rootType]!!) {
-              if (artifactsPaths.any { rootPath.contains(it) }) {
-                  model.removeRoot(rootPath, rootType)
-              }
-          }
-      }
-      model.commit()
-  }
-
-  private fun getPermanentScriptingLibrary(): Library {
-    val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
-    val library = libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
-    if (library != null) return library
-    return libraryTable.createLibrary(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
-  }
-
-  private fun getLibraryRoots(library: Library): Map<OrderRootType, Set<String>> {
-      return buildMap<OrderRootType, Set<String>> {
-          for (rootType in listOf(OrderRootType.CLASSES, OrderRootType.SOURCES)) {
-              put(rootType, library.rootProvider.getUrls(rootType).toSet())
-          }
-      }
-  }
-
-  private fun addToPermanentIndexImpl(classpath: List<String>, sourceClasspath: List<String>) {
-    val newLibrary = getPermanentScriptingLibrary()
-
-    val model = newLibrary.modifiableModel
-    val existingRoots = getLibraryRoots(newLibrary)
-
-    fun addPath(path: String, rootType: OrderRootType) {
-      if (path.endsWith(".jar")) {
-        val rootPath = "file://${File(path).invariantSeparatorsPath}"
-        if (existingRoots[rootType]!!.contains(rootPath)) return
-        model.addRoot(rootPath, rootType)
-      }
+        for (rootType in listOf(OrderRootType.CLASSES, OrderRootType.SOURCES)) {
+            for (rootPath in existingRoots[rootType]!!) {
+                if (artifactsPaths.any { rootPath.contains(it) }) {
+                    model.removeRoot(rootPath, rootType)
+                }
+            }
+        }
+        model.commit()
     }
 
-    for (path in classpath) {
-      addPath(path, OrderRootType.CLASSES)
+    private fun getPermanentScriptingLibrary(): Library {
+        val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
+        val library = libraryTable.getLibraryByName(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
+        if (library != null) return library
+        return libraryTable.createLibrary(SCRIPT_DEPENDENCIES_LIBRARY_NAME)
     }
-    for (path in sourceClasspath) {
-      addPath(path, OrderRootType.SOURCES)
+
+    private fun getLibraryRoots(library: Library): Map<OrderRootType, Set<String>> {
+        return buildMap<OrderRootType, Set<String>> {
+            for (rootType in listOf(OrderRootType.CLASSES, OrderRootType.SOURCES)) {
+                put(rootType, library.rootProvider.getUrls(rootType).toSet())
+            }
+        }
     }
-    model.commit()
-  }
 
-  companion object {
-    internal const val SCRIPT_DEPENDENCIES_LIBRARY_NAME = "Permanent Script Dependencies"
+    private fun addToPermanentIndexImpl(classpath: List<String>, sourceClasspath: List<String>) {
+        val newLibrary = getPermanentScriptingLibrary()
 
-    fun getInstance(project: Project) = project.service<KotlinNotebookPermanentIndexService>()
-  }
+        val model = newLibrary.modifiableModel
+        val existingRoots = getLibraryRoots(newLibrary)
+
+        fun addPath(path: String, rootType: OrderRootType) {
+            if (path.endsWith(".jar")) {
+                val rootPath = "file://${File(path).invariantSeparatorsPath}"
+                if (existingRoots[rootType]!!.contains(rootPath)) return
+                model.addRoot(rootPath, rootType)
+            }
+        }
+
+        for (path in classpath) {
+            addPath(path, OrderRootType.CLASSES)
+        }
+        for (path in sourceClasspath) {
+            addPath(path, OrderRootType.SOURCES)
+        }
+        model.commit()
+    }
+
+    companion object {
+        internal const val SCRIPT_DEPENDENCIES_LIBRARY_NAME = "Permanent Script Dependencies"
+
+        fun getInstance(project: Project) = project.service<KotlinNotebookPermanentIndexService>()
+    }
 }
