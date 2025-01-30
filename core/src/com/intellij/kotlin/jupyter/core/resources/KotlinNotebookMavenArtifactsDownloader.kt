@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.resources
 
 import com.intellij.jarRepository.JarRepositoryManager
@@ -28,7 +28,6 @@ import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-
 
 @Service(Service.Level.PROJECT)
 class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Disposable {
@@ -233,6 +232,6 @@ class KotlinNotebookMavenArtifactsDownloader(private val project: Project) : Dis
     }
 
     companion object {
-        fun getInstance(project: Project) = project.service<KotlinNotebookMavenArtifactsDownloader>()
+        fun getInstance(project: Project): KotlinNotebookMavenArtifactsDownloader = project.service<KotlinNotebookMavenArtifactsDownloader>()
     }
 }
