@@ -2,8 +2,8 @@
 package com.intellij.kotlin.jupyter.core.editor.dnd
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.editor.handlers.DataframeVariableNameSuggester
 import com.intellij.jupyter.core.editor.handlers.LanguageTableDataFileDropHandler
-import com.intellij.jupyter.core.editor.handlers.createDataframeName
 import com.intellij.jupyter.core.editor.handlers.createFilePath
 import com.intellij.openapi.project.Project
 import org.jetbrains.annotations.Nls
@@ -18,6 +18,9 @@ abstract class AbstractKotlinDataframeDropHandler(
     commandName,
     fileExtensions
 ) {
+    override val nameSuggester: DataframeVariableNameSuggester
+        get() = KotlinDataframeVariableNameSuggester
+
     protected abstract fun generateImportExpression(
         importedFile: File,
         dataFilePath: String,
@@ -31,7 +34,7 @@ abstract class AbstractKotlinDataframeDropHandler(
         dataframeName: String?
     ): List<String> {
         val dataFilePath = createFilePath(tableDataFile, notebookFile.file, project)
-        val dfName = dataframeName ?: createDataframeName(project, tableDataFile, KotlinDataframeVariableNameSuggester)
+        val dfName = dataframeName ?: nameSuggester.createDataframeName(project, tableDataFile)
         val importExpression = generateImportExpression(tableDataFile, dataFilePath)
         return generateCode(importExpression, dfName, notebookFile, project, fileIndex)
     }
