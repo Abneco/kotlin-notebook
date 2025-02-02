@@ -25,12 +25,12 @@ jvm_library(
     "//plugins/jupyter/core",
     "@community//platform/platform-impl:ide-impl",
     "//python/scientific-tables",
-    "//dbe/grid/core-plugin",
     "@lib//:jackson-databind-provided",
     "@lib//:jackson-provided",
     "@lib//:kotlinc-kotlin-compiler-common-provided",
     "//plugins/jupyter/tables",
     "@community//platform/code-style-api:codeStyle",
+    "@community//grid/core-impl",
   ],
   runtime_deps = [
     ":kotlin-jupyter-tables_resources",
