@@ -1,14 +1,12 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.dnd
 
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.editor.handlers.DataframeVariableNameSuggester
 import com.intellij.jupyter.core.editor.handlers.LanguageTableDataFileDropHandler
+import com.intellij.jupyter.core.editor.handlers.TableDataFileDropHandlerParams
 import com.intellij.jupyter.core.editor.handlers.createFilePath
-import com.intellij.openapi.project.Project
 import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import java.io.File
 
 abstract class AbstractKotlinDataframeDropHandler(
     @Nls commandName: String,
@@ -22,22 +20,14 @@ abstract class AbstractKotlinDataframeDropHandler(
         get() = KotlinDataframeVariableNameSuggester
 
     protected abstract fun generateImportExpression(
-        importedFile: File,
         dataFilePath: String,
-        isFastMode: Boolean,
+        params: TableDataFileDropHandlerParams
     ): String
 
-    override fun generateCellsCode(
-        notebookFile: BackedNotebookVirtualFile,
-        project: Project,
-        tableDataFile: File,
-        fileIndex: Int,
-        dataframeName: String?,
-        isFastMode: Boolean,
-    ): List<String> {
-        val dataFilePath = createFilePath(tableDataFile, notebookFile.file, project)
-        val dfName = dataframeName ?: nameSuggester.createDataframeName(project, tableDataFile)
-        val importExpression = generateImportExpression(tableDataFile, dataFilePath, isFastMode)
-        return generateCode(importExpression, dfName, notebookFile, project, fileIndex)
+    override fun generateCellCode(params: TableDataFileDropHandlerParams): String {
+        val dataFilePath = createFilePath(params.tableDataFile, params.notebookFile.file, params.project)
+        val dfName = params.dataframeName ?: nameSuggester.createDataframeName(params.project, params.tableDataFile)
+        val importExpression = generateImportExpression(dataFilePath, params)
+        return generateCode(importExpression, dfName, params.notebookFile, params.project, params.fileIndex)
     }
 }

@@ -18,11 +18,11 @@ internal fun generateCode(
     notebookFile: BackedNotebookVirtualFile,
     project: Project,
     fileIndex: Int
-): List<String> =
+): String =
     listOfNotNull(
         "%use dataframe\n".takeIf { fileIndex == 0 && !isDataFrameInClasspath(notebookFile, project) },
         """
         val $dfName = $importExpression
         $dfName
         """.trimIndent()
-    )
+    ).joinToString("")
