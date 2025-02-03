@@ -24,6 +24,7 @@ abstract class AbstractKotlinDataframeDropHandler(
     protected abstract fun generateImportExpression(
         importedFile: File,
         dataFilePath: String,
+        isFastMode: Boolean,
     ): String
 
     override fun generateCellsCode(
@@ -31,11 +32,12 @@ abstract class AbstractKotlinDataframeDropHandler(
         project: Project,
         tableDataFile: File,
         fileIndex: Int,
-        dataframeName: String?
+        dataframeName: String?,
+        isFastMode: Boolean,
     ): List<String> {
         val dataFilePath = createFilePath(tableDataFile, notebookFile.file, project)
         val dfName = dataframeName ?: nameSuggester.createDataframeName(project, tableDataFile)
-        val importExpression = generateImportExpression(tableDataFile, dataFilePath)
+        val importExpression = generateImportExpression(tableDataFile, dataFilePath, isFastMode)
         return generateCode(importExpression, dfName, notebookFile, project, fileIndex)
     }
 }

@@ -10,8 +10,8 @@ class KotlinCsvDropHandler : AbstractKotlinDataframeDropHandler(
     KotlinNotebookBundle.message("kotlin.jupyter.editor.dnd.csv.dataframe.command"),
     setOf(TableDataFileExtensions.CSV, TableDataFileExtensions.TSV)
 ) {
-    override fun generateImportExpression(importedFile: File, dataFilePath: String): String {
-        val csvSeparator = guessCsvSeparator(importedFile)
+    override fun generateImportExpression(importedFile: File, dataFilePath: String, isFastMode: Boolean): String {
+        val csvSeparator = if (isFastMode) null else guessCsvSeparator(importedFile)
         val separatorArg = csvSeparator?.let { separator ->
             val escapedSeparator = when (separator) {
                 '\t' -> "\\t"

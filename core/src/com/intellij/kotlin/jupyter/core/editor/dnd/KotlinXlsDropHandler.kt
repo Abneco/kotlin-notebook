@@ -13,7 +13,7 @@ class KotlinXlsDropHandler : AbstractKotlinDataframeDropHandler(
         TableDataFileExtensions.XLSM
     )
 ) {
-    override fun generateImportExpression(importedFile: File, dataFilePath: String): String {
+    override fun generateImportExpression(importedFile: File, dataFilePath: String, isFastMode: Boolean): String {
         return "DataFrame.readExcel(\"$dataFilePath\")"
     }
 }
