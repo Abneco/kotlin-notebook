@@ -57,7 +57,7 @@ jvm_library(
     "@community//plugins/kotlin/base/fe10/analysis:kotlin-base-fe10-analysis",
     "//plugins/kotlin/jupyter/core:kotlin-jupyter-core",
     "@community//platform/core-api:core",
-    "@community//platform/editor-ui-api:editor",
+    "@community//platform/editor-ui-api:editor-ui",
     "@community//plugins/kotlin/base/scripting:kotlin-base-scripting",
     "@community//plugins/kotlin/jvm-debugger/evaluation/k1:kotlin-jvm-debugger-evaluation-k1",
     "@community//platform/backend/workspace",
