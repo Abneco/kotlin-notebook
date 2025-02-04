@@ -11,7 +11,10 @@ class KotlinCsvDropHandler : AbstractKotlinDataframeDropHandler(
     setOf(TableDataFileExtensions.CSV, TableDataFileExtensions.TSV)
 ) {
     override fun generateImportExpression(dataFilePath: String, context: TableDataFileDropHandlerContext): String {
-        val csvSeparator = if (context.isFastMode) null else guessCsvSeparator(context.tableDataFile)
+        val csvSeparator: Char? = when (val pathData = context.pathData) {
+            is TableDataFileDropHandlerContext.PathData.FileBased -> guessCsvSeparator(pathData.tableDataFile)
+            is TableDataFileDropHandlerContext.PathData.Lightweight -> null
+        }
         val separatorArg = csvSeparator?.let { separator ->
             val escapedSeparator = when (separator) {
                 '\t' -> "\\t"
