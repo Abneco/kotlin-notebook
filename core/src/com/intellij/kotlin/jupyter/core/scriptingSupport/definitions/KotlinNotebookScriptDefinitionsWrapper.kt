@@ -3,9 +3,11 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport.definitions
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandler
+import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper.Companion.create
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
-import com.intellij.openapi.extensions.ExtensionPointName
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.host.ScriptDefinition
@@ -17,7 +19,7 @@ import kotlin.script.experimental.host.ScriptDefinition
  * Note that [scriptDefinitionData] is basically data holder used in some IDEA logic, while
  * [compilationScriptDefinition] is an integral compiler representation for the Script definition itself.
  *
- * [Factory] is used to create an instance for each of the Kotlin modes.
+ * [create] calls a [Factory] service for each of K1/K2 modes.
  */
 abstract class KotlinNotebookScriptDefinitionsWrapper(
     scriptDefinition: ScriptDefinition
@@ -42,10 +44,8 @@ abstract class KotlinNotebookScriptDefinitionsWrapper(
     abstract val compilationScriptDefinition: org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 
     companion object {
-        private val EP: ExtensionPointName<Factory> = ExtensionPointName.create("com.intellij.kotlin.jupyter.core.scriptDefinitionWrapperFactory")
-
-        fun create(scriptDefinition: ScriptDefinition): KotlinNotebookScriptDefinitionsWrapper {
-            return EP.extensionList.first().create(scriptDefinition)
+        fun create(project: Project, scriptDefinition: ScriptDefinition): KotlinNotebookScriptDefinitionsWrapper {
+            return project.service<Factory>().create(scriptDefinition)
         }
     }
 }

@@ -32,5 +32,5 @@ class ScriptingSupportUpdateScheduler(
         )
     }
 
-    override fun actionInvocationDone() = Unit
+    override fun actionInvocationDone(): Unit = Unit
 }

@@ -2,8 +2,10 @@
 package com.intellij.kotlin.jupyter.core.scriptingSupport
 
 import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandler
+import com.intellij.kotlin.jupyter.core.scriptingSupport.CompiledClassifiersDefaultImportsEnhancer.Companion.create
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.extensions.ExtensionPointName
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.repl.result.SerializedCompiledScript
 
 /**
@@ -11,7 +13,7 @@ import org.jetbrains.kotlinx.jupyter.repl.result.SerializedCompiledScript
  *
  * Its main method aims to amend, if needed, additional imports configuration.
  *
- * [Factory] is used to create handler from one of the modules.
+ * [create] calls a [Factory] service for each of K1/K2 modes.
  */
 interface CompiledClassifiersDefaultImportsEnhancer : KotlinPluginModeAwareHandler {
     fun updateDefaultImports(
@@ -26,10 +28,8 @@ interface CompiledClassifiersDefaultImportsEnhancer : KotlinPluginModeAwareHandl
     }
 
     companion object {
-        private val EP: ExtensionPointName<Factory> = ExtensionPointName.create("com.intellij.kotlin.jupyter.core.classifiersDefaultImportsEnhancerFactory")
-
-        fun create(parentDisposable: Disposable): CompiledClassifiersDefaultImportsEnhancer {
-            return EP.extensionList.first().create(parentDisposable)
+        fun create(project: Project, parentDisposable: Disposable): CompiledClassifiersDefaultImportsEnhancer {
+            return project.service<Factory>().create(parentDisposable)
         }
     }
 }

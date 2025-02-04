@@ -59,6 +59,7 @@ class JupyterCompilerService(
 
     val scriptDefinitionsWrapper: KotlinNotebookScriptDefinitionsWrapper by lazy {
         KotlinNotebookScriptDefinitionsWrapper.create(
+            project,
             ScriptDefinition(
                 initialCompileConfiguration,
                 evaluationConfiguration

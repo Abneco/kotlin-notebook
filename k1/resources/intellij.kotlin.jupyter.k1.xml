@@ -16,16 +16,22 @@
 
         <highlightVisitor implementation="com.intellij.kotlin.jupyter.k1.highlighting.BeforeResolveHighlightingVisitorAdapter"/>
         <daemon.highlightInfoFilter implementation="com.intellij.kotlin.jupyter.k1.highlighting.KotlinNotebookHighlightingErrorFilter"/>
+
+        <!-- K1/K2 mode-specific services -->
+        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.PluginModeAwareScriptPresenceChecker$Factory"
+                        serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.PluginModeAwareScriptPresenceCheckerFactoryK1"/>
+        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.CompiledClassifiersDefaultImportsEnhancer$Factory"
+                        serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.CompiledClassifiersDefaultImportsEnhancerFactoryK1"/>
+        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater$Factory"
+                        serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.ScriptingSupportUpdaterFactoryK1"/>
+        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper$Factory"
+                        serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.definition.NotebookScriptDefinitionsWrapperFactoryK1"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <idea.caches.resolve.resolveOptimizingOptionsProvider
                 implementation="com.intellij.kotlin.jupyter.k1.resolve.KotlinNotebookOptimizingOptionsProvider"/>
     </extensions>
     <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.core">
-        <scriptPresenceCheckerFactory implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.PluginModeAwareScriptPresenceCheckerFactoryK1"/>
-        <scriptingSupportUpdaterFactory implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.ScriptingSupportUpdaterFactoryK1"/>
-        <classifiersDefaultImportsEnhancerFactory implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.CompiledClassifiersDefaultImportsEnhancerFactoryK1"/>
-        <scriptDefinitionWrapperFactory implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.definition.NotebookScriptDefinitionsWrapperFactoryK1"/>
         <shadowingVisitorFactory implementation="com.intellij.kotlin.jupyter.k1.highlighting.ShadowingVisitorFactoryK1"/>
         <psiHostTypeHintsInvalidator implementation="com.intellij.kotlin.jupyter.k1.codeinsight.hints.K1PsiHostTypeHintsInvalidator"/>
     </extensions>

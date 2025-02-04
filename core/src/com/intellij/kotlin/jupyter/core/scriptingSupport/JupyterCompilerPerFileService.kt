@@ -28,10 +28,10 @@ import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.allSourceRoots
 import com.intellij.kotlin.jupyter.core.util.anyOf
 import com.intellij.kotlin.jupyter.core.util.errorUnderDebug
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.runSafelyTyped
-import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
@@ -148,14 +148,14 @@ class JupyterCompilerPerFileService(
             addInitial(defaultGlobalImports)
         }
     }
-    private val defaultImportsEnhancer = CompiledClassifiersDefaultImportsEnhancer.create(this)
+    private val defaultImportsEnhancer = CompiledClassifiersDefaultImportsEnhancer.create(project, this)
 
     private val externalDependenciesProvider = ExecutedOnceBackgroundTask.create(
         3,
         this,
         ComputableWithName("Updating of Kotlin notebook dependencies", ::updateClasspathWithExternalDependencies)
     )
-    private val cachePresentsChecker = PluginModeAwareScriptPresenceChecker.create(project, virtualFile)
+    private val cachePresentsChecker = PluginModeAwareScriptPresenceChecker.create(project)
 
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterKotlinPluginScriptClassGetter(ScriptTemplateWithDisplayHelpers::class) {
@@ -546,7 +546,7 @@ class JupyterCompilerPerFileService(
                 // return if afterUpdate triggerred for another service
                 val lastScriptPath = getLastScriptArtifactPath() ?: return@async
 
-                if (!cachePresentsChecker.checkPresentInCache(lastScriptPath)) {
+                if (!cachePresentsChecker.checkPresentInCache(virtualFile, lastScriptPath)) {
                     scriptsChangePublisher.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.INCOMPLETE)
                     return@async
                 }

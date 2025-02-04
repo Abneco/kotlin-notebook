@@ -121,18 +121,6 @@
                         dynamic="true"/>
 
         <!-- Kotlin Mode Specific Factories -->
-        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.scriptPresenceCheckerFactory"
-                        interface="com.intellij.kotlin.jupyter.core.scriptingSupport.PluginModeAwareScriptPresenceChecker$Factory"
-                        dynamic="true"/>
-        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.scriptingSupportUpdaterFactory"
-                        interface="com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater$Factory"
-                        dynamic="true"/>
-        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.classifiersDefaultImportsEnhancerFactory"
-                        interface="com.intellij.kotlin.jupyter.core.scriptingSupport.CompiledClassifiersDefaultImportsEnhancer$Factory"
-                        dynamic="true"/>
-        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.scriptDefinitionWrapperFactory"
-                        interface="com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper$Factory"
-                        dynamic="true"/>
         <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.sessionLibrariesFilter"
                         interface="com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookSessionLibrariesFilter"
                         dynamic="true"/>

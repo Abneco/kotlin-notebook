@@ -13,11 +13,19 @@
         <scriptAdditionalIdeaDependenciesProvider implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptLibrariesProvider"/>
     </extensions>
 
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- K1/K2 mode-specific services-->
+        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.PluginModeAwareScriptPresenceChecker$Factory"
+                serviceImplementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.PluginModeAwareScriptPresenceCheckerFactoryK2"/>
+        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.CompiledClassifiersDefaultImportsEnhancer$Factory"
+                        serviceImplementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.imports.CompiledClassifiersDefaultImportsEnhancerFactoryK2"/>
+        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater$Factory"
+                        serviceImplementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.updater.ScriptingSupportUpdaterFactoryK2"/>
+        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper$Factory"
+                        serviceImplementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.definition.NotebookScriptDefinitionsWrapperFactoryK2"/>
+    </extensions>
+
     <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.core">
-        <scriptPresenceCheckerFactory implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.PluginModeAwareScriptPresenceCheckerFactoryK2"/>
-        <scriptingSupportUpdaterFactory implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.updater.ScriptingSupportUpdaterFactoryK2"/>
-        <classifiersDefaultImportsEnhancerFactory implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.imports.CompiledClassifiersDefaultImportsEnhancerFactoryK2"/>
-        <scriptDefinitionWrapperFactory implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.definition.NotebookScriptDefinitionsWrapperFactoryK2"/>
         <shadowingVisitorFactory implementation="com.intellij.kotlin.jupyter.k2.highlighting.ShadowingVisitorHandlerFactory"/>
         <sessionLibrariesFilter implementation="com.intellij.kotlin.jupyter.k2.projectModel.K2SessionLibrariesFilter"/>
     </extensions>
