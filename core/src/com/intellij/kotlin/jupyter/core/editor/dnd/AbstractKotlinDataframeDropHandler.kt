@@ -26,7 +26,7 @@ abstract class AbstractKotlinDataframeDropHandler(
 
     override fun generateCellCode(params: TableDataFileDropHandlerParams): String {
         val dataFilePath = createFilePath(params.tableDataFile, params.notebookFile.file, params.project)
-        val dfName = params.dataframeName ?: nameSuggester.createDataframeName(params.project, params.tableDataFile)
+        val dfName = params.dataframeName ?: nameSuggester.createDataframeName(params.project, params.tableDataFile.nameWithoutExtension)
         val importExpression = generateImportExpression(dataFilePath, params)
         return generateCode(importExpression, dfName, params.notebookFile, params.project, params.fileIndex)
     }
