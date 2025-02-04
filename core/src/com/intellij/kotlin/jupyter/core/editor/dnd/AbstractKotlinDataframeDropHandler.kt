@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.editor.dnd
 
 import com.intellij.jupyter.core.editor.handlers.DataframeVariableNameSuggester
 import com.intellij.jupyter.core.editor.handlers.LanguageTableDataFileDropHandler
-import com.intellij.jupyter.core.editor.handlers.TableDataFileDropHandlerParams
+import com.intellij.jupyter.core.editor.handlers.TableDataFileDropHandlerContext
 import com.intellij.jupyter.core.editor.handlers.createFilePath
 import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlin.idea.KotlinLanguage
@@ -21,13 +21,13 @@ abstract class AbstractKotlinDataframeDropHandler(
 
     protected abstract fun generateImportExpression(
         dataFilePath: String,
-        params: TableDataFileDropHandlerParams
+        context: TableDataFileDropHandlerContext
     ): String
 
-    override fun generateCellCode(params: TableDataFileDropHandlerParams): String {
-        val dataFilePath = createFilePath(params.tableDataFile, params.notebookFile.file, params.project)
-        val dfName = params.dataframeName ?: nameSuggester.createDataframeName(params.project, params.tableDataFile.nameWithoutExtension)
-        val importExpression = generateImportExpression(dataFilePath, params)
-        return generateCode(importExpression, dfName, params.notebookFile, params.project, params.fileIndex)
+    override fun generateCellCode(context: TableDataFileDropHandlerContext): String {
+        val dataFilePath = createFilePath(context.tableDataFile, context.notebookFile.file, context.project)
+        val dfName = context.dataframeName ?: nameSuggester.createDataframeName(context.project, context.tableDataFile.nameWithoutExtension)
+        val importExpression = generateImportExpression(dataFilePath, context)
+        return generateCode(importExpression, dfName, context.notebookFile, context.project, context.fileIndex)
     }
 }
