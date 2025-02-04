@@ -9,7 +9,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTracke
 import com.intellij.kotlin.jupyter.core.util.getJupyterFileEditor
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.splitToRanges
-import com.intellij.kotlin.jupyter.core.util.toPsiFile
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.notebooks.visualization.getCell
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -48,7 +48,7 @@ class ImpatientNotebookChangeListener(
 
         val (document, psiFile, psiCells) = withReadAccess {
             val document = FileDocumentManager.getInstance().getDocument(file.file)
-            val psiFile = file.file.toPsiFile(project)
+            val psiFile = file.file.findPsiFile(project)
             val psiCells = psiFile?.getNotebookCells()
             Triple(document, psiFile, psiCells)
         }

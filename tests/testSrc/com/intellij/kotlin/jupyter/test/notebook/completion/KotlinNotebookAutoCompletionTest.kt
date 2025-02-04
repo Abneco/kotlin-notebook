@@ -1,7 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.completion
 
-import com.intellij.kotlin.jupyter.core.util.toPsiFile
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
 import com.intellij.kotlin.jupyter.test.LookupFinishMode
 import com.intellij.kotlin.jupyter.test.runners.K1Only
@@ -90,7 +90,7 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
         val notebookFile = configureByJupyterFile()
         val psiFile = invokeAndWaitIfNeeded {
             myFixture.editor.setMode(NotebookEditorMode.EDIT)
-            notebookFile.file.toPsiFile(project)!!
+            notebookFile.file.findPsiFile(project)!!
         }
 
         doTestWithJupyterSessionAndBaseDependencies(psiFile) {

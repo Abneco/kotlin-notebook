@@ -7,7 +7,7 @@ import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.isInsideKotlinNotebookFile
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.retrieveElementUnderCaret
-import com.intellij.kotlin.jupyter.core.util.toPsiFile
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
@@ -53,7 +53,7 @@ sealed class NotebookUsagesContributor {
 
     protected fun searchWithCompiledCellScope(scope: VirtualFile, targetElement: PsiElement, @Suppress("UNUSED_PARAMETER") isFromDSLibs: Boolean): Array<PsiElement>? {
         var adjustedElement = targetElement
-        val asPsiFile = scope.toPsiFile(targetElement.project) as? JupyterFile ?: return null
+        val asPsiFile = scope.findPsiFile(targetElement.project) as? JupyterFile ?: return null
         tryResolveCompiledDeclarationInNotebook(targetElement, asPsiFile)?.let {
             adjustedElement = it
         }
@@ -70,7 +70,7 @@ sealed class NotebookUsagesContributor {
     // maybe don't needed
     protected fun searchProvidedLibrariesUsagesInNotebook(scope: VirtualFile, targetElement: PsiElement, isFromDSLibs: Boolean): Array<PsiElement>? {
         val project = targetElement.project
-        val asPsiFile = scope.toPsiFile(project) as? JupyterFile ?: return null
+        val asPsiFile = scope.findPsiFile(project) as? JupyterFile ?: return null
         val singleTargetRequestResultProcessor = SingleTargetRequestResultProcessor(targetElement)
         val refsProcessor = ProvidedLibrariesReferencesProducer()
         val processor = TextOccurenceProcessor { element: PsiElement?, offsetInElement: Int ->

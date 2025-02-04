@@ -9,7 +9,7 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookChangeEventsType
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookMoveEvent
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
-import com.intellij.kotlin.jupyter.core.util.toPsiFile
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
@@ -62,7 +62,7 @@ class NotebookStructureClassTracker(
       Disposer.register(parentDisposable, this)
     }
     private val psiFile = withReadAccess {
-        virtualFile.file.toPsiFile(project)
+        virtualFile.file.findPsiFile(project)
     }
     private val knownCellInfo = ExecutedPresentCellInfo(psiFile)
 

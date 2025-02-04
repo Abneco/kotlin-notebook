@@ -8,12 +8,11 @@ import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingManager
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.InjectedHostHasErrors
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.LOG
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
-import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
-import com.intellij.kotlin.jupyter.core.util.toPsiFile
+import com.intellij.kotlin.jupyter.core.util.kotlinNotebookLogger
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.getCell
@@ -33,8 +32,6 @@ import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import java.util.concurrent.atomic.AtomicReference
 
 object NotebookHighlightingUtilityObject {
-    internal val LOG = notebookLogger()
-
     const val SCRIPTING_MISSING_DEPENDENCY_PREFIX = "MISSING"
     const val SCRIPTING_MISSING_CLASS_ERROR = "${SCRIPTING_MISSING_DEPENDENCY_PREFIX}_SCRIPT_RECEIVER_CLASS"
     @NlsSafe
@@ -71,7 +68,7 @@ internal fun BackedNotebookVirtualFile.reactOnThemeChangedEvent(project: Project
         notebookChangedCellIndex = null
         renamingEnclosedRange = null
         notebookRangesQueuedForHL?.addAll(
-            file.toPsiFile(project)?.getNotebookCells()?.indices?.toList() ?: emptyList()
+            file.findPsiFile(project)?.getNotebookCells()?.indices?.toList() ?: emptyList()
         )
     }
 }
@@ -91,13 +88,13 @@ internal fun Document.retrieveCellIntervalUnderCaret(virtualFile: VirtualFile, p
 internal fun resetSessionMetaInformation(vFile: VirtualFile, project: Project) {
     if (project.isDisposed) return
 
-    LOG.info("Resetting session meta information")
+    kotlinNotebookLogger.info("Resetting session meta information")
 
     val hlManager = highlightingManagerFor(project, vFile)
 
     if (project.isDisposed) return
     ReadAction.run<Throwable> {
-        val psiFile = vFile.toPsiFile(project)
+        val psiFile = vFile.findPsiFile(project)
         val cells = psiFile?.getNotebookCells()
         hlManager?.dataController?.invalidateStateAfterCellExecution(null)
         val injectedManager = InjectedLanguageManager.getInstance(project)
@@ -112,7 +109,7 @@ internal fun resetSessionMetaInformation(vFile: VirtualFile, project: Project) {
         }
     }
 
-    LOG.info("Requesting restart of scripting support after session restart")
+    kotlinNotebookLogger.info("Requesting restart of scripting support after session restart")
     JupyterCompilerService.getInstance(project).requestScriptingUpdate()
 }
 

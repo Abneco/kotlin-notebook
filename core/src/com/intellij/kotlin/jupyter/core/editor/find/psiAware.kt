@@ -4,13 +4,13 @@ package com.intellij.kotlin.jupyter.core.editor.find
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiManager
 import com.intellij.util.runIf
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtScript
@@ -26,8 +26,8 @@ fun searchForElementDeclarationOrUsages(
     if (!virtualFile.isKotlinNotebook) return null
     val injectedManager = InjectedLanguageManager.getInstance(project)
     val foundData = mutableSetOf<PsiElement>()
-    val asPsiFile = PsiManager.getInstance(project).findFile(virtualFile)
-    val notebookCells = (asPsiFile?.children?.first() as? JupyterNotebook)?.psiCellList ?: return null
+    val asPsiFile = virtualFile.findPsiFile(project) ?: return null
+    val notebookCells = (asPsiFile.children.firstOrNull() as? JupyterNotebook)?.psiCellList ?: return null
     val ordinalMap =
         NotebookStructureTrackerService.getForFile(
             project,

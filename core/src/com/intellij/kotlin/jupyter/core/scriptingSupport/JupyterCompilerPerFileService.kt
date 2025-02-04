@@ -31,7 +31,7 @@ import com.intellij.kotlin.jupyter.core.util.errorUnderDebug
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.runSafelyTyped
-import com.intellij.kotlin.jupyter.core.util.toPsiFile
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
@@ -188,7 +188,7 @@ class JupyterCompilerPerFileService(
 
     fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
         return readDataWithReadAction {
-            val notebookPsiFile = virtualFile.file.toPsiFile(project)
+            val notebookPsiFile = virtualFile.file.findPsiFile(project)
             val ktFiles = notebookPsiFile.getInjectedKtFiles()
             val configurations = ktFiles.mapNotNull { ktFile ->
                 val conf = JupyterKtScriptingSupport.getConfiguration(ktFile)?.valueOrNull()
@@ -205,7 +205,7 @@ class JupyterCompilerPerFileService(
     }
 
     fun getFilesToRefine(): List<KtFileScriptSource> {
-        val notebookPsiFile = virtualFile.file.toPsiFile(project)
+        val notebookPsiFile = virtualFile.file.findPsiFile(project)
         return notebookPsiFile.getInjectedKtFiles().map { KtFileScriptSource(it) }
     }
 
@@ -555,7 +555,7 @@ class JupyterCompilerPerFileService(
                 scriptsChangePublisher.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.COMPLETE)
 
                 readAction {
-                    virtualFile.file.toPsiFile(project)?.let { psiFile ->
+                    virtualFile.file.findPsiFile(project)?.let { psiFile ->
                         DaemonCodeAnalyzer.getInstance(project).restart(psiFile)
                     }
                 }

@@ -10,7 +10,7 @@ import com.intellij.kotlin.jupyter.core.editor.find.ReferenceSearchStrategy
 import com.intellij.kotlin.jupyter.core.editor.find.searchForElementDeclarationOrUsages
 import com.intellij.kotlin.jupyter.core.editor.find.tryResolveCompiledDeclarationInNotebook
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
-import com.intellij.kotlin.jupyter.core.util.toPsiFile
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.model.psi.PsiSymbolService
 import com.intellij.model.psi.impl.targetSymbols
 import com.intellij.openapi.editor.Editor
@@ -46,7 +46,7 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
         // try fast
         val targetSymbol = targetSymbols(psiFile, offset).firstOrNull()
         val adjustedElement = if (targetSymbol != null) PsiSymbolService.getInstance().extractElementFromSymbol(targetSymbol) ?: sourceElement else sourceElement
-        (notebookFile.toPsiFile(project) as? JupyterFile)?.let {
+        (notebookFile.findPsiFile(project) as? JupyterFile)?.let {
             tryResolveCompiledDeclarationInNotebook(adjustedElement, it)?.let { foundDeclaration ->
                 sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, foundDeclaration)
                 return arrayOf(foundDeclaration)

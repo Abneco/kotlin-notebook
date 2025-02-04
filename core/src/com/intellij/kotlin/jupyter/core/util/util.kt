@@ -15,6 +15,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.InvalidVirtualFileAccessException
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
@@ -101,8 +102,15 @@ fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
     takeIfBacked(this) ?: BackedNotebookVirtualFile.Companion.takeBackend(this)
 
 @RequiresReadLock
-fun VirtualFile.toPsiFile(project: Project): PsiFile? =
-    PsiManager.getInstance(project).findFile(this)
+fun VirtualFile.findPsiFile(project: Project): PsiFile? {
+    if (!this.isValid) return null
+    return try {
+        PsiManager.getInstance(project).findFile(this)
+    } catch(e: InvalidVirtualFileAccessException) {
+        kotlinNotebookLogger.error(e)
+        null
+    }
+}
 
 internal fun PsiFile.toDocument(): Document? =
     PsiDocumentManager.getInstance(this.project).getDocument(this)

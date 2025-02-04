@@ -16,7 +16,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.ImpatientNote
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.isCurrentlySelectedInEditor
-import com.intellij.kotlin.jupyter.core.util.toPsiFile
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.Document
@@ -66,7 +66,7 @@ class NotebookHighlightingManager(
     private var _jupyterFile: PsiFile? = null
     val jupyterPsiFile: PsiFile? get() = _jupyterFile
 
-    val dataController = NotebookPerFileHighlightingMetaDataController(
+    val dataController: NotebookPerFileHighlightingMetaDataController = NotebookPerFileHighlightingMetaDataController(
         virtualFile,
         NotebookCellExecutionHighlightingHelper(project, virtualFile),
         this
@@ -151,7 +151,7 @@ class NotebookHighlightingManager(
 
             updateData(cells)
         }
-        val notebookPsiFile = virtualFile.file.toPsiFile(project)
+        val notebookPsiFile = virtualFile.file.findPsiFile(project)
         _jupyterFile = notebookPsiFile
         projectService.addListeners()
     }

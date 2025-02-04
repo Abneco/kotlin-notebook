@@ -12,7 +12,7 @@ import com.intellij.kotlin.jupyter.core.editor.typing.NotebookCellHighlightingTr
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.toDocument
-import com.intellij.kotlin.jupyter.core.util.toPsiFile
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.tryWithWriteLock
 import com.intellij.kotlin.jupyter.core.util.withWriteLock
 import com.intellij.notebooks.visualization.getCell
@@ -38,7 +38,7 @@ internal class NotebookCaretStateProcessor(
 ) : NotebookCaretMovementProcessor, NotebookDaemonFinishedEventProcessor {
 
     private val dataController = notebookHighlightingManager?.dataController
-    private val psiFile = editor.virtualFile.toPsiFile(project)
+    private val psiFile = editor.virtualFile.findPsiFile(project)
     private val document = psiFile?.toDocument()
     private val fastUpdateQueueGuardMark = AtomicReference(false)
 

@@ -8,6 +8,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUP
 import com.intellij.kotlin.jupyter.core.util.errorWithAttachments
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.logger
@@ -15,7 +16,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiManager
 import com.intellij.testFramework.LightVirtualFile
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
@@ -76,7 +76,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
     override fun getConfigurationImmediately(file: VirtualFile): ScriptCompilationConfigurationWrapper? {
         if (file !is VirtualFileWindow) return null
-        val psiFile = PsiManager.getInstance(project).findFile(file) ?: return null
+        val psiFile = file.findPsiFile(project) ?: return null
         if (psiFile !is KtFile) return null
         val conf = getDefaultConfiguration(psiFile)?.valueOrNull()
         if (conf == null) {

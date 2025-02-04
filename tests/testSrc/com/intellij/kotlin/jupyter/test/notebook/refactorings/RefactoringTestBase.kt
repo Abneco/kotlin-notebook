@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.test.notebook.refactorings
 
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
 import com.intellij.jupyter.core.jupyter.editor.JupyterDSFileEditorProvider
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
@@ -13,7 +14,6 @@ import com.intellij.openapi.fileEditor.FileEditorProvider
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiManager
 import java.io.File
 
 abstract class RefactoringTestBase(private val refactoringActionId: String) : KotlinNotebookBaseTestCase() {
@@ -40,7 +40,7 @@ abstract class RefactoringTestBase(private val refactoringActionId: String) : Ko
             val caretModel = myFixture.editor.caretModel
             caretInitializer(caretModel)
 
-            PsiManager.getInstance(project).findFile(originalVirtualFile)!!
+            originalVirtualFile.findPsiFile(project)!!
         }
 
         doEditorActionWithSession(psiFile)

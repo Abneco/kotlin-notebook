@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.test
 
 import com.intellij.injected.editor.DocumentWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.util.toPsiFile
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
@@ -44,7 +44,7 @@ abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCas
         val notebookPsiFile = invokeAndWaitIfNeeded {
             _notebookFile = configureByJupyterFile()
             myFixture.editor.setMode(NotebookEditorMode.EDIT)
-            _notebookFile?.file?.toPsiFile(project)!!
+            _notebookFile?.file?.findPsiFile(project)!!
         }
         originalVirtualFile = myFixture.file.virtualFile
 
