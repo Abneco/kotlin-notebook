@@ -133,6 +133,9 @@
         <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.scriptDefinitionWrapperFactory"
                         interface="com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper$Factory"
                         dynamic="true"/>
+        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.sessionLibrariesFilter"
+                        interface="com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookSessionLibrariesFilter"
+                        dynamic="true"/>
 
         <!-- shadowing -->
         <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.shadowingVisitorFactory"

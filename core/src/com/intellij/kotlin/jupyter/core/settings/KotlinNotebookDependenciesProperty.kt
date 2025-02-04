@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.jupyter.core.jupyter.nbformat.notifyNotebookChanged
 import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
+import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookSessionLibrariesFilter
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
@@ -154,16 +155,20 @@ internal fun getSuitableModules(project: Project): List<Module> {
 
 /**
  * Returns a list of libraries from the given project that are suitable for use in a Kotlin Notebook.
- * This list excludes a "Permanent Script Dependencies" and unnamed libraries
+ * This list excludes "Permanent Script Dependencies", special libraries with backend artifacts and unnamed libraries
  * (technically, a module-level library can have an empty name).
  *
  * @param project the project to get the libraries for.
  * @return a `List` of suitable `Library` objects for the given project.
  */
 internal fun getSuitableLibraries(project: Project): List<Library> {
-    return LibraryTablesRegistrar.getInstance().getLibraryTable(project).libraries.filter {
+    val projectLibraries = LibraryTablesRegistrar.getInstance()
+        .getLibraryTable(project).libraries
+
+    val librariesCandidates = projectLibraries.filter {
         it.name != KotlinNotebookPermanentIndexService.SCRIPT_DEPENDENCIES_LIBRARY_NAME && it.name != null
     }
+    return KotlinNotebookSessionLibrariesFilter.filterSessionLibraries(librariesCandidates)
 }
 
 fun KotlinNotebookDependencies.isAffectedBy(changedLibrary: Library?, changedModules: Collection<Module>): Boolean {

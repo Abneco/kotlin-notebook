@@ -13,10 +13,12 @@ import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
 import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 
+internal const val NOTEBOOK_DEPENDENCIES_MODULE_PREFIX = "$KOTLIN_SCRIPTS_MODULE_NAME.Notebook.Dependencies "
+
 fun VirtualFile.toK2RuntimeDependencyLibraryName(project: Project): String {
     val presentableName = getRelativePathFromProjectRoot(project)?.toString() ?: nameWithoutExtension
 
-    return "$KOTLIN_SCRIPTS_MODULE_NAME.Notebook.Dependencies for ${presentableName}"
+    return "$NOTEBOOK_DEPENDENCIES_MODULE_PREFIX for ${presentableName}"
 }
 
 internal fun VirtualFileUrlManager.getNotebookDependenciesAsLibraryEntity(

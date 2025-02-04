@@ -19,5 +19,6 @@
         <classifiersDefaultImportsEnhancerFactory implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.imports.CompiledClassifiersDefaultImportsEnhancerFactoryK2"/>
         <scriptDefinitionWrapperFactory implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.definition.NotebookScriptDefinitionsWrapperFactoryK2"/>
         <shadowingVisitorFactory implementation="com.intellij.kotlin.jupyter.k2.highlighting.ShadowingVisitorHandlerFactory"/>
+        <sessionLibrariesFilter implementation="com.intellij.kotlin.jupyter.k2.projectModel.K2SessionLibrariesFilter"/>
     </extensions>
 </idea-plugin>
