@@ -5,6 +5,7 @@
         <module name="intellij.jupyter.tables"/>
         <module name="intellij.scientific.tables"/>
         <module name="intellij.notebooks.visualization"/>
+        <module name="intellij.grid.core.impl"/>
     </dependencies>
 
     <extensions defaultExtensionNs="com.intellij">
