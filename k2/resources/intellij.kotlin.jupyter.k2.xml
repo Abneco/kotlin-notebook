@@ -1,7 +1,7 @@
 <idea-plugin package="com.intellij.kotlin.jupyter.k2">
 
     <dependencies>
-        <plugin id="kotlin.plugin.k2"/>
+        <plugin id="com.intellij.modules.kotlin.k2"/>
         <plugin id="org.jetbrains.plugins.kotlin.jupyter"/>
         <module name="intellij.notebooks.jupyter.core"/>
         <module name="intellij.jupyter.core"/>
