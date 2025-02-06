@@ -153,6 +153,11 @@
                 order="first"/>
     </extensions>
 
+    <extensions defaultExtensionNs="com.intellij.jupyter.core">
+        <jupyter.data.input.run.jupyterDataInputErrorMessageFactory
+                implementation="com.intellij.kotlin.jupyter.core.editor.dnd.JupyterDataInputKotlinErrorMessageFactory"/>
+    </extensions>
+
     <extensions defaultExtensionNs="com.intellij">
         <registryKey key="kotlin.notebook.disable.jupyter.core.actions" defaultValue="false"
                      description="Disable some of core Jupyter Notebook actions such as creation of Python Jupyter Notebook"/>

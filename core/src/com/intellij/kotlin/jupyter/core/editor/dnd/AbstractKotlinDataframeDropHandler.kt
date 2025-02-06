@@ -53,10 +53,10 @@ abstract class AbstractKotlinDataframeDropHandler(
         getIsDataFrameInClasspath: () -> Boolean,
     ): String =
         listOfNotNull(
-            "%use dataframe\n".takeIf { fileIndex == 0 && getIsDataFrameInClasspath() },
+            "%use dataframe\n".takeIf { fileIndex == 0 && !getIsDataFrameInClasspath() },
             """
-        val $dfName = $importExpression
-        $dfName
-        """.trimIndent()
+            val $dfName = $importExpression
+            $dfName
+            """.trimIndent()
         ).joinToString("")
 }
