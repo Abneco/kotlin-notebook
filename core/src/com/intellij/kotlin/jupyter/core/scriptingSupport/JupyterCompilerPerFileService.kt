@@ -7,7 +7,6 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNoteb
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
@@ -532,20 +531,12 @@ class JupyterCompilerPerFileService(
     }
 
     private inner class ScriptingSupportUpdateEventProcessor : ScriptingSupportUpdateEventsListener {
-        // means external dependencies are present, time to restart
-        private fun ScriptCompilationConfiguration.restartHLIfNeeded() {
-            if (this != project.baseScriptingCompilationConfiguration) return
-            if (ApplicationManager.getApplication().isUnitTestMode) return
-
-            NotebookHighlightingService.getForFile(project, virtualFile).restartAnalysing()
-        }
         private fun updateLastStableConfiguration() {
             while (true) {
                 val lastStableConf = lastStableConfiguration.get()
                 val updatedConfiguration = handleBeforeCompiling(project.baseScriptingCompilationConfiguration)
 
                 if (lastStableConfiguration.compareAndSet(lastStableConf, updatedConfiguration)) {
-                    lastStableConf.restartHLIfNeeded()
                     LOG.info("Cached configuration updated for ${virtualFile.file.name}!")
                     break
                 }
