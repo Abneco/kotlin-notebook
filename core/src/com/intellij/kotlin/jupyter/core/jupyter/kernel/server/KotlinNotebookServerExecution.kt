@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 
+import com.intellij.ide.ProcessCloseConfirmation
 import com.intellij.jupyter.core.jupyter.connections.JupyterConnectionParameters
 import com.intellij.jupyter.core.jupyter.connections.auth.token.JupyterTokenAuthParams
 import com.intellij.jupyter.core.jupyter.connections.managed.state.JupyterServerStarted
@@ -26,7 +27,7 @@ class KotlinNotebookServerExecution : JupyterServerExecution {
     override val state: JupyterServerState
         get() = JupyterServerStarted(emptyKotlinConnectionParameters)
 
-    override fun stopServer(): Job {
+    override fun stopOrDetach(decision: ProcessCloseConfirmation): Job {
         return CompletableDeferred(Unit)
     }
 
