@@ -91,7 +91,7 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
 
 /**
  * This service is created for every Kotlin notebook file
- * and provides a scripting support for injected Kotlin snippets
+ * and provides scripting support for injected Kotlin snippets
  * including magics handling, storing dependencies, and a list
  * of compiled scripts.
  *
@@ -168,6 +168,7 @@ class JupyterCompilerPerFileService(
 
     private val scriptingSupportAfterUpdateListener = ScriptingSupportUpdateEventProcessor()
 
+    val stableConfiguration: ScriptCompilationConfiguration get() = lastStableConfiguration.get()
     val executedCellsCount: Int get() = directoryCounter.get()
 
     init {
@@ -528,7 +529,7 @@ class JupyterCompilerPerFileService(
 
             NotebookHighlightingService.getForFile(project, virtualFile).restartAnalysing()
         }
-        private fun updateLastKnownConfiguration() {
+        private fun updateLastStableConfiguration() {
             while (true) {
                 val lastStableConf = lastStableConfiguration.get()
                 val updatedConfiguration = handleBeforeCompiling(project.baseScriptingCompilationConfiguration)
@@ -551,7 +552,7 @@ class JupyterCompilerPerFileService(
                     return@async
                 }
 
-                updateLastKnownConfiguration()
+                updateLastStableConfiguration()
                 scriptsChangePublisher.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.COMPLETE)
 
                 readAction {

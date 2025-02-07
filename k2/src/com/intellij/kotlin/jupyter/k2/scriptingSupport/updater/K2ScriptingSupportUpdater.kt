@@ -23,6 +23,8 @@ import org.jetbrains.kotlin.idea.core.script.k2.K2ScriptDefinitionProvider
 import org.jetbrains.kotlin.idea.core.script.scriptConfigurationsSourceOfType
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
+import kotlin.script.experimental.api.ScriptCompilationConfiguration
+import kotlin.script.experimental.api.dependencies
 import kotlin.script.experimental.api.valueOrNull
 
 internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) : ScriptingSupportUpdater {
@@ -106,11 +108,24 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                         source
                     )
 
+                    /**
+                     * Data race preventing trick:
+                     * pass stable configuration to the scripting cache,
+                     * but set dependencies from the refined (new) one, so
+                     * thus libraryRoots of the module will be up to date.
+                     */
+                    val stableConfWithUpdatedLocations = ScriptCompilationConfiguration(notebookService.stableConfiguration) {
+                        val updatedSources = refinedConf[ScriptCompilationConfiguration.dependencies]
+                        if (updatedSources != null) {
+                            dependencies(updatedSources)
+                        }
+                    }
+
                     KotlinNotebookScriptModel(
                         ktFileScriptSource.virtualFile,
                         ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
                             source,
-                            refinedConf
+                            stableConfWithUpdatedLocations
                         )
                     )
                 }
