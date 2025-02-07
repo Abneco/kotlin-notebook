@@ -28,12 +28,12 @@ abstract class AbstractKotlinDataframeDropHandler(
 
     override fun generateCellCode(context: TableDataFileDropHandlerContext): String {
         val dataFilePath = context.resolveFilePath()
-        val dfName = context.dataframeName ?: nameSuggester.createDataframeName(context.project, context.dataFileNameWithoutExtension)
+        val dfName = context.dataframeName ?: nameSuggester.createDataframeName(context.projectOrNull, context.dataFileNameWithoutExtension)
         val importExpression = generateImportExpression(dataFilePath, context)
 
         return generateCode(importExpression, dfName, context.fileIndex, getIsDataFrameInClasspath = {
             when (val pathData = context.pathData) {
-                is TableDataFileDropHandlerContext.PathData.FileBased -> isDataFrameInClasspath(pathData.notebookFile, context.project)
+                is TableDataFileDropHandlerContext.PathData.FileBased -> isDataFrameInClasspath(pathData.notebookFile, pathData.project)
                 is TableDataFileDropHandlerContext.PathData.Lightweight -> false
             }
         })
