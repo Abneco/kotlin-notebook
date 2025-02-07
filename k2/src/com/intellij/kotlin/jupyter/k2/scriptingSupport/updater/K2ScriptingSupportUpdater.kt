@@ -69,6 +69,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         val notebooks = openFiles
             .filter { it.fileType is JupyterFileType }
             .mapNotNull { it.toKotlinNotebookBackedFile() }
+            .filter { JupyterCompilerService.getForFile(project, it).needsConfigurationUpdate }
 
         runCatching {
             updateK2Impl(project, notebooks)
@@ -114,7 +115,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                      * but set dependencies from the refined (new) one, so
                      * thus libraryRoots of the module will be up to date.
                      */
-                    val stableConfWithUpdatedLocations = ScriptCompilationConfiguration(notebookService.stableConfiguration) {
+                    val stableConfWithUpdatedDependenciesRoots = ScriptCompilationConfiguration(notebookService.stableConfiguration) {
                         val updatedSources = refinedConf[ScriptCompilationConfiguration.dependencies]
                         if (updatedSources != null) {
                             dependencies(updatedSources)
@@ -125,7 +126,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                         ktFileScriptSource.virtualFile,
                         ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
                             source,
-                            stableConfWithUpdatedLocations
+                            stableConfWithUpdatedDependenciesRoots
                         )
                     )
                 }

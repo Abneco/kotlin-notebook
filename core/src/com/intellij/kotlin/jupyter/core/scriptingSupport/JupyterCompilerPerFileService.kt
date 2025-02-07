@@ -155,7 +155,7 @@ class JupyterCompilerPerFileService(
         this,
         ComputableWithName("Updating of Kotlin notebook dependencies", ::updateClasspathWithExternalDependencies)
     )
-    private val cachePresentsChecker = PluginModeAwareScriptPresenceChecker.create(project)
+    private val scriptConsistencyVerifier = ScriptingEntitiesConsistencyVerifier.create(project)
 
     private val implicitsList = KotlinImplicitReceiversList()
     private val classGetter = JupyterKotlinPluginScriptClassGetter(ScriptTemplateWithDisplayHelpers::class) {
@@ -170,6 +170,16 @@ class JupyterCompilerPerFileService(
 
     val stableConfiguration: ScriptCompilationConfiguration get() = lastStableConfiguration.get()
     val executedCellsCount: Int get() = directoryCounter.get()
+
+    /**
+     * To determine whatever this [service] has
+     * pending update to Scripting infrastructure.
+     */
+    val needsConfigurationUpdate: Boolean get() = !scriptConsistencyVerifier
+        .isScriptFileConfigurationConsistentWithModel(
+            virtualFile,
+            handleBeforeCompiling(project.baseScriptingCompilationConfiguration)
+        )
 
     init {
         notebookLogger().assertTrue(virtualFile.file.isKotlinNotebook) { "$virtualFile is not a Kotlin Jupyter notebook" }
@@ -547,7 +557,7 @@ class JupyterCompilerPerFileService(
                 // return if afterUpdate triggerred for another service
                 val lastScriptPath = getLastScriptArtifactPath() ?: return@async
 
-                if (!cachePresentsChecker.checkPresentInCache(virtualFile, lastScriptPath)) {
+                if (!scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, lastScriptPath)) {
                     scriptsChangePublisher.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.INCOMPLETE)
                     return@async
                 }

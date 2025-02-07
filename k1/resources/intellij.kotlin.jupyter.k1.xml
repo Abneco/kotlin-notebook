@@ -18,8 +18,8 @@
         <daemon.highlightInfoFilter implementation="com.intellij.kotlin.jupyter.k1.highlighting.KotlinNotebookHighlightingErrorFilter"/>
 
         <!-- K1/K2 mode-specific services -->
-        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.PluginModeAwareScriptPresenceChecker$Factory"
-                        serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.PluginModeAwareScriptPresenceCheckerFactoryK1"/>
+        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier$Factory"
+                        serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.ScriptingEntitiesConsistencyVerifierFactoryK1"/>
         <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.CompiledClassifiersDefaultImportsEnhancer$Factory"
                         serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.CompiledClassifiersDefaultImportsEnhancerFactoryK1"/>
         <projectService serviceInterface="com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater$Factory"
