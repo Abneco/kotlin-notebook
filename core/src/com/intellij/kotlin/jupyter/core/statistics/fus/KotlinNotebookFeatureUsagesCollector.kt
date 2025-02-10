@@ -69,12 +69,23 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             var markdownCellsCount = 0
             var codeCellsCount = 0
             notebook.computeCells().forEach { cell ->
-                when(cell.cellType) {
-                    JupyterCellType.RAW, JupyterCellType.HEADING, JupyterCellType.HTML, JupyterCellType.UNDEFINED -> {}
+                when (cell.cellType) {
+                    JupyterCellType.RAW,
+                    JupyterCellType.HEADING,
+                    JupyterCellType.HTML,
+                    JupyterCellType.UNDEFINED -> {
+                        //nothing
+                    }
                     JupyterCellType.MARKDOWN -> {
                         ++markdownCellsCount
                     }
-                    JupyterCellType.CODE_OR_MAGIC, JupyterCellType.CODE, JupyterCellType.MAGIC, JupyterCellType.SQL, JupyterCellType.DATA_IMPORT -> {
+                    JupyterCellType.CODE_OR_MAGIC,
+                    JupyterCellType.CODE,
+                    JupyterCellType.MAGIC,
+                    JupyterCellType.SQL,
+                    JupyterCellType.DATA_INPUT,
+                    JupyterCellType.DATA_IMPORT,
+                    JupyterCellType.DATA_WRANGLER -> {
                         ++codeCellsCount
                     }
                 }
