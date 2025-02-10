@@ -2,12 +2,11 @@
 package com.intellij.kotlin.jupyter.test
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
-import com.intellij.jupyter.core.jupyter.nbformat.CELL_MARKER
-import com.intellij.jupyter.core.jupyter.nbformat.MARKDOWN_CELL_SUFFIX
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.ExpectedHighlightingData
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
+import org.jetbrains.plugins.notebooks.psi.jupyter.lexer.JupyterNotebookCellHeader
 import org.junit.Assert.assertTrue
 
 /**
@@ -32,7 +31,8 @@ class HighlightingResult(
         assertTrue(result.none { it.description != null && it.description == scriptingMissingClassError })
 
         val isHasShadowed = result.any { it.description != null && (it.description.startsWith("Not yet provided symbol") || it.description.startsWith("Improper usage")) }
-        assertTrue(result.none { it.text.contains(CELL_MARKER) || it.text.contains("$CELL_MARKER ${MARKDOWN_CELL_SUFFIX}") })
+        assertTrue(result.none { it.text.contains(JupyterNotebookCellHeader.CELL_MARKER) || it.text.contains(
+            "${JupyterNotebookCellHeader.CELL_MARKER} ${JupyterNotebookCellHeader.MARKDOWN_CELL_SUFFIX}") })
 
         when (strategy) {
             HighlightCheckStrategy.OnlyValidSyntax -> {

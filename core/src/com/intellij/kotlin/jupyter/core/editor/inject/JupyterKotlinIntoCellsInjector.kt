@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.core.editor.inject
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.nbformat.CELL_MARKER
 import com.intellij.jupyter.core.jupyter.nbformat.nonCodeCellSuffixes
 import com.intellij.kotlin.jupyter.core.language.meta.JKTMetaFileType
 import com.intellij.kotlin.jupyter.core.language.meta.JupyterKtMetaLanguage
@@ -18,11 +17,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import org.jetbrains.plugins.notebooks.psi.core.api.psi.NotebookPsiCell
+import org.jetbrains.plugins.notebooks.psi.jupyter.lexer.JupyterNotebookCellHeader.CELL_MARKER
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterPsiCellImpl
 import java.util.concurrent.atomic.AtomicInteger
 
 private val ELEMENTS_TO_INJECT = mutableListOf(JupyterPsiCellImpl::class.java)
-private val NON_CODE_CELL_REGEX = Regex("""$CELL_MARKER(${nonCodeCellSuffixes.joinToString("|")})\n?""")
+private val NON_CODE_CELL_REGEX = Regex("""${CELL_MARKER}(${nonCodeCellSuffixes.joinToString("|")})\n?""")
 
 val NotebookPsiCell.isNonCode get() = cellMarker.text.matches(NON_CODE_CELL_REGEX)
 
