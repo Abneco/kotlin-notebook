@@ -24,6 +24,7 @@ import com.intellij.platform.workspace.jps.entities.modifyLibraryEntity
 import com.intellij.platform.workspace.jps.entities.modifyModuleEntity
 import com.intellij.platform.workspace.jps.entities.sourceRoots
 import com.intellij.platform.workspace.storage.MutableEntityStorage
+import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
 import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
@@ -33,6 +34,10 @@ import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionsSource
 import java.nio.file.Path
 import kotlin.script.experimental.api.asSuccess
 
+/**
+ * Special marker used to distinguish Kotlin Notebook-related entities
+ */
+class KotlinNotebookScriptEntitySource(virtualFileUrl: VirtualFileUrl) : KotlinScriptEntitySource(virtualFileUrl)
 
 /**
  * K2 entry point that manages script dependencies for Kotlin notebooks within a given project.
@@ -76,7 +81,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
 
         workspaceModel.update("Updating Kotlin Notebook scripting modules") { model ->
             // add new data, target only the base K2 script source
-            model.replaceBySource({ it is KotlinScriptEntitySource }, tmp)
+            model.replaceBySource({ it is KotlinNotebookScriptEntitySource }, tmp)
         }
     }
 
@@ -144,7 +149,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
                 notebookModuleConfiguration.sdkInfo
                     ?.let { SdkDependency(SdkId(it.name, it.sdkType.name)) }
 
-            val source = KotlinScriptEntitySource(scriptFile.toVirtualFileUrl(WorkspaceModel.getInstance(project).getVirtualFileUrlManager()))
+            val source = KotlinNotebookScriptEntitySource(scriptFile.toVirtualFileUrl(WorkspaceModel.getInstance(project).getVirtualFileUrlManager()))
 
             val dependencies = listOfNotNull(
                 LibraryDependency(runtimeLibrary.symbolicId, false, DependencyScope.COMPILE),

@@ -10,7 +10,6 @@ import com.intellij.platform.workspace.jps.entities.LibraryEntity
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrlManager
 import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
-import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 
 internal const val NOTEBOOK_DEPENDENCIES_MODULE_PREFIX = "$KOTLIN_SCRIPTS_MODULE_NAME.Notebook.Dependencies "
@@ -28,7 +27,7 @@ internal fun VirtualFileUrlManager.getNotebookDependenciesAsLibraryEntity(
     configuration: ScriptCompilationConfigurationWrapper
 ): LibraryEntity {
     val url = notebookFile.toVirtualFileUrl(this)
-    val notebookEntity = KotlinScriptEntitySource(url)
+    val notebookEntity = KotlinNotebookScriptEntitySource(url)
     val name = notebookFile.toK2RuntimeDependencyLibraryName(project)
     return entityStorage
         .createOrUpdateLibraryForNotebookDependencies(name, project, notebookEntity, configuration)
