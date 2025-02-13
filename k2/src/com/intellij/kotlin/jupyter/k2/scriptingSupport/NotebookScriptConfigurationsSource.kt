@@ -6,6 +6,7 @@ import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
 import com.intellij.kotlin.jupyter.core.util.getRelativePathFromProjectRoot
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -56,7 +57,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
         project.scriptDefinitionsSourceOfType<KotlinNotebookScriptDefinitionsSource>()
 
     override suspend fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
-        val sdk = ProjectRootManager.getInstance(project).projectSdk
+        val sdk = ProjectRootManager.getInstance(project).projectSdk ?: ProjectJdkTable.getInstance().allJdks.firstOrNull()
         if (sdk == null) {
             thisLogger().warn("No JDK SDK is set for the project")
         }
