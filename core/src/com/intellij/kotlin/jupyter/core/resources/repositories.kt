@@ -3,13 +3,13 @@ package com.intellij.kotlin.jupyter.core.resources
 
 import com.intellij.jarRepository.RemoteRepositoryDescription
 
-private val INTELLIJ_DEPS_REPO = RemoteRepositoryDescription(
+private val INTELLIJ_DEPENDENCIES_REPO = RemoteRepositoryDescription(
     "intellij-dependencies",
     "Intellij Dependencies",
     "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies",
 )
 
-val defaultRemoteArtifactsRepositories = listOf(
+val defaultRemoteArtifactsRepositories: List<RemoteRepositoryDescription> = listOf(
     RemoteRepositoryDescription.MAVEN_CENTRAL,
-    // INTELLIJ_DEPS_REPO,
+    // INTELLIJ_DEPENDENCIES_REPO,
 )
