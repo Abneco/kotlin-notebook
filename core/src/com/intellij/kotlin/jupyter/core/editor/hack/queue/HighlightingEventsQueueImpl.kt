@@ -10,6 +10,7 @@ import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicReference
 
 internal class HighlightingEventsQueueImpl(
     private val project: Project,
@@ -19,8 +20,10 @@ internal class HighlightingEventsQueueImpl(
         private val LOG = notebookLogger()
     }
 
-    private val eventsQueue: MutableCollection<HighlightingEvent> = ConcurrentLinkedQueue()
-    private var psiFile: PsiFile? = notebookVirtualFile.file.findPsiFile(project)
+    private val eventsQueue: ConcurrentLinkedQueue<HighlightingEvent> = ConcurrentLinkedQueue()
+    private val psiFileRef = AtomicReference<PsiFile?>(
+        notebookVirtualFile.file.findPsiFile(project)
+    )
 
     private fun mergeEvents(events: List<HighlightingEvent>) : HighlightingEvent? {
         if (events.isEmpty()) {
@@ -50,27 +53,34 @@ internal class HighlightingEventsQueueImpl(
     override fun pushEvent(event: HighlightingEvent) {
         eventsQueue.add(event)
 
+        // todo: conditional?
         requestHLRestart()
     }
 
-    override fun pullEvents(): HighlightingEvent {
-        val events = eventsQueue.toList()
-        val mergedEvent = mergeEvents(events)
-        if (mergedEvent == null) {
-            return HighlightingEvent(0, null, emptySet())
+    override fun pullEvents(): HighlightingEvent? {
+        val events = mutableListOf<HighlightingEvent>()
+        
+        // Drain all events atomically
+        while (true) {
+            val event = eventsQueue.poll() ?: break
+            events.add(event)
         }
-
-        eventsQueue.removeAll(events)
-        return mergedEvent
+        
+        return mergeEvents(events)
     }
 
     override fun clear() {
         eventsQueue.clear()
-        psiFile = null
+        psiFileRef.set(null)
     }
 
     private fun requestHLRestart() {
-        val psi = psiFile ?: notebookVirtualFile.file.findPsiFile(project)
+        val psi = psiFileRef.get() ?: run {
+            val foundPsi = notebookVirtualFile.file.findPsiFile(project)
+            psiFileRef.set(foundPsi)
+            foundPsi
+        }
+        
         if (psi == null) {
             LOG.error("Cannot find psi file for notebook file: ${notebookVirtualFile.file}")
             return

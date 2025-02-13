@@ -163,15 +163,6 @@ internal class InjectedFilesDataTracker
         return file == targetPsiFile
     }
 
-    private fun numberOfNonWhiteSpaceLeaves(ktFile: KtFile): Int {
-        return SyntaxTraverser.psiTraverser(ktFile)
-            .traverse(TreeTraversal.LEAVES_DFS)
-            .count { psiLeaf ->
-                PsiUtilCore.getElementType(psiLeaf) != TokenType.WHITE_SPACE
-                        && psiLeaf !is KtPackageDirective
-            }
-    }
-
     private fun Collection<PsiFile>.toCellsIndexes(jupyterPsiFile: PsiFile?, manager: InjectedLanguageManager): List<Int> {
         val cells = jupyterPsiFile.getNotebookCells()
         return mapNotNull { injected -> cells.indexOf(manager.getInjectionHost(injected)) }
@@ -195,4 +186,14 @@ internal class InjectedFilesDataTracker
     companion object {
         internal const val INJECTED_SYNTAX_LAYER_BORDER = HighlighterLayer.CARET_ROW - 1
     }
+}
+
+
+internal fun numberOfNonWhiteSpaceLeaves(ktFile: KtFile): Int {
+    return SyntaxTraverser.psiTraverser(ktFile)
+        .traverse(TreeTraversal.LEAVES_DFS)
+        .count { psiLeaf ->
+            PsiUtilCore.getElementType(psiLeaf) != TokenType.WHITE_SPACE
+                    && psiLeaf !is KtPackageDirective
+        }
 }

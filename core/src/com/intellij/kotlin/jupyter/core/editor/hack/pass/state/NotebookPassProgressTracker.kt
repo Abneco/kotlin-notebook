@@ -1,0 +1,157 @@
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.core.editor.hack.pass.state
+
+import com.intellij.concurrency.ConcurrentCollectionFactory
+import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingComponent
+import com.intellij.kotlin.jupyter.core.editor.hack.NotebookPassConfiguration
+import com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass.InjectedFilesDataTracker.Companion.INJECTED_SYNTAX_LAYER_BORDER
+import com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass.numberOfNonWhiteSpaceLeaves
+import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ex.MarkupModelEx
+import com.intellij.openapi.editor.markup.HighlighterLayer
+import com.intellij.openapi.editor.markup.RangeHighlighter
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiLanguageInjectionHost
+import org.jetbrains.kotlin.psi.KtFile
+
+internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingComponent() {
+    internal val leftIndexes: Collection<Int>
+        get() = currentConfiguration.filesToHL.values.map { it.notebookCellIndex } - passConfiguration.completedFiles
+    private val injectedFilesDataRegistry = ConcurrentCollectionFactory.createConcurrentMap<KtFile, InjectedFileData>()
+
+    /**
+     * Accumulator of pass information
+     */
+    private lateinit var currentConfiguration: NotebookPassConfiguration
+    override val passConfiguration: NotebookPassConfiguration
+        get() = currentConfiguration
+
+    override fun passStarting(
+        file: PsiFile,
+        focusCellIndex: Int,
+        indexesToHighlight: Collection<Int>,
+        cellsToHighlight: List<PsiLanguageInjectionHost>,
+    ) {
+        val indexesMergedFromPreviousPass = leftIndexes + indexesToHighlight
+        injectedFilesDataRegistry.clear()
+
+        val newConfiguration = createPassNewConfiguration(
+            focusCellIndex,
+            cellsToHighlight,
+            indexesMergedFromPreviousPass
+        )
+
+        currentConfiguration = newConfiguration
+    }
+
+    // Might better as Int, not KtFile
+    override val leftToHighlight: Collection<KtFile>
+        get() {
+            val leftIndexes = leftIndexes.toSet()
+
+            return currentConfiguration.filesToHL.filter { (_, data) ->
+                data.notebookCellIndex !in leftIndexes
+            }.map { (file, _) -> file }
+        }
+
+    override fun fileHighlighted(file: KtFile) {
+        val injectedFileData = currentConfiguration.filesToHL[file]
+        if (injectedFileData != null) {
+            passConfiguration.completedFiles.add(injectedFileData.notebookCellIndex)
+        }
+
+    }
+
+    private fun createPassNewConfiguration(
+        focusCellIndex: Int,
+        cells: List<PsiLanguageInjectionHost>,
+        targetIndexes: Collection<Int>
+    ): NotebookPassConfiguration {
+        // todo: assert?
+        if (cells.isEmpty()) {
+            return NotebookPassConfiguration(
+                focusCellIndex,
+                emptyMap(),
+                null,
+                ConcurrentCollectionFactory.createConcurrentSet()
+            )
+        }
+
+        val project = cells.first().project
+        val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
+        // todo: is it ok to create each time?
+        val finishedFilesIndexes = ConcurrentCollectionFactory.createConcurrentSet<Int>()
+        var targetPsiFile: KtFile? = null
+
+        for (ind in targetIndexes) {
+            val psiCell = cells.getOrNull(ind) ?: continue
+            val injectedPsiFiles = injectedLanguageManager.getInjectedPsiFiles(psiCell)
+            if (injectedPsiFiles == null) {
+                continue
+            }
+
+            // skip non Kt
+            if (injectedPsiFiles.none { f -> f.first is KtFile }) {
+                finishedFilesIndexes.add(ind)
+                continue
+            }
+            injectedPsiFiles.firstOrNull { f -> f.first is KtFile }?.first?.let { ktFile ->
+                val ktFileRange = injectedLanguageManager.injectedToHost(ktFile, ktFile.textRange)
+                injectedFilesDataRegistry[ktFile as KtFile] = InjectedFileData(
+                    ind,
+                    ktFile,
+                    ktFileRange,
+                    psiCell,
+                    numberOfNonWhiteSpaceLeaves(ktFile)
+                )
+
+                if (ind == focusCellIndex) {
+                    targetPsiFile = ktFile
+                }
+            }
+        }
+
+        return NotebookPassConfiguration(
+            focusCellIndex,
+            injectedFilesDataRegistry,
+            targetPsiFile,
+            finishedFilesIndexes
+        )
+    }
+
+    override fun getRemainingIndexesAfterPassFinished(editor: Editor): Collection<Int> {
+        val markupModelEx = editor.markupModel as? MarkupModelEx ?: return emptySet()
+
+        val data = injectedFilesDataRegistry
+        val skippedFiles = mutableSetOf<Int>()
+
+        for ((_, fileData) in data) {
+            val range = fileData.ktFileRange
+            if (range.length == 0) continue
+
+            fileData.processedTokens.set(0)
+            val seenHighlighters = mutableSetOf<RangeHighlighter>()
+
+            markupModelEx.processRangeHighlightersOverlappingWith(range.startOffset, range.endOffset) {
+                // injected syntax is greater than regular SYNTAX
+                if ((it.layer < INJECTED_SYNTAX_LAYER_BORDER && it.layer != HighlighterLayer.ERROR) && seenHighlighters.add(it)) {
+                    fileData.processedTokens.incrementAndGet()
+                }
+                true
+            }
+            val tokens = seenHighlighters.size
+
+            if (tokens < fileData.totalTokens - 1) {
+                skippedFiles.add(fileData.notebookCellIndex)
+            }
+        }
+
+        return skippedFiles
+    }
+
+    override fun dispose() {
+        super.dispose()
+        injectedFilesDataRegistry.clear()
+    }
+}

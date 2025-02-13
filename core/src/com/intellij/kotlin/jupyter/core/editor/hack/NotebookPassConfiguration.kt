@@ -1,8 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.hack
 
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass.InjectedFilesDataTracker
-import com.intellij.openapi.editor.markup.RangeHighlighter
+import com.intellij.kotlin.jupyter.core.editor.hack.pass.state.InjectedFileData
 import org.jetbrains.kotlin.psi.KtFile
 
 /**
@@ -11,7 +10,7 @@ import org.jetbrains.kotlin.psi.KtFile
  */
 internal data class NotebookPassConfiguration(
     val focusCell: Int,
-    val filesToHL: Map<KtFile, InjectedFilesDataTracker.InjectedFileData>,
-    val completedFiles: MutableSet<Int>,
-    val errorHighlighters: MutableSet<RangeHighlighter>
+    val filesToHL: Map<KtFile, InjectedFileData>,
+    val targetKtFile: KtFile?,
+    val completedFiles: MutableSet<Int>
 )

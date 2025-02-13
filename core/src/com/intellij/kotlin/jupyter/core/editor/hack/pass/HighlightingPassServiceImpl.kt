@@ -2,6 +2,153 @@
 package com.intellij.kotlin.jupyter.core.editor.hack.pass
 
 import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingComponent
+import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingEvent
+import com.intellij.kotlin.jupyter.core.editor.hack.NotebookPassConfiguration
+import com.intellij.kotlin.jupyter.core.editor.hack.document.MarkUpModelErrorsHighlightersTracker
+import com.intellij.kotlin.jupyter.core.editor.hack.pass.state.NotebookPassProgressTracker
+import com.intellij.kotlin.jupyter.core.editor.hack.queue.HighlightingEventsQueue
+import com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass.DaemonIterationState
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.util.getNotebookCells
+import com.intellij.notebooks.visualization.getCell
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ex.EditorEx
+import com.intellij.openapi.editor.ex.MarkupModelEx
+import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.util.TextRange
+import com.intellij.platform.util.coroutines.childScope
+import com.intellij.psi.PsiFile
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import kotlinx.coroutines.async
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.utils.addIfNotNull
 
-class HighlightingPassServiceImpl : HighlightingPassService, HighlightingComponent() {
+/**
+ * Manages the lifecycle of highlighting passes, processes and tracks events, and determines files
+ * or ranges that require rehighlighting.
+ *
+ * @see com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingManager
+ * @see highlightingEventsQueue Event queue for managing and combining document-layer events relevant to highlighting.
+ */
+internal class HighlightingPassServiceImpl(
+    private val highlightingEventsQueue: HighlightingEventsQueue,
+    notebookName: String,
+) : HighlightingPassService, HighlightingComponent() {
+    companion object {
+        private val LOG = notebookLogger()
+    }
+    private val coroutineScope = KotlinNotebookPluginScope.global
+        .childScope("HighlightingPassService for $notebookName")
+    private val passStatusIndicator = DaemonIterationState()
+    private val iterationLock = Mutex(false)
+
+    private val markUpErrorsTracker = child {
+        MarkUpModelErrorsHighlightersTracker()
+    }
+    private val passProgressTracker = child {
+        NotebookPassProgressTracker()
+    }
+
+    override fun getRangesToHighlight(file: PsiFile, editor: Editor): Collection<TextRange> {
+        val caretOffSet = editor.caretModel.offset
+        val cellUnderEditor = editor.getCell(editor.document.getLineNumber(caretOffSet))
+        val cellIndex = cellUnderEditor.ordinal
+        val cells = try {
+            file.getNotebookCells()
+        } catch (_: IllegalStateException) {
+            LOG.warn("Cannot get notebook cells for file: ${file.name}")
+            return emptyList()
+        }
+
+        val mergedRanges = highlightingEventsQueue.pullEvents() ?: return emptyList()
+
+        try {
+            val targetRanges = mergedRanges.changedCells?.mapNotNullTo(mutableSetOf()) {
+                cells.getOrNull(it)?.textRange
+            }.orEmpty() + setOfNotNull(
+                cells.getOrNull(cellIndex)?.textRange
+            )
+
+            // pass can be started earlier than call back about the daemon end could fire
+            if (!passStatusIndicator.enterSetupPhase() && !passStatusIndicator.isInProgress) {
+                LOG.debug("Another pass is in setup, aborting, state: ${passStatusIndicator.get()}")
+                return targetRanges
+            }
+
+            val targetIndexes = (mergedRanges.changedCells ?: emptyList()) + cellIndex
+            passProgressTracker.passStarting(file, cellIndex, targetIndexes, cells)
+
+            return targetRanges
+        } catch (ex: ProcessCanceledException) {
+            // abort and save
+            highlightingEventsQueue.pushEvent(mergedRanges)
+            throw ex
+        }
+    }
+
+    override fun passFinished(editor: Editor, file: PsiFile) {
+        val markup = (editor as? EditorEx)?.filteredDocumentMarkupModel ?: return
+        if (passStatusIndicator.isIdle) return
+
+        coroutineScope.async {
+            processDaemonFinished(editor, file, markup)
+        }
+    }
+
+    override fun shouldHighlightErrorsInFile(ktFile: KtFile): Boolean {
+        return passProgressTracker.passConfiguration.targetKtFile == ktFile
+    }
+
+    @RequiresBackgroundThread
+    private suspend fun processDaemonFinished(editor: Editor, psiFile: PsiFile?, markup: MarkupModelEx) {
+        val passConfiguration = passProgressTracker.passConfiguration
+
+        // todo: combine with [NotebookHighlightingManager]
+        iterationLock.withLock {
+            if (!passStatusIndicator.isIdle) {
+                return@withLock
+            }
+
+            // can be cas
+            passStatusIndicator.setIdle()
+            markUpErrorsTracker.removeHighlightersOutSideOfFocus(passConfiguration)
+
+            val remaining = determineIndexesLeftToHighlight(
+                editor, markup, passConfiguration
+            )
+
+            val finishedFiles = passConfiguration.completedFiles
+
+            val project = editor.project
+            if (project == null) {
+                LOG.info("Project is null for editor $editor in file: $psiFile")
+                return
+            }
+            val isLeft = remaining.isNotEmpty()
+
+            if (isLeft) {
+                val event = HighlightingEvent(
+                    passConfiguration.focusCell,
+                    null,
+                    remaining
+                )
+                highlightingEventsQueue.pushEvent(event)
+            }
+            LOG.debug("Reducing queue by $finishedFiles, left: $remaining")
+        }
+    }
+
+    private fun determineIndexesLeftToHighlight(editor: Editor, markup: MarkupModelEx, passConfiguration: NotebookPassConfiguration): Set<Int> {
+        val completedIndexes = passConfiguration.completedFiles
+        completedIndexes.addIfNotNull(passConfiguration.focusCell)
+
+        val remainingErrors = markUpErrorsTracker.determineFilesWithRemainingErrors(
+            markup, passConfiguration
+        )
+
+        return remainingErrors + passProgressTracker.getRemainingIndexesAfterPassFinished(editor)
+    }
 }
