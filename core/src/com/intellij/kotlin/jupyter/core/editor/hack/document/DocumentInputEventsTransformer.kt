@@ -3,6 +3,8 @@ package com.intellij.kotlin.jupyter.core.editor.hack.document
 
 import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingComponent
 import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingEvent
+import com.intellij.kotlin.jupyter.core.editor.hack.document.transformers.CaretMovementEventTransformer
+import com.intellij.kotlin.jupyter.core.editor.hack.document.transformers.ChangeEventsTransformer
 import com.intellij.kotlin.jupyter.core.editor.hack.queue.HighlightingEventsQueue
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -20,20 +22,27 @@ internal class DocumentInputEventsTransformer(
   private val document: Document,
   private val highlightingEventsQueue: HighlightingEventsQueue,
 ) : HighlightingComponent() {
-
     inner class NotebookDocumentListener : DocumentListener {
         override fun beforeDocumentChange(event: DocumentEvent) {
+            val transformedEvent = documentChangeEventTransformer.transformRawInput(event) ?: return
             highlightingEventsQueue.pushEvent(
-                transformDocumentChange(event)
+                transformedEvent
             )
         }
     }
     inner class NotebookCaretListener : CaretListener {
         override fun caretPositionChanged(event: CaretEvent) {
             highlightingEventsQueue.pushEvent(
-                transformCaretMovement(event)
+                caretMovementEventTransformer.transformRawInput(event)
             )
         }
+    }
+
+    private val caretMovementEventTransformer = child {
+        CaretMovementEventTransformer(editor)
+    }
+    private val documentChangeEventTransformer = child {
+        ChangeEventsTransformer(editor)
     }
 
     override fun initializeSelf() {
@@ -43,13 +52,5 @@ internal class DocumentInputEventsTransformer(
     private fun addListeners() {
         document.addDocumentListener(NotebookDocumentListener(), this)
         editor.caretModel.addCaretListener(NotebookCaretListener(), this)
-    }
-
-    private fun transformCaretMovement(event: CaretEvent): HighlightingEvent {
-        TODO()
-    }
-
-    private fun transformDocumentChange(event: DocumentEvent): HighlightingEvent {
-        TODO()
     }
 }

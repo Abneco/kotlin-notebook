@@ -7,6 +7,7 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.idea.highlighter.visitor.AbstractHighlightingVisitor
+import org.jetbrains.kotlin.psi.KtFile
 
 abstract class AbstractKotlinNotebookDelegatingHighlightingVisitorAdapter<T: AbstractHighlightingVisitor> : AbstractKotlinNotebookHighlightingVisitorAdapter() {
     private var visitor: T? = null

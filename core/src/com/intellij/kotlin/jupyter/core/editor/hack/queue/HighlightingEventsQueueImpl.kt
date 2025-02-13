@@ -6,7 +6,7 @@ import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingComponent
 import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingEvent
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingRestarter
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
-import com.intellij.kotlin.jupyter.core.util.toPsiFile
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -20,7 +20,7 @@ internal class HighlightingEventsQueueImpl(
     }
 
     private val eventsQueue: MutableCollection<HighlightingEvent> = ConcurrentLinkedQueue()
-    private var psiFile: PsiFile? = notebookVirtualFile.file.toPsiFile(project)
+    private var psiFile: PsiFile? = notebookVirtualFile.file.findPsiFile(project)
 
     private fun mergeEvents(events: List<HighlightingEvent>) : HighlightingEvent? {
         if (events.isEmpty()) {
@@ -70,7 +70,7 @@ internal class HighlightingEventsQueueImpl(
     }
 
     private fun requestHLRestart() {
-        val psi = psiFile ?: notebookVirtualFile.file.toPsiFile(project)
+        val psi = psiFile ?: notebookVirtualFile.file.findPsiFile(project)
         if (psi == null) {
             LOG.error("Cannot find psi file for notebook file: ${notebookVirtualFile.file}")
             return

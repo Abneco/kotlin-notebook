@@ -3,18 +3,18 @@ package com.intellij.kotlin.jupyter.core.editor.highlighting.visitors
 
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.highlightingManagerFor
-import com.intellij.kotlin.jupyter.core.util.getTopLevelFile
-import com.intellij.kotlin.jupyter.core.util.isKtFileInsideKotlinNotebook
+import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrSelf
+import com.intellij.kotlin.jupyter.core.util.isInsideKotlinNotebookFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 
 abstract class AbstractKotlinNotebookHighlightingVisitorAdapter : HighlightVisitor {
     override fun suitableForFile(file: PsiFile): Boolean {
-        return file.isKtFileInsideKotlinNotebook()
+        return file.isInsideKotlinNotebookFile()
     }
 
     protected fun analysisFinished(file: PsiFile) {
-        highlightingManagerFor(file.project, file.virtualFile.getTopLevelFile())?.finishedAnalysisForFile(file)
+        highlightingManagerFor(file.project, file.virtualFile.getTopLevelFileOrSelf())?.finishedAnalysisForFile(file)
     }
 
     override fun visit(element: PsiElement) {

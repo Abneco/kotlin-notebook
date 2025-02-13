@@ -9,17 +9,19 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandle
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.components.KaDiagnosticCheckerFilter
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity
+import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.psi.KtFile
 
 /**
  * This is an intermediate class to represent diagnostics data
  * as there is no way to invoke analysis with full checks via
- * [KaDiagnosticProvider] directly.
+ * [org.jetbrains.kotlin.analysis.api.components.KaDiagnosticProvider] directly.
  */
 data class KaDiagnosticData(
     val psiElement: PsiElement,

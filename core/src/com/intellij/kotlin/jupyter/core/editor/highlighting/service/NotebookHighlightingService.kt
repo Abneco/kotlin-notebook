@@ -6,7 +6,6 @@ import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineScope
@@ -22,10 +21,9 @@ class NotebookHighlightingService(
     override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookHighlightingManager {
         // todo: localize read access, do not pollute it
         return withReadAccess {
-            val document = FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
             NotebookHighlightingManager(
                 project,
-                virtualFile, document,
+                virtualFile,
                 fileScope,
                 null
             )

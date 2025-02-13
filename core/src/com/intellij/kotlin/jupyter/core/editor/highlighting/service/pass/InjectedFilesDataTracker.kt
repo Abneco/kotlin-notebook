@@ -59,14 +59,15 @@ internal class InjectedFilesDataTracker
         if (cells == null || cells.isEmpty()) {
             return
         }
+        val project = cells.first().project
+        val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
+
         if (targetIndexes.isEmpty() && completeRangeInd != null) {
             val psiCell = cells.getOrNull(completeRangeInd) ?: return
             targetPsiFile = psiCell.getInjectedKtFiles(injectedLanguageManager).firstOrNull()
             return
         }
 
-        val project = cells.first().project
-        val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
 
         for (ind in targetIndexes) {
             val psiCell = cells.getOrNull(ind) ?: continue
