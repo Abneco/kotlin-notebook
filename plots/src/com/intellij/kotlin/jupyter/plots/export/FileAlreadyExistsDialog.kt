@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.plots.export
 import com.intellij.kotlin.jupyter.plots.i18n.KotlinNotebookPlotsBundle
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.ui.DialogWrapper.OK_EXIT_CODE
+import com.intellij.openapi.ui.ExitActionType
 import com.intellij.openapi.util.NlsActions
 import com.intellij.ui.dsl.builder.MutableProperty
 import com.intellij.ui.dsl.builder.panel
@@ -33,7 +34,7 @@ fun showFileAlreadyExistsDialog(
     }
 
     fun closeDialog() {
-        dialogBuilder.dialogWrapper.close(OK_EXIT_CODE, true)
+        dialogBuilder.dialogWrapper.close(OK_EXIT_CODE, true, ExitActionType.OK)
     }
 
     fun createChangeStrategyAction(
