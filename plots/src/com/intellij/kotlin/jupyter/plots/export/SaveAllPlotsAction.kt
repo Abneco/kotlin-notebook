@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.plots.export
 import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey
 
 class SaveAllPlotsAction : SavePlotAction() {
-    override fun supportsMultiplePlots() = true
+    override fun supportsMultiplePlots(): Boolean = true
 
     override fun isActionApplicable(outputs: List<LetsPlotOutputDataKey>): Boolean {
         return super.isActionApplicable(outputs) && outputs.size > 1
