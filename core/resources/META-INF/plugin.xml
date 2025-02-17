@@ -277,6 +277,9 @@
                 implementationClass="com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector"/>
         <editorNotificationProvider
                 implementation="com.intellij.kotlin.jupyter.core.settings.ui.KotlinNotebookMissingJdkEditorNotification"/>
+
+        <moduleBuilder
+                builderClass="com.intellij.kotlin.jupyter.core.projectWizard.KotlinNotebookModuleBuilder"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">

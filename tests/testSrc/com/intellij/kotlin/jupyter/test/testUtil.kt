@@ -13,6 +13,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterSt
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
 import com.intellij.kotlin.jupyter.core.jupyter.actions.CreateNotebookFactory
+import com.intellij.kotlin.jupyter.core.language.emptyNotebookTemplate
 import com.intellij.kotlin.jupyter.core.language.meta.psi.JKTMetaPSIFile
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
@@ -204,7 +205,12 @@ fun Project.createEmptyNotebook(name: String): BackedNotebookVirtualFile {
     val projectBaseDir = HeavyTestHelper.getOrCreateProjectBaseDir(this)
     val directoryPsiFile = runReadAction { PsiManager.getInstance(this).findDirectory(projectBaseDir)!! }
 
-    val psiFile = CreateNotebookFactory.createFile(name, directoryPsiFile)
+    val notebookTemplate = directoryPsiFile.project.emptyNotebookTemplate
+    val psiFile = CreateNotebookFactory.createFileFromTemplate(
+        fileName = name,
+        template = notebookTemplate,
+        directory = directoryPsiFile,
+    )
     return BackedNotebookVirtualFile.Companion.takeBackend(psiFile!!.virtualFile)!!
 }
 

@@ -23,10 +23,10 @@ class KotlinNotebookCreateAction : CreateFileFromTemplateAction(), DumbAware {
             )
     }
 
-    override fun getActionName(directory: PsiDirectory, newName: String, templateName: String) =
+    override fun getActionName(directory: PsiDirectory, newName: String, templateName: String): String =
         KotlinNotebookBundle.message("kotlin.jupyter.action.create.notebook.name", templateName)
 
     public override fun createFileFromTemplate(name: String, template: FileTemplate, dir: PsiDirectory): PsiFile? {
-        return CreateNotebookFactory.createFileFromTemplate(name, template, defaultTemplateProperty, dir)
+        return CreateNotebookFactory.createFileFromTemplate(name, template, dir, defaultTemplateProperty)
     }
 }

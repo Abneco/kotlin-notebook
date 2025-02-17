@@ -34,8 +34,16 @@ class JupyterKotlinScratchCreationHelper: ScratchFileCreationHelper() {
                 val fileName = "template.ipynb"
                 val dir = VfsUtil.createDirectories(tempDir.path)
                 val psiDir: PsiDirectory = PsiManager.getInstance(project).findDirectory(dir)!!
-                val templateFile = CreateNotebookFactory.createFile(fileName, psiDir, false, NotebookMode.LIGHT)!!
-                val notebookJsonText = templateFile.virtualFile.notebookJsonText
+                val notebookTemplate = FILE_TEMPLATE_KEY.getData(dataContext) ?: psiDir.project.emptyNotebookTemplate
+                val tempFile = CreateNotebookFactory.createFileFromTemplate(
+                    fileName = fileName,
+                    template = notebookTemplate,
+                    directory = psiDir,
+                    openFileInIde = false,
+                    mode = NotebookMode.LIGHT,
+                )!!
+
+                val notebookJsonText = tempFile.virtualFile.notebookJsonText
                 context.text = notebookJsonText
                 context.language = null
                 context.fileExtension = JupyterFileType.defaultExtension

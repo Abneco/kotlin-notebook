@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.core.jupyter.actions
 
 import com.intellij.ide.fileTemplates.FileTemplate
-import com.intellij.ide.fileTemplates.FileTemplateManager
 import com.intellij.ide.scratch.ScratchUtil
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.actions.createFileFromTemplateWithProperties
@@ -27,8 +26,9 @@ import org.jetbrains.kotlinx.jupyter.config.notebookLanguageInfo
 enum class NotebookMode(
     val id: String // Unique id used for serialization to JSON. Changing this will break reading already existing notebook files.
 ) {
-    // A standard notebook found inside the project. Will resolve paths relative to its own position
+    // A standard notebook found inside the project. Will resolve paths relative to its own location
     STANDARD("standard"),
+
     // A light notebook found in the "Scratches and Consoles" section. Will resolve paths relative to the
     // project content root.
     LIGHT("light")
@@ -40,7 +40,7 @@ enum class NotebookMode(
  */
 val BackedNotebookVirtualFile.mode: NotebookMode
     get() {
-        return when(ScratchUtil.isScratch(this.file)) {
+        return when (ScratchUtil.isScratch(this.file)) {
             true -> NotebookMode.LIGHT
             false -> NotebookMode.STANDARD
         }
@@ -52,7 +52,7 @@ val BackedNotebookVirtualFile.mode: NotebookMode
  */
 object CreateNotebookFactory {
 
-    const val TEMPLATE_NAME = "Kotlin Jupyter Notebook"
+    const val TEMPLATE_NAME: String = "Kotlin Jupyter Notebook"
     private const val VAR_KERNEL_SPEC = "KERNEL_SPEC"
     private const val VAR_LANGUAGE_SPEC = "LANGUAGE_SPEC"
     private const val VAR_KTNB_METADATA = "KTNB_METADATA"
@@ -98,27 +98,23 @@ object CreateNotebookFactory {
      *
      * @see [KotlinNotebookCreateAction.createFileFromTemplate]
      */
-    fun createFileFromTemplate(fileName: String,
-                               template: FileTemplate,
-                               defaultTemplateProperty: String?,
-                               directory: PsiDirectory,
-                               mode: NotebookMode = NotebookMode.STANDARD
+    fun createFileFromTemplate(
+        fileName: String,
+        template: FileTemplate,
+        directory: PsiDirectory,
+        defaultTemplateProperty: String? = null,
+        openFileInIde: Boolean = true,
+        mode: NotebookMode = NotebookMode.STANDARD,
     ): PsiFile? {
         val templateValues = createTemplateValues(directory.project, mode)
-        return createFileFromTemplateWithProperties(fileName, template, directory, defaultTemplateProperty, templateValues, LOG)
-    }
-
-    /**
-     * Creates a Notebook file using the default template.
-     * @see com.intellij.kotlin.jupyter.core.language.JupyterKotlinScratchCreationHelper.prepareText
-     */
-    fun createFile(fileName: String,
-                   directory: PsiDirectory,
-                   openFileInIde: Boolean = true,
-                   mode: NotebookMode = NotebookMode.STANDARD
-    ): PsiFile? {
-        val notebookTemplateValues = createTemplateValues(directory.project, mode)
-        val notebookTemplate = FileTemplateManager.getInstance(directory.project).getInternalTemplate(TEMPLATE_NAME)
-        return createFileFromTemplateWithProperties(fileName, notebookTemplate, directory, null, notebookTemplateValues, LOG, openFileInIde)
+        return createFileFromTemplateWithProperties(
+            name = fileName,
+            template = template,
+            dir = directory,
+            defaultTemplateProperty = defaultTemplateProperty,
+            templateValues = templateValues,
+            logger = LOG,
+            openFile = openFileInIde,
+        )
     }
 }
