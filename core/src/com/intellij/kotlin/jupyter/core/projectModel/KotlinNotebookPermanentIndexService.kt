@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.projectModel
 
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.application.EDT
-import com.intellij.openapi.application.writeAction
+import com.intellij.openapi.application.edtWriteAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -20,7 +20,7 @@ class KotlinNotebookPermanentIndexService(val project: Project) {
 
     fun addToPermanentIndex(classpath: List<String>, sourceClasspath: List<String>) {
         KotlinNotebookPluginScope.getForProject(project).async(Dispatchers.EDT) {
-            writeAction {
+            edtWriteAction {
                 addToPermanentIndexImpl(classpath, sourceClasspath)
             }
         }
