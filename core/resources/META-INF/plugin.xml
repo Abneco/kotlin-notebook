@@ -176,6 +176,9 @@
         <registryKey key="kotlin.notebook.outdated.dependencies.hints" defaultValue="true"
                      description="When enabled, a hint will be displayed each time notebook dependencies become outdated"/>
 
+        <registryKey key="kotlin.notebook.welcome.features" defaultValue="false"
+                     description="When enabled, it's possible to create a Kotlin Notebook from the Welcome Screen"/>
+
         <postStartupActivity implementation="com.intellij.kotlin.jupyter.core.notifications.KotlinNotebookPostStartupActivity"/>
 
         <multiHostInjector implementation="com.intellij.kotlin.jupyter.core.editor.inject.JupyterKotlinIntoCellsInjector"/>
@@ -280,6 +283,11 @@
 
         <moduleBuilder
                 builderClass="com.intellij.kotlin.jupyter.core.projectWizard.KotlinNotebookModuleBuilder"/>
+
+        <welcomeTabFactory
+                implementation="com.intellij.kotlin.jupyter.core.projectWizard.KotlinNotebookWelcomeTabFactory"
+                id="KotlinNotebookWelcomeTabFactory"
+                order="after ProjectsWelcomeTab, after GatewayWelcomeTab, before CustomizeWelcomeTab"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">

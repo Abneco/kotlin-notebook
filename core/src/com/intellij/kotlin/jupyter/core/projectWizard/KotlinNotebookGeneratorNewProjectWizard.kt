@@ -3,8 +3,6 @@ package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.ide.fileTemplates.FileTemplate
 import com.intellij.ide.fileTemplates.FileTemplateManager
-import com.intellij.ide.scratch.ScratchFileActions
-import com.intellij.ide.scratch.ScratchFileCreationHelper
 import com.intellij.ide.util.projectWizard.WizardContext
 import com.intellij.ide.wizard.AbstractNewProjectWizardStep
 import com.intellij.ide.wizard.GeneratorNewProjectWizard
@@ -12,14 +10,8 @@ import com.intellij.ide.wizard.GeneratorNewProjectWizardBuilderAdapter
 import com.intellij.ide.wizard.NewProjectWizardChainStep.Companion.nextStep
 import com.intellij.ide.wizard.NewProjectWizardStep
 import com.intellij.ide.wizard.RootNewProjectWizardStep
-import com.intellij.kotlin.jupyter.core.language.FILE_TEMPLATE_KEY
-import com.intellij.kotlin.jupyter.core.language.JupyterKotlinFileType
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.openapi.actionSystem.CustomizedDataContext
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.startup.StartupManager
-import com.intellij.openapi.util.IntellijInternalApi
 import com.intellij.ui.JBColor
 import com.intellij.ui.OnePixelSplitter
 import com.intellij.ui.components.JBLabel
@@ -32,7 +24,6 @@ import icons.KotlinJupyterIcons
 import org.jetbrains.annotations.Nls
 import org.jetbrains.annotations.NonNls
 import java.awt.BorderLayout
-import java.nio.file.Path
 import javax.swing.BorderFactory
 import javax.swing.DefaultListModel
 import javax.swing.Icon
@@ -50,7 +41,7 @@ private class KotlinNotebookGeneratorNewProjectWizard : GeneratorNewProjectWizar
         get() = KotlinJupyterIcons.FileIcon
 
     override fun createStep(context: WizardContext): NewProjectWizardStep {
-        val path = Path.of(System.getProperty("user.home") + "/ktnb")
+        val path = getDefaultKotlinNotebookProjectPath()
         context.setProjectFileDirectory(path, true)
         context.projectName = "ktnb"
 
@@ -80,23 +71,11 @@ private class KotlinNotebookWizardStep(parentStep: NewProjectWizardStep) : Abstr
     override fun setupProject(project: Project) {
         super.setupProject(project)
 
-        @Suppress("DEPRECATION")
-        StartupManager.getInstance(project).runWhenProjectIsInitialized {
-            doSetupProject(project)
-        }
-    }
-
-    @OptIn(IntellijInternalApi::class)
-    private fun doSetupProject(project: Project) {
-        val scratchContext = ScratchFileCreationHelper.Context().apply {
-            language = JupyterKotlinFileType.language
-            fileExtension = JupyterKotlinFileType.getDefaultExtension()
-            filePrefix = notebookName
-        }
-        val dataContext = CustomizedDataContext.withSnapshot(DataContext.EMPTY_CONTEXT) {
-            it[FILE_TEMPLATE_KEY] = template.getFileTemplate(project)
-        }
-        ScratchFileActions.doCreateNewScratch(project, scratchContext, dataContext)
+        createScratchKotlinNotebookWhenProjectIsInitialized(
+            project,
+            template,
+            notebookName,
+        )
     }
 }
 
@@ -104,8 +83,8 @@ enum class NotebookTemplate(
     val id: String,
 ) {
     EMPTY("empty"),
-    //QUICK_API_TEST("quickApiTest"),
-    //DATA_ANALYSIS("dataAnalysis"),
+    QUICK_API_TEST("quickApiTest"),
+    DATA_ANALYSIS("dataAnalysis"),
 }
 
 
