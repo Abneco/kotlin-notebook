@@ -55,10 +55,17 @@ object RecentKotlinNotebookPanelComponentFactory {
         tree.cellRenderer = NotebookTreeCellRenderer()
         val filteringTree = RecentKotlinNotebookFilteringTree(tree, parentDisposable)
 
+        fun getCurrentRow(e: MouseEvent): Int {
+            val point = e.point
+            return TreeUtil.getRowForLocation(tree, point.x, point.y)
+        }
+
         val mouseListener = object : java.awt.event.MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 if (e.clickCount == 1) {
-                    val path = tree.getPathForLocation(e.x, e.y) ?: return
+                    val row = getCurrentRow(e)
+                    if (row == -1) return
+                    val path = tree.getPathForRow(row)
                     val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return
                     val item = node.userObject as? NotebookItem ?: return
                     val project = getOrCreateDefaultKotlinNotebookProject()
@@ -67,8 +74,7 @@ object RecentKotlinNotebookPanelComponentFactory {
             }
 
             override fun mouseMoved(e: MouseEvent) {
-                val point = e.point
-                val row = TreeUtil.getRowForLocation(tree, point.x, point.y)
+                val row = getCurrentRow(e)
                 if (row != -1) {
                     if (!tree.isRowSelected(row)) {
                         tree.setSelectionRow(row)
