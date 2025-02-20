@@ -3,18 +3,11 @@ package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.ide.RecentProjectsManager
 import com.intellij.ide.RecentProjectsManager.RecentProjectsChange
-import com.intellij.ide.RecentProjectsManagerBase
-import com.intellij.ide.dnd.DnDEvent
-import com.intellij.ide.dnd.DnDNativeTarget
-import com.intellij.ide.dnd.DnDSupport
-import com.intellij.ide.dnd.FileCopyPasteUtil
-import com.intellij.ide.impl.ProjectUtil.openOrImportFilesAsync
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.registryFlag
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
-import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.TaskInfo
 import com.intellij.openapi.wm.WelcomeScreen
 import com.intellij.openapi.wm.WelcomeScreenTab
@@ -27,7 +20,6 @@ import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenComponentFactory
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
 import com.intellij.openapi.wm.impl.welcomeScreen.cloneableProjects.CloneableProjectsService
 import com.intellij.openapi.wm.impl.welcomeScreen.cloneableProjects.CloneableProjectsService.CloneProjectListener
-import com.intellij.platform.ide.CoreUiCoroutineScopeHolder
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.Align
@@ -37,8 +29,6 @@ import com.intellij.ui.dsl.builder.EmptySpacingConfiguration
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.UnscaledGaps
 import com.intellij.util.ui.JBUI
-import kotlinx.coroutines.launch
-import java.io.File
 import javax.swing.JComponent
 import javax.swing.ScrollPaneConstants
 
@@ -132,14 +122,9 @@ internal class KotlinNotebookWelcomeScreenTab(private val parentDisposable: Disp
     }
 
     private fun createRecentProjectsPanel(): JComponent {
-        //val recentProjectsPanel: JPanel = JBUI.Panels.simplePanel()
-        //    .withBorder(JBUI.Borders.empty(13, 12))
-        //    .withBackground(WelcomeScreenUIManager.getProjectsBackground())
         val recentProjectTree = RecentKotlinNotebookPanelComponentFactory.createComponent(
             parentDisposable
         )
-
-        initDnD(recentProjectTree)
 
         val scrollPane = ScrollPaneFactory.createScrollPane(
             recentProjectTree,
@@ -156,16 +141,6 @@ internal class KotlinNotebookWelcomeScreenTab(private val parentDisposable: Disp
 
         return projectsPanel
     }
-
-    private fun initDnD(component: JComponent) {
-        val target = createDropFileTarget()
-        DnDSupport.createBuilder(component)
-            .enableAsNativeTarget()
-            .setTargetChecker(target)
-            .setDropHandler(target)
-            .setDisposableParent(parentDisposable)
-            .install()
-    }
 }
 
 
@@ -175,25 +150,4 @@ private enum class PanelState {
 
 private fun getCurrentState(): PanelState {
     return PanelState.NOT_EMPTY
-}
-
-private fun createDropFileTarget(): DnDNativeTarget {
-    return object : DnDNativeTarget {
-        override fun update(event: DnDEvent): Boolean {
-            if (!FileCopyPasteUtil.isFileListFlavorAvailable(event)) {
-                return false
-            }
-            event.isDropPossible = true
-            return false
-        }
-
-        override fun drop(event: DnDEvent) {
-            val files = FileCopyPasteUtil.getFileListFromAttachedObject(event.attachedObject)
-            if (!files.isEmpty()) {
-                service<CoreUiCoroutineScopeHolder>().coroutineScope.launch {
-                    openOrImportFilesAsync(list = files.map(File::toPath), location = "WelcomeFrame")
-                }
-            }
-        }
-    }
 }

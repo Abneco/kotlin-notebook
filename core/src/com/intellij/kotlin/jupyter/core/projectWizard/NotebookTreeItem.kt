@@ -10,7 +10,7 @@ sealed interface NotebookTreeItem {
 
 class NotebookItem(val file: VirtualFile) : NotebookTreeItem {
     override fun displayName(): String = file.name
-    fun searchName(): String = "${file.name} ${file.path}".lowercase()
+    fun searchName(): String = file.name.lowercase()
 }
 
 class RootItem(notebooks: List<VirtualFile>) : NotebookTreeItem {

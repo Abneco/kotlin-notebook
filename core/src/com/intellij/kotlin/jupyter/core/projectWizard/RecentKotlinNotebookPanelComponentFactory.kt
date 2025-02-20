@@ -23,8 +23,10 @@ import com.intellij.ui.ColoredTreeCellRenderer
 import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.border.CustomLineBorder
+import com.intellij.ui.render.RenderingUtil
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.ListUiUtil
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.tree.TreeUtil
 import org.jetbrains.annotations.NotNull
@@ -36,6 +38,7 @@ import java.awt.Insets
 import java.awt.event.MouseEvent
 import java.util.function.Supplier
 import javax.swing.JComponent
+import javax.swing.JList
 import javax.swing.JTree
 import javax.swing.ScrollPaneConstants
 import javax.swing.SwingUtilities
@@ -58,7 +61,7 @@ object RecentKotlinNotebookPanelComponentFactory {
                     val path = tree.getPathForLocation(e.x, e.y) ?: return
                     val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return
                     val item = node.userObject as? NotebookItem ?: return
-                    val project = KotlinNotebookActionsUtil.getOrCreateKtnbProject()
+                    val project = getOrCreateDefaultKotlinNotebookProject()
                     FileEditorManager.getInstance(project).openFile(item.file, true)
                 }
             }
@@ -88,6 +91,11 @@ object RecentKotlinNotebookPanelComponentFactory {
 
         tree.addMouseListener(mouseListener)
         tree.addMouseMotionListener(mouseListener)
+
+        tree.putClientProperty(
+            RenderingUtil.CUSTOM_SELECTION_BACKGROUND,
+            Supplier { ListUiUtil.WithTallRow.background(JList<Any>(), isSelected = true, hasFocus = true) }
+        )
 
         // Subscribe to file changes
         val connection = ApplicationManager.getApplication().messageBus.connect(parentDisposable)
@@ -171,20 +179,13 @@ private class NotebookTreeCellRenderer : ColoredTreeCellRenderer() {
         row: Int,
         hasFocus: Boolean
     ) {
-        background = if (selected) {
-            UIUtil.getTreeSelectionBackground(true)
-        } else {
-            tree.background
-        }
         val node = value as? DefaultMutableTreeNode ?: return
         when (val item = node.userObject) {
             is NotebookItem -> {
                 icon = JupyterKotlinFileType.icon
                 append(item.file.name)
             }
-            else -> {
-                append("")
-            }
+            else -> {}
         }
     }
 }

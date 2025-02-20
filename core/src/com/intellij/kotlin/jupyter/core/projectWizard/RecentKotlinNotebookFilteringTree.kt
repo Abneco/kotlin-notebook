@@ -1,7 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.projectWizard
 
-import com.intellij.ide.IdeBundle
+import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.Disposable
 import com.intellij.ui.FilteringTree
 import com.intellij.ui.SearchTextField
@@ -48,8 +48,11 @@ class RecentKotlinNotebookFilteringTree(
             textEditor.apply {
                 isOpaque = false
                 border = JBUI.Borders.empty()
-                emptyText.text = IdeBundle.message("welcome.screen.search.projects.empty.text")
-                accessibleContext.accessibleName = IdeBundle.message("welcome.screen.search.projects.empty.text")
+
+                val fieldText = KotlinNotebookBundle.message("kotlin.notebook.welcome.screen.search")
+                emptyText.text = fieldText
+                accessibleContext.accessibleName = fieldText
+
                 TextComponentEmptyText.setupPlaceholderVisibility(this)
 
             }
