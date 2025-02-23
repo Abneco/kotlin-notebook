@@ -1,0 +1,117 @@
+package com.intellij.kotlin.jupyter.core.projectWizard
+
+import com.intellij.icons.AllIcons
+import com.intellij.ide.scratch.ScratchFileService
+import com.intellij.ide.scratch.ScratchRootType
+import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.actionSystem.ex.ActionButtonLook
+import com.intellij.openapi.actionSystem.ex.ActionUtil
+import com.intellij.openapi.actionSystem.impl.ActionButton
+import com.intellij.openapi.actionSystem.impl.ActionToolbarImpl
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.EDT
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.vfs.newvfs.BulkFileListener
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
+import com.intellij.ui.ExperimentalUI
+import com.intellij.ui.border.CustomLineBorder
+import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.components.BorderLayoutPanel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.awt.BorderLayout
+import java.awt.Component
+import java.awt.Dimension
+import java.awt.Insets
+import java.util.function.Supplier
+
+class RecentKotlinNotebookPanel(private val parentDisposable: Disposable): BorderLayoutPanel() {
+    init {
+        KotlinNotebookPluginScope.global.launch {
+            withContext(Dispatchers.EDT) {
+                initialize()
+            }
+        }
+    }
+
+    suspend fun initialize() {
+        withBorder(JBUI.Borders.empty(13, 12))
+        withBackground(WelcomeScreenUIManager.getProjectsBackground())
+
+        val treeComponent = KotlinNotebookTreeHolder { file: VirtualFile ->
+            val project = getOrCreateDefaultKotlinNotebookProject()
+            FileEditorManager.getInstance(project).openFile(file, true)
+        }
+        treeComponent.updateAsync().join()
+        val filteringTree = RecentKotlinNotebookFilteringTree(treeComponent)
+        filteringTree.updateAsync().join()
+
+        // Subscribe to file changes
+        val connection = ApplicationManager.getApplication().messageBus.connect(parentDisposable)
+        connection.subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
+            override fun after(events: List<VFileEvent>) {
+                val scratchService = ScratchFileService.getInstance()
+                val scratchRoot = ScratchRootType.getInstance()
+                val anyScratchFileUpdated = events.any { event ->
+                    val file = event.file
+                    file != null && scratchService.getRootType(file) == scratchRoot
+                }
+                if (anyScratchFileUpdated) {
+                    filteringTree.updateAsync()
+                }
+            }
+        })
+
+        val northPanel = JBUI.Panels.simplePanel()
+            .andTransparent()
+            .withBorder(object : CustomLineBorder(WelcomeScreenUIManager.getSeparatorColor(), JBUI.insetsBottom(1)) {
+                override fun getBorderInsets(c: Component): Insets {
+                    return JBUI.insetsBottom(12)
+                }
+            })
+
+        val searchField = filteringTree.installSearchField()
+        if (ExperimentalUI.isNewUI()) {
+            searchField.textEditor.putClientProperty("JTextField.Search.Icon", AllIcons.Actions.Search)
+        }
+
+        val createAction = CreateKotlinNotebookActionGroup()
+        val group = DefaultActionGroup(createAction)
+        val toolbar = object : ActionToolbarImpl(ActionPlaces.WELCOME_SCREEN, group, true) {
+            override fun createToolbarButton(
+                action: AnAction,
+                look: ActionButtonLook?,
+                place: String,
+                presentation: Presentation,
+                minimumSize: Supplier<out Dimension>
+            ): ActionButton {
+                presentation.putClientProperty(ActionUtil.SHOW_TEXT_IN_TOOLBAR, true)
+                return super.createToolbarButton(action, look, place, presentation, minimumSize)
+            }
+        }.apply {
+            isOpaque = false
+            setTargetComponent(searchField)
+        }
+
+        northPanel.add(searchField, BorderLayout.CENTER)
+        northPanel.add(toolbar.component, BorderLayout.EAST)
+
+        val projectsPanel = JBUI.Panels.simplePanel(treeComponent.createScrollPane())
+            .andTransparent()
+            .withBorder(JBUI.Borders.emptyTop(10))
+            .withBackground(WelcomeScreenUIManager.getProjectsBackground())
+
+        add(northPanel, BorderLayout.NORTH)
+        add(projectsPanel, BorderLayout.CENTER)
+    }
+}

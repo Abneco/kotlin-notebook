@@ -1,43 +1,39 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.projectWizard
 
+import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.openapi.Disposable
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.openapi.application.EDT
 import com.intellij.ui.FilteringTree
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.TextComponentEmptyText
-import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.tree.TreeUtil
-import javax.swing.tree.DefaultMutableTreeNode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class RecentKotlinNotebookFilteringTree(
-    treeComponent: Tree,
-    parentDisposable: Disposable
-) : FilteringTree<DefaultMutableTreeNode, NotebookTreeItem>(
-    treeComponent,
-    DefaultMutableTreeNode(RootItem(RecentKotlinNotebooksService.getInstance().getNotebooks()))
+    private val treeComponent: KotlinNotebookTreeHolder
+) : FilteringTree<NotebookTreeNode, NotebookItem>(
+    treeComponent.getTree(),
+    treeComponent.getRoot()
 ) {
-    init {
-        treeComponent.isRootVisible = false
-        treeComponent.rowHeight = 0
-        searchModel.updateStructure()
-    }
+    override fun getNodeClass(): Class<NotebookTreeNode> = NotebookTreeNode::class.java
 
-    override fun getNodeClass(): Class<DefaultMutableTreeNode> = DefaultMutableTreeNode::class.java
+    override fun getText(item: NotebookItem?): String = item?.searchName().orEmpty()
 
-    override fun getText(item: NotebookTreeItem?): String = when (item) {
-        is NotebookItem -> item.searchName()
-        else -> item?.displayName().orEmpty().lowercase()
-    }
+    override fun getChildren(item: NotebookItem): Iterable<NotebookItem> = item.children()
 
-    override fun getChildren(item: NotebookTreeItem): Iterable<NotebookTreeItem> = item.children()
+    override fun createNode(item: NotebookItem): NotebookTreeNode = NotebookTreeNode(item)
 
-    override fun createNode(item: NotebookTreeItem): DefaultMutableTreeNode = DefaultMutableTreeNode(item)
-
-    fun updateTree() {
-        searchModel.updateStructure()
-        TreeUtil.expandAll(tree)
+    fun updateAsync(): Job {
+        return KotlinNotebookPluginScope.global.launch(Dispatchers.EDT) {
+            treeComponent.updateAsync().join()
+            searchModel.updateStructure()
+            TreeUtil.expandAll(tree)
+        }
     }
 
     override fun installSearchField(): SearchTextField {

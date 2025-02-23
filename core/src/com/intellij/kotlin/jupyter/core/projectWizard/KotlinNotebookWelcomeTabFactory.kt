@@ -122,12 +122,10 @@ internal class KotlinNotebookWelcomeScreenTab(private val parentDisposable: Disp
     }
 
     private fun createRecentProjectsPanel(): JComponent {
-        val recentProjectTree = RecentKotlinNotebookPanelComponentFactory.createComponent(
-            parentDisposable
-        )
+        val recentProjectsPanel = RecentKotlinNotebookPanel(parentDisposable)
 
         val scrollPane = ScrollPaneFactory.createScrollPane(
-            recentProjectTree,
+            recentProjectsPanel,
             true
         ).apply {
             horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER

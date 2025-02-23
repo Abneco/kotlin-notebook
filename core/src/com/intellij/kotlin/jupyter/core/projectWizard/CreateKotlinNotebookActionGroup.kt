@@ -14,10 +14,10 @@ import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenActionsUtil
 
 class CreateKotlinNotebookActionGroup : DefaultActionGroup(KotlinNotebookBundle.message("action.new.notebook.from.template.group.text"), true) {
     private val myActions = run {
-        val emptyTemplateAction = CreateKotlinNotebookAction(NotebookTemplate.EMPTY)
+        val emptyTemplateAction = CreateKotlinNotebookAndOpenProjectAction(NotebookTemplate.EMPTY)
         val otherActions = NotebookTemplate.entries
             .filter { it != NotebookTemplate.EMPTY }
-            .map { CreateKotlinNotebookAction(it) }
+            .map { CreateKotlinNotebookAndOpenProjectAction(it) }
             .toTypedArray()
 
         val separator = Separator()

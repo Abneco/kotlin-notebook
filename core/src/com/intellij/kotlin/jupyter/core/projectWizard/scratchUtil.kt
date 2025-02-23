@@ -42,7 +42,7 @@ fun createScratchKotlinNotebookWhenProjectIsInitialized(
 }
 
 fun getDefaultKotlinNotebookProjectPath(): Path {
-    return Path.of(System.getProperty("user.home"), "ktnb").apply {
+    return Path.of(System.getProperty("user.home"), ".kotlinNotebook", "KotlinNotebook").apply {
         createDirectories()
     }
 }

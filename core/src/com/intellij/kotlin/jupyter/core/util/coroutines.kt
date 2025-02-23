@@ -86,7 +86,7 @@ sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
         /**
          * Schedules a coroutine to run on the Event Dispatch Thread.
          */
-        fun invokeOnEDT(action: suspend CoroutineScope.() -> Unit) =
+        fun invokeOnEDT(action: suspend CoroutineScope.() -> Unit): Job =
             global.async(Dispatchers.EDT, block = action)
 
         /**
