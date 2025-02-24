@@ -40,10 +40,14 @@ private class KotlinNotebookGeneratorNewProjectWizard : GeneratorNewProjectWizar
     override val icon: Icon
         get() = KotlinJupyterIcons.FileIcon
 
+    override fun isEnabled(): Boolean {
+        return false
+    }
+
     override fun createStep(context: WizardContext): NewProjectWizardStep {
         val path = getDefaultKotlinNotebookProjectPath()
         context.setProjectFileDirectory(path, true)
-        context.projectName = "ktnb"
+        context.projectName = KOTLIN_NOTEBOOK_TEMPLATE_PROJECT_FOLDER_NAME
 
         return RootNewProjectWizardStep(context)
             .nextStep(::KotlinNotebookWizardStep)

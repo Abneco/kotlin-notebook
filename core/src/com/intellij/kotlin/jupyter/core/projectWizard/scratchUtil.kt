@@ -41,8 +41,14 @@ fun createScratchKotlinNotebookWhenProjectIsInitialized(
     }
 }
 
+const val KOTLIN_NOTEBOOK_TEMPLATE_PROJECT_FOLDER_NAME: String = "KotlinNotebook"
+
 fun getDefaultKotlinNotebookProjectPath(): Path {
-    return Path.of(System.getProperty("user.home"), ".kotlinNotebook", "KotlinNotebook").apply {
+    return Path.of(
+        System.getProperty("user.home"),
+        ".kotlinNotebook",
+        KOTLIN_NOTEBOOK_TEMPLATE_PROJECT_FOLDER_NAME
+    ).apply {
         createDirectories()
     }
 }
