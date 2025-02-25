@@ -11,17 +11,15 @@ import com.intellij.injected.editor.DocumentWindow
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.retrieveCellIntervalUnderCaret
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
-import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.buildFlatMap
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
-import com.intellij.kotlin.jupyter.core.util.invokeNow
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.restartAnalyzing
 import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
 import com.intellij.kotlin.jupyter.core.util.toDocument
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.ProperTextRange
@@ -79,7 +77,7 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
         }
 
         try {
-            val formatter = FormattingService.EP_NAME.findExtensionOrFail(CoreFormattingService::class.java)
+            val formatter = EP_NAME.findExtensionOrFail(CoreFormattingService::class.java)
             for ((file, ranges) in filesToProcess) {
                 val rangeInfo = FormatTextRanges().apply {
                     ranges.forEach { add(it, false) }
@@ -103,10 +101,8 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
                 notebookDocumentTargetRanges = targets
             }
 
-            KotlinNotebookPluginScope.getForProject(project).invokeNow {
-                readAction {
-                    jupyterPsiFile.restartAnalyzing()
-                }
+            ReadAction.run<Throwable> {
+                jupyterPsiFile.restartAnalyzing()
             }
         }
     }

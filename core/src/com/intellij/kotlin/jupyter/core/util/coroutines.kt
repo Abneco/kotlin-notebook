@@ -10,16 +10,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.platform.util.coroutines.childScope
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.time.Duration
 
 /**
@@ -109,13 +106,3 @@ sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
         private class ProjectScope : KotlinNotebookPluginScope()
     }
 }
-
-/**
- * Makes this coroutine to be invoked with minimum delay.
- * Suspension points inside the [action] will be executed in the same thread
- * stated inside the [context].
- */
-internal fun CoroutineScope.invokeNow(
-    context: CoroutineContext = EmptyCoroutineContext,
-    action: suspend CoroutineScope.() -> Unit
-): Job = launch(context, CoroutineStart.UNDISPATCHED, action)
