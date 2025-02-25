@@ -16,5 +16,6 @@ public final class KotlinJupyterIcons {
   }
   /** 16x16 */ public static final @NotNull Icon FileIcon = load("icons/fileIcon.svg", 783830019, 2);
   /** 16x16 */ public static final @NotNull Icon FileIconGreyKotlin = load("icons/fileIconGreyKotlin.svg", 293068365, 2);
+  /** 16x16 */ public static final @NotNull Icon FileIconRunning = load("icons/fileIconRunning.svg", -2122265737, 2);
   /** 16x16 */ public static final @NotNull Icon ToolWindowIcon = load("icons/toolWindowIcon.svg", -1024462064, 2);
 }
