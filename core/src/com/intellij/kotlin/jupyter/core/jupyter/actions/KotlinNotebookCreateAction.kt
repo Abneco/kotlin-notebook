@@ -4,6 +4,10 @@ package com.intellij.kotlin.jupyter.core.jupyter.actions
 import com.intellij.ide.actions.CreateFileFromTemplateAction
 import com.intellij.ide.actions.CreateFileFromTemplateDialog
 import com.intellij.ide.fileTemplates.FileTemplate
+import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
+import com.intellij.kotlin.jupyter.core.language.displayName
+import com.intellij.kotlin.jupyter.core.language.templateName
+import com.intellij.kotlin.jupyter.core.projectWizard.kotlinNotebookWelcomeFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -16,11 +20,7 @@ class KotlinNotebookCreateAction : CreateFileFromTemplateAction(), DumbAware {
     override fun buildDialog(project: Project, directory: PsiDirectory, builder: CreateFileFromTemplateDialog.Builder) {
         builder
             .setTitle(KotlinNotebookBundle.message("kotlin.jupyter.action.create.notebook.dialog.title"))
-            .addKind(
-                KotlinNotebookBundle.message("kotlin.jupyter.action.create.notebook.dialog.kind"),
-                KotlinJupyterIcons.FileIcon,
-                CreateNotebookFactory.TEMPLATE_NAME
-            )
+            .addAllTemplates()
     }
 
     override fun getActionName(directory: PsiDirectory, newName: String, templateName: String): String =
@@ -28,5 +28,23 @@ class KotlinNotebookCreateAction : CreateFileFromTemplateAction(), DumbAware {
 
     public override fun createFileFromTemplate(name: String, template: FileTemplate, dir: PsiDirectory): PsiFile? {
         return CreateNotebookFactory.createFileFromTemplate(name, template, dir, defaultTemplateProperty)
+    }
+
+    private fun CreateFileFromTemplateDialog.Builder.addAllTemplates() {
+        if (kotlinNotebookWelcomeFeaturesEnabled) {
+            for (template in NotebookTemplate.entries) {
+                addTemplate(template)
+            }
+        } else {
+            addTemplate(NotebookTemplate.EMPTY)
+        }
+    }
+
+    private fun CreateFileFromTemplateDialog.Builder.addTemplate(template: NotebookTemplate) {
+        addKind(
+            template.displayName,
+            KotlinJupyterIcons.FileIcon,
+            template.templateName
+        )
     }
 }

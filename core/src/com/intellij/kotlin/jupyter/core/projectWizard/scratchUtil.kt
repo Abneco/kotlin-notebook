@@ -8,6 +8,8 @@ import com.intellij.ide.trustedProjects.TrustedProjects
 import com.intellij.ide.trustedProjects.TrustedProjectsLocator
 import com.intellij.kotlin.jupyter.core.language.FILE_TEMPLATE_KEY
 import com.intellij.kotlin.jupyter.core.language.JupyterKotlinFileType
+import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
+import com.intellij.kotlin.jupyter.core.language.getFileTemplate
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.actionSystem.CustomizedDataContext
 import com.intellij.openapi.actionSystem.DataContext

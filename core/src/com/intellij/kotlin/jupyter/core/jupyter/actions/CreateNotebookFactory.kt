@@ -52,7 +52,6 @@ val BackedNotebookVirtualFile.mode: NotebookMode
  */
 object CreateNotebookFactory {
 
-    const val TEMPLATE_NAME: String = "Kotlin Jupyter Notebook"
     private const val VAR_KERNEL_SPEC = "KERNEL_SPEC"
     private const val VAR_LANGUAGE_SPEC = "LANGUAGE_SPEC"
     private const val VAR_KTNB_METADATA = "KTNB_METADATA"

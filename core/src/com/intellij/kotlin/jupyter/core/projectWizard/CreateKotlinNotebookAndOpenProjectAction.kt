@@ -4,6 +4,9 @@ package com.intellij.kotlin.jupyter.core.projectWizard
 import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.ide.trustedProjects.TrustedProjects
 import com.intellij.ide.trustedProjects.TrustedProjectsLocator.Companion.locateProject
+import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
+import com.intellij.kotlin.jupyter.core.language.description
+import com.intellij.kotlin.jupyter.core.language.displayName
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent

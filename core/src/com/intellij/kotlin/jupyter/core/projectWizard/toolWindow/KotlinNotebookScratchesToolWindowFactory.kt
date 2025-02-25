@@ -2,8 +2,8 @@
 package com.intellij.kotlin.jupyter.core.projectWizard.toolWindow
 
 import com.intellij.icons.AllIcons
+import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
 import com.intellij.kotlin.jupyter.core.projectWizard.CreateKotlinNotebookInCurrentProjectAction
-import com.intellij.kotlin.jupyter.core.projectWizard.NotebookTemplate
 import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
 import com.intellij.kotlin.jupyter.core.projectWizard.kotlinNotebookWelcomeFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle

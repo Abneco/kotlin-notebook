@@ -1,8 +1,6 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.projectWizard
 
-import com.intellij.ide.fileTemplates.FileTemplate
-import com.intellij.ide.fileTemplates.FileTemplateManager
 import com.intellij.ide.util.projectWizard.WizardContext
 import com.intellij.ide.wizard.AbstractNewProjectWizardStep
 import com.intellij.ide.wizard.GeneratorNewProjectWizard
@@ -10,6 +8,9 @@ import com.intellij.ide.wizard.GeneratorNewProjectWizardBuilderAdapter
 import com.intellij.ide.wizard.NewProjectWizardChainStep.Companion.nextStep
 import com.intellij.ide.wizard.NewProjectWizardStep
 import com.intellij.ide.wizard.RootNewProjectWizardStep
+import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
+import com.intellij.kotlin.jupyter.core.language.description
+import com.intellij.kotlin.jupyter.core.language.displayName
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.project.Project
 import com.intellij.ui.JBColor
@@ -81,27 +82,6 @@ private class KotlinNotebookWizardStep(parentStep: NewProjectWizardStep) : Abstr
             notebookName,
         )
     }
-}
-
-enum class NotebookTemplate(
-    val id: String,
-) {
-    EMPTY("empty"),
-    QUICK_API_TEST("quickApiTest"),
-    DATA_ANALYSIS("dataAnalysis"),
-}
-
-
-
-val NotebookTemplate.displayName: String get() =
-    KotlinNotebookBundle.message("kotlin.notebook.project.templates.$id.name")
-
-val NotebookTemplate.description: String get() =
-    KotlinNotebookBundle.message("kotlin.notebook.project.templates.$id.description")
-
-fun NotebookTemplate.getFileTemplate(project: Project): FileTemplate {
-    return FileTemplateManager.getInstance(project)
-        .getInternalTemplate("kotlin.jupyter.$id")
 }
 
 class TemplateSelectionPanel(val templateProperty: KMutableProperty0<NotebookTemplate>) : JBPanel<TemplateSelectionPanel>(BorderLayout()) {
