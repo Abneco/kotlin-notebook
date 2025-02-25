@@ -175,6 +175,6 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
     }
 
     companion object {
-        const val NOTEBOOK_MODULE_NAME_PREFIX = "$KOTLIN_SCRIPTS_MODULE_NAME.Kotlin Notebooks"
+        const val NOTEBOOK_MODULE_NAME_PREFIX: String = "$KOTLIN_SCRIPTS_MODULE_NAME.Kotlin Notebooks"
     }
 }

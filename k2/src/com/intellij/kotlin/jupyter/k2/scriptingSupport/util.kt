@@ -17,7 +17,7 @@ internal const val NOTEBOOK_DEPENDENCIES_MODULE_PREFIX = "$KOTLIN_SCRIPTS_MODULE
 fun VirtualFile.toK2RuntimeDependencyLibraryName(project: Project): String {
     val presentableName = getRelativePathFromProjectRoot(project)?.toString() ?: nameWithoutExtension
 
-    return "$NOTEBOOK_DEPENDENCIES_MODULE_PREFIX for ${presentableName}"
+    return "$NOTEBOOK_DEPENDENCIES_MODULE_PREFIX for ${presentableName} dependencies"
 }
 
 internal fun VirtualFileUrlManager.getNotebookDependenciesAsLibraryEntity(

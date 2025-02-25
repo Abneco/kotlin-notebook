@@ -30,21 +30,20 @@ import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
  * roots and entity source.
  * If it does not exist, it creates a new entity.
  *
- * @param notebookName The name of the Notebook for which the library is being created or updated.
+ * @param libraryName The name of the Notebook for which the library is being created or updated.
  * @param project The project context in which the library is being managed.
  * @param notebookEntitySource The entity source associated with the notebook.
  * @param configurationWrapper Wrapper for script compilation configuration for any cell in the notebook, used to determine library roots.
  */
 fun MutableEntityStorage.createOrUpdateLibraryForNotebookDependencies(
-    notebookName: String,
+    libraryName: String,
     project: Project,
     notebookEntitySource: EntitySource,
     configurationWrapper: ScriptCompilationConfigurationWrapper
 ): LibraryEntity {
     val roots = getLibraryRoots(project, configurationWrapper)
     val libraryTableId = LibraryTableId.ProjectLibraryTableId
-    val name = "$notebookName dependencies"
-    val entity = resolveLibraryDependencies(notebookName, libraryTableId)
+    val entity = resolveLibraryDependencies(libraryName, libraryTableId)
 
     return if (entity != null) {
         modifyLibraryEntity(entity) {
@@ -54,17 +53,17 @@ fun MutableEntityStorage.createOrUpdateLibraryForNotebookDependencies(
     } else {
         addEntity(
             LibraryEntity(
-                name, libraryTableId, roots, notebookEntitySource
+                libraryName, libraryTableId, roots, notebookEntitySource
             )
         )
     }
 }
 
 fun MutableEntityStorage.resolveLibraryDependencies(
-    notebookName: String,
+    notebookDependentLibName: String,
     libraryTableId: LibraryTableId
 ): LibraryEntity? {
-    return resolve(LibraryId("$notebookName dependencies", libraryTableId))
+    return resolve(LibraryId(notebookDependentLibName, libraryTableId))
 }
 
 /**

@@ -6,7 +6,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsis
 import com.intellij.kotlin.jupyter.core.scriptingSupport.workSpaceSnapshot
 import com.intellij.openapi.project.Project
 import com.intellij.platform.workspace.jps.entities.LibraryEntity
-import com.intellij.platform.workspace.storage.entities
+import com.intellij.workspaceModel.ide.toPath
 import org.jetbrains.kotlin.idea.core.script.scriptConfigurationsSourceOfType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 
@@ -19,6 +19,18 @@ private class ScriptingEntitiesConsistencyVerifierFactoryK2 : ScriptingEntitiesC
 private class ScriptingEntitiesConsistencyVerifierK2(
     private val project: Project
 ): ScriptingEntitiesConsistencyVerifier {
+    private fun getNotebookModulesLibraryEntities(): Sequence<LibraryEntity> {
+        return project.workSpaceSnapshot.entitiesBySource {
+            it is KotlinNotebookScriptEntitySource
+        }.filterIsInstance<LibraryEntity>()
+    }
+
+    private fun getRuntimeLibraryForNotebook(notebookFile: BackedNotebookVirtualFile): LibraryEntity? {
+        return getNotebookModulesLibraryEntities().firstOrNull {
+            it.name == notebookFile.file.toK2RuntimeDependencyLibraryName(project)
+        }
+    }
+
     private fun checkSourceIsNotEmpty(notebookFile: BackedNotebookVirtualFile): Boolean {
         val scriptConfigurationsSource = project.scriptConfigurationsSourceOfType<NotebookScriptConfigurationsSource>()?.data?.get()
         if (scriptConfigurationsSource == null) {
@@ -29,12 +41,10 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     }
 
     override fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: String): Boolean {
-        val cache = project.workSpaceSnapshot
-
-        return checkSourceIsNotEmpty(virtualFile) && cache.entities<LibraryEntity>()
-            .filter {
-                it.roots.any { root -> root.url.url.contains(lastCompiledScriptPath) }
-            }.iterator().hasNext()
+        return checkSourceIsNotEmpty(virtualFile) && getRuntimeLibraryForNotebook(virtualFile)?.roots
+            .orEmpty().any { root ->
+                root.url.url.contains(lastCompiledScriptPath)
+            }
     }
 
     override fun isScriptFileConfigurationConsistentWithModel(virtualFile: BackedNotebookVirtualFile, compilationConfiguration: ScriptCompilationConfiguration): Boolean {
@@ -42,6 +52,16 @@ private class ScriptingEntitiesConsistencyVerifierK2(
         val configurationsForNotebookCells = configurationsCache.getConfigurationsForNotebook(virtualFile.file)
 
         // Check the first one since configuration for any cell will be the same
-        return configurationsForNotebookCells?.firstOrNull()?.configuration == compilationConfiguration
+        val configurationWrapper = configurationsForNotebookCells?.firstOrNull()
+        val presentInConfigurationSource = configurationWrapper?.configuration == compilationConfiguration
+
+        val notebookRuntimeDependencyLibrary = getRuntimeLibraryForNotebook(virtualFile)
+        val presentInModuleDependencies = notebookRuntimeDependencyLibrary?.roots.orEmpty()
+            .any { root ->
+                val lastDependencyPath = configurationWrapper?.dependenciesClassPath?.lastOrNull()?.toPath()
+                lastDependencyPath == root.url.toPath()
+            }
+
+        return presentInConfigurationSource && presentInModuleDependencies
     }
 }

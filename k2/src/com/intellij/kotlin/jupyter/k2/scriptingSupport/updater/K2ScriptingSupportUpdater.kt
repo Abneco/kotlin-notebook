@@ -5,6 +5,7 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.action.JupyterRestartKernelListener
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
 import com.intellij.kotlin.jupyter.core.ide.handlers.UpdaterConstructorData
+import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
@@ -14,12 +15,14 @@ import com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptModel
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsSource
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.idea.core.script.k2.K2ScriptDefinitionProvider
+import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource
 import org.jetbrains.kotlin.idea.core.script.scriptConfigurationsSourceOfType
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
@@ -28,6 +31,10 @@ import kotlin.script.experimental.api.dependencies
 import kotlin.script.experimental.api.valueOrNull
 
 internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) : ScriptingSupportUpdater {
+    companion object {
+        private val LOG = KotlinNotebookLoggerFactory.getInstance(K2ScriptingSupportUpdater::class)
+    }
+
     private val project = updaterConstructorData.project
 
     init {
@@ -41,14 +48,32 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
             )
     }
 
+    /**
+     * Special handler for a structured concurrency
+     */
+    private val exceptionHandler = CoroutineExceptionHandler { context, e ->
+        if (e is ProcessCanceledException || project.isDisposed) {
+            return@CoroutineExceptionHandler
+        }
+        LOG.warn("Exception during update k2 configuration for notebooks", e)
+        project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).onUpdateException(Exception(e))
+    }
+
     override fun updateScripts() {
         val editorManager = FileEditorManager.getInstance(project) ?: return
         val scope = KotlinNotebookPluginScope.getForProject(project)
-        scope.async {
+
+        scope.launch(exceptionHandler) {
             updateK2Configurations(editorManager, project)
+
+            K2ScriptDefinitionProvider.getInstance(project).reloadDefinitionsFromSources()
+            project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).afterUpdate()
         }
     }
 
+    /**
+     * Cleares [ScriptConfigurationsSource] for a particular [BackedNotebookVirtualFile]
+     */
     private fun clearRuntimeDependenciesFor(notebookFile: BackedNotebookVirtualFile) {
         val scope = KotlinNotebookPluginScope.getForProject(project)
         scope.async {
@@ -71,22 +96,13 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
             .mapNotNull { it.toKotlinNotebookBackedFile() }
             .filter { JupyterCompilerService.getForFile(project, it).needsConfigurationUpdate }
 
-        runCatching {
-            updateK2Impl(project, notebooks)
-        }.onFailure {
-            if (it is ProcessCanceledException || project.isDisposed) {
-                return@onFailure
-            }
-            thisLogger().warn("Exception during update k2 configuration for notebooks", it)
-            publisher.onUpdateException(Exception(it))
-        }.onSuccess {
-            K2ScriptDefinitionProvider.getInstance(project).reloadDefinitionsFromSources()
+        // Early return
+        if (notebooks.isEmpty()) {
             publisher.afterUpdate()
         }
 
-        //K2ScriptDefinitionProvider.getInstance(project).reloadDefinitionsFromSources()
+        updateK2Impl(project, notebooks)
     }
-
 
     private suspend fun updateK2Impl(project: Project, notebooks: Collection<BackedNotebookVirtualFile>) {
         val scripts = mutableListOf<KotlinNotebookScriptModel>()

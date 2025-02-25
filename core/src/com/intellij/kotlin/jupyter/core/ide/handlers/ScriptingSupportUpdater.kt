@@ -19,6 +19,9 @@ data class UpdaterConstructorData(
  * [create] calls a [Factory] service for each of K1/K2 modes.
  */
 interface ScriptingSupportUpdater : KotlinPluginModeAwareHandler {
+    /**
+     * Main logic for executing scripting update is contained here
+     */
     fun updateScripts()
 
     fun interface Factory {
