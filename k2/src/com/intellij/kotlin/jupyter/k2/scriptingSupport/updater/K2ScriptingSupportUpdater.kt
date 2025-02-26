@@ -23,7 +23,6 @@ import kotlinx.coroutines.launch
 import org.jetbrains.kotlin.idea.core.script.k2.K2ScriptDefinitionProvider
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource
 import org.jetbrains.kotlin.idea.core.script.scriptConfigurationsSourceOfType
-import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import java.util.concurrent.CancellationException
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
@@ -99,6 +98,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         // Early return
         if (notebooks.isEmpty()) {
             publisher.afterUpdate()
+            return
         }
 
         updateK2Impl(project, notebooks)
@@ -110,21 +110,19 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
             val notebookService = JupyterCompilerService.getForFile(project, notebook)
             val perFileScripts = readAction {
                 val scriptsToRefine = notebookService.getFilesToRefine()
+                if (scriptsToRefine.isEmpty()) {
+                    return@readAction emptyList()
+                }
+
+                // refine only once as they are the same per notebook
+                val refinedConfiguration = try {
+                    val anyKtFile = scriptsToRefine.first().ktFile
+                    JupyterKtScriptingSupport.getConfiguration(anyKtFile)?.valueOrNull()?.configuration!!
+                } catch (e: Throwable) {
+                    throw e
+                }
+
                 scriptsToRefine.map { ktFileScriptSource ->
-                    val ktFile = ktFileScriptSource.ktFile
-
-                    val defaultConfiguration = try {
-                        JupyterKtScriptingSupport.getConfiguration(ktFile)?.valueOrNull()?.configuration!!
-                    } catch (e: Throwable) {
-                        throw e
-                    }
-
-                    val source = KtFileScriptSource(ktFile)
-                    val refinedConf = notebookService.handleBeforeCompiling(
-                        defaultConfiguration,
-                        source
-                    )
-
                     /**
                      * Data race preventing trick:
                      * pass stable configuration to the scripting cache,
@@ -132,7 +130,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                      * thus libraryRoots of the module will be up to date.
                      */
                     val stableConfWithUpdatedDependenciesRoots = ScriptCompilationConfiguration(notebookService.stableConfiguration) {
-                        val updatedSources = refinedConf[ScriptCompilationConfiguration.dependencies]
+                        val updatedSources = refinedConfiguration[ScriptCompilationConfiguration.dependencies]
                         if (updatedSources != null) {
                             dependencies(updatedSources)
                         }
@@ -141,7 +139,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                     KotlinNotebookScriptModel(
                         ktFileScriptSource.virtualFile,
                         ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
-                            source,
+                            ktFileScriptSource,
                             stableConfWithUpdatedDependenciesRoots
                         )
                     )

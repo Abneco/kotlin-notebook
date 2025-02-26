@@ -51,8 +51,22 @@ private class ScriptingEntitiesConsistencyVerifierK2(
         val configurationsCache = project.scriptConfigurationsSourceOfType<NotebookScriptConfigurationsSource>()?.data?.get() ?: return true
         val configurationsForNotebookCells = configurationsCache.getConfigurationsForNotebook(virtualFile.file)
 
-        // Check the first one since configuration for any cell will be the same
-        val configurationWrapper = configurationsForNotebookCells?.firstOrNull()
+        /**
+         * Here we need to perform 3 steps check:
+         *  1. Check the number of script configurations matches the number of cells
+         *  2. Check that the stored compilation configuration from [NotebookScriptConfigurationsSource] matches the refined one, e.g., the latest
+         *  3. Check that dependencies from the refined configuration are present in the Workspace library
+         *
+         *  If any of it is missing, we have a pending update.
+         *
+         *  NB: A configuration source is a K2 cache for compile configurations,
+         *  while the Workspace module contains a dependency used for highlighting.
+         */
+        val numberOfConfigurationsMatchesCells = configurationsForNotebookCells?.size == virtualFile.notebook.cellsCount()
+        if (!numberOfConfigurationsMatchesCells) return false
+
+        // Check the random one since the configuration for any cell will be the same
+        val configurationWrapper = configurationsForNotebookCells.lastOrNull()
         val presentInConfigurationSource = configurationWrapper?.configuration == compilationConfiguration
 
         val notebookRuntimeDependencyLibrary = getRuntimeLibraryForNotebook(virtualFile)

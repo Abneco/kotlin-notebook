@@ -1,8 +1,10 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
+import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.getRelativePathFromProjectRoot
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
@@ -26,6 +28,7 @@ import com.intellij.platform.workspace.jps.entities.modifyModuleEntity
 import com.intellij.platform.workspace.jps.entities.sourceRoots
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
+import kotlinx.coroutines.async
 import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
 import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
@@ -69,7 +72,23 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
             virtualFile to ScriptConfigurationWithSdk(configuration, sdk)
         }
 
-        data.set(configurations)
+        // incremental updates are supported
+        val trimmedCache = data.get().toMutableMap()
+            .removeOverlappingRecords(configurations)
+
+        data.set(trimmedCache + configurations)
+    }
+
+    /**
+     * Removes all records related to notebook files before putting new ones from [configurationsUpdate]
+     */
+    private fun MutableMap<VirtualFile, ScriptConfigurationWithSdk>.removeOverlappingRecords(
+        configurationsUpdate: Map<VirtualFile, ScriptConfigurationWithSdk>
+    ): MutableMap<VirtualFile, ScriptConfigurationWithSdk> {
+        val updatesPerNotebookFile = configurationsUpdate.toConfigurationInfoPerNotebook()
+        val keysToRemove = keys.filter { (it as VirtualFileWindow).delegate in updatesPerNotebookFile }
+        keys.removeAll(keysToRemove)
+        return this
     }
 
     override suspend fun updateModules(storage: MutableEntityStorage?) {
