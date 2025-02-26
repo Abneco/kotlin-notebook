@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.execution
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.action.JupyterRestartKernelListener
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionTask
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
@@ -9,7 +10,6 @@ import com.intellij.jupyter.core.jupyter.helper.JupyterHelper
 import com.intellij.kotlin.jupyter.core.editor.highlighting.events.ExecutionCallbackRegistered
 import com.intellij.kotlin.jupyter.core.editor.highlighting.events.ExecutionCallbackUnregistered
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.withWriteLock
 import com.intellij.openapi.application.ApplicationManager
@@ -27,11 +27,9 @@ import kotlin.concurrent.write
 class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackFactory {
     init {
       ApplicationManager.getApplication().messageBus.connect()
-          .subscribe(NotebookSessionEventListener.TOPIC, object : NotebookSessionEventListener {
-              override fun sessionStarted(virtualFile: BackedNotebookVirtualFile, isAfterRestart: Boolean) {
-                  executionDataLock.withWriteLock {
-                      callbacksCounters.remove(virtualFile)
-                  }
+          .subscribe(JupyterRestartKernelListener.TOPIC, JupyterRestartKernelListener { notebookFile ->
+              executionDataLock.withWriteLock {
+                  callbacksCounters.remove(notebookFile)
               }
           })
     }

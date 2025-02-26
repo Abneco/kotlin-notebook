@@ -16,7 +16,6 @@ import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurati
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.async
@@ -26,6 +25,7 @@ import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource
 import org.jetbrains.kotlin.idea.core.script.scriptConfigurationsSourceOfType
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
+import java.util.concurrent.CancellationException
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.dependencies
 import kotlin.script.experimental.api.valueOrNull
@@ -52,11 +52,11 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
      * Special handler for a structured concurrency
      */
     private val exceptionHandler = CoroutineExceptionHandler { context, e ->
-        if (e is ProcessCanceledException || project.isDisposed) {
+        if (e is CancellationException || project.isDisposed) {
             return@CoroutineExceptionHandler
         }
         LOG.warn("Exception during update k2 configuration for notebooks", e)
-        project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).onUpdateException(Exception(e))
+        project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).onUpdateException(e)
     }
 
     override fun updateScripts() {

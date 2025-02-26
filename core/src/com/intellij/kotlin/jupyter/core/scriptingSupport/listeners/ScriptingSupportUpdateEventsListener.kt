@@ -13,7 +13,7 @@ val SCRIPTING_SUPPORT_TOPIC = Topic(ScriptingSupportUpdateEventsListener::class.
 interface ScriptingSupportUpdateEventsListener {
     fun afterUpdate()
 
-    fun onUpdateException(exception: Exception) = Unit
+    fun onUpdateException(exception: Throwable): Unit = Unit
 
-    fun onTrivialUpdate() = Unit
+    fun onTrivialUpdate(): Unit = Unit
 }

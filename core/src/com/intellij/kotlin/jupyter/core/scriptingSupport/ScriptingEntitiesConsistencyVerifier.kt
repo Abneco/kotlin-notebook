@@ -18,10 +18,14 @@ import kotlin.script.experimental.api.ScriptCompilationConfiguration
  * [create] calls a [Factory] service for each of K1/K2 modes.
  */
 interface ScriptingEntitiesConsistencyVerifier : KotlinPluginModeAwareHandler {
-    // Check for presence of classpath part in files cache
+    /**
+     * Check for presence of classpath part in artifacts cache
+     */
     fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: String): Boolean
 
-    // Checks for the presence of a particular refined configuration
+    /**
+     * Checks for the presence of a particular refined configuration
+     */
     fun isScriptFileConfigurationConsistentWithModel(virtualFile: BackedNotebookVirtualFile, compilationConfiguration: ScriptCompilationConfiguration): Boolean
 
     interface Factory {

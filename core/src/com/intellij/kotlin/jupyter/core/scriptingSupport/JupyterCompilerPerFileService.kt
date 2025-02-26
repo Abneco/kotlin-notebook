@@ -74,6 +74,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
+import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.api.asSuccess
@@ -165,7 +166,7 @@ class JupyterCompilerPerFileService(
 
     private val lastStableConfiguration = AtomicReference(project.baseScriptingCompilationConfiguration)
 
-    private val scriptingSupportAfterUpdateListener = ScriptingSupportUpdateEventProcessor()
+    private val scriptingSupportUpdatesProcessor = ScriptingSupportEventsProcessor()
 
     val stableConfiguration: ScriptCompilationConfiguration get() = lastStableConfiguration.get()
     val executedCellsCount: Int get() = directoryCounter.get()
@@ -186,7 +187,7 @@ class JupyterCompilerPerFileService(
 
         project.messageBus.connect(parent).subscribe(
             SCRIPTING_SUPPORT_TOPIC,
-            scriptingSupportAfterUpdateListener
+            scriptingSupportUpdatesProcessor
         )
 
         externalDependenciesProvider.startIfNotStarted()
@@ -458,10 +459,14 @@ class JupyterCompilerPerFileService(
         addSnippet(listToAdd)
     }
 
-    private fun createNextClassLoader(classesDirPath: Path): ClassLoader = URLClassLoader(
-        arrayOf(classesDirPath.toUri().toURL()),
-        (implicitsList.lastOrNull()?.fromClass ?: this::class).java.classLoader
-    )
+    private fun createNextClassLoader(classesDirPath: Path): ClassLoader {
+        val lastSaved = scriptingSupportUpdatesProcessor.lastLoadedTypeOrNull?.fromClass
+        val lastLoadedClass = lastSaved ?: implicitsList.lastOrNull()?.fromClass
+        return URLClassLoader(
+            arrayOf(classesDirPath.toUri().toURL()),
+            (lastLoadedClass ?: this::class).java.classLoader
+        )
+    }
 
     // Returns true if some receiver classes were loaded, false otherwise
     private fun loadReceiverClassesIfAny(classesDirPath: Path, classesToLoad: Collection<String>): Boolean {
@@ -473,11 +478,16 @@ class JupyterCompilerPerFileService(
             action = {
                 writeData {
                     val loader = createNextClassLoader(classesDirPath)
-                    classesToLoad.forEach { className ->
+                    val loadedSnippets = classesToLoad.map { className ->
                         LOG.debug("Adding class: $className")
-                        val kClass = loader.loadClass(className).kotlin
-                        implicitsList.addClass(kClass)
+                        loader.loadClass(className).kotlin
                     }
+                    scriptingSupportUpdatesProcessor.addLoadedSnippet(
+                        ClassPathSnippetsLoadedData(
+                            classesDirPath,
+                            loadedSnippets.map { KotlinType(it) },
+                        )
+                    )
                     true
                 }
             },
@@ -502,6 +512,7 @@ class JupyterCompilerPerFileService(
         _currentClasspath.clear()
         additionalDefaultImports.clear()
         implicitsList.clear()
+        scriptingSupportUpdatesProcessor.clear()
         lastStableConfiguration.set(project.baseScriptingCompilationConfiguration)
         defaultImportsEnhancer.clear()
         if (!project.isDisposed) {
@@ -530,7 +541,9 @@ class JupyterCompilerPerFileService(
         clear()
     }
 
-    private inner class ScriptingSupportUpdateEventProcessor : ScriptingSupportUpdateEventsListener {
+    private inner class ScriptingSupportEventsProcessor : ScriptingSupportUpdateEventsListener, ImplicitListsConfigurationUpdater {
+        private val implicitReceiversClassPathData = mutableListOf<ClassPathSnippetsLoadedData>()
+
         private fun updateLastStableConfiguration() {
             while (true) {
                 val lastStableConf = lastStableConfiguration.get()
@@ -538,9 +551,38 @@ class JupyterCompilerPerFileService(
 
                 if (lastStableConfiguration.compareAndSet(lastStableConf, updatedConfiguration)) {
                     LOG.info("Cached configuration updated for ${virtualFile.file.name}!")
+                    writeData {
+                        updateImplicitLists()
+                    }
                     break
                 }
             }
+        }
+
+        private fun updateImplicitLists() {
+            if (implicitReceiversClassPathData.isEmpty()) return
+
+            val newStableReceivers = getSnippetsReadyForConfigurationUpdate()
+            newStableReceivers.flatMap { it.snippetTypes }.forEach {
+                implicitsList.addClass(it.fromClass!!)
+            }
+
+            implicitReceiversClassPathData.removeAll(newStableReceivers)
+        }
+
+        val lastLoadedTypeOrNull: KotlinType? get() {
+            val loadedSnippets = implicitReceiversClassPathData.lastOrNull()?.snippetTypes
+            return loadedSnippets?.lastOrNull()
+        }
+
+        override fun getSnippetsReadyForConfigurationUpdate(): List<ClassPathSnippetsLoadedData> {
+            return implicitReceiversClassPathData.filter { snippetData ->
+                scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, snippetData.path.toString())
+            }
+        }
+
+        override fun addLoadedSnippet(snippetData: ClassPathSnippetsLoadedData) {
+            implicitReceiversClassPathData.add(snippetData)
         }
 
         override fun afterUpdate() {
@@ -562,6 +604,10 @@ class JupyterCompilerPerFileService(
                     }
                 }
             }
+        }
+
+        fun clear() {
+            implicitReceiversClassPathData.clear()
         }
     }
 

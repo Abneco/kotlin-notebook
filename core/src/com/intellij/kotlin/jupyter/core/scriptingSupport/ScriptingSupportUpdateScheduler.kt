@@ -21,7 +21,7 @@ class ScriptingSupportUpdateScheduler(
                     fireActionFinished()
                 }
 
-                override fun onUpdateException(exception: Exception) {
+                override fun onUpdateException(exception: Throwable) {
                     fireActionFinished()
                 }
 
