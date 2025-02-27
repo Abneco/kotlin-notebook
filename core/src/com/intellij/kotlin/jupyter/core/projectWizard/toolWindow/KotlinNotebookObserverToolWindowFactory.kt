@@ -5,7 +5,6 @@ import com.intellij.icons.AllIcons
 import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
 import com.intellij.kotlin.jupyter.core.projectWizard.CreateKotlinNotebookInCurrentProjectAction
 import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
-import com.intellij.kotlin.jupyter.core.projectWizard.kotlinNotebookWelcomeFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionGroup
@@ -20,25 +19,25 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.ContentFactory
 import java.awt.BorderLayout
 
-class KotlinNotebookScratchesToolWindowFactory: ToolWindowFactory {
+class KotlinNotebookObserverToolWindowFactory: ToolWindowFactory {
     override fun init(toolWindow: ToolWindow) {
-        toolWindow.stripeTitle = KotlinNotebookBundle.message("toolwindow.scratches.title")
-        toolWindow.title = KotlinNotebookBundle.message("toolwindow.scratches.title")
+        toolWindow.stripeTitle = KotlinNotebookBundle.message("toolwindow.observer.title")
+        toolWindow.title = KotlinNotebookBundle.message("toolwindow.observer.title")
         addHeaderActions(toolWindow)
     }
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val panel = ScratchToolWindowPanel(project)
+        val panel = KotlinNotebookObserverPanel(project)
         val content = ContentFactory.getInstance().createContent(panel, "", false)
         toolWindow.contentManager.addContent(content)
     }
 
     override suspend fun isApplicableAsync(project: Project): Boolean {
-        return kotlinNotebookWelcomeFeaturesEnabled
+        return false
     }
 
     override fun shouldBeAvailable(project: Project): Boolean {
-        return kotlinNotebookWelcomeFeaturesEnabled
+        return false
     }
 
     private fun addHeaderActions(toolWindow: ToolWindow) {
@@ -47,8 +46,8 @@ class KotlinNotebookScratchesToolWindowFactory: ToolWindowFactory {
 }
 
 private class CreateNotebookActionGroup: ActionGroup(
-    KotlinNotebookBundle.message("action.group.create.new.kotlin.scratch.notebook.text"),
-    KotlinNotebookBundle.message("action.group.create.new.kotlin.scratch.notebook.description"),
+    KotlinNotebookBundle.message("action.group.create.new.kotlin.welcome.notebook.text"),
+    KotlinNotebookBundle.message("action.group.create.new.kotlin.welcome.notebook.description"),
     AllIcons.General.Add
 ) {
     private val myActions = run {
@@ -68,11 +67,11 @@ private class CreateNotebookActionGroup: ActionGroup(
     }
 }
 
-class ScratchToolWindowPanel(project: Project) : SimpleToolWindowPanel(true), Disposable {
+class KotlinNotebookObserverPanel(project: Project) : SimpleToolWindowPanel(true), Disposable {
     override fun dispose() {
         // Clean up resources if needed
     }
-    private val treeComponent = KotlinNotebookTreeHolder() { file ->
+    private val treeComponent = KotlinNotebookTreeHolder { file ->
         FileEditorManager.getInstance(project).openFile(file, true)
     }
 

@@ -290,7 +290,7 @@
                 order="after ProjectsWelcomeTab, after GatewayWelcomeTab, before CustomizeWelcomeTab"/>
 
         <toolWindow id="KotlinNotebookScratches" anchor="left" order="after Commit" icon="KotlinJupyterIcons.ToolWindowIcon"
-                    factoryClass="com.intellij.kotlin.jupyter.core.projectWizard.toolWindow.KotlinNotebookScratchesToolWindowFactory"/>
+                    factoryClass="com.intellij.kotlin.jupyter.core.projectWizard.toolWindow.KotlinNotebookObserverToolWindowFactory"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">

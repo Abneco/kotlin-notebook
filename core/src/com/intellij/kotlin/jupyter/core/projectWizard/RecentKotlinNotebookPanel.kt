@@ -1,8 +1,6 @@
 package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.icons.AllIcons
-import com.intellij.ide.scratch.ScratchFileService
-import com.intellij.ide.scratch.ScratchRootType
 import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.Disposable
@@ -14,13 +12,9 @@ import com.intellij.openapi.actionSystem.ex.ActionButtonLook
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.actionSystem.impl.ActionToolbarImpl
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.openapi.vfs.newvfs.BulkFileListener
-import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
 import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.border.CustomLineBorder
@@ -49,28 +43,12 @@ class RecentKotlinNotebookPanel(private val parentDisposable: Disposable): Borde
         withBackground(WelcomeScreenUIManager.getProjectsBackground())
 
         val treeComponent = KotlinNotebookTreeHolder { file: VirtualFile ->
-            val project = getOrCreateDefaultKotlinNotebookProject()
+            val project = DefaultKotlinNotebookProject.getProjectWithModalProgress()
             FileEditorManager.getInstance(project).openFile(file, true)
         }
         treeComponent.updateAsync().join()
         val filteringTree = RecentKotlinNotebookFilteringTree(treeComponent)
         filteringTree.updateAsync().join()
-
-        // Subscribe to file changes
-        val connection = ApplicationManager.getApplication().messageBus.connect(parentDisposable)
-        connection.subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
-            override fun after(events: List<VFileEvent>) {
-                val scratchService = ScratchFileService.getInstance()
-                val scratchRoot = ScratchRootType.getInstance()
-                val anyScratchFileUpdated = events.any { event ->
-                    val file = event.file
-                    file != null && scratchService.getRootType(file) == scratchRoot
-                }
-                if (anyScratchFileUpdated) {
-                    filteringTree.updateAsync()
-                }
-            }
-        })
 
         val northPanel = JBUI.Panels.simplePanel()
             .andTransparent()
