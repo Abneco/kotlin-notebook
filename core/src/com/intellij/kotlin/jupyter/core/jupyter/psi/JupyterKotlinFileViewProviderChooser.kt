@@ -19,8 +19,10 @@ class JupyterKotlinFileViewProviderChooser : JupyterFileViewProviderFactory.Choo
     }
 
     override fun isApplicable(file: VirtualFile, isBackProvider: Boolean): Boolean {
-        if (isBackProvider) return false
-        if (!file.exists()) return false
-        return file.isKotlinNotebook
+        return when {
+            isBackProvider -> false
+            !file.exists() -> false
+            else -> file.isKotlinNotebook
+        }
     }
 }

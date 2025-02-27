@@ -8,8 +8,13 @@ import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.testFramework.LightVirtualFile
+import org.jetbrains.kotlin.scripting.definitions.StandardScriptDefinition.fileExtension
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
+import kotlin.script.experimental.api.ScriptCompilationConfiguration
+import kotlin.script.experimental.api.ScriptCompilationConfigurationKeys
 import kotlin.script.experimental.api.SourceCode
+import kotlin.script.experimental.api.fileExtension
 import kotlin.script.experimental.host.ScriptDefinition
 
 /**
@@ -32,11 +37,17 @@ abstract class KotlinNotebookScriptDefinitionsWrapper(
         scriptDefinition
     }
 
+    protected val fileExtension: String by lazy {
+        scriptDefinition.compilationConfiguration[ScriptCompilationConfiguration.fileExtension] ?: "jupyter.kts"
+    }
+
     protected fun isNotebookInjectedScript(script: SourceCode): Boolean {
         val virtualFile = (script as? VirtualFileScriptSource)?.virtualFile ?: return false
 
         return when (virtualFile) {
             is VirtualFileWindow -> virtualFile.delegate.toKotlinNotebookBackedFile() != null
+            // Special case for tmp files as we don't want to create a notebook ViewProvider
+            is LightVirtualFile -> virtualFile.name.endsWith(fileExtension)
             else -> virtualFile.isKotlinNotebook
         }
     }
