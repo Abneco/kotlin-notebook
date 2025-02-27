@@ -68,14 +68,15 @@ private class ScriptingEntitiesConsistencyVerifierK2(
         // Check the random one since the configuration for any cell will be the same
         val configurationWrapper = configurationsForNotebookCells.lastOrNull()
         val presentInConfigurationSource = configurationWrapper?.configuration == compilationConfiguration
+        if (!presentInConfigurationSource) return false
 
         val notebookRuntimeDependencyLibrary = getRuntimeLibraryForNotebook(virtualFile)
         val presentInModuleDependencies = notebookRuntimeDependencyLibrary?.roots.orEmpty()
             .any { root ->
-                val lastDependencyPath = configurationWrapper?.dependenciesClassPath?.lastOrNull()?.toPath()
+                val lastDependencyPath = configurationWrapper.dependenciesClassPath.lastOrNull()?.toPath()
                 lastDependencyPath == root.url.toPath()
             }
 
-        return presentInConfigurationSource && presentInModuleDependencies
+        return presentInModuleDependencies
     }
 }

@@ -6,12 +6,14 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.getRelativePathFromProjectRoot
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
 import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.workspaceModel
@@ -28,12 +30,17 @@ import com.intellij.platform.workspace.jps.entities.modifyModuleEntity
 import com.intellij.platform.workspace.jps.entities.sourceRoots
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import kotlinx.coroutines.async
+import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
+import org.jetbrains.kotlin.analysis.api.projectStructure.KaModuleProvider
+import org.jetbrains.kotlin.analysis.api.projectStructure.analysisContextModule
 import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
 import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource
 import org.jetbrains.kotlin.idea.core.script.scriptDefinitionsSourceOfType
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionsSource
 import java.nio.file.Path
 import kotlin.script.experimental.api.asSuccess
@@ -59,6 +66,51 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
     override fun getScriptDefinitionsSource(): ScriptDefinitionsSource? =
         project.scriptDefinitionsSourceOfType<KotlinNotebookScriptDefinitionsSource>()
 
+    /**
+     * Unfortunately, we live in the injection world.
+     * There might be a situation where [VirtualFileWindow] gets invalided soon after it was processed.
+     * In this case, we should try to fall back and pick any other configuration from the Notebook.
+     */
+    override fun getConfigurationWithSdk(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
+        val stored = super.getConfigurationWithSdk(virtualFile)
+        if (stored != null) return stored
+
+        val cache = data.get()
+        if (cache.isEmpty()) return null
+        val notebooksCache = cache.toConfigurationInfoPerNotebook()
+
+        val topLevelFile = (virtualFile as? VirtualFileWindow)?.delegate ?: return null
+        val notebookScriptsCache = notebooksCache[topLevelFile]?.scripts ?: return null
+        if (notebookScriptsCache.isEmpty()) return null
+
+        val recordWithValidWindow = notebookScriptsCache.firstOrNull {
+            it.first.isValid
+        }
+        if (recordWithValidWindow == null) return null
+
+        val (virtualFileWindow, otherConfigurationFromNotebook) = recordWithValidWindow
+
+        // try to add data to the cache
+        KotlinNotebookPluginScope.getForProject(project).async {
+            val scriptWithSdk = ScriptConfigurationWithSdk(
+                otherConfigurationFromNotebook.asSuccess(),
+                notebooksCache[topLevelFile]?.sdkInfo
+            )
+
+            data.accumulateAndGet(
+                mapOf(virtualFile to scriptWithSdk)
+            ) { old, new -> old + new }
+
+            // add another module as a context dependency until the update is performed
+            readAction {
+                virtualFile.setUpTemporaryModuleForAnalysis(virtualFileWindow)
+            }
+        }
+
+        return cache[virtualFileWindow]
+    }
+
+    @OptIn(KaImplementationDetail::class)
     override suspend fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
         val sdk = ProjectRootManager.getInstance(project).projectSdk ?: ProjectJdkTable.getInstance().allJdks.firstOrNull()
         if (sdk == null) {
@@ -67,6 +119,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
 
         val configurations = scripts.associate { ktScript ->
             val virtualFile = ktScript.virtualFile
+            virtualFile.analysisContextModule = null
             val configuration = ktScript.refinedConfigurationResult.asSuccess()
 
             virtualFile to ScriptConfigurationWithSdk(configuration, sdk)
@@ -89,6 +142,21 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
         val keysToRemove = keys.filter { (it as VirtualFileWindow).delegate in updatesPerNotebookFile }
         keys.removeAll(keysToRemove)
         return this
+    }
+
+    /**
+     * Since we already detected that there is no configuration provided,
+     * one needs to set up any existing context module to be analyzed for the smooth analysis.
+     * Note, it's important to invalidate this key as soon as possible.
+     * It happens in [updateConfigurations].
+     */
+    @OptIn(KaImplementationDetail::class)
+    @RequiresReadLock
+    private fun VirtualFile.setUpTemporaryModuleForAnalysis(donorInjectedFile: VirtualFile) {
+        val randomKtFile = donorInjectedFile.findPsiFile(project) as? KtFile ?: return
+        val randomModule = KaModuleProvider.getInstance(project).getModule(randomKtFile, null)
+
+        this.analysisContextModule = randomModule
     }
 
     override suspend fun updateModules(storage: MutableEntityStorage?) {
