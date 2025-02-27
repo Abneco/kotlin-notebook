@@ -29,6 +29,7 @@ import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.PsiReference
+import com.intellij.psi.impl.PsiDocumentManagerBase
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtil
 import com.intellij.psi.search.SearchScope
@@ -57,10 +58,7 @@ class NotebookMemberInplaceRenamer(
     private var foundRefsSize: Int = 0
     private val prevClassData = myElementToRename.containingFile.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)
     private val fileSuffix: String get() = JupyterCompilerService.getInstance(originalElement.project).fileSuffix
-    private val topLevelDocument = when (val d = myEditor.document) {
-        is DocumentWindow -> d.delegate
-        else -> d
-    }
+    private val topLevelDocument = PsiDocumentManagerBase.getTopLevelDocument(myEditor.document)
 
     override fun performRenameInner(element: PsiElement?, newName: String?) {
         super.performRenameInner(element, newName)

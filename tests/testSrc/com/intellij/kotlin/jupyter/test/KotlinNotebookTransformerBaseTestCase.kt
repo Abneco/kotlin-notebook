@@ -10,6 +10,7 @@ import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.impl.PsiDocumentManagerBase
 
 abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile
@@ -60,8 +61,8 @@ abstract class KotlinNotebookTransformerBaseTestCase : KotlinNotebookBaseTestCas
         }
 
         val doc = myFixture.editor.document
-        val docToCheck = if (testOptions.checkTopLevelDocument && doc is DocumentWindow) {
-            doc.delegate
+        val docToCheck = if (testOptions.checkTopLevelDocument) {
+            PsiDocumentManagerBase.getTopLevelDocument(doc)
         } else {
             doc
         }
