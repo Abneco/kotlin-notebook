@@ -41,6 +41,7 @@ class KotlinNotebookTreeHolder(
         tree.model = treeModel
         tree.isRootVisible = false
         tree.rowHeight = 0
+        tree.border = JBUI.Borders.empty()
         setupTreeProperties()
         setupTreeRenderer()
         setupMouseListener()
@@ -84,7 +85,7 @@ class KotlinNotebookTreeHolder(
             }
 
             override fun mouseClicked(e: MouseEvent) {
-                if (e.clickCount == 1) {
+                if (e.clickCount == 1 && e.button == MouseEvent.BUTTON1) {
                     val row = getCurrentRow(e)
                     if (row == -1) return
                     val path = tree.getPathForRow(row)

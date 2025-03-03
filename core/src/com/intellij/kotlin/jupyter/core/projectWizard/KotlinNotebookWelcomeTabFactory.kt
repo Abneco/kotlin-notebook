@@ -44,7 +44,7 @@ class KotlinNotebookWelcomeTabFactory: WelcomeTabFactory {
     }
 }
 
-internal class KotlinNotebookWelcomeScreenTab(private val parentDisposable: Disposable) : DefaultWelcomeScreenTab(
+internal class KotlinNotebookWelcomeScreenTab(parentDisposable: Disposable) : DefaultWelcomeScreenTab(
     KotlinNotebookBundle.message("kotlin.notebook.project.wizard.title")
 ) {
     private val projectsPanelWrapper: Wrapper = Wrapper().apply {
@@ -122,7 +122,7 @@ internal class KotlinNotebookWelcomeScreenTab(private val parentDisposable: Disp
     }
 
     private fun createRecentProjectsPanel(): JComponent {
-        val recentProjectsPanel = RecentKotlinNotebookPanel(parentDisposable)
+        val recentProjectsPanel = RecentKotlinNotebookPanel()
 
         val scrollPane = ScrollPaneFactory.createScrollPane(
             recentProjectsPanel,

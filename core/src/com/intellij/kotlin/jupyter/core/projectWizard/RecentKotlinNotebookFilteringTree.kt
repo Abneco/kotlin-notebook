@@ -5,17 +5,23 @@ import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeH
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.ui.addKeyboardAction
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.FilteringTree
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.TextComponentEmptyText
+import com.intellij.util.asSafely
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.tree.TreeUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.awt.event.KeyEvent
+import javax.swing.KeyStroke
 
 class RecentKotlinNotebookFilteringTree(
-    private val treeComponent: KotlinNotebookTreeHolder
+    private val treeComponent: KotlinNotebookTreeHolder,
+    private val openNotebook: (VirtualFile) -> Unit
 ) : FilteringTree<NotebookTreeNode, NotebookItem>(
     treeComponent.getTree(),
     treeComponent.getRoot()
@@ -50,8 +56,26 @@ class RecentKotlinNotebookFilteringTree(
                 accessibleContext.accessibleName = fieldText
 
                 TextComponentEmptyText.setupPlaceholderVisibility(this)
-
+                addKeyboardAction(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0)) { activateItems() }
             }
+        }
+    }
+
+    private fun activateItems() {
+        tree.selectionModel.selectionPaths.mapNotNull {
+            it.lastPathComponent.asSafely<NotebookTreeNode>()
+        }.forEach { node ->
+            val item = node.userObject.asSafely<NotebookItem>() ?: return
+            activateItem(item)
+        }
+    }
+
+    private fun activateItem(item: NotebookItem) {
+        when (item) {
+            is NotebookFileItem -> {
+                openNotebook(item.file)
+            }
+            is NotebookRootItem -> {}
         }
     }
 }

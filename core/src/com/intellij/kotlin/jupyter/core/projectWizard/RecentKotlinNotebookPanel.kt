@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.core.projectWizard
 import com.intellij.icons.AllIcons
 import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DefaultActionGroup
@@ -29,7 +28,7 @@ import java.awt.Dimension
 import java.awt.Insets
 import java.util.function.Supplier
 
-class RecentKotlinNotebookPanel(private val parentDisposable: Disposable): BorderLayoutPanel() {
+class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
     init {
         KotlinNotebookPluginScope.global.launch {
             withContext(Dispatchers.EDT) {
@@ -38,23 +37,25 @@ class RecentKotlinNotebookPanel(private val parentDisposable: Disposable): Borde
         }
     }
 
+    private fun openNotebook(file: VirtualFile) {
+        val project = DefaultKotlinNotebookProject.getProjectWithModalProgress()
+        FileEditorManager.getInstance(project).openFile(file, true)
+    }
+
     suspend fun initialize() {
-        withBorder(JBUI.Borders.empty(13, 12))
+        withBorder(JBUI.Borders.empty(13, 0))
         withBackground(WelcomeScreenUIManager.getProjectsBackground())
 
-        val treeComponent = KotlinNotebookTreeHolder { file: VirtualFile ->
-            val project = DefaultKotlinNotebookProject.getProjectWithModalProgress()
-            FileEditorManager.getInstance(project).openFile(file, true)
-        }
+        val treeComponent = KotlinNotebookTreeHolder(::openNotebook)
         treeComponent.updateAsync().join()
-        val filteringTree = RecentKotlinNotebookFilteringTree(treeComponent)
+        val filteringTree = RecentKotlinNotebookFilteringTree(treeComponent, ::openNotebook)
         filteringTree.updateAsync().join()
 
         val northPanel = JBUI.Panels.simplePanel()
             .andTransparent()
             .withBorder(object : CustomLineBorder(WelcomeScreenUIManager.getSeparatorColor(), JBUI.insetsBottom(1)) {
                 override fun getBorderInsets(c: Component): Insets {
-                    return JBUI.insetsBottom(12)
+                    return JBUI.insetsBottom(0)
                 }
             })
 
