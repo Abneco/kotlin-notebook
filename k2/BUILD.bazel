@@ -27,6 +27,8 @@ jvm_library(
     "@lib//:kotlin-stdlib-provided",
     "//plugins/kotlin/jupyter/core:kotlin-jupyter-core",
     "@community//platform/core-api:core",
+    "@community//platform/core-impl",
+    "@community//java/java-psi-api:psi",
     "@community//plugins/kotlin/base/scripting:kotlin-base-scripting",
     "@community//platform/backend/workspace",
     "@community//platform/projectModel-api:projectModel",
