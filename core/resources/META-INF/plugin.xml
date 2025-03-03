@@ -375,7 +375,7 @@
     </extensions>
 
     <actions resource-bundle="messages/KotlinNotebookBundle">
-        <action id="CreateNewKotlinNotebook" class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookCreateAction"
+        <action id="NewKotlinNotebookAction" class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookCreateAction"
                 icon="icons.KotlinJupyterIcons.FileIcon">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="Kotlin.NewScript"/>
         </action>
