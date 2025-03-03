@@ -159,6 +159,8 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
+        <scratch.rootType implementation="com.intellij.kotlin.jupyter.core.projectWizard.KotlinNotebookRootType"/>
+
         <registryKey key="kotlin.notebook.disable.jupyter.core.actions" defaultValue="false"
                      description="Disable some of core Jupyter Notebook actions such as creation of Python Jupyter Notebook"/>
         <registryKey key="lets.plot.swing.outputs.enabled" defaultValue="true"

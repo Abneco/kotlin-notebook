@@ -61,26 +61,30 @@ fun createKotlinNotebookInProjectWhenProjectIsInitialized(
     }
 }
 
-const val KOTLIN_NOTEBOOK_TEMPLATE_PROJECT_FOLDER_NAME: String = "KotlinNotebook"
-
 object DefaultKotlinNotebookProject {
+    const val NAME: String = "KotlinNotebook"
+
     val rootPath: Path by lazy {
         Path.of(
             System.getProperty("user.home"),
             ".kotlinNotebook",
-            KOTLIN_NOTEBOOK_TEMPLATE_PROJECT_FOLDER_NAME
-        ).apply {
+            NAME
+        )
+    }
+
+    fun createRootPath(): Path {
+        return rootPath.apply {
             createDirectories()
         }
     }
 
     fun getVirtualFileRoot(): VirtualFile {
-        return VfsUtil.createDirectories(rootPath.absolutePathString())
+        return VfsUtil.createDirectories(createRootPath().absolutePathString())
     }
 
     @RequiresEdt
     suspend fun getProject(): Project {
-        val projectPath = rootPath
+        val projectPath = createRootPath()
 
         // Mark project as trusted
         TrustedProjects.setProjectTrusted(TrustedProjectsLocator.Companion.locateProject(projectPath, null), isTrusted = true)
@@ -93,7 +97,7 @@ object DefaultKotlinNotebookProject {
 
         // Root module
         val moduleManager = ModuleManager.getInstance(project)
-        moduleManager.getOrCreateEmptyModule(projectPath, KOTLIN_NOTEBOOK_TEMPLATE_PROJECT_FOLDER_NAME)
+        moduleManager.getOrCreateEmptyModule(projectPath, NAME)
 
         return project
     }

@@ -46,9 +46,9 @@ private class KotlinNotebookGeneratorNewProjectWizard : GeneratorNewProjectWizar
     }
 
     override fun createStep(context: WizardContext): NewProjectWizardStep {
-        val path = DefaultKotlinNotebookProject.rootPath
+        val path = DefaultKotlinNotebookProject.createRootPath()
         context.setProjectFileDirectory(path, true)
-        context.projectName = KOTLIN_NOTEBOOK_TEMPLATE_PROJECT_FOLDER_NAME
+        context.projectName = DefaultKotlinNotebookProject.NAME
 
         return RootNewProjectWizardStep(context)
             .nextStep(::KotlinNotebookWizardStep)
