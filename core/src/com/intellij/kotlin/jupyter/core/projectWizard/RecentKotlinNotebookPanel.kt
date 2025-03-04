@@ -1,6 +1,7 @@
 package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.icons.AllIcons
+import com.intellij.kotlin.jupyter.core.language.provideTemplatesForCreateActions
 import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.actionSystem.ActionPlaces
@@ -64,7 +65,11 @@ class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
             searchField.textEditor.putClientProperty("JTextField.Search.Icon", AllIcons.Actions.Search)
         }
 
-        val createAction = CreateKotlinNotebookActionGroup()
+        val createAction = if (provideTemplatesForCreateActions) {
+            CreateKotlinNotebookActionGroup()
+        } else {
+            CreateKotlinNotebookSingleAction()
+        }
         val group = DefaultActionGroup(createAction)
         val toolbar = object : ActionToolbarImpl(ActionPlaces.WELCOME_SCREEN, group, true) {
             override fun createToolbarButton(

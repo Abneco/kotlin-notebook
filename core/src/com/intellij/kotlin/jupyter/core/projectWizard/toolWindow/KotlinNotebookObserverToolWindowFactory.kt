@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.core.projectWizard.toolWindow
 
 import com.intellij.icons.AllIcons
 import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
+import com.intellij.kotlin.jupyter.core.language.provideTemplatesForCreateActions
 import com.intellij.kotlin.jupyter.core.projectWizard.CreateKotlinNotebookInCurrentProjectAction
 import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
@@ -41,7 +42,12 @@ class KotlinNotebookObserverToolWindowFactory: ToolWindowFactory {
     }
 
     private fun addHeaderActions(toolWindow: ToolWindow) {
-        toolWindow.setTitleActions(listOf(CreateNotebookActionGroup()))
+        val createAction = if (provideTemplatesForCreateActions) {
+            CreateNotebookActionGroup()
+        } else {
+            CreateNotebookSingleAction()
+        }
+        toolWindow.setTitleActions(listOf(createAction))
     }
 }
 
@@ -64,6 +70,18 @@ private class CreateNotebookActionGroup: ActionGroup(
         return super.createTemplatePresentation().apply {
             isPopupGroup = true
         }
+    }
+}
+
+private class CreateNotebookSingleAction: AnAction(
+    KotlinNotebookBundle.message("action.group.create.new.kotlin.welcome.notebook.text"),
+    KotlinNotebookBundle.message("action.group.create.new.kotlin.welcome.notebook.description"),
+    AllIcons.General.Add
+) {
+    private val myAction = CreateKotlinNotebookInCurrentProjectAction(NotebookTemplate.EMPTY)
+
+    override fun actionPerformed(e: AnActionEvent) {
+        myAction.actionPerformed(e)
     }
 }
 

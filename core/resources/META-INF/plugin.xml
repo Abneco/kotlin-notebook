@@ -181,6 +181,9 @@
         <registryKey key="kotlin.notebook.welcome.features" defaultValue="false"
                      description="When enabled, it's possible to create a Kotlin Notebook from the Welcome Screen"/>
 
+        <registryKey key = "kotlin.notebook.use.templates.for.create" defaultValue="false"
+                     description="When enabled, you can specify file templates in Kotlin Notebook creation actions"/>
+
         <postStartupActivity implementation="com.intellij.kotlin.jupyter.core.notifications.KotlinNotebookPostStartupActivity"/>
 
         <multiHostInjector implementation="com.intellij.kotlin.jupyter.core.editor.inject.JupyterKotlinIntoCellsInjector"/>

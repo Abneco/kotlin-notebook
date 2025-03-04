@@ -13,7 +13,10 @@ import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.actionSystem.ex.ActionUtil.ACTION_GROUP_POPUP_CAPTION
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenActionsUtil
 
-class CreateKotlinNotebookActionGroup : DefaultActionGroup(KotlinNotebookBundle.message("action.new.notebook.from.template.group.text"), true) {
+class CreateKotlinNotebookActionGroup : DefaultActionGroup(
+    KotlinNotebookBundle.message("action.new.notebook.from.template.group.text"),
+    true
+) {
     private val myActions = run {
         val emptyTemplateAction = CreateKotlinNotebookAndOpenProjectAction(NotebookTemplate.EMPTY)
         val otherActions = NotebookTemplate.entries
@@ -34,7 +37,9 @@ class CreateKotlinNotebookActionGroup : DefaultActionGroup(KotlinNotebookBundle.
         return super.createTemplatePresentation().apply {
             putClientProperty(ACTION_GROUP_POPUP_CAPTION, ActionUtil.ActionGroupPopupCaption.NONE)
             putClientProperty(
-                ActionUtil.COMPONENT_PROVIDER, WelcomeScreenActionsUtil.createToolbarTextButtonAction(this@CreateKotlinNotebookActionGroup))
+                ActionUtil.COMPONENT_PROVIDER,
+                WelcomeScreenActionsUtil.createToolbarTextButtonAction(this@CreateKotlinNotebookActionGroup)
+            )
         }
     }
 
@@ -44,5 +49,24 @@ class CreateKotlinNotebookActionGroup : DefaultActionGroup(KotlinNotebookBundle.
 
     override fun getChildren(e: AnActionEvent?): Array<out AnAction?> {
         return myActions
+    }
+}
+
+class CreateKotlinNotebookSingleAction : AnAction(
+    KotlinNotebookBundle.message("action.new.notebook.from.template.single.text")
+) {
+    private val myAction = CreateKotlinNotebookAndOpenProjectAction(NotebookTemplate.EMPTY)
+
+    override fun actionPerformed(e: AnActionEvent) {
+        myAction.actionPerformed(e)
+    }
+
+    override fun createTemplatePresentation(): Presentation {
+        return super.createTemplatePresentation().apply {
+            putClientProperty(
+                ActionUtil.COMPONENT_PROVIDER,
+                WelcomeScreenActionsUtil.createToolbarTextButtonAction(this@CreateKotlinNotebookSingleAction)
+            )
+        }
     }
 }

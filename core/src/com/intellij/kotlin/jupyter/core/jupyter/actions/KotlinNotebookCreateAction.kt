@@ -6,8 +6,8 @@ import com.intellij.ide.actions.CreateFileFromTemplateDialog
 import com.intellij.ide.fileTemplates.FileTemplate
 import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
 import com.intellij.kotlin.jupyter.core.language.displayName
+import com.intellij.kotlin.jupyter.core.language.provideTemplatesForCreateActions
 import com.intellij.kotlin.jupyter.core.language.templateName
-import com.intellij.kotlin.jupyter.core.projectWizard.kotlinNotebookWelcomeFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -31,7 +31,7 @@ class KotlinNotebookCreateAction : CreateFileFromTemplateAction(), DumbAware {
     }
 
     private fun CreateFileFromTemplateDialog.Builder.addAllTemplates() {
-        if (kotlinNotebookWelcomeFeaturesEnabled) {
+        if (provideTemplatesForCreateActions) {
             for (template in NotebookTemplate.entries) {
                 addTemplate(template)
             }
