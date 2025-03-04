@@ -40,7 +40,7 @@ internal class KotlinNotebookDependenciesProperty(
     private val projectLibrariesPropertyName: String,
 ) : ReadWriteProperty<JupyterNotebook, KotlinNotebookDependencies> {
     companion object {
-        val defaultValue = KotlinNotebookDependencies.AllLibraries
+        val defaultValue: KotlinNotebookDependencies = KotlinNotebookDependencies.None
     }
 
     override fun getValue(thisRef: JupyterNotebook, property: KProperty<*>): KotlinNotebookDependencies {
@@ -76,7 +76,7 @@ internal class KotlinNotebookDependenciesProperty(
     }
 
     private fun projectLibrariesUsed(projectLibrariesNode: JsonNode?): Boolean {
-        if (projectLibrariesNode == null) return true // the default value is to use all libraries
+        if (projectLibrariesNode == null) return defaultValue is KotlinNotebookDependencies.AllLibraries
         if (projectLibrariesNode is BooleanNode) return projectLibrariesNode == BooleanNode.TRUE
         if (projectLibrariesNode !is ArrayNode) return false
         return projectLibrariesNode.size() > 0
@@ -108,12 +108,16 @@ internal class KotlinNotebookDependenciesProperty(
 
     private fun KotlinNotebookDependencies.toNodes(): Nodes {
         return when (this) {
+            defaultValue -> Nodes(
+                projectDependenciesNode = null,
+                projectLibrariesNode = null
+            )
             KotlinNotebookDependencies.AllLibraries -> Nodes(
-                projectDependenciesNode = null, // default value
-                projectLibrariesNode = null, // default value
+                projectDependenciesNode = null,
+                projectLibrariesNode = BooleanNode.TRUE,
             )
             KotlinNotebookDependencies.None -> Nodes(
-                projectDependenciesNode = null, // default value
+                projectDependenciesNode = null,
                 projectLibrariesNode = BooleanNode.FALSE,
             )
             is KotlinNotebookDependencies.SingleModule -> Nodes(

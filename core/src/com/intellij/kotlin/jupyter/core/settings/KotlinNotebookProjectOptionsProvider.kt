@@ -71,7 +71,9 @@ class KotlinNotebookProjectOptionsProvider :
         var shouldLimitTypeHintsByActiveCell by property(false)
 
         // default settings for new notebooks
-        var shouldAddProjectLibrariesToClasspath by property(true)
+        var shouldAddProjectLibrariesToClasspath: Boolean by property(
+            defaultValue = KotlinNotebookDependenciesProperty.defaultValue == KotlinNotebookDependencies.AllLibraries
+        )
         var shouldShowNotebookVariables by property(false)
     }
 
