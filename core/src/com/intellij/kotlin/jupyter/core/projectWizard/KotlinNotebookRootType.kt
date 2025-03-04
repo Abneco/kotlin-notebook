@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.ide.scratch.RootType
+import com.intellij.ide.scratch.RootType.findByClass
 import com.intellij.ide.scratch.ScratchFileTypeIcon
 import com.intellij.kotlin.jupyter.core.language.JupyterKotlinFileType
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
@@ -57,3 +58,6 @@ class KotlinNotebookRootType : RootType("kotlinNotebook", KotlinNotebookBundle.m
         }
     }
 }
+
+val KotlinNotebookRootTypeInstance: KotlinNotebookRootType
+    get() = findByClass(KotlinNotebookRootType::class.java)
