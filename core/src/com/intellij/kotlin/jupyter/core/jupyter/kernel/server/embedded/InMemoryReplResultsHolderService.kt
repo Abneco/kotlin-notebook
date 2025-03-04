@@ -3,8 +3,10 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.observable.util.whenDisposed
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.repl.embedded.DefaultInMemoryReplResultsHolder
 import org.jetbrains.kotlinx.jupyter.repl.embedded.InMemoryReplResultsHolder
@@ -28,10 +30,14 @@ class InMemoryReplResultsHolderService {
 
     /**
      * Get an existing or create a new [InMemoryReplResultsHolder] for the given [sessionId].
+     * Lifetime of a holder is indicated by [disposable].
      */
     @Synchronized
-    fun getOrCreateHolder(sessionId: JupyterNotebookSessionId): InMemoryReplResultsHolder {
-        return holders.getOrPut(sessionId) { DefaultInMemoryReplResultsHolder() }
+    fun getOrCreateHolder(sessionId: JupyterNotebookSessionId, disposable: Disposable): InMemoryReplResultsHolder {
+        return holders.getOrPut(sessionId) {
+            disposable.whenDisposed { holders.remove(sessionId) }
+            DefaultInMemoryReplResultsHolder()
+        }
     }
 
     /**
@@ -41,16 +47,6 @@ class InMemoryReplResultsHolderService {
     @Synchronized
     fun getHolder(sessionId: JupyterNotebookSessionId): InMemoryReplResultsHolder? {
         return holders[sessionId]
-    }
-
-    /**
-     * Removes the [InMemoryReplResultsHolder] for the provided [sessionId].
-     * This should also make all values tracked being eligible for GC.
-     * Returns `true` if a holder was registered for the given session id.
-     */
-    @Synchronized
-    fun removeHolder(sessionId: JupyterNotebookSessionId): Boolean {
-        return holders.remove(sessionId) != null
     }
 
     companion object {

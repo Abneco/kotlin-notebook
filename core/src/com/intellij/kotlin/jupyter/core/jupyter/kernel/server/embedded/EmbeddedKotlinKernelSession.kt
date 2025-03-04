@@ -11,6 +11,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.chooseJvmTargetFor
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersion
 import com.intellij.kotlin.jupyter.core.settings.toCanonicalString
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import org.jetbrains.kotlinx.jupyter.config.defaultRuntimeProperties
 import org.jetbrains.kotlinx.jupyter.libraries.DefaultResolutionInfoProviderFactory
 import org.jetbrains.kotlinx.jupyter.libraries.createLibraryHttpUtil
@@ -38,11 +39,10 @@ class EmbeddedKotlinKernelSession(
     }
 
     override fun dispose() {
-        close()
     }
 
     override fun close() {
-        inMemoryHolderService.removeHolder(sessionId)
+        Disposer.dispose(this)
     }
 
     private val inMemoryHolderService get() = InMemoryReplResultsHolderService.getInstance(project)
@@ -79,7 +79,7 @@ class EmbeddedKotlinKernelSession(
             runtimeProperties,
         )
 
-        val inMemoryResultHolder = inMemoryHolderService.getOrCreateHolder(sessionId)
+        val inMemoryResultHolder = inMemoryHolderService.getOrCreateHolder(sessionId, this)
         return createEmbeddedMessageHandler(
             project,
             replSettings,
