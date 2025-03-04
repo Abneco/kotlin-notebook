@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.ide.scratch.RootType
+import com.intellij.ide.scratch.ScratchFileTypeIcon
 import com.intellij.kotlin.jupyter.core.language.JupyterKotlinFileType
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.application.PathManager
@@ -9,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
 import java.nio.file.Path
+import javax.swing.Icon
 import kotlin.io.path.absolutePathString
 
 
@@ -19,6 +21,12 @@ class KotlinNotebookRootType : RootType("kotlinNotebook", KotlinNotebookBundle.m
 
     init {
         registerRootDirectory()
+    }
+
+    override fun patchIcon(baseIcon: Icon, file: VirtualFile, flags: Int, project: Project?): Icon {
+        if (file.isDirectory()) return baseIcon
+        if (project?.name == DefaultKotlinNotebookProject.NAME) return baseIcon
+        return ScratchFileTypeIcon(baseIcon)
     }
 
     override fun containsFile(file: VirtualFile?): Boolean {

@@ -35,11 +35,13 @@ import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createDirectories
 
+const val KOTLIN_NOTEBOOK_SCRATCH_PREFIX: String = "notebook"
+
 @OptIn(IntellijInternalApi::class)
 fun createKotlinNotebookInProjectWhenProjectIsInitialized(
     project: Project,
     template: NotebookTemplate = NotebookTemplate.EMPTY,
-    notebookNamePrefix: String = "notebook",
+    notebookNamePrefix: String = KOTLIN_NOTEBOOK_SCRATCH_PREFIX,
 ) {
     @Suppress("DEPRECATION")
     StartupManager.getInstance(project).runWhenProjectIsInitialized {
@@ -85,19 +87,16 @@ object DefaultKotlinNotebookProject {
     @RequiresEdt
     suspend fun getProject(): Project {
         val projectPath = createRootPath()
-
-        // Mark project as trusted
-        TrustedProjects.setProjectTrusted(TrustedProjectsLocator.Companion.locateProject(projectPath, null), isTrusted = true)
-
-        // Open project and create a module
+        TrustedProjects.setProjectTrusted(
+            locatedProject = TrustedProjectsLocator.locateProject(projectPath, null),
+            isTrusted = true
+        )
         val project = ProjectManagerEx.getInstanceEx().openProjectAsync(projectPath, OpenProjectTask {
             runConfigurators = true
             isNewProject = true
         }) ?: error("Failed to open project")
-
-        // Root module
-        val moduleManager = ModuleManager.getInstance(project)
-        moduleManager.getOrCreateEmptyModule(projectPath, NAME)
+        ModuleManager.getInstance(project)
+            .getOrCreateEmptyModule(projectPath, NAME)
 
         return project
     }

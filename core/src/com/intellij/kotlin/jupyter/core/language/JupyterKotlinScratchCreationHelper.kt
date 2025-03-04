@@ -6,6 +6,7 @@ import com.intellij.ide.scratch.ScratchFileService
 import com.intellij.jupyter.core.jupyter.helper.notebookJsonText
 import com.intellij.kotlin.jupyter.core.jupyter.actions.CreateNotebookFactory
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
+import com.intellij.kotlin.jupyter.core.projectWizard.KOTLIN_NOTEBOOK_SCRATCH_PREFIX
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.actionSystem.DataContext
@@ -46,6 +47,7 @@ class JupyterKotlinScratchCreationHelper: ScratchFileCreationHelper() {
                 val notebookJsonText = tempFile.virtualFile.notebookJsonText
                 context.text = notebookJsonText
                 context.language = null
+                context.filePrefix = KOTLIN_NOTEBOOK_SCRATCH_PREFIX
                 context.fileExtension = JupyterFileType.defaultExtension
                 context.createOption = ScratchFileService.Option.create_new_always
                 psiDir.delete()
