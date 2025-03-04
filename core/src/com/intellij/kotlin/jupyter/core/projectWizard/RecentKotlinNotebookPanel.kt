@@ -43,7 +43,7 @@ class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
     }
 
     suspend fun initialize() {
-        withBorder(JBUI.Borders.empty(13, 0))
+        withBorder(JBUI.Borders.empty(13, 12))
         withBackground(WelcomeScreenUIManager.getProjectsBackground())
 
         val treeComponent = KotlinNotebookTreeHolder(::openNotebook)
@@ -55,7 +55,7 @@ class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
             .andTransparent()
             .withBorder(object : CustomLineBorder(WelcomeScreenUIManager.getSeparatorColor(), JBUI.insetsBottom(1)) {
                 override fun getBorderInsets(c: Component): Insets {
-                    return JBUI.insetsBottom(0)
+                    return JBUI.insetsBottom(12)
                 }
             })
 
