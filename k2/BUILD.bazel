@@ -16,7 +16,7 @@ jvm_library(
   name = "kotlin-jupyter-k2",
   module_name = "intellij.kotlin.jupyter.k2",
   visibility = ["//visibility:public"],
-  srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
+  srcs = glob(["src/**/*.kt", "src/**/*.java", "gen/**/*.kt", "gen/**/*.java"], allow_empty = True),
   deps = [
     "@ultimate_lib//:jetbrains-kotlin-jupyter-shared-compiler-provided",
     "@lib//:kotlinc-kotlin-scripting-common-provided",
