@@ -294,7 +294,6 @@ class KotlinNotebookSettingsPanelBuilder(
     private fun Panel.createZmqPortsSelector(): Row {
         return group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session.attached.ports")) {
             for (socketType in JupyterSocketType.entries) {
-                @Suppress("HardCodedStringLiteral")
                 val socketName = socketType.name
                 row(socketName) {
                     textField()
