@@ -5,6 +5,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKerne
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
 import java.nio.file.Path
 
 /**
@@ -20,6 +21,7 @@ interface KernelRunnableFactory {
         project: Project,
         kernelId: JupyterKernelId,
         notebookPath: Path,
+        replCompilerMode: ReplCompilerMode,
     ): KotlinKernelRunnableHandler?
 
     companion object {
@@ -29,9 +31,10 @@ interface KernelRunnableFactory {
             project: Project,
             kernelId: JupyterKernelId,
             notebookPath: Path,
+            replCompilerMode: ReplCompilerMode,
         ): KotlinKernelRunnableHandler {
             return EP.extensionList.firstNotNullOfOrNull {
-                it.createKernelRunnableHandler(project, kernelId, notebookPath)
+                it.createKernelRunnableHandler(project, kernelId, notebookPath, replCompilerMode)
             } ?: error("Suitable runnable handler for $notebookPath was not found")
         }
     }

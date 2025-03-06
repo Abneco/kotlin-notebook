@@ -11,6 +11,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProc
 import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWindowManager
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
 import java.nio.file.Path
 
 /**
@@ -27,9 +28,10 @@ class EmbeddedKernelRunnableFactory : ModeAwareKernelRunnableFactory(
         kernelId: JupyterKernelId,
         notebookPath: Path,
         notebookVirtualFile: BackedNotebookVirtualFile?,
+        replCompilerMode: ReplCompilerMode,
     ): KotlinKernelRunnableHandler {
         val runnableHandler = EmbeddedKernelRunnableHandler(
-            project, kernelId, notebookPath, notebookVirtualFile
+            project, kernelId, notebookPath, notebookVirtualFile, replCompilerMode
         )
 
         KotlinNotebookToolWindowManager.getInstance(project)

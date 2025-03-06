@@ -16,6 +16,7 @@ import com.intellij.openapi.project.Project
 import kotlinx.serialization.json.decodeFromJsonElement
 import org.jetbrains.kotlinx.jupyter.messaging.KernelInfoReplyMetadata
 import org.jetbrains.kotlinx.jupyter.startup.DEFAULT_SPRING_SIGNATURE_KEY
+import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.startup.createClientKotlinKernelConfig
 import java.nio.file.Path
 
@@ -27,6 +28,7 @@ class AttachedKernelProcessFactory : ModeAwareKernelRunnableFactory(
         kernelId: JupyterKernelId,
         notebookPath: Path,
         notebookVirtualFile: BackedNotebookVirtualFile?,
+        replCompilerMode: ReplCompilerMode,
     ): KotlinKernelRunnableHandler {
         val options = KotlinNotebookAttachedModeOptions.getInstance(project)
         val host = options.host
@@ -36,6 +38,7 @@ class AttachedKernelProcessFactory : ModeAwareKernelRunnableFactory(
             host,
             ports,
             DEFAULT_SPRING_SIGNATURE_KEY,
+            replCompilerMode,
         )
 
         return AttachedKernelProcessHandler(

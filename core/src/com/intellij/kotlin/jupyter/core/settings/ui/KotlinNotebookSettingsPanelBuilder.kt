@@ -17,6 +17,7 @@ import com.intellij.kotlin.jupyter.core.settings.SessionOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.isAvailable
 import com.intellij.kotlin.jupyter.core.settings.isKernelVersionEnoughForInstrumentation
 import com.intellij.kotlin.jupyter.core.settings.isSuitableForStartingKernel
+import com.intellij.kotlin.jupyter.core.settings.replCompilerModeSelectorEnabled
 import com.intellij.kotlin.jupyter.core.settings.minJdkVersion
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersion
 import com.intellij.kotlin.jupyter.core.util.revealKotlinNotebookLocalKernelsFolder
@@ -32,9 +33,11 @@ import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.util.CheckedDisposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsContexts
+import com.intellij.ui.dsl.builder.ButtonsGroup
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.builder.actionButton
+import com.intellij.ui.dsl.builder.bind
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindIntValue
 import com.intellij.ui.dsl.builder.bindSelected
@@ -51,6 +54,7 @@ import com.intellij.util.messages.Topic
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
+import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
 import kotlin.reflect.KMutableProperty0
 
 class KotlinNotebookSettingsPanelBuilder(
@@ -68,7 +72,7 @@ class KotlinNotebookSettingsPanelBuilder(
         return panel {
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.build")) {
                 createKernelVersionSelector()
-
+                createReplCompilerModeSelector()
                 createJdkComboBox()
                 createJvmTargetForSnippetsComboBox()
                 createMaxHeapSizeSpinner()
@@ -125,6 +129,7 @@ class KotlinNotebookSettingsPanelBuilder(
     }
 
     private fun Panel.createKernelVersionSelector(): Row {
+
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.version")) {
             val defaultVersion = currentKernelVersion.toMavenVersion()
 
@@ -168,6 +173,16 @@ class KotlinNotebookSettingsPanelBuilder(
                 )
             }
         }
+    }
+
+    private fun Panel.createReplCompilerModeSelector(): ButtonsGroup? {
+        if (!replCompilerModeSelectorEnabled) return null
+        return buttonsGroup {
+            row("") {
+                radioButton(KotlinNotebookBundle.message("checkbox.replCompilerMode.k1Mode"), ReplCompilerMode.K1)
+                radioButton(KotlinNotebookBundle.message("checkbox.replCompilerMode.k2Mode"), ReplCompilerMode.K2)
+            }
+        }.bind<ReplCompilerMode>(applicationOptions::replCompilerMode)
     }
 
     private fun Panel.createMaxHeapSizeSpinner(): Row {

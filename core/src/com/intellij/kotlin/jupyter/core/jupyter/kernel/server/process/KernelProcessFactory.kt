@@ -25,6 +25,7 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
+import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
 import java.io.File
@@ -48,9 +49,10 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
         kernelId: JupyterKernelId,
         notebookPath: Path,
         notebookVirtualFile: BackedNotebookVirtualFile?,
+        replCompilerMode: ReplCompilerMode,
     ): SeparateProcessKotlinKernelRunnableHandler {
         val kernelPorts = getKernelPorts()
-        val kernelConfig = DefaultKotlinKernelConfigFactory(project, kernelPorts, notebookPath).create()
+        val kernelConfig = DefaultKotlinKernelConfigFactory(project, kernelPorts, notebookPath, replCompilerMode).create()
 
         val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
         val javaExecutable = getJavaExecutable(project, options)
@@ -73,7 +75,7 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
                 KotlinNotebookMavenArtifacts.KERNEL_SHADOWED,
                 project.selectedKernelVersionAsString
             ).joinToString(classpathSeparator) { it.absolutePath },
-            extraJavaArgs
+            extraJavaArgs,
         )
 
         val commandLine = GeneralCommandLine(cmdArgs).apply {

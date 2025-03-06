@@ -184,6 +184,9 @@
         <registryKey key = "kotlin.notebook.use.templates.for.create" defaultValue="false"
                      description="When enabled, you can specify file templates in Kotlin Notebook creation actions"/>
 
+        <registryKey key="kotlin.notebook.replCompilerMode.enabled" defaultValue="false"
+                     description="When enabled, it is possible to switch the kernel between using K1 or K2 when compiling repl snippets"/>
+
         <postStartupActivity implementation="com.intellij.kotlin.jupyter.core.notifications.KotlinNotebookPostStartupActivity"/>
 
         <multiHostInjector implementation="com.intellij.kotlin.jupyter.core.editor.inject.JupyterKotlinIntoCellsInjector"/>

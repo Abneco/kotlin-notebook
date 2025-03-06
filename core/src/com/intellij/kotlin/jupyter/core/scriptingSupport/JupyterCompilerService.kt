@@ -9,6 +9,7 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
 import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.lang.Language
@@ -23,6 +24,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
+import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import java.io.File
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
@@ -71,6 +73,8 @@ class JupyterCompilerService(
         getCompilationConfiguration(
             scriptClasspath = initialClasspath,
             compilerArgsConfigurator = DefaultCompilerArgsConfigurator(),
+            replCompilerMode = KotlinNotebookApplicationOptions.get().replCompilerMode,
+            loggerFactory = DefaultKernelLoggerFactory
         ) {
             ide {
                 serializationPluginEnabled(true)

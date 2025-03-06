@@ -7,6 +7,7 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.getSessionRunMode
 import com.intellij.kotlin.jupyter.core.util.findNotebookVirtualFileOrNull
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
 import java.nio.file.Path
 
 /**
@@ -20,14 +21,15 @@ abstract class ModeAwareKernelRunnableFactory(
     final override fun createKernelRunnableHandler(
         project: Project,
         kernelId: JupyterKernelId,
-        notebookPath: Path
+        notebookPath: Path,
+        replCompilerMode: ReplCompilerMode,
     ): KotlinKernelRunnableHandler? {
         val notebookVirtualFile = notebookPath.findNotebookVirtualFileOrNull()
 
         val currentMode = notebookVirtualFile?.getSessionRunMode(project)
         if (currentMode != mode) return null
 
-        return createKernelRunnableHandler(project, kernelId, notebookPath, notebookVirtualFile)
+        return createKernelRunnableHandler(project, kernelId, notebookPath, notebookVirtualFile, replCompilerMode)
     }
 
     protected abstract fun createKernelRunnableHandler(
@@ -35,5 +37,6 @@ abstract class ModeAwareKernelRunnableFactory(
         kernelId: JupyterKernelId,
         notebookPath: Path,
         notebookVirtualFile: BackedNotebookVirtualFile?,
+        replCompilerMode: ReplCompilerMode,
     ): KotlinKernelRunnableHandler
 }

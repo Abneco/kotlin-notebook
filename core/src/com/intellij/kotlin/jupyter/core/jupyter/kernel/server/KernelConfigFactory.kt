@@ -14,6 +14,7 @@ import com.intellij.util.lang.JavaVersion
 import org.jetbrains.kotlinx.jupyter.api.JupyterClientType
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
+import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
 import java.io.File
 import java.nio.file.Path
 
@@ -23,7 +24,8 @@ interface KernelConfigFactory {
 
 abstract class AbstractKotlinKernelConfigFactory(
     protected val project: Project,
-    protected val notebookPath: Path
+    protected val notebookPath: Path,
+    protected val replCompilerMode: ReplCompilerMode,
 ) : KernelConfigFactory {
     final override fun create(): KernelConfig = KernelConfig(
         ports = getKernelPorts(),
@@ -41,6 +43,7 @@ abstract class AbstractKotlinKernelConfigFactory(
         // in both separate and embedded modes
         clientType = JupyterClientType.KOTLIN_NOTEBOOK.name,
         jvmTargetForSnippets = getJvmTargetForSnippets(project)?.toFeatureString(),
+        replCompilerMode = replCompilerMode
     )
 
     protected abstract fun getKernelPorts(): KernelPorts
@@ -59,8 +62,9 @@ abstract class AbstractKotlinKernelConfigFactory(
 class DefaultKotlinKernelConfigFactory(
     project: Project,
     private val kernelPorts: KernelPorts,
-    notebookPath: Path
-): AbstractKotlinKernelConfigFactory(project, notebookPath) {
+    notebookPath: Path,
+    replCompilerMode: ReplCompilerMode,
+): AbstractKotlinKernelConfigFactory(project, notebookPath, replCompilerMode) {
     override fun getKernelPorts() = kernelPorts
 
     override fun getDebugPortOrNull(notebookPath: Path): Int? {

@@ -7,6 +7,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.SettingsCategory
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
 import java.util.*
 
 @Service
@@ -29,6 +30,7 @@ class KotlinNotebookApplicationOptionsProvider :
 
     var showLetsPlotAsSwing by prop(State::showLetsPlotAsSwing)
     var showDataFrameAsSwing by prop(State::showDataFrameAsSwing)
+    var replCompilerMode by prop(State::replCompilerMode)
 
     class State : BaseState() {
         var shouldShowExecutionCount by property(true)
@@ -38,6 +40,7 @@ class KotlinNotebookApplicationOptionsProvider :
 
         var showLetsPlotAsSwing by property(letsPlotSwingOutputsEnabled)
         var showDataFrameAsSwing by property(isSwingUiEnabledForKotlinDataframe)
+        var replCompilerMode by enum(ReplCompilerMode.K1)
     }
 
     interface Listener : EventListener {

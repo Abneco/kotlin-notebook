@@ -21,6 +21,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.JupyterSess
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.util.DEFAULT_KOTLIN_KERNEL_NAME
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.createConcurrentDoubleKeyMap
@@ -42,8 +43,7 @@ interface KotlinKernelRunnableProvider {
 /**
  * Jupyter client that is running in the IDE process.
  */
-class KotlinInProcessJupyterClient(
-) : JupyterClient, KotlinKernelRunnableProvider, Disposable {
+class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvider, Disposable {
     init {
         ApplicationManager.getApplication().messageBus.connect(this)
             .subscribe(JupyterSessionVerifiedListener.TOPIC, JupyterSessionVerifiedListener { project, virtualFile ->
@@ -82,15 +82,17 @@ class KotlinInProcessJupyterClient(
     fun startKernel(
         project: Project,
         kernelName: String,
-        notebookPath: Path
+        notebookPath: Path,
     ): JupyterKernelId? {
         if (kernelName !in kernelSpecs) return null
         val kernelId = JupyterKernelId(idGenerator.generate())
+        val replMode = KotlinNotebookApplicationOptions.get().replCompilerMode
 
         val kernel: KotlinKernelRunnableHandler = KernelRunnableFactory.createKernelRunnableHandler(
             project,
             kernelId,
             notebookPath,
+            replMode
         )
         kernel.addBaseKernelListener(MyKernelListener())
 

@@ -9,6 +9,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.AbstractKotlinKern
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
 import java.nio.file.Path
 
 class EmbeddedKernelRunnableHandler(
@@ -16,6 +17,7 @@ class EmbeddedKernelRunnableHandler(
     kernelId: JupyterKernelId,
     notebookPath: Path,
     notebookVirtualFile: BackedNotebookVirtualFile?,
+    private val replCompilerMode: ReplCompilerMode,
 ) : AbstractKotlinKernelRunnableHandler<KotlinKernelListener>(
     KotlinKernelListener::class,
     project, kernelId, notebookPath, notebookVirtualFile
@@ -40,6 +42,6 @@ class EmbeddedKernelRunnableHandler(
     }
 
     override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession {
-        return EmbeddedKotlinKernelSession(project, sessionId, notebookPath, loggerFactory, onMessage)
+        return EmbeddedKotlinKernelSession(project, sessionId, notebookPath, loggerFactory, replCompilerMode, onMessage)
     }
 }
