@@ -17,7 +17,6 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.concurrent.read
 import kotlin.concurrent.write
 
 /**
@@ -55,22 +54,12 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
         }
     }
 
-    /**
-     * Returns true if there is no pending execution requests for [file]
-     */
-    fun hasCompletedExecutionRequestsFor(file: BackedNotebookVirtualFile): Boolean {
-        return executionDataLock.read {
-            callbacksCounters[file]?.second?.isEmpty() == true
-        }
-    }
-
     fun unregisterCallback(project: Project, file: BackedNotebookVirtualFile, index: Int, metadataIsEmpty: Boolean = false) {
         executionDataLock.write {
             val (_, pq) = callbacksCounters[file] ?: return@write
             pq.remove(index)
             val isAfterSeriesRuns = pq.size == 1 && pq.contains(-1)
             if (isAfterSeriesRuns) pq.remove(-1)
-            val emptyDependenciesUpdate = metadataIsEmpty && !isAfterSeriesRuns
 
             with(NotebookHighlightingService.getForFile(project, file).dataController.executionHighlightingHelper) {
                 val eventData = ExecutionCallbackUnregistered(index, isAfterSeriesRuns, pq)

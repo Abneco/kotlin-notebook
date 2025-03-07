@@ -7,7 +7,6 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNoteb
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
-import com.intellij.kotlin.jupyter.core.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
@@ -175,11 +174,19 @@ class JupyterCompilerPerFileService(
      * To determine whatever this [service] has
      * pending update to Scripting infrastructure.
      */
-    val needsConfigurationUpdate: Boolean get() = !scriptConsistencyVerifier
-        .isScriptFileConfigurationConsistentWithModel(
+    val needsConfigurationUpdate: Boolean get() {
+        val hasNewReceivers = readData {
+            scriptingSupportUpdatesProcessor.lastLoadedTypeOrNull != null
+        }
+        if (hasNewReceivers) {
+            return true
+        }
+
+        return !scriptConsistencyVerifier.isScriptFileConfigurationConsistentWithModel(
             virtualFile,
             handleBeforeCompiling(project.baseScriptingCompilationConfiguration)
         )
+    }
 
     init {
         notebookLogger().assertTrue(virtualFile.file.isKotlinNotebook) { "$virtualFile is not a Kotlin Jupyter notebook" }
@@ -359,7 +366,8 @@ class JupyterCompilerPerFileService(
                 writeData {
                     addNewDependencies(sessionId, snippetMetadata, psiCell)
                 }
-                updateScriptingIfNeeded()
+
+                updateScripting()
             } catch (e: Exception) {
                 if (e is ProcessCanceledException) {
                     throw e
@@ -369,12 +377,9 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private fun updateScriptingIfNeeded() {
-        val hasNoExecutionsScheduled = KotlinNotebookCellExecutionCallbackFactory.getInstance().hasCompletedExecutionRequestsFor(virtualFile)
-        if (hasNoExecutionsScheduled) {
-            coroutineScope.async {
-                JupyterCompilerService.getInstance(project).requestScriptingUpdate()
-            }
+    private fun updateScripting() {
+        coroutineScope.async {
+            JupyterCompilerService.getInstance(project).requestScriptingUpdate()
         }
     }
 

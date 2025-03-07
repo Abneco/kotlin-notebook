@@ -26,7 +26,7 @@ import org.jetbrains.kotlin.idea.core.script.scriptConfigurationsSourceOfType
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import java.util.concurrent.CancellationException
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
-import kotlin.script.experimental.api.dependencies
+import kotlin.script.experimental.api.implicitReceivers
 import kotlin.script.experimental.api.valueOrNull
 
 internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) : ScriptingSupportUpdater {
@@ -122,25 +122,27 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                     throw e
                 }
 
-                scriptsToRefine.map { ktFileScriptSource ->
-                    /**
-                     * Data race preventing trick:
-                     * pass stable configuration to the scripting cache,
-                     * but set dependencies from the refined (new) one, so
-                     * thus libraryRoots of the module will be up to date.
-                     */
-                    val stableConfWithUpdatedDependenciesRoots = ScriptCompilationConfiguration(notebookService.stableConfiguration) {
-                        val updatedSources = refinedConfiguration[ScriptCompilationConfiguration.dependencies]
-                        if (updatedSources != null) {
-                            dependencies(updatedSources)
-                        }
-                    }
+                /**
+                 * Data race preventing trick:
+                 * pass the refined (new) one configuration to the cache,
+                 * but set implicitReceivers from the stable one,
+                 * thus, libraryRoots and classes of the module will be up to date with stable receivers.
+                 */
+                val stableConfiguration = notebookService.stableConfiguration
 
+                val configurationWithStableReceivers = ScriptCompilationConfiguration(refinedConfiguration) {
+                    val stableClasses = stableConfiguration[implicitReceivers]
+                    if (stableClasses != null) {
+                        implicitReceivers(stableClasses)
+                    }
+                }
+
+                scriptsToRefine.map { ktFileScriptSource ->
                     KotlinNotebookScriptModel(
                         ktFileScriptSource.virtualFile,
                         ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
                             ktFileScriptSource,
-                            stableConfWithUpdatedDependenciesRoots
+                            configurationWithStableReceivers
                         )
                     )
                 }
