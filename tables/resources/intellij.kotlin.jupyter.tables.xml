@@ -23,6 +23,9 @@
 
         <registryKey key="grid.tables.hierarchical.default.page.size" defaultValue="20"
                      description="Default number of rows displayed per page in hierarchical tables."/>
+        
+        <registryKey key="jupyter.notebook.varsCommandExecutor.timeout" defaultValue="600"
+                     description="Custom timeout for JupyterVarsCommandExecutor. Increasing this could help prevent timeout exceptions when working with large datasets."/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">
