@@ -41,6 +41,7 @@ import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource
 import org.jetbrains.kotlin.idea.core.script.scriptDefinitionsSourceOfType
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionsSource
 import java.nio.file.Path
 import kotlin.script.experimental.api.asSuccess
@@ -63,8 +64,8 @@ class KotlinNotebookScriptEntitySource(virtualFileUrl: VirtualFileUrl) : KotlinS
  *  This is about to change.
  */
 class NotebookScriptConfigurationsSource(override val project: Project) : ScriptConfigurationsSource<KotlinNotebookScriptModel>(project) {
-    override fun getScriptDefinitionsSource(): ScriptDefinitionsSource? =
-        project.scriptDefinitionsSourceOfType<KotlinNotebookScriptDefinitionsSource>()
+    override fun getDefinitions(): Sequence<ScriptDefinition>? =
+        project.scriptDefinitionsSourceOfType<KotlinNotebookScriptDefinitionsSource>()?.definitions
 
     /**
      * Unfortunately, we live in the injection world.

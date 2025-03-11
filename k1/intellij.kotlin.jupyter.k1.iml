@@ -58,5 +58,6 @@
     <orderEntry type="module" module-name="kotlin.compiler-plugins.kotlinx-serialization.common" />
     <orderEntry type="module" module-name="intellij.java.debugger.impl" />
     <orderEntry type="module" module-name="kotlin.jvm-debugger.evaluation" />
+    <orderEntry type="module" module-name="kotlin.scripting" />
   </component>
 </module>

@@ -1,6 +1,8 @@
 <idea-plugin package="com.intellij.kotlin.jupyter.k1">
 
     <dependencies>
+        <plugin id="org.jetbrains.kotlin"/>
+
         <plugin id="com.intellij.modules.kotlin.k1"/>
         <plugin id="org.jetbrains.plugins.kotlin.jupyter"/>
         <module name="intellij.jupyter.psi"/>
@@ -28,6 +30,7 @@
                         serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.definition.NotebookScriptDefinitionsWrapperFactoryK1"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <scriptDefinitionsProvider implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.definition.JupyterScriptDefinitionProvider"/>
         <idea.caches.resolve.resolveOptimizingOptionsProvider
                 implementation="com.intellij.kotlin.jupyter.k1.resolve.KotlinNotebookOptimizingOptionsProvider"/>
     </extensions>

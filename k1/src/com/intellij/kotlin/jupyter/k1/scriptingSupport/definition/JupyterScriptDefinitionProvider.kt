@@ -1,5 +1,5 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.scriptingSupport.definitions
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.k1.scriptingSupport.definition
 
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.openapi.Disposable
@@ -18,7 +18,7 @@ import kotlin.script.experimental.intellij.ScriptDefinitionsProvider
  */
 class JupyterScriptDefinitionProvider(project: Project) : ScriptDefinitionsProvider, Disposable {
     private val disposable = Disposer.newDisposable()
-    private val projectCompilerService = JupyterCompilerService.getInstance(project)
+    private val projectCompilerService = JupyterCompilerService.Companion.getInstance(project)
 
     override val id: String = "Jupyter Definition provider"
 
@@ -29,8 +29,8 @@ class JupyterScriptDefinitionProvider(project: Project) : ScriptDefinitionsProvi
     override fun useDiscovery(): Boolean = false
 
     override fun provideDefinitions(
-        baseHostConfiguration: ScriptingHostConfiguration,
-        loadedScriptDefinitions: List<ScriptDefinition>
+      baseHostConfiguration: ScriptingHostConfiguration,
+      loadedScriptDefinitions: List<ScriptDefinition>
     ): Iterable<ScriptDefinition> {
         return loadedScriptDefinitions + projectCompilerService.scriptDefinitionsWrapper.scriptDefinitionData
     }

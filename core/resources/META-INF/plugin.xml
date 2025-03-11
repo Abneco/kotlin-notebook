@@ -137,7 +137,6 @@
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <renameHandler implementation="com.intellij.kotlin.jupyter.core.editor.refactoring.KotlinNotebookPropertiesRenameHandler"/>
-        <scriptDefinitionsProvider implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.JupyterScriptDefinitionProvider"/>
         <postInsertDeclarationCallback
                 implementation="com.intellij.kotlin.jupyter.core.editor.refactoring.KotlinNotebookPostInsertDeclarationCallback"/>
         <kotlinInjectedFilesAnalysisProvider
