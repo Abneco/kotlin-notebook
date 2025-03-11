@@ -367,7 +367,7 @@ class JupyterCompilerPerFileService(
                     addNewDependencies(sessionId, snippetMetadata, psiCell)
                 }
 
-                updateScripting()
+                requestScriptingUpdate()
             } catch (e: Exception) {
                 if (e is ProcessCanceledException) {
                     throw e
@@ -377,7 +377,7 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private fun updateScripting() {
+    private fun requestScriptingUpdate() {
         coroutineScope.async {
             JupyterCompilerService.getInstance(project).requestScriptingUpdate()
         }
@@ -564,6 +564,10 @@ class JupyterCompilerPerFileService(
             }
         }
 
+        /**
+         * It might be the case that added new classes are not yet present in stored configurations.
+         * For them to appear in the stable configuration cache, we need to invoke update once again.
+         */
         private fun updateImplicitLists() {
             if (implicitReceiversClassPathData.isEmpty()) return
 
@@ -573,6 +577,8 @@ class JupyterCompilerPerFileService(
             }
 
             implicitReceiversClassPathData.removeAll(newStableReceivers)
+
+            requestScriptingUpdate()
         }
 
         val lastLoadedTypeOrNull: KotlinType? get() {
