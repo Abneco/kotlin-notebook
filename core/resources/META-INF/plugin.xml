@@ -359,6 +359,9 @@
         <csvDropHandler
                 id="KotlinJsonDropHandler"
                 implementation="com.intellij.kotlin.jupyter.core.editor.dnd.KotlinJsonDropHandler"/>
+        <csvDropHandler
+                id="KotlinGeoJsonDropHandler"
+                implementation="com.intellij.kotlin.jupyter.core.editor.dnd.KotlinGeoDataDropHandler"/>
         <errorOutputContentProvider
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.outputs.error.KotlinErrorOutputContentProvider"/>
         <executionSettingsProvider
