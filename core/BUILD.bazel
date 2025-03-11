@@ -78,6 +78,7 @@ jvm_library(
     "@community//platform/util/concurrency",
     "@community//platform/backend/workspace",
     "@community//platform/core-ui",
+    "@community//platform/observable:ide-observable",
     "@community//platform/statistics",
     "@community//platform/util",
     "@community//platform/util/coroutines",
