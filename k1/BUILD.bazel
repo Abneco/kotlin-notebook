@@ -74,6 +74,7 @@ jvm_library(
     "@community//plugins/kotlin/compiler-plugins/kotlinx-serialization/common:kotlin-compiler-plugins-kotlinx-serialization-common",
     "@community//java/debugger/impl:java-debugger-impl",
     "@community//plugins/kotlin/jvm-debugger/evaluation:kotlin-jvm-debugger-evaluation",
+    "@community//plugins/kotlin/scripting",
     ":idea_provided",
     ":jupyter-psi_provided",
     ":jupyter-core_provided",
