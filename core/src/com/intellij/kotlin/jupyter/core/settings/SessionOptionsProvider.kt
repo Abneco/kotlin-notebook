@@ -13,7 +13,7 @@ import kotlin.reflect.full.declaredMemberProperties
 @Service
 @State(
     name = "SessionOptionsProvider",
-    storages = [Storage("kotlinNotebookApp.xml")],
+    storages = [Storage(APP_CONFIG_FILE)],
     category = SettingsCategory.PLUGINS
 )
 class SessionOptionsProvider:

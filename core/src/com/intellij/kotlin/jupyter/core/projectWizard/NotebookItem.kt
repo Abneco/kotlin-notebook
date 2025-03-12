@@ -1,7 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.projectWizard
 
-import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
 import org.jetbrains.annotations.Nls
 
 sealed interface NotebookItem {
@@ -10,12 +10,12 @@ sealed interface NotebookItem {
     fun children(): List<NotebookItem> = emptyList()
 }
 
-class NotebookFileItem(val file: VirtualFile) : NotebookItem {
-    override fun displayName(): String = file.name
-    override fun searchName(): String = file.name.lowercase()
+class NotebookFileItem(val notebook: RecentNotebook) : NotebookItem {
+    override fun displayName(): String = notebook.path.name
+    override fun searchName(): String = notebook.path.name.lowercase()
 }
 
-class NotebookRootItem(notebooks: List<VirtualFile>) : NotebookItem {
+class NotebookRootItem(notebooks: List<RecentNotebook>) : NotebookItem {
     private val notebookItems = notebooks.map { NotebookFileItem(it) }
 
     override fun displayName(): String = ""

@@ -50,10 +50,10 @@ class JupyterKotlinScratchCreationHelper: ScratchFileCreationHelper() {
                 context.apply {
                     text = notebookJsonText
                     language = null
-                    filePrefix = KOTLIN_NOTEBOOK_SCRATCH_PREFIX
                     fileExtension = JupyterFileType.defaultExtension
                     createOption = ScratchFileService.Option.create_new_always
                     if (kotlinNotebookWelcomeFeaturesEnabled) {
+                        filePrefix = KOTLIN_NOTEBOOK_SCRATCH_PREFIX
                         defaultRootType = KotlinNotebookRootTypeInstance
                     }
                 }

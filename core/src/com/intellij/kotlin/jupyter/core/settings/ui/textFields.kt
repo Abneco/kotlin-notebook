@@ -1,13 +1,19 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.settings.ui
 
+import com.intellij.openapi.observable.properties.ObservableMutableProperty
+import com.intellij.openapi.observable.properties.ObservableProperty
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
+import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.openapi.ui.validation.DialogValidation
 import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.MutableProperty
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.text
 import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
+import javax.swing.JComponent
+import javax.swing.JTextField
 import javax.swing.text.JTextComponent
 
 fun <T : JTextComponent, V: Any> Cell<T>.bindValueText(
@@ -82,4 +88,33 @@ fun <T : JTextComponent, V: Comparable<V>> Cell<T>.bindComparableIntervalToTextW
             }
             newValue?.toString()
         }
+}
+
+@Suppress("HardCodedStringLiteral")
+fun <T : JComponent> Cell<T>.reactiveComment(textProperty: ObservableMutableProperty<String>): Cell<T> {
+    val comment = comment(textProperty.get()).comment!!
+    textProperty.afterChange { newValue ->
+        comment.text = newValue
+    }
+    return this
+}
+
+fun <T : JTextField> Cell<T>.bindReactiveText(textProperty: ObservableMutableProperty<String>): Cell<T> {
+    component.text = textProperty.get()
+    onChanged {
+        textProperty.set(component.text)
+    }
+    textProperty.afterChange { newValue ->
+        component.text = newValue
+    }
+    return this
+}
+
+fun <T : JTextField> Cell<T>.reactiveValidation(validationInfoProperty: ObservableProperty<ValidationInfo?>): Cell<T> {
+    validation(DialogValidation {
+        validationInfoProperty.get()
+    }).validationRequestor { parentDisposable, validate ->
+        validationInfoProperty.afterChange(parentDisposable) { validate() }
+    }
+    return this
 }

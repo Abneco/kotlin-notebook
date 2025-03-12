@@ -6,12 +6,13 @@ import com.intellij.kotlin.jupyter.core.projectWizard.NotebookFileItem
 import com.intellij.kotlin.jupyter.core.projectWizard.NotebookRootItem
 import com.intellij.kotlin.jupyter.core.projectWizard.NotebookTreeNode
 import com.intellij.kotlin.jupyter.core.projectWizard.RecentKotlinNotebooksService
+import com.intellij.kotlin.jupyter.core.projectWizard.RecentNotebookAction
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.application.EDT
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
 import com.intellij.ui.ColoredTreeCellRenderer
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.render.RenderingUtil
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
@@ -32,7 +33,7 @@ import javax.swing.ScrollPaneConstants
 import javax.swing.tree.DefaultTreeModel
 
 class KotlinNotebookTreeHolder(
-    private val onItemClick: (VirtualFile) -> Unit
+    private val onItemClick: RecentNotebookAction
 ) {
     private val tree = Tree()
     private val treeModel = DefaultTreeModel(NotebookTreeNode(NotebookRootItem(emptyList())))
@@ -68,11 +69,13 @@ class KotlinNotebookTreeHolder(
             ) {
                 val node = value as? NotebookTreeNode ?: return
                 val item = node.item
-                if (item is NotebookFileItem) {
-                    icon = JupyterKotlinFileType.icon
-                }
 
                 append(item.displayName())
+                if (item is NotebookFileItem) {
+                    icon = JupyterKotlinFileType.icon
+                    append("  ")
+                    append(item.notebook.path.parent.path, SimpleTextAttributes.GRAYED_ATTRIBUTES)
+                }
             }
         }
     }
@@ -91,7 +94,7 @@ class KotlinNotebookTreeHolder(
                     val path = tree.getPathForRow(row)
                     val node = path.lastPathComponent as? NotebookTreeNode ?: return
                     val item = node.item as? NotebookFileItem ?: return
-                    onItemClick(item.file)
+                    onItemClick(item.notebook)
                 }
             }
 

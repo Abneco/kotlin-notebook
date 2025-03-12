@@ -8,6 +8,8 @@ import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import java.util.*
 import kotlin.reflect.KProperty
 
+const val APP_CONFIG_FILE: String = "kotlinNotebookApp.xml"
+
 val Project.selectedKernelVersionAsString: String get() {
     return KotlinNotebookProjectOptionsProvider.getInstance(this).kernelVersion
 }
@@ -20,7 +22,7 @@ internal class RegistryFlagDelegate(private val name: String, private val defaul
         // it's implemented this way to make it possible to set the registry key programmatically for tests
         return try {
             Registry.`is`(name)
-        } catch (e: MissingResourceException) {
+        } catch (_: MissingResourceException) {
             defaultValue
         }
     }
@@ -35,4 +37,4 @@ internal fun registryFlag(
     defaultValue: Boolean
 ) = RegistryFlagDelegate(name, defaultValue)
 
-fun LanguageLevel.toCanonicalString() = toJavaVersion().toFeatureString()
+fun LanguageLevel.toCanonicalString(): String = toJavaVersion().toFeatureString()

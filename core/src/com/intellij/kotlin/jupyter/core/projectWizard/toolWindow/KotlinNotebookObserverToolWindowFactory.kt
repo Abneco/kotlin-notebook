@@ -6,6 +6,7 @@ import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
 import com.intellij.kotlin.jupyter.core.language.provideTemplatesForCreateActions
 import com.intellij.kotlin.jupyter.core.projectWizard.CreateKotlinNotebookInCurrentProjectAction
 import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
+import com.intellij.kotlin.jupyter.core.projectWizard.settings.NewNotebookOptionsImpl
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionGroup
@@ -58,7 +59,10 @@ private class CreateNotebookActionGroup: ActionGroup(
 ) {
     private val myActions = run {
         NotebookTemplate.entries
-            .map { CreateKotlinNotebookInCurrentProjectAction(it) }
+            .map {
+                val options = NewNotebookOptionsImpl(template = it)
+                CreateKotlinNotebookInCurrentProjectAction(options)
+            }
             .toTypedArray()
     }
 
@@ -78,7 +82,7 @@ private class CreateNotebookSingleAction: AnAction(
     KotlinNotebookBundle.message("action.group.create.new.kotlin.welcome.notebook.description"),
     AllIcons.General.Add
 ) {
-    private val myAction = CreateKotlinNotebookInCurrentProjectAction(NotebookTemplate.EMPTY)
+    private val myAction = CreateKotlinNotebookInCurrentProjectAction(NewNotebookOptionsImpl())
 
     override fun actionPerformed(e: AnActionEvent) {
         myAction.actionPerformed(e)
@@ -89,8 +93,8 @@ class KotlinNotebookObserverPanel(project: Project) : SimpleToolWindowPanel(true
     override fun dispose() {
         // Clean up resources if needed
     }
-    private val treeComponent = KotlinNotebookTreeHolder { file ->
-        FileEditorManager.getInstance(project).openFile(file, true)
+    private val treeComponent = KotlinNotebookTreeHolder { notebook ->
+        FileEditorManager.getInstance(project).openFile(notebook.path, true)
     }
 
     init {

@@ -289,9 +289,6 @@
         <editorNotificationProvider
                 implementation="com.intellij.kotlin.jupyter.core.settings.ui.KotlinNotebookMissingJdkEditorNotification"/>
 
-        <moduleBuilder
-                builderClass="com.intellij.kotlin.jupyter.core.projectWizard.KotlinNotebookModuleBuilder"/>
-
         <welcomeTabFactory
                 implementation="com.intellij.kotlin.jupyter.core.projectWizard.KotlinNotebookWelcomeTabFactory"
                 id="KotlinNotebookWelcomeTabFactory"

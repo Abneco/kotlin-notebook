@@ -3,16 +3,16 @@ package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.ide.scratch.RootType
 import com.intellij.ide.scratch.RootType.findByClass
+import com.intellij.ide.scratch.ScratchFileService
 import com.intellij.ide.scratch.ScratchFileTypeIcon
 import com.intellij.kotlin.jupyter.core.language.JupyterKotlinFileType
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
 import java.nio.file.Path
 import javax.swing.Icon
-import kotlin.io.path.absolutePathString
 
 
 class KotlinNotebookRootType : RootType("kotlinNotebook", KotlinNotebookBundle.message("kotlin.notebook.root.type.display.name")) {
@@ -20,8 +20,17 @@ class KotlinNotebookRootType : RootType("kotlinNotebook", KotlinNotebookBundle.m
         "." + JupyterKotlinFileType.defaultExtension.lowercase()
     }
 
-    init {
-        registerRootDirectory()
+    private val rootPathString by lazy {
+        ScratchFileService.getInstance().getRootPath(this)
+    }
+
+    val rootPath: Path by lazy {
+        Path.of(rootPathString)
+    }
+
+    val rootVirtualFile: VirtualFile by lazy {
+        val path = rootPathString
+        VfsUtil.createDirectories(path)
     }
 
     override fun patchIcon(baseIcon: Icon, file: VirtualFile, flags: Int, project: Project?): Icon {
@@ -35,7 +44,6 @@ class KotlinNotebookRootType : RootType("kotlinNotebook", KotlinNotebookBundle.m
         if (isHidden) return false
 
         // Get the root path where notebooks should be located
-        val rootPath = DefaultKotlinNotebookProject.rootPath
         val filePath = Path.of(file.path)
 
         // Check if the file is under our root directory
@@ -49,14 +57,6 @@ class KotlinNotebookRootType : RootType("kotlinNotebook", KotlinNotebookBundle.m
     }
 
     override fun isHidden(): Boolean = !kotlinNotebookWelcomeFeaturesEnabled
-
-    private fun registerRootDirectory() {
-        if (!isHidden) {
-            val propertyName = PathManager.PROPERTY_SCRATCH_PATH + "/" + id
-            if (System.getProperty(propertyName) != null) return
-            System.setProperty(propertyName, DefaultKotlinNotebookProject.rootPath.absolutePathString())
-        }
-    }
 }
 
 val KotlinNotebookRootTypeInstance: KotlinNotebookRootType

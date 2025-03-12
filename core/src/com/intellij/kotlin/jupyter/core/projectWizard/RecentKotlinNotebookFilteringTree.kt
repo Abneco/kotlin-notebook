@@ -6,7 +6,6 @@ import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.ui.addKeyboardAction
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.FilteringTree
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.TextComponentEmptyText
@@ -21,7 +20,7 @@ import javax.swing.KeyStroke
 
 class RecentKotlinNotebookFilteringTree(
     private val treeComponent: KotlinNotebookTreeHolder,
-    private val openNotebook: (VirtualFile) -> Unit
+    private val openNotebook: RecentNotebookAction
 ) : FilteringTree<NotebookTreeNode, NotebookItem>(
     treeComponent.getTree(),
     treeComponent.getRoot()
@@ -73,7 +72,7 @@ class RecentKotlinNotebookFilteringTree(
     private fun activateItem(item: NotebookItem) {
         when (item) {
             is NotebookFileItem -> {
-                openNotebook(item.file)
+                openNotebook(item.notebook)
             }
             is NotebookRootItem -> {}
         }

@@ -1,8 +1,10 @@
 package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.icons.AllIcons
-import com.intellij.kotlin.jupyter.core.language.provideTemplatesForCreateActions
 import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
+import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
+import com.intellij.kotlin.jupyter.core.settings.recents.addRecentNotebook
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
@@ -14,7 +16,6 @@ import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.actionSystem.impl.ActionToolbarImpl
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
 import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.border.CustomLineBorder
@@ -38,9 +39,11 @@ class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
         }
     }
 
-    private fun openNotebook(file: VirtualFile) {
-        val project = DefaultKotlinNotebookProject.getProjectWithModalProgress()
-        FileEditorManager.getInstance(project).openFile(file, true)
+    private fun openNotebook(notebook: RecentNotebook) {
+        val projectPath = notebook.projectPath.toNioPath()
+        val project = DefaultKotlinNotebookProject.getProjectWithModalProgress(projectPath)
+        KotlinNotebookApplicationOptions.addRecentNotebook(notebook)
+        FileEditorManager.getInstance(project).openFile(notebook.path, true)
     }
 
     suspend fun initialize() {
@@ -65,12 +68,9 @@ class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
             searchField.textEditor.putClientProperty("JTextField.Search.Icon", AllIcons.Actions.Search)
         }
 
-        val createAction = if (provideTemplatesForCreateActions) {
-            CreateKotlinNotebookActionGroup()
-        } else {
-            CreateKotlinNotebookSingleAction()
-        }
-        val group = DefaultActionGroup(createAction)
+        val openAction = OpenKotlinNotebookAction()
+        val createAction = CreateKotlinNotebookSingleAction()
+        val group = DefaultActionGroup(openAction, createAction)
         val toolbar = object : ActionToolbarImpl(ActionPlaces.WELCOME_SCREEN, group, true) {
             override fun createToolbarButton(
                 action: AnAction,

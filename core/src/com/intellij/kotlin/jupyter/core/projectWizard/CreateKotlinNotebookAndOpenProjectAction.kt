@@ -1,9 +1,10 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.projectWizard
 
-import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
 import com.intellij.kotlin.jupyter.core.language.description
 import com.intellij.kotlin.jupyter.core.language.displayName
+import com.intellij.kotlin.jupyter.core.projectWizard.settings.NewNotebookOptions
+import com.intellij.kotlin.jupyter.core.projectWizard.settings.getActualProjectPath
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -15,40 +16,46 @@ import com.intellij.platform.ide.progress.runWithModalProgressBlocking
 
 
 abstract class CreateKotlinNotebookFromTemplateAbstractAction(
-    private val template: NotebookTemplate
+    protected val settings: NewNotebookOptions
 ) : AnAction(
-    template.displayName,
-    template.description,
+    settings.template.displayName,
+    settings.template.description,
     null
 ) {
     override fun actionPerformed(e: AnActionEvent) {
-        createNotebook(template, e.project)
+        createNotebook(e.project)
     }
 
-    protected abstract fun createNotebook(template: NotebookTemplate, project: Project?)
+    protected abstract fun createNotebook(project: Project?)
 }
 
-
 @OptIn(IntellijInternalApi::class)
-class CreateKotlinNotebookAndOpenProjectAction(template: NotebookTemplate) :
-    CreateKotlinNotebookFromTemplateAbstractAction(template) {
-    override fun createNotebook(template: NotebookTemplate, project: Project?) {
+class CreateKotlinNotebookAndOpenProjectAction(settings: NewNotebookOptions) :
+    CreateKotlinNotebookFromTemplateAbstractAction(settings) {
+    override fun createNotebook(project: Project?) {
         runWithModalProgressBlocking(
             ModalTaskOwner.guess(),
             KotlinNotebookBundle.message("kotlin.notebook.create.project.progress"),
             TaskCancellation.cancellable()
         ) {
-            val project = DefaultKotlinNotebookProject.getProject()
-            createKotlinNotebookInProjectWhenProjectIsInitialized(project, template)
+            val project = DefaultKotlinNotebookProject.getProject(settings.getActualProjectPath())
+            createKotlinNotebookInProjectWhenProjectIsInitialized(
+                project,
+                settings.template,
+                settings.notebookName,
+            )
         }
     }
 }
 
-
-class CreateKotlinNotebookInCurrentProjectAction(template: NotebookTemplate) :
-    CreateKotlinNotebookFromTemplateAbstractAction(template) {
-    override fun createNotebook(template: NotebookTemplate, project: Project?) {
+class CreateKotlinNotebookInCurrentProjectAction(settings: NewNotebookOptions) :
+    CreateKotlinNotebookFromTemplateAbstractAction(settings) {
+    override fun createNotebook(project: Project?) {
         if (project == null) return
-        createKotlinNotebookInProjectWhenProjectIsInitialized(project, template)
+        createKotlinNotebookInProjectWhenProjectIsInitialized(
+            project,
+            settings.template,
+            settings.notebookName,
+        )
     }
 }

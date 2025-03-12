@@ -10,6 +10,11 @@ import com.intellij.kotlin.jupyter.core.language.JupyterKotlinFileType
 import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
 import com.intellij.kotlin.jupyter.core.language.getFileTemplate
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
+import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
+import com.intellij.kotlin.jupyter.core.settings.recents.addRecentNotebook
+import com.intellij.kotlin.jupyter.core.settings.recents.rootPath
+import com.intellij.kotlin.jupyter.core.util.toAbsolutePath
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.module.JavaModuleType
@@ -17,11 +22,10 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.BaseProjectDirectories.Companion.getBaseDirectories
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
+import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.startup.StartupManager
 import com.intellij.openapi.util.IntellijInternalApi
-import com.intellij.openapi.vfs.VfsUtil
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findFileOrDirectory
 import com.intellij.platform.ide.progress.ModalTaskOwner
 import com.intellij.platform.ide.progress.TaskCancellation
@@ -33,15 +37,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
-import kotlin.io.path.createDirectories
 
 const val KOTLIN_NOTEBOOK_SCRATCH_PREFIX: String = "notebook"
+
+typealias RecentNotebookAction = (RecentNotebook) -> Unit
 
 @OptIn(IntellijInternalApi::class)
 fun createKotlinNotebookInProjectWhenProjectIsInitialized(
     project: Project,
-    template: NotebookTemplate = NotebookTemplate.EMPTY,
-    notebookNamePrefix: String = KOTLIN_NOTEBOOK_SCRATCH_PREFIX,
+    template: NotebookTemplate,
+    notebookNamePrefix: String,
 ) {
     @Suppress("DEPRECATION")
     StartupManager.getInstance(project).runWhenProjectIsInitialized {
@@ -53,40 +58,33 @@ fun createKotlinNotebookInProjectWhenProjectIsInitialized(
 
         val psiDir: PsiDirectory = PsiManager.getInstance(project).findDirectory(projectRoot)!!
         val fileTemplate = template.getFileTemplate(project)
-        CreateNotebookFactory.createFileFromTemplate(
+        val newPsiFile = CreateNotebookFactory.createFileFromTemplate(
             fileName = freeFileName,
             template = fileTemplate,
             directory = psiDir,
             openFileInIde = true,
             mode = NotebookMode.STANDARD,
         )
+        if (newPsiFile != null) {
+            val projectPath = project.rootPath
+            if (projectPath != null) {
+                KotlinNotebookApplicationOptions.addRecentNotebook(
+                    RecentNotebook(
+                        newPsiFile.virtualFile,
+                        projectPath,
+                    )
+                )
+            }
+        }
     }
 }
 
 object DefaultKotlinNotebookProject {
     const val NAME: String = "KotlinNotebook"
 
-    val rootPath: Path by lazy {
-        Path.of(
-            System.getProperty("user.home"),
-            ".kotlinNotebook",
-            NAME
-        )
-    }
-
-    fun createRootPath(): Path {
-        return rootPath.apply {
-            createDirectories()
-        }
-    }
-
-    fun getVirtualFileRoot(): VirtualFile {
-        return VfsUtil.createDirectories(createRootPath().absolutePathString())
-    }
-
     @RequiresEdt
-    suspend fun getProject(): Project {
-        val projectPath = createRootPath()
+    suspend fun getProject(projectPath: Path): Project {
+        val projectPath = projectPath
         TrustedProjects.setProjectTrusted(
             locatedProject = TrustedProjectsLocator.locateProject(projectPath, null),
             isTrusted = true
@@ -95,20 +93,30 @@ object DefaultKotlinNotebookProject {
             runConfigurators = true
             isNewProject = true
         }) ?: error("Failed to open project")
-        ModuleManager.getInstance(project)
-            .getOrCreateEmptyModule(projectPath, NAME)
+
+        val moduleManager = ModuleManager.getInstance(project)
+
+        val alreadyHasRootModule = moduleManager.modules.any { module ->
+            module.rootManager.contentRoots.any { root ->
+                root.toAbsolutePath() == projectPath
+            }
+        }
+
+        if (!alreadyHasRootModule) {
+            moduleManager.getOrCreateEmptyModule(projectPath, NAME)
+        }
 
         return project
     }
 
-    fun getProjectWithModalProgress(): Project {
+    fun getProjectWithModalProgress(projectPath: Path): Project {
         @Suppress("DialogTitleCapitalization")
         return runWithModalProgressBlocking(
             ModalTaskOwner.guess(),
             KotlinNotebookBundle.message("progress.title.opening.kotlin.notebook.project"),
             TaskCancellation.Companion.cancellable()
         ) {
-            val project = getProject()
+            val project = getProject(projectPath)
 
             // Wait for project initialization
             @Suppress("DEPRECATION")
