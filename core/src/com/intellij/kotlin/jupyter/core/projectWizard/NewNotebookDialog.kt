@@ -22,7 +22,6 @@ import com.intellij.kotlin.jupyter.core.settings.ui.withCancelActionText
 import com.intellij.kotlin.jupyter.core.settings.ui.withOkActionText
 import com.intellij.kotlin.jupyter.core.settings.ui.withOkReactivelyEnabled
 import com.intellij.kotlin.jupyter.core.settings.ui.withPreferredWidth
-import com.intellij.kotlin.jupyter.core.util.toAbsolutePath
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.observable.properties.AtomicBooleanProperty
@@ -30,6 +29,7 @@ import com.intellij.openapi.observable.properties.AtomicProperty
 import com.intellij.openapi.observable.properties.ObservableMutableProperty
 import com.intellij.openapi.observable.properties.ObservableProperty
 import com.intellij.openapi.observable.util.transform
+import com.intellij.openapi.project.ProjectStorePathManager
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.ui.validation.CHECK_DIRECTORY
@@ -116,10 +116,9 @@ class NewNotebookDialogInteractivity(
 
     private fun updateLocationCommentText() {
         val notebookDirectory = getNotebookDirectory()
-        val projectPath = findEnclosingProjectPath(notebookDirectory)
-
-        if (projectPath != null) {
-            locationCommentText.set(KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.created.in.existent.project", projectPath.toAbsolutePath()))
+        val projectExists = ProjectStorePathManager.getInstance().testStoreDirectoryExistsForProjectRoot(notebookDirectory)
+        if (projectExists) {
+            locationCommentText.set(KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.created.in.existent.project", notebookDirectory))
         } else {
             locationCommentText.set(KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.created.in.newly.initialized.project", notebookDirectory))
         }

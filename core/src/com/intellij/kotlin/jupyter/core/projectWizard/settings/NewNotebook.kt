@@ -6,7 +6,6 @@ import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
 import com.intellij.kotlin.jupyter.core.projectWizard.KOTLIN_NOTEBOOK_SCRATCH_PREFIX
 import com.intellij.kotlin.jupyter.core.projectWizard.KotlinNotebookRootTypeInstance
-import com.intellij.kotlin.jupyter.core.projectWizard.findEnclosingProjectPathOrUseParent
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.APP_CONFIG_FILE
 import com.intellij.kotlin.jupyter.core.settings.DelegatingOptionsProvider
@@ -18,7 +17,6 @@ import com.intellij.openapi.components.SettingsCategory
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
-import com.intellij.openapi.vfs.VfsUtil
 import java.nio.file.Path
 import java.util.*
 
@@ -32,10 +30,7 @@ interface NewNotebookOptions {
 fun NewNotebookOptions.getActualProjectPath(): Path {
     return when(notebookMode) {
         NotebookMode.STANDARD -> {
-            val pathString = requireNotNull(notebookDirectory)
-            val virtualDirectory = VfsUtil.createDirectories(pathString)
-            val projectDirectory = findEnclosingProjectPathOrUseParent(virtualDirectory)
-            projectDirectory.toNioPath()
+            Path.of(notebookDirectory)
         }
         NotebookMode.LIGHT -> {
             KotlinNotebookRootTypeInstance.rootPath

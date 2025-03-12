@@ -40,7 +40,12 @@ class OpenKotlinNotebookAction : OpenFileAction() {
     }
 
     override suspend fun doOpenFile(project: Project?, virtualFile: VirtualFile) {
-        val projectPath = findEnclosingProjectPathOrUseParent(virtualFile)
+        val projectPath = if (virtualFile.isDirectory) {
+            virtualFile
+        } else {
+            virtualFile.parent
+        }
+
         val openedProject = DefaultKotlinNotebookProject.getProject(projectPath.toAbsolutePath())
         KotlinNotebookApplicationOptions.addRecentNotebook(
             RecentNotebook(

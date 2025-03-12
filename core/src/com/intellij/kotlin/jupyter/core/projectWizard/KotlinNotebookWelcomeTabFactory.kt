@@ -1,25 +1,18 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.projectWizard
 
-import com.intellij.ide.RecentProjectsManager
-import com.intellij.ide.RecentProjectsManager.RecentProjectsChange
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.registryFlag
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
-import com.intellij.openapi.progress.TaskInfo
 import com.intellij.openapi.wm.WelcomeScreen
 import com.intellij.openapi.wm.WelcomeScreenTab
 import com.intellij.openapi.wm.WelcomeTabFactory
-import com.intellij.openapi.wm.ex.ProgressIndicatorEx
 import com.intellij.openapi.wm.impl.welcomeScreen.TabbedWelcomeScreen.DefaultWelcomeScreenTab
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeBalloonLayoutImpl
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeFrame
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenComponentFactory
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
-import com.intellij.openapi.wm.impl.welcomeScreen.cloneableProjects.CloneableProjectsService
-import com.intellij.openapi.wm.impl.welcomeScreen.cloneableProjects.CloneableProjectsService.CloneProjectListener
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.Align
@@ -45,36 +38,16 @@ class KotlinNotebookWelcomeTabFactory: WelcomeTabFactory {
 }
 
 internal class KotlinNotebookWelcomeScreenTab(parentDisposable: Disposable) : DefaultWelcomeScreenTab(
-    KotlinNotebookBundle.message("kotlin.notebook.project.wizard.title")
+    KotlinNotebookBundle.message("kotlin.notebook.welcome.tab.title")
 ) {
     private val projectsPanelWrapper: Wrapper = Wrapper().apply {
         background = WelcomeScreenUIManager.getProjectsBackground()
     }
     private val recentProjectsPanel: JComponent = createRecentProjectsPanel()
     private val notificationPanel: JComponent = WelcomeScreenComponentFactory.createNotificationToolbar(parentDisposable)
-    private var panelState: PanelState
 
     init {
-        panelState = getCurrentState()
-        updateState(panelState)
-        val connect = ApplicationManager.getApplication().messageBus.connect(parentDisposable)
-        connect.subscribe(CloneableProjectsService.TOPIC, object : CloneProjectListener {
-            override fun onCloneCanceled() {}
-            override fun onCloneFailed() {}
-            override fun onCloneSuccess() {}
-            override fun onCloneAdded(progressIndicator: ProgressIndicatorEx, taskInfo: TaskInfo) {
-                checkState()
-            }
-
-            override fun onCloneRemoved() {
-                checkState()
-            }
-        })
-        connect.subscribe(RecentProjectsManager.RECENT_PROJECTS_CHANGE_TOPIC, object : RecentProjectsChange {
-            override fun change() {
-                checkState()
-            }
-        })
+        updateState()
     }
 
     override fun buildComponent(): JComponent {
@@ -97,17 +70,8 @@ internal class KotlinNotebookWelcomeScreenTab(parentDisposable: Disposable) : De
         }
     }
 
-    private fun checkState() {
-        val currentState = getCurrentState()
-        if (currentState == panelState) {
-            return
-        }
-        updateState(currentState)
-    }
-
-    private fun updateState(currentPanelState: PanelState) {
+    private fun updateState() {
         projectsPanelWrapper.setContent(recentProjectsPanel)
-        panelState = currentPanelState
         projectsPanelWrapper.repaint()
     }
 
@@ -139,13 +103,4 @@ internal class KotlinNotebookWelcomeScreenTab(parentDisposable: Disposable) : De
 
         return projectsPanel
     }
-}
-
-
-private enum class PanelState {
-    EMPTY, NOT_EMPTY
-}
-
-private fun getCurrentState(): PanelState {
-    return PanelState.NOT_EMPTY
 }
