@@ -10,6 +10,7 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.reactOn
 import com.intellij.kotlin.jupyter.core.editor.typing.NotebookCaretListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
+import com.intellij.kotlin.jupyter.core.settings.registryFlag
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.Disposable
@@ -22,6 +23,8 @@ import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.async
 
+private val inputDataCellsEnabledInKotlinNotebook by registryFlag("kotlin.notebook.data.input.cells.enabled", false)
+
 class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
     override fun onEditorCreated(project: Project, textEditor: TextEditor, virtualFile: BackedNotebookVirtualFile) {
         if (!virtualFile.file.isKotlinNotebook) return
@@ -32,7 +35,9 @@ class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
         val editor = textEditor.editor
 
         if (editor.isJupyter) {
-            JupyterDataInputSettings.disableInputCellsForEditor(editor)
+            if (!inputDataCellsEnabledInKotlinNotebook) {
+                JupyterDataInputSettings.disableInputCellsForEditor(editor)
+            }
 
             val compilerService = JupyterCompilerService.getInstance(project)
             val parentDisposable: Disposable = (editor as? EditorImpl)?.disposable ?: compilerService
