@@ -47,15 +47,3 @@ class CreateKotlinNotebookAndOpenProjectAction(settings: NewNotebookOptions) :
         }
     }
 }
-
-class CreateKotlinNotebookInCurrentProjectAction(settings: NewNotebookOptions) :
-    CreateKotlinNotebookFromTemplateAbstractAction(settings) {
-    override fun createNotebook(project: Project?) {
-        if (project == null) return
-        createKotlinNotebookInProjectWhenProjectIsInitialized(
-            project,
-            settings.template,
-            settings.notebookName,
-        )
-    }
-}

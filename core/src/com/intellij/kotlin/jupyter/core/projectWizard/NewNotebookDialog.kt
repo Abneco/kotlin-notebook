@@ -11,8 +11,11 @@ import com.intellij.kotlin.jupyter.core.projectWizard.settings.NewNotebookOption
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.ui.ComponentWidthPreserver
 import com.intellij.kotlin.jupyter.core.settings.ui.alignedWidthLabel
+import com.intellij.kotlin.jupyter.core.settings.ui.bindReactiveSelection
 import com.intellij.kotlin.jupyter.core.settings.ui.bindReactiveText
 import com.intellij.kotlin.jupyter.core.settings.ui.bindSelection
+import com.intellij.kotlin.jupyter.core.settings.ui.createSegmentedButton
+import com.intellij.kotlin.jupyter.core.settings.ui.createSegmentedButtonItems
 import com.intellij.kotlin.jupyter.core.settings.ui.reactiveComment
 import com.intellij.kotlin.jupyter.core.settings.ui.reactiveValidation
 import com.intellij.kotlin.jupyter.core.settings.ui.withCancelActionText
@@ -39,8 +42,9 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.COLUMNS_MEDIUM
-import com.intellij.ui.dsl.builder.IntelliJSpacingConfiguration
+import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.Panel
+import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.builder.SegmentedButton
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
@@ -59,7 +63,7 @@ import kotlin.reflect.KMutableProperty0
 
 
 class NewNotebookDialogInteractivity(
-    options: NewNotebookMutableOptions,
+    options: NewNotebookOptions,
 ) {
     private val generatedNameRegex = Regex("(.*)(_([1-9][0-9]*))")
 
@@ -191,17 +195,14 @@ class NewNotebookDialogInteractivity(
 fun showNewNotebookDialog(): NewNotebookOptions? {
     val options = NewNotebookMutableOptions()
     val interactivity = NewNotebookDialogInteractivity(options)
+    val panel = panel { buildDialogPanel(options, interactivity) }
 
-    val builder = DialogBuilder()
+    val isOk = DialogBuilder()
+        .title(KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.title"))
         .withPreferredWidth(540)
         .withOkActionText(KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.ok.text"))
         .withOkReactivelyEnabled(interactivity.isOkEnabled)
         .withCancelActionText(KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.cancel.text"))
-
-    val panel = panel { buildDialogPanel(options, interactivity) }
-
-    val isOk = builder
-        .title(KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.title"))
         .centerPanel(panel)
         .showAndGet()
 
@@ -228,13 +229,9 @@ private fun Panel.buildDialogPanel(
     row {
         alignedWidthLabel(labelWidthPreserver, KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.type.label"))
 
-        val notebookModeButton = createNotebookModeSegmentedButtonComponent(interactivity.modeSwitchValue)
-        cell(notebookModeButton)
-            .bind(
-                componentGet = { it.selectedItem ?: NotebookMode.LIGHT },
-                componentSet = { component, value -> component.selectedItem = value },
-                prop = options::notebookMode.toMutableProperty()
-            )
+        notebookModeSegmentedButton()
+            .bindSelection(options::notebookMode.toMutableProperty())
+            .bindReactiveSelection(interactivity.modeSwitchValue)
             .reactiveComment(interactivity.modeSwitchCommentText)
     }
 
@@ -314,20 +311,18 @@ class TemplateSelectionPanel(val templateProperty: KMutableProperty0<NotebookTem
     }
 }
 
-private fun createNotebookModeSegmentedButtonComponent(
-    modeSwitchValue: ObservableMutableProperty<NotebookMode>,
-): SegmentedButtonComponent<NotebookMode> {
-    val segmentedButtonComponent = SegmentedButtonComponent<NotebookMode> { notebookMode ->
-        val text = when (notebookMode) {
-            NotebookMode.STANDARD -> KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.type.segmented.button.standard.text")
-            NotebookMode.LIGHT -> KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.type.segmented.button.light.text")
+private fun Row.notebookModeSegmentedButton(): Cell<SegmentedButtonComponent<NotebookMode>> {
+    fun createButtonComponent(): SegmentedButtonComponent<NotebookMode> {
+        val items = createSegmentedButtonItems<NotebookMode> { notebookMode ->
+            val text = when (notebookMode) {
+                NotebookMode.STANDARD -> KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.type.segmented.button.standard.text")
+                NotebookMode.LIGHT -> KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.type.segmented.button.light.text")
+            }
+
+            SegmentedButton.createPresentation(text = text)
         }
-        SegmentedButton.createPresentation(text = text)
+        return createSegmentedButton(items)
     }
 
-    return segmentedButtonComponent.apply {
-        items = NotebookMode.entries
-        spacing = IntelliJSpacingConfiguration()
-        bindSelection(modeSwitchValue)
-    }
+    return cell(createButtonComponent())
 }

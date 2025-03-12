@@ -25,7 +25,7 @@ import java.util.*
 interface NewNotebookOptions {
     val notebookName: String
     val template: NotebookTemplate
-    val notebookDirectory: String?
+    val notebookDirectory: String
     val notebookMode: NotebookMode
 }
 
@@ -42,13 +42,6 @@ fun NewNotebookOptions.getActualProjectPath(): Path {
         }
     }
 }
-
-class NewNotebookOptionsImpl(
-    override val notebookName: String = KOTLIN_NOTEBOOK_SCRATCH_PREFIX,
-    override val template: NotebookTemplate = NotebookTemplate.EMPTY,
-    override val notebookDirectory: String? = null,
-    override val notebookMode: NotebookMode = NotebookMode.LIGHT,
-) : NewNotebookOptions
 
 class NewNotebookMutableOptions : NewNotebookOptions {
     override var template: NotebookTemplate by options::template
