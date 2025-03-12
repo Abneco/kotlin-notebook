@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.core.editor.creating
 
 import com.intellij.codeInsight.folding.impl.FoldingUpdate
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.data.input.JupyterDataInputSettings
 import com.intellij.jupyter.core.jupyter.editor.JupyterEditorCustomizer
 import com.intellij.jupyter.core.jupyter.editor.isJupyter
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.reactOnThemeChangedEvent
@@ -31,6 +32,8 @@ class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
         val editor = textEditor.editor
 
         if (editor.isJupyter) {
+            JupyterDataInputSettings.disableInputCellsForEditor(editor)
+
             val compilerService = JupyterCompilerService.getInstance(project)
             val parentDisposable: Disposable = (editor as? EditorImpl)?.disposable ?: compilerService
             KotlinNotebookPluginScope.getForProject(project).async {
