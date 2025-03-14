@@ -252,9 +252,7 @@ class JupyterCompilerPerFileService(
 
     private fun requestScriptingUpdateTestAware() {
         if (!ApplicationManager.getApplication().isUnitTestMode) {
-            coroutineScope.async {
-                JupyterCompilerService.getInstance(project).requestScriptingUpdate()
-            }
+            JupyterCompilerService.getInstance(project).requestScriptingUpdate()
         }
     }
 
@@ -378,9 +376,7 @@ class JupyterCompilerPerFileService(
     }
 
     private fun requestScriptingUpdate() {
-        coroutineScope.async {
-            JupyterCompilerService.getInstance(project).requestScriptingUpdate()
-        }
+        JupyterCompilerService.getInstance(project).requestScriptingUpdate()
     }
 
     private fun getLineFolderName(lineNumber: Int) = "line_$lineNumber"
@@ -578,7 +574,10 @@ class JupyterCompilerPerFileService(
 
             implicitReceiversClassPathData.removeAll(newStableReceivers)
 
-            requestScriptingUpdate()
+            // release write lock fast
+            coroutineScope.async {
+                requestScriptingUpdate()
+            }
         }
 
         val lastLoadedTypeOrNull: KotlinType? get() {
