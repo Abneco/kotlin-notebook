@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.ide.trustedProjects.TrustedProjects
-import com.intellij.ide.trustedProjects.TrustedProjectsLocator
 import com.intellij.kotlin.jupyter.core.jupyter.actions.CreateNotebookFactory
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.language.JupyterKotlinFileType
@@ -85,10 +84,7 @@ object DefaultKotlinNotebookProject {
     @RequiresEdt
     suspend fun getProject(projectPath: Path): Project {
         val projectPath = projectPath
-        TrustedProjects.setProjectTrusted(
-            locatedProject = TrustedProjectsLocator.locateProject(projectPath, null),
-            isTrusted = true
-        )
+        TrustedProjects.setProjectTrusted(projectPath, true)
         val project = ProjectManagerEx.getInstanceEx().openProjectAsync(projectPath, OpenProjectTask {
             runConfigurators = true
             isNewProject = true
