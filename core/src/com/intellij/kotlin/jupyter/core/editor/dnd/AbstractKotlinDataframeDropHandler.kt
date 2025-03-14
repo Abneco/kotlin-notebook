@@ -36,6 +36,10 @@ abstract class AbstractKotlinDataframeDropHandler(
         return "%use dataframe\n"
     }
 
+    protected open fun getCellResultStatement(variableName: String): String {
+        return variableName
+    }
+
     override fun generateCellCode(context: TableDataFileDropHandlerContext): String {
         val dataFilePath = context.resolveFilePath()
         val dfName = context.dataframeName ?: nameSuggester.createDataframeName(context.projectOrNull, context.dataFileNameWithoutExtension)
@@ -81,7 +85,7 @@ abstract class AbstractKotlinDataframeDropHandler(
             getUseStatement().takeIf { shouldGenerateUseStatement },
             """
             val $dfName = $importExpression
-            $dfName
+            ${getCellResultStatement(dfName)}
             """.trimIndent()
         ).joinToString("")
 }

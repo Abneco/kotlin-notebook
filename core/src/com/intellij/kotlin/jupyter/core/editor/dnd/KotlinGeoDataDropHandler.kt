@@ -32,4 +32,8 @@ class KotlinGeoDataDropHandler : AbstractKotlinDataframeDropHandler(
     override fun getUseStatement(): String {
         return "%use dataframe(enableExperimentalGeo=true)\n"
     }
+
+    override fun getCellResultStatement(variableName: String): String {
+        return "$variableName.df"
+    }
 }
