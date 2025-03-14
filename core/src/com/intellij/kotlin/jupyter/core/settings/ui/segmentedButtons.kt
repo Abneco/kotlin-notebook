@@ -39,14 +39,14 @@ fun <T> createSegmentedButton(items: List<SegmentedButtonItem<T>>): SegmentedBut
     }
 }
 
-fun <T> Cell<SegmentedButtonComponent<T>>.bindReactiveSelection(
+fun <T> Cell<SegmentedButtonComponent<T>>.bindSelectionChanges(
     selectedProperty: ObservableMutableProperty<T>
 ): Cell<SegmentedButtonComponent<T>> {
-    component.bindReactiveSelection(selectedProperty)
+    component.bindSelectionChanges(selectedProperty)
     return this
 }
 
-private fun <T> SegmentedButtonComponent<T>.bindReactiveSelection(
+private fun <T> SegmentedButtonComponent<T>.bindSelectionChanges(
     selectedProperty: ObservableMutableProperty<T>
 ) {
     selectedItem = selectedProperty.get()

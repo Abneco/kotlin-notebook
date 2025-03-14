@@ -13,7 +13,7 @@ fun DialogBuilder.withPreferredWidth(preferredWidth: Int): DialogBuilder {
     return this
 }
 
-fun DialogBuilder.withOkReactivelyEnabled(enabledProperty: ObservableProperty<Boolean>): DialogBuilder {
+fun DialogBuilder.withOkEnabledBy(enabledProperty: ObservableProperty<Boolean>): DialogBuilder {
     okActionEnabled(enabledProperty.get())
     enabledProperty.afterChange(this) { isOkEnabled ->
         okActionEnabled(isOkEnabled)

@@ -99,15 +99,22 @@ fun <T : JComponent> Cell<T>.reactiveComment(textProperty: ObservableMutableProp
     return this
 }
 
-fun <T : JTextField> Cell<T>.bindReactiveText(textProperty: ObservableMutableProperty<String>): Cell<T> {
-    component.text = textProperty.get()
-    onChanged {
-        textProperty.set(component.text)
-    }
-    textProperty.afterChange { newValue ->
-        component.text = newValue
-    }
-    return this
+fun <T : JTextField> Cell<T>.bindTextChanges(textProperty: ObservableMutableProperty<String>): Cell<T> {
+    return bindChanges(
+        component::getText,
+        component::setText,
+        textProperty
+    )
+}
+
+fun <T: TextFieldWithBrowseButton> Cell<T>.bindLocationTextChanges(
+    textProperty: ObservableMutableProperty<String>
+): Cell<T> {
+    return bindChanges(
+        component::getText,
+        component::setText,
+        textProperty
+    )
 }
 
 fun <T : JTextField> Cell<T>.reactiveValidation(validationInfoProperty: ObservableProperty<ValidationInfo?>): Cell<T> {
@@ -115,6 +122,46 @@ fun <T : JTextField> Cell<T>.reactiveValidation(validationInfoProperty: Observab
         validationInfoProperty.get()
     }).validationRequestor { parentDisposable, validate ->
         validationInfoProperty.afterChange(parentDisposable) { validate() }
+    }
+    return this
+}
+
+fun <T: Any, C: JComponent> Cell<C>.bindChanges(
+    componentPropertyGetter: () -> T,
+    componentPropertySetter: (T) -> Unit,
+    reactiveProperty: ObservableMutableProperty<T>,
+): Cell<C> {
+    return bindChanges(
+        MutableProperty(componentPropertyGetter, componentPropertySetter),
+        reactiveProperty,
+    )
+}
+
+fun <T: Any, C: JComponent> Cell<C>.bindChanges(
+    componentProperty: MutableProperty<T>,
+    reactiveProperty: ObservableMutableProperty<T>,
+): Cell<C> {
+    reflectComponentChangesInProperty(componentProperty::get, reactiveProperty)
+    return reflectPropertyChangesInComponent(componentProperty, reactiveProperty)
+}
+
+fun <T: Any, C: JComponent> Cell<C>.reflectPropertyChangesInComponent(
+    componentProperty: MutableProperty<T>,
+    reactiveProperty: ObservableProperty<T>,
+): Cell<C> {
+    componentProperty.set(reactiveProperty.get())
+    reactiveProperty.afterChange {
+        componentProperty.set(it)
+    }
+    return this
+}
+
+fun <T: Any, C: JComponent> Cell<C>.reflectComponentChangesInProperty(
+    componentGetter: () -> T,
+    reactiveProperty: ObservableMutableProperty<T>,
+): Cell<C> {
+    onChanged {
+        reactiveProperty.set(componentGetter())
     }
     return this
 }

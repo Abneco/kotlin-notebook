@@ -11,16 +11,17 @@ import com.intellij.kotlin.jupyter.core.projectWizard.settings.NewNotebookOption
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.ui.ComponentWidthPreserver
 import com.intellij.kotlin.jupyter.core.settings.ui.alignedWidthLabel
-import com.intellij.kotlin.jupyter.core.settings.ui.bindReactiveSelection
-import com.intellij.kotlin.jupyter.core.settings.ui.bindReactiveText
+import com.intellij.kotlin.jupyter.core.settings.ui.bindSelectionChanges
+import com.intellij.kotlin.jupyter.core.settings.ui.bindLocationTextChanges
 import com.intellij.kotlin.jupyter.core.settings.ui.bindSelection
+import com.intellij.kotlin.jupyter.core.settings.ui.bindTextChanges
 import com.intellij.kotlin.jupyter.core.settings.ui.createSegmentedButton
 import com.intellij.kotlin.jupyter.core.settings.ui.createSegmentedButtonItems
 import com.intellij.kotlin.jupyter.core.settings.ui.reactiveComment
 import com.intellij.kotlin.jupyter.core.settings.ui.reactiveValidation
 import com.intellij.kotlin.jupyter.core.settings.ui.withCancelActionText
 import com.intellij.kotlin.jupyter.core.settings.ui.withOkActionText
-import com.intellij.kotlin.jupyter.core.settings.ui.withOkReactivelyEnabled
+import com.intellij.kotlin.jupyter.core.settings.ui.withOkEnabledBy
 import com.intellij.kotlin.jupyter.core.settings.ui.withPreferredWidth
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
@@ -62,7 +63,7 @@ import javax.swing.SwingConstants
 import kotlin.reflect.KMutableProperty0
 
 
-class NewNotebookDialogInteractivity(
+class NewNotebookDialogViewModel(
     options: NewNotebookOptions,
 ) {
     private val generatedNameRegex = Regex("(.*)(_([1-9][0-9]*))")
@@ -193,14 +194,14 @@ class NewNotebookDialogInteractivity(
 
 fun showNewNotebookDialog(): NewNotebookOptions? {
     val options = NewNotebookMutableOptions()
-    val interactivity = NewNotebookDialogInteractivity(options)
-    val panel = panel { buildDialogPanel(options, interactivity) }
+    val viewModel = NewNotebookDialogViewModel(options)
+    val panel = panel { buildDialogPanel(options, viewModel) }
 
     val isOk = DialogBuilder()
         .title(KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.title"))
         .withPreferredWidth(540)
         .withOkActionText(KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.ok.text"))
-        .withOkReactivelyEnabled(interactivity.isOkEnabled)
+        .withOkEnabledBy(viewModel.isOkEnabled)
         .withCancelActionText(KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.cancel.text"))
         .centerPanel(panel)
         .showAndGet()
@@ -210,7 +211,7 @@ fun showNewNotebookDialog(): NewNotebookOptions? {
 
 private fun Panel.buildDialogPanel(
     options: NewNotebookMutableOptions,
-    interactivity: NewNotebookDialogInteractivity,
+    viewModel: NewNotebookDialogViewModel,
 ) {
     val labelWidthPreserver = ComponentWidthPreserver()
 
@@ -221,8 +222,8 @@ private fun Panel.buildDialogPanel(
             .bindText(options::notebookName)
             .columns(COLUMNS_MEDIUM)
             .align(AlignX.FILL)
-            .bindReactiveText(interactivity.nameFieldValue)
-            .reactiveValidation(interactivity.notebookNameValidationInfo)
+            .bindTextChanges(viewModel.nameFieldValue)
+            .reactiveValidation(viewModel.notebookNameValidationInfo)
     }
 
     row {
@@ -230,8 +231,8 @@ private fun Panel.buildDialogPanel(
 
         notebookModeSegmentedButton()
             .bindSelection(options::notebookMode.toMutableProperty())
-            .bindReactiveSelection(interactivity.modeSwitchValue)
-            .reactiveComment(interactivity.modeSwitchCommentText)
+            .bindSelectionChanges(viewModel.modeSwitchValue)
+            .reactiveComment(viewModel.modeSwitchCommentText)
     }
 
     row {
@@ -241,11 +242,9 @@ private fun Panel.buildDialogPanel(
             .trimmedTextValidation(CHECK_NON_EMPTY, CHECK_DIRECTORY)
             .align(AlignX.FILL)
             .bindText(options::notebookDirectory)
-            .reactiveComment(interactivity.locationCommentText)
-            .onChanged { component ->
-                interactivity.locationFieldValue.set(component.text)
-            }
-    }.visibleIf(interactivity.locationRowIsVisible)
+            .reactiveComment(viewModel.locationCommentText)
+            .bindLocationTextChanges(viewModel.locationFieldValue)
+    }.visibleIf(viewModel.locationRowIsVisible)
 
     if (provideTemplatesForCreateActions) {
         row {
