@@ -1,4 +1,4 @@
-- name: lib/kotlin-jupyter-core.jar
+- name: lib/kotlin-jupyter-plugin.jar
   projectLibraries:
   - name: jetbrains.kotlin-jupyter-shared-compiler
     files:
@@ -11,8 +11,9 @@
     - name: $MAVEN_REPOSITORY$/com/github/ajalt/clikt/2/clikt-2.jar
     reason: <- intellij.kotlin.jupyter.core
   modules:
-  - name: intellij.kotlin.jupyter.core
+  - name: intellij.kotlin.jupyter.plugin
   contentModules:
+  - name: intellij.kotlin.jupyter.core
   - name: intellij.kotlin.jupyter.github
   - name: intellij.kotlin.jupyter.tables
   - name: intellij.kotlin.jupyter.liveTemplates

@@ -4,7 +4,7 @@
         <plugin id="org.jetbrains.kotlin"/>
 
         <plugin id="com.intellij.modules.kotlin.k1"/>
-        <plugin id="org.jetbrains.plugins.kotlin.jupyter"/>
+        <module name="intellij.kotlin.jupyter.core"/>
         <module name="intellij.jupyter.psi"/>
         <module name="intellij.jupyter.core"/>
         <module name="intellij.notebooks.jupyter.core"/>

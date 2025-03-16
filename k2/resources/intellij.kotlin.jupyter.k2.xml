@@ -2,7 +2,7 @@
 
     <dependencies>
         <plugin id="com.intellij.modules.kotlin.k2"/>
-        <plugin id="org.jetbrains.plugins.kotlin.jupyter"/>
+        <module name="intellij.kotlin.jupyter.core"/>
         <module name="intellij.notebooks.jupyter.core"/>
         <module name="intellij.jupyter.core"/>
     </dependencies>
