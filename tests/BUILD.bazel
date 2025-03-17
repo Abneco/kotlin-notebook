@@ -12,6 +12,7 @@ jvm_library(
   visibility = ["//visibility:public"],
   srcs = glob(["testSrc/**/*.kt", "testSrc/**/*.java"], allow_empty = True),
   deps = [
+    "//plugins/kotlin/jupyter/plugin:kotlin-jupyter-plugin",
     "//plugins/kotlin/jupyter/core:kotlin-jupyter-core",
     "//plugins/kotlin/jupyter/github:kotlin-jupyter-github",
     "//plugins/kotlin/jupyter/tables:kotlin-jupyter-tables",
@@ -56,6 +57,7 @@ jvm_library(
     "@community//plugins/kotlin/j2k/shared:kotlin-j2k-shared",
     "@lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
     "//plugins/kotlin/jupyter/k1:kotlin-jupyter-k1",
+    "//plugins/kotlin/jupyter/k2:kotlin-jupyter-k2",
     "@lib//:kotlinc-kotlin-compiler-tests",
     "@ultimate_lib//:kotlin-jupyter-tests-jetbrains-kotlinx-jupyter-notebooks-parser",
   ],
