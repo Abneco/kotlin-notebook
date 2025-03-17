@@ -9,10 +9,8 @@ import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.LightVirtualFile
-import org.jetbrains.kotlin.scripting.definitions.StandardScriptDefinition.fileExtension
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
-import kotlin.script.experimental.api.ScriptCompilationConfigurationKeys
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.api.fileExtension
 import kotlin.script.experimental.host.ScriptDefinition
@@ -39,6 +37,10 @@ abstract class KotlinNotebookScriptDefinitionsWrapper(
 
     protected val fileExtension: String by lazy {
         scriptDefinition.compilationConfiguration[ScriptCompilationConfiguration.fileExtension] ?: "jupyter.kts"
+    }
+
+    protected val compiledFileSuffix: String by lazy { // -> jupyter.class
+        fileExtension.substringBeforeLast('.') + ".class"
     }
 
     protected fun isNotebookInjectedScript(script: SourceCode): Boolean {

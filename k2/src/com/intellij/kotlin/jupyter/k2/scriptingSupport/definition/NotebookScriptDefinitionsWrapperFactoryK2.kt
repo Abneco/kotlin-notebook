@@ -2,6 +2,8 @@
 package com.intellij.kotlin.jupyter.k2.scriptingSupport.definition
 
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper
+import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
+import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.jvm.defaultJvmScriptingHostConfiguration
@@ -26,7 +28,16 @@ internal class K2NotebookScriptDefinitionsWrapper(
             }
 
             override fun isScript(script: SourceCode): Boolean {
-                return super.isScript(script) && isNotebookInjectedScript(script)
+                return when {
+                    super.isScript(script) -> {
+                        isNotebookInjectedScript(script)
+                    }
+                    // it might be a compiled artifact from a notebook's ScriptModule
+                    script is VirtualFileScriptSource -> {
+                        script.name?.endsWith(compiledFileSuffix) == true
+                    }
+                    else -> false
+                }
             }
         }
     }
