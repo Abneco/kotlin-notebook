@@ -240,6 +240,8 @@
         <themeChangedListener implementation="com.intellij.kotlin.jupyter.core.editor.appearance.KotlinNotebookEditorColorsListener"/>
         <jupyter.output.error.filters.provider
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.outputs.error.KotlinJupyterErrorOutputFiltersProvider"/>
+        <errorOutputCustomizer
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.outputs.error.KotlinNotebookErrorOutputCustomizer"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.jupyter.core.jupyter">

@@ -5,13 +5,10 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.helper.NotebookLanguageMatcher
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.Document
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
@@ -24,40 +21,13 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.PsiManager
 import com.intellij.psi.util.parentOfType
 import com.intellij.util.concurrency.annotations.RequiresReadLock
-import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.util.capitalizeDecapitalize.toLowerCaseAsciiOnly
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
-const val DEFAULT_KOTLIN_KERNEL_NAME: String = "kotlin"
-
-private val kotlinMatcher by lazy {
-    NotebookLanguageMatcher(KotlinLanguage.INSTANCE)
-}
-
-val VirtualFile?.isKotlinNotebook: Boolean get() = kotlinMatcher.matches(this)
-val BackedNotebookVirtualFile.isKotlinNotebook: Boolean get() = kotlinMatcher.matches(this)
-val Editor.isKotlinNotebook: Boolean get() = kotlinMatcher.matches(this)
-
-val KtFile.isInsideKotlinNotebook: Boolean
-    get() {
-        val vFile = virtualFile ?: return false
-        if (vFile !is VirtualFileWindow) return false
-
-        return vFile.delegate.isKotlinNotebook
-    }
-
-fun isKotlinKernelName(kernelName: String?): Boolean {
-    return kernelName?.toLowerCaseAsciiOnly() == DEFAULT_KOTLIN_KERNEL_NAME
-}
-
-fun JupyterNotebookSession.isKotlinNotebookSession(): Boolean {
-    return isKotlinKernelName(kernelName)
-}
 
 fun PsiFile.getTopLevelFile(): PsiFile = InjectedLanguageManager.getInstance(project).getTopLevelFile(this) ?: this
 
