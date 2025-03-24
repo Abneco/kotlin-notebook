@@ -23,13 +23,15 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.util.DEFAULT_KOTLIN_KERNEL_NAME
-import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.createConcurrentDoubleKeyMap
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import java.io.File
 import java.nio.file.Path
@@ -130,11 +132,11 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
         sessions.removeByFirstKey(sessionId)
     }
 
-    private fun killKernel(kernelId: JupyterKernelId) {
+    private suspend fun killKernel(kernelId: JupyterKernelId) {
         sendShutdown(kernelId)
         val kernelProcess = kernelsHandlers.remove(kernelId) ?: return
         removeSessionAndRelatedState(kernelProcess)
-        KotlinNotebookPluginScope.invokeOnEDT {
+        withContext(Dispatchers.EDT) {
             Disposer.dispose(kernelProcess)
         }
     }

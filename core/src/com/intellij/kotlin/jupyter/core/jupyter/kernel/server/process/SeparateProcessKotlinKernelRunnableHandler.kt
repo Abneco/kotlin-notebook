@@ -3,13 +3,15 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.KillableColoredProcessHandler
-import com.intellij.execution.process.ProcessAdapter
+import com.intellij.execution.process.KillableProcessHandler
 import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.ProcessListener
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.AbstractKotlinKernelRunnableHandler
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelStateMachine
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.DONT_ACCEPT_SHUTDOWN
@@ -18,6 +20,7 @@ import com.intellij.kotlin.jupyter.core.util.warnInTests
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import com.intellij.util.EventDispatcher
 import com.intellij.util.io.BaseOutputReader
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import java.nio.file.Path
@@ -49,7 +52,7 @@ class SeparateProcessKotlinKernelRunnableHandler(
     KotlinKernelProcessListener::class,
     project, kernelId, notebookPath, notebookVirtualFile
 ) {
-    val process = KernelOsProcessHandler(commandLine, this)
+    val process: KillableProcessHandler = KernelOsProcessHandler(commandLine, this)
 
     init {
         LOG.warnInTests { "Created Kotlin kernel $kernelId" }
@@ -85,13 +88,15 @@ class SeparateProcessKotlinKernelRunnableHandler(
         commandLine: GeneralCommandLine,
         val runnableHandler: SeparateProcessKotlinKernelRunnableHandler
     ) : KillableColoredProcessHandler(commandLine) {
-        val stateMachine get() = runnableHandler.stateMachine
-        val eventDispatcher get() = runnableHandler.eventDispatcher
+        val stateMachine: KernelStateMachine
+            get() = runnableHandler.stateMachine
+        val eventDispatcher: EventDispatcher<KotlinKernelProcessListener>
+            get() = runnableHandler.eventDispatcher
 
         init {
             setShouldKillProcessSoftly(!ApplicationManager.getApplication().isUnitTestMode)
 
-            addProcessListener(object : ProcessAdapter() {
+            addProcessListener(object : ProcessListener {
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                     LOG.debug(event.text.trimEnd().trimStart('\r', '\n'))
                 }
@@ -99,14 +104,14 @@ class SeparateProcessKotlinKernelRunnableHandler(
                 override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
                     if (stateMachine.terminating()) {
                         eventDispatcher.multicaster.kernelWillTerminate(KotlinKernelProcessEventImpl(event))
-                        LOG.debug("Kernel process is going to be terminated (will ${if (willBeDestroyed) "" else "not "}be destroyed): $event")
+                        LOG.info("Kernel process is going to be terminated (will ${if (willBeDestroyed) "" else "not "}be destroyed): $event")
                     }
                 }
 
                 override fun processTerminated(event: ProcessEvent) {
                     if (stateMachine.terminated()) {
                         eventDispatcher.multicaster.kernelTerminated(KotlinKernelProcessEventImpl(event))
-                        LOG.debug("Kernel process terminated with code ${event.exitCode} (${event.text})")
+                        LOG.info("Kernel process terminated with code ${event.exitCode} (${event.text})")
                         LOG.warnInTests { "Destroyed Kotlin kernel ${runnableHandler.kernelId}" }
                     }
 
