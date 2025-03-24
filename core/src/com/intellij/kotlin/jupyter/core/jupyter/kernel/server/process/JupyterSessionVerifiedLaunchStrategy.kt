@@ -96,7 +96,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
         }
 
         session.sendMessageOnPooledThread(zmqMessage, callback)
-        notebookLogger().info("Sent info_request to verify Kotlin Jupyter kernel session ${session.sessionId}")
+        notebookLogger().info("Sending info_request to verify Kotlin Jupyter kernel session ${session.sessionId}")
 
         val verificationResult = withTimeoutOrNull(15.seconds) {
             verificationDeferred.await()
