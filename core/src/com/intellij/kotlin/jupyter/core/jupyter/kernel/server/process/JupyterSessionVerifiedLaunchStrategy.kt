@@ -4,16 +4,17 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
-import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionLaunchStrategy
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
+import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
+import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionLaunchStrategy
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelEvent
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableProvider
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.JupyterSessionVerifiedListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toJupyterMessage
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.openapi.application.ApplicationManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
@@ -95,9 +96,13 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
         }
 
         session.sendMessageOnPooledThread(zmqMessage, callback)
+        notebookLogger().info("Sent info_request to verify Kotlin Jupyter kernel session ${session.sessionId}")
 
-        return withTimeoutOrNull(80.seconds) {
+        val verificationResult = withTimeoutOrNull(15.seconds) {
             verificationDeferred.await()
-        } == true
+        }
+        notebookLogger().info("Kotlin Jupyter kernel session ${session.sessionId} verification result: $verificationResult")
+
+        return verificationResult == true
     }
 }
