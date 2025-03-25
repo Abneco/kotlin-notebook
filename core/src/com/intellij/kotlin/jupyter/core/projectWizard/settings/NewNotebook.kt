@@ -38,10 +38,17 @@ fun NewNotebookOptions.getActualProjectPath(): Path {
     }
 }
 
+fun getDefaultNewNotebookDirectory(): String {
+    return Path.of(
+        RecentProjectsManager.getInstance().suggestNewProjectLocation(),
+        "notebooks"
+    ).toString()
+}
+
 class NewNotebookMutableOptions : NewNotebookOptions {
     override var template: NotebookTemplate by options::template
     override var notebookName: String by options::notebookName
-    override var notebookDirectory: String = RecentProjectsManager.getInstance().suggestNewProjectLocation()
+    override var notebookDirectory: String = getDefaultNewNotebookDirectory()
     override var notebookMode: NotebookMode by options::notebookMode
 
     private val options get() = service<NewNotebookOptionsState>()
