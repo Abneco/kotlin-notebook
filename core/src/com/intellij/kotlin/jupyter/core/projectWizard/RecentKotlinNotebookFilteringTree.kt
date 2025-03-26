@@ -72,7 +72,7 @@ class RecentKotlinNotebookFilteringTree(
     private fun activateItem(item: NotebookItem) {
         when (item) {
             is NotebookFileItem -> {
-                openNotebook(item.notebook)
+                openNotebook(item.notebookWithIcon.notebook)
             }
             is NotebookRootItem -> {}
         }

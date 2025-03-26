@@ -2,12 +2,11 @@
 package com.intellij.kotlin.jupyter.core.projectWizard.common
 
 import com.intellij.icons.AllIcons
-import com.intellij.kotlin.jupyter.core.language.JupyterKotlinFileType
 import com.intellij.kotlin.jupyter.core.projectWizard.NotebookFileItem
 import com.intellij.kotlin.jupyter.core.projectWizard.NotebookRootItem
 import com.intellij.kotlin.jupyter.core.projectWizard.NotebookTreeNode
 import com.intellij.kotlin.jupyter.core.projectWizard.RecentKotlinNotebooksService
-import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
+import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebookWithIcon
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
@@ -120,10 +119,15 @@ private class NotebookComponent : JPanel(GridLayout()) {
             .cell(notebookActions, gaps = UnscaledGaps(right = ActionsButton.RIGHT_GAP))
     }
 
-    fun customizeComponent(notebook: RecentNotebook, rowHovered: Boolean, buttonViewModel: NotebookActionButtonViewModel): JComponent {
-        notebookNameLabel.text = notebook.path.name
-        notebookPathLabel.text = FileUtil.getLocationRelativeToUserHome(notebook.path.parent.path)
-        notebookIconLabel.icon = IconUtil.toSize(JupyterKotlinFileType.icon, 20, 20)
+    fun customizeComponent(notebookWithIcon: RecentNotebookWithIcon, rowHovered: Boolean, buttonViewModel: NotebookActionButtonViewModel): JComponent {
+        val notebookPath = notebookWithIcon.notebook.path
+        notebookNameLabel.text = notebookPath.name
+        notebookPathLabel.text = FileUtil.getLocationRelativeToUserHome(notebookPath.parent.path)
+
+        val icon = notebookWithIcon.icon
+        if (icon != null) {
+            notebookIconLabel.icon = IconUtil.resizeSquared(icon, 24)
+        }
 
         buttonViewModel.prepareActionsButton(notebookActions, rowHovered, AllIcons.Ide.Notification.Gear, AllIcons.Ide.Notification.GearHover)
 
@@ -170,7 +174,11 @@ class KotlinNotebookTreeHolder {
                 val item = node.item
 
                 if (item is NotebookFileItem) {
-                    return notebookComponent.customizeComponent(item.notebook, selected, buttonViewModel)
+                    return notebookComponent.customizeComponent(
+                        item.notebookWithIcon,
+                        selected,
+                        buttonViewModel
+                    )
                 }
 
                 return JLabel(item.displayName())
@@ -225,14 +233,14 @@ class KotlinNotebookTreeHolder {
 
                     if (intersectWithActionIcon(point)) {
                         val dataContext = SimpleDataContext.builder()
-                            .add(RECENT_NOTEBOOK_KEY, item.notebook)
+                            .add(RECENT_NOTEBOOK_KEY, item.notebookWithIcon.notebook)
                             .add(NOTEBOOK_TREE_HOLDER_KEY, this@KotlinNotebookTreeHolder)
                             .build()
 
                         popupMenu.setDataContext { dataContext }
                         popupMenu.component.show(e.component, e.x, e.y)
                     } else {
-                        openNotebook(item.notebook)
+                        openNotebook(item.notebookWithIcon.notebook)
                     }
 
                     e.consume()
@@ -274,7 +282,7 @@ class KotlinNotebookTreeHolder {
 
     fun updateAsync(): Job {
         return KotlinNotebookPluginScope.global.launch(Dispatchers.Default) {
-            val files = RecentKotlinNotebooksService.getInstance().getNotebooks()
+            val files = RecentKotlinNotebooksService.getInstance().getNotebooksWithIcons()
             withContext(Dispatchers.EDT) {
                 val root = NotebookTreeNode(NotebookRootItem(files))
                 treeModel.setRoot(root)

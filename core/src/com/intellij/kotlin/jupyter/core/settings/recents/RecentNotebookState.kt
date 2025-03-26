@@ -4,11 +4,17 @@ package com.intellij.kotlin.jupyter.core.settings.recents
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.Objects
+import javax.swing.Icon
 
 data class RecentNotebook(
     val path: VirtualFile,
     val projectPath: VirtualFile,
     val timeStamp: Long = System.currentTimeMillis(),
+)
+
+data class RecentNotebookWithIcon(
+    val notebook: RecentNotebook,
+    val icon: Icon? = null,
 )
 
 class RecentNotebookState: BaseState() {

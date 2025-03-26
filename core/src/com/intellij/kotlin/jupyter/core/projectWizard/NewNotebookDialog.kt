@@ -39,7 +39,6 @@ import com.intellij.openapi.ui.validation.CHECK_DIRECTORY
 import com.intellij.openapi.ui.validation.CHECK_NON_EMPTY
 import com.intellij.ui.JBColor
 import com.intellij.ui.OnePixelSplitter
-import com.intellij.ui.UIBundle
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBPanel
@@ -176,21 +175,27 @@ class NewNotebookDialogViewModel(
     }
 
     private fun checkFileAlreadyExists(): Boolean {
-        val notebookPath = getNotebookLocation(getNotebookDirectory(), nameFieldValue.get())
+        val nameWithoutExtension = nameFieldValue.get()
+        val notebookPath = getNotebookLocation(getNotebookDirectory(), nameWithoutExtension)
         val alreadyExists = notebookPath.toFile().exists()
         notebookNameValidationMessage.set(
-            KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.name.already.exists")
-                .takeIf { alreadyExists }
+            KotlinNotebookBundle.message(
+                "kotlin.notebook.new.notebook.dialog.name.already.exists",
+                getNotebookName(nameWithoutExtension)
+            ).takeIf { alreadyExists }
         )
         return alreadyExists
+    }
+
+    private fun getNotebookName(nameWithoutExtension: String): String {
+        return "$nameWithoutExtension.${JupyterFileType.defaultExtension}"
     }
 
     private fun getNotebookLocation(
         directory: Path,
         nameWithoutExtension: String,
     ): Path {
-        val notebookFileName = "$nameWithoutExtension.${JupyterFileType.defaultExtension}"
-        return directory.resolve(notebookFileName)
+        return directory.resolve(getNotebookName(nameWithoutExtension))
     }
 }
 
@@ -239,7 +244,7 @@ private fun Panel.buildDialogPanel(
     }
 
     row {
-        alignedWidthLabel(labelWidthPreserver, UIBundle.message("label.project.wizard.new.project.location"))
+        alignedWidthLabel(labelWidthPreserver, KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.location.label"))
 
         textFieldWithBrowseButton(FileChooserDescriptorFactory.singleDir())
             .trimmedTextValidation(CHECK_NON_EMPTY, CHECK_DIRECTORY)
