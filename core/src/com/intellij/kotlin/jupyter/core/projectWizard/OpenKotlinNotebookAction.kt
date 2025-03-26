@@ -6,7 +6,6 @@ import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
 import com.intellij.kotlin.jupyter.core.settings.recents.addRecentNotebook
-import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.toAbsolutePath
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.actionSystem.Presentation
@@ -34,9 +33,7 @@ class OpenKotlinNotebookAction : OpenFileAction() {
             .withExtensionFilter(
                 KotlinNotebookBundle.message("kotlin.notebook.file.type.in.chooser"),
                 JupyterFileType
-            ).withFileFilter {
-                it.isKotlinNotebook
-            }
+            )
     }
 
     override suspend fun doOpenFile(project: Project?, virtualFile: VirtualFile) {
