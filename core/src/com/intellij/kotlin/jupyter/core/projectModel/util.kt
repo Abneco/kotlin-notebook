@@ -95,6 +95,9 @@ private fun getLibraryRoots(
         toVfsRoots(configurationWrapper.dependenciesClassPath).mapTo(this) {
             LibraryRoot(it.toVirtualFileUrl(fileUrlManager), LibraryRootTypeId.COMPILED)
         }
+        toVfsRoots(configurationWrapper.dependenciesSources).mapTo(this) {
+            LibraryRoot(it.toVirtualFileUrl(fileUrlManager), LibraryRootTypeId.SOURCES)
+        }
     }
 
     return roots
