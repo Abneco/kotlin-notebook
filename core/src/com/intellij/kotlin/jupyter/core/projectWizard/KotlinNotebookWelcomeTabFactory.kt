@@ -13,7 +13,6 @@ import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeBalloonLayoutImpl
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeFrame
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenComponentFactory
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
-import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.AlignX
@@ -23,7 +22,6 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.UnscaledGaps
 import com.intellij.util.ui.JBUI
 import javax.swing.JComponent
-import javax.swing.ScrollPaneConstants
 
 val kotlinNotebookWelcomeFeaturesEnabled: Boolean by registryFlag("kotlin.notebook.welcome.features", false)
 
@@ -87,17 +85,7 @@ internal class KotlinNotebookWelcomeScreenTab(parentDisposable: Disposable) : De
 
     private fun createRecentProjectsPanel(): JComponent {
         val recentProjectsPanel = RecentKotlinNotebookPanel()
-
-        val scrollPane = ScrollPaneFactory.createScrollPane(
-            recentProjectsPanel,
-            true
-        ).apply {
-            horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-            isOpaque = false
-            viewport.isOpaque = false
-            background = WelcomeScreenUIManager.getProjectsBackground()
-        }
-        val projectsPanel = JBUI.Panels.simplePanel(scrollPane)
+        val projectsPanel = JBUI.Panels.simplePanel(recentProjectsPanel)
             .andTransparent()
             .withBackground(WelcomeScreenUIManager.getProjectsBackground())
 

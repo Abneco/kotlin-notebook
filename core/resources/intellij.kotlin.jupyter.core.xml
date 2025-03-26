@@ -213,6 +213,8 @@
                 implementation="com.intellij.kotlin.jupyter.core.projectWizard.KotlinNotebookWelcomeTabFactory"
                 id="KotlinNotebookWelcomeTabFactory"
                 order="after ProjectsWelcomeTab, after GatewayWelcomeTab, before CustomizeWelcomeTab"/>
+
+        <webHelpProvider implementation="com.intellij.kotlin.jupyter.core.ide.KotlinNotebookWebHelpProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">
@@ -303,6 +305,16 @@
                 icon="icons.KotlinJupyterIcons.FileIcon">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="Kotlin.NewScript"/>
         </action>
+
+        <group id="KotlinNotebookActionGroup">
+            <action id="OpenSelectedNotebookAction" class="com.intellij.kotlin.jupyter.core.projectWizard.OpenSelectedNotebookAction"/>
+            <action id="RevealNotebookInFinderAction" class="com.intellij.kotlin.jupyter.core.projectWizard.RevealNotebookInFinderAction"/>
+            <action id="CopyNotebookPathAction" class="com.intellij.kotlin.jupyter.core.projectWizard.CopyNotebookPathAction"
+                    use-shortcut-of="CopyPaths"/>
+            <separator/>
+            <action id="RemoveNotebookFromListAction" class="com.intellij.kotlin.jupyter.core.projectWizard.RemoveNotebookFromListAction"
+                    use-shortcut-of="$Delete"/>
+        </group>
         <action id="KotlinNotebookDependenciesComboBoxAction"
                 class="com.intellij.kotlin.jupyter.core.settings.actions.KotlinNotebookDependenciesComboBoxAction">
             <add-to-group group-id="JupyterEditorRightToolbarActions"

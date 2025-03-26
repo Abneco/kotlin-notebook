@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
+import com.intellij.kotlin.jupyter.core.projectWizard.common.openNotebook
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.application.EDT
@@ -19,8 +20,7 @@ import java.awt.event.KeyEvent
 import javax.swing.KeyStroke
 
 class RecentKotlinNotebookFilteringTree(
-    private val treeComponent: KotlinNotebookTreeHolder,
-    private val openNotebook: RecentNotebookAction
+    private val treeComponent: KotlinNotebookTreeHolder
 ) : FilteringTree<NotebookTreeNode, NotebookItem>(
     treeComponent.getTree(),
     treeComponent.getRoot()

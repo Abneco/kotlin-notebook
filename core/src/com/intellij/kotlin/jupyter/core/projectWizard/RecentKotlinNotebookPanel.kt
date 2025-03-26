@@ -2,9 +2,6 @@ package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.icons.AllIcons
 import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
-import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
-import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
-import com.intellij.kotlin.jupyter.core.settings.recents.addRecentNotebook
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
@@ -15,7 +12,6 @@ import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.actionSystem.impl.ActionToolbarImpl
 import com.intellij.openapi.application.EDT
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
 import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.border.CustomLineBorder
@@ -39,20 +35,13 @@ class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
         }
     }
 
-    private fun openNotebook(notebook: RecentNotebook) {
-        val projectPath = notebook.projectPath.toNioPath()
-        val project = DefaultKotlinNotebookProject.getProjectWithModalProgress(projectPath)
-        KotlinNotebookApplicationOptions.addRecentNotebook(notebook)
-        FileEditorManager.getInstance(project).openFile(notebook.path, true)
-    }
-
     suspend fun initialize() {
         withBorder(JBUI.Borders.empty(13, 12))
         withBackground(WelcomeScreenUIManager.getProjectsBackground())
 
-        val treeComponent = KotlinNotebookTreeHolder(::openNotebook)
+        val treeComponent = KotlinNotebookTreeHolder()
         treeComponent.updateAsync().join()
-        val filteringTree = RecentKotlinNotebookFilteringTree(treeComponent, ::openNotebook)
+        val filteringTree = RecentKotlinNotebookFilteringTree(treeComponent)
         filteringTree.updateAsync().join()
 
         val northPanel = JBUI.Panels.simplePanel()

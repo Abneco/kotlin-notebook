@@ -1,6 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.projectWizard
 
+import com.intellij.kotlin.jupyter.core.ide.KotlinNotebookHelpId
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
 import com.intellij.kotlin.jupyter.core.language.description
@@ -10,16 +11,17 @@ import com.intellij.kotlin.jupyter.core.projectWizard.settings.NewNotebookMutabl
 import com.intellij.kotlin.jupyter.core.projectWizard.settings.NewNotebookOptions
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.ui.ComponentWidthPreserver
+import com.intellij.kotlin.jupyter.core.settings.ui.SegmentedButtonItem
 import com.intellij.kotlin.jupyter.core.settings.ui.alignedWidthLabel
-import com.intellij.kotlin.jupyter.core.settings.ui.bindSelectionChanges
 import com.intellij.kotlin.jupyter.core.settings.ui.bindLocationTextChanges
 import com.intellij.kotlin.jupyter.core.settings.ui.bindSelection
+import com.intellij.kotlin.jupyter.core.settings.ui.bindSelectionChanges
 import com.intellij.kotlin.jupyter.core.settings.ui.bindTextChanges
 import com.intellij.kotlin.jupyter.core.settings.ui.createSegmentedButton
-import com.intellij.kotlin.jupyter.core.settings.ui.createSegmentedButtonItems
 import com.intellij.kotlin.jupyter.core.settings.ui.reactiveComment
 import com.intellij.kotlin.jupyter.core.settings.ui.reactiveValidation
 import com.intellij.kotlin.jupyter.core.settings.ui.withCancelActionText
+import com.intellij.kotlin.jupyter.core.settings.ui.withHelpId
 import com.intellij.kotlin.jupyter.core.settings.ui.withOkActionText
 import com.intellij.kotlin.jupyter.core.settings.ui.withOkEnabledBy
 import com.intellij.kotlin.jupyter.core.settings.ui.withPreferredWidth
@@ -203,6 +205,7 @@ fun showNewNotebookDialog(): NewNotebookOptions? {
         .withOkActionText(KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.ok.text"))
         .withOkEnabledBy(viewModel.isOkEnabled)
         .withCancelActionText(KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.cancel.text"))
+        .withHelpId(KotlinNotebookHelpId.NEW_NOTEBOOK_DIALOG)
         .centerPanel(panel)
         .showAndGet()
 
@@ -311,14 +314,17 @@ class TemplateSelectionPanel(val templateProperty: KMutableProperty0<NotebookTem
 
 private fun Row.notebookModeSegmentedButton(): Cell<SegmentedButtonComponent<NotebookMode>> {
     fun createButtonComponent(): SegmentedButtonComponent<NotebookMode> {
-        val items = createSegmentedButtonItems<NotebookMode> { notebookMode ->
-            val text = when (notebookMode) {
-                NotebookMode.STANDARD -> KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.type.segmented.button.standard.text")
-                NotebookMode.LIGHT -> KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.type.segmented.button.light.text")
-            }
+        val items = listOf(
+            SegmentedButtonItem(
+                NotebookMode.LIGHT,
+                SegmentedButton.createPresentation(text = KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.type.segmented.button.light.text"))
+            ),
+            SegmentedButtonItem(
+                NotebookMode.STANDARD,
+                SegmentedButton.createPresentation(text = KotlinNotebookBundle.message("kotlin.notebook.new.notebook.dialog.type.segmented.button.standard.text"))
+            )
+        )
 
-            SegmentedButton.createPresentation(text = text)
-        }
         return createSegmentedButton(items)
     }
 

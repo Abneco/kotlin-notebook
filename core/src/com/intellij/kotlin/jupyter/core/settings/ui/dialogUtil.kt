@@ -1,6 +1,8 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.settings.ui
 
+import com.intellij.kotlin.jupyter.core.ide.KotlinNotebookHelpId
+import com.intellij.kotlin.jupyter.core.ide.helpTopic
 import com.intellij.openapi.observable.properties.ObservableProperty
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.util.NlsActions
@@ -30,3 +32,10 @@ fun DialogBuilder.withCancelActionText(@NlsActions.ActionText text: String): Dia
     addCancelAction().setText(text)
     return this
 }
+
+fun DialogBuilder.withHelpId(helpId: String): DialogBuilder {
+    setHelpId(helpId)
+    return this
+}
+
+fun DialogBuilder.withHelpId(helpId: KotlinNotebookHelpId): DialogBuilder = withHelpId(helpId.helpTopic)
