@@ -17,8 +17,8 @@ import com.intellij.kotlin.jupyter.core.settings.SessionOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.isAvailable
 import com.intellij.kotlin.jupyter.core.settings.isKernelVersionEnoughForInstrumentation
 import com.intellij.kotlin.jupyter.core.settings.isSuitableForStartingKernel
-import com.intellij.kotlin.jupyter.core.settings.replCompilerModeSelectorEnabled
 import com.intellij.kotlin.jupyter.core.settings.minJdkVersion
+import com.intellij.kotlin.jupyter.core.settings.replCompilerModeSelectorEnabled
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersion
 import com.intellij.kotlin.jupyter.core.util.revealKotlinNotebookLocalKernelsFolder
 import com.intellij.openapi.Disposable
@@ -46,11 +46,11 @@ import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.util.execution.ParametersListUtil
-import com.intellij.util.messages.ListenerDescriptor
 import com.intellij.util.messages.MessageBus
 import com.intellij.util.messages.MessageBusFactory
 import com.intellij.util.messages.MessageBusOwner
 import com.intellij.util.messages.Topic
+import com.intellij.util.messages.impl.PluginListenerDescriptor
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
@@ -331,7 +331,7 @@ class KotlinNotebookSettingsPanelBuilder(
 
     private fun createMessageBus(parentDisposable: CheckedDisposable): MessageBus {
         return MessageBusFactory.newMessageBus(object : MessageBusOwner {
-            override fun createListener(descriptor: ListenerDescriptor): Any {
+            override fun createListener(descriptor: PluginListenerDescriptor): Any {
                 throw UnsupportedOperationException()
             }
 
