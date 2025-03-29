@@ -13,12 +13,15 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOption
 import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
 import com.intellij.kotlin.jupyter.core.settings.recents.addRecentNotebook
 import com.intellij.kotlin.jupyter.core.settings.recents.rootPath
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.toAbsolutePath
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.WriteAction
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.module.JavaModuleType
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.BaseProjectDirectories.Companion.getBaseDirectories
+import com.intellij.openapi.project.NOTIFICATIONS_SILENT_MODE
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.openapi.project.rootManager
@@ -36,10 +39,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
+import kotlinx.coroutines.launch
 
 const val KOTLIN_NOTEBOOK_SCRATCH_PREFIX: String = "notebook"
 
-typealias RecentNotebookAction = (RecentNotebook) -> Unit
+private fun Project.runWhenProjectIsInitializedOnBGT(
+    action: suspend () -> Unit
+) {
+    @Suppress("DEPRECATION")
+    StartupManager.getInstance(this).runWhenProjectIsInitialized {
+        KotlinNotebookPluginScope.getForProject(this).launch {
+            action()
+        }
+    }
+}
 
 @OptIn(IntellijInternalApi::class)
 fun createKotlinNotebookInProjectWhenProjectIsInitialized(
@@ -47,23 +60,28 @@ fun createKotlinNotebookInProjectWhenProjectIsInitialized(
     template: NotebookTemplate,
     notebookNamePrefix: String,
 ) {
-    @Suppress("DEPRECATION")
-    StartupManager.getInstance(project).runWhenProjectIsInitialized {
+    project.runWhenProjectIsInitializedOnBGT {
         val projectRoot = project.getBaseDirectories().singleOrNull() ?: error("Project root path is not found")
         val extension = JupyterKotlinFileType.getDefaultExtension()
         val freeFileName = filesInfixSequence
             .map { "$notebookNamePrefix$it.$extension" }
             .first { projectRoot.findFileOrDirectory(it) == null }
 
-        val psiDir: PsiDirectory = PsiManager.getInstance(project).findDirectory(projectRoot)!!
+        val psiDir: PsiDirectory = readAction {
+            PsiManager.getInstance(project).findDirectory(projectRoot)!!
+        }
+
         val fileTemplate = template.getFileTemplate(project)
-        val newPsiFile = CreateNotebookFactory.createFileFromTemplate(
-            fileName = freeFileName,
-            template = fileTemplate,
-            directory = psiDir,
-            openFileInIde = true,
-            mode = NotebookMode.STANDARD,
-        )
+        val newPsiFile = withContext(Dispatchers.EDT) {
+            CreateNotebookFactory.createFileFromTemplate(
+                fileName = freeFileName,
+                template = fileTemplate,
+                directory = psiDir,
+                openFileInIde = true,
+                mode = NotebookMode.STANDARD,
+            )
+        }
+
         if (newPsiFile != null) {
             val projectPath = project.rootPath
             if (projectPath != null) {
@@ -88,6 +106,9 @@ object DefaultKotlinNotebookProject {
         val project = ProjectManagerEx.getInstanceEx().openProjectAsync(projectPath, OpenProjectTask {
             runConfigurators = true
             isNewProject = true
+            beforeInit = {
+                NOTIFICATIONS_SILENT_MODE.set(it, true)
+            }
         }) ?: error("Failed to open project")
 
         val moduleManager = ModuleManager.getInstance(project)
