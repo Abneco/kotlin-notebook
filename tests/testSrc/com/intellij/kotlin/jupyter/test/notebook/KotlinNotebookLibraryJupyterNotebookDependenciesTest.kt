@@ -76,7 +76,7 @@ class KotlinNotebookLibraryDependenciesTest : UsefulTestCase() {
             createLibrary("lib$it", classesDirectory)
         }
 
-        _notebookVirtualFile = project.createEmptyNotebook("test.ipynb")
+        _notebookVirtualFile = project.createEmptyNotebook("test.ipynb", testRootDisposable)
     }
 
     override fun tearDown() {

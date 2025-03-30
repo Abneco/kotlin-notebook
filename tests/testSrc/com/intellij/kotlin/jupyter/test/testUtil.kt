@@ -25,6 +25,7 @@ import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTeste
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
 import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.application.impl.NonBlockingReadActionImpl.waitForAsyncTaskCompletion
 import com.intellij.openapi.application.readAction
@@ -201,7 +202,7 @@ fun <R> withDisabledJcef(action:() -> R): R {
     }
 }
 
-fun Project.createEmptyNotebook(name: String): BackedNotebookVirtualFile {
+fun Project.createEmptyNotebook(name: String, testRootDisposable: Disposable): BackedNotebookVirtualFile {
     val projectBaseDir = HeavyTestHelper.getOrCreateProjectBaseDir(this)
     val directoryPsiFile = runReadAction { PsiManager.getInstance(this).findDirectory(projectBaseDir)!! }
 
@@ -211,7 +212,7 @@ fun Project.createEmptyNotebook(name: String): BackedNotebookVirtualFile {
         template = notebookTemplate,
         directory = directoryPsiFile,
     )
-    return BackedNotebookVirtualFile.Companion.takeBackend(psiFile!!.virtualFile)!!
+    return BackedNotebookVirtualFile.getOrLoadForDisposable(psiFile!!.virtualFile, disposable = testRootDisposable)!!
 }
 
 fun BackedNotebookVirtualFile.delete() {

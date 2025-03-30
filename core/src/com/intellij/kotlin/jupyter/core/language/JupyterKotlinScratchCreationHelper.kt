@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.language
 
 import com.intellij.ide.scratch.ScratchFileCreationHelper
 import com.intellij.ide.scratch.ScratchFileService
-import com.intellij.jupyter.core.jupyter.helper.notebookJsonText
+import com.intellij.jupyter.core.jupyter.helper.getOrReadJsonText
 import com.intellij.kotlin.jupyter.core.jupyter.actions.CreateNotebookFactory
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.projectWizard.KOTLIN_NOTEBOOK_SCRATCH_PREFIX
@@ -46,7 +46,7 @@ class JupyterKotlinScratchCreationHelper: ScratchFileCreationHelper() {
                     mode = NotebookMode.LIGHT,
                 )!!
 
-                val notebookJsonText = tempFile.virtualFile.notebookJsonText
+                val notebookJsonText = tempFile.virtualFile.getOrReadJsonText
                 context.apply {
                     text = notebookJsonText
                     language = null

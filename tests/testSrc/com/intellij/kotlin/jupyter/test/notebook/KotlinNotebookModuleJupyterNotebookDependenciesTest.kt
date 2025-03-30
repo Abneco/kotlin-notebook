@@ -80,7 +80,7 @@ class KotlinNotebookModuleDependenciesTest : UsefulTestCase() {
 
             fixture.setUp()
 
-            _notebookVirtualFile = project.createEmptyNotebook("test.ipynb")
+            _notebookVirtualFile = project.createEmptyNotebook("test.ipynb", testRootDisposable)
         }
     }
 
