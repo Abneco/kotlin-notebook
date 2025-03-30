@@ -1,6 +1,8 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.projectModel
 
+import com.intellij.openapi.components.service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
@@ -17,7 +19,8 @@ import com.intellij.platform.workspace.storage.EntitySource
 import com.intellij.platform.workspace.storage.EntityStorage
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.WorkspaceEntity
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager.Companion.toVfsRoots
+import com.intellij.platform.workspace.storage.impl.url.toVirtualFileUrl
+import org.jetbrains.kotlin.idea.core.script.k2.ClassPathVirtualFileCache
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 
@@ -92,11 +95,14 @@ private fun getLibraryRoots(
     val fileUrlManager = WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
 
     val roots = buildList {
-        toVfsRoots(configurationWrapper.dependenciesClassPath).mapTo(this) {
-            LibraryRoot(it.toVirtualFileUrl(fileUrlManager), LibraryRootTypeId.COMPILED)
+        configurationWrapper.dependenciesClassPath.mapNotNullTo(this) {
+            val file = project.service<ClassPathVirtualFileCache>().get(it.path)
+            file?.let { LibraryRoot(file.toVirtualFileUrl(fileUrlManager), LibraryRootTypeId.COMPILED) }
         }
-        toVfsRoots(configurationWrapper.dependenciesSources).mapTo(this) {
-            LibraryRoot(it.toVirtualFileUrl(fileUrlManager), LibraryRootTypeId.SOURCES)
+
+        configurationWrapper.dependenciesSources.mapNotNullTo(this) {
+            val file = project.service<ClassPathVirtualFileCache>().get(it.path)
+            file?.let { LibraryRoot(file.toVirtualFileUrl(fileUrlManager), LibraryRootTypeId.SOURCES) }
         }
     }
 

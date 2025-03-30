@@ -52,9 +52,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.withContext
-import org.jetbrains.kotlin.idea.core.script.ClasspathToVfsConverter
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.k2.ClassPathVirtualFileCache
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
@@ -529,7 +529,7 @@ class JupyterCompilerPerFileService(
             coroutineScope.cancel()
         }
 
-        ClasspathToVfsConverter.clearCaches()
+        ClassPathVirtualFileCache.getInstance(project).clear()
 
         if (!isDisposed) {
             val manager = ScriptConfigurationManager.getInstance(project) as? CompositeScriptConfigurationManager
