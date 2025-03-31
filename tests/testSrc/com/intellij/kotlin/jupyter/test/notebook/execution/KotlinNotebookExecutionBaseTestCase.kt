@@ -15,7 +15,6 @@ import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
@@ -30,7 +29,6 @@ import com.intellij.util.containers.forEachGuaranteed
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.junit.Rule
-import org.junit.jupiter.api.Assertions
 import org.junit.rules.DisableOnDebug
 import org.junit.rules.TestRule
 
@@ -143,21 +141,5 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
                 testAction()
             }
         }
-    }
-
-    class OutputsTester(private val cellOutputs: List<List<ObjectNode>>) : ReceivedMessagesTester {
-        override val expectedCellsCount: Int
-            get() = cellOutputs.size
-
-        override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) {
-            LOG.debug("Checking outputs for cell #$cellNum")
-            val expectedOutputs = cellOutputs[cellNum].map { it.toPrettyString() }
-            val actualOutputs = messages.outputs.map { it.messageContent["data"].toPrettyString() }
-            Assertions.assertIterableEquals(expectedOutputs, actualOutputs)
-        }
-    }
-
-    companion object {
-        private val LOG = logger<KotlinNotebookExecutionBaseTestCase>()
     }
 }

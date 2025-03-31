@@ -9,7 +9,6 @@ import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketManagerBase
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketSide
 import org.jetbrains.kotlinx.jupyter.protocol.createSocket
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import org.jetbrains.kotlinx.jupyter.util.closeWithTimeout
 import org.zeromq.ZMQ
 import java.io.Closeable
 
@@ -31,7 +30,7 @@ class IdeaJupyterSocketManager(private val kernelConfig: KernelConfig): JupyterS
     }
 
     override fun close() {
-        closeWithTimeout(10_000L, ::doClose)
+        doClose()
     }
 
     private fun doClose() {
