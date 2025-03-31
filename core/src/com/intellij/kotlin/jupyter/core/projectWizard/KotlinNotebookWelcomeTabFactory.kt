@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.registryFlag
+import com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.wm.WelcomeScreen
@@ -49,6 +50,7 @@ internal class KotlinNotebookWelcomeScreenTab(parentDisposable: Disposable) : De
     }
 
     override fun buildComponent(): JComponent {
+        KotlinNotebookFeatureUsagesCollector.registerWelcomeScreenTabOpened()
         return panel {
             customizeSpacingConfiguration(EmptySpacingConfiguration()) {
                 row {

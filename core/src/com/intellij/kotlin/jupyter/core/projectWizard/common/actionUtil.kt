@@ -5,9 +5,14 @@ import com.intellij.kotlin.jupyter.core.projectWizard.DefaultKotlinNotebookProje
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
 import com.intellij.kotlin.jupyter.core.settings.recents.addRecentNotebook
+import com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector
+import com.intellij.kotlin.jupyter.core.statistics.fus.WelcomeScreenIdeEntryType
 import com.intellij.openapi.fileEditor.FileEditorManager
 
 fun openNotebook(notebook: RecentNotebook) {
+    KotlinNotebookFeatureUsagesCollector.registerIdeEntryFromKotlinNotebookWelcomeScreen(
+        WelcomeScreenIdeEntryType.OPEN_RECENT_NOTEBOOK
+    )
     val projectPath = notebook.projectPath.toNioPath()
     val project = DefaultKotlinNotebookProject.getProjectWithModalProgress(projectPath)
     KotlinNotebookApplicationOptions.addRecentNotebook(notebook)

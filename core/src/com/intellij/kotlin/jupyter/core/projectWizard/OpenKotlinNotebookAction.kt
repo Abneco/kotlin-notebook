@@ -6,6 +6,8 @@ import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
 import com.intellij.kotlin.jupyter.core.settings.recents.addRecentNotebook
+import com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector
+import com.intellij.kotlin.jupyter.core.statistics.fus.WelcomeScreenIdeEntryType
 import com.intellij.kotlin.jupyter.core.util.toAbsolutePath
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.actionSystem.Presentation
@@ -49,6 +51,10 @@ class OpenKotlinNotebookAction : OpenFileAction() {
                 virtualFile,
                 projectPath
             )
+        )
+
+        KotlinNotebookFeatureUsagesCollector.registerIdeEntryFromKotlinNotebookWelcomeScreen(
+            WelcomeScreenIdeEntryType.OPEN_NOTEBOOK_FROM_FILE_SYSTEM
         )
 
         super.doOpenFile(openedProject, virtualFile)

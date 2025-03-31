@@ -35,7 +35,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
 
     @Suppress("CompanionObjectInExtension")
     companion object {
-        @JvmStatic private val GROUP = EventLogGroup("kotlin.notebook", 6)
+        @JvmStatic private val GROUP = EventLogGroup("kotlin.notebook", 7)
 
         @JvmStatic private val CELLS_COUNT = EventFields.RoundedInt("cells_count")
         @JvmStatic private val CODE_CELLS_COUNT = EventFields.RoundedInt("cells_code_count")
@@ -260,6 +260,28 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
 
         fun registerRunAllCells(project: Project, cellCountToRun: Int) {
             ALL_CELLS_RUN_EVENT.log(project, cellCountToRun)
+        }
+
+        @JvmStatic private val KOTLIN_NOTEBOOK_WELCOME_SCREEN_TAB_OPENED_EVENT = GROUP.registerEvent(
+            "welcome.screen.tab.opened"
+        )
+
+        fun registerWelcomeScreenTabOpened() {
+            KOTLIN_NOTEBOOK_WELCOME_SCREEN_TAB_OPENED_EVENT.log(null)
+        }
+
+        @JvmStatic private val IDE_ENTRY_TYPE = EventFields.Enum<WelcomeScreenIdeEntryType>("ide_entry_type")
+
+        @JvmStatic private val ENTERED_IDE_FROM_KOTLIN_NOTEBOOK_WELCOME_SCREEN_EVENT = GROUP.registerEvent(
+            "welcome.screen.ide.entered",
+            IDE_ENTRY_TYPE,
+        )
+
+        fun registerIdeEntryFromKotlinNotebookWelcomeScreen(ideEntryType: WelcomeScreenIdeEntryType) {
+            ENTERED_IDE_FROM_KOTLIN_NOTEBOOK_WELCOME_SCREEN_EVENT.log(
+                null,
+                ideEntryType
+            )
         }
 
         // We need some negative special value for "all" dependencies to avoid requesting them
