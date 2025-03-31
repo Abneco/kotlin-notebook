@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.settings.ui
 
 import com.intellij.codeInsight.hint.HintUtil
+import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookMissingJdkService
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
@@ -19,30 +20,39 @@ import javax.swing.JComponent
 class KotlinNotebookMissingJdkEditorNotification : EditorNotificationProvider, DumbAware {
     override fun collectNotificationData(project: Project, file: VirtualFile): Function<in FileEditor, out JComponent?>? {
         if (!file.isKotlinNotebook) return null
-
         project.service<KotlinNotebookMissingJdkService>() // init service
 
+        return Function { fileEditor: FileEditor ->
+            createNotificationPanel(project, fileEditor)
+        }
+    }
+
+    private fun createNotificationPanel(project: Project, fileEditor: FileEditor): EditorNotificationPanel? {
+        if (fileEditor !is JupyterFileEditor) return null
         val optionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
         if (optionsProvider.jdk.getPath(project) != null) return null
 
-        return Function {
-            val panel = EditorNotificationPanel(HintUtil.WARNING_COLOR_KEY, EditorNotificationPanel.Status.Error)
+        val panel = EditorNotificationPanel(
+            fileEditor.editor,
+            null,
+            HintUtil.WARNING_COLOR_KEY,
+            EditorNotificationPanel.Status.Error,
+        )
 
-            val jdkName = optionsProvider.jdkName
-            val message = if (jdkName == null) {
-                KotlinNotebookBundle.message("kotlin.jupyter.missing.jdk.notification.not.selected.text")
-            } else {
-                KotlinNotebookBundle.message("kotlin.jupyter.missing.jdk.notification.not.found.text", jdkName)
-            }
-            panel.text(message)
-
-            panel.createActionLabel(
-                KotlinNotebookBundle.message("kotlin.jupyter.missing.jdk.select.jdk.action"),
-                "ShowKotlinNotebookPreferencesAction",
-                false
-            )
-
-            panel
+        val jdkName = optionsProvider.jdkName
+        val message = if (jdkName == null) {
+            KotlinNotebookBundle.message("kotlin.jupyter.missing.jdk.notification.not.selected.text")
+        } else {
+            KotlinNotebookBundle.message("kotlin.jupyter.missing.jdk.notification.not.found.text", jdkName)
         }
+        panel.text(message)
+
+        panel.createActionLabel(
+            KotlinNotebookBundle.message("kotlin.jupyter.missing.jdk.select.jdk.action"),
+            "ShowKotlinNotebookPreferencesAction",
+            false
+        )
+
+        return panel
     }
 }

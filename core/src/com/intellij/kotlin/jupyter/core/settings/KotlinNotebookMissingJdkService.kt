@@ -1,14 +1,12 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.settings
 
-import com.intellij.kotlin.jupyter.core.settings.ui.KotlinNotebookMissingJdkEditorNotification
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ex.ProjectRootManagerEx
-import com.intellij.ui.EditorNotificationProvider
 import com.intellij.ui.EditorNotifications
 
 @Service(Service.Level.PROJECT)
@@ -31,9 +29,7 @@ class KotlinNotebookMissingJdkService(private val project: Project) : Disposable
     }
 
     private fun updateNotifications() {
-        val extension = EditorNotificationProvider.EP_NAME.findExtension(KotlinNotebookMissingJdkEditorNotification::class.java, project)
-                        ?: return
-        EditorNotifications.getInstance(project).updateNotifications(extension)
+        EditorNotifications.getInstance(project).updateAllNotifications()
     }
 
     override fun dispose() {
