@@ -7,48 +7,39 @@ import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocket
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketInfo
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketManagerBase
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketSide
-import org.jetbrains.kotlinx.jupyter.protocol.SocketWrapper
-import org.jetbrains.kotlinx.jupyter.protocol.addressForSocket
+import org.jetbrains.kotlinx.jupyter.protocol.createSocket
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
+import org.jetbrains.kotlinx.jupyter.util.closeWithTimeout
 import org.zeromq.ZMQ
 import java.io.Closeable
 
 class IdeaJupyterSocketManager(private val kernelConfig: KernelConfig): JupyterSocketManagerBase, Closeable {
     private val context = ZMQ.context(1)
 
-    private fun createSocket(
-        socketInfo: JupyterSocketInfo,
-    ): JupyterSocket {
-        val zmqSocket = context
-            .socket(socketInfo.zmqType(JupyterSocketSide.IDE_CLIENT))
-            .apply {
-                linger = 0
-            }
-        return SocketWrapper(
-            DefaultKernelLoggerFactory,
-            socketInfo.name,
-            zmqSocket,
-            kernelConfig.addressForSocket(socketInfo),
-            kernelConfig.hmac,
-        )
-    }
-
     private fun openSocket(info: JupyterSocketInfo): JupyterSocket {
-        val socket = createSocket(info)
+        val socket = createSocket(
+            DefaultKernelLoggerFactory,
+            info,
+            context,
+            kernelConfig,
+            JupyterSocketSide.IDE_CLIENT
+        )
         if (info.type == JupyterSocketType.IOPUB) {
             socket.subscribe(byteArrayOf())
         }
         return socket
     }
 
-    private val sockets = JupyterSocketInfo.entries.associate { it.type to openSocket(it).apply { connect() } }
+    private val sockets = JupyterSocketInfo.entries.associate {
+        it.type to openSocket(it).apply { connect() }
+    }
 
     override fun fromSocketType(type: JupyterSocketType): JupyterSocket {
         return sockets[type] ?: throw IllegalArgumentException("Unsupported socket type: $type")
     }
 
     override fun close() {
-        doClose()
+        closeWithTimeout(10_000L, ::doClose)
     }
 
     private fun doClose() {
