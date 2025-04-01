@@ -6,6 +6,7 @@ import com.intellij.kotlin.jupyter.core.projectWizard.NotebookFileItem
 import com.intellij.kotlin.jupyter.core.projectWizard.NotebookRootItem
 import com.intellij.kotlin.jupyter.core.projectWizard.NotebookTreeNode
 import com.intellij.kotlin.jupyter.core.projectWizard.RecentKotlinNotebooksService
+import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebookWithIcon
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.actionSystem.ActionGroup
@@ -146,6 +147,7 @@ class KotlinNotebookTreeHolder {
         tree.isRootVisible = false
         tree.rowHeight = 0
         tree.border = JBUI.Borders.empty(4, 0)
+        tree.emptyText.text = KotlinNotebookBundle.message("kotlin.notebook.no.recent.notebooks.found")
         setupTreeProperties()
         setupTreeRenderer()
         setupMouseListener()

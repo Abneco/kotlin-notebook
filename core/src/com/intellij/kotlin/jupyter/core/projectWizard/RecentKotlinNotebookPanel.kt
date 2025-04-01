@@ -59,7 +59,7 @@ class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
 
         val openAction = OpenKotlinNotebookAction()
         val createAction = CreateKotlinNotebookSingleAction()
-        val group = DefaultActionGroup(openAction, createAction)
+        val group = DefaultActionGroup(createAction, openAction)
         val toolbar = object : ActionToolbarImpl(ActionPlaces.WELCOME_SCREEN, group, true) {
             override fun createToolbarButton(
                 action: AnAction,
