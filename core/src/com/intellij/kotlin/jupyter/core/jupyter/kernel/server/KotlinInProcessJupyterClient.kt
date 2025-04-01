@@ -23,14 +23,18 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.util.DEFAULT_KOTLIN_KERNEL_NAME
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.createConcurrentDoubleKeyMap
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.ui.EDT
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import java.io.File
@@ -194,7 +198,7 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
     }
 
 
-    private fun removeSessionAndRelatedState(kernelHandler: KotlinKernelRunnableHandler) {
+    private suspend fun removeSessionAndRelatedState(kernelHandler: KotlinKernelRunnableHandler) {
         if (removeSession(kernelHandler.kernelId) && kernelHandler.kernelState != KernelState.STARTING) {
             val notebookFile = kernelHandler.notebookVirtualFile ?: return
             val project = kernelHandler.project
@@ -202,7 +206,7 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
             // probably move out from here
             resetSessionMetaInformation(notebookFile.file, project)
             if (!project.isDisposed) {
-                JupyterRuntimeService.getInstance(project).clearRuntime(notebookFile.file)
+                JupyterRuntimeService.getInstance(project).clearRuntime(notebookFile.file).join()
             }
         }
     }
@@ -224,6 +228,19 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
 
     private inner class MyKernelListener : KotlinKernelListener {
         override fun kernelTerminated(event: KotlinKernelEvent) {
+            if (EDT.isCurrentThreadEdt()) {
+                // Hopefully, this is the rare case
+                KotlinNotebookPluginScope.getForProject(event.source.project).launch {
+                    onKernelTerminated(event)
+                }
+            } else {
+                runBlockingMaybeCancellable {
+                    onKernelTerminated(event)
+                }
+            }
+        }
+
+        private suspend fun onKernelTerminated(event: KotlinKernelEvent) {
             removeSessionAndRelatedState(event.source)
         }
     }
