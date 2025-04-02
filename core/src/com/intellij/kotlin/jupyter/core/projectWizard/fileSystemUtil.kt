@@ -101,7 +101,7 @@ object DefaultKotlinNotebookProject {
 
     @RequiresEdt
     suspend fun getProject(projectPath: Path): Project {
-        val projectPath = projectPath
+        projectPath.toFile().mkdirs()
         TrustedProjects.setProjectTrusted(projectPath, true)
         val project = ProjectManagerEx.getInstanceEx().openProjectAsync(projectPath, OpenProjectTask {
             runConfigurators = true
