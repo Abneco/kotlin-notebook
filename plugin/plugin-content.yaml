@@ -1,15 +1,15 @@
-- name: lib/jetbrains.kotlin-jupyter-shared-compiler.jar
-  library: jetbrains.kotlin-jupyter-shared-compiler
-  files:
-  - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0/kotlin-jupyter-shared-compiler-0.jar
-  - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0/kotlin-jupyter-api-0.jar
-  - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0/kotlin-jupyter-lib-0.jar
-  - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0/kotlin-jupyter-common-dependencies-0.jar
-  - name: $MAVEN_REPOSITORY$/org/zeromq/jeromq/0/jeromq-0.jar
-  - name: $MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1/jnacl-1.jar
-  - name: $MAVEN_REPOSITORY$/com/github/ajalt/clikt/2/clikt-2.jar
-  reason: <- intellij.kotlin.jupyter.core
 - name: lib/kotlin-jupyter-plugin.jar
+  projectLibraries:
+  - name: jetbrains.kotlin-jupyter-shared-compiler
+    files:
+    - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0/kotlin-jupyter-shared-compiler-0.jar
+    - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0/kotlin-jupyter-api-0.jar
+    - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0/kotlin-jupyter-lib-0.jar
+    - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0/kotlin-jupyter-common-dependencies-0.jar
+    - name: $MAVEN_REPOSITORY$/org/zeromq/jeromq/0/jeromq-0.jar
+    - name: $MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1/jnacl-1.jar
+    - name: $MAVEN_REPOSITORY$/com/github/ajalt/clikt/2/clikt-2.jar
+    reason: <- intellij.kotlin.jupyter.core
   modules:
   - name: intellij.kotlin.jupyter.plugin
   contentModules:
@@ -20,6 +20,11 @@
   - name: intellij.kotlin.jupyter.k1
   - name: intellij.kotlin.jupyter.k2
 - name: lib/modules/intellij.kotlin.jupyter.plots.jar
+  projectLibraries:
+  - name: jetbrains.lets.plot.shadowed
+    files:
+    - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/4/lets-plot-shadowed-4.jar
+    reason: <- intellij.kotlin.jupyter.plots
   contentModules:
   - name: intellij.kotlin.jupyter.plots
     libraries:
@@ -27,7 +32,3 @@
       - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4/lets-plot-export-shadowed-4.jar
       ggdsl-util:
       - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0/ggdsl-util-0.jar
-  library: jetbrains.lets.plot.shadowed
-  files:
-  - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/4/lets-plot-shadowed-4.jar
-  reason: <- intellij.kotlin.jupyter.plots
