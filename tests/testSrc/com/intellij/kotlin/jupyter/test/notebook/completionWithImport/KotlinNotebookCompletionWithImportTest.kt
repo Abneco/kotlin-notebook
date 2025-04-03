@@ -53,7 +53,11 @@ class KotlinNotebookCompletionWithImportTest : AbstractKotlinNotebookCompletionW
             }
         }
     ) { tester ->
-        tester.typeAndFinishLookup("fail") { it.lookupString == "fail" && it.userDataString.contains("fail  {...}") }
+        tester.typeAndFinishLookup("fail") {
+            it.lookupString == "fail" &&
+                    "fail  {...}" in it.userDataString &&
+                    "Assertions" !in it.userDataString
+        }
         assertActualText(
             """
             import org.junit.jupiter.api.fail

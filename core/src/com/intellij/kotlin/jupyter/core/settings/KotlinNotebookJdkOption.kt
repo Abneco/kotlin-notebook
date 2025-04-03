@@ -23,7 +23,7 @@ sealed interface KotlinNotebookJdkOption {
     }
 }
 
-abstract class AbstractKotlinNotebookJdkOption: KotlinNotebookJdkOption {
+abstract class AbstractKotlinNotebookJdkOption : KotlinNotebookJdkOption {
     abstract fun getSdk(project: Project): Sdk?
 
     override fun getPath(project: Project): String? {
@@ -35,7 +35,7 @@ abstract class AbstractKotlinNotebookJdkOption: KotlinNotebookJdkOption {
     }
 }
 
-class NamedJdkOption(private val name: String): AbstractKotlinNotebookJdkOption() {
+class NamedJdkOption(private val name: String) : AbstractKotlinNotebookJdkOption() {
     private val mySdk by lazy {
         ProjectJdkTable.getInstance().findJdk(name, JavaSdk.getInstance().name)
     }
@@ -59,14 +59,70 @@ internal fun Sdk.jdkVersion(): JavaSdkVersion? {
 }
 
 object ProjectJdkOption : AbstractKotlinNotebookJdkOption() {
-    override fun getSdk(project: Project): Sdk? {
-        val rootManager = ProjectRootManager.getInstance(project)
-        val projectSdk = rootManager.projectSdk
-        if (isSuitableForStartingKernel(projectSdk)) return projectSdk
+    private val javaHomeEnvironmentVariablesToTry = listOf(
+        "KOTLIN_JUPYTER_JAVA_HOME",
+        "JRE_HOME",
+        "JDK_HOME",
+        "JDK_11",
+        "JAVA_HOME",
+    )
 
-        val suitableJdk = ProjectJdkTable.getInstance().getSdksOfType(JavaSdk.getInstance()).firstOrNull {
-            isSuitableForStartingKernel(it)
-        } ?: return null
-        return suitableJdk
+    override fun getSdk(project: Project): Sdk? {
+        return getJdksToTry(project)
+            .firstOrNull { isSuitableForStartingKernel(it.sdk) }
+            ?.also { sdkToTry ->
+                if (sdkToTry.shouldCache) {
+                    getCache(project).cachedLastResortJdk = sdkToTry.sdk
+                }
+            }
+            ?.sdk
+    }
+
+    private class SdkToTry(
+        val sdk: Sdk,
+        val shouldCache: Boolean,
+    )
+
+    private suspend fun SequenceScope<SdkToTry>.yieldSdk(sdk: Sdk?, shouldCache: Boolean) {
+        if (sdk == null) return
+        yield(SdkToTry(sdk, shouldCache))
+    }
+
+    private fun getJdksToTry(project: Project): Sequence<SdkToTry> {
+        return sequence {
+            val rootManager = ProjectRootManager.getInstance(project)
+            yieldSdk(rootManager.projectSdk, shouldCache = false)
+
+            val jdkType = JavaSdk.getInstance()
+            for (sdk in ProjectJdkTable.getInstance().getSdksOfType(jdkType)) {
+                yieldSdk(sdk, shouldCache = false)
+            }
+            yieldSdk(getCache(project).cachedLastResortJdk, shouldCache = false)
+
+            for (path in getJavaHomePathsFromEnvironment()) {
+                val jdk = jdkType.createJdk(
+                    "Kotlin Notebook JDK for project ${project.name}",
+                    path,
+                )
+                yieldSdk(jdk, shouldCache = true)
+            }
+        }
+    }
+
+    private fun getCache(project: Project) =
+        KotlinNotebookLastResortJdkCache.getInstance(project)
+
+    private fun getJavaHomePathsFromEnvironment(): Sequence<String> {
+        return sequence {
+            for (variableName in javaHomeEnvironmentVariablesToTry) {
+                val variableValue = System.getenv(variableName) ?: continue
+                if (variableValue.isBlank()) continue
+                yield(variableValue)
+            }
+            val currentJavaHome = System.getProperty("java.home")
+            if (currentJavaHome != null && currentJavaHome.isNotBlank()) {
+                yield(currentJavaHome)
+            }
+        }
     }
 }

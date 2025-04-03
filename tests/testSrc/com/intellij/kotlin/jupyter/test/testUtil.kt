@@ -53,7 +53,6 @@ import org.intellij.lang.annotations.Language
 import org.jetbrains.jupyter.builder.NotebookBuilder
 import org.jetbrains.jupyter.builder.buildNotebook
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.DefaultScriptingSupport
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
@@ -231,9 +230,7 @@ fun cartesianProduct(vararg lists: List<Any>): List<Array<Any>> {
 }
 
 fun waitForReadyIndexes(fixture: CodeInsightTestFixture) {
-    runInEdtAndWait {
-        IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
-    }
+    IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
 }
 
 fun PsiFile.getKtFiles(): List<KtFile>? = when(val psiFile = this) {
@@ -248,23 +245,6 @@ fun PsiFile.getKtFiles(): List<KtFile>? = when(val psiFile = this) {
     }
     else -> {
         error("Only KtFiles are expected, file passed: ${psiFile}")
-    }
-}
-
-// k1 only
-fun setUpScriptingDependencies(fixture: CodeInsightTestFixture) {
-    val ktFiles = fixture.file.getKtFiles() ?: return
-
-    runInEdtAndWait {
-        IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
-        runReadAction {
-            for (file in ktFiles) {
-                ScriptConfigurationManager.updateScriptDependenciesSynchronously(
-                    file
-                )
-            }
-        }
-        IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
     }
 }
 

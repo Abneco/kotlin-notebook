@@ -3,14 +3,15 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
+import com.intellij.kotlin.jupyter.core.settings.ProjectJdkOption
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.getRelativePathFromProjectRoot
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.progress.blockingContextScope
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.ProjectJdkTable
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findPsiFile
@@ -42,7 +43,6 @@ import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource
 import org.jetbrains.kotlin.idea.core.script.scriptDefinitionsSourceOfType
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
-import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionsSource
 import java.nio.file.Path
 import kotlin.script.experimental.api.asSuccess
 
@@ -113,9 +113,9 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
 
     @OptIn(KaImplementationDetail::class)
     override suspend fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
-        val sdk = ProjectRootManager.getInstance(project).projectSdk ?: ProjectJdkTable.getInstance().allJdks.firstOrNull()
+        val sdk = ProjectJdkOption.getSdk(project) ?: ProjectJdkTable.getInstance().allJdks.firstOrNull()
         if (sdk == null) {
-            thisLogger().warn("No JDK SDK is set for the project")
+            notebookLogger().warn("No JDK SDK is set for the project")
         }
 
         val configurations = scripts.associate { ktScript ->
@@ -175,16 +175,17 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
     }
 
 
-    private fun creteOrUpdateScriptModules(
+    private suspend fun creteOrUpdateScriptModules(
         project: Project,
         configurationsPerNotebook: Map<VirtualFile, KotlinNotebookScriptsModuleConfigurationInfo>,
         mutableEntityStorage: MutableEntityStorage
     ) {
-        val virtualFileManager = WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
-        var notebookRuntimeDependencies: LibraryEntity? = null
+        val virtualFileManager = blockingContextScope {
+            WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
+        }
 
         for ((notebookFile, moduleConfigurations) in configurationsPerNotebook) {
-            notebookRuntimeDependencies = virtualFileManager.getNotebookDependenciesAsLibraryEntity(
+            val notebookRuntimeDependencies = virtualFileManager.getNotebookDependenciesAsLibraryEntity(
                 mutableEntityStorage,
                 notebookFile,
                 project,

@@ -44,6 +44,6 @@ class IdeaJupyterSocketManager(private val kernelConfig: KernelConfig): JupyterS
 
     private fun doClose() {
         sockets.values.forEach { it.closeSafely() }
-        context.close()
+        context.closeSafely()
     }
 }

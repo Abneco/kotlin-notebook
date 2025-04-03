@@ -5,13 +5,18 @@ import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
 import com.intellij.kotlin.jupyter.test.runners.KotlinPluginAwareRunner
+import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileEditorProvider
+import com.intellij.openapi.projectRoots.ProjectJdkTable
+import com.intellij.openapi.projectRoots.Sdk
+import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Disposer.newDisposable
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.psi.PsiFile
+import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.util.concurrency.ThreadingAssertions
@@ -72,6 +77,26 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
         runWithJupyterSession(psiFile) {
             setUpDependenciesSynchronously(emptyList())
             action()
+        }
+    }
+
+    protected fun setUpProjectSdk(sdk: Sdk = IdeaTestUtil.getMockJdk18()) {
+        invokeAndWaitIfNeeded {
+            WriteAction.run<Throwable> {
+                val registeredJdk = ProjectJdkTable.getInstance().findJdk(sdk.name)
+                if (registeredJdk == null) {
+                    ProjectJdkTable.getInstance().addJdk(sdk, myFixture.projectDisposable)
+
+                    ProjectRootManager.getInstance(project).projectSdk = sdk
+                }
+            }
+        }
+    }
+
+    protected fun setUpProjectSdkIfNeeded() {
+        // since JDK is considered as a module dependency in K2, it should be provided in the project
+        if (pluginMode == KotlinPluginMode.K2) {
+            setUpProjectSdk()
         }
     }
 
