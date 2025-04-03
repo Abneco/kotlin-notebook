@@ -18,11 +18,13 @@ class KotlinNotebookLastResortJdkCache : Disposable {
         set(sdk) = registerNewCacheValue(sdk)
 
     override fun dispose() {
-        clearCache()
+        registerNewCacheValue(null)
     }
 
     private fun registerNewCacheValue(sdk: Sdk?) {
         val oldSdk = _cachedLastResortJdk
+        if (oldSdk === sdk) return
+
         _cachedLastResortJdk = sdk
 
         val jdkTable = SdkTableImplementationDelegate.getInstance()
@@ -40,10 +42,6 @@ class KotlinNotebookLastResortJdkCache : Disposable {
                 }
             }
         }
-    }
-
-    private fun clearCache() {
-        registerNewCacheValue(null)
     }
 
     companion object {
