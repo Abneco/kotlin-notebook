@@ -10,6 +10,10 @@ import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.getRelativePathFromProjectRoot
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.progress.blockingContextScope
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
+import com.intellij.openapi.components.serviceAsync
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -39,11 +43,12 @@ import org.jetbrains.kotlin.analysis.api.projectStructure.analysisContextModule
 import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
 import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
-import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource
-import org.jetbrains.kotlin.idea.core.script.scriptDefinitionsSourceOfType
+import org.jetbrains.kotlin.idea.core.script.k2.ScriptRefinedConfigurationResolver
+import org.jetbrains.kotlin.idea.core.script.k2.ScriptWorkspaceModelManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.script.experimental.api.asSuccess
 
 /**
@@ -63,20 +68,28 @@ class KotlinNotebookScriptEntitySource(virtualFileUrl: VirtualFileUrl) : KotlinS
  *  Note that now for each script a separate module is created, and for each module there are its own dependencies.
  *  This is about to change.
  */
-class NotebookScriptConfigurationsSource(override val project: Project) : ScriptConfigurationsSource<KotlinNotebookScriptModel>(project) {
-    override fun getDefinitions(): Sequence<ScriptDefinition>? =
-        project.scriptDefinitionsSourceOfType<KotlinNotebookScriptDefinitionsSource>()?.definitions
+@Service(Service.Level.PROJECT)
+class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedConfigurationResolver, ScriptWorkspaceModelManager {
+    val cache: ConcurrentHashMap<VirtualFile, ScriptConfigurationWithSdk> = ConcurrentHashMap<VirtualFile, ScriptConfigurationWithSdk>()
+
+    /**
+     * For now, we do not create it here
+     * as we have our own cycle of updates.
+     */
+    override suspend fun create(
+        virtualFile: VirtualFile,
+        definition: ScriptDefinition
+    ): ScriptConfigurationWithSdk? = get(virtualFile)
 
     /**
      * Unfortunately, we live in the injection world.
      * There might be a situation where [VirtualFileWindow] gets invalided soon after it was processed.
      * In this case, we should try to fall back and pick any other configuration from the Notebook.
      */
-    override fun getConfigurationWithSdk(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
-        val stored = super.getConfigurationWithSdk(virtualFile)
+    override fun get(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
+        val stored = cache[virtualFile]
         if (stored != null) return stored
 
-        val cache = data.get()
         if (cache.isEmpty()) return null
         val notebooksCache = cache.toConfigurationInfoPerNotebook()
 
@@ -98,9 +111,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
                 notebooksCache[topLevelFile]?.sdkInfo
             )
 
-            data.accumulateAndGet(
-                mapOf(virtualFile to scriptWithSdk)
-            ) { old, new -> old + new }
+            cache[virtualFile] = scriptWithSdk
 
             // add another module as a context dependency until the update is performed
             readAction {
@@ -112,7 +123,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
     }
 
     @OptIn(KaImplementationDetail::class)
-    override suspend fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
+    fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
         val sdk = ProjectJdkOption.getSdk(project) ?: ProjectJdkTable.getInstance().allJdks.firstOrNull()
         if (sdk == null) {
             notebookLogger().warn("No JDK SDK is set for the project")
@@ -127,10 +138,11 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
         }
 
         // incremental updates are supported
-        val trimmedCache = data.get().toMutableMap()
+        val trimmedCache = cache.toMutableMap()
             .removeOverlappingRecords(configurations)
 
-        data.set(trimmedCache + configurations)
+        cache.clear()
+        cache.putAll(trimmedCache + configurations)
     }
 
     /**
@@ -160,29 +172,25 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
         this.analysisContextModule = randomModule
     }
 
-    override suspend fun updateModules(storage: MutableEntityStorage?) {
-        val workspaceModel = project.workspaceModel
-        val workspaceSnapshot = storage?.toSnapshot() ?: workspaceModel.currentSnapshot
+    override suspend fun updateWorkspaceModel(configurationPerFile: Map<VirtualFile, ScriptConfigurationWithSdk>) {
+        val workspaceSnapshot = project.workspaceModel.currentSnapshot
         val tmp = MutableEntityStorage.from(workspaceSnapshot)
 
-        val configurationsByNotebook = data.get().toConfigurationInfoPerNotebook()
-        creteOrUpdateScriptModules(project, configurationsByNotebook, tmp)
+        val configurationsByNotebook = cache.toConfigurationInfoPerNotebook()
+        creteOrUpdateScriptModules(configurationsByNotebook, tmp)
 
-        workspaceModel.update("Updating Kotlin Notebook scripting modules") { model ->
+        project.workspaceModel.update("Updating Kotlin Notebook scripting modules") { model ->
             // add new data, target only the base K2 script source
             model.replaceBySource({ it is KotlinNotebookScriptEntitySource }, tmp)
         }
     }
 
-
     private suspend fun creteOrUpdateScriptModules(
-        project: Project,
         configurationsPerNotebook: Map<VirtualFile, KotlinNotebookScriptsModuleConfigurationInfo>,
         mutableEntityStorage: MutableEntityStorage
     ) {
-        val virtualFileManager = blockingContextScope {
-            WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
-        }
+        val virtualFileManager = project.serviceAsync<WorkspaceModel>().getVirtualFileUrlManager()
+        var notebookRuntimeDependencies: LibraryEntity? = null
 
         for ((notebookFile, moduleConfigurations) in configurationsPerNotebook) {
             val notebookRuntimeDependencies = virtualFileManager.getNotebookDependenciesAsLibraryEntity(
@@ -239,7 +247,11 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
                 notebookModuleConfiguration.sdkInfo
                     ?.let { SdkDependency(SdkId(it.name, it.sdkType.name)) }
 
-            val source = KotlinNotebookScriptEntitySource(scriptFile.toVirtualFileUrl(WorkspaceModel.getInstance(project).getVirtualFileUrlManager()))
+            val source = KotlinNotebookScriptEntitySource(
+                scriptFile.toVirtualFileUrl(
+                    WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
+                )
+            )
 
             val dependencies = listOfNotNull(
                 LibraryDependency(runtimeLibrary.symbolicId, false, DependencyScope.COMPILE),
@@ -265,5 +277,7 @@ class NotebookScriptConfigurationsSource(override val project: Project) : Script
 
     companion object {
         const val NOTEBOOK_MODULE_NAME_PREFIX: String = "$KOTLIN_SCRIPTS_MODULE_NAME.Kotlin Notebooks"
+
+        fun getInstance(project: Project): NotebookScriptConfigurationsManager = project.service()
     }
 }

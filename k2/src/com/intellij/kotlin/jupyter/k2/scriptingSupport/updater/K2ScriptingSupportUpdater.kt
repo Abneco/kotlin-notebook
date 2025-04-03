@@ -12,17 +12,19 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUP
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptModel
-import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsSource
+import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsManager
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.components.serviceAsync
+import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import org.jetbrains.kotlin.idea.core.script.k2.DefaultScriptResolutionStrategy
 import org.jetbrains.kotlin.idea.core.script.k2.K2ScriptDefinitionProvider
-import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource
-import org.jetbrains.kotlin.idea.core.script.scriptConfigurationsSourceOfType
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import java.util.concurrent.CancellationException
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
@@ -76,10 +78,10 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
     private fun clearRuntimeDependenciesFor(notebookFile: BackedNotebookVirtualFile) {
         val scope = KotlinNotebookPluginScope.getForProject(project)
         scope.async {
-            project.scriptConfigurationsSourceOfType<NotebookScriptConfigurationsSource>()
-                ?.clearNotebookLibraryDependencies(
-                    notebookFile
-                )
+            project.serviceIfCreated<NotebookScriptConfigurationsManager>()
+              ?.clearNotebookLibraryDependencies(
+                  notebookFile
+              )
         }
     }
 
@@ -105,7 +107,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
     }
 
     private suspend fun updateK2Impl(project: Project, notebooks: Collection<BackedNotebookVirtualFile>) {
-        val scripts = mutableListOf<KotlinNotebookScriptModel>()
+        val scripts = mutableMapOf<KotlinNotebookScriptModel, KtFile>()
         for (notebook in notebooks) {
             val notebookService = JupyterCompilerService.getForFile(project, notebook)
             val perFileScripts = readAction {
@@ -144,16 +146,14 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                             ktFileScriptSource,
                             configurationWithStableReceivers
                         )
-                    )
+                    ) to ktFileScriptSource.ktFile
                 }
             }
 
-            scripts.addAll(perFileScripts)
+            scripts.putAll(perFileScripts)
         }
 
-        project.scriptConfigurationsSourceOfType<NotebookScriptConfigurationsSource>()
-            ?.updateDependenciesAndCreateModules(
-                scripts
-            )
+        project.serviceAsync<NotebookScriptConfigurationsManager>().updateConfigurations(scripts.keys)
+        DefaultScriptResolutionStrategy.getInstance(project).execute(*scripts.values.toTypedArray())
     }
 }

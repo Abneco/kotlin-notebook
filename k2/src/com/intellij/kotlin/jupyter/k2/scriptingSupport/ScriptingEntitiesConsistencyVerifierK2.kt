@@ -4,10 +4,10 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier
 import com.intellij.kotlin.jupyter.core.scriptingSupport.workSpaceSnapshot
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.platform.workspace.jps.entities.LibraryEntity
 import com.intellij.workspaceModel.ide.toPath
-import org.jetbrains.kotlin.idea.core.script.scriptConfigurationsSourceOfType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 
 private class ScriptingEntitiesConsistencyVerifierFactoryK2 : ScriptingEntitiesConsistencyVerifier.Factory {
@@ -32,11 +32,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     }
 
     private fun checkSourceIsNotEmpty(notebookFile: BackedNotebookVirtualFile): Boolean {
-        val scriptConfigurationsSource = project.scriptConfigurationsSourceOfType<NotebookScriptConfigurationsSource>()?.data?.get()
-        if (scriptConfigurationsSource == null) {
-            return false
-        }
-
+        val scriptConfigurationsSource = project.service<NotebookScriptConfigurationsManager>().cache
         return scriptConfigurationsSource.getConfigurationsForNotebook(notebookFile.file)?.isNotEmpty() == true
     }
 
@@ -48,13 +44,13 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     }
 
     override fun isScriptFileConfigurationConsistentWithModel(virtualFile: BackedNotebookVirtualFile, compilationConfiguration: ScriptCompilationConfiguration): Boolean {
-        val configurationsCache = project.scriptConfigurationsSourceOfType<NotebookScriptConfigurationsSource>()?.data?.get() ?: return true
+        val configurationsCache = project.service<NotebookScriptConfigurationsManager>().cache
         val configurationsForNotebookCells = configurationsCache.getConfigurationsForNotebook(virtualFile.file)
 
         /**
          * Here we need to perform 3 steps check:
          *  1. Check the number of script configurations matches the number of cells
-         *  2. Check that the stored compilation configuration from [NotebookScriptConfigurationsSource] matches the refined one, e.g., the latest
+         *  2. Check that the stored compilation configuration from [NotebookScriptConfigurationsManager] matches the refined one, e.g., the latest
          *  3. Check that dependencies from the refined configuration are present in the Workspace library
          *
          *  If any of it is missing, we have a pending update.

@@ -17,7 +17,7 @@ import com.intellij.platform.workspace.storage.EntitySource
 import com.intellij.platform.workspace.storage.EntityStorage
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.WorkspaceEntity
-import org.jetbrains.kotlin.idea.core.script.k2.ScriptClassPathVirtualFileCache
+import org.jetbrains.kotlin.idea.core.script.k2.ScriptClassPathUtil
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 
@@ -90,7 +90,7 @@ private fun getLibraryRoots(
     configurationWrapper: ScriptCompilationConfigurationWrapper
 ): List<LibraryRoot> {
     val fileUrlManager = WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
-    val virtualFileCache = ScriptClassPathVirtualFileCache.getInstance()
+    val virtualFileCache = ScriptClassPathUtil.getInstance()
 
     val roots = buildList {
         configurationWrapper.dependenciesClassPath.mapNotNullTo(this) {

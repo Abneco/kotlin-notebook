@@ -9,14 +9,13 @@
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <scriptDefinitionsSource implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptDefinitionsSource"/>
-        <scriptConfigurationsSource implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsSource"/>
         <scriptAdditionalIdeaDependenciesProvider implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptLibrariesProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- K1/K2 mode-specific services-->
         <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier$Factory"
-                serviceImplementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.ScriptingEntitiesConsistencyVerifierFactoryK2"/>
+                        serviceImplementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.ScriptingEntitiesConsistencyVerifierFactoryK2"/>
         <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.CompiledClassifiersDefaultImportsEnhancer$Factory"
                         serviceImplementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.imports.CompiledClassifiersDefaultImportsEnhancerFactoryK2"/>
         <projectService serviceInterface="com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater$Factory"

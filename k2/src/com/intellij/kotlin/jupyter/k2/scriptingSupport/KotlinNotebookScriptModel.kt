@@ -5,7 +5,6 @@ import com.intellij.ide.scratch.ScratchUtil
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlin.idea.core.script.k2.BaseScriptModel
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import kotlin.script.experimental.api.valueOrNull
@@ -15,13 +14,12 @@ import kotlin.script.experimental.api.valueOrThrow
  * K2-based plugin abstraction for describing configuration data for the script.
  * This class is heavily used in [org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationsSource]
  *
- * @see [NotebookScriptConfigurationsSource]
+ * @see [NotebookScriptConfigurationsManager]
  */
 class KotlinNotebookScriptModel(
-    virtualFile: VirtualFile,
+    val virtualFile: VirtualFile,
     val refinedConfigurationResult: ScriptCompilationConfigurationWrapper
-) : BaseScriptModel(virtualFile)
-
+)
 
 data class KotlinNotebookScriptsModuleConfigurationInfo(
     val notebookFile: VirtualFile,

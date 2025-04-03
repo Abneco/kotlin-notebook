@@ -2,25 +2,42 @@
 package com.intellij.kotlin.jupyter.k2.scriptingSupport.definition
 
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper
-import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
+import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsManager
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import org.jetbrains.kotlin.idea.core.script.k2.configurationResolverDelegate
+import org.jetbrains.kotlin.idea.core.script.k2.scriptWorkspaceModelManagerDelegate
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import kotlin.script.experimental.api.SourceCode
+import kotlin.script.experimental.api.ide
+import kotlin.script.experimental.api.with
 import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.jvm.defaultJvmScriptingHostConfiguration
 
-class NotebookScriptDefinitionsWrapperFactoryK2 : KotlinNotebookScriptDefinitionsWrapper.Factory {
+class NotebookScriptDefinitionsWrapperFactoryK2(val project: Project) : KotlinNotebookScriptDefinitionsWrapper.Factory {
     override fun create(scriptDefinition: ScriptDefinition): KotlinNotebookScriptDefinitionsWrapper {
-        return K2NotebookScriptDefinitionsWrapper(scriptDefinition)
+        return K2NotebookScriptDefinitionsWrapper(scriptDefinition, project)
     }
 }
 
 internal class K2NotebookScriptDefinitionsWrapper(
-    scriptDefinition: ScriptDefinition
+    scriptDefinition: ScriptDefinition,
+    project: Project
 ) : KotlinNotebookScriptDefinitionsWrapper(scriptDefinition) {
     override val compilationScriptDefinition by lazy {
+        var compilationConfiguration = scriptDefinition.compilationConfiguration.with {
+            ide {
+                configurationResolverDelegate {
+                    project.service<NotebookScriptConfigurationsManager>()
+                }
+                scriptWorkspaceModelManagerDelegate {
+                    project.service<NotebookScriptConfigurationsManager>()
+                }
+            }
+        }
         object : org.jetbrains.kotlin.scripting.definitions.ScriptDefinition.FromConfigurations(
             defaultJvmScriptingHostConfiguration,
-            scriptDefinition.compilationConfiguration,
+            compilationConfiguration,
             scriptDefinition.evaluationConfiguration
         ) {
             init {
