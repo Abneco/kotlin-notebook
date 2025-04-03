@@ -5,6 +5,7 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
+import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
 import com.intellij.kotlin.jupyter.test.runners.TestContext
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
@@ -38,12 +39,14 @@ import org.jetbrains.kotlin.test.TestMetadata
 import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.tests.withSwingMarkdownRenderMode
+import org.junit.runner.RunWith
 import java.io.File
 
 /**
  * Base class for all notebook tests. The entry point is the [runNotebookTest] method which provides
  * access to an API wrapper making it possible to write tests in a more human-readable way.
  */
+@RunWith(KotlinNotebookTestRunner::class)
 abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginModeProvider {
 
     // We cannot run on the EDT thread as Kernel Execution also runs there, which can result in deadlocks

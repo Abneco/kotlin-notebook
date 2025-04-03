@@ -7,7 +7,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProc
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.ScriptingUpdateMode
-import com.intellij.kotlin.jupyter.test.runners.RunModeAwareTestRunner
+import com.intellij.kotlin.jupyter.test.runners.RunModeAwareTest
 import com.intellij.kotlin.jupyter.test.runners.TestContext
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.waitForSmartMode
@@ -19,12 +19,11 @@ import org.jetbrains.kotlinx.jupyter.startup.create
 import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
 import org.junit.Ignore
 import org.junit.Test
-import org.junit.runner.RunWith
 import java.net.ServerSocket
 
 
 @TestDataPath("\$CONTENT_ROOT/testData/notebooks/execution")
-@RunWith(RunModeAwareTestRunner::class)
+@RunModeAwareTest
 class KotlinNotebookExecutionTest : KotlinNotebookTestCase() {
 
     @Test

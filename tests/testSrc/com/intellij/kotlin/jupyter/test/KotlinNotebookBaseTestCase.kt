@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.test
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
-import com.intellij.kotlin.jupyter.test.runners.KotlinPluginAwareRunner
+import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
@@ -40,7 +40,7 @@ private const val PROJECT_ROOT_VARIABLE: @NonNls String = "\$PROJECT_ROOT"
 private const val PROJECT_ROOT: @NonNls String = ""
 
 // TODO Migrate this class KotlinNotebookTestCase
-@RunWith(KotlinPluginAwareRunner::class)
+@RunWith(KotlinNotebookTestRunner::class)
 abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPluginModeProvider {
     protected open val notebookFile: BackedNotebookVirtualFile
         get() = when (val file = myFixture.kotlinNotebookFile) {

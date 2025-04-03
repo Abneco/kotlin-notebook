@@ -4,14 +4,11 @@ package com.intellij.kotlin.jupyter.test.notebook.highlighting
 import com.intellij.kotlin.jupyter.test.HighlightCheckStrategy
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.runners.K2Only
-import com.intellij.kotlin.jupyter.test.runners.KotlinPluginAwareRunner
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.testFramework.TestDataPath
 import org.junit.Test
-import org.junit.runner.RunWith
 
 @TestDataPath("\$CONTENT_ROOT/testData/notebooks/highlighting")
-@RunWith(KotlinPluginAwareRunner::class)
 class NotebookBaseHighlightingTest: KotlinNotebookTestCase() {
 
     @Test

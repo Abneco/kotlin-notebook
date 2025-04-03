@@ -3,11 +3,9 @@ package com.intellij.kotlin.jupyter.test.notebook.execution
 
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import com.intellij.kotlin.jupyter.test.executeCellsAndShutdownKernel
-import com.intellij.kotlin.jupyter.test.runners.RunModeAwareTestRunner
-import org.junit.runner.RunWith
+import com.intellij.kotlin.jupyter.test.runners.RunModeAwareTest
 
-@Suppress("Junit4RunWithInspection")
-@RunWith(RunModeAwareTestRunner::class)
+@RunModeAwareTest
 abstract class AbstractSimpleExecutionTest : KotlinNotebookExecutionBaseTestCase() {
     protected fun doTest(tester: ReceivedMessagesTester, executionCallback: JupyterExecutionCallback? = null) {
         val notebookFile = configureExecutionTest()

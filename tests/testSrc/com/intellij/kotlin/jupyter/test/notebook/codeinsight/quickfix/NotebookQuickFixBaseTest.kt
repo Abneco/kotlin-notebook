@@ -94,7 +94,7 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
             var fileText = ""
             try {
                 fileText = ktFile.text
-                TestCase.assertTrue("\"<caret>\" is missing in file \"$ktFile\"", documentContent.contains("<caret>"))
+                assertTrue("\"<caret>\" is missing in file \"$ktFile\"", documentContent.contains("<caret>"))
 
                 val contents = StringUtil.convertLineSeparators(fileText)
 

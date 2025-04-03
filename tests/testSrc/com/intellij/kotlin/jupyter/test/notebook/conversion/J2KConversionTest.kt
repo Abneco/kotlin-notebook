@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.test.notebook.conversion
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
 import com.intellij.kotlin.jupyter.test.runners.K1Only
-import com.intellij.kotlin.jupyter.test.runners.PluginModeAwareParametersRunnerFactory
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.ide.CopyPasteManager
@@ -13,62 +12,68 @@ import org.jetbrains.kotlin.idea.editor.KotlinEditorOptions
 import org.jetbrains.kotlin.j2k.copyPaste.ConvertTextJavaCopyPasteProcessor
 import org.junit.Assume
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import java.awt.datatransfer.StringSelection
 import java.io.File
 
-class MarkedTestParameter<T : Any>(
-    val value: T,
-    val expectedFileMark: String,
-    private val testNameMark: String,
-) {
-    override fun toString() = testNameMark
+private enum class ConversionType {
+    FROM_TEXT_FILE,
+    FROM_JAVA_FILE,
 }
 
-@RunWith(Parameterized::class)
-@Parameterized.UseParametersRunnerFactory(PluginModeAwareParametersRunnerFactory::class)
+private class TestData(
+    val conversionType: ConversionType,
+    val expectedFileMark: String,
+)
+
 @K1Only("Investigate why @Throws is not shortened")
 @TestDataPath("\$CONTENT_ROOT/testData/notebooks/conversion")
-class J2KConversionTest(
-    private val fromJavaFile: MarkedTestParameter<Boolean>,
-) : KotlinNotebookTransformerBaseTestCase() {
+class J2KConversionTest : KotlinNotebookTransformerBaseTestCase() {
     @Test
-    fun testSimpleConversionE() = doTest()
+    fun `testSimpleConversionE FromTextFile`() = doTest(FromTextFile)
 
     @Test
-    fun testSimpleConversionNL() = doTest()
+    fun `testSimpleConversionNL FromTextFile`() = doTest(FromTextFile)
+
+    @Test
+    fun `testSimpleConversionE FromJavaFile`() = doTest(FromJavaFile)
+
+    @Test
+    fun `testSimpleConversionNL FromJavaFile`() = doTest(FromJavaFile)
 
     companion object {
-        @Parameterized.Parameters(name = "{index}. Parameters: <{0}>, <{1}>")
-        @JvmStatic
-        fun `data`(): List<Array<Any>> {
-            return listOf(
-                arrayOf(MarkedTestParameter(false, "Txt", "from text file")),
-                arrayOf(MarkedTestParameter(true, "Java", "from Java file")),
-            )
-        }
+        private val FromTextFile = TestData(ConversionType.FROM_TEXT_FILE, "Txt")
+        private val FromJavaFile = TestData(ConversionType.FROM_JAVA_FILE, "Java")
     }
 
-    private fun prepareExpectedCellText(): String {
-        val expectedCellFile = getTestFile("${fromJavaFile.expectedFileMark}.kt.txt")
+    override fun getTestName(lowercaseFirstLetter: Boolean): String {
+        val superTestName = super.getTestName(lowercaseFirstLetter)
+        return superTestName.substringBefore(' ')
+    }
+
+    private fun prepareExpectedCellText(expectedFileMark: String): String {
+        val expectedCellFile = getTestFile("${expectedFileMark}.kt.txt")
         Assume.assumeTrue(expectedCellFile.exists())
         return expectedCellFile.readText().prepareText()
     }
 
-    private fun doTest() {
-        val expectedCellText = prepareExpectedCellText()
+    private fun doTest(
+        testData: TestData
+    ) {
+        val expectedCellText = prepareExpectedCellText(testData.expectedFileMark)
 
         doSimpleTransformerTest(expectedCellText) {
             val javaCode = File(testDataPath).resolve("simpleConversion.txt").readText()
 
-            if (fromJavaFile.value) {
-                invokeAndWaitIfNeeded {
-                    copyContentFromJavaFile(javaCode)
-                    myFixture.openFileInEditor(notebookFile.file)
+            when (testData.conversionType) {
+                ConversionType.FROM_TEXT_FILE -> {
+                    CopyPasteManager.getInstance().setContents(StringSelection(javaCode))
                 }
-            } else {
-                CopyPasteManager.getInstance().setContents(StringSelection(javaCode))
+                ConversionType.FROM_JAVA_FILE -> {
+                    invokeAndWaitIfNeeded {
+                        copyContentFromJavaFile(javaCode)
+                        myFixture.openFileInEditor(notebookFile.file)
+                    }
+                }
             }
 
             KotlinEditorOptions.getInstance().isDonTShowConversionDialog = true
