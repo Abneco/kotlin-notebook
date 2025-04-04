@@ -84,7 +84,7 @@ object JupyterKotlinRestartKernelActionUpdater {
                 is JupyterNotebookOfflineSettings -> serverIsOffline()
                 is JupyterNotebookSessionSettings -> serverIsOnline()
                 is ManagedJupyterServerNotebookSessionSettings -> when (runtimeSettings.jupyterServerExecution.state) {
-                    JupyterServerFinished,
+                    is JupyterServerFinished,
                     JupyterServerStarting,
                     JupyterServerStopped,
                         -> serverIsOffline()
