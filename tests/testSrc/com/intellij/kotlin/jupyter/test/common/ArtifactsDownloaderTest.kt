@@ -5,8 +5,8 @@ import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDownloader
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersionAsString
-import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
 import org.junit.Test
@@ -41,7 +41,7 @@ class ArtifactsDownloaderTest: BasePlatformTestCase() {
     @Test
     fun `there should be 5 artifacts`() {
         val artifacts = KotlinNotebookMavenArtifacts.all()
-        UsefulTestCase.assertSize(6, artifacts)
+        artifacts shouldHaveSize 6
     }
 
     @Test
@@ -51,7 +51,7 @@ class ArtifactsDownloaderTest: BasePlatformTestCase() {
             val version = project.selectedKernelVersionAsString
             artifacts.forEach { artifact ->
                 val jars = downloader.downloadArtifactAsync(artifact, version)
-                UsefulTestCase.assertSize(1, jars)
+                jars shouldHaveSize 1
             }
         }
     }
@@ -62,7 +62,7 @@ class ArtifactsDownloaderTest: BasePlatformTestCase() {
         val version = project.selectedKernelVersionAsString
         artifacts.forEach { artifact ->
             val jars = downloader.downloadArtifactBlocking(artifact, version)
-            UsefulTestCase.assertSize(1, jars)
+            jars shouldHaveSize 1
         }
     }
 }

@@ -33,6 +33,7 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.psi.PsiDocumentManager
@@ -231,6 +232,7 @@ fun cartesianProduct(vararg lists: List<Any>): List<Array<Any>> {
 
 fun waitForReadyIndexes(fixture: CodeInsightTestFixture) {
     IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
+    DumbService.getInstance(fixture.project).waitForSmartMode()
 }
 
 fun PsiFile.getKtFiles(): List<KtFile>? = when(val psiFile = this) {

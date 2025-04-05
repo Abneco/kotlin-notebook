@@ -5,6 +5,7 @@ import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
 import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
@@ -22,6 +23,9 @@ import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import io.kotest.common.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
@@ -33,6 +37,9 @@ import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Rule
 import org.junit.runner.RunWith
 import java.io.File
+import java.time.Instant
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 private const val CONTENT_ROOT_VARIABLE: @NonNls String = "\$CONTENT_ROOT"
 private const val CONTENT_ROOT: @NonNls String = "/plugins/kotlin/jupyter/tests"
@@ -94,10 +101,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
     }
 
     protected fun setUpProjectSdkIfNeeded() {
-        // since JDK is considered as a module dependency in K2, it should be provided in the project
-        if (pluginMode == KotlinPluginMode.K2) {
-            setUpProjectSdk()
-        }
+        setUpProjectSdk()
     }
 
     /**
@@ -149,14 +153,19 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
         filter: (LookupElement) -> Boolean
     ) {
         ThreadingAssertions.assertBackgroundThread()
-        typeWithPauses(string)
-        joinCommit()
-        invokeAndWaitIfNeeded {
-            val elements = myFixture.completeBasic()
-            val firstLookupElement = elements.firstOrNull(filter)
-            lookup.finishLookup(mode.completionChar, firstLookupElement)
+        runBlocking {
+            typeWithPauses(string)
+            joinCommit()
+            withContext(Dispatchers.EDT) {
+                val elements = completeBasic()
+                val firstLookupElement = elements.firstOrNull(filter)
+                if (firstLookupElement == null) {
+                    fail("No elements matching filter: $elements")
+                }
+                lookup.finishLookup(mode.completionChar, firstLookupElement)
+            }
+            joinCommit()
         }
-        joinCommit()
     }
 
 
@@ -167,6 +176,25 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
     protected fun assertActualTextContains(expectedText: String) {
         val actualText = actualText()
         assertTrue("<$actualText> should contain <$expectedText>", actualText.contains(expectedText))
+    }
+
+    private suspend fun completeBasic(timeout: Duration = 15.seconds): Array<out LookupElement> {
+        val start = Instant.now()
+        val timeoutMillis = timeout.inWholeMilliseconds
+
+        while (true) {
+            val myResult = myFixture.completeBasic()
+            if (myResult != null && myResult.isNotEmpty()) {
+                return myResult
+            }
+            val passedMillis = Instant.now().toEpochMilli() - start.toEpochMilli()
+            if (passedMillis > timeoutMillis) {
+                fail("Lookup didn't show up in $timeout")
+            }
+            LOG.warn("Lookup didn't show up yet, time passed: $passedMillis ms")
+
+            delay(100)
+        }
     }
 
     private fun actualText() = runReadAction { myFixture.editor.document.text }

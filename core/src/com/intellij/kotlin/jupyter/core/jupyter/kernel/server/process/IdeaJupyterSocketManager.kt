@@ -1,6 +1,8 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
+import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocket
@@ -12,6 +14,7 @@ import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.kotlinx.jupyter.util.closeWithTimeout
 import org.zeromq.ZMQ
 import java.io.Closeable
+import java.util.concurrent.CancellationException
 
 class IdeaJupyterSocketManager(private val kernelConfig: KernelConfig): JupyterSocketManagerBase, Closeable {
     private val context = ZMQ.context(1)
@@ -42,8 +45,22 @@ class IdeaJupyterSocketManager(private val kernelConfig: KernelConfig): JupyterS
         closeWithTimeout(10_000L, ::doClose)
     }
 
+    @TestOnly
+    fun getZmqContext(): ZMQ.Context {
+        return context
+    }
+
     private fun doClose() {
         sockets.values.forEach { it.closeSafely() }
         context.closeSafely()
+
+        for (worker in getWorkersFromContext(context)) {
+            notebookLogger().warn("Undisposed ZMQ worker thread $worker detected, interrupting it")
+            try {
+              worker.interrupt()
+            } catch (e: Throwable) {
+                if (e is CancellationException) throw e
+            }
+        }
     }
 }

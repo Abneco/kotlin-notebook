@@ -7,6 +7,7 @@ import com.intellij.kotlin.jupyter.test.LookupFinishMode
 import com.intellij.kotlin.jupyter.test.runners.K1Only
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.TestDataPath
@@ -84,7 +85,9 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookBaseTestCase() {
         assertEmpty(lookupStrings)
     }
 
-    private val lookupStrings: List<String> get() = myFixture?.lookupElementStrings.orEmpty()
+    private val lookupStrings: List<String> get() = ReadAction.compute<List<String>, Throwable> {
+        myFixture?.lookupElementStrings.orEmpty()
+    }
 
     private fun doTest(action: (CompletionAutoPopupTester) -> Unit) {
         val notebookFile = configureByJupyterFile()
