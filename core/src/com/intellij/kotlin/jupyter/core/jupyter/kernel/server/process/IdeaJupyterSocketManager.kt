@@ -54,10 +54,10 @@ class IdeaJupyterSocketManager(private val kernelConfig: KernelConfig): JupyterS
         sockets.values.forEach { it.closeSafely() }
         context.closeSafely()
 
-        for (worker in getWorkersFromContext(context)) {
-            notebookLogger().warn("Undisposed ZMQ worker thread $worker detected, interrupting it")
+        for (zmqPoller in getPollersFromContext(context)) {
+            notebookLogger().warn("Undisposed ZMQ Poller ${zmqPoller.poller} detected, interrupting polling")
             try {
-              worker.interrupt()
+              zmqPoller.close()
             } catch (e: Throwable) {
                 if (e is CancellationException) throw e
             }

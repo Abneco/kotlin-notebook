@@ -3,20 +3,16 @@ package com.intellij.kotlin.jupyter.test.notebook.options
 
 import com.intellij.kotlin.jupyter.core.settings.SessionOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.generateSnippet
+import com.intellij.kotlin.jupyter.test.KotlinNotebookUnitTestCase
 import com.intellij.openapi.components.service
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import junit.framework.TestCase
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 
-@RunWith(JUnit4::class)
-class SessionOptionsTest: BasePlatformTestCase() {
+class SessionOptionsTest: KotlinNotebookUnitTestCase() {
     @Test
     fun `initial snippet generation`() {
         val options = service<SessionOptionsProvider>()
 
-        TestCase.assertEquals(
+        assertEquals(
             """
                 SessionOptions.resolveMpp = false
                 SessionOptions.resolveSources = true
@@ -28,18 +24,18 @@ class SessionOptionsTest: BasePlatformTestCase() {
 
         options.addListener(object: SessionOptionsProvider.Listener {
             override fun onResolveSourcesChanged(oldValue: Boolean, newValue: Boolean) {
-                TestCase.assertEquals(true, oldValue)
-                TestCase.assertEquals(false, newValue)
+                assertEquals(true, oldValue)
+                assertEquals(false, newValue)
             }
 
             override fun onResolveMppChanged(oldValue: Boolean, newValue: Boolean) {
-                TestCase.fail("resolveMpp shouldn't change")
+                fail("resolveMpp shouldn't change")
             }
         }, testRootDisposable)
 
         options.resolveSources = false
 
-        TestCase.assertEquals(
+        assertEquals(
             """
                 SessionOptions.resolveMpp = false
                 SessionOptions.resolveSources = false

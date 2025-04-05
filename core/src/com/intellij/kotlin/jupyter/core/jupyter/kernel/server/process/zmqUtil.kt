@@ -6,52 +6,63 @@ import org.zeromq.ZMQ
 import zmq.Ctx
 import zmq.io.IOThread
 import zmq.poll.Poller
+import java.io.Closeable
 
 private val logger get() = KotlinNotebookLoggerFactory.getInstance(ZMQ::class)
+
+class ZmqPoller(
+    val poller: Poller,
+    val workerThread: Thread?,
+): Closeable {
+    override fun close() {
+        poller.stop()
+        workerThread?.interrupt()
+    }
+}
 
 /**
  * This is our best attempt to find leaking threads.
  */
-fun getWorkersFromContext(context: ZMQ.Context): List<Thread> {
-    val workers = mutableListOf<Thread>()
+fun getPollersFromContext(context: ZMQ.Context): List<ZmqPoller> {
+    val pollers = mutableListOf<ZmqPoller>()
     try {
-        val ctx = context.getCtx() ?: return workers
+        val ctx = context.getCtx() ?: return pollers
 
         val ioThreads = ctx.getIoThreads()
-        if (ioThreads.isNullOrEmpty()) return workers
+        if (ioThreads.isNullOrEmpty()) return pollers
 
         for (ioThread in ioThreads) {
             val poller = ioThread.getPoller() ?: continue
-            val workerThread = poller.getWorkerThread() ?: continue
-            workers.add(workerThread)
+            val workerThread = poller.getWorkerThread()
+            val pollerWithThread = ZmqPoller(poller, workerThread)
+            pollers.add(pollerWithThread)
         }
     } catch (e: Throwable) {
         logger.warn("Error getting ZMQ workers", e)
     }
-    return workers
+    return pollers
 }
 
-private fun ZMQ.Context.getCtx(): Ctx? = getPrivateField("ctx")
+private fun ZMQ.Context.getCtx(): Ctx? = getOwnPrivateField("ctx")
+private fun Ctx.getIoThreads(): List<IOThread>? = getOwnPrivateField("ioThreads")
+private fun IOThread.getPoller(): Poller? = getOwnPrivateField("poller")
+private fun Poller.getWorkerThread(): Thread? = getPrivateFieldFromSuperclasses("worker")
 
-private fun Ctx.getIoThreads(): List<IOThread>? = getPrivateField("ioThreads")
+private inline fun <reified C : Any, reified T> C.getOwnPrivateField(fieldName: String): T? {
+    return getPrivateField(C::class.java, fieldName)
+}
 
-private fun IOThread.getPoller(): Poller? = getPrivateField("poller")
-
-private fun Poller.getWorkerThread(): Thread? {
-    var currentClass: Class<*> = Poller::class.java
+private inline fun <reified C : Any, reified T> C.getPrivateFieldFromSuperclasses(fieldName: String): T? {
+    var currentClass: Class<*> = C::class.java
     while (currentClass != Any::class.java) {
-        val worker: Thread? = getPrivateField(currentClass,"worker")
-        if (worker != null) return worker
+        val value: T? = getPrivateField(currentClass, fieldName)
+        if (value != null) return value
         currentClass = currentClass.superclass
     }
     return null
 }
 
-private inline fun <reified C: Any, reified T> C.getPrivateField(fieldName: String): T? {
-    return getPrivateField(C::class.java, fieldName)
-}
-
-private inline fun <reified C: Any, reified T> C.getPrivateField(clazz: Class<*>, fieldName: String): T? {
+private inline fun <reified C : Any, reified T> C.getPrivateField(clazz: Class<*>, fieldName: String): T? {
     return try {
         val field = clazz.getDeclaredField(fieldName)
         field.isAccessible = true

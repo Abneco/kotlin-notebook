@@ -5,16 +5,13 @@ import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDownloader
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersionAsString
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.kotlin.jupyter.test.KotlinNotebookUnitTestCase
 import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 
-@RunWith(JUnit4::class)
-class ArtifactsDownloaderTest: BasePlatformTestCase() {
+class ArtifactsDownloaderTest: KotlinNotebookUnitTestCase() {
     private val downloader get() = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
 
     private fun setKernelVersion(version: String) {

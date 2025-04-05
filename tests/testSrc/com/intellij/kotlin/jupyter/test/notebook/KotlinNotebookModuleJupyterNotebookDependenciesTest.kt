@@ -8,6 +8,7 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
 import com.intellij.kotlin.jupyter.core.settings.notebookDependencies
 import com.intellij.kotlin.jupyter.test.createEmptyNotebook
 import com.intellij.kotlin.jupyter.test.delete
+import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -27,10 +28,13 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.testFramework.utils.io.deleteRecursively
 import com.intellij.util.containers.forEachGuaranteed
 import kotlinx.coroutines.runBlocking
+import org.junit.Test
+import org.junit.runner.RunWith
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.pathString
 
+@RunWith(KotlinNotebookTestRunner::class)
 class KotlinNotebookModuleDependenciesTest : UsefulTestCase() {
     private lateinit var fixture: CodeInsightTestFixture
     private lateinit var modulesDirectory: Path
@@ -39,10 +43,12 @@ class KotlinNotebookModuleDependenciesTest : UsefulTestCase() {
     private val project get() = fixture.project
     private val notebookVirtualFile get() = _notebookVirtualFile!!
 
+    @Test
     fun `test one module`() {
         doTest(ModuleManager.getInstance(project).modules.first())
     }
 
+    @Test
     fun `test no modules`() {
         doTest(module = null)
     }

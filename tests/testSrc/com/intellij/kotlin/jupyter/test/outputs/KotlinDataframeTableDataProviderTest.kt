@@ -8,18 +8,15 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOption
 import com.intellij.kotlin.jupyter.tables.KotlinDataframeParserFormatV2
 import com.intellij.kotlin.jupyter.tables.KotlinDataframeParsing
 import com.intellij.kotlin.jupyter.tables.KotlinDataframeTableDataProvider
+import com.intellij.kotlin.jupyter.test.KotlinNotebookUnitTestCase
 import com.intellij.kotlin.jupyter.test.baseTestDataPathWithHome
 import com.intellij.scientific.tables.DataId
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.asSafely
 import org.junit.Assert
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 import java.io.File
 
-@RunWith(JUnit4::class)
-class KotlinDataframeTableDataProviderTest : BasePlatformTestCase() {
+class KotlinDataframeTableDataProviderTest : KotlinNotebookUnitTestCase() {
     @Test
     fun `test format check`() {
         val (_, data) = prepareProviderAndData()

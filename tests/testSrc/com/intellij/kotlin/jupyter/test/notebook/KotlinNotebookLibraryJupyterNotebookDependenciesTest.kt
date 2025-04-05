@@ -8,6 +8,7 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
 import com.intellij.kotlin.jupyter.core.settings.notebookDependencies
 import com.intellij.kotlin.jupyter.test.createEmptyNotebook
 import com.intellij.kotlin.jupyter.test.delete
+import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.application.runWriteActionAndWait
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -24,11 +25,14 @@ import com.intellij.testFramework.fixtures.IdeaProjectTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.utils.io.deleteRecursively
 import com.intellij.util.containers.forEachGuaranteed
+import org.junit.Test
+import org.junit.runner.RunWith
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.pathString
 
 
+@RunWith(KotlinNotebookTestRunner::class)
 class KotlinNotebookLibraryDependenciesTest : UsefulTestCase() {
     private lateinit var fixture: IdeaProjectTestFixture
     private lateinit var librariesDirectory: Path
@@ -38,10 +42,12 @@ class KotlinNotebookLibraryDependenciesTest : UsefulTestCase() {
     private val projectLibraries get() = LibraryTablesRegistrar.getInstance().getLibraryTable(project).libraries.toList()
     private val notebookVirtualFile get() = _notebookVirtualFile!!
 
+    @Test
     fun `test no libraries`() {
         doTest(emptyList())
     }
 
+    @Test
     fun `test all libraries`() {
         doTest(projectLibraries)
     }
