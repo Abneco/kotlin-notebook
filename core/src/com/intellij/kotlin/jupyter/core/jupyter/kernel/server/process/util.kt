@@ -16,7 +16,7 @@ fun rethrowAsInterrupted(e: Throwable) {
     throw InterruptedException(message)
 }
 
-internal fun Closeable.closeSafely() {
+fun Closeable.closeSafely() {
     try {
         close()
     } catch (e: Throwable) {

@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.test.common
 
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.IdeaJupyterSocketManager
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.closeSafely
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.getPollersFromContext
 import com.intellij.kotlin.jupyter.test.KotlinNotebookUnitTestCase
 import com.intellij.testFramework.common.waitUntil
@@ -19,10 +20,16 @@ class SocketManagerTest: KotlinNotebookUnitTestCase() {
     fun `socket manager should be successfully cleaned up`() {
         withSocketManager { socketManager ->
             val zmqContext = socketManager.getZmqContext()
-            getPollersFromContext(zmqContext).shouldHaveSize(1)
+            getPollersFromContext(zmqContext).shouldHaveSize(2)
 
             socketManager.close()
-            getPollersFromContext(zmqContext).shouldHaveSize(0)
+
+            runBlocking {
+                waitUntil("ZMQ threads leaked", 30.seconds) {
+                    val pollers = getPollersFromContext(zmqContext)
+                    pollers.all { poller -> poller.workerThread?.isAlive == false }
+                }
+            }
         }
     }
 
@@ -30,13 +37,14 @@ class SocketManagerTest: KotlinNotebookUnitTestCase() {
     fun `socket manager's poller thread should die when ZMQ poller is closed`() {
         withSocketManager { socketManager ->
             val zmqContext = socketManager.getZmqContext()
-            val pollers = getPollersFromContext(zmqContext).shouldHaveSize(1)
-            val poller = pollers.single()
-            poller.close()
+            val pollers = getPollersFromContext(zmqContext).shouldHaveSize(2)
+            for (poller in pollers) {
+                poller.closeSafely()
+            }
 
             runBlocking {
-                waitUntil("Poller thread was not killed", 30.seconds) {
-                    poller.workerThread?.isAlive == false
+                waitUntil("Poller threads were not killed", 30.seconds) {
+                    pollers.all { poller -> poller.workerThread?.isAlive == false }
                 }
             }
         }

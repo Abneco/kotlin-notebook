@@ -10,7 +10,7 @@ import java.io.Closeable
 
 private val logger get() = KotlinNotebookLoggerFactory.getInstance(ZMQ::class)
 
-class ZmqPoller(
+data class ZmqPoller(
     val poller: Poller,
     val workerThread: Thread?,
 ): Closeable {
@@ -25,17 +25,20 @@ class ZmqPoller(
  */
 fun getPollersFromContext(context: ZMQ.Context): List<ZmqPoller> {
     val pollers = mutableListOf<ZmqPoller>()
+    fun addPoller(poller: Poller) {
+        val workerThread = poller.getWorkerThread()
+        pollers.add(ZmqPoller(poller, workerThread))
+    }
+
     try {
         val ctx = context.getCtx() ?: return pollers
 
-        val ioThreads = ctx.getIoThreads()
-        if (ioThreads.isNullOrEmpty()) return pollers
+        val reaper = ctx.getReaper()
+        reaper?.getPoller()?.let(::addPoller)
 
+        val ioThreads = ctx.getIoThreads().orEmpty()
         for (ioThread in ioThreads) {
-            val poller = ioThread.getPoller() ?: continue
-            val workerThread = poller.getWorkerThread()
-            val pollerWithThread = ZmqPoller(poller, workerThread)
-            pollers.add(pollerWithThread)
+            ioThread.getPoller()?.let(::addPoller)
         }
     } catch (e: Throwable) {
         logger.warn("Error getting ZMQ workers", e)
@@ -44,16 +47,17 @@ fun getPollersFromContext(context: ZMQ.Context): List<ZmqPoller> {
 }
 
 private fun ZMQ.Context.getCtx(): Ctx? = getOwnPrivateField("ctx")
+private fun Ctx.getReaper(): Any? = getOwnPrivateField("reaper")
 private fun Ctx.getIoThreads(): List<IOThread>? = getOwnPrivateField("ioThreads")
-private fun IOThread.getPoller(): Poller? = getOwnPrivateField("poller")
+private fun Any.getPoller(): Poller? = getOwnPrivateField("poller")
 private fun Poller.getWorkerThread(): Thread? = getPrivateFieldFromSuperclasses("worker")
 
 private inline fun <reified C : Any, reified T> C.getOwnPrivateField(fieldName: String): T? {
-    return getPrivateField(C::class.java, fieldName)
+    return getPrivateField(this::class.java, fieldName)
 }
 
 private inline fun <reified C : Any, reified T> C.getPrivateFieldFromSuperclasses(fieldName: String): T? {
-    var currentClass: Class<*> = C::class.java
+    var currentClass: Class<*> = this::class.java
     while (currentClass != Any::class.java) {
         val value: T? = getPrivateField(currentClass, fieldName)
         if (value != null) return value

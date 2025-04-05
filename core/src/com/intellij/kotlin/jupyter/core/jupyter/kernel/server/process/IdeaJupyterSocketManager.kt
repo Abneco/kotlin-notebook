@@ -5,16 +5,11 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
-import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocket
-import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketInfo
-import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketManagerBase
-import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketSide
-import org.jetbrains.kotlinx.jupyter.protocol.createSocket
+import org.jetbrains.kotlinx.jupyter.protocol.*
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.kotlinx.jupyter.util.closeWithTimeout
 import org.zeromq.ZMQ
 import java.io.Closeable
-import java.util.concurrent.CancellationException
 
 class IdeaJupyterSocketManager(private val kernelConfig: KernelConfig): JupyterSocketManagerBase, Closeable {
     private val context = ZMQ.context(1)
@@ -55,12 +50,8 @@ class IdeaJupyterSocketManager(private val kernelConfig: KernelConfig): JupyterS
         context.closeSafely()
 
         for (zmqPoller in getPollersFromContext(context)) {
-            notebookLogger().warn("Undisposed ZMQ Poller ${zmqPoller.poller} detected, interrupting polling")
-            try {
-              zmqPoller.close()
-            } catch (e: Throwable) {
-                if (e is CancellationException) throw e
-            }
+            notebookLogger().warn("Undisposed ZMQ Poller $zmqPoller detected, interrupting polling")
+            zmqPoller.closeSafely()
         }
     }
 }
