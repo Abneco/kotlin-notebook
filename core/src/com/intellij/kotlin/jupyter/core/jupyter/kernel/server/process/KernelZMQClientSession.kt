@@ -10,7 +10,6 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.JupyterMe
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toJupyterMessage
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toRawMessageWithSocket
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
-import com.intellij.kotlin.jupyter.core.util.errorUnderDebug
 import com.intellij.openapi.diagnostic.debug
 import com.intellij.util.containers.ContainerUtil
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
@@ -34,7 +33,7 @@ class KernelZMQClientSession(
 
     private val clientThreads: MutableList<Thread> = ContainerUtil.createConcurrentList()
 
-    override val socketManager = IdeaJupyterSocketManager(kernelConfig)
+    override val socketManager: IdeaJupyterSocketManager = IdeaJupyterSocketManager(kernelConfig)
 
     init {
         initSockets()
@@ -49,7 +48,7 @@ class KernelZMQClientSession(
             LOG.debug { "Sending message to $socketType in $sessionId:\n$rawMessage" }
             socket.sendRawMessage(rawMessage)
         } catch (e: Exception) {
-            LOG.errorUnderDebug(e)
+            LOG.warn(e)
         }
     }
 
@@ -61,7 +60,7 @@ class KernelZMQClientSession(
             while (true) {
                 try {
                     loopBody()
-                } catch (e: InterruptedException) {
+                } catch (_: InterruptedException) {
                     LOG.debug(interruptedMessage)
                     break
                 }
