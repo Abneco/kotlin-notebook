@@ -22,8 +22,12 @@ object KotlinModeTransformer : TestTransformer {
             return emptyList()
         }
 
-        val newName = "${testData.description.methodName} (${currentKotlinPluginMode.name} Kotlin)"
-        val newDescription = Description.createTestDescription(testData.method.declaringClass, newName)
+        val newDescription = if (isOnTeamCity) {
+            val newName = "${testData.description.methodName} (${currentKotlinPluginMode.name} Kotlin)"
+            Description.createTestDescription(testData.method.declaringClass, newName)
+        } else {
+            testData.description
+        }
 
         val newTestData = TestData(
             newDescription,
@@ -42,4 +46,6 @@ object KotlinModeTransformer : TestTransformer {
             KotlinPluginMode.K2 -> member?.getMethodOrClassAnnotation<K1Only>() != null
         }
     }
+
+    private val isOnTeamCity get() = System.getenv("TEAMCITY_VERSION") != null
 }
