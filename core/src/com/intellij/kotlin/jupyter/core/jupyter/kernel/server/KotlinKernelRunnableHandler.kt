@@ -61,16 +61,5 @@ interface KotlinKernelRunnableHandler: Disposable {
      * @return `true` if the kernel can be stopped, `false` otherwise.
      */
     fun canStopKernel(): Boolean = kernelState.canBeStopped
-
-    /**
-     * Stops the kernel if it is currently in a state that allows stopping
-     * (either [KernelState.STARTING] or [KernelState.STARTED]).
-     *
-     * This method transitions the kernel's state to [KernelState.TERMINATED].
-     *
-     * It may and should have side effects like process termination and inability to
-     * send new messages
-     */
-    fun stopKernel()
 }
 

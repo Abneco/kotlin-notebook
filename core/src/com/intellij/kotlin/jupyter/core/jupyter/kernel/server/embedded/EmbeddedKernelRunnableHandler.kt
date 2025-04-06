@@ -22,23 +22,11 @@ class EmbeddedKernelRunnableHandler(
     KotlinKernelListener::class,
     project, kernelId, notebookPath, notebookVirtualFile
 ) {
-
     val loggerFactory: EmbeddedKotlinKernelLoggerFactory = EmbeddedKotlinKernelLoggerFactory()
 
-    override fun stopKernel() {
-        val event = EmbeddedKernelEvent(this)
-        if (stateMachine.terminating()) {
-            eventDispatcher.multicaster.kernelWillTerminate(event)
-        }
-
-        if (stateMachine.terminated()) {
-            eventDispatcher.multicaster.kernelTerminated(event)
-        }
-    }
-
     override fun dispose() {
-        stopKernel()
-        eventDispatcher.listeners.clear()
+        val event = EmbeddedKernelEvent(this)
+        notifyTerminatedAndDispose(event)
     }
 
     override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession {

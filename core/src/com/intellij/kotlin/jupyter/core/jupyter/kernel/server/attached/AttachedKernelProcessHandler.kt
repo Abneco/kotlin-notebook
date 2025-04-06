@@ -39,20 +39,8 @@ class AttachedKernelProcessHandler(
         )
     }
 
-    override fun stopKernel() {
-        val event = AttachedKernelEvent(this)
-
-        if (stateMachine.terminating()) {
-            eventDispatcher.multicaster.kernelWillTerminate(event)
-        }
-
-        if (stateMachine.terminated()) {
-            eventDispatcher.multicaster.kernelTerminated(event)
-        }
-    }
-
     override fun dispose() {
-        stopKernel()
-        eventDispatcher.listeners.clear()
+        val event = AttachedKernelEvent(this)
+        notifyTerminatedAndDispose(event)
     }
 }

@@ -30,14 +30,14 @@ abstract class AbstractKotlinKernelRunnableHandler<ListenerT: KotlinKernelListen
     override val notebookPath: Path,
     override val notebookVirtualFile: BackedNotebookVirtualFile?
 ) : KotlinKernelRunnableHandler {
-    protected val stateMachine = KernelStateMachine()
+    protected val stateMachine: KernelStateMachine = KernelStateMachine()
     override val kernelState: KernelState get() = stateMachine.currentState
 
     override fun markStarted() {
         stateMachine.started()
     }
 
-    protected val eventDispatcher = EventDispatcher.create(listenerClass.java)
+    protected val eventDispatcher: EventDispatcher<ListenerT> = EventDispatcher.create(listenerClass.java)
 
     override fun onKernelInfoReply(message: JupyterMessage) {
         val event = KernelInfoReplyReceivedEventImpl(this, message)
@@ -66,5 +66,17 @@ abstract class AbstractKotlinKernelRunnableHandler<ListenerT: KotlinKernelListen
      */
     fun addKernelListener(listener: ListenerT) {
         eventDispatcher.addListener(listener)
+    }
+
+    protected fun notifyTerminatedAndDispose(event: KotlinKernelEvent) {
+        if (stateMachine.terminating()) {
+            eventDispatcher.multicaster.kernelWillTerminate(event)
+        }
+
+        if (stateMachine.terminated()) {
+            eventDispatcher.multicaster.kernelTerminated(event)
+        }
+
+        eventDispatcher.listeners.clear()
     }
 }

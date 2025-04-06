@@ -17,10 +17,11 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSessio
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.DONT_ACCEPT_SHUTDOWN
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.warnInTests
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.EventDispatcher
+import com.intellij.util.application
 import com.intellij.util.io.BaseOutputReader
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import java.nio.file.Path
@@ -66,12 +67,9 @@ class SeparateProcessKotlinKernelRunnableHandler(
         return KernelZMQClientSession(sessionId, kernelConfig, onMessage, DONT_ACCEPT_SHUTDOWN)
     }
 
-    override fun stopKernel() {
-        process.destroyProcess()
-    }
-
     override fun dispose() {
-        stopKernel()
+        LOG.debug("Stopping kernel process", Throwable())
+        process.destroyProcess()
     }
 
     /**
@@ -94,7 +92,7 @@ class SeparateProcessKotlinKernelRunnableHandler(
             get() = runnableHandler.eventDispatcher
 
         init {
-            setShouldKillProcessSoftly(!ApplicationManager.getApplication().isUnitTestMode)
+            setShouldKillProcessSoftly(!application.isUnitTestMode && !SystemInfo.isLinux)
 
             addProcessListener(object : ProcessListener {
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {

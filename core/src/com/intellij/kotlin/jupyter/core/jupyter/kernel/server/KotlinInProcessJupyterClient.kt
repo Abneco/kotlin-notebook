@@ -133,10 +133,9 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
         sessions.removeByFirstKey(sessionId)
     }
 
-    private suspend fun killKernel(kernelId: JupyterKernelId) {
+    private fun killKernel(kernelId: JupyterKernelId) {
         sendShutdown(kernelId)
         val kernelProcess = kernelsHandlers.remove(kernelId) ?: return
-        removeSessionAndRelatedState(kernelProcess)
         Disposer.dispose(kernelProcess)
     }
 
@@ -182,7 +181,7 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
         val processHandler = kernelsHandlers[kernelId] ?: throw RuntimeException("No kernel with id $kernelId")
         val session = processHandler.createSession(sessionId, onMessage) ?: return null
         clientSessions[kernelId] = session
-        Disposer.register(this, session)
+        Disposer.register(processHandler, session)
         return session
     }
 
