@@ -27,15 +27,12 @@ import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.createConcurrentDoubleKeyMap
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.ui.EDT
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import java.io.File
 import java.nio.file.Path
@@ -140,9 +137,7 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
         sendShutdown(kernelId)
         val kernelProcess = kernelsHandlers.remove(kernelId) ?: return
         removeSessionAndRelatedState(kernelProcess)
-        withContext(Dispatchers.EDT) {
-            Disposer.dispose(kernelProcess)
-        }
+        Disposer.dispose(kernelProcess)
     }
 
     private fun sendShutdown(kernelId: JupyterKernelId) {
