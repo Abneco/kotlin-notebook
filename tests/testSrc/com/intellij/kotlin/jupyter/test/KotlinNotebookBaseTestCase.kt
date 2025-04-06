@@ -152,22 +152,44 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
         mode: LookupFinishMode = LookupFinishMode.ENTER,
         filter: (LookupElement) -> Boolean
     ) {
+        typeAndDoWithLookup(string) { lookupElements ->
+            if (lookupElements == null) return@typeAndDoWithLookup
+            val firstLookupElement = lookupElements.firstOrNull(filter)
+            if (firstLookupElement == null) {
+                fail("No elements matching filter: $lookupElements")
+            }
+            lookup.finishLookup(mode.completionChar, firstLookupElement)
+        }
+    }
+
+    /**
+     * Returns null if the single element was auto-completed
+     * Returns empty list if no lookup appeared
+     */
+    protected fun CompletionAutoPopupTester.typeAndGetLookup(
+        string: String,
+    ): List<LookupElement>? {
+        var result: List<LookupElement>? = emptyList()
+        typeAndDoWithLookup(string) {
+            result = it
+        }
+        return result
+    }
+
+    private fun CompletionAutoPopupTester.typeAndDoWithLookup(
+        string: String,
+        action: (List<LookupElement>?) -> Unit
+    ) {
         ThreadingAssertions.assertBackgroundThread()
         runBlocking {
             typeWithPauses(string)
             joinCommit()
             withContext(Dispatchers.EDT) {
-                val elements = completeBasic()
-                val firstLookupElement = elements.firstOrNull(filter)
-                if (firstLookupElement == null) {
-                    fail("No elements matching filter: $elements")
-                }
-                lookup.finishLookup(mode.completionChar, firstLookupElement)
+                action(completeBasic())
             }
             joinCommit()
         }
     }
-
 
     protected fun assertActualText(expectedText: String) {
         assertEquals(expectedText, actualText())
@@ -178,18 +200,21 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
         assertTrue("<$actualText> should contain <$expectedText>", actualText.contains(expectedText))
     }
 
-    private suspend fun completeBasic(timeout: Duration = 15.seconds): Array<out LookupElement> {
+    /**
+     * Returns null if the single element was auto-completed
+     * Returns empty list if no lookup appeared in a given [timeout]
+     */
+    protected suspend fun completeBasic(timeout: Duration = 15.seconds): List<LookupElement>? {
         val start = Instant.now()
         val timeoutMillis = timeout.inWholeMilliseconds
 
         while (true) {
             val myResult = myFixture.completeBasic()
-            if (myResult != null && myResult.isNotEmpty()) {
-                return myResult
-            }
+            if (myResult == null) return null
+            if (myResult.isNotEmpty())return myResult.toList()
             val passedMillis = Instant.now().toEpochMilli() - start.toEpochMilli()
             if (passedMillis > timeoutMillis) {
-                fail("Lookup didn't show up in $timeout")
+                return emptyList()
             }
             LOG.warn("Lookup didn't show up yet, time passed: $passedMillis ms")
 
