@@ -19,6 +19,7 @@ import org.jetbrains.kotlinx.jupyter.protocol.AbstractJupyterConnection
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.zeromq.ZMQException
 import java.nio.channels.ClosedSelectorException
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
@@ -34,6 +35,8 @@ class KernelZMQClientSession(
     private val clientThreads: MutableList<Thread> = ContainerUtil.createConcurrentList()
 
     override val socketManager: IdeaJupyterSocketManager = IdeaJupyterSocketManager(kernelConfig)
+
+    private val isClosing = AtomicBoolean(false)
 
     init {
         initSockets()
@@ -111,6 +114,8 @@ class KernelZMQClientSession(
 
 
     override fun close() {
+        if (!isClosing.compareAndSet(false, true)) return
+
         clientThreads.clear()
         socketManager.closeSafely()
     }
