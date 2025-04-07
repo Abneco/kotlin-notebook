@@ -181,7 +181,7 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
         val processHandler = kernelsHandlers[kernelId] ?: throw RuntimeException("No kernel with id $kernelId")
         val session = processHandler.createSession(sessionId, onMessage) ?: return null
         clientSessions[kernelId] = session
-        Disposer.register(processHandler, session)
+        Disposer.register(this, session)
         return session
     }
 
@@ -193,7 +193,7 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
 
 
     private suspend fun removeSessionAndRelatedState(kernelHandler: KotlinKernelRunnableHandler) {
-        if (removeSession(kernelHandler.kernelId) && kernelHandler.kernelState != KernelState.STARTING) {
+        if (removeAndDisposeSession(kernelHandler.kernelId) && kernelHandler.kernelState != KernelState.STARTING) {
             val notebookFile = kernelHandler.notebookVirtualFile ?: return
             val project = kernelHandler.project
 
@@ -213,7 +213,7 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
      *
      * @return True if the session was successfully removed, false otherwise.
      */
-    private fun removeSession(kernelId: JupyterKernelId): Boolean {
+    private fun removeAndDisposeSession(kernelId: JupyterKernelId): Boolean {
         return clientSessions.remove(kernelId)?.let { session ->
             Disposer.dispose(session)
             true
