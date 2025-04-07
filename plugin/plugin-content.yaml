@@ -1,13 +1,4 @@
-- name: lib/kotlin-jupyter-plugin.jar
-  modules:
-  - name: intellij.kotlin.jupyter.plugin
-  contentModules:
-  - name: intellij.kotlin.jupyter.core
-  - name: intellij.kotlin.jupyter.github
-  - name: intellij.kotlin.jupyter.tables
-  - name: intellij.kotlin.jupyter.liveTemplates
-  - name: intellij.kotlin.jupyter.k1
-  - name: intellij.kotlin.jupyter.k2
+- name: lib/jetbrains.kotlin-jupyter-shared-compiler.jar
   library: jetbrains.kotlin-jupyter-shared-compiler
   files:
   - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0/kotlin-jupyter-shared-compiler-0.jar
@@ -18,6 +9,16 @@
   - name: $MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1/jnacl-1.jar
   - name: $MAVEN_REPOSITORY$/com/github/ajalt/clikt/2/clikt-2.jar
   reason: <- intellij.kotlin.jupyter.core
+- name: lib/kotlin-jupyter-plugin.jar
+  modules:
+  - name: intellij.kotlin.jupyter.plugin
+  contentModules:
+  - name: intellij.kotlin.jupyter.core
+  - name: intellij.kotlin.jupyter.github
+  - name: intellij.kotlin.jupyter.tables
+  - name: intellij.kotlin.jupyter.liveTemplates
+  - name: intellij.kotlin.jupyter.k1
+  - name: intellij.kotlin.jupyter.k2
 - name: lib/modules/intellij.kotlin.jupyter.plots.jar
   contentModules:
   - name: intellij.kotlin.jupyter.plots
