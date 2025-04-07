@@ -90,16 +90,15 @@ private fun getLibraryRoots(
     configurationWrapper: ScriptCompilationConfigurationWrapper
 ): List<LibraryRoot> {
     val fileUrlManager = WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
-    val virtualFileCache = ScriptClassPathUtil.getInstance()
 
     val roots = buildList {
         configurationWrapper.dependenciesClassPath.mapNotNullTo(this) {
-            val file = virtualFileCache.findVirtualFile(it.path)
+          val file = ScriptClassPathUtil.findVirtualFile(it.path)
             file?.let { LibraryRoot(file.toVirtualFileUrl(fileUrlManager), LibraryRootTypeId.COMPILED) }
         }
 
         configurationWrapper.dependenciesSources.mapNotNullTo(this) {
-            val file = virtualFileCache.findVirtualFile(it.path)
+          val file = ScriptClassPathUtil.findVirtualFile(it.path)
             file?.let { LibraryRoot(file.toVirtualFileUrl(fileUrlManager), LibraryRootTypeId.SOURCES) }
         }
     }
