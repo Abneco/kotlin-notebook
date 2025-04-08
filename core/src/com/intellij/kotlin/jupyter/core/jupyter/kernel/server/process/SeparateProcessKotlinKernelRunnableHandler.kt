@@ -92,6 +92,8 @@ class SeparateProcessKotlinKernelRunnableHandler(
             get() = runnableHandler.eventDispatcher
 
         init {
+            // Kotlin kernel process can't be killed gracefully on Linux.
+            // For now reasons are unknown, should be investigated.
             setShouldKillProcessSoftly(!application.isUnitTestMode && !SystemInfo.isLinux)
 
             addProcessListener(object : ProcessListener {
