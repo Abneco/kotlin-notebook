@@ -87,7 +87,7 @@
         <plugin id="com.intellij.notebooks.core"/>
         <plugin id="intellij.jupyter"/>
 
-        <plugin id="com.intellij.modules.java"/>
+        <plugin id="com.intellij.java"/>
     </dependencies>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
