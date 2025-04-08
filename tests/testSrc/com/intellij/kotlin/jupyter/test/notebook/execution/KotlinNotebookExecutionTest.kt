@@ -34,7 +34,6 @@ class KotlinNotebookExecutionTest : KotlinNotebookTestCase() {
         executeCell(3).assertOutput(emptyOutput())
     }
 
-    @Ignore("KTNB-840: Thread leak, to investigate")
     @Test
     fun testExampleWithBoundSocket() {
         val kernelProcessFactory = KernelRunnableFactory.EP.findExtensionOrFail(KernelProcessFactory::class.java)
@@ -58,7 +57,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookTestCase() {
                 executeCell(0).assertOutput(textPlainOutput("5"))
                 executeCell(1).assertOutput(emptyOutput())
                 executeCell(2).assertOutput(textPlainOutput("5"))
-                executeCell(2).assertOutput(emptyOutput())
+                executeCell(3).assertOutput(emptyOutput())
             }
 
             when (TestContext.kernelRunMode) {

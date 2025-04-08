@@ -31,7 +31,7 @@ abstract class NotebookPerFileChildService(
  * Abstract class representing a notebook project-level service.
  * Every such class contains a collection of per-file [Child] services instantiated by a demand.
  *
- * Note that for every [Child], its own [CoroutineScope] is created as a child scope of [this.coroutineScope].
+ * Note that for every [Child], its own [CoroutineScope] is created as a child scope of `this.coroutineScope`.
  */
 abstract class NotebookProjectLevelService<Child : NotebookPerFileChildService>(
     protected val coroutineScope: CoroutineScope
@@ -54,12 +54,14 @@ abstract class NotebookProjectLevelService<Child : NotebookPerFileChildService>(
                 coroutineScope.childScope(
                     "Child scope for ${virtualFile.file.name} of service ${this::class.simpleName}"
                 )
-            )
+            ).also { child ->
+                Disposer.register(this, child)
+            }
         }
     }
 
     override fun dispose() {
         coroutineScope.cancel()
-        mapping.forEach { Disposer.dispose(it.value) }
+        mapping.clear()
     }
 }

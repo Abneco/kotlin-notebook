@@ -25,21 +25,26 @@ interface KotlinKernelRunnableHandler: Disposable {
     val kernelState: KernelState
 
     /**
-     * This method is triggered only once for each created session in the very early state of the
-     * session lifecycle, before any messages could be sent.
+     * Was this kernel ever marked as verified?
+     */
+    val isVerified: Boolean
+
+    /**
+     * This method is triggered only once for each created session in the very early stage of the
+     * session lifecycle, before any other messages could be sent.
      * [message] is a [KERNEL_INFO_REPLY] message that may contain useful metadata.
      */
     fun onKernelInfoReply(message: JupyterMessage) {}
 
     /**
-     * Marks the kernel's state as started.
+     * Marks the kernel as verified.
      *
-     * Changes the kernel state from `STARTING` to `STARTED`.
-     * Ensures that the transition occurs only if the current state is `STARTING`.
-     * This function should be called once the kernel is fully started and ready to process tasks.
-     * This function is called _after_ [onKernelInfoReply]
+     * Changes the kernel state from [KernelState.STARTED_UNVERIFIED] to [KernelState.STARTED_VERIFIED].
+     * Ensures that the transition occurs only if the current state is [KernelState.STARTED_UNVERIFIED].
+     * This function should be called once the kernel is verified and ready to process tasks.
+     * This function is called _after_ [onKernelInfoReply] which in fact verifies kernel's responsiveness.
      */
-    fun markStarted()
+    fun markVerified()
 
     /**
      * Adds a listener for the events that happen with every [KotlinKernelRunnableHandler]

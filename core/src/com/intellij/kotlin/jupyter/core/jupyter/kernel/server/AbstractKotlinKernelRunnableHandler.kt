@@ -33,8 +33,11 @@ abstract class AbstractKotlinKernelRunnableHandler<ListenerT: KotlinKernelListen
     protected val stateMachine: KernelStateMachine = KernelStateMachine()
     override val kernelState: KernelState get() = stateMachine.currentState
 
-    override fun markStarted() {
-        stateMachine.started()
+    private var _isVerified: Boolean = false
+    override val isVerified: Boolean get() = _isVerified
+
+    override fun markVerified() {
+        _isVerified = stateMachine.verified()
     }
 
     protected val eventDispatcher: EventDispatcher<ListenerT> = EventDispatcher.create(listenerClass.java)

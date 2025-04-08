@@ -8,6 +8,8 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMe
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionLaunchStrategy
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KERNEL_VERIFICATION_TIMEOUT
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinInProcessJupyterClient
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelEvent
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableHandler
@@ -22,7 +24,6 @@ import org.jetbrains.kotlinx.jupyter.messaging.KernelInfoRequest
 import org.jetbrains.kotlinx.jupyter.messaging.MessageType
 import org.jetbrains.kotlinx.jupyter.messaging.makeSimpleMessage
 import org.jetbrains.kotlinx.jupyter.messaging.toRawMessage
-import kotlin.time.Duration.Companion.seconds
 
 abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: Int) : JupyterSessionLaunchStrategy {
     override suspend fun createAndVerifySession(
@@ -37,12 +38,14 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
             val kernel = (jupyterClient as? KotlinKernelRunnableProvider)?.getKernel(sessionData.kernelId)
 
             if (verifySession(session, kernel)) {
-                kernel?.markStarted()
+                kernel?.markVerified()
                 notifySessionVerified(session)
                 return session
             }
 
-            jupyterClient.deleteSession(sessionData.sessionId)
+            // Let's wait for a proper session cleanup to ensure state consistency
+            (jupyterClient as KotlinInProcessJupyterClient)
+                .deleteSessionAndWaitForTermination(sessionData.sessionId)
         }
         return null
     }
@@ -98,7 +101,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
         session.sendMessageOnPooledThread(zmqMessage, callback)
         notebookLogger().info("Sending info_request to verify Kotlin Jupyter kernel session ${session.sessionId}")
 
-        val verificationResult = withTimeoutOrNull(15.seconds) {
+        val verificationResult = withTimeoutOrNull(KERNEL_VERIFICATION_TIMEOUT) {
             verificationDeferred.await()
         }
         notebookLogger().info("Kotlin Jupyter kernel session ${session.sessionId} verification result: $verificationResult")

@@ -2,10 +2,10 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 
 enum class KernelState {
-    STARTING,
-    STARTED,
+    STARTED_UNVERIFIED,
+    STARTED_VERIFIED,
     TERMINATING,
     TERMINATED,
 }
 
-val KernelState.canBeStopped: Boolean get() = equals(KernelState.STARTING) || equals(KernelState.STARTED)
+val KernelState.canBeStopped: Boolean get() = equals(KernelState.STARTED_UNVERIFIED) || equals(KernelState.STARTED_VERIFIED)

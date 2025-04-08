@@ -232,6 +232,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         // it may trigger daemon restarting later asynchronously
         (myFixture as CodeInsightTestFixtureImpl).canChangeDocumentDuringHighlighting(true)
 
+        val testRunMode = TestContext.kernelRunMode
         invokeAndWaitIfNeeded {
             val backedFile = myFixture.configureByJupyterFile(
                 jupyterFileName = notebookFile.name,
@@ -240,7 +241,6 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
             myFixture.editor.setMode(NotebookEditorMode.EDIT)
             originalVirtualFile = myFixture.file.virtualFile
             // `myFixture.file` may return the file which is injected inside one of the cells
-            val testRunMode = TestContext.kernelRunMode
             backedFile.notebook.sessionRunMode = testRunMode
             FileDocumentManager.getInstance().saveAllDocuments()
         }

@@ -10,21 +10,21 @@ import java.util.concurrent.atomic.AtomicReference
  * using a finite state machine approach.
  *
  * It's guaranteed that the kernel states are always changed in the following order:
- * [KernelState.STARTING] -> [KernelState.STARTED] ->
+ * [KernelState.STARTED_UNVERIFIED] -> [KernelState.STARTED_VERIFIED] ->
  * [KernelState.TERMINATING] -> [KernelState.TERMINATED]
  *
  * This class is thread-safe.
  */
 class KernelStateMachine {
-    private val state = AtomicReference(KernelState.STARTING)
+    private val state = AtomicReference(KernelState.STARTED_UNVERIFIED)
 
-    fun started(): Boolean {
-        return state.compareAndSet(KernelState.STARTING, KernelState.STARTED)
+    fun verified(): Boolean {
+        return state.compareAndSet(KernelState.STARTED_UNVERIFIED, KernelState.STARTED_VERIFIED)
     }
 
     fun terminating(): Boolean {
-        started()
-        return state.compareAndSet(KernelState.STARTED, KernelState.TERMINATING)
+        verified()
+        return state.compareAndSet(KernelState.STARTED_VERIFIED, KernelState.TERMINATING)
     }
 
     fun terminated(): Boolean {

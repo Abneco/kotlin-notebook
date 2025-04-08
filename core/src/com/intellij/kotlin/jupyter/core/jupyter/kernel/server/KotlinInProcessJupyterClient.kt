@@ -19,11 +19,13 @@ import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.resetSessionMetaInformation
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.JupyterSessionVerifiedListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
+import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.util.DEFAULT_KOTLIN_KERNEL_NAME
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.util.PassOnceGuard
 import com.intellij.kotlin.jupyter.core.util.createConcurrentDoubleKeyMap
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -31,8 +33,13 @@ import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.util.coroutines.childScope
 import com.intellij.util.ui.EDT
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import java.io.File
 import java.nio.file.Path
@@ -55,6 +62,12 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
             })
     }
 
+    private val coroutineScope = KotlinNotebookPluginScope.global.childScope(
+        "KotlinInProcessJupyterClient",
+        Dispatchers.Default,
+        supervisor = true
+    )
+
     private val idGenerator = IdGenerator()
 
     private val kernelsHandlers = ConcurrentCollectionFactory.createConcurrentMap<JupyterKernelId, KotlinKernelRunnableHandler>()
@@ -64,6 +77,9 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
         JupyterSessionData::sessionId,
         JupyterSessionData::kernelId,
     )
+
+    private val killKernelGuard = PassOnceGuard<JupyterKernelId>()
+    private val terminatingKernels = ConcurrentCollectionFactory.createConcurrentMap<JupyterKernelId, CompletableDeferred<Unit>>()
 
     private val clientSessions = ConcurrentCollectionFactory.createConcurrentMap<JupyterKernelId, KotlinKernelSession>()
 
@@ -130,12 +146,30 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
     override suspend fun deleteSession(sessionId: JupyterNotebookSessionId) {
         val sessionData = sessions.getByFirstKey(sessionId) ?: return
         killKernel(sessionData.kernelId)
-        sessions.removeByFirstKey(sessionId)
+    }
+
+    suspend fun deleteSessionAndWaitForTermination(sessionId: JupyterNotebookSessionId) {
+        val sessionData = sessions.getByFirstKey(sessionId) ?: return
+        killKernelAndWaitForTermination(sessionData.kernelId)
+    }
+
+    private suspend fun killKernelAndWaitForTermination(kernelId: JupyterKernelId) {
+        killKernel(kernelId)
+        waitForKernelTermination(kernelId)
+    }
+
+    private suspend fun waitForKernelTermination(kernelId: JupyterKernelId) {
+        withTimeoutOrNull(KERNEL_KILL_WAIT_TIMEOUT) {
+            getKernelTerminationDeferred(kernelId).join()
+        }
     }
 
     private fun killKernel(kernelId: JupyterKernelId) {
+        if (killKernelGuard.alreadyEntered(kernelId)) return
+        LOG.debug("Killing kernel with id $kernelId")
+
+        val kernelProcess = kernelsHandlers[kernelId] ?: return
         sendShutdown(kernelId)
-        val kernelProcess = kernelsHandlers.remove(kernelId) ?: return
         Disposer.dispose(kernelProcess)
     }
 
@@ -159,11 +193,9 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
     }
 
     override suspend fun restart(kernelId: JupyterKernelId) {
-        val sessionData = sessions.getBySecondKey(kernelId) ?: return
         val project = kernelsHandlers[kernelId]?.project
         val notebookFile = kernelsHandlers[kernelId]?.notebookVirtualFile
-        killKernel(kernelId)
-        sessions.removeByValue(sessionData)
+        killKernelAndWaitForTermination(kernelId)
 
         if (notebookFile != null) {
             pendingRestarts.add(notebookFile.file)
@@ -189,11 +221,15 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
         kernelsHandlers.clear()
         sessions.clear()
         clientSessions.clear()
+        terminatingKernels.clear()
+        coroutineScope.cancel()
+        Disposer.dispose(killKernelGuard)
     }
 
 
-    private suspend fun removeSessionAndRelatedState(kernelHandler: KotlinKernelRunnableHandler) {
-        if (removeAndDisposeSession(kernelHandler.kernelId) && kernelHandler.kernelState != KernelState.STARTING) {
+    private suspend fun clearSessionAndRuntimeImpl(kernelHandler: KotlinKernelRunnableHandler) {
+        if (removeAndDisposeSession(kernelHandler.kernelId)) {
+            if (!kernelHandler.isVerified) return
             val notebookFile = kernelHandler.notebookVirtualFile ?: return
             val project = kernelHandler.project
 
@@ -202,6 +238,23 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
             if (!project.isDisposed) {
                 JupyterRuntimeService.getInstance(project).clearRuntime(notebookFile.file).join()
             }
+        }
+    }
+
+    private suspend fun clearSessionAndRuntime(kernelHandler: KotlinKernelRunnableHandler) {
+        try {
+            clearSessionAndRuntimeImpl(kernelHandler)
+        } finally {
+            val kernelId = kernelHandler.kernelId
+            kernelsHandlers.remove(kernelId)
+            sessions.removeBySecondKey(kernelId)
+            getKernelTerminationDeferred(kernelId).complete(Unit)
+        }
+    }
+
+    private fun getKernelTerminationDeferred(kernelId: JupyterKernelId): CompletableDeferred<Unit> {
+        return terminatingKernels.getOrPut(kernelId) {
+            CompletableDeferred()
         }
     }
 
@@ -222,24 +275,24 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
 
     private inner class MyKernelListener : KotlinKernelListener {
         override fun kernelTerminated(event: KotlinKernelEvent) {
-            if (EDT.isCurrentThreadEdt()) {
-                // Hopefully, this is the rare case
-                KotlinNotebookPluginScope.getForProject(event.source.project).launch {
-                    onKernelTerminated(event)
-                }
-            } else {
+            val kernelHandler = event.source
+            val cleanupJob = coroutineScope.launch {
+                clearSessionAndRuntime(kernelHandler)
+            }
+
+            // In principle, this wait isn't needed.
+            // We do it to ensure better state consistency and dispose everything properly.
+            if (!EDT.isCurrentThreadEdt()) {
                 runBlockingMaybeCancellable {
-                    onKernelTerminated(event)
+                    cleanupJob.join()
                 }
             }
-        }
-
-        private suspend fun onKernelTerminated(event: KotlinKernelEvent) {
-            removeSessionAndRelatedState(event.source)
         }
     }
 
     companion object {
+        private val LOG = KotlinNotebookLoggerFactory.getInstance(KotlinInProcessJupyterClient::class)
+
         private val kernelSpecs: Map<KernelName, JupyterKernelSpec> = mapOf(
             DEFAULT_KOTLIN_KERNEL_NAME to JupyterKernelBase(
                 notebookKernelSpec.displayName,
