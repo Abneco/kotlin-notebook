@@ -87,7 +87,6 @@
         <plugin id="com.intellij.notebooks.core"/>
         <plugin id="intellij.jupyter"/>
 
-        <plugin id="com.intellij.modules.platform"/>
         <plugin id="com.intellij.modules.java"/>
     </dependencies>
 
