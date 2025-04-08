@@ -1,11 +1,14 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.settings.actions
 
+import com.intellij.jupyter.core.jupyter.connections.action.JupyterRestartKernelListener
 import com.intellij.jupyter.core.jupyter.connections.action.shutdownNotebook
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
+import com.intellij.kotlin.jupyter.core.settings.topics.NO_SESSION_OPTIONS_CHOICE_TOPIC
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.ui.components.dialog
 import com.intellij.ui.dsl.builder.panel
@@ -25,10 +28,14 @@ internal inline fun promptSessionShutdownIfNeeded(
     crossinline action: () -> Unit
 ) {
     val notebookFile = notebookEditor.notebookFile
-    if (!notebookFile.isKotlinNotebook) return
+    val project = notebookEditor.project
+    if (!notebookFile.isKotlinNotebook || project == null) return
 
-    if (JupyterRuntimeService.Companion.getInstance(notebookEditor.project ?: return).getSession(notebookFile.file) == null) {
+    if (!JupyterRuntimeService.getInstance(project).hasActiveSession(notebookFile.file)) {
         action()
+        project.messageBus
+            .syncPublisher(NO_SESSION_OPTIONS_CHOICE_TOPIC)
+            .optionsChanged(notebookFile)
         return
     }
 

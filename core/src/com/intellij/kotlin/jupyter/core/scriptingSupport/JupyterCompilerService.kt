@@ -10,6 +10,8 @@ import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentInde
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
+import com.intellij.kotlin.jupyter.core.settings.topics.EmptySessionOptionsChoiceListener
+import com.intellij.kotlin.jupyter.core.settings.topics.NO_SESSION_OPTIONS_CHOICE_TOPIC
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.lang.Language
@@ -52,7 +54,7 @@ class JupyterCompilerService(
 ) : NotebookProjectLevelService<JupyterCompilerPerFileService>(coroutineScope) {
 
     init {
-        registerKernelRestartListener()
+        registerRestartListeners()
     }
 
     private val initialClasspath: List<File> by lazy {
@@ -153,12 +155,25 @@ class JupyterCompilerService(
         this
     )
 
-    private fun registerKernelRestartListener() {
+    private fun registerRestartListeners() {
+        val onRestartFunction = { notebookFile: BackedNotebookVirtualFile ->
+            removeSession(notebookFile)
+            getOrCreate(notebookFile)
+        }
+
         ApplicationManager.getApplication().messageBus.connect(this)
-            .subscribe(JupyterRestartKernelListener.TOPIC,
-                       JupyterRestartKernelListener { notebookFile ->
-                           removeSession(notebookFile)
-                       }
+            .subscribe(
+                JupyterRestartKernelListener.TOPIC,
+                JupyterRestartKernelListener { notebookFile ->
+                    onRestartFunction(notebookFile)
+                }
+            )
+        project.messageBus.connect(this)
+            .subscribe(
+                NO_SESSION_OPTIONS_CHOICE_TOPIC,
+                EmptySessionOptionsChoiceListener { notebookFile ->
+                    onRestartFunction(notebookFile)
+                }
             )
     }
 

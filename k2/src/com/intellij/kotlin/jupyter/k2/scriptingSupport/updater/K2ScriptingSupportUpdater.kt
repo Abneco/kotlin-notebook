@@ -9,11 +9,14 @@ import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
+import com.intellij.kotlin.jupyter.core.settings.topics.EmptySessionOptionsChoiceListener
+import com.intellij.kotlin.jupyter.core.settings.topics.NO_SESSION_OPTIONS_CHOICE_TOPIC
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptModel
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsManager
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.serviceAsync
 import com.intellij.openapi.components.serviceIfCreated
@@ -40,10 +43,17 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
     init {
         val parentDisposable = updaterConstructorData.parentDisposable
-        project.messageBus.connect(parentDisposable)
+        ApplicationManager.getApplication().messageBus.connect(parentDisposable)
             .subscribe(
                 JupyterRestartKernelListener.TOPIC,
                 JupyterRestartKernelListener { notebookFile ->
+                    clearRuntimeDependenciesFor(notebookFile)
+                }
+            )
+        project.messageBus.connect(parentDisposable)
+            .subscribe(
+                NO_SESSION_OPTIONS_CHOICE_TOPIC,
+                EmptySessionOptionsChoiceListener { notebookFile ->
                     clearRuntimeDependenciesFor(notebookFile)
                 }
             )

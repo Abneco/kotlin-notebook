@@ -106,6 +106,9 @@ class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomCompon
     ) : DumbAwareAction(placeholder) {
         override fun actionPerformed(e: AnActionEvent) {
             val editor = e.editor ?: return
+            if (e.getCurrentDependencies() == dependencies) {
+                return
+            }
 
             promptSessionShutdownIfNeeded(KotlinNotebookDependenciesComboBoxAction::class, editor) {
                 val notebook = editor.notebookFile.notebookOrNull
