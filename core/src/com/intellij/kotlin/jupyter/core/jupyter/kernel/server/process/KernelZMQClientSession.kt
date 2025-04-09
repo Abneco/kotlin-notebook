@@ -6,12 +6,18 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNoteb
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.SESSION_KILL_WAIT_TIMEOUT
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.JupyterMessageFilter
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toJupyterMessage
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toRawMessageWithSocket
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.diagnostic.debug
+import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.util.containers.ContainerUtil
+import com.intellij.util.ui.EDT
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.api.libraries.rawMessageCallback
@@ -112,16 +118,40 @@ class KernelZMQClientSession(
         onMessageCallback(message)
     }
 
+    override fun dispose() {
+        close()
+    }
 
     override fun close() {
         if (!isClosing.compareAndSet(false, true)) return
 
-        clientThreads.clear()
-        socketManager.closeSafely()
+        val closeDeferred = KotlinNotebookPluginScope.global.launch {
+            withTimeoutOrNull(SESSION_KILL_WAIT_TIMEOUT) {
+                doClose()
+            }
+        }
+
+        if (!EDT.isCurrentThreadEdt()) {
+            runBlockingMaybeCancellable {
+                closeDeferred.join()
+            }
+        }
     }
 
-    override fun dispose() {
-        close()
+    private fun doClose() {
+        socketManager.closeSafely()
+        disposeThreads()
+    }
+
+    private fun disposeThreads() {
+        val threadsToInterrupt = clientThreads.toList()
+        clientThreads.clear()
+        for (thread in threadsToInterrupt) {
+            thread.interrupt()
+        }
+        for (thread in threadsToInterrupt) {
+            thread.join()
+        }
     }
 
     companion object {
