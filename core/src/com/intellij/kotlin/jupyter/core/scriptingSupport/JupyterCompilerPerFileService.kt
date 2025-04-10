@@ -312,7 +312,12 @@ class JupyterCompilerPerFileService(
                         getScriptingClass(classGetter)
                     }
                 }
-                implicitReceivers(implicitsList)
+                /**
+                 * We do need to create a copy here,
+                 * otherwise all changes made to this list will eventually appear in the cache without an update,
+                 * and no consistency checks can be done.
+                 */
+                implicitReceivers(implicitsList.toList())
                 defaultImports(additionalDefaultImports.getList())
                 ide.dependenciesSources(
                     JvmDependency(
