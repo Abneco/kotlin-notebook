@@ -108,13 +108,13 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
             return
         }
 
-        LOG.debug {
-            "Performing update for notebooks: ${notebooks.joinToString(", ") { it.file.name }}"
-        }
         updateK2Impl(project, notebooks)
     }
 
     private suspend fun updateK2Impl(project: Project, notebooks: Collection<BackedNotebookVirtualFile>) {
+        val notebookNames = notebooks.joinToString(", ") { it.file.name }
+        LOG.debug("Performing update for notebooks: $notebookNames")
+
         val scripts = mutableMapOf<KotlinNotebookScriptModel, KtFile>()
         for (notebook in notebooks) {
             val notebookService = JupyterCompilerService.getForFile(project, notebook)
@@ -162,6 +162,11 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
             }
 
             scripts.putAll(perFileScripts)
+        }
+
+        if (scripts.isEmpty()) {
+            LOG.warn("No scripts to refine found, might be in initialization phase. Notebooks: $notebookNames")
+            return
         }
 
         project.serviceAsync<NotebookScriptConfigurationsManager>().updateConfigurations(scripts.keys)
