@@ -32,6 +32,7 @@ import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.diagnostic.Attachment
+import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
@@ -513,6 +514,9 @@ class JupyterCompilerPerFileService(
             val newStableReceivers = getSnippetsReadyForConfigurationUpdate()
             newStableReceivers.flatMap { it.snippetTypes }.forEach {
                 implicitsList.addClass(it.fromClass!!)
+            }
+            LOG.debug {
+                "Added classes to implicitList: ${newStableReceivers.flatMap { it.snippetTypes.map { type -> type.typeName } }}"
             }
 
             implicitReceiversClassPathData.removeAll(newStableReceivers)

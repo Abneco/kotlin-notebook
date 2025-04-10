@@ -18,6 +18,7 @@ import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.serviceAsync
 import com.intellij.openapi.components.serviceIfCreated
+import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -102,10 +103,14 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
         // Early return
         if (notebooks.isEmpty()) {
+            LOG.debug("No notebooks to update")
             publisher.afterUpdate()
             return
         }
 
+        LOG.debug {
+            "Performing update for notebooks: ${notebooks.joinToString(", ") { it.file.name }}"
+        }
         updateK2Impl(project, notebooks)
     }
 
@@ -139,6 +144,9 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                     val stableClasses = stableConfiguration[implicitReceivers]
                     if (stableClasses != null) {
                         implicitReceivers(stableClasses)
+                    }
+                    LOG.debug {
+                        "Stable implicit receivers for notebook '${notebook.file.name}': ${stableClasses?.map { it.typeName }}"
                     }
                 }
 
