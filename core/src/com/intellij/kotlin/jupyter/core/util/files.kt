@@ -2,6 +2,10 @@
 package com.intellij.kotlin.jupyter.core.util
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookPerFileSettingsCache
+import com.intellij.kotlin.jupyter.core.settings.findModule
+import com.intellij.kotlin.jupyter.core.settings.getSuitableLibraries
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
@@ -9,6 +13,7 @@ import com.intellij.openapi.fileEditor.impl.EditorTabPresentationUtil
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.io.toNioPathOrNull
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -30,6 +35,27 @@ fun Project.allSourceRoots(): List<File> {
     val allModules = moduleManager.modules
     return allModules.flatMap { module ->
         module.sourceRoots.map { File(it.path) }
+    }
+}
+
+fun Project.sourceRootsForDependencies(notebookFile: BackedNotebookVirtualFile): List<File> {
+    val optionsProvider = KotlinNotebookPerFileSettingsCache.getInstance(this).getSettings(notebookFile)
+    val dependencies = optionsProvider.notebookDependencies
+
+    return when (dependencies) {
+        is KotlinNotebookDependencies.None -> emptyList()
+        is KotlinNotebookDependencies.AllLibraries -> {
+            val libraries = getSuitableLibraries(this)
+            libraries.flatMap { library ->
+                library.rootProvider.getFiles(OrderRootType.SOURCES).map { File(it.path) }
+            }
+        }
+        is KotlinNotebookDependencies.SingleModule -> {
+            val tagetModule = optionsProvider.notebookDependencies.findModule(this)
+            if (tagetModule == null) return emptyList()
+
+            tagetModule.sourceRoots.map { File(it.path) }
+        }
     }
 }
 

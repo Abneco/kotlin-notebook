@@ -23,13 +23,13 @@ import com.intellij.kotlin.jupyter.core.statistics.usages.KotlinNotebookPluginUp
 import com.intellij.kotlin.jupyter.core.util.ComputableWithName
 import com.intellij.kotlin.jupyter.core.util.ExecutedOnceBackgroundTask
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
-import com.intellij.kotlin.jupyter.core.util.allSourceRoots
 import com.intellij.kotlin.jupyter.core.util.anyOf
 import com.intellij.kotlin.jupyter.core.util.errorUnderDebug
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.runSafelyTyped
+import com.intellij.kotlin.jupyter.core.util.sourceRootsForDependencies
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
@@ -341,7 +341,7 @@ class JupyterCompilerPerFileService(
                 defaultImports(additionalDefaultImports.getList())
                 ide.dependenciesSources(
                     JvmDependency(
-                        project.allSourceRoots() + _sourceRoots.getList()
+                        project.sourceRootsForDependencies(virtualFile) + _sourceRoots.getList()
                     )
                 )
             }
