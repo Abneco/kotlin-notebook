@@ -19,7 +19,6 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScrip
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.ScriptingSupportUpdateEventsListener
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersionAsString
-import com.intellij.kotlin.jupyter.core.statistics.usages.KotlinNotebookPluginUpdater
 import com.intellij.kotlin.jupyter.core.util.ComputableWithName
 import com.intellij.kotlin.jupyter.core.util.ExecutedOnceBackgroundTask
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
@@ -32,7 +31,6 @@ import com.intellij.kotlin.jupyter.core.util.runSafelyTyped
 import com.intellij.kotlin.jupyter.core.util.sourceRootsForDependencies
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
@@ -48,10 +46,8 @@ import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.intellij.util.io.delete
 import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
@@ -353,11 +349,6 @@ class JupyterCompilerPerFileService(
       psiCell: JupyterPsiCell?,
     ) {
         coroutineScope.async {
-            withContext(Dispatchers.EDT) {
-                KotlinNotebookPluginUpdater.getInstance().pluginUsed()
-            }
-
-            // execute not on EDT
             try {
                 val sessionId = getSession()?.sessionId
                 writeData {
