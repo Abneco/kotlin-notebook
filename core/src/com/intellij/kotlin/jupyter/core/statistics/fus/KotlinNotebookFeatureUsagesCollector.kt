@@ -85,7 +85,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
                     JupyterCellType.SQL,
                     JupyterCellType.DATA_INPUT,
                     JupyterCellType.DATA_WRANGLER,
-                    JupyterCellType.CHECKBOX -> {
+                    JupyterCellType.VARIABLE_CHECKBOX -> {
                         ++codeCellsCount
                     }
                 }
