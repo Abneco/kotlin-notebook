@@ -3,9 +3,6 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
@@ -48,8 +45,6 @@ import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
@@ -104,8 +99,6 @@ class JupyterCompilerPerFileService(
     private val scriptsChangePublisher get() =
         project.messageBus.syncPublisher(NotebookScriptsStateListener.TOPIC)
 
-    private var isDisposed = false
-
     // This lock is used to avoid concurrent modifications of data structures
     // that hold the session state
     // Please don't use it directly.
@@ -155,8 +148,6 @@ class JupyterCompilerPerFileService(
     private val classGetter = JupyterKotlinPluginScriptClassGetter(ScriptTemplateWithDisplayHelpers::class) {
         implicitsList
     }
-
-    private var previousSessionId: JupyterNotebookSessionId? = null
 
     private val lastStableConfiguration = AtomicReference(project.baseScriptingCompilationConfiguration)
 
@@ -230,19 +221,6 @@ class JupyterCompilerPerFileService(
                 text.takeIf { it.isNotEmpty() } ?: "[Injected file has no text]"
             )
         )
-    }
-
-    private suspend fun getSession(): JupyterNotebookSession? {
-        return try {
-            if (!ApplicationManager.getApplication().isUnitTestMode) {
-                JupyterRuntimeService.getInstance(project).getOrCreateSession(virtualFile)
-            } else null
-        } catch (e: Throwable) {
-            // TODO: show error for user with asking for configuring Python interpreter for the module
-            if (e is ProcessCanceledException) throw e
-            LOG.warn("Cannot create Jupyter session for Kotlin notebook", e)
-            null
-        }
     }
 
     private fun requestScriptingUpdateTestAware() {
@@ -350,9 +328,8 @@ class JupyterCompilerPerFileService(
     ) {
         coroutineScope.async {
             try {
-                val sessionId = getSession()?.sessionId
                 writeData {
-                    addNewDependencies(sessionId, snippetMetadata, psiCell)
+                    addNewDependencies(snippetMetadata, psiCell)
                 }
 
                 requestScriptingUpdate()
@@ -376,17 +353,9 @@ class JupyterCompilerPerFileService(
     }
 
     private fun addNewDependencies(
-        sessionId: JupyterNotebookSessionId?,
         snippetMetadata: EvaluatedSnippetMetadata,
         psiCell: JupyterPsiCell?
     ) {
-        if (sessionId != previousSessionId) {
-            LOG.info("Clearing Kotlin snippets. Previous session ID: ${previousSessionId?.id}")
-            clearPreviousSnippets()
-            previousSessionId = sessionId
-        }
-
-
         // TODO: compare text in snippet metadata with cell source and add a source file to directory and to the container
         val nextCounter = directoryCounter.incrementAndGet()
 
@@ -499,35 +468,21 @@ class JupyterCompilerPerFileService(
         )
     }
 
-    private fun clearPreviousSnippets() {
-        _currentClasspath.clear()
-        additionalDefaultImports.clear()
-        implicitsList.clear()
-        scriptingSupportUpdatesProcessor.clear()
-        lastStableConfiguration.set(project.baseScriptingCompilationConfiguration)
-        defaultImportsEnhancer.clear()
-        if (!project.isDisposed) {
-            NotebookStructureTrackerService.getForFile(project, virtualFile).notebookDataCleared()
-        }
-    }
-
-    fun clear() {
+    override fun dispose() {
         writeData {
-            clearPreviousSnippets()
+            _currentClasspath.clear()
+            additionalDefaultImports.clear()
+            implicitsList.clear()
+            scriptingSupportUpdatesProcessor.clear()
+            lastStableConfiguration.set(project.baseScriptingCompilationConfiguration)
+            defaultImportsEnhancer.clear()
+            if (!project.isDisposed) {
+                NotebookStructureTrackerService.getForFile(project, virtualFile).notebookDataCleared()
+            }
 
             classesDir.delete(true)
             coroutineScope.cancel()
         }
-
-        if (!isDisposed) {
-            val manager = ScriptConfigurationManager.getInstance(project) as? CompositeScriptConfigurationManager
-            manager?.updater?.invalidateAndCommit()
-        }
-    }
-
-    override fun dispose() {
-        isDisposed = true
-        clear()
     }
 
     private inner class ScriptingSupportEventsProcessor : ScriptingSupportUpdateEventsListener, ImplicitListsConfigurationUpdater {

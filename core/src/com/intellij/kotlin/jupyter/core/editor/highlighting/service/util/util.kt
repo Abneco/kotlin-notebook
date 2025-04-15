@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.editor.highlighting.service.util
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.hints.PsiHostTypeHintsInvalidator
 import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder
@@ -9,6 +10,7 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHigh
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.InjectedHostHasErrors
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
@@ -16,13 +18,14 @@ import com.intellij.kotlin.jupyter.core.util.kotlinNotebookLogger
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.getCell
-import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.util.removeUserData
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
@@ -32,10 +35,10 @@ import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import java.util.concurrent.atomic.AtomicReference
 
 object NotebookHighlightingUtilityObject {
-    const val SCRIPTING_MISSING_DEPENDENCY_PREFIX = "MISSING"
-    const val SCRIPTING_MISSING_CLASS_ERROR = "${SCRIPTING_MISSING_DEPENDENCY_PREFIX}_SCRIPT_RECEIVER_CLASS"
+    const val SCRIPTING_MISSING_DEPENDENCY_PREFIX: String = "MISSING"
+    const val SCRIPTING_MISSING_CLASS_ERROR: String = "${SCRIPTING_MISSING_DEPENDENCY_PREFIX}_SCRIPT_RECEIVER_CLASS"
     @NlsSafe
-    const val SCRIPTING_MISSING_BASE_CLASS_ERROR = "[${SCRIPTING_MISSING_DEPENDENCY_PREFIX}_SCRIPT_BASE_CLASS]"
+    const val SCRIPTING_MISSING_BASE_CLASS_ERROR: String = "[${SCRIPTING_MISSING_DEPENDENCY_PREFIX}_SCRIPT_BASE_CLASS]"
 
     internal val InjectedHostHasErrors = Key.create<AtomicReference<Boolean>>("injected.element.errors.found")
     val NonTargetHostErrorMark: Key<Boolean> = Key.create("injected.element.actual.errors.registry")
@@ -82,30 +85,51 @@ internal fun Document.retrieveCellIntervalUnderCaret(virtualFile: VirtualFile, p
     return editor.getCell(lineNumber)
 }
 
-/**
- * [get] ReadAction
- */
-internal fun resetSessionMetaInformation(vFile: VirtualFile, project: Project) {
+internal suspend fun cleanupKernelSession(
+    kernelHandler: KotlinKernelRunnableHandler,
+) {
+    if (!kernelHandler.isVerified) return
+    val notebookFile = kernelHandler.notebookVirtualFile ?: return
+    val project = kernelHandler.project
+
+    resetSessionMetaInformation(project, notebookFile)
+    if (!project.isDisposed) {
+        JupyterRuntimeService.getInstance(project).clearRuntime(notebookFile.file).join()
+    }
+}
+
+private suspend fun resetSessionMetaInformation(
+    project: Project,
+    backedNotebookVirtualFile: BackedNotebookVirtualFile,
+) {
     if (project.isDisposed) return
 
     kotlinNotebookLogger.info("Resetting session meta information")
 
-    val hlManager = highlightingManagerFor(project, vFile)
+    val virtualFile = backedNotebookVirtualFile.file
+    val hlManager = NotebookHighlightingService.getForFile(project, backedNotebookVirtualFile)
+    val compilerService = JupyterCompilerService.getInstance(project)
 
-    if (project.isDisposed) return
-    ReadAction.run<Throwable> {
-        val psiFile = vFile.findPsiFile(project)
+    readAction {
+        if (project.isDisposed) return@readAction
+        val psiFile = virtualFile.findPsiFile(project)
+        compilerService.removeSession(backedNotebookVirtualFile)
         val cells = psiFile?.getNotebookCells()
-        hlManager?.dataController?.invalidateStateAfterCellExecution(null)
+        hlManager.dataController.invalidateStateAfterCellExecution(null)
         val injectedManager = InjectedLanguageManager.getInstance(project)
-        psiFile?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
-        cells?.forEach {
-            it.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, null)
-            it.putUserData(InjectedHostHasErrors, null)
-            PsiHostTypeHintsInvalidator.invalidateTypeHintsRegistry(it)
-            injectedManager.getInjectedPsiFiles(it)?.firstOrNull { f ->
-                f.first is KtFile
-            }?.first?.putUserData(NonTargetHostErrorMark, null)
+        psiFile?.removeUserData(NotebookReferenceFinder.CELL_CLASS_NAME)
+
+        cells?.forEach { cell ->
+            cell.removeUserData(NotebookReferenceFinder.CELL_CLASS_NAME)
+            cell.removeUserData(InjectedHostHasErrors)
+            PsiHostTypeHintsInvalidator.invalidateTypeHintsRegistry(cell)
+
+            injectedManager.getInjectedPsiFiles(cell)?.forEach { elementWithRange ->
+                val psiElement = elementWithRange.first
+                if (psiElement is KtFile) {
+                    psiElement.removeUserData(NonTargetHostErrorMark)
+                }
+            }
         }
     }
 

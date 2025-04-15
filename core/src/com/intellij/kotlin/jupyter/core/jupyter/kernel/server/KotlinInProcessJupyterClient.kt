@@ -10,13 +10,12 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNoteb
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterInterruptRequestMessageBuilder
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterShutdownRequestMessageBuilder
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.connections.filecontentsapi.CachingFileContentsApi
 import com.intellij.jupyter.core.jupyter.connections.http.HttpSession
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelBase
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.resetSessionMetaInformation
+import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.cleanupKernelSession
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.JupyterSessionVerifiedListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
@@ -226,21 +225,6 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
         Disposer.dispose(killKernelGuard)
     }
 
-
-    private suspend fun clearSessionAndRuntimeImpl(kernelHandler: KotlinKernelRunnableHandler) {
-        if (removeAndDisposeSession(kernelHandler.kernelId)) {
-            if (!kernelHandler.isVerified) return
-            val notebookFile = kernelHandler.notebookVirtualFile ?: return
-            val project = kernelHandler.project
-
-            // probably move out from here
-            resetSessionMetaInformation(notebookFile.file, project)
-            if (!project.isDisposed) {
-                JupyterRuntimeService.getInstance(project).clearRuntime(notebookFile.file).join()
-            }
-        }
-    }
-
     private suspend fun clearSessionAndRuntime(kernelHandler: KotlinKernelRunnableHandler) {
         try {
             clearSessionAndRuntimeImpl(kernelHandler)
@@ -249,6 +233,12 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
             kernelsHandlers.remove(kernelId)
             sessions.removeBySecondKey(kernelId)
             getKernelTerminationDeferred(kernelId).complete(Unit)
+        }
+    }
+
+    private suspend fun clearSessionAndRuntimeImpl(kernelHandler: KotlinKernelRunnableHandler) {
+        if (removeAndDisposeSession(kernelHandler.kernelId)) {
+            cleanupKernelSession(kernelHandler)
         }
     }
 

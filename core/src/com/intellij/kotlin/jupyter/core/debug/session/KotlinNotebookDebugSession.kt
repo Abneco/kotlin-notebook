@@ -116,7 +116,7 @@ internal class KotlinNotebookDebugSession(
                         if (project.isDisposed) return@launch
 
                         val session = getOrCreateDebuggerSession(project, forceRestart = true)
-                        LOG.warn("Session after start: $session")
+                        LOG.info("Debugger session after start: $session")
                     }
                 }
             }

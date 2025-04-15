@@ -3,19 +3,15 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.action.JupyterRestartKernelListener
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
 import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
-import com.intellij.kotlin.jupyter.core.settings.topics.EmptySessionOptionsChoiceListener
-import com.intellij.kotlin.jupyter.core.settings.topics.NO_SESSION_OPTIONS_CHOICE_TOPIC
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.lang.Language
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -52,10 +48,6 @@ class JupyterCompilerService(
     val project: Project,
     coroutineScope: CoroutineScope
 ) : NotebookProjectLevelService<JupyterCompilerPerFileService>(coroutineScope) {
-
-    init {
-        registerRestartListeners()
-    }
 
     private val initialClasspath: List<File> by lazy {
        emptyList()
@@ -154,28 +146,6 @@ class JupyterCompilerService(
         updateActionHandler::updateScripts,
         this
     )
-
-    private fun registerRestartListeners() {
-        val onRestartFunction = { notebookFile: BackedNotebookVirtualFile ->
-            removeSession(notebookFile)
-            getOrCreate(notebookFile)
-        }
-
-        ApplicationManager.getApplication().messageBus.connect(this)
-            .subscribe(
-                JupyterRestartKernelListener.TOPIC,
-                JupyterRestartKernelListener { notebookFile ->
-                    onRestartFunction(notebookFile)
-                }
-            )
-        project.messageBus.connect(this)
-            .subscribe(
-                NO_SESSION_OPTIONS_CHOICE_TOPIC,
-                EmptySessionOptionsChoiceListener { notebookFile ->
-                    onRestartFunction(notebookFile)
-                }
-            )
-    }
 
     private fun removeRuntimeDependenciesFromIndex() {
         val paths = KotlinNotebookMavenArtifacts.all().mapTo(HashSet()) {
