@@ -152,11 +152,11 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
         mode: LookupFinishMode = LookupFinishMode.ENTER,
         filter: (LookupElement) -> Boolean
     ) {
-        typeAndDoWithLookup(string) { lookupElements ->
+        typeAndDoWithLookup(string, filter) { lookupElements ->
             if (lookupElements == null) return@typeAndDoWithLookup
-            val firstLookupElement = lookupElements.firstOrNull(filter)
+            val firstLookupElement = lookupElements.firstOrNull()
             if (firstLookupElement == null) {
-                fail("No elements matching filter: $lookupElements")
+                fail("No elements matching filter: ${lookupElements.map { it.lookupString }}")
             }
             lookup.finishLookup(mode.completionChar, firstLookupElement)
         }
@@ -170,7 +170,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
         string: String,
     ): List<LookupElement>? {
         var result: List<LookupElement>? = emptyList()
-        typeAndDoWithLookup(string) {
+        typeAndDoWithLookup(string, { true }) {
             result = it
         }
         return result
@@ -178,6 +178,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
 
     private fun CompletionAutoPopupTester.typeAndDoWithLookup(
         string: String,
+        filter: (LookupElement) -> Boolean,
         action: (List<LookupElement>?) -> Unit
     ) {
         ThreadingAssertions.assertBackgroundThread()
@@ -185,7 +186,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
             typeWithPauses(string)
             joinCommit()
             withContext(Dispatchers.EDT) {
-                action(completeBasic())
+                action(completeBasic(filter = filter))
             }
             joinCommit()
         }
@@ -204,14 +205,18 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
      * Returns null if the single element was auto-completed
      * Returns empty list if no lookup appeared in a given [timeout]
      */
-    protected suspend fun completeBasic(timeout: Duration = 15.seconds): List<LookupElement>? {
+    protected suspend fun completeBasic(
+        timeout: Duration = 15.seconds,
+        filter: (LookupElement) -> Boolean = { true },
+    ): List<LookupElement>? {
         val start = Instant.now()
         val timeoutMillis = timeout.inWholeMilliseconds
 
         while (true) {
             val myResult = myFixture.completeBasic()
             if (myResult == null) return null
-            if (myResult.isNotEmpty())return myResult.toList()
+            val filteredResult = myResult.filter(filter)
+            if (filteredResult.isNotEmpty()) return filteredResult
             val passedMillis = Instant.now().toEpochMilli() - start.toEpochMilli()
             if (passedMillis > timeoutMillis) {
                 return emptyList()
