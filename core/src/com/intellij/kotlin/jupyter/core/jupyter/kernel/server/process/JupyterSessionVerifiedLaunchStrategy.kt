@@ -46,6 +46,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
             // Let's wait for a proper session cleanup to ensure state consistency
             (jupyterClient as KotlinInProcessJupyterClient)
                 .deleteSessionAndWaitForTermination(sessionData.sessionId)
+            session.deleteSession()
         }
         return null
     }
