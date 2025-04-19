@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.settings
 
+import com.intellij.openapi.observable.util.whenDisposed
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdk
 import com.intellij.openapi.projectRoots.JavaSdkVersion
@@ -94,16 +95,21 @@ object ProjectJdkOption : AbstractKotlinNotebookJdkOption() {
             yieldSdk(rootManager.projectSdk, shouldCache = false)
 
             val jdkType = JavaSdk.getInstance()
-            for (sdk in ProjectJdkTable.getInstance().getSdksOfType(jdkType)) {
+            val jdkTable = ProjectJdkTable.getInstance()
+            for (sdk in jdkTable.getSdksOfType(jdkType)) {
                 yieldSdk(sdk, shouldCache = false)
             }
-            yieldSdk(getCache(project).cachedLastResortJdk, shouldCache = false)
+            val sdkCache = getCache(project)
+            yieldSdk(sdkCache.cachedLastResortJdk, shouldCache = false)
 
             for (path in getJavaHomePathsFromEnvironment()) {
                 val jdk = jdkType.createJdk(
                     "Kotlin Notebook JDK for project ${project.name}",
                     path,
                 )
+                sdkCache.whenDisposed {
+                    jdkTable.removeJdk(jdk)
+                }
                 yieldSdk(jdk, shouldCache = true)
             }
         }

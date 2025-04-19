@@ -23,6 +23,7 @@ abstract class RefactoringTestBase(private val refactoringActionId: String) : Ko
 
     protected fun doTest(caretInitializer: (CaretModel) -> Unit) {
         myFixture.setCaresAboutInjection(true)
+        setUpProjectSdkIfNeeded()
         val editorProvider = FileEditorProvider.EP_FILE_EDITOR_PROVIDER.findExtension(JupyterDSFileEditorProvider::class.java)!!
         val notebookFile = configureByJupyterFile(fileEditorProvider = editorProvider)
         originalVirtualFile = notebookFile.file
