@@ -27,6 +27,7 @@ import com.intellij.ui.dsl.listCellRenderer.textListCellRenderer
 import com.intellij.ui.layout.selectedValueMatches
 import com.intellij.ui.util.preferredWidth
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
@@ -184,7 +185,7 @@ abstract class SavePlotAction : AbstractExportPlotAction() {
 
         // There is no way for now to get rid of it
         @Suppress("DEPRECATION")
-        dialogPanel.preferredWidth = 550
+        dialogPanel.preferredWidth = JBUI.scale(550)
 
         val restoreDefaultSettingsAction = object : AbstractAction(KotlinNotebookPlotsBundle.message("kotlin.jupyter.dialog.outputs.plot.export.restore.defaults")) {
             override fun actionPerformed(e: ActionEvent?) {
