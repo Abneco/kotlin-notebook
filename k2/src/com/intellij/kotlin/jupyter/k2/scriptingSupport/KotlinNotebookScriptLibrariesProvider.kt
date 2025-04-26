@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.injectedScriptLibraryDependencies
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.module.Module
@@ -27,7 +28,10 @@ class KotlinNotebookScriptLibrariesProvider : ScriptAdditionalIdeaDependenciesPr
         if (!virtualFile.isKotlinNotebook) return emptyList()
 
         val snapshot = WorkspaceModel.getInstance(project).currentSnapshot
-        val libraryDependencies = file.injectedScriptLibraryDependencies(project, snapshot)
+        val libraryDependencies = virtualFile.injectedScriptLibraryDependencies(project, snapshot)
+        if (libraryDependencies.isEmpty()) {
+            notebookLogger().warn("No library dependencies found for notebook file: ${virtualFile.path}")
+        }
 
         return libraryDependencies.mapNotNull { dependency ->
             val entity = snapshot.resolve(dependency.library) ?: return@mapNotNull null

@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.ide.scratch.ScratchUtil
-import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
@@ -23,7 +22,7 @@ class KotlinNotebookScriptModel(
 
 data class KotlinNotebookScriptsModuleConfigurationInfo(
     val notebookFile: VirtualFile,
-    val scripts: List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>>,
+    val configuration: ScriptCompilationConfigurationWrapper,
     val sdkInfo: Sdk?
 )
 
@@ -38,22 +37,17 @@ internal fun Map<VirtualFile, ScriptConfigurationWithSdk>.toConfigurationInfoPer
     return configurations.filterNot {
         ScratchUtil.isScratch(it.key) || it.value.valueOrNull() == null
     }.mapValues { entry ->
-        val (scriptFile, configuration) = entry
-        scriptFile to configuration.valueOrThrow()
-    }.entries.groupBy(
-        keySelector = { (it.key as VirtualFileWindow).delegate },
-        valueTransform = { it.value }
-    ).mapValues {
+        val (topLevelFile, configuration) = entry
         KotlinNotebookScriptsModuleConfigurationInfo(
-            it.key,
-            it.value,
+            topLevelFile,
+            configuration.valueOrThrow(),
             sdk
         )
     }
 }
 
-internal fun Map<VirtualFile, ScriptConfigurationWithSdk>.getConfigurationsForNotebook(notebookFile: VirtualFile): Collection<ScriptCompilationConfigurationWrapper>? {
-    return this.filter { (vFile, configurationWrapper) ->
-        (vFile as? VirtualFileWindow)?.delegate == notebookFile && configurationWrapper.scriptConfiguration.valueOrNull() != null
-    }.map { it.value.scriptConfiguration.valueOrThrow() }
+internal fun Map<VirtualFile, ScriptConfigurationWithSdk>.getConfigurationForNotebook(notebookFile: VirtualFile): ScriptCompilationConfigurationWrapper? {
+    if (this.isEmpty()) return null
+
+    return this[notebookFile]?.scriptConfiguration?.valueOrNull()
 }

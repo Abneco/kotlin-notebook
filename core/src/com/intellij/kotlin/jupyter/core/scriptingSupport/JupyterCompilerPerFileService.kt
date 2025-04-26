@@ -403,8 +403,6 @@ class JupyterCompilerPerFileService(
     }
 
     fun provideDefaultConfiguration(sourceCode: SourceCode): ScriptCompilationConfigurationResult {
-        requestScriptingUpdateTestAware()
-
         return ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
             sourceCode,
             lastStableConfiguration.get()

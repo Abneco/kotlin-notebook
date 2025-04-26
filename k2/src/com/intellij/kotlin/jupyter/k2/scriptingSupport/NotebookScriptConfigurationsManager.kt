@@ -6,14 +6,10 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
 import com.intellij.kotlin.jupyter.core.settings.ProjectJdkOption
-import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.getRelativePathFromProjectRoot
-import com.intellij.openapi.application.readAction
-import com.intellij.openapi.progress.blockingContextScope
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.components.serviceAsync
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -36,7 +32,6 @@ import com.intellij.platform.workspace.jps.entities.sourceRoots
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import com.intellij.util.concurrency.annotations.RequiresReadLock
-import kotlinx.coroutines.async
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModuleProvider
 import org.jetbrains.kotlin.analysis.api.projectStructure.analysisContextModule
@@ -65,8 +60,7 @@ class KotlinNotebookScriptEntitySource(virtualFileUrl: VirtualFileUrl) : KotlinS
  *  - preparation of script configurations
  *  - updating internal modules for scripts and its dependency as libraries.
  *
- *  Note that now for each script a separate module is created, and for each module there are its own dependencies.
- *  This is about to change.
+ *  Note that now for each [BackedNotebookVirtualFile] a separate module is created, and for module there are its own dependencies.
  */
 @Service(Service.Level.PROJECT)
 class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedConfigurationResolver, ScriptWorkspaceModelManager {
@@ -82,44 +76,20 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
     ): ScriptConfigurationWithSdk? = get(virtualFile)
 
     /**
-     * Unfortunately, we live in the injection world.
-     * There might be a situation where [VirtualFileWindow] gets invalided soon after it was processed.
-     * In this case, we should try to fall back and pick any other configuration from the Notebook.
+     * Depending on a [VirtualFileWindow] is dangerous as it might get invalidated soon after it was processed.
+     * For this end, one should associate configuration with top level [VirtualFile].
      */
     override fun get(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
-        val stored = cache[virtualFile]
-        if (stored != null) return stored
-
-        if (cache.isEmpty()) return null
-        val notebooksCache = cache.toConfigurationInfoPerNotebook()
-
-        val topLevelFile = (virtualFile as? VirtualFileWindow)?.delegate ?: return null
-        val notebookScriptsCache = notebooksCache[topLevelFile]?.scripts ?: return null
-        if (notebookScriptsCache.isEmpty()) return null
-
-        val recordWithValidWindow = notebookScriptsCache.firstOrNull {
-            it.first.isValid
-        }
-        if (recordWithValidWindow == null) return null
-
-        val (virtualFileWindow, otherConfigurationFromNotebook) = recordWithValidWindow
-
-        // try to add data to the cache
-        KotlinNotebookPluginScope.getForProject(project).async {
-            val scriptWithSdk = ScriptConfigurationWithSdk(
-                otherConfigurationFromNotebook.asSuccess(),
-                notebooksCache[topLevelFile]?.sdkInfo
-            )
-
-            cache[virtualFile] = scriptWithSdk
-
-            // add another module as a context dependency until the update is performed
-            readAction {
-                virtualFile.setUpTemporaryModuleForAnalysis(virtualFileWindow)
-            }
+        val topLevelFile = when (virtualFile) {
+            is VirtualFileWindow -> virtualFile.delegate
+            else -> virtualFile
         }
 
-        return cache[virtualFileWindow]
+        val configuration = cache[topLevelFile]
+        if (configuration == null) {
+            notebookLogger().warn("No configuration found for ${topLevelFile.name}")
+        }
+        return configuration
     }
 
     @OptIn(KaImplementationDetail::class)
@@ -134,27 +104,11 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
             virtualFile.analysisContextModule = null
             val configuration = ktScript.refinedConfigurationResult.asSuccess()
 
-            virtualFile to ScriptConfigurationWithSdk(configuration, sdk)
+            val topLevelFile = (virtualFile as VirtualFileWindow).delegate
+            topLevelFile to ScriptConfigurationWithSdk(configuration, sdk)
         }
 
-        // incremental updates are supported
-        val trimmedCache = cache.toMutableMap()
-            .removeOverlappingRecords(configurations)
-
-        cache.clear()
-        cache.putAll(trimmedCache + configurations)
-    }
-
-    /**
-     * Removes all records related to notebook files before putting new ones from [configurationsUpdate]
-     */
-    private fun MutableMap<VirtualFile, ScriptConfigurationWithSdk>.removeOverlappingRecords(
-        configurationsUpdate: Map<VirtualFile, ScriptConfigurationWithSdk>
-    ): MutableMap<VirtualFile, ScriptConfigurationWithSdk> {
-        val updatesPerNotebookFile = configurationsUpdate.toConfigurationInfoPerNotebook()
-        val keysToRemove = keys.filter { (it as VirtualFileWindow).delegate in updatesPerNotebookFile }
-        keys.removeAll(keysToRemove)
-        return this
+        cache.putAll(configurations)
     }
 
     /**
@@ -190,14 +144,13 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         mutableEntityStorage: MutableEntityStorage
     ) {
         val virtualFileManager = project.serviceAsync<WorkspaceModel>().getVirtualFileUrlManager()
-        var notebookRuntimeDependencies: LibraryEntity? = null
 
         for ((notebookFile, moduleConfigurations) in configurationsPerNotebook) {
             val notebookRuntimeDependencies = virtualFileManager.getNotebookDependenciesAsLibraryEntity(
                 mutableEntityStorage,
                 notebookFile,
                 project,
-                moduleConfigurations.scripts.first().second
+                moduleConfigurations.configuration
             )
 
             updateNotebookConfiguration(project, mutableEntityStorage, moduleConfigurations, notebookRuntimeDependencies)
@@ -236,43 +189,41 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
             NOTEBOOK_MODULE_NAME_PREFIX
         }
 
-        for ((scriptFile, _) in notebookModuleConfiguration.scripts) {
-            val file = Path.of(scriptFile.path).toFile()
-            val relativeLocation = file.nameWithoutExtension
+        val file = Path.of(notebookModuleConfiguration.notebookFile.path).toFile()
+        val relativeLocation = file.nameWithoutExtension
 
-            val locationName = relativeLocation.replace(VfsUtilCore.VFS_SEPARATOR_CHAR, ':')
-            val moduleName = "$moduleNamePrefix.$locationName"
+        val locationName = relativeLocation.replace(VfsUtilCore.VFS_SEPARATOR_CHAR, ':')
+        val moduleName = "$moduleNamePrefix.$locationName"
 
-            val sdkDependency =
-                notebookModuleConfiguration.sdkInfo
-                    ?.let { SdkDependency(SdkId(it.name, it.sdkType.name)) }
+        val sdkDependency =
+            notebookModuleConfiguration.sdkInfo
+                ?.let { SdkDependency(SdkId(it.name, it.sdkType.name)) }
 
-            val source = KotlinNotebookScriptEntitySource(
-                scriptFile.toVirtualFileUrl(
-                    WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
-                )
+        val source = KotlinNotebookScriptEntitySource(
+            notebookModuleConfiguration.notebookFile.toVirtualFileUrl(
+                WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
             )
+        )
 
-            val dependencies = listOfNotNull(
-                LibraryDependency(runtimeLibrary.symbolicId, false, DependencyScope.COMPILE),
-                sdkDependency
-            )
+        val dependencies = listOfNotNull(
+            LibraryDependency(runtimeLibrary.symbolicId, false, DependencyScope.COMPILE),
+            sdkDependency
+        )
 
-            val newEntry = ModuleEntity(moduleName, dependencies, source)
+        val newEntry = ModuleEntity(moduleName, dependencies, source)
 
-            val oldEntry = mutableEntityStorage.resolve(ModuleId(moduleName))
-            if (oldEntry != null) {
-                mutableEntityStorage.modifyModuleEntity(oldEntry) {
-                    this.dependencies = newEntry.dependencies
-                    this.sourceRoots = newEntry.sourceRoots
-                    this.name = newEntry.name
-                }
-                continue
+        val oldEntry = mutableEntityStorage.resolve(ModuleId(moduleName))
+        if (oldEntry != null) {
+            mutableEntityStorage.modifyModuleEntity(oldEntry) {
+                this.dependencies = newEntry.dependencies
+                this.sourceRoots = newEntry.sourceRoots
+                this.name = newEntry.name
             }
-
-            // seen firstly
-            mutableEntityStorage.addEntity(newEntry)
+            return
         }
+
+        // seen firstly
+        mutableEntityStorage.addEntity(newEntry)
     }
 
     companion object {

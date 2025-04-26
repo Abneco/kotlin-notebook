@@ -9,6 +9,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.platform.workspace.jps.entities.LibraryEntity
 import com.intellij.workspaceModel.ide.toPath
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
+import kotlin.script.experimental.api.baseClass
+import kotlin.script.experimental.api.dependencies
+import kotlin.script.experimental.api.implicitReceivers
 
 private class ScriptingEntitiesConsistencyVerifierFactoryK2 : ScriptingEntitiesConsistencyVerifier.Factory {
     override fun create(project: Project): ScriptingEntitiesConsistencyVerifier {
@@ -33,7 +36,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
 
     private fun checkSourceIsNotEmpty(notebookFile: BackedNotebookVirtualFile): Boolean {
         val scriptConfigurationsSource = project.service<NotebookScriptConfigurationsManager>().cache
-        return scriptConfigurationsSource.getConfigurationsForNotebook(notebookFile.file)?.isNotEmpty() == true
+        return scriptConfigurationsSource.getConfigurationForNotebook(notebookFile.file) != null
     }
 
     override fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: String): Boolean {
@@ -45,34 +48,39 @@ private class ScriptingEntitiesConsistencyVerifierK2(
 
     override fun isScriptFileConfigurationConsistentWithModel(virtualFile: BackedNotebookVirtualFile, compilationConfiguration: ScriptCompilationConfiguration): Boolean {
         val configurationsCache = project.service<NotebookScriptConfigurationsManager>().cache
-        val configurationsForNotebookCells = configurationsCache.getConfigurationsForNotebook(virtualFile.file)
+        val configurationForNotebook = configurationsCache.getConfigurationForNotebook(virtualFile.file)
+        if (configurationForNotebook == null) return false
 
         /**
-         * Here we need to perform 3 steps check:
-         *  1. Check the number of script configurations matches the number of cells
-         *  2. Check that the stored compilation configuration from [NotebookScriptConfigurationsManager] matches the refined one, e.g., the latest
-         *  3. Check that dependencies from the refined configuration are present in the Workspace library
+         * Here we need to perform 2 steps check:
+         *  1. Check that the stored compilation configuration from [NotebookScriptConfigurationsManager] matches the refined one.
+         *  2. Check that dependencies from the refined configuration are present in the Workspace library
          *
          *  If any of it is missing, we have a pending update.
          *
          *  NB: A configuration source is a K2 cache for compile configurations,
          *  while the Workspace module contains a dependency used for highlighting.
          */
-        val numberOfConfigurationsMatchesCells = configurationsForNotebookCells?.size == virtualFile.notebook.cellsCount()
-        if (!numberOfConfigurationsMatchesCells) return false
 
         // Check the random one since the configuration for any cell will be the same
-        val configurationWrapper = configurationsForNotebookCells.lastOrNull()
-        val presentInConfigurationSource = configurationWrapper?.configuration == compilationConfiguration
+        val configuration = configurationForNotebook.configuration ?: return false
+        val presentInConfigurationSource = compareConfigurationsData(compilationConfiguration, configuration)
         if (!presentInConfigurationSource) return false
 
         val notebookRuntimeDependencyLibrary = getRuntimeLibraryForNotebook(virtualFile)
         val presentInModuleDependencies = notebookRuntimeDependencyLibrary?.roots.orEmpty()
             .any { root ->
-                val lastDependencyPath = configurationWrapper.dependenciesClassPath.lastOrNull()?.toPath()
+                val lastDependencyPath = configurationForNotebook.dependenciesClassPath.lastOrNull()?.toPath()
                 lastDependencyPath == root.url.toPath()
             }
 
         return presentInModuleDependencies
+    }
+
+    // Check only base things as K2 mode could have extra keys present
+    private fun compareConfigurationsData(current: ScriptCompilationConfiguration, cached: ScriptCompilationConfiguration): Boolean {
+        return current[ScriptCompilationConfiguration.baseClass] == cached[ScriptCompilationConfiguration.baseClass]
+                && current[ScriptCompilationConfiguration.implicitReceivers] == cached[ScriptCompilationConfiguration.implicitReceivers]
+                && current[ScriptCompilationConfiguration.dependencies] == cached[ScriptCompilationConfiguration.dependencies]
     }
 }

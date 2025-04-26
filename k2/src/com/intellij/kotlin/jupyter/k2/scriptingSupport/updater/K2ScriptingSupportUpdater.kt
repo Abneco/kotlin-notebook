@@ -119,14 +119,14 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         for (notebook in notebooks) {
             val notebookService = JupyterCompilerService.getForFile(project, notebook)
             val perFileScripts = readAction {
-                val scriptsToRefine = notebookService.getFilesToRefine()
-                if (scriptsToRefine.isEmpty()) {
-                    return@readAction emptyList()
+                val scriptsToRefine = notebookService.getFilesToRefine().firstOrNull { it.virtualFile.isValid }
+                if (scriptsToRefine == null) {
+                    return@readAction null
                 }
 
                 // refine only once as they are the same per notebook
                 val refinedConfiguration = try {
-                    val anyKtFile = scriptsToRefine.first().ktFile
+                    val anyKtFile = scriptsToRefine.ktFile
                     JupyterKtScriptingSupport.getConfiguration(anyKtFile)?.valueOrNull()?.configuration!!
                 } catch (e: Throwable) {
                     throw e
@@ -150,18 +150,18 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                     }
                 }
 
-                scriptsToRefine.map { ktFileScriptSource ->
-                    KotlinNotebookScriptModel(
-                        ktFileScriptSource.virtualFile,
-                        ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
-                            ktFileScriptSource,
-                            configurationWithStableReceivers
-                        )
-                    ) to ktFileScriptSource.ktFile
-                }
+                KotlinNotebookScriptModel(
+                    scriptsToRefine.virtualFile,
+                    ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
+                        scriptsToRefine,
+                        configurationWithStableReceivers
+                    )
+                ) to scriptsToRefine.ktFile
             }
 
-            scripts.putAll(perFileScripts)
+            if (perFileScripts != null) {
+                scripts.put(perFileScripts.first, perFileScripts.second)
+            }
         }
 
         if (scripts.isEmpty()) {
@@ -170,6 +170,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         }
 
         project.serviceAsync<NotebookScriptConfigurationsManager>().updateConfigurations(scripts.keys)
+        // Might be the case our own strategy is needed
         DefaultScriptResolutionStrategy.getInstance(project).execute(*scripts.values.toTypedArray())
     }
 }
