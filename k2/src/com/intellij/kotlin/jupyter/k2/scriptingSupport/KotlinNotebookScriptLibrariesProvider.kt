@@ -4,13 +4,17 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.injectedScriptLibraryDependencies
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
+import com.intellij.platform.workspace.jps.entities.LibraryEntity
+import com.intellij.platform.workspace.jps.entities.LibraryRootTypeId
 import com.intellij.workspaceModel.ide.impl.legacyBridge.library.ProjectLibraryTableBridgeImpl.Companion.libraryMap
+import kotlinx.coroutines.async
 import org.jetbrains.kotlin.idea.core.script.dependencies.ScriptAdditionalIdeaDependenciesProvider
 
 /**
@@ -30,12 +34,31 @@ class KotlinNotebookScriptLibrariesProvider : ScriptAdditionalIdeaDependenciesPr
         val snapshot = WorkspaceModel.getInstance(project).currentSnapshot
         val libraryDependencies = virtualFile.injectedScriptLibraryDependencies(project, snapshot)
         if (libraryDependencies.isEmpty()) {
-            notebookLogger().warn("No library dependencies found for notebook file: ${virtualFile.path}")
+            notebookLogger().warn("No library dependencies found for notebook file: ${virtualFile.name}")
+            return emptyList()
         }
 
-        return libraryDependencies.mapNotNull { dependency ->
-            val entity = snapshot.resolve(dependency.library) ?: return@mapNotNull null
-            snapshot.libraryMap.getDataByEntity(entity)
+        val resolvedLibraries = libraryDependencies.mapNotNull { dependency ->
+            snapshot.resolve(dependency.library) ?: return@mapNotNull null
         }
+        KotlinNotebookPluginScope.getForProject(project).async {
+            resolvedLibraries.logLibrariesRoots(virtualFile)
+        }
+
+        return resolvedLibraries.mapNotNull { dependency ->
+            snapshot.libraryMap.getDataByEntity(dependency)
+        }
+    }
+
+    private fun List<LibraryEntity>.logLibrariesRoots(virtualFile: VirtualFile) {
+        val dependencies = this
+        val rootsInfo = buildString {
+            dependencies.forEach { libraryDependency ->
+                append(
+                    libraryDependency.roots.filter { it.type == LibraryRootTypeId.COMPILED }.joinToString("\n") { it.url.presentableUrl }
+                )
+            }
+        }
+        notebookLogger().debug("Found ${dependencies.size} library dependencies for notebook file: ${virtualFile.name}, roots:\n$rootsInfo\n")
     }
 }
