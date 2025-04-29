@@ -25,6 +25,9 @@ import org.jetbrains.kotlin.idea.core.script.dependencies.ScriptAdditionalIdeaDe
  * Note that it works for K2 mode; K1 is handled by a legacy approach.
  */
 class KotlinNotebookScriptLibrariesProvider : ScriptAdditionalIdeaDependenciesProvider() {
+    companion object {
+        private val LOG = notebookLogger()
+    }
     override fun getRelatedModules(file: VirtualFile, project: Project): List<Module> = emptyList()
 
     override fun getRelatedLibraries(file: VirtualFile, project: Project): List<Library> {
@@ -34,7 +37,7 @@ class KotlinNotebookScriptLibrariesProvider : ScriptAdditionalIdeaDependenciesPr
         val snapshot = WorkspaceModel.getInstance(project).currentSnapshot
         val libraryDependencies = virtualFile.injectedScriptLibraryDependencies(project, snapshot)
         if (libraryDependencies.isEmpty()) {
-            notebookLogger().warn("No library dependencies found for notebook file: ${virtualFile.name}")
+            LOG.warn("No library dependencies found for notebook file: ${virtualFile.name}")
             return emptyList()
         }
 
@@ -59,6 +62,6 @@ class KotlinNotebookScriptLibrariesProvider : ScriptAdditionalIdeaDependenciesPr
                 )
             }
         }
-        notebookLogger().debug("Found ${dependencies.size} library dependencies for notebook file: ${virtualFile.name}, roots:\n$rootsInfo\n")
+        LOG.debug("Found ${dependencies.size} library dependencies for notebook file: ${virtualFile.name}, roots:\n$rootsInfo\n")
     }
 }
