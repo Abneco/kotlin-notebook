@@ -519,7 +519,7 @@ class JupyterCompilerPerFileService(
                 implicitsList.addClass(it.fromClass!!)
             }
             LOG.debug {
-                "Added classes to implicitList: ${newStableReceivers.flatMap { it.snippetTypes.map { type -> type.typeName } }}"
+                "Added classes in ${virtualFile.file.name} to implicitList: ${newStableReceivers.flatMap { it.snippetTypes.map { type -> type.typeName } }}"
             }
 
             implicitReceiversClassPathData.removeAll(newStableReceivers)
@@ -551,6 +551,7 @@ class JupyterCompilerPerFileService(
                 val lastScriptPath = getLastScriptArtifactPath() ?: return@async
 
                 if (!scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, lastScriptPath)) {
+                    LOG.info("Configuration is not consistent for ${virtualFile.file.name}, absent $lastScriptPath")
                     scriptsChangePublisher.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.INCOMPLETE)
                     return@async
                 }
