@@ -171,6 +171,6 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
         project.serviceAsync<NotebookScriptConfigurationsManager>().updateConfigurations(scripts.keys)
         // Might be the case our own strategy is needed
-        DefaultScriptResolutionStrategy.getInstance(project).execute(*scripts.values.toTypedArray())
+        DefaultScriptResolutionStrategy.getInstance(project).execute(*scripts.values.toTypedArray()).join()
     }
 }
