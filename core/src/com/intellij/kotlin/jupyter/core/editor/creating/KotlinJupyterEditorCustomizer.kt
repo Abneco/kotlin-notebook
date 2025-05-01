@@ -5,7 +5,7 @@ import com.intellij.codeInsight.folding.impl.FoldingUpdate
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.data.input.JupyterDataInputSettings
 import com.intellij.jupyter.core.jupyter.editor.JupyterEditorCustomizer
-import com.intellij.jupyter.core.jupyter.editor.isJupyter
+import com.intellij.jupyter.core.jupyter.helper.isJupyter
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.reactOnThemeChangedEvent
 import com.intellij.kotlin.jupyter.core.editor.typing.NotebookCaretListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService

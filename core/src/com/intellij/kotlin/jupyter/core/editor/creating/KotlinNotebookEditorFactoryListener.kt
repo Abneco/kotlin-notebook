@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.editor.creating
 
 import com.intellij.jupyter.core.editor.NotebookEditorCreatedCallback
-import com.intellij.jupyter.core.jupyter.editor.isJupyter
+import com.intellij.jupyter.core.jupyter.helper.isJupyter
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookPerFileSettingsCache
 import com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook

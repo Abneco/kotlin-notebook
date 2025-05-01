@@ -3,11 +3,11 @@ package com.intellij.kotlin.jupyter.tables
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.jupyter.core.jackson
-import com.intellij.jupyter.core.jupyter.editor.isJupyter
 import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputDataKey
 import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.editor.outputs.getOutputsForIndex
 import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.JupyterWebOutputInfo
+import com.intellij.jupyter.core.jupyter.helper.isJupyter
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterExecuteResultOutput
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputType
 import com.intellij.jupyter.tables.JupyterTableOutputDataKey
