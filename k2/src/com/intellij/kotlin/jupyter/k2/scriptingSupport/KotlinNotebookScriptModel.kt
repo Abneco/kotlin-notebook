@@ -1,7 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
-import com.intellij.ide.scratch.ScratchUtil
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
@@ -35,7 +34,7 @@ internal fun Map<VirtualFile, ScriptConfigurationWithSdk>.toConfigurationInfoPer
     val configurations = this.mapValues { it.value.scriptConfiguration }
 
     return configurations.filterNot {
-        ScratchUtil.isScratch(it.key) || it.value.valueOrNull() == null
+        it.value.valueOrNull() == null
     }.mapValues { entry ->
         val (topLevelFile, configuration) = entry
         KotlinNotebookScriptsModuleConfigurationInfo(
