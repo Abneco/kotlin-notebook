@@ -6,10 +6,6 @@ import com.intellij.jupyter.core.jupyter.connections.action.getJupyterNotebookRu
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterNotebookOfflineSettings
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterNotebookSessionSettings
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.ManagedJupyterServerNotebookSessionSettings
-import com.intellij.jupyter.core.jupyter.connections.managed.state.JupyterServerFinished
-import com.intellij.jupyter.core.jupyter.connections.managed.state.JupyterServerStarted
-import com.intellij.jupyter.core.jupyter.connections.managed.state.JupyterServerStarting
-import com.intellij.jupyter.core.jupyter.connections.managed.state.JupyterServerStopped
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServerUtils.getJupyterServer
 import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookFile
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
@@ -83,12 +79,10 @@ object JupyterKotlinRestartKernelActionUpdater {
             when (runtimeSettings) {
                 is JupyterNotebookOfflineSettings -> serverIsOffline()
                 is JupyterNotebookSessionSettings -> serverIsOnline()
-                is ManagedJupyterServerNotebookSessionSettings -> when (runtimeSettings.jupyterServerExecution.state) {
-                    is JupyterServerFinished,
-                    JupyterServerStarting,
-                    JupyterServerStopped,
-                        -> serverIsOffline()
-                    is JupyterServerStarted -> serverIsOnline()
+                is ManagedJupyterServerNotebookSessionSettings -> if (runtimeSettings.jupyterServerExecution.state.isStarted()) {
+                    serverIsOnline()
+                } else {
+                    serverIsOffline()
                 }
             }
         }
