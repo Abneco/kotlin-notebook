@@ -551,10 +551,13 @@ class JupyterCompilerPerFileService(
             implicitReceiversClassPathData.add(snippetData)
         }
 
-        override fun afterUpdate() {
+        override fun afterUpdate(notebooks: Collection<BackedNotebookVirtualFile>?) {
             coroutineScope.async {
                 // return if afterUpdate triggerred for another service
                 val lastScriptPath = getLastScriptArtifactPath() ?: return@async
+                if (notebooks != null && !notebooks.contains(virtualFile)) {
+                    return@async
+                }
 
                 if (!scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, lastScriptPath)) {
                     LOG.info("Configuration is not consistent for ${virtualFile.file.name}, absent $lastScriptPath")

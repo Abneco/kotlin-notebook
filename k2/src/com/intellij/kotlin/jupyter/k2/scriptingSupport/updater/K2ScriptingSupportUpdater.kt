@@ -7,6 +7,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterS
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
 import com.intellij.kotlin.jupyter.core.ide.handlers.UpdaterConstructorData
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
+import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerPerFileService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
@@ -45,7 +46,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         project.messageBus.connect(parentDisposable)
             .subscribe(
                 JUPYTER_SESSION_LIFETIME_TOPIC,
-                object: JupyterSessionLifetimeListener {
+                object : JupyterSessionLifetimeListener {
                     override fun sessionWillTerminate(notebookFile: BackedNotebookVirtualFile) {
                         clearRuntimeDependenciesFor(notebookFile)
                     }
@@ -69,10 +70,10 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         val scope = KotlinNotebookPluginScope.getForProject(project)
 
         scope.launch(exceptionHandler) {
-            updateK2Configurations(editorManager, project)
+            val updatedNotebooks = updateK2Configurations(editorManager, project)
 
             K2ScriptDefinitionProvider.getInstance(project).reloadDefinitionsFromSources()
-            project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).afterUpdate()
+            project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).afterUpdate(updatedNotebooks)
         }
     }
 
@@ -83,14 +84,14 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         val scope = KotlinNotebookPluginScope.getForProject(project)
         scope.async {
             project.serviceIfCreated<NotebookScriptConfigurationsManager>()
-              ?.clearNotebookLibraryDependencies(
-                  notebookFile
-              )
+                ?.clearNotebookLibraryDependencies(
+                    notebookFile
+                )
         }
     }
 
-    private suspend fun updateK2Configurations(editorManager: FileEditorManager, project: Project) {
-        if (project.isDisposed) return
+    private suspend fun updateK2Configurations(editorManager: FileEditorManager, project: Project): Collection<BackedNotebookVirtualFile>? {
+        if (project.isDisposed) return null
 
         val editors = editorManager.allEditors
         val openFiles = editors.mapNotNull { it.file }
@@ -103,10 +104,12 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         // Early return
         if (notebooks.isEmpty()) {
             LOG.debug("No notebooks to update")
-            return
+            return emptySet()
         }
 
         updateK2Impl(project, notebooks)
+
+        return notebooks
     }
 
     private suspend fun updateK2Impl(project: Project, notebooks: Collection<BackedNotebookVirtualFile>) {
@@ -131,28 +134,18 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                 }
 
                 /**
-                 * Data race preventing trick:
-                 * pass the refined (new) one configuration to the cache,
-                 * but set implicitReceivers from the stable one,
-                 * thus, libraryRoots and classes of the module will be up to date with stable receivers.
+                 * Refined configuration contains only checked receivers from [JupyterCompilerPerFileService].
                  */
-                val stableConfiguration = notebookService.stableConfiguration
-
-                val configurationWithStableReceivers = ScriptCompilationConfiguration(refinedConfiguration) {
-                    val stableClasses = stableConfiguration[implicitReceivers]
-                    if (stableClasses != null) {
-                        implicitReceivers(stableClasses)
-                    }
-                    LOG.debug {
-                        "Stable implicit receivers for notebook '${notebook.file.name}': ${stableClasses?.map { it.typeName }}"
-                    }
+                val stableClasses = refinedConfiguration[ScriptCompilationConfiguration.implicitReceivers]
+                LOG.debug {
+                    "Stable implicit receivers for notebook '${notebook.file.name}': ${stableClasses?.map { it.typeName }}"
                 }
 
                 KotlinNotebookScriptModel(
                     scriptsToRefine.virtualFile,
                     ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
                         scriptsToRefine,
-                        configurationWithStableReceivers
+                        refinedConfiguration
                     )
                 ) to scriptsToRefine.ktFile
             }
@@ -162,7 +155,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
             // Skip if already exists
             if (perFileScripts != null && storedConfiguration != perFileScripts.first.refinedConfigurationResult.configuration) {
-                scripts.put(perFileScripts.first, perFileScripts.second)
+                scripts[perFileScripts.first] = perFileScripts.second
             }
         }
 
