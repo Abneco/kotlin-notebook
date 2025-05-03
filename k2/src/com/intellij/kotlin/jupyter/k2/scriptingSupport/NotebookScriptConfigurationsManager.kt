@@ -6,13 +6,11 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
 import com.intellij.kotlin.jupyter.core.settings.ProjectJdkOption
-import com.intellij.kotlin.jupyter.core.util.getRelativePathFromProjectRoot
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.components.serviceAsync
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.ProjectJdkTable
-import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
@@ -42,7 +40,6 @@ import org.jetbrains.kotlin.idea.core.script.k2.ScriptRefinedConfigurationResolv
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptWorkspaceModelManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
-import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.script.experimental.api.asSuccess
 
@@ -86,7 +83,7 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         }
 
         val configuration = cache[topLevelFile]
-        if (configuration == null) {
+        if (cache.isNotEmpty() && configuration == null) {
             notebookLogger().warn("No configuration found for ${topLevelFile.name}")
         }
         return configuration
@@ -182,18 +179,7 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         notebookModuleConfiguration: KotlinNotebookScriptsModuleConfigurationInfo,
         runtimeLibrary: LibraryEntity
     ) {
-        val prefixFromProjectRoot = notebookModuleConfiguration.notebookFile.getRelativePathFromProjectRoot(project)?.parent
-        val moduleNamePrefix = if (prefixFromProjectRoot != null) {
-            "$NOTEBOOK_MODULE_NAME_PREFIX.$prefixFromProjectRoot"
-        } else {
-            NOTEBOOK_MODULE_NAME_PREFIX
-        }
-
-        val file = Path.of(notebookModuleConfiguration.notebookFile.path).toFile()
-        val relativeLocation = file.nameWithoutExtension
-
-        val locationName = relativeLocation.replace(VfsUtilCore.VFS_SEPARATOR_CHAR, ':')
-        val moduleName = "$moduleNamePrefix.$locationName"
+        val moduleName = notebookModuleConfiguration.notebookFile.toK2RuntimeModuleName(project)
 
         val sdkDependency =
             notebookModuleConfiguration.sdkInfo

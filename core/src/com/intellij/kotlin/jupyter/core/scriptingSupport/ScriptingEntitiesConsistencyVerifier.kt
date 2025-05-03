@@ -6,6 +6,8 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandle
 import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier.Companion.create
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.util.concurrency.annotations.RequiresReadLock
+import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 
 
@@ -22,6 +24,13 @@ interface ScriptingEntitiesConsistencyVerifier : KotlinPluginModeAwareHandler {
      * Check for presence of classpath part in artifacts cache
      */
     fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: String): Boolean
+
+    /**
+     * Returns the list of types that are present in the FileIndex, e.g., for them there exists stub or other indexed representation.
+     * Might get suspended on index rebuilt.
+     */
+    @RequiresReadLock
+    suspend fun filterTypesPresentInIndexes(virtualFile: BackedNotebookVirtualFile, types: Collection<KotlinType>): Collection<KotlinType>
 
     /**
      * Checks for the presence of a particular refined configuration

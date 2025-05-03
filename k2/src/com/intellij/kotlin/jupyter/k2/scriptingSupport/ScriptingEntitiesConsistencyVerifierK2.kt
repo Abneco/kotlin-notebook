@@ -2,12 +2,17 @@
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.projectModel.kotlin.getIndexedTopLevelClassifiersFiltered
 import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier
 import com.intellij.kotlin.jupyter.core.scriptingSupport.workSpaceSnapshot
+import com.intellij.kotlin.jupyter.k2.projectModel.findK2WorkspaceModule
+import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.platform.workspace.jps.entities.LibraryEntity
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.intellij.workspaceModel.ide.toPath
+import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.baseClass
 import kotlin.script.experimental.api.dependencies
@@ -37,6 +42,23 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     private fun checkSourceIsNotEmpty(notebookFile: BackedNotebookVirtualFile): Boolean {
         val scriptConfigurationsSource = project.service<NotebookScriptConfigurationsManager>().cache
         return scriptConfigurationsSource.getConfigurationForNotebook(notebookFile.file) != null
+    }
+
+    /**
+     * KaModules get invalidated during scripting update.
+     * However, this method is invoked after changes are made to a Workspace model;
+     * hence, it's assumed everything is rebuilt by this time.
+     */
+    @RequiresReadLock
+    override suspend fun filterTypesPresentInIndexes(virtualFile: BackedNotebookVirtualFile, types: Collection<KotlinType>): Collection<KotlinType> {
+        val module = virtualFile.findK2WorkspaceModule(project) ?: return emptySet()
+
+        return smartReadAction(project) {
+            val allIndexed = module.getIndexedTopLevelClassifiersFiltered(project).map {
+                it.fqName?.asString()
+            }
+            types.filter { it.typeName in allIndexed }
+        }
     }
 
     override fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: String): Boolean {

@@ -57,6 +57,7 @@ import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -494,18 +495,16 @@ class JupyterCompilerPerFileService(
     }
 
     private inner class ScriptingSupportEventsProcessor : ScriptingSupportUpdateEventsListener, ImplicitListsConfigurationUpdater {
-        private val implicitReceiversClassPathData = mutableListOf<ClassPathSnippetsLoadedData>()
+        private val implicitReceiversClassPathData = ConcurrentLinkedQueue<ClassPathSnippetsLoadedData>()
 
-        private fun updateLastStableConfiguration() {
+        private suspend fun updateLastStableConfiguration() {
             while (true) {
                 val lastStableConf = lastStableConfiguration.get()
                 val updatedConfiguration = handleBeforeCompiling(project.baseScriptingCompilationConfiguration)
 
                 if (lastStableConfiguration.compareAndSet(lastStableConf, updatedConfiguration)) {
                     LOG.info("Cached configuration updated for ${virtualFile.file.name}!")
-                    writeData {
-                        updateImplicitLists()
-                    }
+                    updateImplicitLists()
                     break
                 }
             }
@@ -515,7 +514,7 @@ class JupyterCompilerPerFileService(
          * It might be the case that added new classes are not yet present in stored configurations.
          * For them to appear in the stable configuration cache, we need to invoke update once again.
          */
-        private fun updateImplicitLists() {
+        private suspend fun updateImplicitLists() {
             if (implicitReceiversClassPathData.isEmpty()) return
 
             val newStableReceivers = getSnippetsReadyForConfigurationUpdate()
@@ -526,12 +525,14 @@ class JupyterCompilerPerFileService(
                 "Added classes in ${virtualFile.file.name} to implicitList: ${newStableReceivers.flatMap { it.snippetTypes.map { type -> type.typeName } }}"
             }
 
+            // someone already made everything
+            if (implicitReceiversClassPathData.isEmpty()) {
+                return
+            }
+
             implicitReceiversClassPathData.removeAll(newStableReceivers)
 
-            // release write lock fast
-            coroutineScope.async {
-                requestScriptingUpdate()
-            }
+            requestScriptingUpdate()
         }
 
         val lastLoadedTypeOrNull: KotlinType? get() {
@@ -539,9 +540,10 @@ class JupyterCompilerPerFileService(
             return loadedSnippets?.lastOrNull()
         }
 
-        override fun getSnippetsReadyForConfigurationUpdate(): List<ClassPathSnippetsLoadedData> {
-            return implicitReceiversClassPathData.filter { snippetData ->
-                scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, snippetData.path.toString())
+        override suspend fun getSnippetsReadyForConfigurationUpdate(): List<ClassPathSnippetsLoadedData> {
+            return implicitReceiversClassPathData.toList().filter {
+                val presentTypes = scriptConsistencyVerifier.filterTypesPresentInIndexes(virtualFile, it.snippetTypes)
+                presentTypes == it.snippetTypes
             }
         }
 

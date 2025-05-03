@@ -19,5 +19,5 @@ internal data class ClassPathSnippetsLoadedData(
 internal interface ImplicitListsConfigurationUpdater {
     fun addLoadedSnippet(snippetData: ClassPathSnippetsLoadedData)
 
-    fun getSnippetsReadyForConfigurationUpdate(): List<ClassPathSnippetsLoadedData>
+    suspend fun getSnippetsReadyForConfigurationUpdate(): List<ClassPathSnippetsLoadedData>
 }

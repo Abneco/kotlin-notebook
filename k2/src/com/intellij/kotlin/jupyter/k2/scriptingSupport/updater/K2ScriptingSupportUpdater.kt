@@ -94,7 +94,6 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
         val editors = editorManager.allEditors
         val openFiles = editors.mapNotNull { it.file }
-        val publisher = project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC)
 
         val notebooks = openFiles
             .filter { it.fileType is JupyterFileType }
@@ -104,7 +103,6 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         // Early return
         if (notebooks.isEmpty()) {
             LOG.debug("No notebooks to update")
-            publisher.afterUpdate()
             return
         }
 
@@ -159,13 +157,17 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                 ) to scriptsToRefine.ktFile
             }
 
-            if (perFileScripts != null) {
+            val storedConfiguration = project.serviceAsync<NotebookScriptConfigurationsManager>().cache[notebook.file]
+                ?.scriptConfiguration?.valueOrNull()?.configuration
+
+            // Skip if already exists
+            if (perFileScripts != null && storedConfiguration != perFileScripts.first.refinedConfigurationResult.configuration) {
                 scripts.put(perFileScripts.first, perFileScripts.second)
             }
         }
 
         if (scripts.isEmpty()) {
-            LOG.warn("No scripts to refine found, might be in initialization phase. Notebooks: $notebookNames")
+            LOG.info("No scripts to refine found, skipping update. Notebooks: $notebookNames")
             return
         }
 
