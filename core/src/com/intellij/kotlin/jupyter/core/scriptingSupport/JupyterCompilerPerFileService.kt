@@ -44,6 +44,8 @@ import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
@@ -496,15 +498,20 @@ class JupyterCompilerPerFileService(
 
     private inner class ScriptingSupportEventsProcessor : ScriptingSupportUpdateEventsListener, ImplicitListsConfigurationUpdater {
         private val implicitReceiversClassPathData = ConcurrentLinkedQueue<ClassPathSnippetsLoadedData>()
+        private val implicitListsUpdateMutex = Mutex()
 
-        private suspend fun updateLastStableConfiguration() {
+        private fun updateLastStableConfiguration() {
             while (true) {
                 val lastStableConf = lastStableConfiguration.get()
                 val updatedConfiguration = handleBeforeCompiling(project.baseScriptingCompilationConfiguration)
 
                 if (lastStableConfiguration.compareAndSet(lastStableConf, updatedConfiguration)) {
                     LOG.info("Cached configuration updated for ${virtualFile.file.name}!")
-                    updateImplicitLists()
+                    coroutineScope.async {
+                        implicitListsUpdateMutex.withLock {
+                            updateImplicitLists()
+                        }
+                    }
                     break
                 }
             }
@@ -518,8 +525,11 @@ class JupyterCompilerPerFileService(
             if (implicitReceiversClassPathData.isEmpty()) return
 
             val newStableReceivers = getSnippetsReadyForConfigurationUpdate()
-            newStableReceivers.flatMap { it.snippetTypes }.forEach {
-                implicitsList.addClass(it.fromClass!!)
+
+            writeData {
+                newStableReceivers.flatMap { it.snippetTypes }.forEach {
+                    implicitsList.addClass(it.fromClass!!)
+                }
             }
             LOG.debug {
                 "Added classes in ${virtualFile.file.name} to implicitList: ${newStableReceivers.flatMap { it.snippetTypes.map { type -> type.typeName } }}"
