@@ -144,7 +144,7 @@ inline fun <R> runSafely(action: () -> R, onFailure: (Throwable) -> Unit): R? {
     }
 }
 
-inline fun <R> runSafelyTyped(crossinline action: () -> R, crossinline onFailure: (Throwable) -> R): R {
+suspend inline fun <R> runSafelyTyped(crossinline action: suspend () -> R, crossinline onFailure: (Throwable) -> R): R {
     return try {
         action()
     } catch (e: Throwable) {

@@ -34,6 +34,7 @@ import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingCancellable
+import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.ThreadingAssertions
@@ -62,9 +63,6 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.concurrent.read
-import kotlin.concurrent.write
 import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
@@ -109,12 +107,17 @@ class JupyterCompilerPerFileService(
     // that hold the session state
     // Please don't use it directly.
     // Also note that acquiring this lock inside read/write action may lead to the deadlock, never do it.
-    private val dataLock = ReentrantReadWriteLock()
+    //private val dataLock = ReentrantReadWriteLock()
+    private val dataLock = Mutex()
 
-    private inline fun <R> writeData(crossinline action: () -> R) = dataLock.write(action)
-    private inline fun <R> readData(crossinline action: () -> R) = dataLock.read(action)
-    private fun <R> readDataWithReadAction(action: () -> R): R = readData {
-        ReadAction.compute<R, Throwable>(action)
+    private suspend inline fun <R> writeData(crossinline action: () -> R) = dataLock.withLock(null, action)
+    private suspend inline fun <R> readData(crossinline action: () -> R) = dataLock.withLock(null, action)
+    private fun <R> readDataBlocking(action: () -> R): R = runBlockingMaybeCancellable {
+        coroutineScope.async {
+            writeData {
+                action()
+            }
+        }.await()
     }
 
     private val directoryCounter = AtomicInteger(0)
@@ -167,9 +170,7 @@ class JupyterCompilerPerFileService(
      * pending update to Scripting infrastructure.
      */
     val needsConfigurationUpdate: Boolean get() {
-        val hasNewReceivers = readData {
-            scriptingSupportUpdatesProcessor.lastLoadedTypeOrNull != null
-        }
+        val hasNewReceivers = scriptingSupportUpdatesProcessor.lastLoadedTypeOrNull != null
         if (hasNewReceivers) {
             return true
         }
@@ -195,26 +196,38 @@ class JupyterCompilerPerFileService(
     }
 
     fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
-        return readDataWithReadAction {
+        val ktFiles = ReadAction.compute<List<KtFile>, Throwable> {
             val notebookPsiFile = virtualFile.file.findPsiFile(project)
-            val ktFiles = notebookPsiFile.getInjectedKtFiles()
-            val configurations = ktFiles.mapNotNull { ktFile ->
-                val conf = JupyterKtScriptingSupport.getConfiguration(ktFile)?.valueOrNull()
-                if (conf == null || conf.dependenciesClassPath.isEmpty()) {
-                    ktFile.reportAsAttachment()
-                    null
-                } else {
-                    ktFile.virtualFile to conf
-                }
-            }
-
-            configurations
+            notebookPsiFile.getInjectedKtFiles()
         }
+
+        return ktFiles.getConfigurations()
+    }
+
+    suspend fun scriptsAsync(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
+        val ktFiles = readAction {
+            val notebookPsiFile = virtualFile.file.findPsiFile(project)
+            notebookPsiFile.getInjectedKtFiles()
+        }
+
+        return ktFiles.getConfigurations()
     }
 
     fun getFilesToRefine(): List<KtFileScriptSource> {
         val notebookPsiFile = virtualFile.file.findPsiFile(project)
         return notebookPsiFile.getInjectedKtFiles().map { KtFileScriptSource(it) }
+    }
+
+    private fun Collection<KtFile>.getConfigurations(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
+        return mapNotNull { ktFile ->
+            val conf = JupyterKtScriptingSupport.getConfiguration(ktFile)?.valueOrNull()
+            if (conf == null || conf.dependenciesClassPath.isEmpty()) {
+                ktFile.reportAsAttachment()
+                null
+            } else {
+                ktFile.virtualFile to conf
+            }
+        }
     }
 
     private fun KtFile.reportAsAttachment() {
@@ -307,7 +320,7 @@ class JupyterCompilerPerFileService(
         val sourceText = sourceCode?.text
         LOG.debug("Before-compiling callback for script: $sourceText")
 
-        return readData {
+        return readDataBlocking {
             val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
             ScriptCompilationConfiguration(withNewClasspath) {
                 if (_currentClasspath.hasInitialPart) {
@@ -402,10 +415,12 @@ class JupyterCompilerPerFileService(
         val compiledClassifiers = snippetMetadata.compiledData.scripts.filterNot { it.isImplicitReceiver }
         val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
 
-        if (loadReceiverClassesIfAny(lineClassesDir, kClassNames)) {
-            defaultImportsEnhancer.updateDefaultImports(
-                compiledClassifiers, additionalDefaultImports
-            )
+        coroutineScope.async { // perform in another thread
+            if (loadReceiverClassesIfAny(lineClassesDir, kClassNames)) {
+                defaultImportsEnhancer.updateDefaultImports(
+                    compiledClassifiers, additionalDefaultImports
+                )
+            }
         }
     }
 
@@ -440,7 +455,7 @@ class JupyterCompilerPerFileService(
     }
 
     // Returns true if some receiver classes were loaded, false otherwise
-    private fun loadReceiverClassesIfAny(classesDirPath: Path, classesToLoad: Collection<String>): Boolean {
+    private suspend fun loadReceiverClassesIfAny(classesDirPath: Path, classesToLoad: Collection<String>): Boolean {
         if (classesToLoad.isEmpty()) {
             return false
         }
@@ -480,18 +495,20 @@ class JupyterCompilerPerFileService(
     }
 
     override fun dispose() {
-        writeData {
-            _currentClasspath.clear()
-            additionalDefaultImports.clear()
-            implicitsList.clear()
-            scriptingSupportUpdatesProcessor.clear()
-            lastStableConfiguration.set(project.baseScriptingCompilationConfiguration)
-            defaultImportsEnhancer.clear()
-            if (!project.isDisposed) {
-                NotebookStructureTrackerService.getInstance(project).remove(virtualFile)
-            }
+        coroutineScope.async {
+            writeData {
+                _currentClasspath.clear()
+                additionalDefaultImports.clear()
+                implicitsList.clear()
+                scriptingSupportUpdatesProcessor.clear()
+                lastStableConfiguration.set(project.baseScriptingCompilationConfiguration)
+                defaultImportsEnhancer.clear()
+                if (!project.isDisposed) {
+                    NotebookStructureTrackerService.getInstance(project).remove(virtualFile)
+                }
 
             classesDir.delete(true)
+            }
             coroutineScope.cancel()
         }
     }
