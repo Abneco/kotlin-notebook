@@ -34,5 +34,6 @@
     <orderEntry type="module" module-name="intellij.notebooks.jupyter.core" />
     <orderEntry type="module" module-name="intellij.platform.ide.impl" />
     <orderEntry type="module" module-name="kotlin.base.code-insight" />
+    <orderEntry type="module" module-name="intellij.platform.lang.impl" />
   </component>
 </module>
