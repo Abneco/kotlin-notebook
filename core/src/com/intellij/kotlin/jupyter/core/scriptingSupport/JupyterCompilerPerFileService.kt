@@ -120,7 +120,7 @@ class JupyterCompilerPerFileService(
 
     private val directoryCounter = AtomicInteger(0)
     private val lastClasspathUpdate = AtomicReference<String>()
-    private val isStateUpdating = AtomicReference<Boolean>()
+    private val isStateUpdating = AtomicReference(true)
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -169,14 +169,14 @@ class JupyterCompilerPerFileService(
      */
     val needsConfigurationUpdate: Boolean get() {
         val hasNewReceivers = scriptingSupportUpdatesProcessor.lastLoadedTypeOrNull != null
-        if (hasNewReceivers || isStateUpdating.get()) {
-            return true
+
+        when {
+            hasNewReceivers || isStateUpdating.get() -> return true
+            // means service is restarted; the base class is absent
+            lastStableConfiguration.get() == project.baseScriptingCompilationConfiguration -> return true
         }
 
-        return !scriptConsistencyVerifier.isScriptFileConfigurationConsistentWithModel(
-            virtualFile,
-            lastStableConfiguration.get()
-        )
+        return isStateUpdating.get()
     }
 
     init {
