@@ -70,6 +70,8 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         val scope = KotlinNotebookPluginScope.getForProject(project)
 
         scope.launch(exceptionHandler) {
+            if (project.isDisposed) return@launch
+
             val updatedNotebooks = updateK2Configurations(editorManager, project)
 
             K2ScriptDefinitionProvider.getInstance(project).reloadDefinitionsFromSources()

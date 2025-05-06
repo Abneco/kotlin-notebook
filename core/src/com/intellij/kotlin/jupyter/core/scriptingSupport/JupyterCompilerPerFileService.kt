@@ -104,17 +104,15 @@ class JupyterCompilerPerFileService(
     }
 
     // This lock is used to avoid concurrent modifications of data structures
-    // that hold the session state
+    // that hold the session state from coroutines.
     // Please don't use it directly.
     // Also note that acquiring this lock inside read/write action may lead to the deadlock, never do it.
-    //private val dataLock = ReentrantReadWriteLock()
+    // Use 'accessDataBlocking' for non-suspended context.
     private val dataLock = Mutex()
-
-    private suspend inline fun <R> writeData(crossinline action: () -> R) = dataLock.withLock(null, action)
-    private suspend inline fun <R> readData(crossinline action: () -> R) = dataLock.withLock(null, action)
-    private fun <R> readDataBlocking(action: () -> R): R = runBlockingMaybeCancellable {
+    private suspend inline fun <R> accessData(crossinline action: () -> R) = dataLock.withLock(null, action)
+    private fun <R> accessDataBlocking(action: () -> R): R = runBlockingMaybeCancellable {
         coroutineScope.async {
-            writeData {
+            accessData {
                 action()
             }
         }.await()
@@ -122,6 +120,7 @@ class JupyterCompilerPerFileService(
 
     private val directoryCounter = AtomicInteger(0)
     private val lastClasspathUpdate = AtomicReference<String>()
+    private val isStateUpdating = AtomicReference<Boolean>()
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -162,7 +161,6 @@ class JupyterCompilerPerFileService(
 
     private val scriptingSupportUpdatesProcessor = ScriptingSupportEventsProcessor()
 
-    val stableConfiguration: ScriptCompilationConfiguration get() = lastStableConfiguration.get()
     val executedCellsCount: Int get() = directoryCounter.get()
 
     /**
@@ -171,13 +169,13 @@ class JupyterCompilerPerFileService(
      */
     val needsConfigurationUpdate: Boolean get() {
         val hasNewReceivers = scriptingSupportUpdatesProcessor.lastLoadedTypeOrNull != null
-        if (hasNewReceivers) {
+        if (hasNewReceivers || isStateUpdating.get()) {
             return true
         }
 
         return !scriptConsistencyVerifier.isScriptFileConfigurationConsistentWithModel(
             virtualFile,
-            handleBeforeCompiling(project.baseScriptingCompilationConfiguration)
+            lastStableConfiguration.get()
         )
     }
 
@@ -247,6 +245,7 @@ class JupyterCompilerPerFileService(
     private fun requestScriptingUpdateTestAware() {
         if (!ApplicationManager.getApplication().isUnitTestMode) {
             projectService.requestScriptingUpdate()
+            isStateUpdating.set(true)
         }
     }
 
@@ -288,7 +287,7 @@ class JupyterCompilerPerFileService(
             LOG.warn("Couldn't download jars for the kernel version: $version")
         }
 
-        writeData {
+        accessData {
             _currentClasspath.addInitial(jars)
             _sourceRoots.addInitial(sourcesJars)
         }
@@ -304,7 +303,7 @@ class JupyterCompilerPerFileService(
     private suspend fun updateClasspathWithProjectArtifactsAsync(): Boolean {
         val buildService = JupyterKotlinProjectArtifactsService.getInstance(project)
         val artifacts = buildService.buildProjectAndGetLibraries(virtualFile).ifEmpty { return false }
-        return writeData {
+        return accessData {
             val oldSize = _currentClasspath.size
             _currentClasspath.addSnippet(artifacts.map { File(it) })
             val newSize = _currentClasspath.size
@@ -320,31 +319,45 @@ class JupyterCompilerPerFileService(
         val sourceText = sourceCode?.text
         LOG.debug("Before-compiling callback for script: $sourceText")
 
-        return readDataBlocking {
-            val withNewClasspath = config.withUpdatedClasspath(currentClasspath)
-            ScriptCompilationConfiguration(withNewClasspath) {
-                if (_currentClasspath.hasInitialPart) {
-                    addBaseClass<ScriptTemplateWithDisplayHelpers>()
-                }
+        return accessDataBlocking {
+            config.refineConfiguration()
+        }
+    }
 
-                hostConfiguration.update {
-                    it.with {
-                        getScriptingClass(classGetter)
-                    }
-                }
-                /**
-                 * We do need to create a copy here,
-                 * otherwise all changes made to this list will eventually appear in the cache without an update,
-                 * and no consistency checks can be done.
-                 */
-                implicitReceivers(implicitsList.toList())
-                defaultImports(additionalDefaultImports.getList())
-                ide.dependenciesSources(
-                    JvmDependency(
-                        project.sourceRootsForDependencies(virtualFile) + _sourceRoots.getList()
-                    )
-                )
+    suspend fun handleBeforeCompilingAsync(
+        config: ScriptCompilationConfiguration,
+    ) : ScriptCompilationConfiguration {
+        LOG.debug("Before-compiling callback ")
+
+        return accessData {
+            config.refineConfiguration()
+        }
+    }
+
+    private fun ScriptCompilationConfiguration.refineConfiguration(): ScriptCompilationConfiguration {
+        val withNewClasspath = withUpdatedClasspath(currentClasspath)
+        return ScriptCompilationConfiguration(withNewClasspath) {
+            if (_currentClasspath.hasInitialPart) {
+                addBaseClass<ScriptTemplateWithDisplayHelpers>()
             }
+
+            hostConfiguration.update {
+                it.with {
+                    getScriptingClass(classGetter)
+                }
+            }
+            /**
+             * We do need to create a copy here,
+             * otherwise all changes made to this list will eventually appear in the cache without an update,
+             * and no consistency checks can be done.
+             */
+            implicitReceivers(implicitsList.toList())
+            defaultImports(additionalDefaultImports.getList())
+            ide.dependenciesSources(
+                JvmDependency(
+                    project.sourceRootsForDependencies(virtualFile) + _sourceRoots.getList()
+                )
+            )
         }
     }
 
@@ -354,7 +367,7 @@ class JupyterCompilerPerFileService(
     ) {
         coroutineScope.async {
             try {
-                writeData {
+                accessData {
                     addNewDependencies(snippetMetadata, psiCell)
                 }
 
@@ -370,6 +383,7 @@ class JupyterCompilerPerFileService(
 
     private fun requestScriptingUpdate() {
         projectService.requestScriptingUpdate()
+        isStateUpdating.set(true)
     }
 
     private fun getLineFolderName(lineNumber: Int) = "line_$lineNumber"
@@ -462,7 +476,7 @@ class JupyterCompilerPerFileService(
 
         return runSafelyTyped(
             action = {
-                writeData {
+                accessData {
                     val loader = createNextClassLoader(classesDirPath)
                     val loadedSnippets = classesToLoad.map { className ->
                         LOG.debug("Adding class: $className")
@@ -496,7 +510,7 @@ class JupyterCompilerPerFileService(
 
     override fun dispose() {
         coroutineScope.async {
-            writeData {
+            accessData {
                 _currentClasspath.clear()
                 additionalDefaultImports.clear()
                 implicitsList.clear()
@@ -517,14 +531,14 @@ class JupyterCompilerPerFileService(
         private val implicitReceiversClassPathData = ConcurrentLinkedQueue<ClassPathSnippetsLoadedData>()
         private val implicitListsUpdateMutex = Mutex()
 
-        private fun updateLastStableConfiguration() {
+        private suspend fun updateLastStableConfiguration() {
             while (true) {
                 val lastStableConf = lastStableConfiguration.get()
-                val updatedConfiguration = handleBeforeCompiling(project.baseScriptingCompilationConfiguration)
+                val updatedConfiguration = handleBeforeCompilingAsync(project.baseScriptingCompilationConfiguration)
 
                 if (lastStableConfiguration.compareAndSet(lastStableConf, updatedConfiguration)) {
                     LOG.info("Cached configuration updated for ${virtualFile.file.name}!")
-                    coroutineScope.async {
+                    coroutineScope.async { // do not wait
                         implicitListsUpdateMutex.withLock {
                             updateImplicitLists()
                         }
@@ -539,15 +553,24 @@ class JupyterCompilerPerFileService(
          * For them to appear in the stable configuration cache, we need to invoke update once again.
          */
         private suspend fun updateImplicitLists() {
-            if (implicitReceiversClassPathData.isEmpty()) return
+            if (implicitReceiversClassPathData.isEmpty()) {
+                // nothing to update, one needs to check the state
+                isStateUpdating.set(
+                    checkConfigurationNeedsUpdate()
+                )
+                return
+            }
 
             val newStableReceivers = getSnippetsReadyForConfigurationUpdate()
 
-            writeData {
+            accessData {
                 newStableReceivers.flatMap { it.snippetTypes }.forEach {
                     implicitsList.addClass(it.fromClass!!)
                 }
             }
+            // Mark state as dirty
+            isStateUpdating.set(true)
+
             LOG.debug {
                 "Added classes in ${virtualFile.file.name} to implicitList: ${newStableReceivers.flatMap { it.snippetTypes.map { type -> type.typeName } }}"
             }
@@ -560,6 +583,13 @@ class JupyterCompilerPerFileService(
             implicitReceiversClassPathData.removeAll(newStableReceivers)
 
             requestScriptingUpdate()
+        }
+
+        private suspend fun checkConfigurationNeedsUpdate(): Boolean {
+            return !scriptConsistencyVerifier.isScriptFileConfigurationConsistentWithModel(
+                virtualFile,
+                handleBeforeCompilingAsync(project.baseScriptingCompilationConfiguration)
+            )
         }
 
         val lastLoadedTypeOrNull: KotlinType? get() {
@@ -583,6 +613,7 @@ class JupyterCompilerPerFileService(
                 // return if afterUpdate triggerred for another service
                 val lastScriptPath = getLastScriptArtifactPath() ?: return@async
                 if (notebooks != null && !notebooks.contains(virtualFile)) {
+                    isStateUpdating.set(false)
                     return@async
                 }
 
