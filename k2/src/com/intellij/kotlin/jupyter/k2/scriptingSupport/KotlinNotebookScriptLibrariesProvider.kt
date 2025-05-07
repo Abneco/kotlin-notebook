@@ -6,7 +6,6 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.injectedScriptLibraryDependencies
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
-import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.vfs.VirtualFile
@@ -24,12 +23,10 @@ import org.jetbrains.kotlin.idea.core.script.dependencies.ScriptAdditionalIdeaDe
  *
  * Note that it works for K2 mode; K1 is handled by a legacy approach.
  */
-class KotlinNotebookScriptLibrariesProvider : ScriptAdditionalIdeaDependenciesProvider() {
+class KotlinNotebookScriptLibrariesProvider : ScriptAdditionalIdeaDependenciesProvider {
     companion object {
         private val LOG = notebookLogger()
     }
-    override fun getRelatedModules(file: VirtualFile, project: Project): List<Module> = emptyList()
-
     override fun getRelatedLibraries(file: VirtualFile, project: Project): List<Library> {
         val virtualFile = (file as? VirtualFileWindow)?.delegate ?: return emptyList()
         if (!virtualFile.isKotlinNotebook) return emptyList()
