@@ -53,6 +53,13 @@ fun PsiFile?.getInjectedKtFiles(): List<KtFile> {
     }
 }
 
+fun BackedNotebookVirtualFile?.getInjectedKtFiles(project: Project): List<KtFile> {
+    if (this == null) return emptyList()
+    val topLevelFile = file.findPsiFile(project) ?: return emptyList()
+
+    return topLevelFile.getInjectedKtFiles()
+}
+
 fun PsiFile?.getNotebookValidCells(): List<JupyterPsiCell> =
     getNotebookCells().filter { it.isValid }
 

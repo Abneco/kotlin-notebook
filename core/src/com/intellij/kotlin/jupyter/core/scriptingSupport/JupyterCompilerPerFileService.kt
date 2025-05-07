@@ -195,25 +195,37 @@ class JupyterCompilerPerFileService(
 
     fun scripts(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
         val ktFiles = ReadAction.compute<List<KtFile>, Throwable> {
-            val notebookPsiFile = virtualFile.file.findPsiFile(project)
-            notebookPsiFile.getInjectedKtFiles()
+            virtualFile.getInjectedKtFiles(project)
+        }.ifEmpty {
+            return emptyList()
         }
+        val currentConfiguration = ktFiles.getSampleConfiguration() ?: return emptyList()
 
-        return ktFiles.getConfigurations()
+        return ktFiles.map { file ->
+            file.virtualFile to currentConfiguration.second
+        }
     }
 
     suspend fun scriptsAsync(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
         val ktFiles = readAction {
-            val notebookPsiFile = virtualFile.file.findPsiFile(project)
-            notebookPsiFile.getInjectedKtFiles()
+            virtualFile.getInjectedKtFiles(project)
         }
+        val currentConfiguration = ktFiles.getSampleConfiguration() ?: return emptyList()
 
-        return ktFiles.getConfigurations()
+        return ktFiles.map { file ->
+            file.virtualFile to currentConfiguration.second
+        }
     }
 
     fun getFilesToRefine(): List<KtFileScriptSource> {
         val notebookPsiFile = virtualFile.file.findPsiFile(project)
         return notebookPsiFile.getInjectedKtFiles().map { KtFileScriptSource(it) }
+    }
+
+    private fun Collection<KtFile>.getSampleConfiguration(): Pair<VirtualFile, ScriptCompilationConfigurationWrapper>? {
+        return firstNotNullOfOrNull {
+            setOf(it).getConfigurations().firstOrNull()
+        }
     }
 
     private fun Collection<KtFile>.getConfigurations(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
