@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.outputs.export
 
 import com.intellij.kotlin.jupyter.core.util.getKotlinNotebookCacheDirectory
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.SystemInfo
+import com.intellij.util.system.OS
 import java.awt.Image
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
@@ -50,8 +50,7 @@ fun createImageDataTransferable(
     imageData: ByteArray,
     fileName: String,
 ): Transferable {
-    // Standard copy works incorrectly on Mac, see JBR-6788
-    return if (SystemInfo.isMac) {
+    return if (isIntermediateFileWorkaroundNeeded()) {
         val plotFile = project
             .getKotlinNotebookCacheDirectory()
             .resolve("plotExport")
@@ -64,4 +63,15 @@ fun createImageDataTransferable(
         val image = ImageIO.read(ByteArrayInputStream(imageData))
         ImageTransferableFactory.createTransferable(image)
     }
+}
+
+private fun isIntermediateFileWorkaroundNeeded(): Boolean {
+    // Standard copy works incorrectly on Mac, see JBR-6788,
+    // But it seemingly was fixed in the newer (15 and later) Mac versions
+    val os = OS.CURRENT
+    if (os != OS.macOS) return false
+    val version = os.version
+    val majorVersionString = version.substringBefore(".")
+    val majorVersion = majorVersionString.toIntOrNull() ?: return true
+    return majorVersion <= 14
 }
