@@ -12,7 +12,7 @@ create_kotlinc_options(
 )
 
 jvm_resources(
-  name = "kotlin-jupyter-k1_resources",
+  name = "k1_resources",
   files = glob(["resources/**/*"]),
   strip_prefix = "resources"
 )
@@ -28,17 +28,17 @@ jvm_provided_library(
 )
 
 jvm_provided_library(
-  name = "jupyter-core_provided",
+  name = "core_provided",
   lib = "//plugins/jupyter/core"
 )
 
 jvm_provided_library(
-  name = "java-psi-api-psi_provided",
+  name = "java-psi_provided",
   lib = "@community//java/java-psi-api:psi"
 )
 
 jvm_library(
-  name = "kotlin-jupyter-k1",
+  name = "k1",
   module_name = "intellij.kotlin.jupyter.k1",
   visibility = ["//visibility:public"],
   srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
@@ -53,33 +53,33 @@ jvm_library(
     "@lib//:kotlinc-kotlin-compiler-common-provided",
     "@lib//:kotlinc-kotlin-compiler-fe10-provided",
     "@lib//:kotlin-stdlib-provided",
-    "@community//plugins/kotlin/base/fe10/analysis:kotlin-base-fe10-analysis",
-    "//plugins/kotlin/jupyter/core:kotlin-jupyter-core",
+    "@community//plugins/kotlin/base/fe10/analysis",
+    "//plugins/kotlin/jupyter/core",
     "@community//platform/core-api:core",
     "@community//platform/editor-ui-api:editor-ui",
-    "@community//plugins/kotlin/base/scripting:kotlin-base-scripting",
-    "@community//plugins/kotlin/jvm-debugger/evaluation/k1:kotlin-jvm-debugger-evaluation-k1",
+    "@community//plugins/kotlin/base/scripting",
+    "@community//plugins/kotlin/jvm-debugger/evaluation/k1",
     "@community//platform/backend/workspace",
     "@community//platform/projectModel-api:projectModel",
     "@community//platform/projectModel-impl",
     "@community//platform/analysis-api:analysis",
-    "//plugins/workspace:ide-workspace",
+    "//plugins/workspace",
     "@community//platform/workspace/storage",
     "@community//platform/workspace/jps",
     "@community//platform/analysis-impl",
     "@community//plugins/kotlin/highlighting/highlighting-minimal:kotlin-highlighting-minimal",
     "@community//platform/lang-impl",
     "@community//jupyter:notebooks-jupyter-core",
-    "@community//plugins/kotlin/base/project-structure:kotlin-base-project-structure",
-    "@community//plugins/kotlin/compiler-plugins/kotlinx-serialization/common:kotlin-compiler-plugins-kotlinx-serialization-common",
-    "@community//java/debugger/impl:java-debugger-impl",
-    "@community//plugins/kotlin/jvm-debugger/evaluation:kotlin-jvm-debugger-evaluation",
+    "@community//plugins/kotlin/base/project-structure",
+    "@community//plugins/kotlin/compiler-plugins/kotlinx-serialization/common",
+    "@community//java/debugger/impl",
+    "@community//plugins/kotlin/jvm-debugger/evaluation",
     "@community//plugins/kotlin/scripting",
     ":idea_provided",
     ":jupyter-psi_provided",
-    ":jupyter-core_provided",
-    ":java-psi-api-psi_provided",
+    ":core_provided",
+    ":java-psi_provided",
   ],
-  runtime_deps = [":kotlin-jupyter-k1_resources"]
+  runtime_deps = [":k1_resources"]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.k1` end

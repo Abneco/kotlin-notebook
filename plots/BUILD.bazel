@@ -2,24 +2,24 @@
 load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources")
 
 jvm_resources(
-  name = "kotlin-jupyter-plots_resources",
+  name = "plots_resources",
   files = glob(["resources/**/*"]),
   strip_prefix = "resources"
 )
 
 jvm_resources(
-  name = "kotlin-jupyter-plots_resources_1",
+  name = "plots_resources_1",
   files = glob(["resources-en/**/*"]),
   strip_prefix = "resources-en"
 )
 
 jvm_library(
-  name = "kotlin-jupyter-plots",
+  name = "plots",
   module_name = "intellij.kotlin.jupyter.plots",
   visibility = ["//visibility:public"],
   srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
   deps = [
-    "//plugins/kotlin/jupyter/core:kotlin-jupyter-core",
+    "//plugins/kotlin/jupyter/core",
     "@ultimate_lib//:jetbrains-lets-plot-shadowed",
     "@ultimate_lib//:kotlin-jupyter-plots-jetbrains-lets-plot-export-shadowed",
     "@ultimate_lib//:kotlin-jupyter-plots-ggdsl-util",
@@ -36,11 +36,11 @@ jvm_library(
     "//plugins/jupyter/psi",
     "@community//notebooks/visualization",
     "@community//notebooks/notebook-ui:ui",
-    "@community//platform/platform-impl/ui:ide-ui",
+    "@community//platform/platform-impl/ui",
   ],
   runtime_deps = [
-    ":kotlin-jupyter-plots_resources",
-    ":kotlin-jupyter-plots_resources_1",
+    ":plots_resources",
+    ":plots_resources_1",
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.plots` end

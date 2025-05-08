@@ -2,33 +2,33 @@
 load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources")
 
 jvm_resources(
-  name = "kotlin-jupyter-liveTemplates_resources",
+  name = "liveTemplates_resources",
   files = glob(["resources/**/*"]),
   strip_prefix = "resources"
 )
 
 jvm_resources(
-  name = "kotlin-jupyter-liveTemplates_resources_1",
+  name = "liveTemplates_resources_1",
   files = glob(["resources-en/**/*"]),
   strip_prefix = "resources-en"
 )
 
 jvm_library(
-  name = "kotlin-jupyter-liveTemplates",
+  name = "liveTemplates",
   module_name = "intellij.kotlin.jupyter.liveTemplates",
   visibility = ["//visibility:public"],
   srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
   deps = [
     "@lib//:kotlin-stdlib-provided",
-    "//plugins/kotlin/jupyter/core:kotlin-jupyter-core",
+    "//plugins/kotlin/jupyter/core",
     "@community//plugins/kotlin/code-insight/live-templates-shared:kotlin-code-insight-live-templates-shared",
     "@community//platform/analysis-api:analysis",
     "@community//platform/core-api:core",
     "@community//platform/platform-impl:ide-impl",
   ],
   runtime_deps = [
-    ":kotlin-jupyter-liveTemplates_resources",
-    ":kotlin-jupyter-liveTemplates_resources_1",
+    ":liveTemplates_resources",
+    ":liveTemplates_resources_1",
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.liveTemplates` end

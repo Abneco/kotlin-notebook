@@ -2,16 +2,16 @@
 load("@rules_jvm//:jvm.bzl", "jvm_library")
 
 jvm_library(
-  name = "kotlin-jupyter-build",
+  name = "build",
   module_name = "intellij.kotlin.jupyter.build",
   visibility = ["//visibility:public"],
   srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
   deps = [
     "@lib//:kotlin-stdlib",
     "@lib//:kotlinx-coroutines-core",
-    "//build:ultimate-build",
+    "//build",
     "@community//platform/build-scripts:buildScripts",
-    "@community//platform/build-scripts/downloader:buildScripts-downloader",
+    "@community//platform/build-scripts/downloader",
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.build` end
