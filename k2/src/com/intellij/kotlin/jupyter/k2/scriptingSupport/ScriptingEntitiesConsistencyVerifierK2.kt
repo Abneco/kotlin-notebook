@@ -6,7 +6,7 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.kotlin.getIndexedTopLevelClassifiersFiltered
 import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier
 import com.intellij.kotlin.jupyter.core.scriptingSupport.workSpaceSnapshot
-import com.intellij.kotlin.jupyter.k2.projectModel.findK2WorkspaceModule
+import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceModule
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.debug

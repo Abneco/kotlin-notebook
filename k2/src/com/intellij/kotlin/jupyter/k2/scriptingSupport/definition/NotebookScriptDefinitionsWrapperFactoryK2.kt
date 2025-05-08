@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport.definition
 
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsManager
+import com.intellij.kotlin.jupyter.k2.scriptingSupport.fir.refineNotebookWithSelectedBundledCompilerPlugins
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.configurationResolverDelegate
@@ -34,6 +35,7 @@ internal class K2NotebookScriptDefinitionsWrapper(
                     project.service<NotebookScriptConfigurationsManager>()
                 }
             }
+            refineNotebookWithSelectedBundledCompilerPlugins(project)
         }
         object : org.jetbrains.kotlin.scripting.definitions.ScriptDefinition.FromConfigurations(
             defaultJvmScriptingHostConfiguration,

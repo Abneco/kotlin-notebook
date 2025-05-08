@@ -2,3 +2,5 @@
 package com.intellij.kotlin.jupyter.core.settings
 
 internal val replCompilerModeSelectorEnabled: Boolean by registryFlag("kotlin.notebook.replCompilerMode.enabled", false)
+
+internal val compilerPluginsEnabled: Boolean by registryFlag("kotlin.notebook.compilerPlugins.enabled", false)

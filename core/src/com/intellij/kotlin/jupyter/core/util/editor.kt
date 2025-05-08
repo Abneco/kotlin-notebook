@@ -16,7 +16,7 @@ internal fun Project.getJupyterFileEditor(vFile: VirtualFile): JupyterFileEditor
         = FileEditorManager.getInstance(this).getSelectedEditor(vFile) as? JupyterFileEditor
 
 @OptIn(UnsafeCastFunction::class)
-internal fun Project.getCurrentEditorOrNull(): Editor? {
+fun Project.getCurrentEditorOrNull(): Editor? {
     return FileEditorManager.getInstance(this).selectedEditor?.safeAs<TextEditor>()?.editor
 }
 

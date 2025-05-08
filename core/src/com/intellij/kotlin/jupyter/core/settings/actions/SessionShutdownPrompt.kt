@@ -19,7 +19,7 @@ import kotlin.reflect.KClass
  *
  * It doesn't do anything for non-Kotlin notebooks.
  */
-internal inline fun promptSessionShutdownIfNeeded(
+inline fun promptSessionShutdownIfNeeded(
     classForLogging: KClass<*>,
     notebookEditor: Editor,
     crossinline action: () -> Unit

@@ -27,10 +27,13 @@
                         serviceImplementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.updater.ScriptingForceUpdaterK2Factory"/>
 
         <trafficLightRendererContributor implementation="com.intellij.kotlin.jupyter.k2.codeInsight.NotebookTrafficLightContributor"/>
+
+        <postStartupActivity implementation="com.intellij.kotlin.jupyter.k2.project.NotebookK2PostStartupActivity"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.core">
         <shadowingVisitorFactory implementation="com.intellij.kotlin.jupyter.k2.highlighting.ShadowingVisitorHandlerFactory"/>
-        <sessionLibrariesFilter implementation="com.intellij.kotlin.jupyter.k2.projectModel.K2SessionLibrariesFilter"/>
+        <sessionLibrariesFilter implementation="com.intellij.kotlin.jupyter.k2.project.model.K2SessionLibrariesFilter"/>
+        <settings.compilerPluginsBuilder implementation="com.intellij.kotlin.jupyter.k2.settings.ui.CompilerPluginsSettingsBuilderK2"/>/>
     </extensions>
 </idea-plugin>

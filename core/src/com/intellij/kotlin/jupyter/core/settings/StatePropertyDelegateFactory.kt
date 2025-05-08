@@ -30,10 +30,11 @@ private class StatePropertyDelegateImpl<StateT, ListenerT: EventListener, Intern
 
     override operator fun setValue(thisRef: Any?, property: KProperty<*>, value: ExternalT) {
         val oldValue = getCurrentValue()
-        stateProperty.set(stateProvider(), externalToInternal(value))
+        //  fire event right away, 'oldValue' might be updated after setter execution
         if (oldValue != value) {
             fireChangeEvent(oldValue, value)
         }
+        stateProperty.set(stateProvider(), externalToInternal(value))
     }
 
     fun fireChangeEvent(oldValue: ExternalT, newValue: ExternalT) {

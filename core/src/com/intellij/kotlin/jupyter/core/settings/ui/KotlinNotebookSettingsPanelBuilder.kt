@@ -14,6 +14,7 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookAttachedModeOptio
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.SessionOptionsProvider
+import com.intellij.kotlin.jupyter.core.settings.extensions.NotebookCompilerPluginSettingsBuilder.Companion.buildCompilerPluginsOptionsSelector
 import com.intellij.kotlin.jupyter.core.settings.isAvailable
 import com.intellij.kotlin.jupyter.core.settings.isKernelVersionEnoughForInstrumentation
 import com.intellij.kotlin.jupyter.core.settings.isSuitableForStartingKernel
@@ -78,6 +79,7 @@ class KotlinNotebookSettingsPanelBuilder(
                 createMaxHeapSizeSpinner()
                 createExtraJvmArgumentsField()
                 createEnvironmentVariablesField()
+                createCompilerPluginsOptionsSelector()
             }
             if (KotlinNotebookSessionRunMode.ATTACHED_PROCESS.isAvailable) {
                 group(KotlinNotebookBundle.message("kotlin.jupyter.attached.process.mode.settings.group")) {
@@ -268,6 +270,10 @@ class KotlinNotebookSettingsPanelBuilder(
         }
     }
 
+    private fun Panel.createCompilerPluginsOptionsSelector(): Row? {
+        return buildCompilerPluginsOptionsSelector(project, this)
+    }
+
     private fun Panel.createDebugOptions(): Row {
         return row {
             checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables"))
@@ -354,6 +360,6 @@ class KotlinNotebookSettingsPanelBuilder(
 
     companion object {
         private const val DEFAULT_COLUMNS_COUNT = 48
-        private const val BUILD_WIDTH_GROUP = "kotlin.notebook.build"
+        const val BUILD_WIDTH_GROUP: String = "kotlin.notebook.build"
     }
 }

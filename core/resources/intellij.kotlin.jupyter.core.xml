@@ -42,6 +42,9 @@
         <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.sessionLibrariesFilter"
                         interface="com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookSessionLibrariesFilter"
                         dynamic="true"/>
+        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.settings.compilerPluginsBuilder"
+                        interface="com.intellij.kotlin.jupyter.core.settings.extensions.NotebookCompilerPluginSettingsBuilder"
+                        dynamic="true"/>
 
         <!-- shadowing -->
         <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.shadowingVisitorFactory"
@@ -106,6 +109,9 @@
 
         <registryKey key="kotlin.notebook.replCompilerMode.enabled" defaultValue="false"
                      description="When enabled, it is possible to switch the kernel between using K1 or K2 when compiling repl snippets"/>
+
+        <registryKey key="kotlin.notebook.compilerPlugins.enabled" defaultValue="false"
+                     description="When enabled, it is possible to specify additional bundled compiler plugins for notebook"/>
 
         <postStartupActivity implementation="com.intellij.kotlin.jupyter.core.notifications.KotlinNotebookPostStartupActivity"/>
 
