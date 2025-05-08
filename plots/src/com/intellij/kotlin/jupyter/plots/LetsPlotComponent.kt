@@ -9,11 +9,14 @@ import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.components.JBLayeredPane
+import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
 import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
 import org.jetbrains.letsPlot.core.spec.FigKind
 import org.jetbrains.letsPlot.core.spec.config.PlotConfig
 import org.jetbrains.letsPlot.core.util.MonolithicCommon
+import org.jetbrains.letsPlot.core.util.PlotHtmlExport
+import org.jetbrains.letsPlot.core.util.PlotHtmlHelper
 import org.jetbrains.letsPlot.core.util.PlotSizeHelper
 import java.awt.Dimension
 import java.awt.event.ComponentEvent
@@ -128,6 +131,15 @@ class LetsPlotComponent : JBLayeredPane() {
         this.plotPanel = plotPanel
         this.transparentPanel = transparentPanel
     }
+
+    @TestOnly
+    fun getPlotHtml() = dataKey?.let {
+        PlotHtmlExport.buildHtmlFromRawSpecs(
+            deserializeSpec(it.spec).toMutableMap(),
+            iFrame = true,
+            scriptUrl = PlotHtmlHelper.scriptUrl("4.0.0")
+        )
+    } ?: ""
 
     companion object {
         private val LOG = thisLogger()
