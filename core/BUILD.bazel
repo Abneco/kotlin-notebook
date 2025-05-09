@@ -51,6 +51,7 @@ jvm_library(
   kotlinc_opts = ":custom",
   deps = [
     "@lib//:jetbrains-annotations-provided",
+    "@community//platform/editor-ui-api:editor-ui",
     "@community//platform/ide-core-impl",
     "@ultimate_lib//:jetbrains-kotlin-jupyter-shared-compiler",
     "@lib//:kotlin-reflect-provided",

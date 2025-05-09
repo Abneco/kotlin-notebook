@@ -29,6 +29,7 @@ jvm_library(
     "@community//platform/core-api:core",
     "@community//platform/core-impl",
     "@community//java/java-psi-api:psi",
+    "@community//platform/editor-ui-api:editor-ui",
     "@community//plugins/kotlin/base/scripting",
     "@community//platform/backend/workspace",
     "@community//platform/projectModel-api:projectModel",

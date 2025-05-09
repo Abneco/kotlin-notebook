@@ -31,6 +31,7 @@ jvm_library(
     "@lib//:kotlinx-serialization-core",
     "@lib//:kotlinx-serialization-json",
     "@community//platform/core-ui",
+    "@community//platform/editor-ui-api:editor-ui",
     "@community//platform/platform-impl:ide-impl",
     "//plugins/jupyter/core",
     "//plugins/jupyter/psi",

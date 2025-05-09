@@ -21,6 +21,7 @@ jvm_library(
   deps = [
     "@lib//:kotlin-stdlib-provided",
     "//plugins/kotlin/jupyter/core",
+    "@community//platform/editor-ui-api:editor-ui",
     "@community//plugins/kotlin/code-insight/live-templates-shared:kotlin-code-insight-live-templates-shared",
     "@community//platform/analysis-api:analysis",
     "@community//platform/core-api:core",
