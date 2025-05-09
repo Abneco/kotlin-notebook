@@ -31,6 +31,7 @@ import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.PsiReference
 import com.intellij.psi.impl.PsiDocumentManagerBase
 import com.intellij.psi.impl.source.tree.LeafPsiElement
+import com.intellij.psi.impl.source.tree.injected.InjectedLanguageEditorUtil
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtil
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.util.PsiTreeUtil
@@ -87,10 +88,7 @@ class NotebookMemberInplaceRenamer(
             private val injectedManager = InjectedLanguageManager.getInstance(element.project)
             private val elementHost = injectedManager.getInjectionHost(element.containingFile)
             private var adjustmentTextRange: Collection<TextRange>? = null
-            private val topLevelEditor = when (myEditor) {
-                is EditorWindow -> (myEditor as EditorWindow).delegate
-                else -> myEditor
-            }
+            private val topLevelEditor = InjectedLanguageEditorUtil.getTopLevelEditor(myEditor)
             private val notebookHighlightingService = topLevelEditor.notebookFileOrNull?.let {
                 NotebookHighlightingService.getForFile(element.project, it)
             }
