@@ -128,7 +128,7 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
         return sessions.values().toList()
     }
 
-    override suspend fun createSession(project: Project, kernelName: KernelName, notebookPath: String): JupyterSessionData {
+    override suspend fun createSessionData(project: Project, kernelName: KernelName, notebookPath: String): JupyterSessionData {
         val notebookFile = File(notebookPath).absoluteFile
         val kernelId = startKernel(project, kernelName, notebookFile.toPath()) ?: throw RuntimeException("Unknown kernel: $kernelName")
 
