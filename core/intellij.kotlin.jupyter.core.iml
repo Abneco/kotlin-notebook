@@ -27,6 +27,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" scope="PROVIDED" name="jetbrains-annotations" level="project" />
+    <orderEntry type="module" module-name="intellij.platform.editor.ui" />
     <orderEntry type="module" module-name="intellij.platform.ide.core.impl" />
     <orderEntry type="library" name="jetbrains.kotlin-jupyter-shared-compiler" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="kotlin-reflect" level="project" />
