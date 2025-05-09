@@ -47,7 +47,6 @@ import java.util.concurrent.ExecutionException
 internal class KotlinNotebookDebugSession(
     public override val virtualFile: BackedNotebookVirtualFile,
     private val project: Project,
-    projectService: Disposable,
     coroutineScope: CoroutineScope,
     private val portProvider: () -> Int?
 ): NotebookPerFileChildService(virtualFile, coroutineScope) {
@@ -124,8 +123,7 @@ internal class KotlinNotebookDebugSession(
     }
 
     init {
-        Disposer.register(projectService, this)
-        project.initServiceListeners(projectService)
+        project.initServiceListeners(this)
 
         debugConnectionHolder.sessionRelatedInfo.updateWith(project, targetDebugPort)
     }

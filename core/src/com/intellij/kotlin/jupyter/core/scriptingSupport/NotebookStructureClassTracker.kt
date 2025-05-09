@@ -12,13 +12,12 @@ import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import org.jetbrains.kotlin.util.getValueOrNull
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
@@ -56,15 +55,17 @@ class NotebookStructureClassTracker(
     private val project: Project,
     virtualFile: BackedNotebookVirtualFile,
     scope: CoroutineScope,
-    parentDisposable: Disposable
 ): NotebookPerFileChildService(virtualFile, scope), NotebookClassesInCellsInfoHandler {
-    init {
-      Disposer.register(parentDisposable, this)
+    private val psiFile by lazy {
+        withReadAccess {
+            virtualFile.file.findPsiFile(project)
+        }
     }
-    private val psiFile = withReadAccess {
-        virtualFile.file.findPsiFile(project)
+
+    private val knownCellInfoDelegate = lazy {
+        ExecutedPresentCellInfo(psiFile)
     }
-    private val knownCellInfo = ExecutedPresentCellInfo(psiFile)
+    private val knownCellInfo by knownCellInfoDelegate
 
     override val cellOrdinalToClassNameStructure: MutableMap<Int, Set<String>>
         get() = knownCellInfo.cellOrdinalToClassName
@@ -206,9 +207,7 @@ class NotebookStructureClassTracker(
     }
 
     override fun notebookDataCleared() {
-        // Object could be disposed before this field is initialized
-        @Suppress("UNNECESSARY_SAFE_CALL")
-        knownCellInfo?.clear()
+        knownCellInfoDelegate.getValueOrNull()?.clear()
     }
 
     override fun dispose() {

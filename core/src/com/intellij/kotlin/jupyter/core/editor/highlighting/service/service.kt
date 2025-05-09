@@ -9,11 +9,9 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.Noteboo
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.kotlin.jupyter.core.util.restartAnalyzing
-import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.util.coroutines.childScope
@@ -28,15 +26,13 @@ class NotebookHighlightingService(
     val project: Project, coroutineScope: CoroutineScope
 ) : NotebookProjectLevelService<NotebookHighlightingManager>(coroutineScope) {
 
-    override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookHighlightingManager {
-        return withReadAccess {
-            val document = FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
-            NotebookHighlightingManager(
-              virtualFile, document,
-              this@NotebookHighlightingService,
-              fileScope,
-              null)
-        }
+    override fun createInstance(backedFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookHighlightingManager {
+        return NotebookHighlightingManager(
+                backedFile,
+                this@NotebookHighlightingService,
+                fileScope,
+                null,
+        )
     }
 
     companion object {
@@ -73,16 +69,6 @@ internal object NotebookHighlightingRestarter {
                 file.restartAnalyzing()
             }
             afterRequest()
-        }
-    }
-
-    fun scheduleRegularUpdateNoChecks(
-        file: PsiFile,
-        delayDelta: Long = HL_DELAY_PAUSE
-    ) {
-        regularUpdateScope.launch {
-            delay(delayDelta)
-            readAction { file.restartAnalyzing() }
         }
     }
 

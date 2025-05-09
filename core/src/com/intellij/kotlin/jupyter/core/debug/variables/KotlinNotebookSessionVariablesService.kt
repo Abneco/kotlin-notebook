@@ -65,17 +65,16 @@ class KotlinNotebookSessionVariablesService(
     }
 
 
-    override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookVariablesPerFileStateService {
+    override fun createInstance(backedFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookVariablesPerFileStateService {
         return NotebookVariablesPerFileStateService(
-          project,
-          virtualFile,
-          fileScope,
-          this
+            project,
+            backedFile,
+            fileScope,
         )
     }
 
     companion object {
-        fun getInstance(project: Project) = project.service<KotlinNotebookSessionVariablesService>()
+        fun getInstance(project: Project): KotlinNotebookSessionVariablesService = project.service<KotlinNotebookSessionVariablesService>()
 
         fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): NotebookVariablesPerFileStateService {
             return getInstance(project).getOrCreate(virtualFile)

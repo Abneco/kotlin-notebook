@@ -39,24 +39,30 @@ abstract class NotebookProjectLevelService<Child : NotebookPerFileChildService>(
     protected val mapping: MutableMap<VirtualFile, Child> = ConcurrentHashMap()
 
     /**
-     * Creates a new [Child] service for the given [virtualFile]
+     * Creates a new [Child] service for the given [backedFile]
      * with its own [CoroutineScope].
      */
     protected abstract fun createInstance(
-        virtualFile: BackedNotebookVirtualFile,
+        backedFile: BackedNotebookVirtualFile,
         fileScope: CoroutineScope
     ): Child
 
-    fun getOrCreate(virtualFile: BackedNotebookVirtualFile): Child {
-        return mapping.getOrPut(virtualFile.file) {
+    fun getOrCreate(backedFile: BackedNotebookVirtualFile): Child {
+        return mapping.getOrPut(backedFile.file) {
             createInstance(
-                virtualFile,
+                backedFile,
                 coroutineScope.childScope(
-                    "Child scope for ${virtualFile.file.name} of service ${this::class.simpleName}"
+                    "Child scope for ${backedFile.file.name} of service ${this::class.simpleName}"
                 )
             ).also { child ->
                 Disposer.register(this, child)
             }
+        }
+    }
+
+    fun remove(backedFile: BackedNotebookVirtualFile) {
+        mapping.remove(backedFile.file)?.let { child ->
+            Disposer.dispose(child)
         }
     }
 

@@ -26,7 +26,6 @@ import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.runSafelyTyped
 import com.intellij.kotlin.jupyter.core.util.sourceRootsForDependencies
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.readAction
@@ -36,7 +35,6 @@ import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
@@ -88,14 +86,12 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
  * @property project       Target Project instance
  * @property virtualFile   File with Kotlin notebook
  * @param initialClasspath Initial classpath to use
- * @param parent           Parent Disposable
  */
 class JupyterCompilerPerFileService(
     private val project: Project,
     virtualFile: BackedNotebookVirtualFile,
     initialClasspath: List<File>,
-    scope: CoroutineScope,
-    parent: Disposable
+    scope: CoroutineScope
 ) : NotebookPerFileChildService(virtualFile, scope) {
     private val scriptsChangePublisher get() =
         project.messageBus.syncPublisher(NotebookScriptsStateListener.TOPIC)
@@ -177,9 +173,7 @@ class JupyterCompilerPerFileService(
 
     init {
         notebookLogger().assertTrue(virtualFile.file.isKotlinNotebook) { "$virtualFile is not a Kotlin Jupyter notebook" }
-        Disposer.register(parent, this)
-
-        project.messageBus.connect(parent).subscribe(
+        project.messageBus.connect(this).subscribe(
             SCRIPTING_SUPPORT_TOPIC,
             scriptingSupportUpdatesProcessor
         )
@@ -481,7 +475,7 @@ class JupyterCompilerPerFileService(
             lastStableConfiguration.set(project.baseScriptingCompilationConfiguration)
             defaultImportsEnhancer.clear()
             if (!project.isDisposed) {
-                NotebookStructureTrackerService.getForFile(project, virtualFile).notebookDataCleared()
+                NotebookStructureTrackerService.getInstance(project).remove(virtualFile)
             }
 
             classesDir.delete(true)

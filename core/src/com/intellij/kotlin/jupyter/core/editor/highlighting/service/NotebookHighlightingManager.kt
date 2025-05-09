@@ -15,20 +15,20 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookAfterScriptsUpd
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.ImpatientNotebookChangeListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
-import com.intellij.kotlin.jupyter.core.util.isCurrentlySelectedInEditor
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
+import com.intellij.kotlin.jupyter.core.util.isCurrentlySelectedInEditor
+import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.ex.MarkupModelEx
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.util.concurrency.ThreadingAssertions
@@ -49,8 +49,7 @@ import org.jetbrains.kotlin.utils.addIfNotNull
  */
 class NotebookHighlightingManager(
     virtualFile: BackedNotebookVirtualFile,
-    private val document: Document,
-    projectService: NotebookHighlightingService,
+    private val projectService: NotebookHighlightingService,
     childScope: CoroutineScope,
     var completeRangeInd: Int?
 ): NotebookPerFileChildService(virtualFile, childScope) {
@@ -58,6 +57,11 @@ class NotebookHighlightingManager(
         private val LOG = notebookLogger()
     }
     private val project: Project = projectService.project
+    private val document by lazy {
+        withReadAccess {
+            FileDocumentManager.getInstance().getDocument(virtualFile.file)!!
+        }
+    }
 
     private val iterationLock = Mutex(false)
     private val iterationStateIndicator = DaemonIterationState()
@@ -141,19 +145,25 @@ class NotebookHighlightingManager(
     }
 
     init {
-        Disposer.register(projectService, this)
-        runBlockingMaybeCancellable {
-            val cells = getAllCellsIndexes()
-            if (cells == null) {
-                LOG.warn(KotlinNotebookBundle.message("kotlin.jupyter.highlighting.service.null.cells.warning"))
-                return@runBlockingMaybeCancellable
-            }
+        coroutineScope.async {
+            initializeService()
+        }
+    }
 
+    private suspend fun initializeService() {
+        val cells = readAction {
+            getAllCellsIndexes()
+        }
+        if (cells == null) {
+            LOG.warn(KotlinNotebookBundle.message("kotlin.jupyter.highlighting.service.null.cells.warning"))
+        } else {
             updateData(cells)
         }
-        val notebookPsiFile = virtualFile.file.findPsiFile(project)
-        _jupyterFile = notebookPsiFile
-        projectService.addListeners()
+
+        readAction {
+            _jupyterFile = virtualFile.file.findPsiFile(project)
+            projectService.addListeners()
+        }
     }
 
     private var activeCaretListener: NotebookCaretListener? = null

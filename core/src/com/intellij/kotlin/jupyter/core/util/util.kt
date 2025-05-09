@@ -7,10 +7,9 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.progress.ProcessCanceledException
-import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.InvalidVirtualFileAccessException
 import com.intellij.openapi.vfs.VirtualFile
@@ -109,10 +108,8 @@ internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
 internal inline fun <T> withReadAccess(crossinline block: () -> T): T {
     return if (ApplicationManager.getApplication().isDispatchThread) {
         block()
-    } else runBlockingMaybeCancellable {
-        readAction {
-            block()
-        }
+    } else ReadAction.compute<T, Throwable> {
+        block()
     }
 }
 

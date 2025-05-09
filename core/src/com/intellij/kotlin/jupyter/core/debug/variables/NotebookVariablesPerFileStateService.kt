@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.debug.variables
 
+import com.intellij.debugger.engine.DebuggerUtils
 import com.intellij.debugger.engine.JavaValue
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.engine.jdi.VirtualMachineProxy
@@ -14,9 +15,7 @@ import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.variables.KotlinNotebookToolWindowHandler
 import com.intellij.kotlin.jupyter.core.variables.KotlinNotebookVarsToolWindow
 import com.intellij.kotlin.jupyter.core.variables.NotebookVariablesToolWindowSetup
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.xdebugger.frame.XValueChildrenList
 import com.sun.jdi.ClassType
 import com.sun.jdi.Field
@@ -38,7 +37,6 @@ class NotebookVariablesPerFileStateService(
     private val project: Project,
     virtualFile: BackedNotebookVirtualFile,
     coroutineScope: CoroutineScope,
-    parentDisposable: Disposable
 ) : NotebookPerFileChildService(virtualFile, coroutineScope), NotebookAbstractSessionEnvironmentExplorer {
     companion object {
         private val LOG = notebookLogger()
@@ -50,9 +48,6 @@ class NotebookVariablesPerFileStateService(
         )
     }
 
-    init {
-        Disposer.register(parentDisposable, this)
-    }
     private val variableToolWindowHandler = KotlinNotebookToolWindowHandler()
     private val notebookSessionEnvironmentProvider = NotebookSessionNoSuspensionEnvironmentProvider(virtualFile)
     var variablesMetaData: Map<String, String?>? = null
@@ -119,8 +114,8 @@ class NotebookVariablesPerFileStateService(
         ) {
             var mapEntryReference = accessorData.mapEntryReference
             val nextEntryField = accessorData.nextEntryFieldAccessor
-            val keyField = accessorData.hashMapNodeClassType.fieldByName("key")
-            val valueField = accessorData.hashMapNodeClassType.fieldByName("value")
+            val keyField = DebuggerUtils.findField(accessorData.hashMapNodeClassType, "key")
+            val valueField = DebuggerUtils.findField(accessorData.hashMapNodeClassType, "value")
             val nodeManager = debuggerContext.debugProcess?.xdebugProcess?.nodeManager
 
 
@@ -173,7 +168,7 @@ class NotebookVariablesPerFileStateService(
             throw IllegalArgumentException("Parent interface for Entry shall not be null")
         }
 
-        val nextEntryFieldAccessor = mapEntryReferenceType.fieldByName("after")
+        val nextEntryFieldAccessor = DebuggerUtils.findField(mapEntryReferenceType, "after") ?: return list
         val processImpl = virtualMachineProxy.debugProcess ?: return list
 
         return list.apply {
