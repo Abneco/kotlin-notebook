@@ -37,6 +37,15 @@ fun Logger.errorUnderDebug(throwable: Throwable): Unit = doUnderDebug {
     error(throwable)
 }
 
+fun Logger.debugWithAttachments(message: () -> String, attachments: () -> List<Attachment>) {
+    if (!isDebugEnabled) return
+    val messageValue = message()
+    debug(
+        messageValue,
+        RuntimeExceptionWithAttachments(messageValue, *attachments().toTypedArray())
+    )
+}
+
 fun Logger.errorWithAttachments(message: String, vararg attachments: Attachment): Unit =
     error(
         message,

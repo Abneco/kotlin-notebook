@@ -20,7 +20,7 @@ import com.intellij.kotlin.jupyter.core.util.ComputableWithName
 import com.intellij.kotlin.jupyter.core.util.ExecutedOnceBackgroundTask
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.anyOf
-import com.intellij.kotlin.jupyter.core.util.errorUnderDebug
+import com.intellij.kotlin.jupyter.core.util.debugWithAttachments
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
@@ -209,12 +209,16 @@ class JupyterCompilerPerFileService(
     }
 
     private fun KtFile.reportAsAttachment() {
-        LOG.errorUnderDebug(
-            "Empty script dependencies found",
-            Attachment(
-                virtualFilePath,
-                text.takeIf { it.isNotEmpty() } ?: "[Injected file has no text]"
-            )
+        LOG.debugWithAttachments(
+            message = { "Empty script dependencies found" },
+            attachments = {
+                listOf(
+                    Attachment(
+                        virtualFilePath,
+                        text.takeIf { it.isNotEmpty() } ?: "[Injected file has no text]"
+                    )
+                )
+            }
         )
     }
 
