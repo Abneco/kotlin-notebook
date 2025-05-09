@@ -80,6 +80,7 @@ jvm_library(
     "@community//platform/backend/workspace",
     "@community//platform/core-ui",
     "@community//platform/observable",
+    "@community//platform/refactoring",
     "@community//platform/statistics",
     "@community//platform/util",
     "@community//platform/util/coroutines",
