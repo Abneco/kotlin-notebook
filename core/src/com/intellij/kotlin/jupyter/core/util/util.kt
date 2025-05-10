@@ -19,6 +19,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.PsiManager
 import com.intellij.psi.util.parentOfType
+import com.intellij.testFramework.LightVirtualFile
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
@@ -31,10 +32,11 @@ import kotlin.contracts.contract
 fun PsiFile.getTopLevelFile(): PsiFile = InjectedLanguageManager.getInstance(project).getTopLevelFile(this) ?: this
 
 fun VirtualFile.getTopLevelFile(): VirtualFile {
-    return if (this is VirtualFileWindow) {
-        delegate
-    } else {
-        this
+    return when (this) {
+        is VirtualFileWindow -> delegate.getTopLevelFile()
+        is LightVirtualFile -> originalFile
+        is BackedNotebookVirtualFile -> this.originFile
+        else -> this
     }
 }
 

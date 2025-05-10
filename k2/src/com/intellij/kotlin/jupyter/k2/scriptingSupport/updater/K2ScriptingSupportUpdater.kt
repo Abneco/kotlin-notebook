@@ -85,10 +85,8 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
     private fun clearRuntimeDependenciesFor(notebookFile: BackedNotebookVirtualFile) {
         val scope = KotlinNotebookPluginScope.getForProject(project)
         scope.async {
-            project.serviceIfCreated<NotebookScriptConfigurationsManager>()
-                ?.clearNotebookLibraryDependencies(
-                    notebookFile
-                )
+            val service = project.serviceIfCreated<NotebookScriptConfigurationsManager>() ?: return@async
+            service.clearNotebookLibraryDependencies(notebookFile)
         }
     }
 
@@ -119,6 +117,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         LOG.debug("Performing update for notebooks: $notebookNames")
 
         val scripts = mutableMapOf<KotlinNotebookScriptModel, KtFile>()
+        val configurationCache = project.serviceAsync<NotebookScriptConfigurationsManager>().cache
         for (notebook in notebooks) {
             val notebookService = JupyterCompilerService.getForFile(project, notebook)
             val perFileScripts = readAction {
@@ -143,6 +142,14 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                     "Stable implicit receivers for notebook '${notebook.file.name}': ${stableClasses?.map { it.typeName }}"
                 }
 
+                val storedConfiguration = configurationCache[notebook.file]
+                    ?.scriptConfiguration?.valueOrNull()?.configuration
+
+                // skip if exists
+                if (storedConfiguration == refinedConfiguration) {
+                    return@readAction null
+                }
+
                 KotlinNotebookScriptModel(
                     scriptsToRefine.virtualFile,
                     ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
@@ -152,11 +159,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                 ) to scriptsToRefine.ktFile
             }
 
-            val storedConfiguration = project.serviceAsync<NotebookScriptConfigurationsManager>().cache[notebook.file]
-                ?.scriptConfiguration?.valueOrNull()?.configuration
-
-            // Skip if already exists
-            if (perFileScripts != null && storedConfiguration != perFileScripts.first.refinedConfigurationResult.configuration) {
+            if (perFileScripts != null) {
                 scripts[perFileScripts.first] = perFileScripts.second
             }
         }

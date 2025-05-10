@@ -6,6 +6,7 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
 import com.intellij.kotlin.jupyter.core.settings.ProjectJdkOption
+import com.intellij.kotlin.jupyter.core.util.getTopLevelFile
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.components.serviceAsync
@@ -77,10 +78,7 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
      * For this end, one should associate configuration with top level [VirtualFile].
      */
     override fun get(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
-        val topLevelFile = when (virtualFile) {
-            is VirtualFileWindow -> virtualFile.delegate
-            else -> virtualFile
-        }
+        val topLevelFile = virtualFile.getTopLevelFile()
 
         val configuration = cache[topLevelFile]
         if (cache.isNotEmpty() && configuration == null) {
