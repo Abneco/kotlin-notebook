@@ -105,7 +105,7 @@ jvm_library(
     "@community//java/execution/openapi:java-execution",
     "@community//java/execution/impl",
     "@community//java/idea-ui:ui",
-    "@community//aether-dependency-resolver:java-aetherDependencyResolver",
+    "@community//aether-dependency-resolver",
     "@community//jupyter:notebooks-jupyter-core",
     "@community//notebooks/notebook-ui:ui",
     "@community//notebooks/visualization",
