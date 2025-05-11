@@ -34,7 +34,7 @@ import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingCancellable
-import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
@@ -88,13 +88,19 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
  * @param initialClasspath Initial classpath to use
  */
 class JupyterCompilerPerFileService(
-    private val project: Project,
+    private val projectService: JupyterCompilerService,
     virtualFile: BackedNotebookVirtualFile,
     initialClasspath: List<File>,
     scope: CoroutineScope
 ) : NotebookPerFileChildService(virtualFile, scope) {
+    private val project get() = projectService.project
+
     private val scriptsChangePublisher get() =
         project.messageBus.syncPublisher(NotebookScriptsStateListener.TOPIC)
+
+    init {
+        Disposer.register(projectService, this)
+    }
 
     // This lock is used to avoid concurrent modifications of data structures
     // that hold the session state
@@ -224,7 +230,7 @@ class JupyterCompilerPerFileService(
 
     private fun requestScriptingUpdateTestAware() {
         if (!ApplicationManager.getApplication().isUnitTestMode) {
-            JupyterCompilerService.getInstance(project).requestScriptingUpdate()
+            projectService.requestScriptingUpdate()
         }
     }
 
@@ -347,7 +353,7 @@ class JupyterCompilerPerFileService(
     }
 
     private fun requestScriptingUpdate() {
-        JupyterCompilerService.getInstance(project).requestScriptingUpdate()
+        projectService.requestScriptingUpdate()
     }
 
     private fun getLineFolderName(lineNumber: Int) = "line_$lineNumber"

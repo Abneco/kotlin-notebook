@@ -105,7 +105,7 @@ class JupyterCompilerService(
 
     override fun createInstance(backedFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): JupyterCompilerPerFileService {
         return JupyterCompilerPerFileService(
-            project,
+            this,
             backedFile,
             initialClasspath,
             fileScope
