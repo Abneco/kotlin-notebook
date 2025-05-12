@@ -24,7 +24,6 @@ class NotebookBaseHighlightingTest: KotlinNotebookTestCase() {
     @K2Only("This fails on K1 for unknown reasons")
     @Test
     fun withShadowedUnresolved() = runNotebookTest {
-        waitForDependencies()
         runHighlighting().assertHighlightResult(HighlightCheckStrategy.ShadowedErrors)
     }
 

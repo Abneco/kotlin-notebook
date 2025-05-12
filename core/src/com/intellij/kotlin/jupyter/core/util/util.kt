@@ -115,7 +115,7 @@ internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
 }
 
 internal inline fun <T> withReadAccess(crossinline block: () -> T): T {
-    return if (ApplicationManager.getApplication().isDispatchThread) {
+    return if (ApplicationManager.getApplication().isDispatchThread || ApplicationManager.getApplication().isReadAccessAllowed) {
         block()
     } else ReadAction.compute<T, Throwable> {
         block()

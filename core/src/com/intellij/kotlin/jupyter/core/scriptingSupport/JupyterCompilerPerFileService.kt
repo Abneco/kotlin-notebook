@@ -26,6 +26,7 @@ import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.runSafelyTyped
 import com.intellij.kotlin.jupyter.core.util.sourceRootsForDependencies
+import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.readAction
@@ -39,7 +40,6 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.intellij.util.io.delete
 import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
@@ -323,16 +323,20 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    @RequiresReadLock
+    // NB: This method should be called once per notebook configuration setup,
+    // as all dependencies are the same between all cells.
     fun handleBeforeCompiling(
         config: ScriptCompilationConfiguration,
         sourceCode: SourceCode? = null
     ): ScriptCompilationConfiguration {
-        val sourceText = sourceCode?.text
-        LOG.debug("Before-compiling callback for script: $sourceText")
-
+        // prefer fine-grained locks
         return accessDataBlocking {
-            config.refineConfiguration()
+            withReadAccess {
+                val sourceText = sourceCode?.text
+                LOG.debug("Before-compiling callback for script: $sourceText")
+
+                config.refineConfiguration()
+            }
         }
     }
 
