@@ -6,6 +6,8 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.ExpectedHighlightingData
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import org.jetbrains.plugins.notebooks.psi.jupyter.lexer.JupyterNotebookCellHeader
 import org.junit.Assert.assertTrue
 
@@ -29,26 +31,24 @@ class HighlightingResult(
             checkInfos = true
         )
         assertTrue(result.none { it.description != null && it.description == scriptingMissingClassError })
-
-        val isHasShadowed = result.any { it.description != null && (it.description.startsWith("Not yet provided symbol") || it.description.startsWith("Improper usage")) }
         assertTrue(result.none { it.text.contains(JupyterNotebookCellHeader.CELL_MARKER) || it.text.contains(
             "${JupyterNotebookCellHeader.CELL_MARKER} ${JupyterNotebookCellHeader.MARKDOWN_CELL_SUFFIX}") })
 
+        val errors = result.filter { it.severity == HighlightSeverity.ERROR }
+
         when (strategy) {
             HighlightCheckStrategy.OnlyValidSyntax -> {
-                //assertTrue(!isHasShadowed)
-                assertTrue(result.none { it.severity == HighlightSeverity.ERROR })
+                errors.shouldBeEmpty()
                 val actualData = result.filter { filter(it) }
                 expectedData.checkResult(notebookFile, actualData, testFixture.editor.document.text)
             }
             HighlightCheckStrategy.ShadowedErrors -> {
-                //assertTrue(isHasShadowed)
-                assertTrue(result.none { it.severity == HighlightSeverity.ERROR })
+                errors.shouldBeEmpty()
                 val actualData = result.filter { filter(it) }
                 expectedData.checkResult(notebookFile, actualData, testFixture.editor.document.text)
             }
             HighlightCheckStrategy.WithErrors -> {
-                assertTrue(result.any { it.severity == HighlightSeverity.ERROR })
+                errors.shouldNotBeEmpty()
             }
         }
     }
