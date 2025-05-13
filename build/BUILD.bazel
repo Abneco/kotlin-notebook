@@ -10,7 +10,7 @@ jvm_library(
     "@lib//:kotlin-stdlib",
     "@lib//:kotlinx-coroutines-core",
     "//build",
-    "@community//platform/build-scripts:buildScripts",
+    "@community//platform/build-scripts",
     "@community//platform/build-scripts/downloader",
   ]
 )
