@@ -111,6 +111,7 @@ jvm_library(
     "@community//notebooks/visualization",
     "@community//plugins/kotlin/base/plugin",
     "@community//java/debugger/shared",
+    "@community//plugins/kotlin/base/indices",
     ":scripting_provided",
     ":java-psi_provided",
     ":core_provided",
