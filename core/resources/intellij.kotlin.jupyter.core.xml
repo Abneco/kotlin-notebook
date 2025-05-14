@@ -21,7 +21,7 @@
 
     <projectListeners>
         <listener class="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinRuntimeServiceListener"
-                  topic="com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService$Listener"/>
+                  topic="com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeListener"/>
         <listener class="com.intellij.kotlin.jupyter.core.settings.KotlinNotebookModuleRenameListener"
                   topic="com.intellij.openapi.project.ModuleListener"/>
     </projectListeners>

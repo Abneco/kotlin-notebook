@@ -6,7 +6,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecu
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeListener
 import com.intellij.kotlin.jupyter.test.util.JDKVersionRule
 import com.intellij.kotlin.jupyter.test.util.StopExecutionOnFailureRule
 import com.intellij.openapi.Disposable
@@ -69,7 +69,7 @@ class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest() {
     private fun getSessionDeferred(project: Project, disposable: Disposable): Deferred<JupyterNotebookSession> {
         val sessionDeferred = CompletableDeferred<JupyterNotebookSession>()
         project.messageBus.connect(disposable)
-            .subscribe(JupyterRuntimeService.Listener.TOPIC, object : JupyterRuntimeService.Listener {
+            .subscribe(JupyterRuntimeListener.TOPIC, object : JupyterRuntimeListener {
                 override fun sessionCreated(session: JupyterNotebookSession) {
                     sessionDeferred.complete(session)
                 }

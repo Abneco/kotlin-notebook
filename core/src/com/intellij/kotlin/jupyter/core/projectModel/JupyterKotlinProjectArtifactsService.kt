@@ -8,7 +8,7 @@ import com.intellij.java.workspace.entities.JavaSourceRootPropertiesEntity
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeListener
 import com.intellij.jupyter.core.jupyter.helper.getOriginalVirtualFile
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
@@ -188,15 +188,15 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private fun addSessionListener() {
-        val sessionListener = object : JupyterRuntimeService.Listener {
+        val sessionListener = object : JupyterRuntimeListener {
             override fun sessionDeleted(session: JupyterNotebookSession) {
                 sessionData.remove(session.sessionId)
-                session.virtualFile?.let {
+                session.virtualFile.let {
                     project.service<JupyterKotlinOutdatedDependenciesNotificationService>().notificationExpire(NotebookId(it.originFile))
                 }
             }
         }
-        project.messageBus.connect(this).subscribe(JupyterRuntimeService.Listener.TOPIC, sessionListener)
+        project.messageBus.connect(this).subscribe(JupyterRuntimeListener.TOPIC, sessionListener)
     }
 
     private suspend fun buildProject(settings: KotlinNotebookSettings): BuildResult {

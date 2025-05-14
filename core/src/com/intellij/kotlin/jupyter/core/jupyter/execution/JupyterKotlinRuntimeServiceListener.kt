@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.execution
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeListener
 import com.intellij.kotlin.jupyter.core.projectModel.JupyterKotlinProjectArtifactsService
 import com.intellij.kotlin.jupyter.core.settings.SessionOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.generateSnippet
@@ -13,7 +13,7 @@ import com.intellij.kotlin.jupyter.core.util.isKotlinNotebookSession
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 
-class JupyterKotlinRuntimeServiceListener : JupyterRuntimeService.Listener {
+class JupyterKotlinRuntimeServiceListener : JupyterRuntimeListener {
     override fun sessionCreated(session: JupyterNotebookSession) {
         if (!session.isKotlinNotebookSession()) return
 
