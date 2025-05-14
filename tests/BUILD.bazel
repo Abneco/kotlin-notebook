@@ -17,6 +17,7 @@ jvm_library(
     "//plugins/kotlin/jupyter/github",
     "//plugins/kotlin/jupyter/tables",
     "@community//platform/editor-ui-api:editor-ui",
+    "@community//jps/model-api:model",
     "@community//plugins/kotlin/core",
     "@community//plugins/kotlin/scripting",
     "@community//platform/testFramework",
