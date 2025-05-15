@@ -93,6 +93,7 @@
     <orderEntry type="module" module-name="intellij.notebooks.visualization" />
     <orderEntry type="module" module-name="kotlin.base.plugin" />
     <orderEntry type="module" module-name="intellij.java.debugger.impl.shared" />
+    <orderEntry type="library" name="slf4j-api" level="project" />
     <orderEntry type="module" module-name="kotlin.base.indices" />
   </component>
 </module>
