@@ -88,6 +88,7 @@ jvm_library(
     "@community//platform/util/coroutines",
     "@community//platform/util-ex",
     "@community//platform/util:util-ui",
+    "@community//platform/workspace/storage",
     "@community//plugins/kotlin/base/analysis",
     "@community//java/debugger/openapi:java-debugger",
     "@community//plugins/kotlin/base/scripting",
