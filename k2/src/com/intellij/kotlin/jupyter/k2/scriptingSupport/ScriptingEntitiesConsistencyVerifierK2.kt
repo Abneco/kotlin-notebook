@@ -64,7 +64,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     override fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: String): Boolean {
         return checkSourceIsNotEmpty(virtualFile) && getRuntimeLibraryForNotebook(virtualFile)?.roots
             .orEmpty().any { root ->
-                root.url.url.contains(lastCompiledScriptPath)
+                root.url.toPath().toString().contains(lastCompiledScriptPath)
             }
     }
 

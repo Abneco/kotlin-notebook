@@ -37,6 +37,7 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.io.toNioPathOrNull
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
@@ -119,7 +120,7 @@ class JupyterCompilerPerFileService(
     }
 
     private val directoryCounter = AtomicInteger(0)
-    private val lastClasspathUpdate = AtomicReference<String>()
+    private val lastClasspathUpdate = AtomicReference<Path>()
     private val isStateUpdating = AtomicReference(true)
 
     private val classesDir: Path by lazy {
@@ -277,8 +278,9 @@ class JupyterCompilerPerFileService(
 
     private fun Collection<String>.updateLastClasspathArtifact() {
         val lastClasspathUpdateValue = lastOrNull()
-        if (lastClasspathUpdateValue != null) {
-            lastClasspathUpdate.set(lastClasspathUpdateValue)
+        val asPath = lastClasspathUpdateValue?.toNioPathOrNull()
+        if (asPath != null) {
+            lastClasspathUpdate.set(asPath)
         }
     }
 
@@ -404,7 +406,7 @@ class JupyterCompilerPerFileService(
 
     private fun getLineFolderName(lineNumber: Int) = "line_$lineNumber"
 
-    private fun getLastScriptArtifactPath(): String? {
+    private fun getLastScriptArtifactPath(): Path? {
         return lastClasspathUpdate.get()
     }
 
@@ -426,7 +428,7 @@ class JupyterCompilerPerFileService(
         _sourceRoots.addSnippetFromData(snippetMetadata.newSources.map { File(it) }, lineSourcesDir.toFile())
         additionalDefaultImports.addSnippet(snippetMetadata.newImports)
         if (snippetMetadata.newClasspath.isEmpty()) {
-            lastClasspathUpdate.set(lineClassesDirAsFile.absolutePath)
+            lastClasspathUpdate.set(lineClassesDirAsFile.toPath())
         } else {
             snippetMetadata.newClasspath.updateLastClasspathArtifact()
         }
@@ -627,13 +629,13 @@ class JupyterCompilerPerFileService(
         override fun afterUpdate(notebooks: Collection<BackedNotebookVirtualFile>?) {
             coroutineScope.async {
                 // return if afterUpdate triggerred for another service
-                val lastScriptPath = getLastScriptArtifactPath() ?: return@async
+                val lastScriptPath = getLastScriptArtifactPath()?.toAbsolutePath() ?: return@async
                 if (notebooks != null && !notebooks.contains(virtualFile)) {
                     isStateUpdating.set(false)
                     return@async
                 }
 
-                if (!scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, lastScriptPath)) {
+                if (!scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, lastScriptPath.toString())) {
                     LOG.info("Configuration is not consistent for ${virtualFile.file.name}, absent $lastScriptPath")
                     scriptsChangePublisher.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.INCOMPLETE)
                     return@async
