@@ -8,6 +8,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.scriptConfigurationsCla
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.project.Project
+import com.intellij.psi.search.ProjectAndLibrariesScope
 import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 
@@ -43,7 +44,11 @@ private class ScriptingEntitiesConsistencyVerifierK1(
                 } else null
             }?.heavyCache?.get()
 
-            cachedForScript?.classFilesScope?.getIndexedTopLevelClassifiers(project)
+            val projectScope = cachedForScript?.classFilesScope?.uniteWith(
+                ProjectAndLibrariesScope(project)
+            )
+
+            projectScope?.getIndexedTopLevelClassifiers(project)
         }
 
         if (indexedNames == null) {
