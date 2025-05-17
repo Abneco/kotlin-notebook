@@ -23,6 +23,12 @@ class KotlinCsvDropHandler : AbstractKotlinDataframeDropHandler(
             ", delimiter = '$escapedSeparator'"
         } ?: ""
 
-        return "DataFrame.readCSV(\"$dataFilePath\"$separatorArg)"
+        val methodName = when (context.fileExtension) {
+            TableDataFileExtensions.CSV -> "readCsv"
+            TableDataFileExtensions.TSV -> "readTsv"
+            else -> error("Unexpected file extension: ${context.fileExtension}")
+        }
+
+        return "DataFrame.$methodName(\"$dataFilePath\"$separatorArg)"
     }
 }
