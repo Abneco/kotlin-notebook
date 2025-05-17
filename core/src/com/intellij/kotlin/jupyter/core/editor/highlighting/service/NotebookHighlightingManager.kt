@@ -296,7 +296,7 @@ class NotebookHighlightingManager(
 
             val executionRequestsDone = dataController
                 .executionHighlightingHelper
-                .daemonFinished(finishedFiles, queue, canModifyRequests)
+                .daemonFinished(finishedFiles, queue)
 
             val project = editor.project
             if (project == null) {

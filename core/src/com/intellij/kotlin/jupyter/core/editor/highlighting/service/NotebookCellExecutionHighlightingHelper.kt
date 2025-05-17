@@ -94,11 +94,8 @@ class NotebookCellExecutionHighlightingHelper(
         }
 
     fun daemonFinished(completedElements: Set<Int>?,
-                       currentToHLQueue: MutableSet<Int>?,
-                       canModifyRequests: Boolean): Boolean {
-        val remainingData = if (isCanModifyRequestData(canModifyRequests)) {
-            reduceAfterExecutionTargets(completedElements)
-        } else expandAfterExecutionTargets(completedElements, currentToHLQueue)
+                       currentToHLQueue: MutableSet<Int>?): Boolean {
+        val remainingData = reduceAfterExecutionTargets(completedElements)
         remainingData?.let { currentToHLQueue?.addAll(it) }
 
         return remainingData.isNullOrEmpty()
