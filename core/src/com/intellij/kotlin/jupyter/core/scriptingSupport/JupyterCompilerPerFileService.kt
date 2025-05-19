@@ -112,11 +112,9 @@ class JupyterCompilerPerFileService(
     private val dataLock = Mutex()
     private suspend inline fun <R> accessData(crossinline action: () -> R) = dataLock.withLock(null, action)
     private fun <R> accessDataBlocking(action: () -> R): R = runBlockingMaybeCancellable {
-        coroutineScope.async {
-            accessData {
-                action()
-            }
-        }.await()
+        accessData {
+            action()
+        }
     }
 
     private val directoryCounter = AtomicInteger(0)
@@ -332,8 +330,8 @@ class JupyterCompilerPerFileService(
         sourceCode: SourceCode? = null
     ): ScriptCompilationConfiguration {
         // prefer fine-grained locks
-        return accessDataBlocking {
-            withReadAccess {
+        return withReadAccess {
+            accessDataBlocking {
                 val sourceText = sourceCode?.text
                 LOG.debug("Before-compiling callback for script: $sourceText")
 
