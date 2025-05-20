@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.test
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionQueueManager
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionQueueStore
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionTask
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
@@ -116,10 +116,11 @@ fun executeCellsAndShutdownKernel(tester: ReceivedMessagesTester, notebookFile: 
 fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executionCallback: JupyterExecutionCallback? = null) {
     val project = notebookFile.project
     val document = PsiDocumentManager.getInstance(project).getDocument(notebookFile)!!
-    val executionManager = JupyterExecutionQueueManager.getInstance(project)
     val notebookCells = notebookFile.getCells()
     val backedNotebookFile = notebookFile.virtualFile.toKotlinNotebookBackedFile()!!
     val cellsCount = notebookCells.size
+    val executionManager = JupyterExecutionQueueStore.getQueue(project, backedNotebookFile)
+
     Assertions.assertEquals(tester.expectedCellsCount, cellsCount)
 
     val testTimeout = defaultTestDuration
