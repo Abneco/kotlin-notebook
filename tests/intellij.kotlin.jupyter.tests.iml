@@ -57,36 +57,22 @@
             <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/jupyter-notebooks-parser/0.2.0-dev-10/jupyter-notebooks-parser-0.2.0-dev-10.jar">
               <sha256sum>a0aebd9163e6811f6820d3fab1340895f4e01892e36d4501532f3c812a9a594e</sha256sum>
             </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlin/kotlin-stdlib/2.1.0/kotlin-stdlib-2.1.0.jar">
-              <sha256sum>d6f91b7b0f306cca299fec74fb7c34e4874d6f5ec5b925a0b4de21901e119c3f</sha256sum>
-            </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/annotations/13.0/annotations-13.0.jar">
-              <sha256sum>ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478</sha256sum>
-            </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.7.3/kotlinx-serialization-json-jvm-1.7.3.jar">
-              <sha256sum>b1e9138499ed8d20375edda3f2b1c95f3103a258eff6af9edc5ea07100f2b29c</sha256sum>
-            </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.7.3/kotlinx-serialization-core-jvm-1.7.3.jar">
-              <sha256sum>f0adde45864144475385cf4aa7e0b7feb27f61fcf9472665ed98cc971b06b1eb</sha256sum>
-            </artifact>
           </verification>
+          <exclude>
+            <dependency maven-id="org.jetbrains.kotlin:kotlin-stdlib" />
+            <dependency maven-id="org.jetbrains.kotlinx:kotlinx-serialization-json-jvm" />
+          </exclude>
         </properties>
         <CLASSES>
           <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/jupyter-notebooks-parser/0.2.0-dev-10/jupyter-notebooks-parser-0.2.0-dev-10.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlin/kotlin-stdlib/2.1.0/kotlin-stdlib-2.1.0.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/annotations/13.0/annotations-13.0.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.7.3/kotlinx-serialization-json-jvm-1.7.3.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.7.3/kotlinx-serialization-core-jvm-1.7.3.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
           <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/jupyter-notebooks-parser/0.2.0-dev-10/jupyter-notebooks-parser-0.2.0-dev-10-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlin/kotlin-stdlib/2.1.0/kotlin-stdlib-2.1.0-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/annotations/13.0/annotations-13.0-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.7.3/kotlinx-serialization-json-jvm-1.7.3-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.7.3/kotlinx-serialization-core-jvm-1.7.3-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
+    <orderEntry type="library" scope="TEST" name="kotlinx-serialization-core" level="project" />
+    <orderEntry type="library" scope="TEST" name="kotlinx-serialization-json" level="project" />
   </component>
 </module>

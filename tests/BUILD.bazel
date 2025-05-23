@@ -62,6 +62,8 @@ jvm_library(
     "//plugins/kotlin/jupyter/k2",
     "@lib//:kotlinc-kotlin-compiler-tests",
     "@ultimate_lib//:kotlin-jupyter-tests-jetbrains-kotlinx-jupyter-notebooks-parser",
+    "@lib//:kotlinx-serialization-core",
+    "@lib//:kotlinx-serialization-json",
   ],
   runtime_deps = ["//:idea-ultimate-main"]
 )
