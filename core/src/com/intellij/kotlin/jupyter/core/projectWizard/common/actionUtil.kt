@@ -7,7 +7,9 @@ import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
 import com.intellij.kotlin.jupyter.core.settings.recents.addRecentNotebook
 import com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector
 import com.intellij.kotlin.jupyter.core.statistics.fus.WelcomeScreenIdeEntryType
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.util.application
 
 fun openNotebook(notebook: RecentNotebook) {
     KotlinNotebookFeatureUsagesCollector.registerIdeEntryFromKotlinNotebookWelcomeScreen(
@@ -16,5 +18,9 @@ fun openNotebook(notebook: RecentNotebook) {
     val projectPath = notebook.projectPath.toNioPath()
     val project = DefaultKotlinNotebookProject.getProjectWithModalProgress(projectPath)
     KotlinNotebookApplicationOptions.addRecentNotebook(notebook)
-    FileEditorManager.getInstance(project).openFile(notebook.path, true)
+
+    application.invokeLater({
+        FileEditorManager.getInstance(project)
+            .openFile(notebook.path, true)
+    }, ModalityState.nonModal())
 }
