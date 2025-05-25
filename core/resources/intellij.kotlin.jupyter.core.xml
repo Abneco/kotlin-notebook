@@ -141,7 +141,6 @@
 
         <completion.contributor language="JKTMeta" id="JKTMetaBasic"
                                 implementationClass="com.intellij.kotlin.jupyter.core.editor.codeInsight.metaLanguage.JKTMetaCompletionContributor"/>
-        <!--<completion.contributor language="JKTMeta" implementationClass="com.intellij.kotlin.jupyter.core.lang.codeInsight.KotlinMagicsRuntimeCompletionContributor" order="first"/>-->
         <annotator language="JKTMeta"
                    implementationClass="com.intellij.kotlin.jupyter.core.editor.codeInsight.metaLanguage.JKTMetaAnnotator"/>
         <lang.commenter language="JKTMeta"

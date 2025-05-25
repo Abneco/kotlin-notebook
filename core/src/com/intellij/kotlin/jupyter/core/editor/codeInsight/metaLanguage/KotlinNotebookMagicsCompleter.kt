@@ -26,7 +26,7 @@ class KotlinNotebookMagicsCompleter(
         return try {
             HttpRequests.request(url).readString()
         } catch (e: IOException) {
-            logger<KotlinNotebookMagicsCompleter>().warn("Magic completion request failed")
+            logger<KotlinNotebookMagicsCompleter>().warn("Magic completion request failed", e)
             null
         }
     }

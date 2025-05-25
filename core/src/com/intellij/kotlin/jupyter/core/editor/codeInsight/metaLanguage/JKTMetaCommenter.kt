@@ -11,6 +11,6 @@ class JKTMetaCommenter : Commenter {
     override fun getLineCommentPrefix(): String? = kotlinCommenter?.lineCommentPrefix
     override fun getBlockCommentPrefix(): String? = kotlinCommenter?.blockCommentPrefix
     override fun getBlockCommentSuffix(): String? = kotlinCommenter?.blockCommentSuffix
-    override fun getCommentedBlockCommentPrefix() = kotlinCommenter?.commentedBlockCommentPrefix
-    override fun getCommentedBlockCommentSuffix() = kotlinCommenter?.commentedBlockCommentSuffix
+    override fun getCommentedBlockCommentPrefix(): String? = kotlinCommenter?.commentedBlockCommentPrefix
+    override fun getCommentedBlockCommentSuffix(): String? = kotlinCommenter?.commentedBlockCommentSuffix
 }

@@ -7,6 +7,7 @@ import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.project.DumbAware
 import com.intellij.psi.util.startOffset
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlinx.jupyter.common.ReplCommand
@@ -16,7 +17,7 @@ import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.libraries.ResourceLibraryDescriptorsProvider
 import kotlin.time.Duration.Companion.seconds
 
-class JKTMetaCompletionContributor : CompletionContributor() {
+class JKTMetaCompletionContributor : CompletionContributor(), DumbAware {
     private val magicsCompleter = KotlinNotebookMagicsCompleter(
         ResourceLibraryDescriptorsProvider(DefaultKernelLoggerFactory)
     )
