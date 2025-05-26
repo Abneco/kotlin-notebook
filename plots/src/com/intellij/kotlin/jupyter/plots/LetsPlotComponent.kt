@@ -12,18 +12,22 @@ import com.intellij.ui.components.JBLayeredPane
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
 import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
-import org.jetbrains.letsPlot.core.spec.FigKind
+import org.jetbrains.letsPlot.commons.geometry.DoubleVector
 import org.jetbrains.letsPlot.core.spec.config.PlotConfig
+import org.jetbrains.letsPlot.core.spec.front.PlotConfigFrontend
 import org.jetbrains.letsPlot.core.util.MonolithicCommon
 import org.jetbrains.letsPlot.core.util.PlotHtmlExport
 import org.jetbrains.letsPlot.core.util.PlotHtmlHelper
 import org.jetbrains.letsPlot.core.util.PlotSizeHelper
+import org.jetbrains.letsPlot.core.util.sizing.SizingPolicy
 import java.awt.Dimension
 import java.awt.event.ComponentEvent
 import java.awt.event.MouseEvent
 import javax.swing.JPanel
-import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.roundToInt
+
+private val sizingPolicy get() = SizingPolicy.fitContainerSize(false)
 
 class LetsPlotComponent : JBLayeredPane() {
     private var plotPanel: PlotPanel? = null
@@ -84,7 +88,6 @@ class LetsPlotComponent : JBLayeredPane() {
     private fun initForSpec(processedSpec: MutableLetsPlotSpec) {
         val plotComponentProvider = IdeaPlotComponentProviderBatik(
             processedSpec = processedSpec,
-            preserveAspectRatio = false,
             executor = IdeaSwingContextBatik.IDEA_EDT_EXECUTOR,
             computationMessagesHandler = { messages ->
                 for (message in messages) {
@@ -97,7 +100,8 @@ class LetsPlotComponent : JBLayeredPane() {
             plotComponentProvider = plotComponentProvider,
             preferredSizeFromPlot = true,
             repaintDelay = 200,
-            applicationContext = IdeaSwingContextBatik
+            applicationContext = IdeaSwingContextBatik,
+            sizingPolicy = sizingPolicy
         ){}
 
         plotPanel.isOpaque = true
@@ -184,25 +188,8 @@ private fun scaledFigureSize(
         return Pair(containerWidth, containerHeight)
     }
 
-    return when (PlotConfig.figSpecKind(figureSpec)) {
-        FigKind.GG_BUNCH_SPEC -> {
-            // don't scale GGBunch size
-            val bunchSize = PlotSizeHelper.plotBunchSize(figureSpec)
-            Pair(ceil(bunchSize.x).toInt(), ceil(bunchSize.y).toInt())
-        }
-
-        FigKind.PLOT_SPEC -> {
-            // for single plot: scale component to fit in requested size
-            val aspectRatio = PlotSizeHelper.figureAspectRatio(figureSpec)
-            scaledFigureSize(aspectRatio, containerWidth, containerHeight)
-        }
-
-        FigKind.SUBPLOTS_SPEC -> {
-            val (nCol, nRow) = (figureSpec["layout"]!! as Map<*, *>).let {
-                (it["ncol"]!! as Double) to (it["nrow"] as Double)
-            }
-            val aspectRatio = (nCol * 600.0) / (nRow * 400.0)
-            scaledFigureSize(aspectRatio, containerWidth, containerHeight)
-        }
+    val config = PlotConfigFrontend.create(figureSpec) {}
+    return PlotSizeHelper.singlePlotSize(figureSpec, DoubleVector(containerWidth, containerHeight), sizingPolicy, config.facets, config.containsLiveMap).run {
+        x.roundToInt() to y.roundToInt()
     }
 }
