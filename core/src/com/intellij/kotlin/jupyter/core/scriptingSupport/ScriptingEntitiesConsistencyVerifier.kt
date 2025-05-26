@@ -6,6 +6,7 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandle
 import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier.Companion.create
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
@@ -15,15 +16,16 @@ import kotlin.script.experimental.api.ScriptCompilationConfiguration
  * An interface that acts as a checker to determine if a script or its configuration is present in Workspace Model / cache,
  * depending on the mode of the Kotlin plugin (K1 or K2).
  *
- * This is crucial to now since only after a script was added to the Model, it's now in indexes.
+ * This is crucial now since only after a script was added to the Model, it's now in indexes.
  *
  * [create] calls a [Factory] service for each of K1/K2 modes.
  */
 interface ScriptingEntitiesConsistencyVerifier : KotlinPluginModeAwareHandler {
     /**
-     * Check for presence of classpath part in artifacts cache
+     * Check for presence of classpath part in artifacts cache.
+     * Since path representation could differ for any OS, it's important to use an agnostic approach.
      */
-    fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: String): Boolean
+    fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: VirtualFileUrl): Boolean
 
     /**
      * Returns the list of types that are present in the FileIndex, e.g., for them there exists stub or other indexed representation.

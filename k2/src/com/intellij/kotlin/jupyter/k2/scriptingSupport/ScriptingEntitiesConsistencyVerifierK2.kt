@@ -9,9 +9,12 @@ import com.intellij.kotlin.jupyter.k2.projectModel.findK2WorkspaceModule
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.platform.backend.workspace.workspaceModel
 import com.intellij.platform.workspace.jps.entities.LibraryEntity
+import com.intellij.platform.workspace.jps.entities.LibraryRootTypeId
+import com.intellij.platform.workspace.storage.impl.url.toVirtualFileUrl
+import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import com.intellij.util.concurrency.annotations.RequiresReadLock
-import com.intellij.workspaceModel.ide.toPath
 import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.baseClass
@@ -61,10 +64,16 @@ private class ScriptingEntitiesConsistencyVerifierK2(
         }
     }
 
-    override fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: String): Boolean {
+    /**
+     * Only COMPILED roots influence analysis, so we're checking that the necessary artifacts are already present in the model
+     * before analysis could start.
+     */
+    override fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: VirtualFileUrl): Boolean {
+        val artifactName = lastCompiledScriptPath.fileName
+
         return checkSourceIsNotEmpty(virtualFile) && getRuntimeLibraryForNotebook(virtualFile)?.roots
             .orEmpty().any { root ->
-                root.url.toPath().toString().contains(lastCompiledScriptPath)
+                root.type == LibraryRootTypeId.COMPILED && root.url.presentableUrl.endsWith(artifactName)
             }
     }
 
@@ -90,10 +99,12 @@ private class ScriptingEntitiesConsistencyVerifierK2(
         if (!presentInConfigurationSource) return false
 
         val notebookRuntimeDependencyLibrary = getRuntimeLibraryForNotebook(virtualFile)
+        val urlManager = project.workspaceModel.getVirtualFileUrlManager()
+        val lastDependencyVFUrl = configurationForNotebook.dependenciesClassPath.lastOrNull()
+            ?.toPath()?.toVirtualFileUrl(urlManager)
         val presentInModuleDependencies = notebookRuntimeDependencyLibrary?.roots.orEmpty()
             .any { root ->
-                val lastDependencyPath = configurationForNotebook.dependenciesClassPath.lastOrNull()?.toPath()
-                lastDependencyPath == root.url.toPath()
+                lastDependencyVFUrl == root.url
             }
 
         return presentInModuleDependencies

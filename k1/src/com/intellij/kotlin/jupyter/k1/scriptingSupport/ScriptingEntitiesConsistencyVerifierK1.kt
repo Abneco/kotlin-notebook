@@ -8,6 +8,9 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.scriptConfigurationsCla
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.project.Project
+import com.intellij.platform.backend.workspace.toVirtualFileUrl
+import com.intellij.platform.backend.workspace.workspaceModel
+import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import com.intellij.psi.search.ProjectAndLibrariesScope
 import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
@@ -23,11 +26,13 @@ private class ScriptingEntitiesConsistencyVerifierFactoryK1(
 private class ScriptingEntitiesConsistencyVerifierK1(
     private val project: Project
 ) : ScriptingEntitiesConsistencyVerifier {
-    override fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: String): Boolean {
+    override fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: VirtualFileUrl): Boolean {
         val cache = project.scriptConfigurationsClassCache
+        val urlManager = project.workspaceModel.getVirtualFileUrlManager()
+        val presentableUrl = lastCompiledScriptPath.presentableUrl
 
         return cache.allDependenciesClassFiles.any {
-            it.presentableUrl == lastCompiledScriptPath
+            it.toVirtualFileUrl(urlManager).presentableUrl == presentableUrl
         }
     }
 

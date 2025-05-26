@@ -39,6 +39,8 @@ import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.io.toNioPathOrNull
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.backend.workspace.workspaceModel
+import com.intellij.platform.workspace.storage.impl.url.toVirtualFileUrl
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.delete
@@ -627,14 +629,16 @@ class JupyterCompilerPerFileService(
         override fun afterUpdate(notebooks: Collection<BackedNotebookVirtualFile>?) {
             coroutineScope.async {
                 // return if afterUpdate triggerred for another service
-                val lastScriptPath = getLastScriptArtifactPath()?.toAbsolutePath() ?: return@async
+                val lastScriptPath = getLastScriptArtifactPath() ?: return@async
                 if (notebooks != null && !notebooks.contains(virtualFile)) {
                     isStateUpdating.set(false)
                     return@async
                 }
 
-                if (!scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, lastScriptPath.toString())) {
-                    LOG.info("Configuration is not consistent for ${virtualFile.file.name}, absent $lastScriptPath")
+                val vFileUrl = lastScriptPath.toVirtualFileUrl(project.workspaceModel.getVirtualFileUrlManager())
+
+                if (!scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, vFileUrl)) {
+                    LOG.info("Configuration is not consistent for ${virtualFile.file.name}, absent $lastScriptPath, fileUrl: ${vFileUrl.url}")
                     scriptsChangePublisher.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.INCOMPLETE)
                     return@async
                 }
