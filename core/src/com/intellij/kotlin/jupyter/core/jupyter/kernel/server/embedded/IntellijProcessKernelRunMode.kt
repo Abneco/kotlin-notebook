@@ -8,7 +8,9 @@ import org.jetbrains.kotlinx.jupyter.util.DelegatingClassLoader
 import org.jetbrains.kotlinx.jupyter.util.kernelFqnPrefixes
 
 object IntellijProcessKernelRunMode : AbstractKernelRunMode("Intellij Process") {
-    override fun createIntermediaryClassLoader(parent: ClassLoader) = createIdeDelegatingClassLoader(parent)
+    override fun createIntermediaryClassLoader(parent: ClassLoader): ClassLoader {
+        return createIdeDelegatingClassLoader(parent)
+    }
 
     override val shouldKillProcessOnShutdown: Boolean get() = false
     override val inMemoryOutputsSupported: Boolean get() = true
@@ -36,5 +38,8 @@ private fun createIdeDelegatingClassLoader(parent: ClassLoader): ClassLoader {
             }
         }
 
-    return DelegatingClassLoader(parent, strategy)
+    val mainClassLoader = DelegatingClassLoader(parent, strategy)
+    return MultiDelegatingClassLoader().apply {
+        addParent(mainClassLoader)
+    }
 }

@@ -5,5 +5,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 val KERNEL_VERIFICATION_TIMEOUT: Duration = 15.seconds
+val KERNEL_UPDATE_FILE_PATH_TIMEOUT: Duration = 5.seconds
 val KERNEL_KILL_WAIT_TIMEOUT: Duration = 15.seconds
 val SESSION_KILL_WAIT_TIMEOUT: Duration = 15.seconds
