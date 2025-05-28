@@ -10,6 +10,10 @@ import java.util.Enumeration
 /**
  * A custom class loader that extends [ModifiableParentsClassLoader] and supports multiple parent class loaders.
  * This allows delegation to multiple specified class loaders for loading classes and resources.
+ * We try parents in the order they were added to the class loader, so "older" parents have higher
+ * resolution priority.
+ * That's why if you have main plugin module A and the submodule of this plugin B (so, B depends on A),
+ * the classloader of B should be added before the classloader of A.
  */
 class MultiDelegatingClassLoader : ModifiableParentsClassLoader() {
     private val parents = mutableListOf<ClassLoader>()
