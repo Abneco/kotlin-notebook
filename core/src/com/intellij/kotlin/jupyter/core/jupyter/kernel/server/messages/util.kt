@@ -1,7 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages
 
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
@@ -33,7 +33,8 @@ import kotlin.time.Duration
  */
 suspend fun JupyterNotebookSession.updateNotebookMetadata(): Boolean {
     val notebookFilePath = virtualFile.file.toNioPath().absolute()
-    val updateResult: Boolean? = sendShellMessageAndWait(
+    val updateResult: Boolean? = sendMessageAndWait(
+        channel = JupyterMessageChannel.SHELL,
         messageType = MessageType.UPDATE_CLIENT_METADATA_REQUEST,
         content = UpdateClientMetadataRequest(notebookFilePath),
         timeout = KERNEL_UPDATE_FILE_PATH_TIMEOUT
@@ -55,18 +56,19 @@ suspend fun JupyterNotebookSession.updateNotebookMetadata(): Boolean {
 }
 
 /**
- * Sends a message to the kernel's `SHELL` channel and waits for a reply.
+ * Sends a message to the kernel's [channel] and waits for a reply.
  * Use [callbackFactory] to provide a callback that will be called when a reply is received.
  * Its argument, `replyDeferred`, should be completed by the client code.
  *
  * @return null if the deferred was not completed within the timeout.
  */
 @OptIn(ExperimentalContracts::class)
-suspend fun <T: Any> JupyterNotebookSession.sendShellMessageAndWait(
+suspend fun <T: Any> JupyterNotebookSession.sendMessageAndWait(
+    channel: JupyterMessageChannel,
     messageType: MessageType,
     content: AbstractMessageContent,
     timeout: Duration,
-    callbackFactory: (replyDeferred: CompletableDeferred<T>) -> JupyterExecutionCallbackAdapter,
+    callbackFactory: (replyDeferred: CompletableDeferred<T>) -> JupyterExecutionCallback,
 ): T? {
     contract {
         callsInPlace(callbackFactory, InvocationKind.EXACTLY_ONCE)
@@ -74,7 +76,7 @@ suspend fun <T: Any> JupyterNotebookSession.sendShellMessageAndWait(
 
     val messageFactory = NoReplyMessageFactory(sessionId)
     val message = messageFactory.makeSimpleMessage(messageType, content)
-    val zmqMessage = message.toRawMessage().toJupyterMessage(JupyterMessageChannel.SHELL)
+    val zmqMessage = message.toRawMessage().toJupyterMessage(channel)
 
     val replyDeferred = CompletableDeferred<T>()
     val callback = callbackFactory(replyDeferred)

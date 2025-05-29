@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionLaunchStrategy
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KERNEL_VERIFICATION_TIMEOUT
@@ -14,7 +15,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnab
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableProvider
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.JupyterSessionVerifiedListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.FinalizationPreservingCallback
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.sendShellMessageAndWait
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.sendMessageAndWait
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.updateNotebookMetadata
 import com.intellij.openapi.application.ApplicationManager
 import org.jetbrains.kotlinx.jupyter.messaging.KernelInfoRequest
@@ -58,7 +59,8 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
         session: JupyterNotebookSession,
         kernel: KotlinKernelRunnableHandler?
     ): Boolean {
-        val verificationResult = session.sendShellMessageAndWait(
+        val verificationResult = session.sendMessageAndWait(
+            channel = JupyterMessageChannel.SHELL,
             messageType = MessageType.KERNEL_INFO_REQUEST,
             content = KernelInfoRequest(),
             timeout = KERNEL_VERIFICATION_TIMEOUT
