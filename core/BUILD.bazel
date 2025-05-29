@@ -75,6 +75,7 @@ jvm_library(
     "@community//platform/platform-api:ide",
     "@community//platform/platform-impl:ide-impl",
     "@community//platform/platform-util-io:ide-util-io",
+    "@community//platform/indexing-api:indexing",
     "@community//jps/model-api:model",
     "@community//platform/lang-api:lang",
     "@community//platform/lang-impl",

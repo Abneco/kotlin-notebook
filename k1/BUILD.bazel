@@ -53,6 +53,7 @@ jvm_library(
     "@lib//:kotlinc-kotlin-compiler-common-provided",
     "@lib//:kotlinc-kotlin-compiler-fe10-provided",
     "@lib//:kotlin-stdlib-provided",
+    "@community//platform/indexing-api:indexing",
     "@community//plugins/kotlin/base/fe10/analysis",
     "//plugins/kotlin/jupyter/core",
     "@community//platform/core-api:core",
