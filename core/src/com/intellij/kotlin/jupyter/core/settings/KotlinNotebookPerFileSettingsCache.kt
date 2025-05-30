@@ -20,6 +20,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.waitForSmartMode
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.ide.progress.withBackgroundProgress
 import com.intellij.psi.search.FilenameIndex
@@ -30,13 +31,23 @@ import com.intellij.util.containers.CollectionFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.CalledInAny
 import kotlin.reflect.KMutableProperty0
 
+private typealias Refactoring = (JupyterNotebook) -> Unit
+
 @Service(Service.Level.PROJECT)
 class KotlinNotebookPerFileSettingsCache(val project: Project, private val coroutineScope: CoroutineScope) : Disposable {
     private val cache = CollectionFactory.createConcurrentWeakMap<VirtualFile, KotlinNotebookSettings>()
+    private val refactoringsChannel = Channel<Refactoring>(Channel.UNLIMITED)
+
+    init {
+        coroutineScope.async {
+            runRefactorings()
+        }
+    }
 
     fun notebookEditorCreated(file: VirtualFile) {
         if (cache.contains(file)) return
@@ -76,38 +87,8 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
     @CalledInAny
     fun getCachedSettings(file: VirtualFile): KotlinNotebookSettings? = cache[file]
 
-    internal fun onModulesRenamed(oldToNewNames: Map<String, String>) = performRefactoring {
-        onModulesRenamed(this::notebookDependencies, oldToNewNames)
-    }
-
-    private fun performRefactoring(operation: JupyterNotebook.() -> Unit) {
-        coroutineScope.async {
-            withBackgroundProgress(project, KotlinNotebookBundle.message("kotlin.jupyter.settings.refactoring.progress")) {
-                val openNotebookFiles = withContext(Dispatchers.EDT) {
-                    val openNotebookFiles = cache.toMap().keys.mapNotNull { BackedNotebookVirtualFile.takeIfBacked(it) }
-                    openNotebookFiles.forEach { it.notebook.operation() }
-                    if (openNotebookFiles.isNotEmpty()) FileDocumentManager.getInstance().saveAllDocuments()
-                    openNotebookFiles
-                }
-                val openFiles = openNotebookFiles.map { it.originFile }
-
-                val ipynbFiles = smartReadAction(project) {
-                    FilenameIndex.getAllFilesByExt(project, JupyterFileType.defaultExtension, ProjectScope.getProjectScope(project))
-                }
-                val closedNotebookFiles = ipynbFiles
-                    .filter { !openFiles.contains(it) }
-                    .mapNotNull { BackedNotebookVirtualFile.Companion.takeBackend(it) }
-                    .filter { it.file.isKotlinNotebook }
-                if (closedNotebookFiles.isNotEmpty()) {
-                    withContext(Dispatchers.EDT) {
-                        writeIntentReadAction {
-                            closedNotebookFiles.forEach { it.notebook.operation() }
-                            FileDocumentManager.getInstance().saveAllDocuments()
-                        }
-                    }
-                }
-            }
-        }
+    internal fun onModulesRenamed(oldToNewNames: Map<String, String>) = scheduleRefactoring { notebook ->
+        onModulesRenamed(notebook::notebookDependencies, oldToNewNames)
     }
 
     private fun onModulesRenamed(property: KMutableProperty0<KotlinNotebookDependencies>, oldToNewNames: Map<String, String>) {
@@ -115,8 +96,54 @@ class KotlinNotebookPerFileSettingsCache(val project: Project, private val corou
         property.set(KotlinNotebookDependencies.SingleModule(oldToNewNames[oldModule.moduleName] ?: oldModule.moduleName))
     }
 
+    private suspend fun runRefactorings() {
+        while (true) {
+            runRefactoring(refactoringsChannel.receive())
+        }
+    }
+
+    private fun scheduleRefactoring(refactoring: Refactoring) {
+        coroutineScope.async {
+            refactoringsChannel.send(refactoring)
+        }
+    }
+
+    private suspend fun runRefactoring(refactoring: Refactoring) {
+        project.waitForSmartMode()
+        withBackgroundProgress(project, KotlinNotebookBundle.message("kotlin.jupyter.settings.refactoring.progress")) {
+            val openNotebookFiles = withContext(Dispatchers.EDT) {
+                val openNotebookFiles = cache.toMap().keys.mapNotNull { BackedNotebookVirtualFile.takeIfBacked(it) }
+                if (openNotebookFiles.isNotEmpty()) {
+                    writeIntentReadAction {
+                        openNotebookFiles.forEach { refactoring(it.notebook) }
+                        FileDocumentManager.getInstance().saveAllDocuments()
+                    }
+                }
+                openNotebookFiles
+            }
+            val openFiles = openNotebookFiles.map { it.originFile }
+
+            val ipynbFiles = smartReadAction(project) {
+                FilenameIndex.getAllFilesByExt(project, JupyterFileType.defaultExtension, ProjectScope.getProjectScope(project))
+            }
+            val closedNotebookFiles = ipynbFiles
+                .filter { !openFiles.contains(it) }
+                .mapNotNull { BackedNotebookVirtualFile.takeBackend(it) }
+                .filter { it.file.isKotlinNotebook }
+            if (closedNotebookFiles.isNotEmpty()) {
+                withContext(Dispatchers.EDT) {
+                    writeIntentReadAction {
+                        closedNotebookFiles.forEach { refactoring(it.notebook) }
+                        FileDocumentManager.getInstance().saveAllDocuments()
+                    }
+                }
+            }
+        }
+    }
+
     override fun dispose() {
         cache.clear()
+        refactoringsChannel.close()
     }
 
     companion object {
