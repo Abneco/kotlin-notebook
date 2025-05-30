@@ -24,7 +24,6 @@ import java.awt.Dimension
 import java.awt.event.ComponentEvent
 import java.awt.event.MouseEvent
 import javax.swing.JPanel
-import kotlin.math.floor
 import kotlin.math.roundToInt
 
 private val sizingPolicy get() = SizingPolicy.fitContainerSize(false)
@@ -166,20 +165,6 @@ private fun plotSize(spec: LetsPlotSpec, containerWidth: Int, containerHeight: I
 }
 
 private fun scaledFigureSize(
-    aspectRatio: Double, containerWidth: Int, containerHeight: Int
-): Pair<Int, Int> {
-    return if (aspectRatio >= 1.0) {
-        val plotHeight = containerWidth / aspectRatio
-        val scaling = if (plotHeight > containerHeight) containerHeight / plotHeight else 1.0
-        Pair(floor(containerWidth * scaling).toInt(), floor(plotHeight * scaling).toInt())
-    } else {
-        val plotWidth = containerHeight * aspectRatio
-        val scaling = if (plotWidth > containerWidth) containerWidth / plotWidth else 1.0
-        Pair(floor(plotWidth * scaling).toInt(), floor(containerHeight * scaling).toInt())
-    }
-}
-
-private fun scaledFigureSize(
     figureSpec: LetsPlotSpec, containerWidth: Int, containerHeight: Int
 ): Pair<Int, Int> {
 
@@ -189,7 +174,7 @@ private fun scaledFigureSize(
     }
 
     val config = PlotConfigFrontend.create(figureSpec) {}
-    return PlotSizeHelper.singlePlotSize(figureSpec, DoubleVector(containerWidth, containerHeight), sizingPolicy, config.facets, config.containsLiveMap).run {
-        x.roundToInt() to y.roundToInt()
-    }
+    val containerSize = DoubleVector(containerWidth, containerHeight)
+    val plotSize = PlotSizeHelper.singlePlotSize(figureSpec, containerSize, sizingPolicy, config.facets, config.containsLiveMap)
+    return plotSize.run { x.roundToInt() to y.roundToInt() }
 }
