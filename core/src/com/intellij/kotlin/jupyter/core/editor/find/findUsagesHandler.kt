@@ -107,11 +107,10 @@ internal class KotlinNotebookElementFindUsagesHandler(
         var result = true
         runReadAction {
             val foundUsages = findUsageForElement(element)
-            if (foundUsages.isNullOrEmpty()) result = false
 
             foundUsages?.iterator()?.forEach {
                 val properFileRange = ensureProperTextRangeShiftInFile(it)
-                refProcessor.processInReadAction(NotebookReferenceWrapper(super.myPsiElement, it, properFileRange, true))
+                result = result && refProcessor.processInReadAction(NotebookReferenceWrapper(super.myPsiElement, it, properFileRange, true))
             }
         }
 
