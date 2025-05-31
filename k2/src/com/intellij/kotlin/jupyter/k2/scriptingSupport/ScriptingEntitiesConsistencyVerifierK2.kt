@@ -48,6 +48,19 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     }
 
     /**
+     * Only COMPILED roots influence analysis, so we're checking that the necessary artifacts are already present in the model
+     * before analysis could start.
+     */
+    private fun checkArtifactPresentInLibrary(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: VirtualFileUrl): Boolean {
+        val artifactName = lastCompiledScriptPath.fileName
+
+        return getRuntimeLibraryForNotebook(virtualFile)?.roots
+            .orEmpty().any { root ->
+                root.type == LibraryRootTypeId.COMPILED && root.url.presentableUrl.endsWith(artifactName)
+            }
+    }
+
+    /**
      * KaModules get invalidated during scripting update.
      * However, this method is invoked after changes are made to a Workspace model;
      * hence, it's assumed everything is rebuilt by this time.
@@ -64,17 +77,8 @@ private class ScriptingEntitiesConsistencyVerifierK2(
         }
     }
 
-    /**
-     * Only COMPILED roots influence analysis, so we're checking that the necessary artifacts are already present in the model
-     * before analysis could start.
-     */
     override fun isScriptPathConsistentWithModel(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: VirtualFileUrl): Boolean {
-        val artifactName = lastCompiledScriptPath.fileName
-
-        return checkSourceIsNotEmpty(virtualFile) && getRuntimeLibraryForNotebook(virtualFile)?.roots
-            .orEmpty().any { root ->
-                root.type == LibraryRootTypeId.COMPILED && root.url.presentableUrl.endsWith(artifactName)
-            }
+        return checkSourceIsNotEmpty(virtualFile) && checkArtifactPresentInLibrary(virtualFile, lastCompiledScriptPath)
     }
 
     override fun isScriptFileConfigurationConsistentWithModel(virtualFile: BackedNotebookVirtualFile, compilationConfiguration: ScriptCompilationConfiguration): Boolean {
@@ -98,14 +102,12 @@ private class ScriptingEntitiesConsistencyVerifierK2(
         val presentInConfigurationSource = compareConfigurationsData(compilationConfiguration, configuration)
         if (!presentInConfigurationSource) return false
 
-        val notebookRuntimeDependencyLibrary = getRuntimeLibraryForNotebook(virtualFile)
         val urlManager = project.workspaceModel.getVirtualFileUrlManager()
         val lastDependencyVFUrl = configurationForNotebook.dependenciesClassPath.lastOrNull()
-            ?.toPath()?.toVirtualFileUrl(urlManager)
-        val presentInModuleDependencies = notebookRuntimeDependencyLibrary?.roots.orEmpty()
-            .any { root ->
-                lastDependencyVFUrl == root.url
-            }
+            ?.toPath()?.toVirtualFileUrl(urlManager) ?: return false
+        val presentInModuleDependencies = checkArtifactPresentInLibrary(
+            virtualFile, lastDependencyVFUrl
+        )
 
         return presentInModuleDependencies
     }
