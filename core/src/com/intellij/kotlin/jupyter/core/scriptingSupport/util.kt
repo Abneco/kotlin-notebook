@@ -5,7 +5,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.workspace.WorkspaceModel
 import com.intellij.platform.workspace.storage.ImmutableEntityStorage
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsCache
 import org.jetbrains.kotlinx.jupyter.repl.result.SerializedCompiledScript
 import kotlin.script.experimental.api.IdeScriptCompilationConfigurationKeys
@@ -16,7 +15,7 @@ internal val Project.baseScriptingCompilationConfiguration: ScriptCompilationCon
     get() = JupyterCompilerService.getInstance(this).scriptDefinitionsWrapper.scriptDefinitionData.compilationConfiguration
 
 val Project.scriptConfigurationsClassCache: ScriptClassRootsCache
-    get() = (ScriptConfigurationManager.getInstance(this) as CompositeScriptConfigurationManager).updater.classpathRoots
+    get() = ScriptConfigurationManager.getInstance(this).updater.classpathRoots
 
 val Project.workSpaceSnapshot: ImmutableEntityStorage
     get() = WorkspaceModel.getInstance(this).currentSnapshot

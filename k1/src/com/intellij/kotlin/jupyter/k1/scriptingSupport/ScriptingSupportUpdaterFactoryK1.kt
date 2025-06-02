@@ -6,7 +6,6 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.UpdaterConstructorData
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.RecursionManager
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 
 class ScriptingSupportUpdaterFactoryK1: ScriptingSupportUpdater.Factory {
     override fun create(updaterConstructor: UpdaterConstructorData): ScriptingSupportUpdater {
@@ -16,7 +15,7 @@ class ScriptingSupportUpdaterFactoryK1: ScriptingSupportUpdater.Factory {
 
 class K1ScriptingSupportUpdater(private val project: Project): ScriptingSupportUpdater {
     override fun updateScripts() {
-        val updater = (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
+        val updater = ScriptConfigurationManager.getInstance(project).updater
         RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
             updater.invalidateAndCommit()
         }

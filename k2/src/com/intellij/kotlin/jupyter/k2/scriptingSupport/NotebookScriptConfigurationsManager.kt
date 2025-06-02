@@ -5,13 +5,19 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
+import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.settings.ProjectJdkOption
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFile
+import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.components.serviceAsync
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.projectRoots.ProjectJdkTable
+import com.intellij.openapi.projectRoots.Sdk
+import com.intellij.openapi.roots.OrderRootType
+import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
@@ -30,6 +36,7 @@ import com.intellij.platform.workspace.jps.entities.modifyModuleEntity
 import com.intellij.platform.workspace.jps.entities.sourceRoots
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
+import com.intellij.testFramework.LightVirtualFile
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModuleProvider
@@ -39,8 +46,10 @@ import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptRefinedConfigurationResolver
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptWorkspaceModelManager
+import org.jetbrains.kotlin.idea.core.script.scriptingWarnLog
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
+import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.script.experimental.api.asSuccess
 
@@ -81,10 +90,47 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         val topLevelFile = virtualFile.getTopLevelFile()
 
         val configuration = cache[topLevelFile]
-        if (cache.isNotEmpty() && configuration == null) {
+        if (cache.isEmpty()) {
+            return getDefaultConfiguration(topLevelFile)
+        } else if (configuration == null) {
             notebookLogger().warn("No configuration found for ${topLevelFile.name}")
         }
+
         return configuration
+    }
+
+    fun getDefaultConfiguration(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
+        val sourceCode = VirtualFileScriptSource(virtualFile)
+        val notebookFile = virtualFile.toBackedNotebookFile()
+        if (notebookFile == null) {
+            notebookLogger().warn("Can't retrieve notebook file for $virtualFile.")
+            return null
+        }
+
+        val configuration = JupyterCompilerService.getForFile(project, notebookFile).provideDefaultConfiguration(sourceCode)
+
+        return ScriptConfigurationWithSdk(configuration, getScriptDefaultSdk())
+    }
+
+    private fun getScriptDefaultSdk(): Sdk? {
+        val projectSdk = ProjectRootManager.getInstance(project).projectSdk?.takeIf { it.canBeUsedForScript() }
+        if (projectSdk != null) return projectSdk
+
+        val allJdks = ProjectJdkTable.getInstance().allJdks
+
+        val anyJavaSdk = allJdks.find { it.canBeUsedForScript() }
+        if (anyJavaSdk != null) {
+            return anyJavaSdk
+        }
+
+        return null
+    }
+
+    private fun Sdk.canBeUsedForScript() = sdkType is JavaSdkType && hasValidClassPathRoots()
+
+    private fun Sdk.hasValidClassPathRoots(): Boolean {
+        val rootClasses = rootProvider.getFiles(OrderRootType.CLASSES)
+        return rootClasses.isNotEmpty() && rootClasses.all { it.isValid }
     }
 
     @OptIn(KaImplementationDetail::class)

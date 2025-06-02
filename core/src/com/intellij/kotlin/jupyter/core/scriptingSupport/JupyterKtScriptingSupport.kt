@@ -6,9 +6,9 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.util.errorWithAttachments
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
-import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.logger
@@ -18,7 +18,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.LightVirtualFile
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport
 import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsBuilder
 import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsUpdater
@@ -113,9 +112,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     companion object {
         private val LOG = logger<JupyterKtScriptingSupport>()
 
-        private fun getUpdater(project: Project): ScriptClassRootsUpdater {
-            return (ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager).updater
-        }
+        private fun getUpdater(project: Project): ScriptClassRootsUpdater = ScriptConfigurationManager.getInstance(project).updater
 
         fun isInTheTransaction(project: Project): Boolean = getUpdater(project).isTransactionAboutToHappen()
 

@@ -5,6 +5,7 @@ import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeRed
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.getCellRangesInDocumentOrNull
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
+import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.visualization.NotebookCellLines
@@ -15,6 +16,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
+import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginModeProvider
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.utils.addIfNotNull
@@ -41,7 +43,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         val cellUnderEditor = editor.getCell(document.getLineNumber(caretOffSet))
         ProgressManager.checkCanceled()
 
-        cells?.ensureScriptConfigurations(ScriptConfigurationManager.getInstance(project),
+        cells?.ensureScriptConfigurations(ScriptConfigurationManager.getInstanceSafe(project),
                                                                InjectedLanguageManager.getInstance(project))
         val highlightingManager = backedNotebook?.let { NotebookHighlightingService.getForFile(project, it) }
         val dataController = highlightingManager?.dataController
@@ -158,11 +160,15 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         }
     }
 
-    private fun Collection<PsiLanguageInjectionHost>?.ensureScriptConfigurations(scriptingManager: ScriptConfigurationManager, manager: InjectedLanguageManager) {
+    private fun Collection<PsiLanguageInjectionHost>?.ensureScriptConfigurations(scriptingManager: ScriptConfigurationManager?, manager: InjectedLanguageManager) {
         this?.forEach {
             manager.getInjectedPsiFiles(it)?.firstOrNull { f -> f.first is KtFile }?.first?.let { ktFile ->
                 if (ktFile is KtFile) {
-                    scriptingManager.getConfiguration(ktFile)
+                    if (KotlinPluginModeProvider.isK1Mode()) {
+                        scriptingManager?.getConfiguration(ktFile)
+                    } else {
+                        JupyterKtScriptingSupport.getDefaultConfiguration(ktFile)
+                    }
                 }
             }
         }
