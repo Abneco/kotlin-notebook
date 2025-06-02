@@ -26,7 +26,7 @@ import java.awt.event.MouseEvent
 import javax.swing.JPanel
 import kotlin.math.roundToInt
 
-private val sizingPolicy get() = SizingPolicy.fitContainerSize(false)
+private val sizingPolicy get() = SizingPolicy.notebookCell()
 
 class LetsPlotComponent : JBLayeredPane() {
     private var plotPanel: PlotPanel? = null
