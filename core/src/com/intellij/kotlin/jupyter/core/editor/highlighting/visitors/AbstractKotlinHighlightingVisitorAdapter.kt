@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.core.editor.highlighting.visitors
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.highlightingManagerFor
-import com.intellij.kotlin.jupyter.core.util.getTopLevelFile
+import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrSelf
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.psi.PsiElement
@@ -27,7 +27,7 @@ abstract class AbstractKotlinHighlightingVisitorAdapter<T: AbstractHighlightingV
     }
 
     protected fun analysisFinished(file: PsiFile) {
-        highlightingManagerFor(file.project, file.virtualFile.getTopLevelFile())?.finishedAnalysisForFile(file)
+        highlightingManagerFor(file.project, file.virtualFile.getTopLevelFileOrSelf())?.finishedAnalysisForFile(file)
     }
 
     override fun analyze(file: PsiFile, updateWholeFile: Boolean, holder: HighlightInfoHolder, action: Runnable): Boolean {

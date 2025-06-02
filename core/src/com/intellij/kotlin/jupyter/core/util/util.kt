@@ -29,11 +29,17 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
 
-fun PsiFile.getTopLevelFile(): PsiFile = InjectedLanguageManager.getInstance(project).getTopLevelFile(this) ?: this
+fun PsiFile.getTopLevelFileOrSelf(): PsiFile {
+    return InjectedLanguageManager.getInstance(project).getTopLevelFile(this) ?: this
+}
 
-fun VirtualFile.getTopLevelFile(): VirtualFile {
+fun VirtualFile.getTopLevelFileOrSelf(): VirtualFile {
+    return getTopLevelFileOrNull() ?: this
+}
+
+fun VirtualFile.getTopLevelFileOrNull(): VirtualFile? {
     return when (this) {
-        is VirtualFileWindow -> delegate.getTopLevelFile()
+        is VirtualFileWindow -> delegate.getTopLevelFileOrNull()
         is LightVirtualFile -> originalFile
         is BackedNotebookVirtualFile -> this.originFile
         else -> this
@@ -76,8 +82,8 @@ fun PsiLanguageInjectionHost.getKtFileStartOffset(injectedLanguageManager: Injec
     return injectedLanguageManager.injectedToHost(ktFile, 0)
 }
 
-fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile? =
-    takeIfBacked(this) ?: BackedNotebookVirtualFile.Companion.takeBackend(this)
+fun VirtualFile.toBackedNotebookFile(): BackedNotebookVirtualFile =
+    takeIfBacked(this) ?: BackedNotebookVirtualFile.takeBackend(this)
 
 @RequiresReadLock
 fun VirtualFile.findPsiFile(project: Project): PsiFile? {

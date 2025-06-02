@@ -7,7 +7,7 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.settings.ProjectJdkOption
-import com.intellij.kotlin.jupyter.core.util.getTopLevelFile
+import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
 import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -36,7 +36,6 @@ import com.intellij.platform.workspace.jps.entities.modifyModuleEntity
 import com.intellij.platform.workspace.jps.entities.sourceRoots
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
-import com.intellij.testFramework.LightVirtualFile
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModuleProvider
@@ -46,7 +45,6 @@ import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptRefinedConfigurationResolver
 import org.jetbrains.kotlin.idea.core.script.k2.ScriptWorkspaceModelManager
-import org.jetbrains.kotlin.idea.core.script.scriptingWarnLog
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
@@ -87,7 +85,7 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
      * For this end, one should associate configuration with top level [VirtualFile].
      */
     override fun get(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
-        val topLevelFile = virtualFile.getTopLevelFile()
+        val topLevelFile = virtualFile.getTopLevelFileOrNull() ?: return null
 
         val configuration = cache[topLevelFile]
         if (cache.isEmpty()) {
@@ -99,13 +97,9 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         return configuration
     }
 
-    fun getDefaultConfiguration(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
+    fun getDefaultConfiguration(virtualFile: VirtualFile): ScriptConfigurationWithSdk {
         val sourceCode = VirtualFileScriptSource(virtualFile)
         val notebookFile = virtualFile.toBackedNotebookFile()
-        if (notebookFile == null) {
-            notebookLogger().warn("Can't retrieve notebook file for $virtualFile.")
-            return null
-        }
 
         val configuration = JupyterCompilerService.getForFile(project, notebookFile).provideDefaultConfiguration(sourceCode)
 

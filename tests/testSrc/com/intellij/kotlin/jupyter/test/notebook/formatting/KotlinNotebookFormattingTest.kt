@@ -1,7 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.formatting
 
-import com.intellij.kotlin.jupyter.core.util.getTopLevelFile
+import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrSelf
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTransformerBaseTestCase
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.command.WriteCommandAction
@@ -9,7 +9,7 @@ import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 
-@TestDataPath("\$CONTENT_ROOT/testData/notebooks/formatting")
+@TestDataPath($$"$CONTENT_ROOT/testData/notebooks/formatting")
 class KotlinNotebookFormattingTest : KotlinNotebookTransformerBaseTestCase() {
     @Test
     fun testFormatKotlinCell() = doTest(
@@ -50,7 +50,7 @@ class KotlinNotebookFormattingTest : KotlinNotebookTransformerBaseTestCase() {
         ) {
             if (reformatWholeFile) {
                 WriteCommandAction.runWriteCommandAction(project) {
-                    CodeStyleManager.getInstance(project).reformat(myFixture.file.getTopLevelFile())
+                    CodeStyleManager.getInstance(project).reformat(myFixture.file.getTopLevelFileOrSelf())
                 }
             } else {
                 myFixture.performEditorAction(IdeActions.ACTION_EDITOR_REFORMAT)
