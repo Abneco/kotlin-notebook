@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.util
 
+import com.intellij.injected.editor.EditorWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import com.intellij.openapi.editor.Editor
@@ -41,3 +42,9 @@ internal fun Project.getOpenedKotlinNotebookEditors(): Collection<TextEditor>? {
         editorManager.getSelectedEditor(it.file) as? TextEditor
     }.ifEmpty { return null }
 }
+
+fun Editor.getTopLevelEditor(): Editor =
+    when (this) {
+        is EditorWindow -> delegate.getTopLevelEditor()
+        else -> this
+    }

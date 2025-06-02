@@ -16,6 +16,7 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
+import com.intellij.kotlin.jupyter.core.util.getTopLevelEditor
 import com.intellij.kotlin.jupyter.core.util.isInsideKotlinNotebookFile
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.retrieveElementUnderCaret
@@ -275,7 +276,9 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
 
     override fun createMemberRenamer(element: PsiElement, elementToRename: PsiNameIdentifierOwner, editor: Editor): MemberInplaceRenamer {
         val originalCaretElement = InjectedLanguageManager.getInstance(element.project).getInjectionHost(element)
-        return NotebookMemberInplaceRenamer(element, elementToRename, editor, originalCaretElement)
+        val originalEditor = editor.getTopLevelEditor()
+
+        return NotebookMemberInplaceRenamer(element, elementToRename, originalEditor, originalCaretElement)
     }
 
     override fun isAvailable(element: PsiElement?, editor: Editor, file: PsiFile): Boolean {

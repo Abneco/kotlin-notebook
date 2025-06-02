@@ -1,8 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.refactoring
 
-import com.intellij.injected.editor.DocumentWindow
-import com.intellij.injected.editor.EditorWindow
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.kotlin.jupyter.core.editor.find.KotlinNotebookElementFindUsagesHandler
 import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder
@@ -88,6 +86,7 @@ class NotebookMemberInplaceRenamer(
             private val injectedManager = InjectedLanguageManager.getInstance(element.project)
             private val elementHost = injectedManager.getInjectionHost(element.containingFile)
             private var adjustmentTextRange: Collection<TextRange>? = null
+            private var affectedCells: MutableSet<Int>? = null
             private val topLevelEditor = InjectedLanguageEditorUtil.getTopLevelEditor(myEditor)
             private val notebookHighlightingService = topLevelEditor.notebookFileOrNull?.let {
                 NotebookHighlightingService.getForFile(element.project, it)
@@ -101,6 +100,7 @@ class NotebookMemberInplaceRenamer(
                         notebookHighlightingService?.dataController?.update {
                             notebookChangedCellIndex = hostFile?.getNotebookCells()?.indexOf(originalHostInvocation)
                             renamingEnclosedRange = adjustmentTextRange
+                            notebookRangesQueuedForHL?.addAll(affectedCells ?: emptySet())
                         }
                     }
                 }
@@ -120,7 +120,7 @@ class NotebookMemberInplaceRenamer(
                         notificationUtility.showRefactoringExistingUsagesMessage(size)
                         return ans.toTypedArray()
                     }
-                    if (size == ans.size) {
+                    if (size <= ans.size) {
                         notificationUtility.showRerunActionNeeded()
                         val targetHostRanges = mutableSetOf<TextRange>()
                         val targetHostIndxs = mutableSetOf<Int>()
@@ -141,10 +141,8 @@ class NotebookMemberInplaceRenamer(
                             }
                         }
                         if (targetHostRanges.isNotEmpty()) {
+                            affectedCells = targetHostIndxs
                             adjustmentTextRange = targetHostRanges
-                            notebookHighlightingService?.dataController?.notebookRangesQueuedForHL?.addAll(
-                                targetHostIndxs
-                            )
                         }
                         return ans.toTypedArray()
                     }
