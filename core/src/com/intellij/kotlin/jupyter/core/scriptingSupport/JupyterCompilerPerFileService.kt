@@ -399,7 +399,7 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private fun requestScriptingUpdate() {
+    fun requestScriptingUpdate() {
         projectService.requestScriptingUpdate()
         isStateUpdating.set(true)
     }

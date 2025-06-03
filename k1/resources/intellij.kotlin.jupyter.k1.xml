@@ -28,6 +28,8 @@
                         serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.ScriptingSupportUpdaterFactoryK1"/>
         <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper$Factory"
                         serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.definition.NotebookScriptDefinitionsWrapperFactoryK1"/>
+        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookScriptingForceUpdateRequestor$Factory"
+                        serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.ScriptingForceUpdaterK1Factory"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <scriptDefinitionsProvider implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.definition.JupyterScriptDefinitionProvider"/>

@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
 import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
@@ -14,7 +13,6 @@ import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrSelf
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.lang.Language
-import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -22,7 +20,6 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
-import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
@@ -53,6 +50,9 @@ class JupyterCompilerService(
     val project: Project,
     coroutineScope: CoroutineScope
 ) : NotebookProjectLevelService<JupyterCompilerPerFileService>(coroutineScope) {
+    private val scriptingForceUpdater: NotebookScriptingForceUpdateRequestor by lazy {
+        NotebookScriptingForceUpdateRequestor.create(project)
+    }
 
     private val initialClasspath: List<File> by lazy {
        emptyList()
@@ -128,18 +128,12 @@ class JupyterCompilerService(
     }
 
     fun restartHighlighting(files: Collection<VirtualFile>) {
-        val notebookFiles = files.filter { it.isKotlinNotebook }.map { BackedNotebookVirtualFile.Companion.takeBackend(it) }
+        val notebookFiles = files.filter { it.isKotlinNotebook }.map { BackedNotebookVirtualFile.takeBackend(it) }
         if (notebookFiles.isEmpty()) {
             return
         }
         coroutineScope.async {
-            JupyterKtScriptingSupport.updateSynchronously(project)
-
-            smartReadAction(project) {
-                notebookFiles.forEach { file ->
-                    NotebookHighlightingService.getForFile(project, file).restartAnalysing()
-                }
-            }
+            scriptingForceUpdater.forceUpdateScripting(notebookFiles)
         }
     }
 
