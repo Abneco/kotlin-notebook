@@ -265,7 +265,6 @@ class NotebookHighlightingManager(
     @RequiresBackgroundThread
     private suspend fun processDaemonFinished(editor: Editor, psiFile: PsiFile?, markup: MarkupModelEx) {
         val queue = dataController.notebookRangesQueuedForHL
-        val canModifyRequests = true
         val target = completeRangeInd
 
         iterationLock.withLock {
@@ -286,7 +285,7 @@ class NotebookHighlightingManager(
                 )
 
             val finishedFiles = highlightingPassTokensProcessor.finishedFiles
-            reduceQueue(finishedFiles, canModifyRequests)
+            reduceQueue(finishedFiles)
             queue?.addIfNotNull(target)
 
             val executionRequestsDone = dataController
@@ -312,17 +311,14 @@ class NotebookHighlightingManager(
                     notebookRangesQueuedForHL = queue
                 }
             }
-            LOG.debug("Reducing queue by $finishedFiles, left: $remaining, canModify: ${canModifyRequests}, exec requests done: $executionRequestsDone")
+            LOG.debug("Reducing queue by $finishedFiles, left: $remaining, exec requests done: $executionRequestsDone")
         }
     }
 
-    private fun isCanModifyHLRequests(project: Project): Boolean =
-        !JupyterKtScriptingSupport.isInTheTransaction(project)
-
-    private fun reduceQueue(finishedFiles: Set<Int>, canModifyRequests: Boolean) {
+    private fun reduceQueue(finishedFiles: Set<Int>) {
         val queue = dataController.notebookRangesQueuedForHL
         // we don't want to lose any updates happened during concurrent modification or delay
-        if (queue != null && finishedFiles.isNotEmpty() && canModifyRequests) {
+        if (queue != null && finishedFiles.isNotEmpty()) {
             queue.removeAll(finishedFiles)
         }
     }
