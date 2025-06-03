@@ -10,7 +10,9 @@ import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
+import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrSelf
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
+import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.lang.Language
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.Service
@@ -20,7 +22,10 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
+import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
+import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
@@ -136,6 +141,18 @@ class JupyterCompilerService(
                 }
             }
         }
+    }
+
+    fun getDefaultConfiguration(virtualFile: VirtualFile): ScriptCompilationConfigurationResult? {
+        val topLevelFile = virtualFile.getTopLevelFileOrSelf()
+        val notebookFile = topLevelFile.toKotlinNotebookBackedFile()
+        if (notebookFile == null) {
+            return null
+        }
+
+        val sourceCode = VirtualFileScriptSource(topLevelFile)
+        val compilerService = getForFile(project, notebookFile)
+        return compilerService.provideDefaultConfiguration(sourceCode)
     }
 
     private val updateActionHandler = ScriptingSupportUpdater.create(project, this)

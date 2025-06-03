@@ -90,18 +90,16 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         val configuration = cache[topLevelFile]
         if (cache.isEmpty()) {
             return getDefaultConfiguration(topLevelFile)
-        } else if (configuration == null) {
+        }
+        if (configuration == null) {
             notebookLogger().warn("No configuration found for ${topLevelFile.name}")
         }
 
         return configuration
     }
 
-    fun getDefaultConfiguration(virtualFile: VirtualFile): ScriptConfigurationWithSdk {
-        val sourceCode = VirtualFileScriptSource(virtualFile)
-        val notebookFile = virtualFile.toBackedNotebookFile()
-
-        val configuration = JupyterCompilerService.getForFile(project, notebookFile).provideDefaultConfiguration(sourceCode)
+    fun getDefaultConfiguration(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
+        val configuration = JupyterCompilerService.getInstance(project).getDefaultConfiguration(virtualFile) ?: return null
 
         return ScriptConfigurationWithSdk(configuration, getScriptDefaultSdk())
     }

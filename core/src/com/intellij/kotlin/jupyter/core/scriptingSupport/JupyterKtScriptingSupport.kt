@@ -138,17 +138,6 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
             val notebookVirtualFile = virtualFile.delegate
             val notebookFile = notebookVirtualFile.toBackedNotebookFile()
-            if (notebookFile == null) {
-                if (notebookVirtualFile is LightVirtualFile) {
-                    LOG.warn("Backed notebook file is not yet build for $notebookVirtualFile in injected file $psiFile")
-                } else {
-                    LOG.error(
-                        "Can't retrieve notebook file for $psiFile. " +
-                                "Virtual file $notebookVirtualFile is of type ${notebookVirtualFile::class}"
-                    )
-                }
-                return null
-            }
 
             val compilerService = JupyterCompilerService.getForFile(psiFile.project, notebookFile)
             val sourceCode = KtFileScriptSource(psiFile)

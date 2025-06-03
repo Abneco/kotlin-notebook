@@ -208,11 +208,6 @@ class NotebookHighlightingManager(
     }
 
     fun finishedAnalysisForFile(psiFile: PsiFile): Deferred<Unit> = coroutineScope.async {
-        if (!isCanModifyHLRequests(psiFile.project)) {
-            LOG.debug("Not allowed to change, will redo")
-            return@async
-        }
-
         highlightingPassTokensProcessor.injectedFileProcessed(psiFile)
     }
 
@@ -270,7 +265,7 @@ class NotebookHighlightingManager(
     @RequiresBackgroundThread
     private suspend fun processDaemonFinished(editor: Editor, psiFile: PsiFile?, markup: MarkupModelEx) {
         val queue = dataController.notebookRangesQueuedForHL
-        val canModifyRequests = isCanModifyHLRequests(project)
+        val canModifyRequests = true
         val target = completeRangeInd
 
         iterationLock.withLock {

@@ -5,6 +5,7 @@ import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeRed
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.getCellRangesInDocumentOrNull
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
+import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.lang.injection.InjectedLanguageManager
@@ -167,7 +168,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
                     if (KotlinPluginModeProvider.isK1Mode()) {
                         scriptingManager?.getConfiguration(ktFile)
                     } else {
-                        JupyterKtScriptingSupport.getDefaultConfiguration(ktFile)
+                        JupyterCompilerService.getInstance(ktFile.project).getDefaultConfiguration(ktFile.virtualFile)
                     }
                 }
             }
