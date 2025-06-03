@@ -13,7 +13,7 @@ internal class IndexAwareScriptDefinitionsLoadRequestor(private val project: Pro
 
         KotlinNotebookPluginScope.getForProject(project).async {
             smartReadAction(project) {
-                ScriptDefinitionsManager.getInstance(project).allDefinitions
+                ScriptDefinitionsManager.getInstance(project).getDefinitions()
             }
         }
     }

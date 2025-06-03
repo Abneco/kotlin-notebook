@@ -44,6 +44,7 @@ jvm_library(
     "@community//platform/platform-impl:ide-impl",
     "@community//plugins/kotlin/base/code-insight",
     "@community//platform/lang-impl",
+    "@community//plugins/kotlin/base/scripting.k2",
     ":scripting_provided",
   ],
   runtime_deps = [":k2_resources"]

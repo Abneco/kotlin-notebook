@@ -25,8 +25,8 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import org.jetbrains.kotlin.idea.core.script.k2.DefaultScriptResolutionStrategy
-import org.jetbrains.kotlin.idea.core.script.k2.K2ScriptDefinitionProvider
+import org.jetbrains.kotlin.idea.core.script.k2.definitions.K2ScriptDefinitionProvider
+import org.jetbrains.kotlin.idea.core.script.k2.highlighting.DefaultScriptResolutionStrategy
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import java.util.concurrent.CancellationException
@@ -80,7 +80,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
     }
 
     /**
-     * Clears [org.jetbrains.kotlin.idea.core.script.k2.ScriptConfiguration] for a particular [BackedNotebookVirtualFile]
+     * Clears [org.jetbrains.kotlin.idea.core.script.ScriptConfiguration] for a particular [BackedNotebookVirtualFile]
      */
     private fun clearRuntimeDependenciesFor(notebookFile: BackedNotebookVirtualFile) {
         val scope = KotlinNotebookPluginScope.getForProject(project)

@@ -5,8 +5,8 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNoteb
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.idea.core.script.k2.configurationResolverDelegate
-import org.jetbrains.kotlin.idea.core.script.k2.scriptWorkspaceModelManagerDelegate
+import org.jetbrains.kotlin.idea.core.script.k2.configurations.configurationResolverDelegate
+import org.jetbrains.kotlin.idea.core.script.k2.configurations.scriptWorkspaceModelManagerDelegate
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.api.ide

@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.vfs.VirtualFile
-import org.jetbrains.kotlin.idea.core.script.k2.ScriptConfigurationWithSdk
+import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationWithSdk
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import kotlin.script.experimental.api.valueOrNull
 import kotlin.script.experimental.api.valueOrThrow
