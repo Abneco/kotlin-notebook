@@ -6,7 +6,6 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSession
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
 import com.intellij.openapi.diagnostic.Attachment
-import com.intellij.openapi.progress.blockingContext
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.xdebugger.frame.XValueChildrenList
@@ -29,9 +28,7 @@ fun BackedNotebookVirtualFile.retrieveSessionVariableValue(project: Project, var
  * retrieves all [JavaValue] in Kernel interpreter state
  */
 suspend fun BackedNotebookVirtualFile.retrieveCurrentSessionVariables(project: Project): XValueChildrenList? {
-    val variables = blockingContext {
-        KotlinNotebookSessionVariablesService.getForFile(project, this).getXValueChildrenList()
-    }
+  val variables = KotlinNotebookSessionVariablesService.getForFile(project, this).getXValueChildrenList()
     return variables
 }
 
