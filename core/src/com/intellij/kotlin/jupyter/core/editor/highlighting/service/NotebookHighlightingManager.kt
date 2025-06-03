@@ -209,7 +209,7 @@ class NotebookHighlightingManager(
 
     fun finishedAnalysisForFile(psiFile: PsiFile): Deferred<Unit> = coroutineScope.async {
         if (!isCanModifyHLRequests(psiFile.project)) {
-            LOG.info("Not allowed to change, will redo")
+            LOG.debug("Not allowed to change, will redo")
             return@async
         }
 
@@ -317,7 +317,7 @@ class NotebookHighlightingManager(
                     notebookRangesQueuedForHL = queue
                 }
             }
-            LOG.info("Reducing queue by $finishedFiles, left: $remaining, canModify: ${canModifyRequests}, exec requests done: $executionRequestsDone")
+            LOG.debug("Reducing queue by $finishedFiles, left: $remaining, canModify: ${canModifyRequests}, exec requests done: $executionRequestsDone")
         }
     }
 

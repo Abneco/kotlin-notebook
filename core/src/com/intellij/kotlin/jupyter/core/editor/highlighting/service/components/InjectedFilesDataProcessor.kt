@@ -106,7 +106,7 @@ internal class InjectedFilesDataProcessor(
         }
 
         finishedFilesIndexes.addIfNotNull(ind)
-        sharedLogger.info("Finished visitors for $ind")
+        sharedLogger.debug("Finished visitors for $ind")
 
         return
     }
