@@ -85,7 +85,14 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
      * For this end, one should associate configuration with top level [VirtualFile].
      */
     override fun get(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
-        val topLevelFile = virtualFile.getTopLevelFileOrNull() ?: return null
+        val topLevelFile = virtualFile.getTopLevelFileOrNull()
+
+        if (topLevelFile == null) {
+            // We may get there in the case of a light file we usually get as an intermediate result
+            // of some refactorings / intention previews
+            notebookLogger().info("No top level file found for ${virtualFile.name}")
+            return null
+        }
 
         val configuration = cache[topLevelFile]
         if (cache.isEmpty()) {
