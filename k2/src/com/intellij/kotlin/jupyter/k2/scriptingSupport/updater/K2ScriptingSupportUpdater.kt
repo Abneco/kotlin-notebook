@@ -25,7 +25,7 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import org.jetbrains.kotlin.idea.core.script.k2.definitions.K2ScriptDefinitionProvider
+import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionProviderImpl
 import org.jetbrains.kotlin.idea.core.script.k2.highlighting.DefaultScriptResolutionStrategy
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
@@ -74,7 +74,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
             val updatedNotebooks = updateK2Configurations(editorManager, project)
 
-            K2ScriptDefinitionProvider.getInstance(project).reloadDefinitionsFromSources()
+            ScriptDefinitionProviderImpl.getInstance(project).notifyDefinitionsChanged()
             project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).afterUpdate(updatedNotebooks)
         }
     }
