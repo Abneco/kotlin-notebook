@@ -6,8 +6,8 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.idea.base.projectStructure.moduleInfo.IdeaModuleInfo
-import org.jetbrains.kotlin.idea.base.scripting.projectStructure.ScriptModuleInfo
 import org.jetbrains.kotlin.idea.caches.resolve.ResolveOptimizingOptionsProvider
+import org.jetbrains.kotlin.idea.core.script.k1.modules.ScriptModuleInfo
 import org.jetbrains.kotlin.resolve.scopes.optimization.OptimizingOptions
 
 private class KotlinNotebookOptimizingOptionsProvider: ResolveOptimizingOptionsProvider {

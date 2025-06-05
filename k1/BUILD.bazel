@@ -75,6 +75,7 @@ jvm_library(
     "@community//java/debugger/impl",
     "@community//plugins/kotlin/jvm-debugger/evaluation",
     "@community//plugins/kotlin/scripting",
+    "@community//plugins/kotlin/base/scripting.k1",
     ":idea_provided",
     ":jupyter-psi_provided",
     ":core_provided",

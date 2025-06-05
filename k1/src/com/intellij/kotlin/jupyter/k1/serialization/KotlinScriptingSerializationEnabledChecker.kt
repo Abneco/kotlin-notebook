@@ -4,8 +4,8 @@ package com.intellij.kotlin.jupyter.k1.serialization
 import com.intellij.kotlin.jupyter.core.scriptingSupport.serializationPluginEnabled
 import org.jetbrains.kotlin.analyzer.ModuleInfo
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
-import org.jetbrains.kotlin.idea.base.scripting.projectStructure.ScriptModuleInfo
 import org.jetbrains.kotlin.idea.compilerPlugin.kotlinxSerialization.KotlinSerializationEnabledChecker
+import org.jetbrains.kotlin.idea.core.script.k1.modules.ScriptModuleInfo
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ide
 
