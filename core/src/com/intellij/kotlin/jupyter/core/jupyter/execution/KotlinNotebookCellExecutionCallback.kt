@@ -11,6 +11,7 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.util.debugInTests
 import com.intellij.kotlin.jupyter.core.util.deserialize
 import com.intellij.kotlin.jupyter.core.util.logListInfo
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -73,6 +74,8 @@ class KotlinNotebookCellExecutionCallback(
                     "Cell executed. Deserialization took $deserializationTime ms. New classpath received",
                     snippetMetadata?.newClasspath.orEmpty()
                 )
+            } else {
+                LOG.debugInTests { "No snippet metadata found for message $message" }
             }
 
             KotlinNotebookFeatureUsagesCollector.registerCellExecuted(

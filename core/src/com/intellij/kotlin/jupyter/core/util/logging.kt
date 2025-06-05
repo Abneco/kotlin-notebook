@@ -58,6 +58,12 @@ fun Logger.warnInTests(messageFactory: () -> String) {
     }
 }
 
+fun Logger.debugInTests(messageFactory: () -> String) {
+    if (ApplicationManager.getApplication().isUnitTestMode) {
+        debug(messageFactory())
+    }
+}
+
 fun Logger.reportErrorTestAware(message: String, attachment: Attachment) {
     val logReference = if (ApplicationManager.getApplication().isUnitTestMode)
         ::errorWithAttachments
