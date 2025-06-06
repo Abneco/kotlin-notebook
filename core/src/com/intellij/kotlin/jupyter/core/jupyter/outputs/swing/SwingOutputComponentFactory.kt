@@ -21,14 +21,14 @@ class SwingOutputComponentFactory: NotebookOutputComponentFactory<SwingComponent
 
     override fun createComponent(
         editor: EditorImpl,
-        output: SwingOutputDataKey
+        outputDataKey: SwingOutputDataKey
     ): NotebookOutputComponentFactory.CreatedComponent<SwingComponent> {
         val component = SwingComponent()
-        component.initialize(editor, output)
+        component.initialize(editor, outputDataKey)
         return NotebookOutputComponentFactory.CreatedComponent(
             component,
             NotebookOutputComponentFactory.WidthStretching.STRETCH_AND_SQUEEZE,
-            output.createGutterPainter(),
+            outputDataKey.createGutterPainter(),
             limitHeight = false,
             resizable = true,
             { KotlinNotebookBundle.message("kotlin.notebook.collapsed.swing.component.output.text") },

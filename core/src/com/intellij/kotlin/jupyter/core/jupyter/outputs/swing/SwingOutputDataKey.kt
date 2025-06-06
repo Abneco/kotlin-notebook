@@ -15,7 +15,7 @@ class SwingOutputDataKey(
     val component: Any,
     override val executionCount: Int?,
 ): HasExecutionCount {
-    override fun getStatisticKey() = NotebookOutputKeyType.SWING_COMPONENT
-    val content = component.toString() // Snapshot `toString()` to prevent modifications during use of the UI.
+    override fun getStatisticKey(): NotebookOutputKeyType = NotebookOutputKeyType.SWING_COMPONENT
+    val content: String = component.toString() // Snapshot `toString()` to prevent modifications during use of the UI.
     override fun getContentForDiffing(): Any = content
 }

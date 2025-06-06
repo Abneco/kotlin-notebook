@@ -4,7 +4,6 @@ package com.intellij.kotlin.jupyter.plots
 import com.intellij.jupyter.core.jupyter.editor.outputs.HasExecutionCount
 import com.intellij.notebooks.visualization.outputs.statistic.NotebookOutputKeyType
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
@@ -14,7 +13,7 @@ data class LetsPlotOutputDataKey(
     override val executionCount: Int?,
     val applyColorScheme: Boolean,
 ) : HasExecutionCount {
-    override fun getStatisticKey() = NotebookOutputKeyType.LETS_PLOT
+    override fun getStatisticKey(): NotebookOutputKeyType = NotebookOutputKeyType.LETS_PLOT
     override fun getContentForDiffing(): Any {
         return JSON.encodeToString(spec)
     }

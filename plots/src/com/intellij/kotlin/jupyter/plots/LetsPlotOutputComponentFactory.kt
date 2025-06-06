@@ -17,15 +17,15 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotCom
 
     override fun createComponent(
         editor: EditorImpl,
-        output: LetsPlotOutputDataKey
+        outputDataKey: LetsPlotOutputDataKey
     ): NotebookOutputComponentFactory.CreatedComponent<LetsPlotComponent> {
         ServiceLoaderHelper.addClassLoader(LetsPlotOutputComponentFactory::class.java.classLoader)
         val component = LetsPlotComponent()
-        component.initialize(output)
+        component.initialize(outputDataKey)
         return NotebookOutputComponentFactory.CreatedComponent(
             component,
             NotebookOutputComponentFactory.WidthStretching.STRETCH_AND_SQUEEZE,
-            output.createGutterPainter(),
+            outputDataKey.createGutterPainter(),
             limitHeight = false,
             resizable = true,
             { "LetsPlot plot" },
