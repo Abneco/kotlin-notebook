@@ -2,12 +2,14 @@
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.kotlin.getIndexedTopLevelClassifiersFiltered
 import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier
 import com.intellij.kotlin.jupyter.core.scriptingSupport.workSpaceSnapshot
 import com.intellij.kotlin.jupyter.k2.projectModel.findK2WorkspaceModule
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.workspace.workspaceModel
 import com.intellij.platform.workspace.jps.entities.LibraryEntity
@@ -54,10 +56,20 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     private fun checkArtifactPresentInLibrary(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: VirtualFileUrl): Boolean {
         val artifactName = lastCompiledScriptPath.fileName
 
-        return getRuntimeLibraryForNotebook(virtualFile)?.roots
-            .orEmpty().any { root ->
-                root.type == LibraryRootTypeId.COMPILED && root.url.presentableUrl.endsWith(artifactName)
+        val libraryRoots = getRuntimeLibraryForNotebook(virtualFile)?.roots
+            .orEmpty()
+        val isPresent = libraryRoots.any { root ->
+            root.type == LibraryRootTypeId.COMPILED && root.url.presentableUrl.endsWith(artifactName)
+        }
+
+        if (!isPresent) {
+            notebookLogger().debug {
+                val loggedRoots = libraryRoots.filter { it.type == LibraryRootTypeId.COMPILED }.takeLast(10).joinToString(separator = "\n") { it.url.presentableUrl }
+                "For notebook ${virtualFile.file.name} no dependency '${artifactName}' found among roots of size ${libraryRoots.size}, last roots:\n $loggedRoots"
             }
+        }
+
+        return isPresent
     }
 
     /**

@@ -7,8 +7,8 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.settings.ProjectJdkOption
+import com.intellij.kotlin.jupyter.core.util.debugInTests
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
-import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.components.serviceAsync
@@ -238,6 +238,11 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
             LibraryDependency(runtimeLibrary.symbolicId, false, DependencyScope.COMPILE),
             sdkDependency
         )
+
+        notebookLogger().debugInTests {
+            val libraryInfo = "${runtimeLibrary.name}, rootsSize: ${runtimeLibrary.roots.size}"
+            "Updating scripting module for notebook '${notebookModuleConfiguration.notebookFile.nameWithoutExtension}' with library: $libraryInfo"
+        }
 
         val newEntry = ModuleEntity(moduleName, dependencies, source)
 

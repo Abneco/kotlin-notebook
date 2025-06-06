@@ -5,6 +5,7 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.injectedScriptLibraryDependencies
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.libraries.Library
@@ -28,7 +29,11 @@ class KotlinNotebookScriptLibrariesProvider : ScriptAdditionalIdeaDependenciesPr
         private val LOG = notebookLogger()
     }
     override fun getRelatedLibraries(file: VirtualFile, project: Project): List<Library> {
-        val virtualFile = (file as? VirtualFileWindow)?.delegate ?: return emptyList()
+        val virtualFile = file.getTopLevelFileOrNull()
+        if (virtualFile == null) {
+            LOG.debug("Top-level file not found: $file")
+            return emptyList()
+        }
         if (!virtualFile.isKotlinNotebook) return emptyList()
 
         val snapshot = WorkspaceModel.getInstance(project).currentSnapshot
