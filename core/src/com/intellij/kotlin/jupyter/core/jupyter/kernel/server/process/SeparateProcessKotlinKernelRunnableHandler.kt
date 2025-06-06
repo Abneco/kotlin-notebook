@@ -93,8 +93,9 @@ class SeparateProcessKotlinKernelRunnableHandler(
 
         init {
             // Kotlin kernel process can't be killed gracefully on Linux.
-            // For now reasons are unknown, should be investigated.
-            setShouldKillProcessSoftly(!application.isUnitTestMode && !SystemInfo.isLinux)
+            // For now, reasons are unknown, should be investigated.
+            // On Windows, a process should not be killed plainly, e.g., without using specific Windows API.
+            setShouldKillProcessSoftly(!application.isUnitTestMode && !SystemInfo.isLinux || SystemInfo.isWindows)
 
             addProcessListener(object : ProcessListener {
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
