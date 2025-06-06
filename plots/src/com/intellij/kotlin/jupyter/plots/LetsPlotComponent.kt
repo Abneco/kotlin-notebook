@@ -21,12 +21,11 @@ import org.jetbrains.letsPlot.core.util.PlotHtmlHelper
 import org.jetbrains.letsPlot.core.util.PlotSizeHelper
 import org.jetbrains.letsPlot.core.util.sizing.SizingPolicy
 import java.awt.Dimension
+import java.awt.Rectangle
 import java.awt.event.ComponentEvent
 import java.awt.event.MouseEvent
 import javax.swing.JPanel
 import kotlin.math.roundToInt
-
-private val sizingPolicy get() = SizingPolicy.notebookCell()
 
 class LetsPlotComponent : JBLayeredPane() {
     private var plotPanel: PlotPanel? = null
@@ -58,8 +57,8 @@ class LetsPlotComponent : JBLayeredPane() {
         val myComponent = plotPanel ?: return
         val myData = dataKey ?: return
         val spec = getSpec(myData)
-        val (plotWidth, plotHeight) = plotSize(spec, mySize.width, mySize.height)
-        myComponent.setBounds(0, 0, plotWidth, plotHeight)
+        val plotSize = plotSize(spec, mySize, SizingPolicy.fitContainerSize(true)) ?: mySize
+        myComponent.bounds = Rectangle(plotSize)
         // This is a workaround: a plot panel may skip first resize event, but we need it to rebuild the plot
         myComponent.dispatchEvent(ComponentEvent(myComponent, ComponentEvent.COMPONENT_RESIZED))
 
@@ -68,7 +67,9 @@ class LetsPlotComponent : JBLayeredPane() {
     }
 
     override fun getPreferredSize(): Dimension {
-        return plotPanel?.preferredSize ?: super.getPreferredSize()
+        return dataKey?.let {
+            plotSize(getSpec(it), parent?.size, SizingPolicy.notebookCell())
+        } ?: plotPanel?.preferredSize ?: super.getPreferredSize()
     }
 
     private fun reinitComponent(spec: MutableLetsPlotSpec) {
@@ -100,7 +101,7 @@ class LetsPlotComponent : JBLayeredPane() {
             preferredSizeFromPlot = true,
             repaintDelay = 200,
             applicationContext = IdeaSwingContextBatik,
-            sizingPolicy = sizingPolicy
+            sizingPolicy = SizingPolicy.fitContainerSize(true)
         ){}
 
         plotPanel.isOpaque = true
@@ -160,21 +161,14 @@ private fun getSpec(dataKey: LetsPlotOutputDataKey, flavor: LetsPlotFlavor): Mut
     return processedSpec.toMutableMap()
 }
 
-private fun plotSize(spec: LetsPlotSpec, containerWidth: Int, containerHeight: Int): Pair<Int, Int> {
-    return scaledFigureSize(spec, containerWidth, containerHeight)
-}
-
-private fun scaledFigureSize(
-    figureSpec: LetsPlotSpec, containerWidth: Int, containerHeight: Int
-): Pair<Int, Int> {
-
-    if (PlotConfig.isFailure(figureSpec)) {
+private fun plotSize(spec: LetsPlotSpec, containerSize: Dimension?, sizingPolicy: SizingPolicy): Dimension? {
+    if (PlotConfig.isFailure(spec)) {
         // Keep given size
-        return Pair(containerWidth, containerHeight)
+        return containerSize
     }
 
-    val config = PlotConfigFrontend.create(figureSpec) {}
-    val containerSize = DoubleVector(containerWidth, containerHeight)
-    val plotSize = PlotSizeHelper.singlePlotSize(figureSpec, containerSize, sizingPolicy, config.facets, config.containsLiveMap)
-    return plotSize.run { x.roundToInt() to y.roundToInt() }
+    val config = PlotConfigFrontend.create(spec) {}
+    val containerSizeVec = containerSize?.run { DoubleVector(width, height) }
+    val plotSize = PlotSizeHelper.singlePlotSize(spec, containerSizeVec, sizingPolicy, config.facets, config.containsLiveMap)
+    return plotSize.run { Dimension(x.roundToInt(),y.roundToInt()) }
 }
