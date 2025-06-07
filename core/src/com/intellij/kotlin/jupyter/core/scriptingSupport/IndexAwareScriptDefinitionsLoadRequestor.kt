@@ -5,7 +5,7 @@ import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.async
-import org.jetbrains.kotlin.idea.core.script.ScriptDefinitionsManager
+import org.jetbrains.kotlin.idea.core.script.IdeScriptDefinitionProvider
 
 internal class IndexAwareScriptDefinitionsLoadRequestor(private val project: Project) {
     fun reloadDefinitions() {
@@ -13,7 +13,7 @@ internal class IndexAwareScriptDefinitionsLoadRequestor(private val project: Pro
 
         KotlinNotebookPluginScope.getForProject(project).async {
             smartReadAction(project) {
-                ScriptDefinitionsManager.getInstance(project).getDefinitions()
+                IdeScriptDefinitionProvider.getInstance(project).getDefinitions()
             }
         }
     }
