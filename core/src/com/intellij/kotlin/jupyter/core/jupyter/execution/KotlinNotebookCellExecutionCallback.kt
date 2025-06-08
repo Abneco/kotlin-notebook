@@ -40,7 +40,7 @@ class KotlinNotebookCellExecutionCallback(
 ) : JupyterExecutionCallbackAdapter() {
     override val channel: JupyterMessageChannel
         get() = JupyterMessageChannel.ANY
-    override var finalizeCallback = {}
+    override var finalizeCallback: () -> Unit = {}
 
     override fun expire() {
         unregisterCallback()
@@ -87,16 +87,11 @@ class KotlinNotebookCellExecutionCallback(
 
             snippetMetadata
         }
-        val metadataIsPresent = snippetMetadata != null
-        unregisterCallback(!metadataIsPresent)
+        unregisterCallback()
 
-        if (metadataIsPresent) {
-            /**
-             * Acquire an instance of [JupyterCompilerPerFileService] for this notebook
-             * and pass the metadata we received to it.
-             */
-            val compilerService = JupyterCompilerService.getForFile(project, virtualFile)
-            compilerService.addCompiledSnippet(snippetMetadata, psiCell)
+        if (snippetMetadata != null) {
+            JupyterCompilerService.getForFile(project, virtualFile)
+                .addCompiledSnippet(snippetMetadata, psiCell)
         } else {
             NotebookHighlightingService.getForFile(project, virtualFile)
                 .dataController.notebookDocumentStructureNontrivialChanged.compareAndSet(false, true)
@@ -108,9 +103,8 @@ class KotlinNotebookCellExecutionCallback(
         KotlinNotebookFeatureUsagesCollector.registerOutputUpdated(project, output)
     }
 
-    private fun unregisterCallback(snippetMetadataIsEmpty: Boolean = false) {
-        val factory = KotlinNotebookCellExecutionCallbackFactory.getInstance()
-        factory.unregisterCallback(project, virtualFile, index, snippetMetadataIsEmpty)
+    private fun unregisterCallback() {
+        kotlinNotebookCellExecutionCallbackFactory.unregisterCallback(project, virtualFile, index)
     }
 
 

@@ -54,7 +54,7 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
         }
     }
 
-    fun unregisterCallback(project: Project, file: BackedNotebookVirtualFile, index: Int, metadataIsEmpty: Boolean = false) {
+    fun unregisterCallback(project: Project, file: BackedNotebookVirtualFile, index: Int) {
         executionDataLock.write {
             val (_, pq) = callbacksCounters[file] ?: return@write
             pq.remove(index)
@@ -104,7 +104,9 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
         )
     }
 
-    companion object {
-        fun getInstance() = JupyterCellExecutionCallbackFactory.EP_NAME.findExtensionOrFail(KotlinNotebookCellExecutionCallbackFactory::class.java)
-    }
+}
+
+val kotlinNotebookCellExecutionCallbackFactory: KotlinNotebookCellExecutionCallbackFactory get() {
+    return JupyterCellExecutionCallbackFactory.EP_NAME
+        .findExtensionOrFail(KotlinNotebookCellExecutionCallbackFactory::class.java)
 }

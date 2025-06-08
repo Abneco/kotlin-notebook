@@ -24,16 +24,16 @@ class JupyterKotlinRuntimeServiceListener : JupyterRuntimeListener {
             ${KotlinNotebookCodegen.generateColorSchemeChangeCode()}
         """.trimIndent()
 
-        val callbacks = session.virtualFile?.let { virtualFile ->
+        val callbacks = session.virtualFile.let { virtualFile ->
             val project = session.project
             listOf(
-              KotlinNotebookCellExecutionCallbackFactory.getInstance().createUnboundCallback(project, virtualFile),
-              object : JupyterExecutionCallbackAdapter() {
+                kotlinNotebookCellExecutionCallbackFactory.createUnboundCallback(project, virtualFile),
+                object : JupyterExecutionCallbackAdapter() {
                     override fun onExecuteReply(message: JupyterMessage) {
                         logger<JupyterKotlinRuntimeServiceListener>().debug("Kotlin session has been initialized with response: ${message.json}")
                     }
                 })
-        } ?: emptyList()
+        }
 
         session.execute(initCode, onMessageCreated = {}, callbacks = callbacks, silent = true)
     }

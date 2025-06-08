@@ -10,7 +10,6 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstan
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookAfterScriptsUpdatePluginAwareHandler
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.ImpatientNotebookChangeListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
@@ -27,7 +26,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.progress.ProcessCanceledException
-import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
@@ -71,8 +69,7 @@ class NotebookHighlightingManager(
     val jupyterPsiFile: PsiFile? get() = _jupyterFile
 
     val dataController: NotebookPerFileHighlightingMetaDataController = NotebookPerFileHighlightingMetaDataController(
-        virtualFile,
-        NotebookCellExecutionHighlightingHelper(project, virtualFile),
+      NotebookCellExecutionHighlightingHelper(project, virtualFile),
         this
     )
 
@@ -125,7 +122,7 @@ class NotebookHighlightingManager(
     }
 
     private fun createK1Instance() : NotebookAfterScriptsUpdatePluginAwareHandler {
-        return NotebookAfterScriptsUpdatePluginAwareHandler { file, updateState ->
+        return NotebookAfterScriptsUpdatePluginAwareHandler { file, _ ->
             if (file != virtualFile) return@NotebookAfterScriptsUpdatePluginAwareHandler
         }
     }
@@ -134,7 +131,7 @@ class NotebookHighlightingManager(
      * Since shadowing does not work, just perform complete restart after the main execution effect took place
      */
     private fun createK2Instance() : NotebookAfterScriptsUpdatePluginAwareHandler {
-        return NotebookAfterScriptsUpdatePluginAwareHandler { file, updateState ->
+        return NotebookAfterScriptsUpdatePluginAwareHandler { file, _ ->
             if (file != virtualFile) return@NotebookAfterScriptsUpdatePluginAwareHandler
 
             val isCurrentFileOpened = virtualFile.isCurrentlySelectedInEditor(project)

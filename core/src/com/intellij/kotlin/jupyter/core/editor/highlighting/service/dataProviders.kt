@@ -1,19 +1,17 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.highlighting.service
 
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import org.jetbrains.kotlin.utils.ifEmpty
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 /**
  * Contract for providing meta-data related to Notebook highlighting.
  * Implementations should be [thread-safe].
- * Configuration should be done via help of [NotebookFileHighlightingDataConfigurator].
  *
  * @see NotebookPerFileHighlightingMetaDataController
  * @see NotebookHighlightingManager
@@ -26,13 +24,12 @@ internal interface NotebookFileHighlightingDataProvider {
     val notebookDocumentTargetRanges: MutableSet<Int>?
     val reformatDocumentTargets: MutableSet<Int>?
     val lastExecutedCellsBatch: Set<Int>?
-    val notebookDocumentStructureNontrivialChanged: AtomicReference<Boolean>
-    val notebookCellsUpdatesAllowedToChange: AtomicReference<Boolean>
+    val notebookDocumentStructureNontrivialChanged: AtomicBoolean
+    val notebookCellsUpdatesAllowedToChange: AtomicBoolean
 }
 
 
 class NotebookPerFileHighlightingMetaDataController(
-    private val notebookFile: BackedNotebookVirtualFile,
     val executionHighlightingHelper: NotebookCellExecutionHighlightingHelper,
     parentDisposable: Disposable
 ): NotebookFileHighlightingDataProvider, Disposable {
@@ -50,8 +47,8 @@ class NotebookPerFileHighlightingMetaDataController(
     private val dataStorage = ConcurrentHashMap<KeysValues, Any>()
 
     private fun initialiseStorage() {
-        dataStorage[KeysValues.StructureNonTrivialChanged] = AtomicReference(false)
-        dataStorage[KeysValues.CellsUpdatesAllowedToChange] = AtomicReference(true)
+        dataStorage[KeysValues.StructureNonTrivialChanged] = AtomicBoolean(false)
+        dataStorage[KeysValues.CellsUpdatesAllowedToChange] = AtomicBoolean(true)
         dataStorage[KeysValues.ReformatTargets] = mutableSetOf<TextRange>()
         dataStorage[KeysValues.TargetRanges] = mutableSetOf<TextRange>()
         dataStorage[KeysValues.RenamingTargets] = mutableSetOf<TextRange>()
@@ -64,7 +61,7 @@ class NotebookPerFileHighlightingMetaDataController(
     }
 
     inner class NotebookHighlightingMetaDataConfigurator(
-        val notebookDocumentStructureNontrivialChanged: AtomicReference<Boolean>
+        val notebookDocumentStructureNontrivialChanged: AtomicBoolean
     ) {
         var completeHighlightingRange: TextRange? = null
             get() = this@NotebookPerFileHighlightingMetaDataController.completeHighlightingRange
@@ -123,7 +120,7 @@ class NotebookPerFileHighlightingMetaDataController(
 
     @Suppress("UNCHECKED_CAST")
     private val dataHolder = NotebookHighlightingMetaDataConfigurator(
-        dataStorage[KeysValues.StructureNonTrivialChanged] as AtomicReference<Boolean>
+        dataStorage[KeysValues.StructureNonTrivialChanged] as AtomicBoolean
     )
 
     fun update(action: (NotebookHighlightingMetaDataConfigurator).() -> Unit) {
@@ -165,12 +162,12 @@ class NotebookPerFileHighlightingMetaDataController(
         get() = executionHighlightingHelper.getLastExecutedCellsBatch()
 
     @Suppress("UNCHECKED_CAST")
-    override val notebookDocumentStructureNontrivialChanged: AtomicReference<Boolean>
-        get() = (dataStorage[KeysValues.StructureNonTrivialChanged] as AtomicReference<Boolean>)
+    override val notebookDocumentStructureNontrivialChanged: AtomicBoolean
+        get() = (dataStorage[KeysValues.StructureNonTrivialChanged] as AtomicBoolean)
 
     @Suppress("UNCHECKED_CAST")
-    override val notebookCellsUpdatesAllowedToChange: AtomicReference<Boolean>
-        get() = (dataStorage[KeysValues.CellsUpdatesAllowedToChange] as AtomicReference<Boolean>)
+    override val notebookCellsUpdatesAllowedToChange: AtomicBoolean
+        get() = (dataStorage[KeysValues.CellsUpdatesAllowedToChange] as AtomicBoolean)
 
     override fun dispose() {
         dataStorage.clear()
