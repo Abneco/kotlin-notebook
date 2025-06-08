@@ -30,6 +30,7 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
 
     protected fun findActionWithText(name: String, strict: Boolean = false): IntentionAction? {
         repeat(2) {
+            UIUtil.dispatchAllInvocationEvents()
             for (action in myFixture.availableIntentions) {
                 if (if (strict) { name == action.text } else action.text.contains(name)) {
                     return action
@@ -64,9 +65,6 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
                 } catch (invocationFailure: ComparisonFailure) {
                     invocationFailure
                 }
-
-                UIUtil.dispatchAllInvocationEvents()
-                UIUtil.dispatchAllInvocationEvents()
 
                 if (!shouldBeAvailableAfterExecution) {
                     var action = findActionWithText(expectedText)

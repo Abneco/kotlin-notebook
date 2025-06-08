@@ -11,7 +11,7 @@ import org.junit.rules.TestRule
 import org.junit.rules.Timeout
 
 @K1Only("KTNB-839: private modifier is added to an extension function")
-@TestDataPath("\$CONTENT_ROOT/testData/notebooks/codeinsight/quickfix/extensions")
+@TestDataPath($$"$CONTENT_ROOT/testData/notebooks/codeinsight/quickfix/extensions")
 class NotebookQuickFixIntentionsExtensionTest : NotebookQuickFixBaseTest() {
     @get:Rule
     val timeoutRule: TestRule = DisableOnDebug(

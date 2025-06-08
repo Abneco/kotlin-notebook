@@ -1,7 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.projectModel
 
-import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.edtWriteAction
 import com.intellij.openapi.components.Service
@@ -10,16 +9,24 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import java.io.File
 
+/**
+ * This service is used to store the classpath of the notebooks used in this project
+ * so that for the second time indexing won't take that much time.
+ */
 @Service(Service.Level.PROJECT)
-class KotlinNotebookPermanentIndexService(val project: Project) {
+class KotlinNotebookPermanentIndexService(
+    val project: Project,
+    val coroutineScope: CoroutineScope,
+) {
     private val projectLibraryTable get() = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
 
     fun addToPermanentIndex(classpath: List<String>, sourceClasspath: List<String>) {
-        KotlinNotebookPluginScope.getForProject(project).async(Dispatchers.EDT) {
+        coroutineScope.async(Dispatchers.EDT) {
             edtWriteAction {
                 addToPermanentIndexImpl(classpath, sourceClasspath)
             }
@@ -42,7 +49,7 @@ class KotlinNotebookPermanentIndexService(val project: Project) {
     }
 
     private fun getLibraryRoots(library: Library): Map<OrderRootType, Set<String>> {
-        return buildMap<OrderRootType, Set<String>> {
+        return buildMap {
             for (rootType in listOf(OrderRootType.CLASSES, OrderRootType.SOURCES)) {
                 put(rootType, library.rootProvider.getUrls(rootType).toSet())
             }

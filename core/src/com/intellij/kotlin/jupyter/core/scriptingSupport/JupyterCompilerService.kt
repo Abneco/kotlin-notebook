@@ -15,6 +15,7 @@ import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.lang.Language
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.components.serviceOrNull
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
@@ -158,18 +159,17 @@ class JupyterCompilerService(
     )
 
     private fun removeRuntimeDependenciesFromIndex() {
+        if (project.isDisposed) return
+        val indexService = project.serviceOrNull<KotlinNotebookPermanentIndexService>() ?: return
         val paths = KotlinNotebookMavenArtifacts.all().mapTo(HashSet()) {
             it.artifact
         }
-        KotlinNotebookPermanentIndexService.getInstance(project)
-            .removeFromPermanentIndex(paths)
+        indexService.removeFromPermanentIndex(paths)
     }
 
     override fun dispose() {
         super.dispose()
-        if (!project.isDisposed) {
-            removeRuntimeDependenciesFromIndex()
-        }
+        removeRuntimeDependenciesFromIndex()
     }
 
     companion object {
