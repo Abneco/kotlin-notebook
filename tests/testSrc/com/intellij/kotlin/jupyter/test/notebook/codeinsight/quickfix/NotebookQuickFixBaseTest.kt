@@ -14,7 +14,6 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.runInEdtAndWait
-import com.intellij.util.ui.UIUtil
 import junit.framework.TestCase
 import org.jetbrains.kotlin.idea.base.test.KotlinTestHelpers
 import org.jetbrains.kotlin.idea.test.ConfigLibraryUtil
@@ -30,7 +29,7 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
 
     protected fun findActionWithText(name: String, strict: Boolean = false): IntentionAction? {
         repeat(2) {
-            UIUtil.dispatchAllInvocationEvents()
+            processInvocationEvents()
             for (action in myFixture.availableIntentions) {
                 if (if (strict) { name == action.text } else action.text.contains(name)) {
                     return action

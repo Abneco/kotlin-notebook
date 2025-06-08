@@ -22,6 +22,7 @@ import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import com.intellij.util.ui.UIUtil
 import io.kotest.common.runBlocking
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -41,9 +42,9 @@ import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-private const val CONTENT_ROOT_VARIABLE: @NonNls String = "\$CONTENT_ROOT"
+private const val CONTENT_ROOT_VARIABLE: @NonNls String = $$"$CONTENT_ROOT"
 private const val CONTENT_ROOT: @NonNls String = "/plugins/kotlin/jupyter/tests"
-private const val PROJECT_ROOT_VARIABLE: @NonNls String = "\$PROJECT_ROOT"
+private const val PROJECT_ROOT_VARIABLE: @NonNls String = $$"$PROJECT_ROOT"
 private const val PROJECT_ROOT: @NonNls String = ""
 
 // TODO Migrate this class KotlinNotebookTestCase
@@ -228,4 +229,14 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
     }
 
     private fun actualText() = runReadAction { myFixture.editor.document.text }
+
+    /**
+     * With high probability, avoids deadlocks when using invokeAndWait() in tests
+     * Avoid using invokeAndWait, but if it's impossible to avoid, place the call of this method before it.
+     */
+    protected fun processInvocationEvents() {
+        UIUtil.dispatchAllInvocationEvents()
+        Thread.sleep(3000)
+        UIUtil.dispatchAllInvocationEvents()
+    }
 }
