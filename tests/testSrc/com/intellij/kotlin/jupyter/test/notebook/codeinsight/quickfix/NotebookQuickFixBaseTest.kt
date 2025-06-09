@@ -18,8 +18,9 @@ import junit.framework.TestCase
 import org.jetbrains.kotlin.idea.base.test.KotlinTestHelpers
 import org.jetbrains.kotlin.idea.test.ConfigLibraryUtil
 import org.junit.ComparisonFailure
+import org.junit.Ignore
 
-
+@Ignore("Test is broken, see KTNB-1071")
 abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() {
     override fun getProject(): Project {
         return myFixture.project

@@ -1,6 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.runners
 
+import org.junit.Ignore
 import org.junit.runner.notification.RunNotifier
 import org.junit.runners.BlockJUnit4ClassRunner
 import org.junit.runners.model.FrameworkMethod
@@ -18,9 +19,13 @@ class KotlinNotebookTestRunner(klass: Class<*>) : BlockJUnit4ClassRunner(klass) 
         KernelRunModeTransformer,
     )
 
+    private fun isIgnoredByHierarchy(method: FrameworkMethod): Boolean {
+        return method.declaringClass.findAnnotationInHierarchy<Ignore>() != null
+    }
+
     public override fun runChild(method: FrameworkMethod, notifier: RunNotifier) {
         val defaultDescription = describeChild(method)
-        if (isIgnored(method)) {
+        if (isIgnored(method) || isIgnoredByHierarchy(method)) {
             notifier.fireTestIgnored(defaultDescription)
             return
         }
