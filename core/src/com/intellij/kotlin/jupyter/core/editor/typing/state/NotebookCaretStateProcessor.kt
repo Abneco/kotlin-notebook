@@ -38,12 +38,12 @@ internal class NotebookCaretStateProcessor(
 ) : NotebookCaretMovementProcessor, NotebookDaemonFinishedEventProcessor {
 
     private val dataController = notebookHighlightingManager?.dataController
-    private val psiFile = editor.virtualFile.findPsiFile(project)
+    private val psiFile = editor.virtualFile?.findPsiFile(project)
     private val document = psiFile?.toDocument()
     private val fastUpdateQueueGuardMark = AtomicReference(false)
 
     private val updateScope = KotlinNotebookPluginScope.global
-        .childScope("NotebookCaretStateProcessor for ${editor.virtualFile.name}")
+        .childScope("NotebookCaretStateProcessor for ${editor.virtualFile!!.name}")
     internal val stateLock = ReentrantReadWriteLock()
 
     private var lastCellInd: Int = -1

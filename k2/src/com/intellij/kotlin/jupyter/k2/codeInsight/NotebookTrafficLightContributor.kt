@@ -23,7 +23,7 @@ internal class NotebookTrafficLightContributor : TrafficLightRendererContributor
     ): TrafficLightRenderer? {
         val project = editor.project
         if (project == null || !editor.virtualFile.isKotlinNotebook) return null
-        val backedNotebookVirtualFile = editor.virtualFile.toBackedNotebookFile() ?: return null
+        val backedNotebookVirtualFile = editor.virtualFile?.toBackedNotebookFile() ?: return null
 
         return UpdateTrafficLightRenderer(project, editor, backedNotebookVirtualFile)
     }
