@@ -13,6 +13,8 @@ import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
 import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
 import org.jetbrains.letsPlot.commons.geometry.DoubleVector
+import org.jetbrains.letsPlot.core.spec.FigKind
+import org.jetbrains.letsPlot.core.spec.config.CompositeFigureConfig
 import org.jetbrains.letsPlot.core.spec.config.PlotConfig
 import org.jetbrains.letsPlot.core.spec.front.PlotConfigFrontend
 import org.jetbrains.letsPlot.core.util.MonolithicCommon
@@ -167,8 +169,16 @@ private fun plotSize(spec: LetsPlotSpec, containerSize: Dimension?, sizingPolicy
         return containerSize
     }
 
-    val config = PlotConfigFrontend.create(spec) {}
     val containerSizeVec = containerSize?.run { DoubleVector(width, height) }
-    val plotSize = PlotSizeHelper.singlePlotSize(spec, containerSizeVec, sizingPolicy, config.facets, config.containsLiveMap)
+    val plotSize = when (PlotConfig.figSpecKind(spec)) {
+        FigKind.SUBPLOTS_SPEC -> {
+            val config = CompositeFigureConfig(spec, null) {}
+            PlotSizeHelper.compositeFigureSize(config, containerSizeVec, sizingPolicy)
+        }
+        else -> {
+            val config = PlotConfigFrontend.create(spec) {}
+            PlotSizeHelper.singlePlotSize(spec, containerSizeVec, sizingPolicy, config.facets, config.containsLiveMap)
+        }
+    }
     return plotSize.run { Dimension(x.roundToInt(),y.roundToInt()) }
 }
