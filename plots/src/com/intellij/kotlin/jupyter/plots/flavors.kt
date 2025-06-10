@@ -30,10 +30,8 @@ fun getLetsPlotFlavor(isDark: Boolean): LetsPlotFlavor {
 fun updateFlavor(rawSpec: MutableLetsPlotSpec, flavor: LetsPlotFlavor) {
     val flavorName = flavor.flavorName
     when (PlotConfig.figSpecKind(rawSpec)) {
-        FigKind.PLOT_SPEC -> updateFlavorForPlot(rawSpec, flavorName)
-        FigKind.SUBPLOTS_SPEC -> updateFlavorForSubPlots(rawSpec, flavorName)
         FigKind.GG_BUNCH_SPEC -> updateFlavorForGGBunch(rawSpec, flavorName)
-        else -> return
+        else -> updateFlavorForPlot(rawSpec, flavorName)
     }
 }
 
@@ -54,16 +52,6 @@ private fun updateFlavorForGGBunch(spec: MutableLetsPlotSpec, flavorName: String
                         updateFlavorForPlot(plotSpec, flavorName)
                     }
                 }
-            }
-        }.orEmpty()
-    }
-}
-
-private fun updateFlavorForSubPlots(spec: MutableLetsPlotSpec, flavorName: String) {
-    spec.compute("figures") { _, figures ->
-        (figures.asSafely<List<LetsPlotSpec?>>())?.map {
-            it?.toMutableMap()?.also { figure ->
-                updateFlavorForPlot(figure, flavorName)
             }
         }.orEmpty()
     }
