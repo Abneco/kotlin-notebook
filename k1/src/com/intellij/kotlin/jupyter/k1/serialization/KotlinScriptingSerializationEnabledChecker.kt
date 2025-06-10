@@ -5,7 +5,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.serializationPluginEnab
 import org.jetbrains.kotlin.analyzer.ModuleInfo
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.idea.compilerPlugin.kotlinxSerialization.KotlinSerializationEnabledChecker
-import org.jetbrains.kotlin.idea.core.script.k1.modules.ScriptModuleInfo
+import org.jetbrains.kotlin.idea.core.script.dependencies.ScriptModuleInfo
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ide
 
