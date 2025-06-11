@@ -21,6 +21,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
@@ -148,6 +149,10 @@ class JupyterCompilerService(
         val sourceCode = VirtualFileScriptSource(topLevelFile)
         val compilerService = getForFile(project, notebookFile)
         return compilerService.provideDefaultConfiguration(sourceCode)
+    }
+
+    fun ensureScriptConfiguration(project: Project, ktFile: KtFile) {
+        updateActionHandler.ensureScriptConfiguration(project, ktFile)
     }
 
     private val updateActionHandler = ScriptingSupportUpdater.create(project, this)

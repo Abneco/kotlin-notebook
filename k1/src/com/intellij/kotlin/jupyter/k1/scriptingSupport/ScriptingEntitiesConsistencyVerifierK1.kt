@@ -4,7 +4,6 @@ package com.intellij.kotlin.jupyter.k1.scriptingSupport
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.projectModel.kotlin.getIndexedTopLevelClassifiers
 import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier
-import com.intellij.kotlin.jupyter.core.scriptingSupport.scriptConfigurationsClassCache
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.project.Project
@@ -12,6 +11,8 @@ import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.workspaceModel
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import com.intellij.psi.search.ProjectAndLibrariesScope
+import org.jetbrains.kotlin.idea.core.script.k1.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.k1.ucache.ScriptClassRootsCache
 import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 
@@ -74,4 +75,7 @@ private class ScriptingEntitiesConsistencyVerifierK1(
         virtualFile: BackedNotebookVirtualFile,
         compilationConfiguration: ScriptCompilationConfiguration
     ): Boolean = true
+
+    private val Project.scriptConfigurationsClassCache: ScriptClassRootsCache
+        get() = ScriptConfigurationManager.getInstance(this).updater.classpathRoots
 }

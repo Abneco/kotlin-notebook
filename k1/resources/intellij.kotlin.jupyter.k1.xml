@@ -32,6 +32,12 @@
         <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookScriptingForceUpdateRequestor$Factory"
                         serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.ScriptingForceUpdaterK1Factory"/>
     </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">
+        <!--suppress PluginXmlDynamicPlugin -->
+        <scriptingSupport implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.JupyterKtScriptingSupport"/>
+    </extensions>
+
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <scriptDefinitionsProvider implementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.definition.JupyterScriptDefinitionProvider"/>
         <idea.caches.resolve.resolveOptimizingOptionsProvider

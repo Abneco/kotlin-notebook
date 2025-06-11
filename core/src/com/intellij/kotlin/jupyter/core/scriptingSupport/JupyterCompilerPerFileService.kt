@@ -51,9 +51,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
+import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfiguration
 import org.jetbrains.kotlinx.jupyter.compiler.CompiledScriptsSerializer
 import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
@@ -224,35 +226,7 @@ class JupyterCompilerPerFileService(
     }
 
     private fun Collection<KtFile>.getSampleConfiguration(): Pair<VirtualFile, ScriptCompilationConfigurationWrapper>? {
-        return firstNotNullOfOrNull {
-            setOf(it).getConfigurations().firstOrNull()
-        }
-    }
-
-    private fun Collection<KtFile>.getConfigurations(): List<Pair<VirtualFile, ScriptCompilationConfigurationWrapper>> {
-        return mapNotNull { ktFile ->
-            val conf = JupyterKtScriptingSupport.getConfiguration(ktFile)?.valueOrNull()
-            if (conf == null || conf.dependenciesClassPath.isEmpty()) {
-                ktFile.reportAsAttachment()
-                null
-            } else {
-                ktFile.virtualFile to conf
-            }
-        }
-    }
-
-    private fun KtFile.reportAsAttachment() {
-        LOG.debugWithAttachments(
-            message = { "Empty script dependencies found" },
-            attachments = {
-                listOf(
-                    Attachment(
-                        virtualFilePath,
-                        text.takeIf { it.isNotEmpty() } ?: "[Injected file has no text]"
-                    )
-                )
-            }
-        )
+        return firstNotNullOfOrNull { ktFile -> getConfiguration(ktFile)?.let { ktFile.virtualFile to it }  }
     }
 
     private fun requestScriptingUpdateTestAware() {
@@ -661,5 +635,30 @@ class JupyterCompilerPerFileService(
 
     companion object {
         private val LOG = KotlinNotebookLoggerFactory.getInstance(JupyterCompilerPerFileService::class)
+
+
+        fun getConfiguration(ktFile: KtFile): ScriptCompilationConfigurationWrapper? {
+            val scriptDef = ktFile.findScriptDefinition() ?: return null
+            val conf = refineScriptCompilationConfiguration(KtFileScriptSource(ktFile), scriptDef, ktFile.project).valueOrNull()
+            if (conf == null || conf.dependenciesClassPath.isEmpty()) {
+                ktFile.reportAsAttachment()
+            }
+
+            return conf
+        }
+
+        private fun KtFile.reportAsAttachment() {
+            LOG.debugWithAttachments(
+                message = { "Empty script dependencies found" },
+                attachments = {
+                    listOf(
+                        Attachment(
+                            virtualFilePath,
+                            text.takeIf { it.isNotEmpty() } ?: "[Injected file has no text]"
+                        )
+                    )
+                }
+            )
+        }
     }
 }

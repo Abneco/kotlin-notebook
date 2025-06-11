@@ -5,6 +5,7 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater.Com
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlin.psi.KtFile
 
 
 data class UpdaterConstructorData(
@@ -23,6 +24,8 @@ interface ScriptingSupportUpdater : KotlinPluginModeAwareHandler {
      * Main logic for executing scripting update is contained here
      */
     fun updateScripts()
+
+    fun ensureScriptConfiguration(project: Project, ktFile: KtFile)
 
     fun interface Factory {
         fun create(updaterConstructor: UpdaterConstructorData): ScriptingSupportUpdater

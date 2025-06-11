@@ -215,11 +215,6 @@
         <webHelpProvider implementation="com.intellij.kotlin.jupyter.core.ide.KotlinNotebookWebHelpProvider"/>
     </extensions>
 
-    <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">
-        <!--suppress PluginXmlDynamicPlugin -->
-        <scriptingSupport implementation="com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport"/>
-    </extensions>
-
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">
         <jupyterLanguageBasedFileViewProviderChooser
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.psi.JupyterKotlinFileViewProviderChooser"/>

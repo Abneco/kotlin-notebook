@@ -4,8 +4,6 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport
 import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.workspace.WorkspaceModel
 import com.intellij.platform.workspace.storage.ImmutableEntityStorage
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsCache
 import org.jetbrains.kotlinx.jupyter.repl.result.SerializedCompiledScript
 import kotlin.script.experimental.api.IdeScriptCompilationConfigurationKeys
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
@@ -13,9 +11,6 @@ import kotlin.script.experimental.util.PropertiesCollection
 
 internal val Project.baseScriptingCompilationConfiguration: ScriptCompilationConfiguration
     get() = JupyterCompilerService.getInstance(this).scriptDefinitionsWrapper.scriptDefinitionData.compilationConfiguration
-
-val Project.scriptConfigurationsClassCache: ScriptClassRootsCache
-    get() = ScriptConfigurationManager.getInstance(this).updater.classpathRoots
 
 val Project.workSpaceSnapshot: ImmutableEntityStorage
     get() = WorkspaceModel.getInstance(this).currentSnapshot

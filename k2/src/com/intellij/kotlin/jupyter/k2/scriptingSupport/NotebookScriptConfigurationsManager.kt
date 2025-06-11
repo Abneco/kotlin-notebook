@@ -47,7 +47,6 @@ import org.jetbrains.kotlin.idea.core.script.k2.configurations.ScriptRefinedConf
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.ScriptWorkspaceModelManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
-import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.script.experimental.api.asSuccess
 
@@ -59,7 +58,7 @@ class KotlinNotebookScriptEntitySource(virtualFileUrl: VirtualFileUrl) : KotlinS
 /**
  * K2 entry point that manages script dependencies for Kotlin notebooks within a given project.
  *
- * Basically, it's the replacement for [org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport] in K2 mode.
+ * Basically, it's the replacement for [org.jetbrains.kotlin.idea.core.script.k1.configuration.ScriptingSupport] in K2 mode.
  *
  * Update handles steps:
  *  - preparation of script configurations

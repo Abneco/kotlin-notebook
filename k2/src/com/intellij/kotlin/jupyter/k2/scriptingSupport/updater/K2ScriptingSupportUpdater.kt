@@ -9,7 +9,6 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.UpdaterConstructorData
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerPerFileService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
-import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
@@ -79,6 +78,10 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         }
     }
 
+    override fun ensureScriptConfiguration(project: Project, ktFile: KtFile) {
+        JupyterCompilerService.getInstance(ktFile.project).getDefaultConfiguration(ktFile.virtualFile)
+    }
+
     /**
      * Clears [org.jetbrains.kotlin.idea.core.script.ScriptConfiguration] for a particular [BackedNotebookVirtualFile]
      */
@@ -129,7 +132,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                 // refine only once as they are the same per notebook
                 val refinedConfiguration = try {
                     val anyKtFile = scriptsToRefine.ktFile
-                    JupyterKtScriptingSupport.getConfiguration(anyKtFile)?.valueOrNull()?.configuration!!
+                    JupyterCompilerPerFileService.getConfiguration(anyKtFile)?.configuration!!
                 } catch (e: Throwable) {
                     throw e
                 }

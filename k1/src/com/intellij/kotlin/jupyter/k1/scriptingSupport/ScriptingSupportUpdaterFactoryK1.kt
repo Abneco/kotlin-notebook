@@ -5,7 +5,8 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
 import com.intellij.kotlin.jupyter.core.ide.handlers.UpdaterConstructorData
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.RecursionManager
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.k1.ScriptConfigurationManager
+import org.jetbrains.kotlin.psi.KtFile
 
 class ScriptingSupportUpdaterFactoryK1: ScriptingSupportUpdater.Factory {
     override fun create(updaterConstructor: UpdaterConstructorData): ScriptingSupportUpdater {
@@ -19,5 +20,9 @@ class K1ScriptingSupportUpdater(private val project: Project): ScriptingSupportU
         RecursionManager.doPreventingRecursion("${this::class}: update()", false) {
             updater.invalidateAndCommit()
         }
+    }
+
+    override fun ensureScriptConfiguration(project: Project, ktFile: KtFile) {
+        ScriptConfigurationManager.getInstanceSafe(project)?.getConfiguration(ktFile)
     }
 }

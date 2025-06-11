@@ -75,5 +75,6 @@
     </orderEntry>
     <orderEntry type="library" scope="TEST" name="kotlinx-serialization-core" level="project" />
     <orderEntry type="library" scope="TEST" name="kotlinx-serialization-json" level="project" />
+    <orderEntry type="module" module-name="kotlin.base.scripting.k1" scope="TEST" />
   </component>
 </module>

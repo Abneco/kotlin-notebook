@@ -1,9 +1,11 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.scriptingSupport
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.k1.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
+import com.intellij.kotlin.jupyter.core.scriptingSupport.IndexAwareScriptDefinitionsLoadRequestor
+import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.util.errorWithAttachments
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
@@ -16,17 +18,14 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.testFramework.LightVirtualFile
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.core.script.configuration.ScriptingSupport
-import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsBuilder
-import org.jetbrains.kotlin.idea.core.script.ucache.ScriptClassRootsUpdater
+import org.jetbrains.kotlin.idea.core.script.k1.ScriptClassRootsUpdater
+import org.jetbrains.kotlin.idea.core.script.k1.ScriptConfigurationManager
+import org.jetbrains.kotlin.idea.core.script.k1.configuration.ScriptingSupport
+import org.jetbrains.kotlin.idea.core.script.k1.ucache.ScriptClassRootsBuilder
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.KtFileScriptSource
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
-import org.jetbrains.kotlin.scripting.resolve.refineScriptCompilationConfiguration
 import org.jetbrains.kotlin.utils.addToStdlib.UnsafeCastFunction
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import kotlin.script.experimental.api.valueOrNull
@@ -62,7 +61,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
         val editors = editorManager?.allEditors ?: return
 
         val openFiles = editors.mapNotNull {
-            (it as? JupyterFileEditor)?.getNotebookFile()
+          (it as? JupyterFileEditor)?.getNotebookFile()
         }.filter { it.fileType is JupyterFileType }.ifEmpty {
             editors.mapNotNull { BackedNotebookVirtualFile.takeIfBacked(it.file)?.file }
         }
@@ -119,11 +118,6 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
             updater.update {
                 updater.invalidate(true)
             }
-        }
-
-        fun getConfiguration(psiFile: KtFile): ScriptCompilationConfigurationResult? {
-            val scriptDef = psiFile.findScriptDefinition() ?: return null
-            return refineScriptCompilationConfiguration(KtFileScriptSource(psiFile), scriptDef, psiFile.project)
         }
 
         @OptIn(UnsafeCastFunction::class)

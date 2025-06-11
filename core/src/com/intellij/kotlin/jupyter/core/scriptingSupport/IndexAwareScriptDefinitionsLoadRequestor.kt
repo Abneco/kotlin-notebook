@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.async
 import org.jetbrains.kotlin.idea.core.script.IdeScriptDefinitionProvider
 
-internal class IndexAwareScriptDefinitionsLoadRequestor(private val project: Project) {
+class IndexAwareScriptDefinitionsLoadRequestor(private val project: Project) {
     fun reloadDefinitions() {
         if (project.isDisposed || !project.isInitialized) return
 

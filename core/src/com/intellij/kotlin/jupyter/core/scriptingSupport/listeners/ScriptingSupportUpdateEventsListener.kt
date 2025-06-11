@@ -9,7 +9,7 @@ import com.intellij.util.messages.Topic
 val SCRIPTING_SUPPORT_TOPIC: Topic<ScriptingSupportUpdateEventsListener> = Topic(ScriptingSupportUpdateEventsListener::class.java, Topic.BroadcastDirection.NONE, true)
 
 /**
- * Listener for reflecting events from [com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterKtScriptingSupport]
+ * Listener for reflecting events from [com.intellij.kotlin.jupyter.k1.scriptingSupport.JupyterKtScriptingSupport]
  */
 interface ScriptingSupportUpdateEventsListener {
     /**

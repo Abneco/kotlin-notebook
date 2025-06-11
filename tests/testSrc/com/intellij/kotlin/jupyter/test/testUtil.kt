@@ -54,7 +54,7 @@ import org.intellij.lang.annotations.Language
 import org.jetbrains.jupyter.builder.NotebookBuilder
 import org.jetbrains.jupyter.builder.buildNotebook
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
-import org.jetbrains.kotlin.idea.core.script.configuration.DefaultScriptingSupport
+import org.jetbrains.kotlin.idea.core.script.k1.configuration.DefaultScriptingSupport
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
