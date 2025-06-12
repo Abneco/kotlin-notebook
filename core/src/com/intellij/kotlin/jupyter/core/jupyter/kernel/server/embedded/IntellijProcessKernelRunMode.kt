@@ -20,7 +20,8 @@ object IntellijProcessKernelRunMode : AbstractKernelRunMode("Intellij Process") 
 }
 
 private val librariesFqnPrefixes = listOf(
-    "org.jetbrains.letsPlot."
+    "org.jetbrains.letsPlot.",
+    "org.jetbrains.kotlinx.dataframe.",
 )
 
 private fun String.startsWithAnyOf(prefixes: List<String>): Boolean {
