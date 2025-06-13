@@ -30,6 +30,7 @@ jvm_library(
     "@lib//:jackson-databind-provided",
     "@lib//:kotlinx-serialization-core",
     "@lib//:kotlinx-serialization-json",
+    "@community//platform/core-api:core",
     "@community//platform/core-ui",
     "@community//platform/editor-ui-api:editor-ui",
     "@community//platform/platform-impl:ide-impl",
