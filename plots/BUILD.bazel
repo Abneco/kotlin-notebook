@@ -38,6 +38,7 @@ jvm_library(
     "//plugins/jupyter/psi",
     "@community//notebooks/visualization",
     "@community//notebooks/notebook-ui:ui",
+    "@community//platform/projectModel-api:projectModel",
     "@community//platform/platform-impl/ui",
   ],
   runtime_deps = [

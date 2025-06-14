@@ -62,6 +62,7 @@
     <orderEntry type="module" module-name="intellij.jupyter.psi" />
     <orderEntry type="module" module-name="intellij.notebooks.visualization" />
     <orderEntry type="module" module-name="intellij.notebooks.ui" />
+    <orderEntry type="module" module-name="intellij.platform.projectModel" />
     <orderEntry type="module" module-name="intellij.platform.ide.ui" />
   </component>
 </module>

@@ -20,6 +20,7 @@ jvm_library(
     "@community//platform/core-api:core",
     "@community//platform/editor-ui-api:editor-ui",
     "@community//jps/model-api:model",
+    "@community//platform/projectModel-api:projectModel",
     "@community//plugins/kotlin/core",
     "@community//plugins/kotlin/scripting",
     "@community//platform/testFramework",
