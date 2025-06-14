@@ -52,9 +52,9 @@ import com.intellij.util.messages.MessageBusOwner
 import com.intellij.util.messages.Topic
 import com.intellij.util.messages.impl.PluginListenerDescriptor
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
+import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
-import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
 import kotlin.reflect.KMutableProperty0
 
 class KotlinNotebookSettingsPanelBuilder(

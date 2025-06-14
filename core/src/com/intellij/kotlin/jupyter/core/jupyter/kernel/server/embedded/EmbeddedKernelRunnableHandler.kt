@@ -9,7 +9,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.AbstractKotlinKern
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
+import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import java.nio.file.Path
 
 class EmbeddedKernelRunnableHandler(

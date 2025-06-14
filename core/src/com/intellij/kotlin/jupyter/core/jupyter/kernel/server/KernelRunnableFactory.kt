@@ -5,7 +5,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKerne
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
+import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import java.nio.file.Path
 
 /**

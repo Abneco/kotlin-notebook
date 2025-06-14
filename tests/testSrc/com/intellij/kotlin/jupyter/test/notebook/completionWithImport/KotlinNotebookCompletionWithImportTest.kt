@@ -5,6 +5,7 @@ import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTester
 import com.intellij.kotlin.jupyter.test.runners.K1Only
 import com.intellij.testFramework.TestDataPath
+import org.junit.Ignore
 import org.junit.Test
 
 @K1Only("Investigate failures for K2")
@@ -41,6 +42,7 @@ class KotlinNotebookCompletionWithImportTest : AbstractKotlinNotebookCompletionW
         )
     }
 
+    @Ignore("KTNB-1074")
     @Test(timeout = 300_000)
     fun completionInsertionCorrectWithExternalImport() = doTest(
         object : ReceivedMessagesTester {

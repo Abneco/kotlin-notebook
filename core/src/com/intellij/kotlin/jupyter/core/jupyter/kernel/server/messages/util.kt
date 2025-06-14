@@ -12,7 +12,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toJupyterMessage
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
-import org.jetbrains.kotlinx.jupyter.messaging.AbstractMessageContent
+import org.jetbrains.kotlinx.jupyter.messaging.MessageContent
 import org.jetbrains.kotlinx.jupyter.messaging.MessageType
 import org.jetbrains.kotlinx.jupyter.messaging.UpdateClientMetadataRequest
 import org.jetbrains.kotlinx.jupyter.messaging.makeSimpleMessage
@@ -66,7 +66,7 @@ suspend fun JupyterNotebookSession.updateNotebookMetadata(): Boolean {
 suspend fun <T: Any> JupyterNotebookSession.sendMessageAndWait(
     channel: JupyterMessageChannel,
     messageType: MessageType,
-    content: AbstractMessageContent,
+    content: MessageContent,
     timeout: Duration,
     callbackFactory: (replyDeferred: CompletableDeferred<T>) -> JupyterExecutionCallback,
 ): T? {

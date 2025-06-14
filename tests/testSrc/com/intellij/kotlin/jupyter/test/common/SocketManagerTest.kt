@@ -8,8 +8,8 @@ import com.intellij.kotlin.jupyter.test.KotlinNotebookUnitTestCase
 import com.intellij.testFramework.common.waitUntil
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldHaveSize
-import org.jetbrains.kotlinx.jupyter.startup.DEFAULT
-import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
+import org.jetbrains.kotlinx.jupyter.api.DEFAULT
+import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.startup.createClientKotlinKernelConfig
 import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
 import org.junit.Test

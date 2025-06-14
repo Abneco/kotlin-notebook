@@ -11,7 +11,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProc
 import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWindowManager
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
+import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import java.nio.file.Path
 
 /**

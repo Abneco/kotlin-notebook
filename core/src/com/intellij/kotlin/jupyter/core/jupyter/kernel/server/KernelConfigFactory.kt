@@ -12,9 +12,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.pom.java.LanguageLevel
 import com.intellij.util.lang.JavaVersion
 import org.jetbrains.kotlinx.jupyter.api.JupyterClientType
+import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
-import org.jetbrains.kotlinx.jupyter.startup.ReplCompilerMode
 import java.io.File
 import java.nio.file.Path
 

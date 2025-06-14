@@ -330,6 +330,8 @@ class JupyterCompilerPerFileService(
         val withNewClasspath = withUpdatedClasspath(currentClasspath)
         return ScriptCompilationConfiguration(withNewClasspath) {
             if (_currentClasspath.hasInitialPart) {
+                // `addBaseClas` is the wrong name, but is only used for backwards compatibility.
+                // Should be renamed once K2 Support is stable.
                 addBaseClass<ScriptTemplateWithDisplayHelpers>()
             }
 
@@ -343,7 +345,8 @@ class JupyterCompilerPerFileService(
              * otherwise all changes made to this list will eventually appear in the cache without an update,
              * and no consistency checks can be done.
              */
-            implicitReceivers(implicitsList.toList())
+            val updatedReceivers = implicitsList.toList() + KotlinType(ScriptTemplateWithDisplayHelpers::class)
+            implicitReceivers(updatedReceivers)
             defaultImports(additionalDefaultImports.getList())
             ide.dependenciesSources(
                 JvmDependency(
