@@ -10,7 +10,6 @@ import com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsag
 import com.intellij.kotlin.jupyter.core.statistics.fus.WelcomeScreenIdeEntryType
 import com.intellij.kotlin.jupyter.core.util.toAbsolutePath
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
@@ -39,7 +38,7 @@ class OpenKotlinNotebookAction : OpenFileAction() {
             )
     }
 
-    override suspend fun doOpenFile(project: Project?, virtualFile: VirtualFile, e: AnActionEvent) {
+    override suspend fun doOpenFile(project: Project?, virtualFile: VirtualFile) {
         val projectPath = if (virtualFile.isDirectory) {
             virtualFile
         } else {
@@ -58,6 +57,6 @@ class OpenKotlinNotebookAction : OpenFileAction() {
             WelcomeScreenIdeEntryType.OPEN_NOTEBOOK_FROM_FILE_SYSTEM
         )
 
-        super.doOpenFile(openedProject, virtualFile, e)
+        super.doOpenFile(openedProject, virtualFile)
     }
 }
