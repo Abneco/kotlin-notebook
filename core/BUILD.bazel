@@ -78,6 +78,7 @@ jvm_library(
     "@community//platform/indexing-api:indexing",
     "@community//jps/model-api:model",
     "@community//platform/lang-api:lang",
+    "@community//platform/lang-core",
     "@community//platform/lang-impl",
     "@community//platform/util/concurrency",
     "@community//platform/backend/workspace",
