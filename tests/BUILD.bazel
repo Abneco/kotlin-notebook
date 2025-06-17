@@ -48,7 +48,6 @@ jvm_library(
     "//python/scientific-tables",
     "@community//plugins/markdown/core:markdown",
     "@lib//:kotlinc-kotlin-compiler-common",
-    "@ultimate_lib//:jetbrains-kotlin-jupyter-shared-compiler",
     "@community//plugins/kotlin/base/code-insight/minimal",
     "@lib//:kotlinx-coroutines-debug",
     "@community//plugins/kotlin/code-insight/impl-base",
@@ -69,6 +68,7 @@ jvm_library(
     "@lib//:kotlinx-serialization-json",
     "@community//plugins/kotlin/base/scripting.k1",
     "@community//plugins/kotlin/base/scripting.k1:scripting.k1_test_lib",
+    "//plugins/jupyter/execution",
   ],
   runtime_deps = ["//:idea-ultimate-main"]
 )

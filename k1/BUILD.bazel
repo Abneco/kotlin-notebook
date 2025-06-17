@@ -44,7 +44,6 @@ jvm_library(
   srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
   kotlinc_opts = ":custom",
   deps = [
-    "@ultimate_lib//:jetbrains-kotlin-jupyter-shared-compiler-provided",
     "@community//java/debugger/openapi:java-debugger",
     "@lib//:kotlinc-kotlin-scripting-common-provided",
     "@lib//:kotlinc-kotlin-scripting-compiler-impl-provided",

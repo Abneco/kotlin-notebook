@@ -25,6 +25,7 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
+import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
@@ -51,6 +52,8 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
         notebookVirtualFile: BackedNotebookVirtualFile?,
         replCompilerMode: ReplCompilerMode,
     ): SeparateProcessKotlinKernelRunnableHandler {
+        JupyterSocketType::class.java.classLoader
+
         val kernelPorts = getKernelPorts()
         val kernelConfig = DefaultKotlinKernelConfigFactory(project, kernelPorts, notebookPath, replCompilerMode).create()
 
@@ -116,7 +119,7 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
         val mode: NotebookMode = BackedNotebookVirtualFile.takeIfBacked(notebookFile)?.mode ?: return null
 
         val notebookParentDir = notebookPath.absolute().parent.takeIf { it.exists() }
-        return when(mode) {
+        return when (mode) {
             NotebookMode.STANDARD -> notebookParentDir
             NotebookMode.LIGHT -> {
                 try {
@@ -141,6 +144,7 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
     }
 
     private var _kernelPortsProvider: KernelPortsProvider = KernelPortsProvider {
+        Thread.currentThread().setContextClassLoader(KernelPortsProvider::class.java.classLoader)
         createRandomKernelPorts()
     }
 
@@ -152,6 +156,7 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
     }
 
     private fun getKernelPorts(): KernelPorts {
-        return _kernelPortsProvider.getKernelPorts()
+
+        return kernelPortsProvider.getKernelPorts()
     }
 }

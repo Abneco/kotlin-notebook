@@ -18,7 +18,6 @@ jvm_library(
   visibility = ["//visibility:public"],
   srcs = glob(["src/**/*.kt", "src/**/*.java", "gen/**/*.kt", "gen/**/*.java"], allow_empty = True),
   deps = [
-    "@ultimate_lib//:jetbrains-kotlin-jupyter-shared-compiler-provided",
     "@lib//:kotlinc-kotlin-scripting-common-provided",
     "@lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
     "@lib//:kotlinc-analysis-api-provided",

@@ -10,6 +10,7 @@
         <plugin id="intellij.jupyter"/>
         <module name="intellij.jupyter.psi"/>
         <module name="intellij.jupyter.core"/>
+        <module name="intellij.jupyter.execution"/>
 
         <plugin id="com.intellij.java"/>
     </dependencies>

@@ -30,7 +30,52 @@
     <orderEntry type="module" module-name="intellij.platform.editor.ui" />
     <orderEntry type="module" module-name="intellij.platform.foldings" />
     <orderEntry type="module" module-name="intellij.platform.ide.core.impl" />
-    <orderEntry type="library" name="jetbrains.kotlin-jupyter-shared-compiler" level="project" />
+    <orderEntry type="module-library" exported="">
+      <library name="jetbrains.kotlin-jupyter-shared-compiler" type="repository">
+        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler:0.13.0-475">
+          <verification>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.13.0-475/kotlin-jupyter-shared-compiler-0.13.0-475.jar">
+              <sha256sum>7ff6a1473fff7b602cf9c28582671917e3e51ac706fad0674bf1be3ce812cbd7</sha256sum>
+            </artifact>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.13.0-475/kotlin-jupyter-lib-0.13.0-475.jar">
+              <sha256sum>57c947414e92a235d09aca1762e33ec878457b5a29e7e8d95b555fc8c4022830</sha256sum>
+            </artifact>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.13.0-475/kotlin-jupyter-common-dependencies-0.13.0-475.jar">
+              <sha256sum>bcbf9675bae1aeff1a6d5c7711b0a4ea8929ab73dc564e1fe8f3c292641c74ac</sha256sum>
+            </artifact>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/zeromq/jeromq/0.6.0/jeromq-0.6.0.jar">
+              <sha256sum>4784ff6d6e91b8eecd917b73d07b161c19a808ef870a5bdb760515bb67e208d3</sha256sum>
+            </artifact>
+            <artifact url="file://$MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0.jar">
+              <sha256sum>4accc9d2a56a6dd5198ec5e1c5c05a091da563bccd346fd6578edc083152beaa</sha256sum>
+            </artifact>
+            <artifact url="file://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0.jar">
+              <sha256sum>31e7e890bec03af28228a1b56a44b2bc1ec2bb9ef058c928880016d19994869c</sha256sum>
+            </artifact>
+          </verification>
+          <exclude>
+            <dependency maven-id="org.jetbrains.kotlinx:kotlin-jupyter-api" />
+          </exclude>
+        </properties>
+        <CLASSES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.13.0-475/kotlin-jupyter-shared-compiler-0.13.0-475.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.13.0-475/kotlin-jupyter-lib-0.13.0-475.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.13.0-475/kotlin-jupyter-common-dependencies-0.13.0-475.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/zeromq/jeromq/0.6.0/jeromq-0.6.0.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.13.0-475/kotlin-jupyter-shared-compiler-0.13.0-475-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.13.0-475/kotlin-jupyter-lib-0.13.0-475-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.13.0-475/kotlin-jupyter-common-dependencies-0.13.0-475-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/zeromq/jeromq/0.6.0/jeromq-0.6.0-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
     <orderEntry type="library" scope="PROVIDED" name="kotlin-reflect" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="kotlinx-serialization-core" level="project" />
     <orderEntry type="library" name="kotlinx-serialization-json" level="project" />
@@ -97,5 +142,6 @@
     <orderEntry type="module" module-name="intellij.java.debugger.impl.shared" />
     <orderEntry type="library" name="slf4j-api" level="project" />
     <orderEntry type="module" module-name="kotlin.base.indices" />
+    <orderEntry type="module" module-name="intellij.jupyter.execution" />
   </component>
 </module>
