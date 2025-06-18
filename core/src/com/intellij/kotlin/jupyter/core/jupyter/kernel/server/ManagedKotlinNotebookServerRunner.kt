@@ -10,7 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 
 class ManagedKotlinNotebookServerRunner : ManagedJupyterServerRunner {
-    override fun startServer(
+    override suspend fun startServer(
         project: Project,
         virtualFile: VirtualFile,
         kernelName: String?,
