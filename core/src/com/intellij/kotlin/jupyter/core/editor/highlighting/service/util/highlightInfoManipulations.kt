@@ -15,7 +15,6 @@ fun convertToShadowedDeclaration(psiElement: PsiElement, factoryName: String): H
     return HighlightInfo.newHighlightInfo(shadowedSymbolSeverity)
         .range(psiElement.textRange)
         .textAttributes(CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES)
-        .needsUpdateOnTyping(false)
         .group(0)
         .fillInProperDescription(factoryName)
         .createUnconditionally()
