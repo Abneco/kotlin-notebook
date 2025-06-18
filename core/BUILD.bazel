@@ -52,6 +52,7 @@ jvm_library(
   deps = [
     "@lib//:jetbrains-annotations-provided",
     "@community//platform/editor-ui-api:editor-ui",
+    "@community//platform/execution-impl",
     "@community//platform/foldings",
     "@community//platform/ide-core-impl",
     "@ultimate_lib//:kotlin-jupyter-core-jetbrains-kotlin-jupyter-shared-compiler",
