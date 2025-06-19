@@ -51,6 +51,7 @@ jvm_library(
   kotlinc_opts = ":custom",
   deps = [
     "@lib//:jetbrains-annotations-provided",
+    "@community//platform/code-style-api:codeStyle",
     "@community//platform/editor-ui-api:editor-ui",
     "@community//platform/execution-impl",
     "@community//platform/foldings",
