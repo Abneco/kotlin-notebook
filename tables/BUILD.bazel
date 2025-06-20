@@ -34,6 +34,7 @@ jvm_library(
     "//plugins/jupyter/tables",
     "@community//platform/code-style-api:codeStyle",
     "@community//grid/core-impl",
+    "@community//grid/impl",
   ],
   runtime_deps = [
     ":tables_resources",

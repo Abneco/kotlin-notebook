@@ -43,9 +43,9 @@ object KotlinDataframeParsing {
 
     fun isFormatSupported(serializedData: String): Boolean {
         return serializedData.contains(SERIALIZED_DATAFRAME_FIELD) &&
-               serializedData.contains(NUM_COLS_FIELD) &&
-               serializedData.contains(NUM_ROWS_FIELD) &&
-               serializedData.contains(COLUMNS_FIELD)
+                serializedData.contains(NUM_COLS_FIELD) &&
+                serializedData.contains(NUM_ROWS_FIELD) &&
+                serializedData.contains(COLUMNS_FIELD)
     }
 
     fun createParserForData(serializedData: String, mapper: ObjectMapper): KotlinDataframeParser {
@@ -140,7 +140,7 @@ private class KotlinDataframeParserImpl(
         )
     }
 
-    override fun parseDataFrameData(serializedData: String): List<List<Any>> {
+    override fun parseDataFrameData(serializedData: String): List<ColumnValues> {
         val rawJson = mapper.extractRawJson(serializedData)
 
         val rows = rawJson.getByPath(pathToData) as ArrayNode
@@ -276,7 +276,7 @@ private class KotlinDataframeParserImpl(
 
         return try {
             Base64.getDecoder().decode(text)
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             null
         }
     }

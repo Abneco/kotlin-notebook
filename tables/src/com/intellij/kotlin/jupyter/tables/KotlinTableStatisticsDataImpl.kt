@@ -5,12 +5,12 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.intellij.database.run.ui.table.statisticsPanel.types.ColumnDescriptionStatistics
+import com.intellij.database.run.ui.table.statisticsPanel.types.StatisticsDescriptionUnit
 import com.intellij.jupyter.core.jackson
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.scientific.tables.api.ColumnDescriptionStatistics
 import com.intellij.scientific.tables.api.DSTableCommandExecutor
-import com.intellij.scientific.tables.api.DescriptionStatisticsValue
 import com.intellij.scientific.tables.api.TableStatisticsData
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -93,7 +93,7 @@ class KotlinTableStatisticsDataImpl(
             //},
             val columnDescriptionStatistics = mutableListOf<ColumnDescriptionStatistics>()
             for (columnStats: JsonNode in statisticsArray) {
-                val stats = mutableListOf<DescriptionStatisticsValue>()
+                val stats = mutableListOf<StatisticsDescriptionUnit>()
                 columnStats.fieldNames()
                     .asSequence()
                     .toList()
@@ -101,7 +101,7 @@ class KotlinTableStatisticsDataImpl(
                         // Currently, values are passed through as-is. Consider if we should format
                         // some types so they become more readable, .e.g., restrict number of decimals
                         // in doubles/floats.
-                        stats.add(DescriptionStatisticsValue(fieldName, columnStats[fieldName].asText()))
+                        stats.add(StatisticsDescriptionUnit(fieldName, columnStats[fieldName].asText()))
                     }
                 if (stats.isNotEmpty()) {
                     columnDescriptionStatistics.add(ColumnDescriptionStatistics(stats))

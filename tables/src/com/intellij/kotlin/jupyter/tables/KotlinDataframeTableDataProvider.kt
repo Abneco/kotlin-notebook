@@ -41,7 +41,6 @@ import java.io.IOException
 import javax.swing.RowSorter
 import javax.swing.SortOrder
 
-
 internal const val DEFAULT_JSON_MAX_LENGTH = 100000000
 
 private const val JSON_MAX_STRING_LENGTH = "jupyter.notebook.json.maxStringLength"
@@ -84,14 +83,14 @@ class KotlinDataframeTableDataProvider : TableDataProviderFactory, TableDataType
 const val NULL: String = "null"
 
 class KotlinDataFrameProvider(private val project: Project, private val parser: KotlinDataframeParser, private val columnsLimit: Int) : NestedTableDataProvider {
-    override val type: DSTableDataType = DSTableDataType.EXTERNAL
+    override fun getType(): DSTableDataType = DSTableDataType.EXTERNAL
 
     override fun parseStaticTableToFrameInfo(text: String): DSDataFrameInfo {
         return parseFrameInfoFromKotlinDataframeOutput(text, isPreview = true)
     }
 
-    override fun parseStaticTableToTableData(id: DataId, table: String): DSTableRawData {
-        return parseDataFromKotlinDataframeOutput(id, table)
+    override fun parseStaticTableToTableData(dataId: DataId, table: String): DSTableRawData {
+        return parseDataFromKotlinDataframeOutput(dataId, table)
     }
 
     @Throws(DSTableDataException::class)
@@ -123,7 +122,7 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
             ::getCommandCode
         )
 
-       return executeParsing(response) { parseDataFromKotlinDataframeOutput(dataId, response) }
+        return executeParsing(response) { parseDataFromKotlinDataframeOutput(dataId, response) }
     }
 
     @Throws(DSTableDataException::class)
@@ -220,7 +219,7 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
     }
 
     private fun getCommandCode(tableCommand: TableCommand): String {
-        return when(tableCommand) {
+        return when (tableCommand) {
             is DescribeTableCommand, is InfoTableCommand, is VisualizationDataTableCommand, is ImageLoadCommand, is ImageStartLoadCommand -> throw NotImplementedError()
             is SliceTableCommand -> getSliceCommandCode(tableCommand)
         }

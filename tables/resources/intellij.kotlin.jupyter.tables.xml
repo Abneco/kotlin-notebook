@@ -6,6 +6,7 @@
         <module name="intellij.scientific.tables"/>
         <module name="intellij.notebooks.visualization"/>
         <module name="intellij.grid.core.impl"/>
+        <module name="intellij.grid.impl"/>
     </dependencies>
 
     <extensions defaultExtensionNs="com.intellij">

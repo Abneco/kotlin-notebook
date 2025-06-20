@@ -24,5 +24,6 @@
     <orderEntry type="module" module-name="intellij.jupyter.tables" />
     <orderEntry type="module" module-name="intellij.platform.codeStyle" />
     <orderEntry type="module" module-name="intellij.grid.core.impl" />
+    <orderEntry type="module" module-name="intellij.grid.impl" />
   </component>
 </module>
