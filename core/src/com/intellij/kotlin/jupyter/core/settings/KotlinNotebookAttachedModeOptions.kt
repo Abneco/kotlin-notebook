@@ -9,11 +9,11 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
+import org.jetbrains.kotlinx.jupyter.startup.ANY_HOST_NAME
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
-import org.jetbrains.kotlinx.jupyter.startup.defaultSpringAppPorts
+import org.jetbrains.kotlinx.jupyter.startup.DEFAULT_SPRING_APP_WEBSOCKET_PORT
+import org.jetbrains.kotlinx.jupyter.ws.WsKernelPorts
 import java.util.*
-import kotlin.reflect.KMutableProperty1
 
 @Service(Service.Level.PROJECT)
 @State(
@@ -29,42 +29,14 @@ class KotlinNotebookAttachedModeOptions:
     )
 {
 
-    var host by propNarrowing(State::host) { it ?: "*" }
+    var host: String by propNarrowing(State::host) { it ?: ANY_HOST_NAME }
+    var webSocketPort: Int by prop(State::webSocketPort).onChange { old, new -> onPortChanged(old, new) }
 
-    var hb by socket(State::hb, JupyterSocketType.HB)
-    var shell by socket(State::shell, JupyterSocketType.SHELL)
-    var control by socket(State::control, JupyterSocketType.CONTROL)
-    var stdin by socket(State::stdin, JupyterSocketType.STDIN)
-    var iopub by socket(State::iopub, JupyterSocketType.IOPUB)
-
-    private fun socket(
-        socketProperty: KMutableProperty1<State, Int>, socketType: JupyterSocketType
-    ) = prop(socketProperty).onChange { old, new -> onPortChanged(socketType, old, new) }
-
-    private val socketProperties = mapOf(
-        JupyterSocketType.HB to ::hb,
-        JupyterSocketType.SHELL to ::shell,
-        JupyterSocketType.CONTROL to ::control,
-        JupyterSocketType.STDIN to ::stdin,
-        JupyterSocketType.IOPUB to ::iopub,
-    )
-
-    fun getKernelPorts(): KernelPorts {
-        return socketProperties.mapValues { (_, prop) -> prop.get() }
-    }
-
-    fun getSocketProperty(socketType: JupyterSocketType) = socketProperties[socketType]!!
+    fun getKernelPorts(): KernelPorts = WsKernelPorts(webSocketPort)
 
     class State : BaseState() {
-        var host by string("*")
-
-        var hb by socket(JupyterSocketType.HB)
-        var shell by socket(JupyterSocketType.SHELL)
-        var control by socket(JupyterSocketType.CONTROL)
-        var stdin by socket(JupyterSocketType.STDIN)
-        var iopub by socket(JupyterSocketType.IOPUB)
-
-        private fun socket(type: JupyterSocketType) = property(defaultSpringAppPorts[type]!!)
+        var host: String? by string(ANY_HOST_NAME)
+        var webSocketPort: Int by property(DEFAULT_SPRING_APP_WEBSOCKET_PORT)
     }
 
     class PresentableNameGetter : com.intellij.openapi.components.State.NameGetter() {
@@ -72,7 +44,7 @@ class KotlinNotebookAttachedModeOptions:
     }
 
     interface Listener : EventListener {
-        fun onPortChanged(type: JupyterSocketType, oldValue: Int, newValue: Int)
+        fun onPortChanged(oldValue: Int, newValue: Int)
     }
 
     companion object {

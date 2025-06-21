@@ -2,8 +2,8 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import org.jetbrains.kotlinx.jupyter.messaging.JupyterBaseSockets
-import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketInfo
+import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
+import org.jetbrains.kotlinx.jupyter.messaging.JupyterServerSockets
 
 /**
  * Holds all Jupyter sockets that are needed for messaging
@@ -14,16 +14,15 @@ import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketInfo
  */
 class EmbeddedJupyterSockets(
     private val onMessageCallback: (JupyterMessage) -> Unit
-) : JupyterBaseSockets {
-    private fun openSocket(socketInfo: JupyterSocketInfo) =
+) : JupyterServerSockets {
+    private fun openSocket(socketType: JupyterSocketType) =
       EmbeddedJupyterSocket(
-        socketInfo.type,
-        onMessageCallback
+          socketType,
+          onMessageCallback
       )
 
-    override val heartbeat = openSocket(JupyterSocketInfo.HB)
-    override val shell = openSocket(JupyterSocketInfo.SHELL)
-    override val control = openSocket(JupyterSocketInfo.CONTROL)
-    override val stdin = openSocket(JupyterSocketInfo.STDIN)
-    override val iopub = openSocket(JupyterSocketInfo.IOPUB)
+    override val shell = openSocket(JupyterSocketType.SHELL)
+    override val control = openSocket(JupyterSocketType.CONTROL)
+    override val stdin = openSocket(JupyterSocketType.STDIN)
+    override val iopub = openSocket(JupyterSocketType.IOPUB)
 }

@@ -39,6 +39,7 @@ class AttachedKernelProcessFactory : ModeAwareKernelRunnableFactory(
             ports,
             DEFAULT_SPRING_SIGNATURE_KEY,
             replCompilerMode,
+            extraCompilerArgs = emptyList()
         )
 
         return AttachedKernelProcessHandler(

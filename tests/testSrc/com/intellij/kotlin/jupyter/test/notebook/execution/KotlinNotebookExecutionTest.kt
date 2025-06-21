@@ -16,7 +16,7 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
 import org.jetbrains.kotlinx.jupyter.startup.create
-import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
+import org.jetbrains.kotlinx.jupyter.startup.ZmqKernelPorts
 import org.junit.Ignore
 import org.junit.Test
 import java.net.ServerSocket
@@ -45,7 +45,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookTestCase() {
         var attemptCount = 0
         val portsProvider = KernelPortsProvider {
             ++attemptCount
-            createKernelPorts { socketType ->
+            ZmqKernelPorts { socketType ->
                 if (attemptCount == 1 && socketType == JupyterSocketType.HB) boundPort
                 else portsGenerator.randomPort()
             }

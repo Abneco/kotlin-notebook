@@ -30,7 +30,8 @@
   contentModules:
   - name: intellij.kotlin.jupyter.core
     libraries:
-      jetbrains.kotlin-jupyter-shared-compiler:
+      jetbrains.kotlinx.kotlin.jupyter.ws.server:
+      - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0/kotlin-jupyter-ws-server-0.jar
       - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0/kotlin-jupyter-shared-compiler-0.jar
       - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0/kotlin-jupyter-lib-0.jar
       - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0/kotlin-jupyter-common-dependencies-0.jar

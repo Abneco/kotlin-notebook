@@ -23,7 +23,7 @@ import org.jetbrains.kotlinx.jupyter.messaging.MessageHandler
 import org.jetbrains.kotlinx.jupyter.repl.ReplConfig
 import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import org.jetbrains.kotlinx.jupyter.startup.createKernelPorts
+import org.jetbrains.kotlinx.jupyter.startup.ZmqKernelPorts
 import java.nio.file.Path
 
 class EmbeddedKotlinKernelSession(
@@ -53,7 +53,7 @@ class EmbeddedKotlinKernelSession(
     private fun createMessageHandler(): MessageHandler {
         val kernelConfig: KernelConfig = DefaultKotlinKernelConfigFactory(
             project,
-            createKernelPorts { 0 },
+            ZmqKernelPorts { 0 },
             notebookPath,
             replCompilerMode
         ).create()
@@ -62,7 +62,7 @@ class EmbeddedKotlinKernelSession(
             DefaultResolutionInfoProviderFactory,
             loggerFactory,
             createLibraryHttpUtil(loggerFactory, IdeaHttpClient),
-            kernelConfig.homeDir,
+            kernelConfig.ownParams.homeDir,
             kernelRunMode = IntellijProcessKernelRunMode,
         )
 

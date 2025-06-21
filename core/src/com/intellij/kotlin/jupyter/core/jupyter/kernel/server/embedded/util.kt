@@ -2,8 +2,8 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 
 import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
-import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketBase
+import org.jetbrains.kotlinx.jupyter.protocol.JupyterSendReceiveSocket
 
-fun JupyterSocketBase.setClientReply(message: RawMessage) {
+fun JupyterSendReceiveSocket.setClientReply(message: RawMessage) {
   (this as? EmbeddedJupyterSocket)?.setClientReply(message)
 }

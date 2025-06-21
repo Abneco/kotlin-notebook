@@ -6,7 +6,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.channel
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toJupyterMessage
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
-import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketBase
+import org.jetbrains.kotlinx.jupyter.protocol.JupyterSendReceiveSocket
 import java.util.concurrent.ArrayBlockingQueue
 
 /**
@@ -23,7 +23,7 @@ import java.util.concurrent.ArrayBlockingQueue
 open class EmbeddedJupyterSocket(
     private val socketType: JupyterSocketType,
     private val onMessageCallback: (JupyterMessage) -> Unit,
-) : JupyterSocketBase {
+) : JupyterSendReceiveSocket {
     private val clientReplyQueue = ArrayBlockingQueue<RawMessage>(10)
 
     /**

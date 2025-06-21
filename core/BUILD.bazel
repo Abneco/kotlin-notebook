@@ -56,7 +56,7 @@ jvm_library(
     "@community//platform/execution-impl",
     "@community//platform/foldings",
     "@community//platform/ide-core-impl",
-    "@ultimate_lib//:kotlin-jupyter-core-jetbrains-kotlin-jupyter-shared-compiler",
+    "@ultimate_lib//:kotlin-jupyter-core-jetbrains-kotlinx-kotlin-jupyter-ws-server",
     "@lib//:kotlin-reflect-provided",
     "@lib//:kotlinx-serialization-core-provided",
     "@lib//:kotlinx-serialization-json",
@@ -126,7 +126,7 @@ jvm_library(
     ":core_provided",
     ":jupyter-psi_provided",
   ],
-  exports = ["@ultimate_lib//:kotlin-jupyter-core-jetbrains-kotlin-jupyter-shared-compiler"],
+  exports = ["@ultimate_lib//:kotlin-jupyter-core-jetbrains-kotlinx-kotlin-jupyter-ws-server"],
   runtime_deps = [
     ":core_resources",
     ":core_resources_1",

@@ -1,7 +1,6 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.common
 
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.IdeaJupyterSocketManager
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.closeSafely
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.getPollersFromContext
 import com.intellij.kotlin.jupyter.test.KotlinNotebookUnitTestCase
@@ -10,19 +9,24 @@ import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldHaveSize
 import org.jetbrains.kotlinx.jupyter.api.DEFAULT
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
+import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
+import org.jetbrains.kotlinx.jupyter.messaging.JupyterZmqClientSocketManager
+import org.jetbrains.kotlinx.jupyter.messaging.JupyterZmqClientSockets
+import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketSide
 import org.jetbrains.kotlinx.jupyter.startup.createClientKotlinKernelConfig
-import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
+import org.jetbrains.kotlinx.jupyter.startup.createRandomZmqKernelPorts
+import org.jetbrains.kotlinx.jupyter.util.closeWithTimeout
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
-class SocketManagerTest: KotlinNotebookUnitTestCase() {
+class SocketManagerTest : KotlinNotebookUnitTestCase() {
     @Test
     fun `socket manager should be successfully cleaned up`() {
-        withSocketManager { socketManager ->
-            val zmqContext = socketManager.getZmqContext()
+        withZmqSockets { zmqSockets ->
+            val zmqContext = zmqSockets.context
             getPollersFromContext(zmqContext).shouldHaveSize(2)
 
-            socketManager.close()
+            zmqSockets.close()
 
             runBlocking {
                 waitUntil("ZMQ threads leaked", 30.seconds) {
@@ -35,8 +39,8 @@ class SocketManagerTest: KotlinNotebookUnitTestCase() {
 
     @Test
     fun `socket manager's poller thread should die when ZMQ poller is closed`() {
-        withSocketManager { socketManager ->
-            val zmqContext = socketManager.getZmqContext()
+        withZmqSockets { zmqSockets ->
+            val zmqContext = zmqSockets.context
             val pollers = getPollersFromContext(zmqContext).shouldHaveSize(2)
             for (poller in pollers) {
                 poller.closeSafely()
@@ -47,18 +51,27 @@ class SocketManagerTest: KotlinNotebookUnitTestCase() {
                     pollers.all { poller -> poller.workerThread?.isAlive == false }
                 }
             }
+            println("done!")
         }
     }
 
-    private fun withSocketManager(action: (IdeaJupyterSocketManager) -> Unit) {
+    private fun withZmqSockets(action: (JupyterZmqClientSockets) -> Unit) {
         val kernelConfig = createClientKotlinKernelConfig(
             host = "*",
-            ports = createRandomKernelPorts(),
+            ports = createRandomZmqKernelPorts(),
             signatureKey = "zzz",
-            replCompilerMode = ReplCompilerMode.DEFAULT
+            replCompilerMode = ReplCompilerMode.DEFAULT,
+            extraCompilerArgs = emptyList(),
         )
 
-        IdeaJupyterSocketManager(kernelConfig).use(action)
+        val sockets = JupyterZmqClientSocketManager(DefaultKernelLoggerFactory, side = JupyterSocketSide.IDE_CLIENT).open(kernelConfig)
+        try {
+            action(sockets)
+        } finally {
+          closeWithTimeout(10_000L) {
+              sockets.close()
+          }
+        }
     }
 
     override fun runInDispatchThread(): Boolean = false

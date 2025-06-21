@@ -54,7 +54,6 @@ import com.intellij.util.messages.Topic
 import com.intellij.util.messages.impl.PluginListenerDescriptor
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
-import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
 import kotlin.reflect.KMutableProperty0
 
@@ -83,8 +82,8 @@ class KotlinNotebookSettingsPanelBuilder(
             }
             if (KotlinNotebookSessionRunMode.ATTACHED_PROCESS.isAvailable) {
                 group(KotlinNotebookBundle.message("kotlin.jupyter.attached.process.mode.settings.group")) {
-                    createKernelHostField()
-                    createZmqPortsSelector()
+                    createAttachedProcessKernelHostField()
+                    createAttachedProcessPortSelector()
                 }
             }
             if (debugFeaturesEnabled) {
@@ -289,7 +288,7 @@ class KotlinNotebookSettingsPanelBuilder(
         }
     }
 
-    private fun Panel.createKernelHostField(): Row {
+    private fun Panel.createAttachedProcessKernelHostField(): Row {
         return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.session.attached.host")) {
             textField()
                 .bindText(attachedProcessOptions::host)
@@ -297,16 +296,11 @@ class KotlinNotebookSettingsPanelBuilder(
         }
     }
 
-    private fun Panel.createZmqPortsSelector(): Row {
-        return group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session.attached.ports")) {
-            for (socketType in JupyterSocketType.entries) {
-                val socketName = socketType.name
-                row(socketName) {
-                    textField()
-                        .bindIntText(attachedProcessOptions.getSocketProperty(socketType))
-                        .widthGroup(BUILD_WIDTH_GROUP)
-                }
-            }
+    private fun Panel.createAttachedProcessPortSelector(): Row {
+        return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.session.attached.ports")) {
+            textField()
+                .bindIntText(attachedProcessOptions::webSocketPort)
+                .widthGroup(BUILD_WIDTH_GROUP)
         }
     }
 

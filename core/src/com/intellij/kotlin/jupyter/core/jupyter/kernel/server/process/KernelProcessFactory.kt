@@ -27,7 +27,7 @@ import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
-import org.jetbrains.kotlinx.jupyter.startup.createRandomKernelPorts
+import org.jetbrains.kotlinx.jupyter.startup.createRandomZmqKernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
 import java.io.File
 import java.nio.file.Path
@@ -145,7 +145,7 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
 
     private var _kernelPortsProvider: KernelPortsProvider = KernelPortsProvider {
         Thread.currentThread().setContextClassLoader(KernelPortsProvider::class.java.classLoader)
-        createRandomKernelPorts()
+        createRandomZmqKernelPorts()
     }
 
     val kernelPortsProvider: KernelPortsProvider get() = _kernelPortsProvider

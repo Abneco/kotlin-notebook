@@ -6,7 +6,7 @@ import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.execution.JupyterExecutor
 import org.jetbrains.kotlinx.jupyter.messaging.AbstractMessageHandler
 import org.jetbrains.kotlinx.jupyter.messaging.ExecutionCounter
-import org.jetbrains.kotlinx.jupyter.messaging.JupyterBaseSockets
+import org.jetbrains.kotlinx.jupyter.messaging.JupyterServerSockets
 import org.jetbrains.kotlinx.jupyter.messaging.MessageFactoryProvider
 import org.jetbrains.kotlinx.jupyter.messaging.MessageRequestProcessor
 import org.jetbrains.kotlinx.jupyter.messaging.comms.CommManagerInternal
@@ -17,7 +17,7 @@ class EmbeddedMessageHandler(
     private val loggerFactory: KernelLoggerFactory,
     private val commManager: CommManagerInternal,
     private val messageFactoryProvider: MessageFactoryProvider,
-    private val socketManager: JupyterBaseSockets,
+    private val socketManager: JupyterServerSockets,
     private val executor: JupyterExecutor,
 ) : AbstractMessageHandler() {
     private val executionCount = ExecutionCounter(1)

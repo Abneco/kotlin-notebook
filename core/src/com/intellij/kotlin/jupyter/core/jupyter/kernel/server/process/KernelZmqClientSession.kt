@@ -11,38 +11,39 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.JupyterMe
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toJupyterMessage
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toRawMessageWithSocket
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
-import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.ui.EDT
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
-import org.jetbrains.kotlinx.jupyter.api.libraries.rawMessageCallback
-import org.jetbrains.kotlinx.jupyter.protocol.AbstractJupyterConnection
+import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
+import org.jetbrains.kotlinx.jupyter.messaging.JupyterClientSocketManager
+import org.jetbrains.kotlinx.jupyter.messaging.JupyterClientSockets
+import org.jetbrains.kotlinx.jupyter.messaging.JupyterZmqClientSocketManager
+import org.jetbrains.kotlinx.jupyter.messaging.JupyterZmqClientSockets
+import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketSide
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
+import org.jetbrains.kotlinx.jupyter.ws.JupyterWsClientSocketManager
 import org.zeromq.ZMQException
 import java.nio.channels.ClosedSelectorException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 
-class KernelZMQClientSession(
-  override val sessionId: JupyterNotebookSessionId,
-  kernelConfig: KernelConfig,
-  private val onMessageCallback: (JupyterMessage) -> Unit,
-  private val outgoingMessagesFilter: JupyterMessageFilter,
-): AbstractJupyterConnection(), JupyterKernelCommunicationClient, KotlinKernelSession {
+sealed class KernelClientSession(
+    override val sessionId: JupyterNotebookSessionId,
+    kernelConfig: KernelConfig,
+    private val onMessageCallback: (JupyterMessage) -> Unit,
+    private val outgoingMessagesFilter: JupyterMessageFilter,
+    socketManager: JupyterClientSocketManager,
+) : JupyterKernelCommunicationClient, KotlinKernelSession {
     private val receiveMessageLock = ReentrantLock(true)
-
-    private val clientThreads: MutableList<Thread> = ContainerUtil.createConcurrentList()
-
-    override val socketManager: IdeaJupyterSocketManager = IdeaJupyterSocketManager(kernelConfig)
-
     private val isClosing = AtomicBoolean(false)
+    protected val sockets: JupyterClientSockets = socketManager.open(kernelConfig)
 
     init {
         initSockets()
@@ -50,10 +51,10 @@ class KernelZMQClientSession(
 
     override fun send(content: JupyterMessage) {
         if (!outgoingMessagesFilter.accepts(content)) return
-
         val (rawMessage, socketType) = content.toRawMessageWithSocket() ?: return
         try {
-            val socket = socketManager.fromSocketType(socketType)
+            val socket = sockets.fromSocketType(socketType)
+                ?: throw IllegalArgumentException("Interacting with heartbeat socket is not supported")
             LOG.debug { "Sending message to $socketType in $sessionId:\n$rawMessage" }
             socket.sendRawMessage(rawMessage)
         } catch (e: Exception) {
@@ -62,55 +63,21 @@ class KernelZMQClientSession(
     }
 
     private fun initSockets() {
-        fun socketLoop(
-            interruptedMessage: String,
-            loopBody: () -> Unit
-        ) {
-            while (true) {
+        JupyterSocketType.entries.forEach { socketType ->
+            val socket = sockets.fromSocketType(socketType)
+
+            socket?.onRawMessage { rawMessage ->
                 try {
-                    loopBody()
-                } catch (_: InterruptedException) {
-                    LOG.debug(interruptedMessage)
-                    break
+                    receiveMessageLock.withLock { processMessage(socketType, rawMessage) }
+                } catch (e: ClosedSelectorException) {
+                    rethrowAsInterrupted(e)
+                } catch (e: ZMQException) {
+                    rethrowAsInterrupted(e)
+                } catch (e: AssertionError) {
+                    rethrowAsInterrupted(e)
                 }
             }
         }
-
-        val mainClientThread = thread(name = "Main Kernel ZMQ client thread") {
-            val childThreads = buildList {
-                JupyterSocketType.entries.forEach { socketType ->
-                    val socket = socketManager.fromSocketType(socketType)
-
-                    addMessageCallback(
-                        rawMessageCallback(socketType, null) { rawMessage ->
-                            receiveMessageLock.withLock {
-                                processMessage(socketType, rawMessage)
-                            }
-                        }
-                    )
-
-                    add(
-                        thread(name = "$socketType's socket thread") {
-                            socketLoop("Socket $socketType: Interrupted") {
-                                try {
-                                    socket.runCallbacksOnMessage()
-                                } catch (e: ClosedSelectorException) {
-                                    rethrowAsInterrupted(e)
-                                } catch (e: ZMQException) {
-                                    rethrowAsInterrupted(e)
-                                } catch (e: AssertionError) {
-                                    rethrowAsInterrupted(e)
-                                }
-                            }
-                        }
-                    )
-                }
-            }
-
-            clientThreads.addAll(childThreads)
-            childThreads.forEach { it.join() }
-        }
-        clientThreads.add(mainClientThread)
     }
 
     private fun processMessage(socketType: JupyterSocketType, rawMessage: RawMessage) {
@@ -127,7 +94,7 @@ class KernelZMQClientSession(
 
         val closeDeferred = KotlinNotebookPluginScope.global.launch {
             withTimeoutOrNull(SESSION_KILL_WAIT_TIMEOUT) {
-                doClose()
+                sockets.closeSafely()
             }
         }
 
@@ -138,25 +105,51 @@ class KernelZMQClientSession(
         }
     }
 
-    private fun doClose() {
-        socketManager.closeSafely()
-        disposeThreads()
-    }
-
-    private fun disposeThreads() {
-        val threadsToInterrupt = clientThreads.toList()
-        clientThreads.clear()
-        for (thread in threadsToInterrupt) {
-            thread.interrupt()
-        }
-        for (thread in threadsToInterrupt) {
-            thread.join()
-        }
-    }
-
     companion object {
-        private val LOG = KotlinNotebookLoggerFactory.getInstance(KernelZMQClientSession::class)
+        private val LOG = KotlinNotebookLoggerFactory.getInstance(KernelClientSession::class)
     }
+}
+
+class KernelZmqClientSession(
+    sessionId: JupyterNotebookSessionId,
+    kernelConfig: KernelConfig,
+    onMessageCallback: (JupyterMessage) -> Unit,
+    outgoingMessagesFilter: JupyterMessageFilter,
+) : KernelClientSession(
+    sessionId = sessionId,
+    kernelConfig = kernelConfig,
+    onMessageCallback = onMessageCallback,
+    outgoingMessagesFilter = outgoingMessagesFilter,
+    socketManager = JupyterZmqClientSocketManager(DefaultKernelLoggerFactory, JupyterSocketSide.IDE_CLIENT)
+) {
+    override fun close() {
+        super.close()
+        for (zmqPoller in getPollersFromContext((sockets as JupyterZmqClientSockets).context)) {
+            notebookLogger().warn("Undisposed ZMQ Poller $zmqPoller detected, interrupting polling")
+            zmqPoller.closeSafely()
+        }
+    }
+}
+
+class KernelWsClientSession(
+    sessionId: JupyterNotebookSessionId,
+    kernelConfig: KernelConfig,
+    onMessageCallback: (JupyterMessage) -> Unit,
+    outgoingMessagesFilter: JupyterMessageFilter,
+) : KernelClientSession(
+    sessionId = sessionId,
+    kernelConfig = kernelConfig,
+    onMessageCallback = onMessageCallback,
+    outgoingMessagesFilter = outgoingMessagesFilter,
+    socketManager = JupyterWsClientSocketManager(DefaultKernelLoggerFactory)
+)
+
+private fun JupyterClientSockets.fromSocketType(socketType: JupyterSocketType) = when (socketType) {
+    JupyterSocketType.SHELL -> shell
+    JupyterSocketType.CONTROL -> control
+    JupyterSocketType.STDIN -> stdin
+    JupyterSocketType.IOPUB -> ioPub
+    JupyterSocketType.HB -> null
 }
 
 val JupyterMessageChannel.socketType: JupyterSocketType? get() {

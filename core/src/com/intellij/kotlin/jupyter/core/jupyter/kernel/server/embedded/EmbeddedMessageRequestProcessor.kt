@@ -7,7 +7,7 @@ import org.jetbrains.kotlinx.jupyter.execution.JupyterExecutor
 import org.jetbrains.kotlinx.jupyter.messaging.ExecutionCounter
 import org.jetbrains.kotlinx.jupyter.messaging.IdeCompatibleMessageRequestProcessor
 import org.jetbrains.kotlinx.jupyter.messaging.InputReply
-import org.jetbrains.kotlinx.jupyter.messaging.JupyterBaseSockets
+import org.jetbrains.kotlinx.jupyter.messaging.JupyterServerSockets
 import org.jetbrains.kotlinx.jupyter.messaging.MessageFactoryProvider
 import org.jetbrains.kotlinx.jupyter.messaging.comms.CommManagerInternal
 import org.jetbrains.kotlinx.jupyter.messaging.toRawMessage
@@ -16,7 +16,7 @@ import org.jetbrains.kotlinx.jupyter.repl.ReplForJupyter
 class EmbeddedMessageRequestProcessor(
     rawIncomingMessage: RawMessage,
     messageFactoryProvider: MessageFactoryProvider,
-    socketManager: JupyterBaseSockets,
+    socketManager: JupyterServerSockets,
     commManager: CommManagerInternal,
     executor: JupyterExecutor,
     executionCount: ExecutionCounter,

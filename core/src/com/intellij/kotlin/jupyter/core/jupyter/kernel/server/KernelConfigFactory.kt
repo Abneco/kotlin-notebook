@@ -13,8 +13,11 @@ import com.intellij.pom.java.LanguageLevel
 import com.intellij.util.lang.JavaVersion
 import org.jetbrains.kotlinx.jupyter.api.JupyterClientType
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
+import org.jetbrains.kotlinx.jupyter.startup.ANY_HOST_NAME
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
+import org.jetbrains.kotlinx.jupyter.startup.KernelJupyterParams
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
+import org.jetbrains.kotlinx.jupyter.startup.parameters.KernelOwnParams
 import java.io.File
 import java.nio.file.Path
 
@@ -28,22 +31,29 @@ abstract class AbstractKotlinKernelConfigFactory(
     protected val replCompilerMode: ReplCompilerMode,
 ) : KernelConfigFactory {
     final override fun create(): KernelConfig = KernelConfig(
-        ports = getKernelPorts(),
-        transport = "tcp",
-        signatureScheme = "HmacSHA256",
-        // Key doesn't matter as long as it's a local kernel
-        signatureKey = "x-x-x",
-        scriptClasspath = getClasspath(),
-        // Don't try to resolve libraries against some local directory,
-        // use only embedded or remote JSON library files
-        homeDir = null,
-        debugPort = getDebugPortOrNull(notebookPath),
-        // Kernel provides API for a user to learn in what environment the session is run
-        // In particular, a client type is available via `notebook.jupyterClientType`
-        // in both separate and embedded modes
-        clientType = JupyterClientType.KOTLIN_NOTEBOOK.name,
-        jvmTargetForSnippets = getJvmTargetForSnippets(project)?.toFeatureString(),
-        replCompilerMode = replCompilerMode
+        jupyterParams = KernelJupyterParams(
+            host = ANY_HOST_NAME,
+            ports = getKernelPorts(),
+            transport = "tcp",
+            signatureScheme = "HmacSHA256",
+            // Key doesn't matter as long as it's a local kernel
+            signatureKey = "x-x-x",
+        ),
+        ownParams = KernelOwnParams(
+            scriptClasspath = getClasspath(),
+            // Don't try to resolve libraries against some local directory,
+            // use only embedded or remote JSON library files
+            homeDir = null,
+            debugPort = getDebugPortOrNull(notebookPath),
+            // Kernel provides API for a user to learn in what environment the session is run
+            // In particular, a client type is available via `notebook.jupyterClientType`
+            // in both separate and embedded modes
+            clientType = JupyterClientType.KOTLIN_NOTEBOOK.name,
+            jvmTargetForSnippets = getJvmTargetForSnippets(project)?.toFeatureString(),
+            replCompilerMode = replCompilerMode
+        ),
+
+
     )
 
     protected abstract fun getKernelPorts(): KernelPorts
@@ -65,7 +75,7 @@ class DefaultKotlinKernelConfigFactory(
     notebookPath: Path,
     replCompilerMode: ReplCompilerMode,
 ): AbstractKotlinKernelConfigFactory(project, notebookPath, replCompilerMode) {
-    override fun getKernelPorts() = kernelPorts
+    override fun getKernelPorts(): KernelPorts = kernelPorts
 
     override fun getDebugPortOrNull(notebookPath: Path): Int? {
         return KotlinNotebookDebugSessionManager.getInstance(project).getByPath(notebookPath)?.provideFreshDebugPort()
