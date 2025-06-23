@@ -9,6 +9,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.util.computeFileIconImpl
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import com.intellij.util.concurrency.annotations.RequiresBlockingContext
 
 @Service
 class RecentKotlinNotebooksService {
@@ -31,6 +32,7 @@ class RecentKotlinNotebooksService {
     }
 
     companion object {
+        @RequiresBlockingContext
         fun getInstance(): RecentKotlinNotebooksService = service<RecentKotlinNotebooksService>()
     }
 }

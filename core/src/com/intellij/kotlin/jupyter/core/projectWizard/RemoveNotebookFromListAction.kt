@@ -46,7 +46,7 @@ class RemoveNotebookFromListAction : AnAction(), DumbAware {
             val treeHolder = e.getData(NOTEBOOK_TREE_HOLDER_KEY)
             if (treeHolder != null) {
                 KotlinNotebookPluginScope.global.launch {
-                    treeHolder.updateAsync().join()
+                    treeHolder.update()
                     withContext(Dispatchers.EDT) {
                         treeHolder.revalidateTree()
                     }

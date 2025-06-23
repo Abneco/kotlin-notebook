@@ -8,13 +8,13 @@ import com.intellij.kotlin.jupyter.core.projectWizard.NotebookTreeNode
 import com.intellij.kotlin.jupyter.core.projectWizard.RecentKotlinNotebooksService
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebookWithIcon
-import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.components.serviceAsync
 import com.intellij.openapi.ui.panel.ComponentPanelBuilder
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
@@ -37,8 +37,6 @@ import com.intellij.util.ui.NamedColorUtil
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.tree.TreeUtil
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
 import java.awt.Component
@@ -282,13 +280,13 @@ internal class KotlinNotebookTreeHolder {
     fun getTree(): Tree = tree
     fun getRoot(): NotebookTreeNode = treeModel.root as NotebookTreeNode
 
-    fun updateAsync(): Job {
-        return KotlinNotebookPluginScope.global.launch(Dispatchers.Default) {
-            val files = RecentKotlinNotebooksService.getInstance().getNotebooksWithIcons()
-            withContext(Dispatchers.EDT) {
-                val root = NotebookTreeNode(NotebookRootItem(files))
-                treeModel.setRoot(root)
-            }
+    suspend fun update() {
+        val files = withContext(Dispatchers.Default) {
+            serviceAsync<RecentKotlinNotebooksService>().getNotebooksWithIcons()
+        }
+        withContext(Dispatchers.EDT) {
+            val root = NotebookTreeNode(NotebookRootItem(files))
+            treeModel.setRoot(root)
         }
     }
 

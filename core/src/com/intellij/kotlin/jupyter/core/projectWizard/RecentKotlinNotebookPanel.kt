@@ -40,9 +40,9 @@ internal class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
         withBackground(WelcomeScreenUIManager.getProjectsBackground())
 
         val treeComponent = KotlinNotebookTreeHolder()
-        treeComponent.updateAsync().join()
+        treeComponent.update()
         val filteringTree = RecentKotlinNotebookFilteringTree(treeComponent)
-        filteringTree.updateAsync().join()
+        filteringTree.update()
 
         val northPanel = JBUI.Panels.simplePanel()
             .andTransparent()

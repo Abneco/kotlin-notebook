@@ -4,8 +4,6 @@ package com.intellij.kotlin.jupyter.core.projectWizard
 import com.intellij.kotlin.jupyter.core.projectWizard.common.KotlinNotebookTreeHolder
 import com.intellij.kotlin.jupyter.core.projectWizard.common.openNotebook
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.ui.addKeyboardAction
 import com.intellij.ui.FilteringTree
 import com.intellij.ui.SearchTextField
@@ -13,9 +11,6 @@ import com.intellij.ui.components.TextComponentEmptyText
 import com.intellij.util.asSafely
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.tree.TreeUtil
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import java.awt.event.KeyEvent
 import javax.swing.KeyStroke
 
@@ -33,12 +28,10 @@ internal class RecentKotlinNotebookFilteringTree(
 
     override fun createNode(item: NotebookItem): NotebookTreeNode = NotebookTreeNode(item)
 
-    fun updateAsync(): Job {
-        return KotlinNotebookPluginScope.global.launch(Dispatchers.EDT) {
-            treeComponent.updateAsync().join()
-            searchModel.updateStructure()
-            TreeUtil.expandAll(tree)
-        }
+    suspend fun update() {
+        treeComponent.update()
+        searchModel.updateStructure()
+        TreeUtil.expandAll(tree)
     }
 
     override fun installSearchField(): SearchTextField {
