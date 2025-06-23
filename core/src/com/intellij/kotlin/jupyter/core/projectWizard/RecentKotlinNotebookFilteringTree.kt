@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import java.awt.event.KeyEvent
 import javax.swing.KeyStroke
 
-class RecentKotlinNotebookFilteringTree(
+internal class RecentKotlinNotebookFilteringTree(
     private val treeComponent: KotlinNotebookTreeHolder
 ) : FilteringTree<NotebookTreeNode, NotebookItem>(
     treeComponent.getTree(),

@@ -136,7 +136,7 @@ private class NotebookComponent : JPanel(GridLayout()) {
     }
 }
 
-class KotlinNotebookTreeHolder {
+internal class KotlinNotebookTreeHolder {
     private val tree = Tree()
     private val treeModel = DefaultTreeModel(NotebookTreeNode(NotebookRootItem(emptyList())))
     private val buttonViewModel = NotebookActionButtonViewModel()

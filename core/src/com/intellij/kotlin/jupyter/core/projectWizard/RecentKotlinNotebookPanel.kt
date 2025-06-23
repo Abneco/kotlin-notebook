@@ -26,7 +26,7 @@ import java.awt.Dimension
 import java.awt.Insets
 import java.util.function.Supplier
 
-class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
+internal class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
     init {
         KotlinNotebookPluginScope.global.launch {
             withContext(Dispatchers.EDT) {

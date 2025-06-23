@@ -24,9 +24,9 @@ import com.intellij.ui.dsl.gridLayout.UnscaledGaps
 import com.intellij.util.ui.JBUI
 import javax.swing.JComponent
 
-val kotlinNotebookWelcomeFeaturesEnabled: Boolean by registryFlag("kotlin.notebook.welcome.features", true)
+internal val kotlinNotebookWelcomeFeaturesEnabled: Boolean by registryFlag("kotlin.notebook.welcome.features", true)
 
-class KotlinNotebookWelcomeTabFactory: WelcomeTabFactory {
+private class KotlinNotebookWelcomeTabFactory: WelcomeTabFactory {
     override fun createWelcomeTabs(ws: WelcomeScreen, parentDisposable: Disposable): List<WelcomeScreenTab?> {
         return listOf(KotlinNotebookWelcomeScreenTab(parentDisposable))
     }
