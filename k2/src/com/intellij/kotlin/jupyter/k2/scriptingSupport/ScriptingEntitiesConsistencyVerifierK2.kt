@@ -7,12 +7,13 @@ import com.intellij.kotlin.jupyter.core.projectModel.kotlin.getIndexedTopLevelCl
 import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier
 import com.intellij.kotlin.jupyter.core.scriptingSupport.workSpaceSnapshot
 import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceModule
+import com.intellij.kotlin.jupyter.k2.project.model.notebookScriptLibrariesEntities
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.workspace.workspaceModel
-import com.intellij.platform.workspace.jps.entities.LibraryEntity
+import com.intellij.platform.workspace.jps.entities.LibraryRoot
 import com.intellij.platform.workspace.jps.entities.LibraryRootTypeId
 import com.intellij.platform.workspace.storage.impl.url.toVirtualFileUrl
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
@@ -32,16 +33,12 @@ private class ScriptingEntitiesConsistencyVerifierFactoryK2 : ScriptingEntitiesC
 private class ScriptingEntitiesConsistencyVerifierK2(
     private val project: Project
 ): ScriptingEntitiesConsistencyVerifier {
-    private fun getNotebookModulesLibraryEntities(): Sequence<LibraryEntity> {
-        return project.workSpaceSnapshot.entitiesBySource {
-            it is KotlinNotebookScriptEntitySource
-        }.filterIsInstance<LibraryEntity>()
-    }
+    private fun getDependencyRootsForNotebook(notebookFile: BackedNotebookVirtualFile): List<LibraryRoot> {
+        val snapshot = project.workSpaceSnapshot
+        val dependencyAsLibraries = notebookFile
+            .notebookScriptLibrariesEntities(project, snapshot)
 
-    private fun getRuntimeLibraryForNotebook(notebookFile: BackedNotebookVirtualFile): LibraryEntity? {
-        return getNotebookModulesLibraryEntities().firstOrNull {
-            it.name == notebookFile.file.toK2RuntimeDependencyLibraryName(project)
-        }
+        return dependencyAsLibraries.flatMap { it.roots }
     }
 
     private fun checkSourceIsNotEmpty(notebookFile: BackedNotebookVirtualFile): Boolean {
@@ -56,8 +53,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     private fun checkArtifactPresentInLibrary(virtualFile: BackedNotebookVirtualFile, lastCompiledScriptPath: VirtualFileUrl): Boolean {
         val artifactName = lastCompiledScriptPath.fileName
 
-        val libraryRoots = getRuntimeLibraryForNotebook(virtualFile)?.roots
-            .orEmpty()
+        val libraryRoots = getDependencyRootsForNotebook(virtualFile)
         val isPresent = libraryRoots.any { root ->
             root.type == LibraryRootTypeId.COMPILED && root.url.presentableUrl.endsWith(artifactName)
         }

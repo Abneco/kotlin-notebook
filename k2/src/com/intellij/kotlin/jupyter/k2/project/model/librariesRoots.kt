@@ -1,6 +1,8 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.projectModel
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.k2.project.model
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookConfigurationRootsView
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
@@ -16,14 +18,12 @@ import com.intellij.platform.workspace.jps.entities.modifyLibraryEntity
 import com.intellij.platform.workspace.storage.EntitySource
 import com.intellij.platform.workspace.storage.EntityStorage
 import com.intellij.platform.workspace.storage.MutableEntityStorage
-import com.intellij.platform.workspace.storage.WorkspaceEntity
+import com.intellij.workspaceModel.ide.legacyBridge.findModuleEntity
 import org.jetbrains.kotlin.idea.core.script.ScriptClassPathUtil
-import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
-import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 
 
 /**
- * Creates or updates a library entity associated with runtime notebook dependencies in a
+ * Creates or updates a library entity associated with runtime compiled only notebook dependencies in a
  * global Project table.
  *
  * If a library entity for the specified notebook name already exists, it updates the entity's
@@ -33,15 +33,13 @@ import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
  * @param libraryName The name of the Notebook for which the library is being created or updated.
  * @param project The project context in which the library is being managed.
  * @param notebookEntitySource The entity source associated with the notebook.
- * @param configurationWrapper Wrapper for script compilation configuration for any cell in the notebook, used to determine library roots.
+ * @param roots List of library roots which will be used for this entity.
  */
 fun MutableEntityStorage.createOrUpdateLibraryForNotebookDependencies(
     libraryName: String,
-    project: Project,
     notebookEntitySource: EntitySource,
-    configurationWrapper: ScriptCompilationConfigurationWrapper
+    roots: List<LibraryRoot>
 ): LibraryEntity {
-    val roots = getLibraryRoots(project, configurationWrapper)
     val libraryTableId = LibraryTableId.ProjectLibraryTableId
     val entity = resolveLibraryDependencies(libraryName, libraryTableId)
 
@@ -67,41 +65,19 @@ fun MutableEntityStorage.resolveLibraryDependencies(
 }
 
 /**
- * Returns a Sequence of all [WorkspaceEntity] related to a
- * given [VirtualFile]'s [com.intellij.platform.workspace.storage.url.VirtualFileUrl]
+ * Returns a list of [LibraryDependency] for a particular [VirtualFile] based
+ * on [ModuleEntity] associated with this file.
  */
-internal fun VirtualFile.workspaceEntities(project: Project, snapshot: EntityStorage): Sequence<WorkspaceEntity> {
-    val virtualFileUrlManager = WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
-    val virtualFileUrl = toVirtualFileUrl(virtualFileUrlManager)
-    return snapshot.getVirtualFileUrlIndex()
-        .findEntitiesByUrl(virtualFileUrl)
-}
-
-
-fun VirtualFile.injectedScriptLibraryDependencies(project: Project, workSpaceSnapshot: EntityStorage): List<LibraryDependency> {
-    val dependencies = workspaceEntities(project, workSpaceSnapshot)
-        .firstIsInstanceOrNull<ModuleEntity>()?.dependencies ?: return emptyList()
+fun BackedNotebookVirtualFile.notebookScriptLibraryDependencies(project: Project, workSpaceSnapshot: EntityStorage): List<LibraryDependency> {
+    val dependencies = findK2WorkspaceModule(project)
+        ?.findModuleEntity(workSpaceSnapshot)
+        ?.dependencies ?: return emptyList()
 
     return dependencies.filterIsInstance<LibraryDependency>()
 }
 
-private fun getLibraryRoots(
-    project: Project,
-    configurationWrapper: ScriptCompilationConfigurationWrapper
-): List<LibraryRoot> {
-    val fileUrlManager = WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
-
-    val roots = buildList {
-        configurationWrapper.dependenciesClassPath.mapNotNullTo(this) {
-          val file = ScriptClassPathUtil.findVirtualFile(it.path)
-            file?.let { LibraryRoot(file.toVirtualFileUrl(fileUrlManager), LibraryRootTypeId.COMPILED) }
-        }
-
-        configurationWrapper.dependenciesSources.mapNotNullTo(this) {
-          val file = ScriptClassPathUtil.findVirtualFile(it.path)
-            file?.let { LibraryRoot(file.toVirtualFileUrl(fileUrlManager), LibraryRootTypeId.SOURCES) }
-        }
+fun BackedNotebookVirtualFile.notebookScriptLibrariesEntities(project: Project, workSpaceSnapshot: EntityStorage): List<LibraryEntity> {
+    return notebookScriptLibraryDependencies(project, workSpaceSnapshot).mapNotNull {
+        workSpaceSnapshot.resolve(it.library)
     }
-
-    return roots
 }

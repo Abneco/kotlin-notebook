@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.projectModel
 
+import com.intellij.kotlin.jupyter.core.scriptingSupport.workSpaceSnapshot
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.edtWriteAction
 import com.intellij.openapi.components.Service
@@ -9,6 +10,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
+import com.intellij.openapi.util.io.systemIndependentPath
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.backend.workspace.virtualFile
+import com.intellij.platform.backend.workspace.workspaceModel
+import com.intellij.platform.workspace.storage.url.VirtualFileUrlManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -46,6 +52,12 @@ class KotlinNotebookPermanentIndexService(
             }
         }
         model.commit()
+    }
+
+    val currentClassRoots: Collection<VirtualFile> get() {
+        val library = getPermanentScriptingLibrary() ?: return emptySet()
+
+        return library.rootProvider.getFiles(OrderRootType.CLASSES).toSet()
     }
 
     private fun getLibraryRoots(library: Library): Map<OrderRootType, Set<String>> {

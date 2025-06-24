@@ -10,6 +10,12 @@ object KotlinNotebookMavenArtifacts {
         return this
     }
 
+    val ARTIFACTS_COMMON_PREFIX: String by lazy {
+        all().map { it.artifact }.reduce { acc, string ->
+            acc.commonPrefixWith(string)
+        }
+    }
+
     val KERNEL_SHADOWED = jupyterKernelLibrary("kernel-shadowed").add()
     val SCRIPT_CLASSPATH_SHADOWED = jupyterKernelLibrary("script-classpath-shadowed").add()
     val SCRIPT_CLASSPATH_SHADOWED_ZIP = jupyterKernelLibrary("script-classpath-shadowed", ArtifactKind.ZIP).add()

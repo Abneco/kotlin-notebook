@@ -18,7 +18,7 @@ sealed interface KotlinNotebookJdkOption {
 
     companion object {
         fun fromName(name: String?): KotlinNotebookJdkOption {
-            if (name == null) return ProjectJdkOption
+            if (name == null) return NotebookProjectJdkOption
             return NamedJdkOption(name)
         }
     }
@@ -59,7 +59,7 @@ internal fun Sdk.jdkVersion(): JavaSdkVersion? {
     return JavaSdk.getInstance().getVersion(this)
 }
 
-object ProjectJdkOption : AbstractKotlinNotebookJdkOption() {
+object NotebookProjectJdkOption : AbstractKotlinNotebookJdkOption() {
     private val javaHomeEnvironmentVariablesToTry = listOf(
         "KOTLIN_JUPYTER_JAVA_HOME",
         "JRE_HOME",
@@ -77,6 +77,12 @@ object ProjectJdkOption : AbstractKotlinNotebookJdkOption() {
                 }
             }
             ?.sdk
+    }
+
+    fun suggestJdks(project: Project): Sequence<Sdk> {
+        return getJdksToTry(project)
+            .filter { isSuitableForStartingKernel(it.sdk) }
+            .map { it.sdk }
     }
 
     private class SdkToTry(

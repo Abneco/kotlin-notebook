@@ -1,12 +1,12 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
-import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
-import com.intellij.kotlin.jupyter.core.projectModel.injectedScriptLibraryDependencies
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
+import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
+import com.intellij.kotlin.jupyter.k2.project.model.notebookScriptLibraryDependencies
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.vfs.VirtualFile
@@ -37,7 +37,7 @@ class KotlinNotebookScriptLibrariesProvider : ScriptAdditionalIdeaDependenciesPr
         if (!virtualFile.isKotlinNotebook) return emptyList()
 
         val snapshot = WorkspaceModel.getInstance(project).currentSnapshot
-        val libraryDependencies = virtualFile.injectedScriptLibraryDependencies(project, snapshot)
+        val libraryDependencies = virtualFile.toBackedNotebookFile().notebookScriptLibraryDependencies(project, snapshot)
         if (libraryDependencies.isEmpty()) {
             LOG.warn("No library dependencies found for notebook file: ${virtualFile.name}")
             return emptyList()

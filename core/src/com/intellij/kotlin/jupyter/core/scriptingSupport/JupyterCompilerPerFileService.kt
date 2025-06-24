@@ -350,7 +350,7 @@ class JupyterCompilerPerFileService(
             defaultImports(additionalDefaultImports.getList())
             ide.dependenciesSources(
                 JvmDependency(
-                    project.sourceRootsForDependencies(virtualFile) + _sourceRoots.getList()
+                    project.sourceRootsForDependencies(virtualFile) + _sourceRoots.getList().toSet()
                 )
             )
         }
@@ -638,7 +638,6 @@ class JupyterCompilerPerFileService(
 
     companion object {
         private val LOG = KotlinNotebookLoggerFactory.getInstance(JupyterCompilerPerFileService::class)
-
 
         fun getConfiguration(ktFile: KtFile): ScriptCompilationConfigurationWrapper? {
             val scriptDef = ktFile.findScriptDefinition() ?: return null

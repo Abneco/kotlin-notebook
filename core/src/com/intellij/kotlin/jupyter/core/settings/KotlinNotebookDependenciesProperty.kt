@@ -171,7 +171,7 @@ internal fun getSuitableLibraries(project: Project): List<Library> {
     val librariesCandidates = projectLibraries.filter {
         it.name != KotlinNotebookPermanentIndexService.SCRIPT_DEPENDENCIES_LIBRARY_NAME && it.name != null
     }
-    return KotlinNotebookSessionLibrariesFilter.filterSessionLibraries(librariesCandidates)
+    return KotlinNotebookSessionLibrariesFilter.filterSessionLibraries(project, librariesCandidates)
 }
 
 fun KotlinNotebookDependencies.isAffectedBy(changedLibrary: Library?, changedModules: Collection<Module>): Boolean {

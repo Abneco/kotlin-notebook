@@ -4,39 +4,37 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
-import com.intellij.kotlin.jupyter.core.projectModel.resolveLibraryDependencies
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
-import com.intellij.kotlin.jupyter.core.settings.ProjectJdkOption
+import com.intellij.kotlin.jupyter.core.settings.NotebookProjectJdkOption
 import com.intellij.kotlin.jupyter.core.util.debugInTests
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
+import com.intellij.kotlin.jupyter.k2.project.model.filterBoundToOneModule
+import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceModule
+import com.intellij.kotlin.jupyter.k2.project.model.notebookScriptLibrariesEntities
+import com.intellij.kotlin.jupyter.k2.project.model.toK2RuntimeModuleName
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.components.serviceAsync
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.OrderRootType
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
 import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.workspaceModel
-import com.intellij.platform.workspace.jps.entities.DependencyScope
 import com.intellij.platform.workspace.jps.entities.LibraryDependency
-import com.intellij.platform.workspace.jps.entities.LibraryEntity
-import com.intellij.platform.workspace.jps.entities.LibraryTableId
 import com.intellij.platform.workspace.jps.entities.ModuleEntity
 import com.intellij.platform.workspace.jps.entities.ModuleId
 import com.intellij.platform.workspace.jps.entities.SdkDependency
 import com.intellij.platform.workspace.jps.entities.SdkId
-import com.intellij.platform.workspace.jps.entities.modifyLibraryEntity
 import com.intellij.platform.workspace.jps.entities.modifyModuleEntity
 import com.intellij.platform.workspace.jps.entities.sourceRoots
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import com.intellij.util.concurrency.annotations.RequiresReadLock
+import com.intellij.workspaceModel.ide.legacyBridge.findModuleEntity
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModuleProvider
 import org.jetbrains.kotlin.analysis.api.projectStructure.analysisContextModule
@@ -48,6 +46,7 @@ import org.jetbrains.kotlin.idea.core.script.k2.modules.ScriptWorkspaceModelMana
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.ifEmpty
 import kotlin.script.experimental.api.asSuccess
 
 /**
@@ -94,46 +93,41 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         }
 
         val configuration = cache[topLevelFile]
-        if (cache.isEmpty()) {
-            return getDefaultConfiguration(topLevelFile)
-        }
-        if (configuration == null) {
-            notebookLogger().warn("No configuration found for ${topLevelFile.name}")
-        }
 
-        return configuration
+        return if (cache.isEmpty()) {
+            getDefaultConfiguration(topLevelFile)
+        } else {
+            if (configuration == null) {
+                notebookLogger().warn("No configuration found for ${topLevelFile.name}")
+            }
+            configuration
+        }
     }
 
     fun getDefaultConfiguration(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
         val configuration = JupyterCompilerService.getInstance(project).getDefaultConfiguration(virtualFile) ?: return null
 
-        return ScriptConfigurationWithSdk(configuration, getScriptDefaultSdk())
+        return ScriptConfigurationWithSdk(configuration, getSelectedSdkOrAnyAcceptable())
     }
 
-    private fun getScriptDefaultSdk(): Sdk? {
-        val projectSdk = ProjectRootManager.getInstance(project).projectSdk?.takeIf { it.canBeUsedForScript() }
-        if (projectSdk != null) return projectSdk
-
-        val allJdks = ProjectJdkTable.getInstance().allJdks
-
-        val anyJavaSdk = allJdks.find { it.canBeUsedForScript() }
-        if (anyJavaSdk != null) {
-            return anyJavaSdk
-        }
-
-        return null
-    }
-
-    private fun Sdk.canBeUsedForScript() = sdkType is JavaSdkType && hasValidClassPathRoots()
-
-    private fun Sdk.hasValidClassPathRoots(): Boolean {
+    private fun Sdk.canBeUsedForScript(): Boolean {
+        if (sdkType !is JavaSdkType) return false
         val rootClasses = rootProvider.getFiles(OrderRootType.CLASSES)
         return rootClasses.isNotEmpty() && rootClasses.all { it.isValid }
     }
 
+    private fun getSelectedSdkOrAnyAcceptable(): Sdk? {
+        val registeredJdks = ProjectJdkTable.getInstance().allJdks.toSet().ifEmpty {
+            return null
+        }
+        return NotebookProjectJdkOption.suggestJdks(project).firstOrNull {
+            it.canBeUsedForScript() && it in registeredJdks
+        }
+    }
+
     @OptIn(KaImplementationDetail::class)
     fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
-        val sdk = ProjectJdkOption.getSdk(project) ?: ProjectJdkTable.getInstance().allJdks.firstOrNull()
+        val sdk = getSelectedSdkOrAnyAcceptable()
         if (sdk == null) {
             notebookLogger().warn("No JDK SDK is set for the project")
         }
@@ -178,21 +172,13 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         }
     }
 
+    // this might be parallel
     private suspend fun creteOrUpdateScriptModules(
         configurationsPerNotebook: Map<VirtualFile, KotlinNotebookScriptsModuleConfigurationInfo>,
         mutableEntityStorage: MutableEntityStorage
     ) {
-        val virtualFileManager = project.serviceAsync<WorkspaceModel>().getVirtualFileUrlManager()
-
-        for ((notebookFile, moduleConfigurations) in configurationsPerNotebook) {
-            val notebookRuntimeDependencies = virtualFileManager.getNotebookDependenciesAsLibraryEntity(
-                mutableEntityStorage,
-                notebookFile,
-                project,
-                moduleConfigurations.configuration
-            )
-
-            updateNotebookConfiguration(project, mutableEntityStorage, moduleConfigurations, notebookRuntimeDependencies)
+        for ((_, moduleConfigurations) in configurationsPerNotebook) {
+            updateNotebookConfiguration(project, mutableEntityStorage, moduleConfigurations)
         }
     }
 
@@ -201,14 +187,17 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         val workspaceSnapshot = workspaceModel.currentSnapshot
         val tmpSnapshot = MutableEntityStorage.from(workspaceSnapshot)
 
-        val libraryEntity = tmpSnapshot.resolveLibraryDependencies(
-            notebookFile.file.toK2RuntimeDependencyLibraryName(project),
-            LibraryTableId.ProjectLibraryTableId
-        )
-        if (libraryEntity == null) return
+        val libraryEntities = notebookFile.notebookScriptLibrariesEntities(project, workspaceSnapshot)
+        if (libraryEntities.isEmpty()) return
 
-        tmpSnapshot.modifyLibraryEntity(libraryEntity) {
-            this.roots = mutableListOf()
+        val notebookModule = notebookFile
+            .findK2WorkspaceModule(project)
+            ?.findModuleEntity(tmpSnapshot) ?: return
+        val relatedToThisModule = libraryEntities
+            .filterBoundToOneModule(workspaceModel.currentSnapshot, notebookModule)
+
+        relatedToThisModule.forEach { libraryEntity ->
+            tmpSnapshot.removeEntity(libraryEntity)
         }
         workspaceModel.update("Clearing Kotlin Notebook scripting modules") { model ->
             model.applyChangesFrom(tmpSnapshot)
@@ -218,9 +207,20 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
     private fun updateNotebookConfiguration(
         project: Project,
         mutableEntityStorage: MutableEntityStorage,
-        notebookModuleConfiguration: KotlinNotebookScriptsModuleConfigurationInfo,
-        runtimeLibrary: LibraryEntity
+        notebookModuleConfiguration: KotlinNotebookScriptsModuleConfigurationInfo
     ) {
+        fun buildLibraryDependencies(): Collection<LibraryDependency> {
+            val dependencyViews = notebookModuleConfiguration.createConfigurationDependencyViews()
+
+            return buildSet {
+                for (view in dependencyViews) {
+                    val libraryDependencies = view.getOrUpdateLibraryDependencies(project, mutableEntityStorage)
+
+                    addAll(libraryDependencies)
+                }
+            }
+        }
+
         val moduleName = notebookModuleConfiguration.notebookFile.toK2RuntimeModuleName(project)
 
         val sdkDependency =
@@ -233,14 +233,11 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
             )
         )
 
-        val dependencies = listOfNotNull(
-            LibraryDependency(runtimeLibrary.symbolicId, false, DependencyScope.COMPILE),
-            sdkDependency
-        )
+        val libraryDependencies = buildLibraryDependencies()
+        val dependencies = libraryDependencies + listOfNotNull(sdkDependency)
 
         notebookLogger().debugInTests {
-            val libraryInfo = "${runtimeLibrary.name}, rootsSize: ${runtimeLibrary.roots.size}"
-            "Updating scripting module for notebook '${notebookModuleConfiguration.notebookFile.nameWithoutExtension}' with library: $libraryInfo"
+            "Updating scripting module for notebook '${notebookModuleConfiguration.notebookFile.nameWithoutExtension}' with libraries: $libraryDependencies"
         }
 
         val newEntry = ModuleEntity(moduleName, dependencies, source)

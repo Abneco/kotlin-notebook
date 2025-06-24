@@ -2,7 +2,9 @@
 package com.intellij.kotlin.jupyter.core.projectModel
 
 import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandler
+import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.openapi.extensions.ExtensionPointName
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.libraries.Library
 
 /**
@@ -14,21 +16,21 @@ import com.intellij.openapi.roots.libraries.Library
  */
 fun interface KotlinNotebookSessionLibrariesFilter : KotlinPluginModeAwareHandler {
     /**
-     * Should return true if a library should not be exposed, e.g.,
-     * it contains REPL backend artifacts or anything not suitable for sharing.
+     * Returns a list of libraries which are not notebook-created runtime libraries, e.g.,
+     * they do not contain REPL backend artifacts or anything not project-related.
      */
-    fun isInternalLibrary(library: Library): Boolean
+    fun filterOutNonProjectLibraries(project: Project, libraries: List<Library>): List<Library>
 
     companion object {
         private val EP: ExtensionPointName<KotlinNotebookSessionLibrariesFilter> = ExtensionPointName.create("com.intellij.kotlin.jupyter.core.sessionLibrariesFilter")
 
-        fun filterSessionLibraries(libraries: List<Library>): List<Library> {
+        fun filterSessionLibraries(project: Project, libraries: List<Library>): List<Library> {
             val extensions = EP.extensionList
-            return libraries.filterNot { library ->
-                extensions.any { extension ->
-                    extension.isInternalLibrary(library)
-                }
-            }
+            if (extensions.isEmpty()) return libraries
+
+            return extensions.fold(libraries) { acc, filter ->
+                filter.filterOutNonProjectLibraries(project, acc)
+            }.toList()
         }
     }
 }
