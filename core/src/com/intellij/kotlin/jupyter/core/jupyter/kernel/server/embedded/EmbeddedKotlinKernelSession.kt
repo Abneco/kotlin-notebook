@@ -12,6 +12,9 @@ import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersion
 import com.intellij.kotlin.jupyter.core.settings.toCanonicalString
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.util.application
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import com.intellij.util.ui.EDT
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.config.defaultRuntimeProperties
 import org.jetbrains.kotlinx.jupyter.libraries.DefaultResolutionInfoProviderFactory
@@ -35,8 +38,8 @@ class EmbeddedKotlinKernelSession(
     private val messageHandler = createMessageHandler()
 
     override fun send(content: JupyterMessage) {
-        content.asRawMessage { rawMessage, socketType ->
-            messageHandler.handleMessage(socketType, rawMessage)
+        runOnBackgroundThread {
+            doSend(content)
         }
     }
 
@@ -46,8 +49,6 @@ class EmbeddedKotlinKernelSession(
     override fun close() {
         Disposer.dispose(this)
     }
-
-    private val inMemoryHolderService get() = InMemoryReplResultsHolderService.getInstance(project)
 
     private fun createMessageHandler(): MessageHandler {
         val kernelConfig: KernelConfig = DefaultKotlinKernelConfigFactory(
@@ -82,6 +83,7 @@ class EmbeddedKotlinKernelSession(
             runtimeProperties,
         )
 
+        val inMemoryHolderService = InMemoryReplResultsHolderService.getInstance(project)
         val inMemoryResultHolder = inMemoryHolderService.getOrCreateHolder(sessionId, this)
         return createEmbeddedMessageHandler(
             project,
@@ -91,5 +93,20 @@ class EmbeddedKotlinKernelSession(
             inMemoryResultHolder,
             kernelVersion.toMavenVersion(),
         )
+    }
+
+    @RequiresBackgroundThread
+    private fun doSend(content: JupyterMessage) {
+        content.asRawMessage { rawMessage, socketType ->
+            messageHandler.handleMessage(socketType, rawMessage)
+        }
+    }
+
+    private fun runOnBackgroundThread(action: () -> Unit) {
+        if (EDT.isCurrentThreadEdt()) {
+            application.executeOnPooledThread(action)
+        } else {
+            action()
+        }
     }
 }
