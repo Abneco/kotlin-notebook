@@ -43,8 +43,8 @@ import org.jetbrains.kotlin.analysis.api.projectStructure.analysisContextModule
 import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
 import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationWithSdk
-import org.jetbrains.kotlin.idea.core.script.k2.configurations.ScriptRefinedConfigurationResolver
-import org.jetbrains.kotlin.idea.core.script.k2.configurations.ScriptWorkspaceModelManager
+import org.jetbrains.kotlin.idea.core.script.k2.modules.ScriptRefinedConfigurationResolver
+import org.jetbrains.kotlin.idea.core.script.k2.modules.ScriptWorkspaceModelManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import java.util.concurrent.ConcurrentHashMap
