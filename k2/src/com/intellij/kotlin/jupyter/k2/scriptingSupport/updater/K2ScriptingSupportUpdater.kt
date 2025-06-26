@@ -1,6 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.k2.scriptingSupport.updater
 
+import com.intellij.codeInsight.daemon.impl.analysis.HighlightingSettingsPerFile
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JUPYTER_SESSION_LIFETIME_TOPIC
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterSessionLifetimeListener
@@ -11,19 +12,27 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerPerFileS
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrSelf
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptModel
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsManager
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
+import com.intellij.openapi.application.edtWriteAction
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.serviceAsync
 import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import org.jetbrains.kotlin.analysis.api.platform.modification.publishGlobalModuleStateModificationEvent
+import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationWithSdk
+import org.jetbrains.kotlin.idea.core.script.ScriptDependenciesModificationTracker
+import org.jetbrains.kotlin.idea.core.script.k2.configurations.ScriptConfigurationsProviderImpl
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionProviderImpl
 import org.jetbrains.kotlin.idea.core.script.k2.highlighting.DefaultScriptResolutionStrategy
 import org.jetbrains.kotlin.psi.KtFile
@@ -174,6 +183,26 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
         project.serviceAsync<NotebookScriptConfigurationsManager>().updateConfigurations(scripts.keys)
         // Might be the case our own strategy is needed
-        DefaultScriptResolutionStrategy.getInstance(project).execute(*scripts.values.toTypedArray()).join()
+        updateWorkspaceConfiguration(scripts.keys).join()
+    }
+
+    private fun updateWorkspaceConfiguration(notebookModels: Collection<KotlinNotebookScriptModel>): Job {
+        val configurationManager = NotebookScriptConfigurationsManager.getInstance(project)
+
+        return KotlinNotebookPluginScope.getForProject(project).launch {
+            val updatedConfigurationsWithSdk = notebookModels.associate {
+                it.virtualFile to configurationManager.get(it.virtualFile)
+            }.filter { it.value != null }.mapValues { it.value!! }
+
+            configurationManager.updateWorkspaceModel(updatedConfigurationsWithSdk)
+            ScriptConfigurationsProviderImpl.getInstance(project).store(updatedConfigurationsWithSdk.values)
+
+            edtWriteAction {
+                project.publishGlobalModuleStateModificationEvent()
+            }
+
+            ScriptDependenciesModificationTracker.getInstance(project).incModificationCount()
+            HighlightingSettingsPerFile.getInstance(project).incModificationCount()
+        }
     }
 }
