@@ -29,6 +29,7 @@ import java.util.function.Supplier
 internal class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
     init {
         KotlinNotebookPluginScope.global.launch {
+            // we use TreeUtil.promiseVisit - it uses read action
             withContext(Dispatchers.EDT) {
                 initialize()
             }

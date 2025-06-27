@@ -13,7 +13,7 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
-import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.UI
 import com.intellij.openapi.components.serviceAsync
 import com.intellij.openapi.ui.panel.ComponentPanelBuilder
 import com.intellij.openapi.util.io.FileUtil
@@ -284,7 +284,7 @@ internal class KotlinNotebookTreeHolder {
         val files = withContext(Dispatchers.Default) {
             serviceAsync<RecentKotlinNotebooksService>().getNotebooksWithIcons()
         }
-        withContext(Dispatchers.EDT) {
+        withContext(Dispatchers.UI) {
             val root = NotebookTreeNode(NotebookRootItem(files))
             treeModel.setRoot(root)
         }
