@@ -12,7 +12,6 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerPerFileS
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
-import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrSelf
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptModel
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsManager
@@ -24,17 +23,16 @@ import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.jetbrains.kotlin.analysis.api.platform.modification.publishGlobalModuleStateModificationEvent
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationWithSdk
 import org.jetbrains.kotlin.idea.core.script.ScriptDependenciesModificationTracker
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.ScriptConfigurationsProviderImpl
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionProviderImpl
-import org.jetbrains.kotlin.idea.core.script.k2.highlighting.DefaultScriptResolutionStrategy
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import java.util.concurrent.CancellationException
@@ -48,6 +46,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
     }
 
     private val project = updaterConstructorData.project
+    private val disposalMutex = Mutex()
 
     init {
         val parentDisposable = updaterConstructorData.parentDisposable
@@ -98,7 +97,9 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         val scope = KotlinNotebookPluginScope.getForProject(project)
         scope.async {
             val service = project.serviceIfCreated<NotebookScriptConfigurationsManager>() ?: return@async
-            service.clearNotebookLibraryDependencies(notebookFile)
+            disposalMutex.withLock {
+                service.clearNotebookLibraryDependencies(notebookFile)
+            }
         }
     }
 

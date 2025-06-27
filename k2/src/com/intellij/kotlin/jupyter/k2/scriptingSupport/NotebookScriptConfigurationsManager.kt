@@ -194,12 +194,12 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
             .findK2WorkspaceModule(project)
             ?.findModuleEntity(tmpSnapshot) ?: return
         val relatedToThisModule = libraryEntities
-            .filterBoundToOneModule(workspaceModel.currentSnapshot, notebookModule)
+            .filterBoundToOneModule(tmpSnapshot, notebookModule)
 
         relatedToThisModule.forEach { libraryEntity ->
             tmpSnapshot.removeEntity(libraryEntity)
         }
-        workspaceModel.update("Clearing Kotlin Notebook scripting modules") { model ->
+        workspaceModel.update("Clearing Kotlin Notebook scripting modules for ${notebookFile.file.name}") { model ->
             model.applyChangesFrom(tmpSnapshot)
         }
     }
