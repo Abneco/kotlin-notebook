@@ -95,6 +95,11 @@ class EmbeddedKotlinKernelSession(
         )
     }
 
+    /**
+     * "Sends" a message to the kernel.
+     * In fact, in embedded mode the message is processed in the same thread synchronously.
+     * That's why we should never do this on EDT: it would lead to UI freezes.
+     */
     @RequiresBackgroundThread
     private fun doSend(content: JupyterMessage) {
         content.asRawMessage { rawMessage, socketType ->
