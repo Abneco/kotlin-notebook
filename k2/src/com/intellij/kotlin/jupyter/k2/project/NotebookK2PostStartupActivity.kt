@@ -6,6 +6,7 @@ import com.intellij.kotlin.jupyter.core.util.getCurrentEditorOrNull
 import com.intellij.kotlin.jupyter.k2.settings.KotlinNotebookK2ProjectOptionsProvider
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
+import org.jetbrains.kotlin.idea.compiler.configuration.KotlinCompilerPluginsScriptConfigurationListener
 
 class NotebookK2PostStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
@@ -17,9 +18,15 @@ class NotebookK2PostStartupActivity : ProjectActivity {
             addListener(object : KotlinNotebookK2ProjectOptionsProvider.Listener {
                 override fun onCompilerPluginsChanged() {
                     val editor = project.getCurrentEditorOrNull() ?: return
-                    promptSessionShutdownIfNeeded(NotebookK2PostStartupActivity::class, editor) {}
+                    promptSessionShutdownIfNeeded(NotebookK2PostStartupActivity::class, editor) {
+                        project.notifyCompilerPluginsSettingsChanged()
+                    }
                 }
             }, this)
         }
+    }
+
+    private fun Project.notifyCompilerPluginsSettingsChanged() {
+        messageBus.syncPublisher(KotlinCompilerPluginsScriptConfigurationListener.TOPIC).scriptConfigurationsChanged()
     }
 }

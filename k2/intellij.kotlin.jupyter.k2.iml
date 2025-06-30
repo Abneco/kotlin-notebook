@@ -35,12 +35,13 @@
     <orderEntry type="module" module-name="intellij.notebooks.jupyter.core" />
     <orderEntry type="module" module-name="intellij.platform.ide.impl" />
     <orderEntry type="module" module-name="kotlin.base.code-insight" />
-    <orderEntry type="module" module-name="kotlin.bundled-compiler-plugins-support" />
     <orderEntry type="module" module-name="kotlin.base.scripting.k2" />
     <orderEntry type="module" module-name="kotlin.base.fir.project-structure" />
     <orderEntry type="module" module-name="kotlin.base.fir.scripting" />
-    <orderEntry type="module" module-name="intellij.jupyter.psi" />
     <orderEntry type="module" module-name="kotlin.base.project-structure" />
     <orderEntry type="module" module-name="kotlin.base.scripting.shared" />
+    <orderEntry type="module" module-name="kotlin.base.compiler-configuration" />
+    <orderEntry type="module" module-name="kotlin.bundled-compiler-plugins-support" />
+    <orderEntry type="module" module-name="intellij.jupyter.psi" />
   </component>
 </module>
