@@ -125,7 +125,7 @@ class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomCompon
 
         override fun update(e: AnActionEvent) {
             if (e.getCurrentDependencies() == dependencies) {
-                e.presentation.selectedIcon = AllIcons.Actions.Checked
+                e.presentation.icon = AllIcons.Actions.Checked
             }
         }
     }
