@@ -144,7 +144,7 @@ fun KotlinNotebookDependencies.findModule(project: Project): Module? {
  * @param project the project to get the modules for.
  * @return a `List` of suitable `Module` objects for the given project.
  */
-internal fun getSuitableModules(project: Project): List<Module> {
+internal fun getSuitableModules(project: Project): Iterable<Module> {
     fun Module.isProbablyBuildSrc() = name.split(".").any { it == "buildSrc" }
 
     return ModuleManager.getInstance(project).modules.filter {
@@ -153,7 +153,7 @@ internal fun getSuitableModules(project: Project): List<Module> {
         val hasSdk = sdk.sdkType is JavaSdkType // Kotlin MPP JVM source set will have JavaSdkType too
         val hasSources = it.productionSourceInfo != null || it.testSourceInfo != null
         hasSdk && hasSources
-    }
+    }.sortedBy { it.name }
 }
 
 /**
