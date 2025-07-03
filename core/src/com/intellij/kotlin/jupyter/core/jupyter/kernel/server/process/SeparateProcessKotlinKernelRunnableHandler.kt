@@ -99,7 +99,7 @@ class SeparateProcessKotlinKernelRunnableHandler(
 
             addProcessListener(object : ProcessListener {
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                    LOG.warn(event.text.trimEnd().trimStart('\r', '\n'))
+                    LOG.debug(event.text.trimEnd().trimStart('\r', '\n'))
                 }
 
                 override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
@@ -112,7 +112,7 @@ class SeparateProcessKotlinKernelRunnableHandler(
                 override fun processTerminated(event: ProcessEvent) {
                     if (stateMachine.terminated()) {
                         eventDispatcher.multicaster.kernelTerminated(KotlinKernelProcessEventImpl(event))
-                        LOG.warn("Kernel process terminated with code ${event.exitCode} (${event.text})")
+                        LOG.info("Kernel process terminated with code ${event.exitCode} (${event.text})")
                         LOG.warnInTests { "Destroyed Kotlin kernel ${runnableHandler.kernelId}" }
                     }
 
