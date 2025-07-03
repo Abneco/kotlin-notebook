@@ -42,8 +42,13 @@ class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomCompon
             /* title = */ null,
             /* actionGroup = */ createPopupActionGroup(e.dataContext),
             /* dataContext = */ e.dataContext,
-            /* selectionAidMethod = */ null,
+            /* aid = */ null,
             /* showDisabledActions = */ true,
+            /* disposeCallback = */ null,
+            /* maxRowCount = */ -1,
+            /* preselectCondition = */ { actionGroupItem: AnAction ->
+                (actionGroupItem as? SelectDependenciesAction)?.dependencies == e.getCurrentDependencies()
+            },
             /* actionPlace = */ null
         )
         popup.showUnderneathOf(component)
@@ -102,7 +107,7 @@ class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomCompon
 
     private sealed class SelectDependenciesAction(
         @NlsActions.ActionText placeholder: String,
-        private val dependencies: KotlinNotebookDependencies,
+        val dependencies: KotlinNotebookDependencies,
     ) : DumbAwareAction(placeholder) {
         override fun actionPerformed(e: AnActionEvent) {
             val editor = e.editor ?: return
