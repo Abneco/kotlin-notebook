@@ -14,6 +14,8 @@ import com.intellij.util.lang.JavaVersion
 import org.jetbrains.kotlinx.jupyter.api.JupyterClientType
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.startup.ANY_HOST_NAME
+import org.jetbrains.kotlinx.jupyter.startup.KERNEL_SIGNATURE_SCHEME
+import org.jetbrains.kotlinx.jupyter.startup.KERNEL_TRANSPORT_SCHEME
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.kotlinx.jupyter.startup.KernelJupyterParams
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
@@ -26,18 +28,20 @@ interface KernelConfigFactory {
 }
 
 abstract class AbstractKotlinKernelConfigFactory(
-    protected val project: Project,
-    protected val notebookPath: Path,
-    protected val replCompilerMode: ReplCompilerMode,
+    startupOptions: KernelStartupOptions,
 ) : KernelConfigFactory {
+    protected val project: Project = startupOptions.project
+    protected val notebookPath: Path = startupOptions.notebookPath
+    protected val replCompilerMode: ReplCompilerMode = startupOptions.replCompilerMode
+    protected val extraCompilerArguments: List<String> = startupOptions.extraCompilerArguments
+
     final override fun create(): KernelConfig = KernelConfig(
         jupyterParams = KernelJupyterParams(
-            host = ANY_HOST_NAME,
+            host = getHost(),
             ports = getKernelPorts(),
-            transport = "tcp",
-            signatureScheme = "HmacSHA256",
-            // Key doesn't matter as long as it's a local kernel
-            signatureKey = "x-x-x",
+            transport = KERNEL_TRANSPORT_SCHEME,
+            signatureScheme = KERNEL_SIGNATURE_SCHEME,
+            signatureKey = getSignature(),
         ),
         ownParams = KernelOwnParams(
             scriptClasspath = getClasspath(),
@@ -50,15 +54,20 @@ abstract class AbstractKotlinKernelConfigFactory(
             // in both separate and embedded modes
             clientType = JupyterClientType.KOTLIN_NOTEBOOK.name,
             jvmTargetForSnippets = getJvmTargetForSnippets(project)?.toFeatureString(),
-            replCompilerMode = replCompilerMode
+            replCompilerMode = replCompilerMode,
+            extraCompilerArguments = extraCompilerArguments,
         ),
-
-
     )
 
     protected abstract fun getKernelPorts(): KernelPorts
 
     protected abstract fun getDebugPortOrNull(notebookPath: Path): Int?
+
+    protected open fun getHost(): String = ANY_HOST_NAME
+    protected open fun getSignature(): String {
+        // Key doesn't matter as long as it's a local kernel
+        return "x-x-x"
+    }
 
     protected open fun getClasspath(): List<File> {
         return KotlinNotebookMavenArtifactsDownloader.getInstance(project).getClasspathArtifacts(project)
@@ -70,11 +79,9 @@ abstract class AbstractKotlinKernelConfigFactory(
 }
 
 class DefaultKotlinKernelConfigFactory(
-    project: Project,
+    startupOptions: KernelStartupOptions,
     private val kernelPorts: KernelPorts,
-    notebookPath: Path,
-    replCompilerMode: ReplCompilerMode,
-): AbstractKotlinKernelConfigFactory(project, notebookPath, replCompilerMode) {
+): AbstractKotlinKernelConfigFactory(startupOptions) {
     override fun getKernelPorts(): KernelPorts = kernelPorts
 
     override fun getDebugPortOrNull(notebookPath: Path): Int? {

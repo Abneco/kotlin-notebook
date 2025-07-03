@@ -113,6 +113,9 @@
         <registryKey key="kotlin.notebook.compilerPlugins.enabled" defaultValue="false"
                      description="When enabled, it is possible to specify additional bundled compiler plugins for notebook"/>
 
+        <registryKey key="kotlin.notebook.projectWideExtraCompilerArguments.enabled" defaultValue="false"
+                     description="When enabled, it is possible to specify additional compiler arguments for all notebooks in the project"/>" />
+
         <postStartupActivity implementation="com.intellij.kotlin.jupyter.core.notifications.KotlinNotebookPostStartupActivity"/>
 
         <multiHostInjector implementation="com.intellij.kotlin.jupyter.core.editor.inject.JupyterKotlinIntoCellsInjector"/>

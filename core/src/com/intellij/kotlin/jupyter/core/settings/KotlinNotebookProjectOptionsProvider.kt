@@ -49,6 +49,8 @@ class KotlinNotebookProjectOptionsProvider :
         internal set
     var extraJvmArguments by prop(State::extraJvmArguments)
         internal set
+    var extraCompilerArguments by prop(State::extraCompilerArguments)
+        internal set
     var extraEnvironmentVariables by prop(State::extraEnvironmentVariables)
         internal set
 
@@ -66,6 +68,7 @@ class KotlinNotebookProjectOptionsProvider :
         var jvmTargetForSnippets by string(null)
         var heapMaxLimitInMib by property(DEFAULT_HEAP_MAX_LIMIT_MIB)
         var extraJvmArguments by list<String>()
+        var extraCompilerArguments by list<String>()
         var extraEnvironmentVariables by linkedMap<String, String>()
 
         var shouldLimitTypeHintsByActiveCell by property(false)

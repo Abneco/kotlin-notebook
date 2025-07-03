@@ -6,25 +6,22 @@ import com.intellij.execution.process.KillableColoredProcessHandler
 import com.intellij.execution.process.KillableProcessHandler
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessListener
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.AbstractKotlinKernelRunnableHandler
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelStartupOptions
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelStateMachine
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.DONT_ACCEPT_SHUTDOWN
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.warnInTests
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.EventDispatcher
 import com.intellij.util.application
 import com.intellij.util.io.BaseOutputReader
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import java.nio.file.Path
 
 /**
  * A handler for managing a separate process that runs a Kotlin Jupyter kernel.
@@ -43,15 +40,12 @@ import java.nio.file.Path
  * @param notebookVirtualFile The virtual file of the Jupyter notebook, if any.
  */
 class SeparateProcessKotlinKernelRunnableHandler(
-    project: Project,
-    kernelId: JupyterKernelId,
+    startupOptions: KernelStartupOptions,
     commandLine: GeneralCommandLine,
     private val kernelConfig: KernelConfig,
-    notebookPath: Path,
-    notebookVirtualFile: BackedNotebookVirtualFile?,
 ): AbstractKotlinKernelRunnableHandler<KotlinKernelProcessListener>(
     KotlinKernelProcessListener::class,
-    project, kernelId, notebookPath, notebookVirtualFile
+    startupOptions,
 ) {
     val process: KillableProcessHandler = KernelOsProcessHandler(commandLine, this)
 

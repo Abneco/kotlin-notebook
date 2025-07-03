@@ -19,6 +19,7 @@ import com.intellij.kotlin.jupyter.core.settings.isAvailable
 import com.intellij.kotlin.jupyter.core.settings.isKernelVersionEnoughForInstrumentation
 import com.intellij.kotlin.jupyter.core.settings.isSuitableForStartingKernel
 import com.intellij.kotlin.jupyter.core.settings.minJdkVersion
+import com.intellij.kotlin.jupyter.core.settings.projectWideExtraCompilerArgumentsSelectionEnabled
 import com.intellij.kotlin.jupyter.core.settings.replCompilerModeSelectorEnabled
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersion
 import com.intellij.kotlin.jupyter.core.util.revealKotlinNotebookLocalKernelsFolder
@@ -52,6 +53,7 @@ import com.intellij.util.messages.MessageBusFactory
 import com.intellij.util.messages.MessageBusOwner
 import com.intellij.util.messages.Topic
 import com.intellij.util.messages.impl.PluginListenerDescriptor
+import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
@@ -77,6 +79,7 @@ class KotlinNotebookSettingsPanelBuilder(
                 createJvmTargetForSnippetsComboBox()
                 createMaxHeapSizeSpinner()
                 createExtraJvmArgumentsField()
+                createCompilerExtraArguments()
                 createEnvironmentVariablesField()
                 createCompilerPluginsOptionsSelector()
             }
@@ -198,18 +201,21 @@ class KotlinNotebookSettingsPanelBuilder(
     }
 
     private fun Panel.createExtraJvmArgumentsField(): Row {
-        return row(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.extra.args")) {
-            expandableTextField()
-                .columns(DEFAULT_COLUMNS_COUNT)
-                .widthGroup(BUILD_WIDTH_GROUP)
-                .applyToComponent {
-                    setMonospaced(true)
-                }
-                .bindText(
-                    { ParametersListUtil.DEFAULT_LINE_JOINER.`fun`(projectOptions.extraJvmArguments) },
-                    { text -> projectOptions.extraJvmArguments = ParametersListUtil.parse(text) }
-                )
-        }
+        return createParametersListField(
+            KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.extra.args"),
+            KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.extra.args.comment"),
+            projectOptions::extraJvmArguments,
+        )
+    }
+
+    private fun Panel.createCompilerExtraArguments(): Row? {
+        if (!projectWideExtraCompilerArgumentsSelectionEnabled) return null
+
+        return createParametersListField(
+            KotlinNotebookBundle.message("kotlin.jupyter.settings.compiler.extra.args"),
+            KotlinNotebookBundle.message("kotlin.jupyter.settings.compiler.extra.args.comment"),
+            projectOptions::extraCompilerArguments,
+        )
     }
 
     private fun Panel.createEnvironmentVariablesField(): Row {
@@ -320,6 +326,30 @@ class KotlinNotebookSettingsPanelBuilder(
                     comment(commentMessage)
                 }
                 .bindSelected(property)
+        }
+    }
+
+    private fun Panel.createParametersListField(
+        message: @Nls String,
+        commentMessage: @NlsContexts.DetailedDescription String?,
+        property: KMutableProperty0<MutableList<String>>,
+    ): Row {
+        return row(message) {
+            expandableTextField()
+                .apply {
+                    if (commentMessage != null) {
+                        comment(commentMessage)
+                    }
+                }
+                .columns(DEFAULT_COLUMNS_COUNT)
+                .widthGroup(BUILD_WIDTH_GROUP)
+                .applyToComponent {
+                    setMonospaced(true)
+                }
+                .bindText(
+                    { ParametersListUtil.DEFAULT_LINE_JOINER.`fun`(property.get()) },
+                    { text -> property.set(ParametersListUtil.parse(text)) }
+                )
         }
     }
 

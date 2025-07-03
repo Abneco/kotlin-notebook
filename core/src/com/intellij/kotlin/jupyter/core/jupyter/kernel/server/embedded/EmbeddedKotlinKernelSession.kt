@@ -4,7 +4,6 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelCommunicationClient
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.asRawMessage
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.chooseJvmTargetForSnippets
@@ -15,7 +14,6 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.util.application
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.ui.EDT
-import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.config.defaultRuntimeProperties
 import org.jetbrains.kotlinx.jupyter.libraries.DefaultResolutionInfoProviderFactory
 import org.jetbrains.kotlinx.jupyter.libraries.createLibraryHttpUtil
@@ -23,15 +21,12 @@ import org.jetbrains.kotlinx.jupyter.messaging.MessageHandler
 import org.jetbrains.kotlinx.jupyter.repl.ReplConfig
 import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import org.jetbrains.kotlinx.jupyter.startup.ZmqKernelPorts
-import java.nio.file.Path
 
 class EmbeddedKotlinKernelSession(
     private val project: Project,
+    private val kernelConfig: KernelConfig,
     override val sessionId: JupyterNotebookSessionId,
-    private val notebookPath: Path,
     private val loggerFactory: EmbeddedKotlinKernelLoggerFactory,
-    private val replCompilerMode: ReplCompilerMode,
     private val onMessage: (JupyterMessage) -> Unit
 ) : KotlinKernelSession, JupyterKernelCommunicationClient {
 
@@ -51,13 +46,6 @@ class EmbeddedKotlinKernelSession(
     }
 
     private fun createMessageHandler(): MessageHandler {
-        val kernelConfig: KernelConfig = DefaultKotlinKernelConfigFactory(
-            project,
-            ZmqKernelPorts { 0 },
-            notebookPath,
-            replCompilerMode
-        ).create()
-
         val intellijDataProvider = IntellijDataProvider(
             currentProject = project,
         )

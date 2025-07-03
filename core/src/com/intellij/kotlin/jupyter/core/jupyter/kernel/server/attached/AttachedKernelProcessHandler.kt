@@ -1,29 +1,23 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.attached
 
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.AbstractKotlinKernelRunnableHandler
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelStartupOptions
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.ACCEPT_ALL_MESSAGES
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelWsClientSession
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
-import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import java.nio.file.Path
 
 class AttachedKernelProcessHandler(
-    project: Project,
-    kernelId: JupyterKernelId,
-    notebookPath: Path,
-    notebookVirtualFile: BackedNotebookVirtualFile?,
+    startupOptions: KernelStartupOptions,
     private val kernelConfig: KernelConfig,
 ) : AbstractKotlinKernelRunnableHandler<KotlinKernelListener>(
     KotlinKernelListener::class,
-    project, kernelId, notebookPath, notebookVirtualFile
+    startupOptions
 ) {
     override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession? {
         if (!kernelConfig.jupyterParams.areAllSocketsOpen()) {

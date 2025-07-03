@@ -30,6 +30,18 @@ abstract class AbstractKotlinKernelRunnableHandler<ListenerT: KotlinKernelListen
     override val notebookPath: Path,
     override val notebookVirtualFile: BackedNotebookVirtualFile?
 ) : KotlinKernelRunnableHandler {
+
+    constructor(
+        listenerClass: KClass<ListenerT>,
+        startupOptions: KernelStartupOptions,
+    ): this(
+        listenerClass,
+        startupOptions.project,
+        startupOptions.kernelId,
+        startupOptions.notebookPath,
+        startupOptions.notebookVirtualFile,
+    )
+
     protected val stateMachine: KernelStateMachine = KernelStateMachine()
     override val kernelState: KernelState get() = stateMachine.currentState
 

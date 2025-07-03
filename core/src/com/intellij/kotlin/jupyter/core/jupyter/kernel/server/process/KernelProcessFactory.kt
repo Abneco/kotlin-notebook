@@ -4,11 +4,11 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.jupyter.actions.mode
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelStartupOptions
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ModeAwareKernelRunnableFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
@@ -24,8 +24,6 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.annotations.TestOnly
-import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
-import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.createRandomZmqKernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
@@ -45,17 +43,17 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
     KotlinNotebookSessionRunMode.SEPARATE_PROCESS
 ) {
     @RequiresBackgroundThread
-    override fun createKernelRunnableHandler(
-        project: Project,
-        kernelId: JupyterKernelId,
-        notebookPath: Path,
-        notebookVirtualFile: BackedNotebookVirtualFile?,
-        replCompilerMode: ReplCompilerMode,
+    override fun createSpecificKernelRunnableHandler(
+        startupOptions: KernelStartupOptions,
     ): SeparateProcessKotlinKernelRunnableHandler {
-        JupyterSocketType::class.java.classLoader
-
         val kernelPorts = getKernelPorts()
-        val kernelConfig = DefaultKotlinKernelConfigFactory(project, kernelPorts, notebookPath, replCompilerMode).create()
+        val kernelConfig = DefaultKotlinKernelConfigFactory(
+            startupOptions,
+            kernelPorts,
+        ).create()
+
+        val project = startupOptions.project
+        val notebookPath = startupOptions.notebookPath
 
         val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
         val javaExecutable = getJavaExecutable(project, options)
@@ -88,7 +86,7 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
         }
 
         return SeparateProcessKotlinKernelRunnableHandler(
-            project, kernelId, commandLine, kernelConfig, notebookPath, notebookVirtualFile
+            startupOptions, commandLine, kernelConfig,
         ).apply {
             addKernelListener(object : KotlinKernelProcessListener {
                 override fun beforeNotificationStarted(event: KotlinKernelNotificationStartedEvent) {

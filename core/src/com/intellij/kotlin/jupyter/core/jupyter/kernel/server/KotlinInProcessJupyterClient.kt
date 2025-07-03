@@ -21,7 +21,6 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSes
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
-import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.util.DEFAULT_KOTLIN_KERNEL_NAME
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.PassOnceGuard
@@ -104,14 +103,14 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
     ): JupyterKernelId? {
         if (kernelName !in kernelSpecs) return null
         val kernelId = JupyterKernelId(idGenerator.generate())
-        val replMode = KotlinNotebookApplicationOptions.get().replCompilerMode
 
-        val kernel: KotlinKernelRunnableHandler = KernelRunnableFactory.createKernelRunnableHandler(
-            project,
-            kernelId,
-            notebookPath,
-            replMode
+        val startupOptions = KernelStartupOptions(
+            project = project,
+            kernelId = kernelId,
+            notebookPath = notebookPath,
         )
+
+        val kernel: KotlinKernelRunnableHandler = KernelRunnableFactory.createKernelRunnableHandler(startupOptions)
         kernel.addBaseKernelListener(MyKernelListener())
 
         Disposer.register(this, kernel)

@@ -8,6 +8,7 @@ import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentInde
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrSelf
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
@@ -32,6 +33,7 @@ import java.io.File
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
 import kotlin.script.experimental.api.asSuccess
+import kotlin.script.experimental.api.compilerOptions
 import kotlin.script.experimental.api.displayName
 import kotlin.script.experimental.api.fileExtension
 import kotlin.script.experimental.api.ide
@@ -81,6 +83,13 @@ class JupyterCompilerService(
                 serializationPluginEnabled(true)
             }
             displayName("Kotlin Notebooks")
+            compilerOptions.update { oldOptions ->
+                val extraOptions = KotlinNotebookProjectOptionsProvider.getInstance(project).extraCompilerArguments.toList()
+                buildSet {
+                    oldOptions?.let { addAll(it) }
+                    addAll(extraOptions)
+                }.toList().takeIf { it.isNotEmpty() }
+            }
             refineConfiguration {
                 beforeCompiling { (sourceCode, config, _) ->
                     val virtualFile = (sourceCode as? KtFileScriptSource)?.virtualFile
