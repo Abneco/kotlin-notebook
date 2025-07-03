@@ -7,7 +7,9 @@ import org.jetbrains.kotlinx.jupyter.util.ClassLoadingDelegatingStrategy
 import org.jetbrains.kotlinx.jupyter.util.DelegatingClassLoader
 import org.jetbrains.kotlinx.jupyter.util.kernelFqnPrefixes
 
-object IntellijProcessKernelRunMode : AbstractKernelRunMode("Intellij Process") {
+class IntellijProcessKernelRunMode(
+    val intellijDataProvider: IntellijDataProvider,
+) : AbstractKernelRunMode("Intellij Process") {
     override fun createIntermediaryClassLoader(parent: ClassLoader): ClassLoader {
         return createIdeDelegatingClassLoader(parent)
     }

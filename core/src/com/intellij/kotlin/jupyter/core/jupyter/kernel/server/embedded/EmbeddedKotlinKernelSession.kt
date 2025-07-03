@@ -58,12 +58,17 @@ class EmbeddedKotlinKernelSession(
             replCompilerMode
         ).create()
 
+        val intellijDataProvider = IntellijDataProvider(
+            currentProject = project,
+        )
+        Disposer.register(this, intellijDataProvider)
+
         val replConfig: ReplConfig = ReplConfig.create(
             DefaultResolutionInfoProviderFactory,
             loggerFactory,
             createLibraryHttpUtil(loggerFactory, IdeaHttpClient),
             kernelConfig.ownParams.homeDir,
-            kernelRunMode = IntellijProcessKernelRunMode,
+            kernelRunMode = IntellijProcessKernelRunMode(intellijDataProvider),
         )
 
         val socketsManager = EmbeddedJupyterSockets(onMessage)
