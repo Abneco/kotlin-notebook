@@ -98,7 +98,7 @@ class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomCompon
         e.presentation.text = text
     }
 
-    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     private sealed class SelectDependenciesAction(
         @NlsActions.ActionText placeholder: String,
@@ -144,17 +144,14 @@ class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomCompon
             super.update(e)
         }
     }
-
-    private companion object {
-        fun AnActionEvent.getCurrentDependencies(): KotlinNotebookDependencies? {
-            val notebookFile = notebookFile
-            if (notebookFile == null || !notebookFile.isKotlinNotebook) {
-                this.presentation.isEnabledAndVisible = false
-                return null
-            }
-
-            return notebookFile.notebookOrNull?.notebookDependencies
-        }
-    }
 }
 
+private fun AnActionEvent.getCurrentDependencies(): KotlinNotebookDependencies? {
+    val notebookFile = notebookFile
+    if (notebookFile == null || !notebookFile.isKotlinNotebook) {
+        this.presentation.isEnabledAndVisible = false
+        return null
+    }
+
+    return notebookFile.notebookOrNull?.notebookDependencies
+}
