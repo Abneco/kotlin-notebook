@@ -28,10 +28,6 @@ abstract class NotebookConfigurationRootsViewBase(
 
     protected abstract fun filterTargetDependencies(candidates: List<File>): List<File>
 
-    protected fun isBaseJar(file: File): Boolean {
-        return file.isFile && file.extension == "jar" && file.nameWithoutExtension.startsWith(ARTIFACTS_COMMON_PREFIX)
-    }
-
     protected fun getNotebookEntitySource(project: Project): KotlinNotebookScriptEntitySource {
         val urlManager = project.workspaceModel.getVirtualFileUrlManager()
         val notebookFileUrl = configurationInfo.notebookFile.toVirtualFileUrl(urlManager)
@@ -46,7 +42,7 @@ class CompiledSnippets(configurationInfo: KotlinNotebookScriptsModuleConfigurati
     override val typeName: String = "Compiled"
 
     override fun filterTargetDependencies(candidates: List<File>): List<File> {
-        return candidates.filter { it.isDirectory || isBaseJar(it) }
+        return candidates.filter { it.isDirectory }
     }
 
     override fun getOrUpdateLibraryDependencies(
@@ -74,7 +70,7 @@ class Jars(configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo) : No
     override val typeName: String = "Jars"
 
     override fun filterTargetDependencies(candidates: List<File>): List<File> {
-        return candidates.filter { it.isFile && it.extension == "jar" && !isBaseJar(it) }
+        return candidates.filter { it.isFile && it.extension == "jar" }
     }
 
     override fun getOrUpdateLibraryDependencies(
