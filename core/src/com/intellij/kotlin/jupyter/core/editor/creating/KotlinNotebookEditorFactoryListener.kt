@@ -21,7 +21,7 @@ class KotlinNotebookEditorFactoryListener : NotebookEditorCreatedCallback {
             if (file.isKotlinNotebook) {
                 KotlinNotebookPerFileSettingsCache.getInstance(project).notebookEditorCreated(file)
 
-                val notebookFile = file.toBackedNotebookFile() ?: return
+                val notebookFile = file.toBackedNotebookFile()
                 KotlinNotebookFeatureUsagesCollector.registerOpenNotebook(project, notebookFile)
             }
         }
