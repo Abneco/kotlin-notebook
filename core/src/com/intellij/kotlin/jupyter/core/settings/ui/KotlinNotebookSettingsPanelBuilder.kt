@@ -213,7 +213,7 @@ class KotlinNotebookSettingsPanelBuilder(
 
         return createParametersListField(
             KotlinNotebookBundle.message("kotlin.jupyter.settings.compiler.extra.args"),
-            KotlinNotebookBundle.message("kotlin.jupyter.settings.compiler.extra.args.comment"),
+            null,
             projectOptions::extraCompilerArguments,
         )
     }

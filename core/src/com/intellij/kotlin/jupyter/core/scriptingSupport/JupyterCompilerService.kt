@@ -30,6 +30,7 @@ import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import java.io.File
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
 import kotlin.script.experimental.api.asSuccess
@@ -58,48 +59,75 @@ class JupyterCompilerService(
         NotebookScriptingForceUpdateRequestor.create(project)
     }
 
+    // Make it possible to use AtomicReference as a "cache" we can reset by setting the value to null
+    private inline fun <T: Any> AtomicReference<T?>.getOrSet(crossinline initializer: () -> T): T =
+        updateAndGet { existing -> existing ?: initializer() }!!
+
+    // Current values of the script definitions. If these are `null`, you must call `getOrSet` to update them correctly.
+    private val scriptDefinitionsWrapperValue: AtomicReference<KotlinNotebookScriptDefinitionsWrapper?> = AtomicReference()
+    private val initialCompileConfigurationValue: AtomicReference<ScriptCompilationConfiguration?> = AtomicReference()
+
     private val initialClasspath: List<File> by lazy {
        emptyList()
     }
 
-    val scriptDefinitionsWrapper: KotlinNotebookScriptDefinitionsWrapper by lazy {
-        KotlinNotebookScriptDefinitionsWrapper.create(
-            project,
-            ScriptDefinition(
-                initialCompileConfiguration,
-                evaluationConfiguration
-            )
-        )
+    /**
+     * Some changes to the script definition (like compiler arguments) require a new script definition as
+     * they cannot be updated after the compiler session has started.
+     *
+     * Calling this method will remove any current definition and lazily create a new one. Generally, they
+     * are cached by already open Notebooks, so the new definition will only be fetched for new files
+     * or if the kernel is restarted.
+     */
+    fun resetScriptDefinition() {
+        scriptDefinitionsWrapperValue.set(null)
+        initialCompileConfigurationValue.set(null)
     }
 
-    private val initialCompileConfiguration by lazy {
-        getCompilationConfiguration(
-            scriptClasspath = initialClasspath,
-            compilerArgsConfigurator = DefaultCompilerArgsConfigurator(),
-            replCompilerMode = KotlinNotebookApplicationOptions.get().replCompilerMode,
-            loggerFactory = DefaultKernelLoggerFactory
-        ) {
-            ide {
-                serializationPluginEnabled(true)
+    val scriptDefinitionsWrapper: KotlinNotebookScriptDefinitionsWrapper
+        get() {
+            return scriptDefinitionsWrapperValue.getOrSet {
+                KotlinNotebookScriptDefinitionsWrapper.create(
+                    project,
+                    ScriptDefinition(
+                        initialCompileConfiguration,
+                        evaluationConfiguration
+                    )
+                )
             }
-            displayName("Kotlin Notebooks")
-            compilerOptions.update { oldOptions ->
-                val extraOptions = KotlinNotebookProjectOptionsProvider.getInstance(project).extraCompilerArguments.toList()
-                buildSet {
-                    oldOptions?.let { addAll(it) }
-                    addAll(extraOptions)
-                }.toList().takeIf { it.isNotEmpty() }
-            }
-            refineConfiguration {
-                beforeCompiling { (sourceCode, config, _) ->
-                    val virtualFile = (sourceCode as? KtFileScriptSource)?.virtualFile
-                    val fileDelegate = (virtualFile as? VirtualFileWindow)?.delegate
-                    val notebookFile = fileDelegate?.let(BackedNotebookVirtualFile::takeIfBacked) ?: return@beforeCompiling config.asSuccess()
-                    getOrCreate(notebookFile).handleBeforeCompiling(config, sourceCode).asSuccess()
+        }
+
+    private val initialCompileConfiguration: ScriptCompilationConfiguration
+        get() {
+            return initialCompileConfigurationValue.getOrSet {
+                getCompilationConfiguration(
+                    scriptClasspath = initialClasspath,
+                    compilerArgsConfigurator = DefaultCompilerArgsConfigurator(),
+                    replCompilerMode = KotlinNotebookApplicationOptions.get().replCompilerMode,
+                    loggerFactory = DefaultKernelLoggerFactory
+                ) {
+                    ide {
+                        serializationPluginEnabled(true)
+                    }
+                    displayName("Kotlin Notebooks")
+                    compilerOptions.update { oldOptions ->
+                        val extraOptions = KotlinNotebookProjectOptionsProvider.getInstance(project).extraCompilerArguments.toList()
+                        buildSet {
+                            oldOptions?.let { addAll(it) }
+                            addAll(extraOptions)
+                        }.toList().takeIf { it.isNotEmpty() }
+                    }
+                    refineConfiguration {
+                        beforeCompiling { (sourceCode, config, _) ->
+                            val virtualFile = (sourceCode as? KtFileScriptSource)?.virtualFile
+                            val fileDelegate = (virtualFile as? VirtualFileWindow)?.delegate
+                            val notebookFile = fileDelegate?.let(BackedNotebookVirtualFile::takeIfBacked) ?: return@beforeCompiling config.asSuccess()
+                            getOrCreate(notebookFile).handleBeforeCompiling(config, sourceCode).asSuccess()
+                        }
+                    }
                 }
             }
         }
-    }
 
     private val evaluationConfiguration by lazy {
         ScriptEvaluationConfiguration {

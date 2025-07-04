@@ -49,7 +49,9 @@ class KotlinNotebookProjectOptionsProvider :
         internal set
     var extraJvmArguments by prop(State::extraJvmArguments)
         internal set
-    var extraCompilerArguments by prop(State::extraCompilerArguments)
+    var extraCompilerArguments by prop(
+        State::extraCompilerArguments
+    ).onChange(Listener::onExtraCompilerArgumentsChanged)
         internal set
     var extraEnvironmentVariables by prop(State::extraEnvironmentVariables)
         internal set
@@ -90,12 +92,13 @@ class KotlinNotebookProjectOptionsProvider :
         fun onJdkChanged() {}
         fun onJvmTargetForSnippetsChanged() {}
         fun onKernelVersionChanged() {}
+        fun onExtraCompilerArgumentsChanged() {}
     }
 
 
     companion object {
         fun getInstance(project: Project): KotlinNotebookProjectOptionsProvider = project.service()
 
-        const val DEFAULT_HEAP_MAX_LIMIT_MIB = 3256
+        private const val DEFAULT_HEAP_MAX_LIMIT_MIB: Int = 3256
     }
 }

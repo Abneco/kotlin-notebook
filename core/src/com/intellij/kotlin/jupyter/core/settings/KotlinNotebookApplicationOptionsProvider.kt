@@ -32,7 +32,9 @@ class KotlinNotebookApplicationOptionsProvider :
 
     var showLetsPlotAsSwing: Boolean by prop(State::showLetsPlotAsSwing)
     var showDataFrameAsSwing: Boolean by prop(State::showDataFrameAsSwing)
-    var replCompilerMode: ReplCompilerMode by prop(State::replCompilerMode)
+    var replCompilerMode: ReplCompilerMode by prop(
+        State::replCompilerMode
+    ).onChange(Listener::onReplCompilerModeChanged)
 
     var recentNotebooks: MutableList<RecentNotebookState> by prop(State::recentNotebooks)
 
@@ -53,8 +55,8 @@ class KotlinNotebookApplicationOptionsProvider :
 
     interface Listener : EventListener {
         fun onShowExecutionCountChanged() {}
-
         fun onShowFoldings(oldValue: Boolean, newValue: Boolean) {}
+        fun onReplCompilerModeChanged() {}
     }
 
     override fun dispose() {

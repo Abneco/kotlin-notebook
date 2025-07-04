@@ -7,6 +7,9 @@ import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 
+/**
+ * Entry point for setting up the Kotlin Notebook settings panel and handle its lifecycle.
+ */
 internal class KotlinNotebookConfigurable(private val project: Project) :
     BoundConfigurable(KotlinNotebookBundle.message("kotlin.jupyter.settings.title")), SearchableConfigurable {
 
@@ -18,6 +21,6 @@ internal class KotlinNotebookConfigurable(private val project: Project) :
     }
 
     companion object {
-        const val ID = "kotlinNotebook"
+        private const val ID = "kotlinNotebook"
     }
 }

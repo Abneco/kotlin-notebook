@@ -42,6 +42,7 @@ internal class KotlinNotebookNotifications(private val project: Project) {
         RERUN_ACTION_NEEDED(NotificationType.INFORMATION),
         BYTECODE_REFACTORING_WARNING(NotificationType.WARNING),
         REFACTORING_EXISTING_USAGES_MESSAGE(NotificationType.INFORMATION),
+        KERNEL_RESTART_NEEDED(NotificationType.INFORMATION),
     }
 
     private val notificationSingletons = ConcurrentHashMap<KotlinNotebookNotificationType, SingletonNotificationManager>()
@@ -91,6 +92,12 @@ internal class KotlinNotebookNotifications(private val project: Project) {
             )
         }
     }
+
+    fun showKernelRestartNeeded() =
+        notify(
+            KotlinNotebookNotificationType.KERNEL_RESTART_NEEDED,
+            KotlinNotebookBundle.message("kotlin.jupyter.session.restartNeeded")
+        )
 
     fun showKernelRestart() =
         notify(
