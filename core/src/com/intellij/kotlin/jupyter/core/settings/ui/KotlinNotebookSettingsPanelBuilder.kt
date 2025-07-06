@@ -79,7 +79,7 @@ class KotlinNotebookSettingsPanelBuilder(
                 createJvmTargetForSnippetsComboBox()
                 createMaxHeapSizeSpinner()
                 createExtraJvmArgumentsField()
-                createCompilerExtraArguments()
+                createCompilerExtraArgumentsField()
                 createEnvironmentVariablesField()
                 createCompilerPluginsOptionsSelector()
             }
@@ -208,7 +208,7 @@ class KotlinNotebookSettingsPanelBuilder(
         )
     }
 
-    private fun Panel.createCompilerExtraArguments(): Row? {
+    private fun Panel.createCompilerExtraArgumentsField(): Row? {
         if (!projectWideExtraCompilerArgumentsSelectionEnabled) return null
 
         return createParametersListField(
