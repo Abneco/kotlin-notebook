@@ -17,7 +17,6 @@ import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.util.ui.EDT
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
 import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
@@ -27,6 +26,7 @@ import org.jetbrains.kotlinx.jupyter.messaging.JupyterZmqClientSocketManager
 import org.jetbrains.kotlinx.jupyter.messaging.JupyterZmqClientSockets
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketSide
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
+import org.jetbrains.kotlinx.jupyter.util.closeWithTimeout
 import org.jetbrains.kotlinx.jupyter.ws.JupyterWsClientSocketManager
 import org.zeromq.ZMQException
 import java.nio.channels.ClosedSelectorException
@@ -93,7 +93,7 @@ sealed class KernelClientSession(
         if (!isClosing.compareAndSet(false, true)) return
 
         val closeDeferred = KotlinNotebookPluginScope.global.launch {
-            withTimeoutOrNull(SESSION_KILL_WAIT_TIMEOUT) {
+            closeWithTimeout(timeoutMs = SESSION_KILL_WAIT_TIMEOUT.inWholeMilliseconds) {
                 sockets.closeSafely()
             }
         }
