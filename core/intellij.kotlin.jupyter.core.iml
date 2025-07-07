@@ -34,19 +34,19 @@
     <orderEntry type="module" module-name="intellij.platform.ide.core.impl" />
     <orderEntry type="module-library" exported="">
       <library name="jetbrains.kotlinx.kotlin.jupyter.ws.server" type="repository">
-        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-ws-server:0.14.1-504">
+        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-ws-server:0.14.1-514">
           <verification>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0.14.1-504/kotlin-jupyter-ws-server-0.14.1-504.jar">
-              <sha256sum>15434329814a8ffea3a853fc7d7c7d6e592e7003df5031ec83d5820616fcc0b2</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0.14.1-514/kotlin-jupyter-ws-server-0.14.1-514.jar">
+              <sha256sum>2f23dc680bbcc5da85938d90de6128d336c53204ee0754ac3fbe3c4082830afa</sha256sum>
             </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.14.1-504/kotlin-jupyter-shared-compiler-0.14.1-504.jar">
-              <sha256sum>182e099388a549a2e4a75d3feafa29ba20996e52766c7b5661a7c818c903e3cf</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.14.1-514/kotlin-jupyter-shared-compiler-0.14.1-514.jar">
+              <sha256sum>6b4c5f080856dd2718caa47c46e0974011e86ad0e557db95ec71938183f655b3</sha256sum>
             </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.14.1-504/kotlin-jupyter-lib-0.14.1-504.jar">
-              <sha256sum>9681b88e7837104ccc42753a20d1620e3383ae8e411a048951b5bfa7aaab3515</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.14.1-514/kotlin-jupyter-lib-0.14.1-514.jar">
+              <sha256sum>0e9d4ce2493699f3b7657763590cab82045ccf06ab233656863d0ce45c9750fc</sha256sum>
             </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.14.1-504/kotlin-jupyter-common-dependencies-0.14.1-504.jar">
-              <sha256sum>efbdd228d2f42e9f289948c70cb9f771292e59d984197f79c72beee32746ce15</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.14.1-514/kotlin-jupyter-common-dependencies-0.14.1-514.jar">
+              <sha256sum>f4e7655341c617a5ce76f64c4900efe4f8f4cc9e20c3630cce2e636976fc4090</sha256sum>
             </artifact>
             <artifact url="file://$MAVEN_REPOSITORY$/org/zeromq/jeromq/0.6.0/jeromq-0.6.0.jar">
               <sha256sum>4784ff6d6e91b8eecd917b73d07b161c19a808ef870a5bdb760515bb67e208d3</sha256sum>
@@ -65,20 +65,20 @@
           </exclude>
         </properties>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0.14.1-504/kotlin-jupyter-ws-server-0.14.1-504.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.14.1-504/kotlin-jupyter-shared-compiler-0.14.1-504.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.14.1-504/kotlin-jupyter-lib-0.14.1-504.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.14.1-504/kotlin-jupyter-common-dependencies-0.14.1-504.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0.14.1-514/kotlin-jupyter-ws-server-0.14.1-514.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.14.1-514/kotlin-jupyter-shared-compiler-0.14.1-514.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.14.1-514/kotlin-jupyter-lib-0.14.1-514.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.14.1-514/kotlin-jupyter-common-dependencies-0.14.1-514.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/org/zeromq/jeromq/0.6.0/jeromq-0.6.0.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0.14.1-504/kotlin-jupyter-ws-server-0.14.1-504-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.14.1-504/kotlin-jupyter-shared-compiler-0.14.1-504-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.14.1-504/kotlin-jupyter-lib-0.14.1-504-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.14.1-504/kotlin-jupyter-common-dependencies-0.14.1-504-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0.14.1-514/kotlin-jupyter-ws-server-0.14.1-514-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.14.1-514/kotlin-jupyter-shared-compiler-0.14.1-514-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.14.1-514/kotlin-jupyter-lib-0.14.1-514-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.14.1-514/kotlin-jupyter-common-dependencies-0.14.1-514-sources.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/org/zeromq/jeromq/0.6.0/jeromq-0.6.0-sources.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0-sources.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0-sources.jar!/" />
