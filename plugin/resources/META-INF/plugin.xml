@@ -74,7 +74,6 @@
 
     <content>
         <module name="intellij.kotlin.jupyter.core"/>
-        <module name="intellij.kotlin.jupyter.github"/>
         <module name="intellij.kotlin.jupyter.tables"/>
         <module name="intellij.kotlin.jupyter.plots"/>
         <module name="intellij.kotlin.jupyter.liveTemplates"/>

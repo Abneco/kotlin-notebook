@@ -344,12 +344,6 @@
                 icon="AllIcons.Actions.Copy">
         </action>
 
-        <group id="KotlinNotebookEditorActions">
-            <separator/>
-            <add-to-group group-id="JupyterEditorPopupActions"/>
-            <add-to-group group-id="JupyterEditorLeftToolbarActions"/>
-        </group>
-
         <group id="KotlinNotebookChangeSessionModeActions">
             <action id="KotlinNotebookEnableSeparateProcessMode"
                     class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookEnableSeparateProcessMode"/>

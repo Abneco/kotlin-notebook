@@ -15,7 +15,6 @@ jvm_library(
   deps = [
     "//plugins/kotlin/jupyter/plugin",
     "//plugins/kotlin/jupyter/core",
-    "//plugins/kotlin/jupyter/github",
     "//plugins/kotlin/jupyter/tables",
     "@community//platform/analysis-api:analysis",
     "@community//platform/code-style-api:codeStyle",
