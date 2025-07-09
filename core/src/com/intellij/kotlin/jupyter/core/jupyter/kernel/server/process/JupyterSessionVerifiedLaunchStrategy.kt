@@ -7,7 +7,8 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMe
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionLaunchStrategy
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KERNEL_VERIFICATION_TIMEOUT
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KERNEL_VERIFICATION_ATTEMPT_COUNT
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KERNEL_VERIFICATION_ATTEMPT_TIMEOUT
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinInProcessJupyterClient
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelEvent
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
@@ -59,29 +60,32 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
         session: JupyterNotebookSession,
         kernel: KotlinKernelRunnableHandler?
     ): Boolean {
-        val verificationResult = session.sendMessageAndWait(
-            channel = JupyterMessageChannel.SHELL,
-            messageType = MessageType.KERNEL_INFO_REQUEST,
-            content = KernelInfoRequest(),
-            timeout = KERNEL_VERIFICATION_TIMEOUT
-        ) { verificationDeferred ->
-            kernel?.addBaseKernelListener(object : KotlinKernelListener {
-                override fun kernelTerminated(event: KotlinKernelEvent) {
-                    verificationDeferred.complete(false)
-                }
-            })
+        repeat(KERNEL_VERIFICATION_ATTEMPT_COUNT) {
+            val verificationResult = session.sendMessageAndWait(
+                channel = JupyterMessageChannel.SHELL,
+                messageType = MessageType.KERNEL_INFO_REQUEST,
+                content = KernelInfoRequest(),
+                timeout = KERNEL_VERIFICATION_ATTEMPT_TIMEOUT
+            ) { verificationDeferred ->
+                kernel?.addBaseKernelListener(object : KotlinKernelListener {
+                    override fun kernelTerminated(event: KotlinKernelEvent) {
+                        verificationDeferred.complete(false)
+                    }
+                })
 
-            object : FinalizationPreservingCallback(
-                myFinalizeCallback = {
-                    verificationDeferred.complete(false)
-                }
-            ) {
-                override fun onKernelInfoReply(message: JupyterMessage) {
-                    kernel?.onKernelInfoReply(message)
-                    verificationDeferred.complete(true)
+                object : FinalizationPreservingCallback(
+                    myFinalizeCallback = {
+                        verificationDeferred.complete(false)
+                    }
+                ) {
+                    override fun onKernelInfoReply(message: JupyterMessage) {
+                        kernel?.onKernelInfoReply(message)
+                        verificationDeferred.complete(true)
+                    }
                 }
             }
+            if (verificationResult == true) return true
         }
-        return verificationResult == true
+        return false
     }
 }
