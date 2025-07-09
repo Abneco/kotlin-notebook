@@ -89,13 +89,17 @@ sealed class KernelClientSession(
         close()
     }
 
+    protected open fun closeSockets() {
+        closeWithTimeout(timeoutMs = SESSION_KILL_WAIT_TIMEOUT.inWholeMilliseconds) {
+            sockets.close()
+        }
+    }
+
     override fun close() {
         if (!isClosing.compareAndSet(false, true)) return
 
         val closeDeferred = KotlinNotebookPluginScope.global.launch {
-            closeWithTimeout(timeoutMs = SESSION_KILL_WAIT_TIMEOUT.inWholeMilliseconds) {
-                sockets.closeSafely()
-            }
+            closeSockets()
         }
 
         if (!EDT.isCurrentThreadEdt()) {
@@ -122,11 +126,13 @@ class KernelZmqClientSession(
     outgoingMessagesFilter = outgoingMessagesFilter,
     socketManager = JupyterZmqClientSocketManager(DefaultKernelLoggerFactory, JupyterSocketSide.IDE_CLIENT)
 ) {
-    override fun close() {
-        super.close()
+    override fun closeSockets() {
+        super.closeSockets()
         for (zmqPoller in getPollersFromContext((sockets as JupyterZmqClientSockets).context)) {
-            notebookLogger().warn("Undisposed ZMQ Poller $zmqPoller detected, interrupting polling")
-            zmqPoller.closeSafely()
+            if (zmqPoller.workerThread?.isAlive != false) {
+                notebookLogger().warn("Undisposed ZMQ Poller $zmqPoller detected, interrupting polling")
+                zmqPoller.closeSafely()
+            }
         }
     }
 }
