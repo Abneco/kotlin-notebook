@@ -1,17 +1,11 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
-import com.intellij.kotlin.jupyter.k2.project.model.createOrUpdateLibraryForNotebookDependencies
-import com.intellij.kotlin.jupyter.k2.project.model.toK2RuntimeDependencyLibraryName
 import com.intellij.openapi.project.Project
-import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.virtualFile
-import com.intellij.platform.backend.workspace.workspaceModel
-import com.intellij.platform.workspace.jps.entities.DependencyScope
-import com.intellij.platform.workspace.jps.entities.LibraryDependency
-import com.intellij.platform.workspace.jps.entities.LibraryRootTypeId
 import com.intellij.platform.workspace.storage.MutableEntityStorage
-import org.jetbrains.kotlin.idea.core.script.getOrCreateLibrary
+import org.jetbrains.kotlin.idea.KotlinScriptLibraryEntity
+import org.jetbrains.kotlin.idea.KotlinScriptLibraryEntityId
 import java.io.File
 
 /**
@@ -26,12 +20,6 @@ abstract class NotebookConfigurationRootsViewBase(
         filterTargetDependencies(configurationInfo.configuration.dependenciesSources)
 
     protected abstract fun filterTargetDependencies(candidates: List<File>): List<File>
-
-    protected fun getNotebookEntitySource(project: Project): KotlinNotebookScriptEntitySource {
-        val urlManager = project.workspaceModel.getVirtualFileUrlManager()
-        val notebookFileUrl = configurationInfo.notebookFile.toVirtualFileUrl(urlManager)
-        return KotlinNotebookScriptEntitySource(notebookFileUrl)
-    }
 }
 
 /**
@@ -47,18 +35,16 @@ class CompiledSnippets(configurationInfo: KotlinNotebookScriptsModuleConfigurati
     override fun getOrUpdateLibraryDependencies(
         project: Project,
         entityStorage: MutableEntityStorage
-    ): List<LibraryDependency> {
-        val notebook = configurationInfo.notebookFile
-        val libraryName = notebook.toK2RuntimeDependencyLibraryName(project, typeName)
-        val entitySource = getNotebookEntitySource(project)
+    ): List<KotlinScriptLibraryEntityId> {
+        val (classes, sources) = getAllLibraryRoots(project)
+        if (classes.isEmpty()) return emptyList()
 
-        val libraryEntity = entityStorage.createOrUpdateLibraryForNotebookDependencies(
-            libraryName,  entitySource, getAllLibraryRoots(project)
-        )
+        val libraryId = KotlinScriptLibraryEntityId(classes, sources)
+        if (!entityStorage.contains(libraryId)) {
+            entityStorage addEntity KotlinScriptLibraryEntity(classes, sources, KotlinNotebookScriptEntitySource)
+        }
 
-        return listOf(
-            LibraryDependency(libraryEntity.symbolicId, false, DependencyScope.COMPILE)
-        )
+        return listOf(libraryId)
     }
 }
 
@@ -75,27 +61,26 @@ class Jars(configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo) : No
     override fun getOrUpdateLibraryDependencies(
         project: Project,
         entityStorage: MutableEntityStorage
-    ): List<LibraryDependency> {
-        val jarRoots = getAllLibraryRoots(project)
-        val classRoots = jarRoots.filter { root -> root.type == LibraryRootTypeId.COMPILED }
-        val entitySource = getNotebookEntitySource(project)
+    ): List<KotlinScriptLibraryEntityId> {
+        val (classes, sources) = getAllLibraryRoots(project)
+        if (classes.isEmpty()) return emptyList()
 
         return buildList {
-            for (root in classRoots) {
-                val virtualFile = root.url.virtualFile
-                val libraryName = virtualFile?.name ?: root.url.presentableUrl
-                val presentableName = virtualFile?.nameWithoutExtension ?: libraryName
+            for (virtualFileUrl in classes) {
+                val libraryName = virtualFileUrl.virtualFile?.name ?: virtualFileUrl.presentableUrl
+                val presentableName = virtualFileUrl.virtualFile?.nameWithoutExtension ?: libraryName
 
                 // This is a workaround to find a matching source's jar without adding all the source roots
-                val sourceRoot = jarRoots.firstOrNull {
-                    root -> root.type == LibraryRootTypeId.SOURCES && root.url.presentableUrl.contains(presentableName)
+                val sourceRoot = sources.firstOrNull {
+                    it.presentableUrl.contains(presentableName)
                 }
 
-                with(entityStorage) {
-                    add(
-                        getOrCreateLibrary(libraryName, listOfNotNull(root, sourceRoot), entitySource)
-                    )
+                val id = KotlinScriptLibraryEntityId(listOf(virtualFileUrl), listOfNotNull(sourceRoot))
+                if (!entityStorage.contains(id)) {
+                    entityStorage addEntity KotlinScriptLibraryEntity(id.classes, id.sources, KotlinNotebookScriptEntitySource)
                 }
+
+                add(id)
             }
         }
     }

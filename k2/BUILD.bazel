@@ -46,6 +46,10 @@ jvm_library(
     "@community//plugins/kotlin/base/code-insight",
     "@community//plugins/kotlin/bundled-compiler-plugins-support",
     "@community//plugins/kotlin/base/scripting.k2",
+    "@community//plugins/kotlin/base/fir/project-structure",
+    "@community//plugins/kotlin/base/fir/scripting",
+    "//plugins/jupyter/psi",
+    "@community//plugins/kotlin/base/project-structure",
     ":scripting_provided",
   ],
   runtime_deps = [":k2_resources"]

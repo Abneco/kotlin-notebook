@@ -9,7 +9,10 @@ import com.intellij.platform.workspace.jps.entities.LibraryDependency
 import com.intellij.platform.workspace.jps.entities.LibraryRoot
 import com.intellij.platform.workspace.jps.entities.LibraryRootTypeId
 import com.intellij.platform.workspace.storage.MutableEntityStorage
+import com.intellij.platform.workspace.storage.url.VirtualFileUrl
+import org.jetbrains.kotlin.idea.KotlinScriptLibraryEntityId
 import org.jetbrains.kotlin.idea.core.script.ScriptClassPathUtil
+import org.jetbrains.kotlin.idea.core.script.k2.configurations.toVirtualFileUrl
 import java.io.File
 
 /**
@@ -38,28 +41,19 @@ sealed interface NotebookConfigurationRootsView {
     /**
      * Returns a list of all roots in the format as [LibraryRoot]
      */
-    fun getAllLibraryRoots(project: Project): List<LibraryRoot> {
+    fun getAllLibraryRoots(project: Project): Pair<List<VirtualFileUrl>, List<VirtualFileUrl>> {
         val fileUrlManager = WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
 
-        val roots = buildSet {
-            dependenciesRoots.mapNotNullTo(this) {
-                val file = ScriptClassPathUtil.findVirtualFile(it.path)
-                file?.let { LibraryRoot(file.toVirtualFileUrl(fileUrlManager), LibraryRootTypeId.COMPILED) }
-            }
+        val classes = dependenciesRoots.map { it.path.toVirtualFileUrl(fileUrlManager) }
+        val sources = dependenciesSources.map { it.path.toVirtualFileUrl(fileUrlManager) }
 
-            dependenciesSources.mapNotNullTo(this) {
-                val file = ScriptClassPathUtil.findVirtualFile(it.path)
-                file?.let { LibraryRoot(file.toVirtualFileUrl(fileUrlManager), LibraryRootTypeId.SOURCES) }
-            }
-        }
-
-        return roots.toList()
+        return classes to sources
     }
 
     /**
      * Creates or updates an [entityStorage] based on the dependency roots.
      */
-    fun getOrUpdateLibraryDependencies(project: Project, entityStorage: MutableEntityStorage): List<LibraryDependency>
+    fun getOrUpdateLibraryDependencies(project: Project, entityStorage: MutableEntityStorage): List<KotlinScriptLibraryEntityId>
 }
 
 

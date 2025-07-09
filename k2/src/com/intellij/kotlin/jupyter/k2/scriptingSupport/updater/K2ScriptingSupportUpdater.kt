@@ -30,6 +30,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.kotlin.analysis.api.platform.modification.publishGlobalModuleStateModificationEvent
+import org.jetbrains.kotlin.analysis.api.platform.modification.publishGlobalScriptModuleStateModificationEvent
 import org.jetbrains.kotlin.idea.core.script.ScriptDependenciesModificationTracker
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.ScriptConfigurationsProviderImpl
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionProviderImpl
@@ -200,6 +201,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
             edtWriteAction {
                 project.publishGlobalModuleStateModificationEvent()
+                project.publishGlobalScriptModuleStateModificationEvent()
             }
 
             ScriptDependenciesModificationTracker.getInstance(project).incModificationCount()

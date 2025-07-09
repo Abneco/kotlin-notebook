@@ -575,7 +575,7 @@ class JupyterCompilerPerFileService(
                 return
             }
 
-            implicitReceiversClassPathData.removeAll(newStableReceivers)
+            implicitReceiversClassPathData.removeAll(newStableReceivers.toSet())
 
             requestScriptingUpdate()
         }

@@ -3,11 +3,9 @@ package com.intellij.kotlin.jupyter.k2.project.model
 
 import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
 import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookSessionLibrariesFilter
-import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.Library
-import com.intellij.platform.workspace.jps.entities.LibraryEntity
 import org.jetbrains.kotlin.utils.mapToSetOrEmpty
 
 class K2SessionLibrariesFilter : KotlinNotebookSessionLibrariesFilter {
@@ -35,25 +33,13 @@ class K2SessionLibrariesFilter : KotlinNotebookSessionLibrariesFilter {
     }
 
     private fun Library.isProjectRelated(notebookDependenciesRoots: Collection<String>): Boolean {
-        return when {
-            isForCompiledSnippets() -> false
-            else -> {
-                val libraryRoots = getFiles(OrderRootType.CLASSES).map {
-                    it.presentableName
-                }
-                libraryRoots.none {
-                    it in notebookDependenciesRoots
-                }
-            }
+        val libraryRoots = getFiles(OrderRootType.CLASSES).map {
+            it.presentableName
+        }
+
+        return libraryRoots.none {
+            it in notebookDependenciesRoots
         }
     }
 
-}
-
-internal fun Library.isForCompiledSnippets(): Boolean {
-    return name?.startsWith(NOTEBOOK_DEPENDENCIES_MODULE_PREFIX) == true
-}
-
-internal fun LibraryEntity.isForCompiledSnippets(): Boolean {
-    return name.startsWith(NOTEBOOK_DEPENDENCIES_MODULE_PREFIX)
 }

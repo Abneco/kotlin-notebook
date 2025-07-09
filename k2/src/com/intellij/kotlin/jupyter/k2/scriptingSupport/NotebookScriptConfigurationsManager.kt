@@ -8,10 +8,6 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.settings.NotebookProjectJdkOption
 import com.intellij.kotlin.jupyter.core.util.debugInTests
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
-import com.intellij.kotlin.jupyter.k2.project.model.filterBoundToOneModule
-import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceModule
-import com.intellij.kotlin.jupyter.k2.project.model.notebookScriptLibrariesEntities
-import com.intellij.kotlin.jupyter.k2.project.model.toK2RuntimeModuleName
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -24,35 +20,27 @@ import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
 import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.workspaceModel
-import com.intellij.platform.workspace.jps.entities.LibraryDependency
-import com.intellij.platform.workspace.jps.entities.ModuleEntity
-import com.intellij.platform.workspace.jps.entities.ModuleId
-import com.intellij.platform.workspace.jps.entities.SdkDependency
-import com.intellij.platform.workspace.jps.entities.SdkId
-import com.intellij.platform.workspace.jps.entities.modifyModuleEntity
-import com.intellij.platform.workspace.jps.entities.sourceRoots
+import com.intellij.platform.workspace.storage.EntitySource
 import com.intellij.platform.workspace.storage.MutableEntityStorage
-import com.intellij.platform.workspace.storage.url.VirtualFileUrl
+import com.intellij.platform.workspace.storage.url.VirtualFileUrlManager
 import com.intellij.util.concurrency.annotations.RequiresReadLock
-import com.intellij.workspaceModel.ide.legacyBridge.findModuleEntity
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModuleProvider
 import org.jetbrains.kotlin.analysis.api.projectStructure.analysisContextModule
-import org.jetbrains.kotlin.idea.core.script.KOTLIN_SCRIPTS_MODULE_NAME
-import org.jetbrains.kotlin.idea.core.script.KotlinScriptEntitySource
+import org.jetbrains.kotlin.idea.KotlinScriptEntity
+import org.jetbrains.kotlin.idea.KotlinScriptLibraryEntityId
 import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationWithSdk
 import org.jetbrains.kotlin.idea.core.script.k2.modules.ScriptRefinedConfigurationResolver
 import org.jetbrains.kotlin.idea.core.script.k2.modules.ScriptWorkspaceModelManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.ifEmpty
 import kotlin.script.experimental.api.asSuccess
 
 /**
  * Special marker used to distinguish Kotlin Notebook-related entities
  */
-class KotlinNotebookScriptEntitySource(virtualFileUrl: VirtualFileUrl) : KotlinScriptEntitySource(virtualFileUrl)
+object KotlinNotebookScriptEntitySource : EntitySource
 
 /**
  * K2 entry point that manages script dependencies for Kotlin notebooks within a given project.
@@ -68,14 +56,18 @@ class KotlinNotebookScriptEntitySource(virtualFileUrl: VirtualFileUrl) : KotlinS
 @Service(Service.Level.PROJECT)
 class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedConfigurationResolver, ScriptWorkspaceModelManager {
     val cache: ConcurrentHashMap<VirtualFile, ScriptConfigurationWithSdk> = ConcurrentHashMap<VirtualFile, ScriptConfigurationWithSdk>()
+    val workspaceModel: WorkspaceModel
+        get() = project.workspaceModel
+
+    val virtualFileUrlManager: VirtualFileUrlManager
+        get() = project.workspaceModel.getVirtualFileUrlManager()
 
     /**
      * For now, we do not create it here
      * as we have our own cycle of updates.
      */
     override suspend fun create(
-        virtualFile: VirtualFile,
-        definition: ScriptDefinition
+        virtualFile: VirtualFile, definition: ScriptDefinition
     ): ScriptConfigurationWithSdk? = get(virtualFile)
 
     /**
@@ -85,8 +77,7 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
     override fun get(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
         val topLevelFile = virtualFile.getTopLevelFileOrNull()
 
-        if (topLevelFile == null) {
-            // We may get there in the case of a light file we usually get as an intermediate result
+        if (topLevelFile == null) { // We may get there in the case of a light file we usually get as an intermediate result
             // of some refactorings / intention previews
             notebookLogger().info("No top level file found for ${virtualFile.name}")
             return null
@@ -160,14 +151,12 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
     }
 
     override suspend fun updateWorkspaceModel(configurationPerFile: Map<VirtualFile, ScriptConfigurationWithSdk>) {
-        val workspaceSnapshot = project.workspaceModel.currentSnapshot
-        val tmp = MutableEntityStorage.from(workspaceSnapshot)
+        val tmp = MutableEntityStorage.create()
 
         val configurationsByNotebook = cache.toConfigurationInfoPerNotebook()
         creteOrUpdateScriptModules(configurationsByNotebook, tmp)
 
-        project.workspaceModel.update("Updating Kotlin Notebook scripting modules") { model ->
-            // add new data, target only the base K2 script source
+        project.workspaceModel.update("Updating Kotlin Notebook scripting modules") { model -> // add new data, target only the base K2 script source
             model.replaceBySource({ it is KotlinNotebookScriptEntitySource }, tmp)
         }
     }
@@ -183,22 +172,19 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
     }
 
     suspend fun clearNotebookLibraryDependencies(notebookFile: BackedNotebookVirtualFile) {
-        val workspaceModel = project.workspaceModel
         val workspaceSnapshot = workspaceModel.currentSnapshot
         val tmpSnapshot = MutableEntityStorage.from(workspaceSnapshot)
 
-        val libraryEntities = notebookFile.notebookScriptLibrariesEntities(project, workspaceSnapshot)
-        if (libraryEntities.isEmpty()) return
+        val dependencies =
+            workspaceSnapshot.getVirtualFileUrlIndex().findEntitiesByUrl(notebookFile.file.toVirtualFileUrl(virtualFileUrlManager))
+                .filterIsInstance<KotlinScriptEntity>().flatMap { it.dependencies }
 
-        val notebookModule = notebookFile
-            .findK2WorkspaceModule(project)
-            ?.findModuleEntity(tmpSnapshot) ?: return
-        val relatedToThisModule = libraryEntities
-            .filterBoundToOneModule(tmpSnapshot, notebookModule)
-
-        relatedToThisModule.forEach { libraryEntity ->
-            tmpSnapshot.removeEntity(libraryEntity)
+        dependencies.forEach {
+            it.resolve(workspaceSnapshot)?.let { libraryEntity ->
+                tmpSnapshot.removeEntity(libraryEntity)
+            }
         }
+
         workspaceModel.update("Clearing Kotlin Notebook scripting modules for ${notebookFile.file.name}") { model ->
             model.applyChangesFrom(tmpSnapshot)
         }
@@ -209,56 +195,22 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         mutableEntityStorage: MutableEntityStorage,
         notebookModuleConfiguration: KotlinNotebookScriptsModuleConfigurationInfo
     ) {
-        fun buildLibraryDependencies(): Collection<LibraryDependency> {
+        fun buildLibraryDependencies(): Collection<KotlinScriptLibraryEntityId> {
             val dependencyViews = notebookModuleConfiguration.createConfigurationDependencyViews()
-
-            return buildSet {
-                for (view in dependencyViews) {
-                    val libraryDependencies = view.getOrUpdateLibraryDependencies(project, mutableEntityStorage)
-
-                    addAll(libraryDependencies)
-                }
-            }
+            return dependencyViews.flatMap { it.getOrUpdateLibraryDependencies(project, mutableEntityStorage) }.toSet()
         }
 
-        val moduleName = notebookModuleConfiguration.notebookFile.toK2RuntimeModuleName(project)
-
-        val sdkDependency =
-            notebookModuleConfiguration.sdkInfo
-                ?.let { SdkDependency(SdkId(it.name, it.sdkType.name)) }
-
-        val source = KotlinNotebookScriptEntitySource(
-            notebookModuleConfiguration.notebookFile.toVirtualFileUrl(
-                WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
-            )
-        )
-
-        val libraryDependencies = buildLibraryDependencies()
-        val dependencies = libraryDependencies + listOfNotNull(sdkDependency)
+        val virtualFile = notebookModuleConfiguration.notebookFile
+        val libraryIds = buildLibraryDependencies().toList()
 
         notebookLogger().debugInTests {
-            "Updating scripting module for notebook '${notebookModuleConfiguration.notebookFile.nameWithoutExtension}' with libraries: $libraryDependencies"
+            "Updating scripting module for notebook '${virtualFile.nameWithoutExtension}' with libraries: $libraryIds"
         }
 
-        val newEntry = ModuleEntity(moduleName, dependencies, source)
-
-        val oldEntry = mutableEntityStorage.resolve(ModuleId(moduleName))
-        if (oldEntry != null) {
-            mutableEntityStorage.modifyModuleEntity(oldEntry) {
-                this.dependencies = newEntry.dependencies
-                this.sourceRoots = newEntry.sourceRoots
-                this.name = newEntry.name
-            }
-            return
-        }
-
-        // seen firstly
-        mutableEntityStorage.addEntity(newEntry)
+        mutableEntityStorage addEntity KotlinScriptEntity(virtualFile.toVirtualFileUrl(virtualFileUrlManager), libraryIds, KotlinNotebookScriptEntitySource)
     }
 
     companion object {
-        const val NOTEBOOK_MODULE_NAME_PREFIX: String = "$KOTLIN_SCRIPTS_MODULE_NAME.Kotlin Notebooks"
-
         fun getInstance(project: Project): NotebookScriptConfigurationsManager = project.service()
     }
 }
