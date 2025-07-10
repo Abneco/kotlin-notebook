@@ -22,17 +22,16 @@ import kotlin.time.Duration.Companion.seconds
 class SocketManagerTest : KotlinNotebookUnitTestCase() {
     @Test
     fun `socket manager should be successfully cleaned up`() {
-        withZmqSockets { zmqSockets ->
-            val zmqContext = zmqSockets.context
-            getPollersFromContext(zmqContext).shouldHaveSize(2)
+        val zmqSockets = openZmqSockets()
+        val zmqContext = zmqSockets.context
+        getPollersFromContext(zmqContext).shouldHaveSize(2)
 
-            zmqSockets.close()
+        zmqSockets.close()
 
-            runBlocking {
-                waitUntil("ZMQ threads leaked", 30.seconds) {
-                    val pollers = getPollersFromContext(zmqContext)
-                    pollers.all { poller -> poller.workerThread?.isAlive == false }
-                }
+        runBlocking {
+            waitUntil("ZMQ threads leaked", 30.seconds) {
+                val pollers = getPollersFromContext(zmqContext)
+                pollers.all { poller -> poller.workerThread?.isAlive == false }
             }
         }
     }
@@ -56,6 +55,17 @@ class SocketManagerTest : KotlinNotebookUnitTestCase() {
     }
 
     private fun withZmqSockets(action: (JupyterZmqClientSockets) -> Unit) {
+        val sockets = openZmqSockets()
+        try {
+            action(sockets)
+        } finally {
+          closeWithTimeout(10_000L) {
+              sockets.close()
+          }
+        }
+    }
+
+    private fun openZmqSockets(): JupyterZmqClientSockets {
         val kernelConfig = createClientKotlinKernelConfig(
             host = "*",
             ports = createRandomZmqKernelPorts(),
@@ -64,14 +74,8 @@ class SocketManagerTest : KotlinNotebookUnitTestCase() {
             extraCompilerArgs = emptyList(),
         )
 
-        val sockets = JupyterZmqClientSocketManager(DefaultKernelLoggerFactory, side = JupyterSocketSide.IDE_CLIENT).open(kernelConfig)
-        try {
-            action(sockets)
-        } finally {
-          closeWithTimeout(10_000L) {
-              sockets.close()
-          }
-        }
+        return JupyterZmqClientSocketManager(DefaultKernelLoggerFactory, side = JupyterSocketSide.IDE_CLIENT)
+            .open(kernelConfig)
     }
 
     override fun runInDispatchThread(): Boolean = false
