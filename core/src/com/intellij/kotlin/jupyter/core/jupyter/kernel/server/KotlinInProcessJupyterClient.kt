@@ -215,6 +215,8 @@ class KotlinInProcessJupyterClient() : JupyterClient, KotlinKernelRunnableProvid
         return session
     }
 
+    fun getKernelSession(kernelId: JupyterKernelId): KotlinKernelSession? = clientSessions[kernelId]
+
     override fun dispose() {
         kernelsHandlers.clear()
         sessions.clear()

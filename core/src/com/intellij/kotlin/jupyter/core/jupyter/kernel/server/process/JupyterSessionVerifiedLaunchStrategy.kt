@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 
 import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
@@ -34,7 +35,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
 
             val kernel = (jupyterClient as? KotlinKernelRunnableProvider)?.getKernel(sessionData.kernelId)
 
-            if (verifySession(session, kernel)) {
+            if (verifySession(session, kernel, sessionData.kernelId)) {
                 session.updateNotebookMetadata()
                 kernel?.markVerified()
                 notifySessionVerified(session)
@@ -58,9 +59,15 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
 
     private suspend fun verifySession(
         session: JupyterNotebookSession,
-        kernel: KotlinKernelRunnableHandler?
+        kernel: KotlinKernelRunnableHandler?,
+        kernelId: JupyterKernelId,
     ): Boolean {
-        repeat(KERNEL_VERIFICATION_ATTEMPT_COUNT) {
+        repeat(KERNEL_VERIFICATION_ATTEMPT_COUNT) { attemptCounter ->
+            if (attemptCounter > 0) {
+                val kernelClientSession = (session.jupyterServer.client as KotlinInProcessJupyterClient)
+                    .getKernelSession(kernelId) as? KernelClientSession
+                kernelClientSession?.restartCommunication()
+            }
             val verificationResult = session.sendMessageAndWait(
                 channel = JupyterMessageChannel.SHELL,
                 messageType = MessageType.KERNEL_INFO_REQUEST,
