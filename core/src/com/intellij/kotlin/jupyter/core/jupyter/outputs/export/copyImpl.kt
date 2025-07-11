@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.outputs.export
 
 import com.intellij.kotlin.jupyter.core.util.getKotlinNotebookCacheDirectory
@@ -65,13 +65,6 @@ fun createImageDataTransferable(
     }
 }
 
-private fun isIntermediateFileWorkaroundNeeded(): Boolean {
-    // Standard copy works incorrectly on Mac, see JBR-6788,
-    // But it seemingly was fixed in the newer (15 and later) Mac versions
-    val os = OS.CURRENT
-    if (os != OS.macOS) return false
-    val version = os.version
-    val majorVersionString = version.substringBefore(".")
-    val majorVersion = majorVersionString.toIntOrNull() ?: return true
-    return majorVersion <= 14
-}
+// Standard copy works incorrectly on Mac, see JBR-6788,
+// But it seemingly was fixed in the newer (15 and later) Mac versions
+private fun isIntermediateFileWorkaroundNeeded(): Boolean = OS.CURRENT == OS.macOS && !OS.CURRENT.isAtLeast(15, 0)
