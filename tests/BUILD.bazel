@@ -70,6 +70,9 @@ jvm_library(
     "@community//plugins/kotlin/base/scripting.k1",
     "@community//plugins/kotlin/base/scripting.k1:scripting.k1_test_lib",
     "//plugins/jupyter/execution",
+    "@community//plugins/kotlin/idea/tests:tests_test_lib",
+    "@community//plugins/kotlin/base/util",
+    "@community//plugins/kotlin/base/util:util_test_lib",
   ],
   runtime_deps = ["//:idea-ultimate-main"]
 )

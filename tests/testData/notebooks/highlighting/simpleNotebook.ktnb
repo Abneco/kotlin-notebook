@@ -1,0 +1,7 @@
+#%%
+val a = 1234
+fun <T> id(x: T) = x
+#%%
+class Foo {
+  val z = 1
+}

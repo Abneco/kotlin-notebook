@@ -1,0 +1,6 @@
+#%%
+// org.jetbrains.kotlin.idea.k2.codeinsight.intentions.AddNamesToCallArgumentsIntention
+fun foo(s: String, b: Boolean) {}
+fun <T> id(x: T) = x
+
+<caret>foo(id("42"))

@@ -8,7 +8,7 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 
-@TestDataPath("\$CONTENT_ROOT/testData/notebooks/highlighting")
+@TestDataPath($$"$CONTENT_ROOT/testData/notebooks/highlighting")
 class NotebookBaseHighlightingTest: KotlinNotebookTestCase() {
 
     @Test

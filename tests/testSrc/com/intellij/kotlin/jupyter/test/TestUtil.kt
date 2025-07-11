@@ -50,7 +50,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
-import org.intellij.lang.annotations.Language
 import org.jetbrains.jupyter.builder.NotebookBuilder
 import org.jetbrains.jupyter.builder.buildNotebook
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
@@ -288,6 +287,3 @@ fun buildKotlinNotebookFile(name: String, build: NotebookBuilder.() -> Unit): Fi
     return notebookFile
 }
 
-fun NotebookBuilder.kotlinCell(@Language("kotlin") kotlin: String) {
-    codeCell(kotlin)
-}

@@ -22,7 +22,7 @@ import org.junit.Test
 import java.net.ServerSocket
 
 
-@TestDataPath("\$CONTENT_ROOT/testData/notebooks/execution")
+@TestDataPath($$"$CONTENT_ROOT/testData/notebooks/execution")
 @RunModeAwareTest
 class KotlinNotebookExecutionTest : KotlinNotebookTestCase() {
 

@@ -1,12 +1,18 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test
 
+import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
+import com.intellij.kotlin.jupyter.test.notebook.codeinsight.intentions.IntentionInvocationHandler
 import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
 import com.intellij.kotlin.jupyter.test.runners.TestContext
+import com.intellij.kotlin.jupyter.test.runners.findAnnotationInHierarchy
+import com.intellij.kotlin.jupyter.test.util.data.TEMPLATE_DATA_EXTENSION
+import com.intellij.kotlin.jupyter.test.util.fromTemplateFile
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -22,6 +28,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Disposer.newDisposable
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.resolve.FileContextUtil
 import com.intellij.testFramework.IdeaTestUtil
@@ -29,18 +36,24 @@ import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.TestLoggerFactory
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.intellij.util.containers.forEachGuaranteed
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.jupyter.builder.NotebookBuilder
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
+import org.jetbrains.kotlin.idea.base.test.KotlinTestHelpers
+import org.jetbrains.kotlin.idea.intentions.invoke
 import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
 import org.jetbrains.kotlin.idea.test.setUpWithKotlinPlugin
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.test.TestMetadata
 import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.tests.withSwingMarkdownRenderMode
 import org.junit.runner.RunWith
 import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.Path
 
 /**
  * Base class for all notebook tests. The entry point is the [runNotebookTest] method which provides
@@ -62,6 +75,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
 
     private var notebookRunner: NotebookTestBuilder? = null
     override lateinit var originalVirtualFile: VirtualFile
+    protected lateinit var intentionInvocationHandler: IntentionInvocationHandler
 
     override val pluginMode: KotlinPluginMode
         get() {
@@ -72,7 +86,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
             }
         }
 
-    private val backedNotebookFile: BackedNotebookVirtualFile
+    protected val backedNotebookFile: BackedNotebookVirtualFile
         get() = when (val file = myFixture.kotlinNotebookFile) {
             is BackedNotebookVirtualFile -> file
             else -> error("Null notebook file found for ${myFixture.file?.virtualFile}")
@@ -81,6 +95,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
     override fun setUp() {
         super.setUp()
         KotlinNotebookLoggerFactory.enableUnitTestMode()
+        intentionInvocationHandler = IntentionInvocationHandler(myFixture)
     }
 
     override fun tearDown() {
@@ -130,11 +145,62 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
     }
 
     override fun getBasePath(): @NonNls String {
-        val testDataPath = this::class.java.getAnnotation(TestDataPath::class.java)?.value
-        val testMetadataPath = this::class.java.getAnnotation(TestMetadata::class.java)?.value
+        val testDataPath = this::class.java.findAnnotationInHierarchy<TestDataPath>()?.value
+        val testMetadataPath = this::class.java.findAnnotationInHierarchy<TestMetadata>()?.value
         return FileUtil.toSystemIndependentName(listOfNotNull(testDataPath, testMetadataPath).joinToString(File.separator))
             .replace(CONTENT_ROOT_VARIABLE, CONTENT_ROOT)
             .replace(PROJECT_ROOT_VARIABLE, PROJECT_ROOT)
+    }
+
+    protected fun getTestFile(): File {
+        // we're using TestCase.getName() to get the function name, should be safe since the test name isn't customized anywhere
+        val testMetadata = this::class.java.getMethod(name).getAnnotation(TestMetadata::class.java)
+        return if (testMetadata != null) {
+            File(testDataPath, testMetadata.value)
+        } else {
+            val completePath = computeCompletePathFromParentToFile(
+                "${getTestName(true)}.$TEMPLATE_DATA_EXTENSION"
+            )
+            if (completePath == null) {
+                error("Can't find the requested file '${getTestName(true)}' with parent path: $testDataPath")
+            }
+            File(completePath.toUri())
+        }
+    }
+
+    fun getDataFile(fileName: String): File {
+        val pathToFile = computeCompletePathFromParentToFile(fileName) ?: error("File $fileName not found")
+        return File(pathToFile.toUri())
+    }
+
+    fun invokeIntentionsInInjectedFile(ktFile: KtFile) {
+        intentionInvocationHandler.invokeIntentionsInFile(ktFile)
+    }
+
+    fun invokeIntention(intention: IntentionAction) {
+        val injectedFile = runReadAction {
+            getKtFileUnderCaret()
+        } ?: error("No KtFile found at caret position ${editor.caretModel.offset}")
+
+        intentionInvocationHandler.invokeIntention(injectedFile, intention)
+    }
+
+    /**
+     * Performs search from a top-level directory inside child directories for a particular file.
+     * Returns immediately if the search is not necessary.
+     */
+    private fun computeCompletePathFromParentToFile(fileName: String): Path? {
+        val file = File(testDataPath, fileName)
+        return if (file.exists() && file.isFile) {
+            Path(file.absolutePath)
+        } else {
+            findPathFromParentToFile(fileName)
+        }
+    }
+
+    private fun findPathFromParentToFile(fileName: String): Path? {
+        val file = File(testDataPath)
+        return file.walkTopDown().firstOrNull { it.name == fileName }?.toPath()
     }
 
     /**
@@ -160,6 +226,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
      * The filename is determined by either [TestMetadata] annotation on the test function,
      * or from the test name (discarding the "test" prefix if present and lowercasing the first letter).
      * The directory to search for this file is specified by the [TestDataPath] annotation on the test class.
+     * Once template file is found, [NotebookBuilder] is used to construct the real notebook.
      *
      * @param setupScriptDependencies If `true` test will only continue once script dependencies are available on the classpath.
      * If `false` these are loaded asynchronously which can affect functionality like highlighting.
@@ -167,13 +234,10 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
      * @see [com.intellij.testFramework.fixtures.CodeInsightTestFixture.file].
      */
     fun runNotebookTest(setupScriptDependencies: Boolean = true, test: NotebookTestBuilder.() -> Unit) {
-        // we're using TestCase.getName() to get the function name, should be safe since the test name isn't customized anywhere
-        val testMetadata = this::class.java.getMethod(name).getAnnotation(TestMetadata::class.java)
-        val testFile = if (testMetadata != null) {
-            File(testDataPath, testMetadata.value)
-        } else {
-            File(testDataPath, "${getTestName(true)}.ipynb")
-        }
+        val testFile = buildKotlinNotebookFile(
+            name = getTestName(true),
+            build = { fromTemplateFile(getTestFile()) }
+        )
         runNotebookTestInternal(
             testFile = testFile,
             setupScriptDependencies = setupScriptDependencies,
@@ -203,6 +267,15 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         Disposer.dispose(testCaseDisposable)
     }
 
+    protected open fun additionalSetup(builder: NotebookTestBuilder) {
+        KotlinTestHelpers.registerChooserInterceptor(myFixture.testRootDisposable)
+    }
+
+    protected fun assertTestFileHasCaret() {
+        val rawText =  FileUtil.loadFile(getTestFile(), true)
+        assertTrue("\"<caret>\" is missing in file \"${file.name}\"", rawText.contains("<caret>"))
+    }
+
     private fun runNotebookTestInternal(
         testFile: File,
         setupScriptDependencies: Boolean,
@@ -217,6 +290,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         withSwingMarkdownRenderMode {
             val psiTestFile = configureTestFile(testFile)
             notebookRunner = NotebookTestBuilder(project, psiTestFile, myFixture, this)
+            additionalSetup(notebookRunner!!)
             if (setupScriptDependencies) {
                 notebookRunner!!.setupScriptDependencies()
             }
@@ -253,6 +327,14 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
             setUpProjectSDK()
         }
         return notebookFile
+    }
+
+    @RequiresReadLock
+    protected fun getKtFileUnderCaret(): KtFile? {
+        val hostFile = backedNotebookFile.file.findPsiFile(project) ?: return null
+        return InjectedLanguageManager.getInstance(project)
+            .findInjectedElementAt(hostFile, myFixture.caretOffset)
+            ?.containingFile as? KtFile
     }
 
     // During tests where the kernel runs in its own process, it will pick up the Java version from

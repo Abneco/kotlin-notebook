@@ -1,0 +1,5 @@
+#%%
+%use serialization
+#%%
+@Serializable
+class A(val b: Int<caret>)

@@ -1,0 +1,6 @@
+#%%
+while(!Thread.interrupted()) {
+
+}
+throw RuntimeException("The execution was interrupted")
+#%%

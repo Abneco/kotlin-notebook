@@ -1,0 +1,6 @@
+#%%
+%use serialization
+@Serializable class Test(val x: Int)
+#%%
+Json.encodeToString(Test(3))
+#%%

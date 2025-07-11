@@ -1,0 +1,1 @@
+fun <T> id(x: T): T = x
