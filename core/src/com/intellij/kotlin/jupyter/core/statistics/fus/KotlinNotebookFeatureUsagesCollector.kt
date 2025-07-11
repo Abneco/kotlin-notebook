@@ -35,21 +35,38 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
 
     @Suppress("CompanionObjectInExtension")
     companion object {
-        @JvmStatic private val GROUP = EventLogGroup("kotlin.notebook", 7)
+        @JvmStatic
+        private val GROUP = EventLogGroup("kotlin.notebook", 7)
 
-        @JvmStatic private val CELLS_COUNT = EventFields.RoundedInt("cells_count")
-        @JvmStatic private val CODE_CELLS_COUNT = EventFields.RoundedInt("cells_code_count")
-        @JvmStatic private val MARKDOWN_CELLS_COUNT = EventFields.RoundedInt("cells_markdown_count")
+        @JvmStatic
+        private val CELLS_COUNT = EventFields.RoundedInt("cells_count")
 
-        @JvmStatic private val NOTEBOOK_LANGUAGE = EventFields.Language
-        @JvmStatic private val NOTEBOOK_MODE = EventFields.Enum<NotebookMode>("notebook_mode") { it.id }
+        @JvmStatic
+        private val CODE_CELLS_COUNT = EventFields.RoundedInt("cells_code_count")
 
-        @JvmStatic private val INCLUDED_PROJECT_MODULES_COUNT = EventFields.RoundedInt("project_sources_v2_count")
-        @JvmStatic private val INCLUDED_PROJECT_LIBRARIES_COUNT = EventFields.RoundedInt("project_libraries_v2_count")
-        @JvmStatic private val ARE_PROJECT_SOURCE_DEPENDENCIES_INCLUDED = EventFields.Boolean("project_sources_v1_included")
-        @JvmStatic private val ARE_PROJECT_LIBRARY_DEPENDENCIES_INCLUDED = EventFields.Boolean("project_libraries_v1_included")
+        @JvmStatic
+        private val MARKDOWN_CELLS_COUNT = EventFields.RoundedInt("cells_markdown_count")
 
-        @JvmStatic private val NOTEBOOK_OPEN_EVENT = GROUP.registerVarargEvent(
+        @JvmStatic
+        private val NOTEBOOK_LANGUAGE = EventFields.Language
+
+        @JvmStatic
+        private val NOTEBOOK_MODE = EventFields.Enum<NotebookMode>("notebook_mode") { it.id }
+
+        @JvmStatic
+        private val INCLUDED_PROJECT_MODULES_COUNT = EventFields.RoundedInt("project_sources_v2_count")
+
+        @JvmStatic
+        private val INCLUDED_PROJECT_LIBRARIES_COUNT = EventFields.RoundedInt("project_libraries_v2_count")
+
+        @JvmStatic
+        private val ARE_PROJECT_SOURCE_DEPENDENCIES_INCLUDED = EventFields.Boolean("project_sources_v1_included")
+
+        @JvmStatic
+        private val ARE_PROJECT_LIBRARY_DEPENDENCIES_INCLUDED = EventFields.Boolean("project_libraries_v1_included")
+
+        @JvmStatic
+        private val NOTEBOOK_OPEN_EVENT = GROUP.registerVarargEvent(
             "notebook.opened",
             CELLS_COUNT,
             CODE_CELLS_COUNT,
@@ -88,6 +105,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
                     JupyterCellType.CHECKBOX,
                     JupyterCellType.DROPDOWN,
                     JupyterCellType.TEXT_FIELD,
+                    JupyterCellType.VISUALIZATION,
                     JupyterCellType.NUMBER_FIELD -> {
                         ++codeCellsCount
                     }
@@ -116,12 +134,20 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             OK, COMPILATION_ERROR, RUNTIME_ERROR, ABORTED
         }
 
-        @JvmStatic private val EXECUTION_STATUS = EventFields.Enum<ExecutionStatus>("cell_execution_status")
-        @JvmStatic private val CLASSPATH_ENTRIES_COUNT = EventFields.RoundedInt("classpath_entries_count")
-        @JvmStatic private val EXECUTION_TIME = EventFields.DurationMs
-        @JvmStatic private val EXECUTION_COUNT = EventFields.RoundedInt("executed_cells_count")
+        @JvmStatic
+        private val EXECUTION_STATUS = EventFields.Enum<ExecutionStatus>("cell_execution_status")
 
-        @JvmStatic private val EXECUTION_RESULT_EVENT = GROUP.registerVarargEvent(
+        @JvmStatic
+        private val CLASSPATH_ENTRIES_COUNT = EventFields.RoundedInt("classpath_entries_count")
+
+        @JvmStatic
+        private val EXECUTION_TIME = EventFields.DurationMs
+
+        @JvmStatic
+        private val EXECUTION_COUNT = EventFields.RoundedInt("executed_cells_count")
+
+        @JvmStatic
+        private val EXECUTION_RESULT_EVENT = GROUP.registerVarargEvent(
             "cell.result.received",
             EXECUTION_STATUS,
             CLASSPATH_ENTRIES_COUNT,
@@ -129,9 +155,11 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             EXECUTION_COUNT,
         )
 
-        @JvmStatic private val LIBRARY_NAME = EventFields.StringValidatedByCustomRule("library_name", LibraryNameValidationRule::class.java)
+        @JvmStatic
+        private val LIBRARY_NAME = EventFields.StringValidatedByCustomRule("library_name", LibraryNameValidationRule::class.java)
 
-        @JvmStatic private val LIBRARY_USED_EVENT = GROUP.registerVarargEvent(
+        @JvmStatic
+        private val LIBRARY_USED_EVENT = GROUP.registerVarargEvent(
             "library.used",
             LIBRARY_NAME,
             EXECUTION_COUNT,
@@ -143,7 +171,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             executionDurationMs: Long,
             metadata: EvaluatedSnippetMetadata
         ) {
-            val status = when(message.status) {
+            val status = when (message.status) {
                 JupyterExecutionStatus.OK -> ExecutionStatus.OK
                 JupyterExecutionStatus.ERROR -> {
                     val errorName = message.messageContent["ename"].asText("")
@@ -202,26 +230,29 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
         }
 
         private val mimeToOutputType = mapOf(
-          "text/plain" to OutputType.PLAIN_TEXT,
-          "text/html" to OutputType.HTML,
-          "text/markdown" to OutputType.MARKDOWN,
-          "application/json" to OutputType.JSON,
-          "image/png" to OutputType.RASTER_IMAGE,
-          "image/jpeg" to OutputType.RASTER_IMAGE,
-          "image/bmp" to OutputType.RASTER_IMAGE,
-          "image/svg+xml" to OutputType.VECTOR_IMAGE,
-          LETS_PLOT_MIME to OutputType.SWING_LETS_PLOT,
-          KOTLIN_DATAFRAME_MIME to OutputType.SWING_DATAFRAME,
+            "text/plain" to OutputType.PLAIN_TEXT,
+            "text/html" to OutputType.HTML,
+            "text/markdown" to OutputType.MARKDOWN,
+            "application/json" to OutputType.JSON,
+            "image/png" to OutputType.RASTER_IMAGE,
+            "image/jpeg" to OutputType.RASTER_IMAGE,
+            "image/bmp" to OutputType.RASTER_IMAGE,
+            "image/svg+xml" to OutputType.VECTOR_IMAGE,
+            LETS_PLOT_MIME to OutputType.SWING_LETS_PLOT,
+            KOTLIN_DATAFRAME_MIME to OutputType.SWING_DATAFRAME,
         )
 
-        @JvmStatic private val OUTPUT_UPDATED_EVENT = GROUP.registerEvent(
+        @JvmStatic
+        private val OUTPUT_UPDATED_EVENT = GROUP.registerEvent(
             "output.updated",
             EventFields.StringList("output_types", OutputType.entries.map { it.toString() })
         )
 
         fun registerOutputUpdated(project: Project, output: JupyterOutput) {
-            val outputTypes: List<OutputType> = when(output) {
-                is JupyterErrorOutput -> { listOf(OutputType.ERROR) }
+            val outputTypes: List<OutputType> = when (output) {
+                is JupyterErrorOutput -> {
+                    listOf(OutputType.ERROR)
+                }
                 is JupyterStreamOutput -> {
                     val type = if (output.name == "stdout") {
                         OutputType.STREAM_TEXT
@@ -243,7 +274,8 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             OUTPUT_UPDATED_EVENT.log(project, outputTypes.map { it.toString() })
         }
 
-        @JvmStatic private val KERNEL_RESTARTED_EVENT = GROUP.registerEvent(
+        @JvmStatic
+        private val KERNEL_RESTARTED_EVENT = GROUP.registerEvent(
             "kernel.restarted",
             CELLS_COUNT,
             CLASSPATH_ENTRIES_COUNT,
@@ -257,7 +289,8 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             KERNEL_RESTARTED_EVENT.log(project, cellCountBeforeRestart, classpathSizeBeforeRestart)
         }
 
-        @JvmStatic private val ALL_CELLS_RUN_EVENT = GROUP.registerEvent(
+        @JvmStatic
+        private val ALL_CELLS_RUN_EVENT = GROUP.registerEvent(
             "notebook.cells.all.run",
             CELLS_COUNT,
         )
@@ -266,7 +299,8 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             ALL_CELLS_RUN_EVENT.log(project, cellCountToRun)
         }
 
-        @JvmStatic private val KOTLIN_NOTEBOOK_WELCOME_SCREEN_TAB_OPENED_EVENT = GROUP.registerEvent(
+        @JvmStatic
+        private val KOTLIN_NOTEBOOK_WELCOME_SCREEN_TAB_OPENED_EVENT = GROUP.registerEvent(
             "welcome.screen.tab.opened"
         )
 
@@ -274,9 +308,11 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             KOTLIN_NOTEBOOK_WELCOME_SCREEN_TAB_OPENED_EVENT.log(null)
         }
 
-        @JvmStatic private val IDE_ENTRY_TYPE = EventFields.Enum<WelcomeScreenIdeEntryType>("ide_entry_type")
+        @JvmStatic
+        private val IDE_ENTRY_TYPE = EventFields.Enum<WelcomeScreenIdeEntryType>("ide_entry_type")
 
-        @JvmStatic private val ENTERED_IDE_FROM_KOTLIN_NOTEBOOK_WELCOME_SCREEN_EVENT = GROUP.registerEvent(
+        @JvmStatic
+        private val ENTERED_IDE_FROM_KOTLIN_NOTEBOOK_WELCOME_SCREEN_EVENT = GROUP.registerEvent(
             "welcome.screen.ide.entered",
             IDE_ENTRY_TYPE,
         )
