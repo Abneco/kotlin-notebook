@@ -4,7 +4,8 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-const val KERNEL_VERIFICATION_ATTEMPT_COUNT: Int = 3
+const val KERNEL_VERIFICATION_ATTEMPTS_COUNT: Int = 3
+const val KERNEL_VERIFICATION_RECONNECT_ATTEMPTS_COUNT: Int = 2
 val KERNEL_VERIFICATION_ATTEMPT_TIMEOUT: Duration = 10.seconds
 val KERNEL_UPDATE_FILE_PATH_TIMEOUT: Duration = 5.seconds
 val KERNEL_KILL_WAIT_TIMEOUT: Duration = 15.seconds

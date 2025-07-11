@@ -8,7 +8,6 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMe
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionLaunchStrategy
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KERNEL_VERIFICATION_ATTEMPT_COUNT
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KERNEL_VERIFICATION_ATTEMPT_TIMEOUT
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinInProcessJupyterClient
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelEvent
@@ -23,13 +22,16 @@ import com.intellij.openapi.application.ApplicationManager
 import org.jetbrains.kotlinx.jupyter.messaging.KernelInfoRequest
 import org.jetbrains.kotlinx.jupyter.messaging.MessageType
 
-abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: Int) : JupyterSessionLaunchStrategy {
+abstract class JupyterSessionVerifiedLaunchStrategy(
+    private val verificationAttemptsCount: Int,
+    private val reconnectAttemptsCount: Int,
+) : JupyterSessionLaunchStrategy {
     override suspend fun createAndVerifySession(
         jupyterClient: JupyterClient,
         sessionDataFactory: suspend JupyterClient.() -> JupyterSessionData,
         sessionFactory: (JupyterSessionData) -> JupyterNotebookSession?
     ): JupyterNotebookSession? {
-        repeat(attemptsCount) {
+        repeat(verificationAttemptsCount) {
             val sessionData = jupyterClient.sessionDataFactory()
             val session = sessionFactory(sessionData) ?: return null
 
@@ -62,7 +64,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(private val attemptsCount: I
         kernel: KotlinKernelRunnableHandler?,
         kernelId: JupyterKernelId,
     ): Boolean {
-        repeat(KERNEL_VERIFICATION_ATTEMPT_COUNT) { attemptCounter ->
+        repeat(reconnectAttemptsCount) { attemptCounter ->
             if (attemptCounter > 0) {
                 val kernelClientSession = (session.jupyterServer.client as KotlinInProcessJupyterClient)
                     .getKernelSession(kernelId) as? KernelClientSession
