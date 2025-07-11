@@ -55,7 +55,6 @@ class EmbeddedKotlinKernelSession(
             DefaultResolutionInfoProviderFactory,
             loggerFactory,
             createLibraryHttpUtil(loggerFactory, IdeaHttpClient),
-            kernelConfig.ownParams.homeDir,
             kernelRunMode = IntellijProcessKernelRunMode(intellijDataProvider),
         )
 
