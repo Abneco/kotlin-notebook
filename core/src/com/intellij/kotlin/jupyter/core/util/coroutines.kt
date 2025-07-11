@@ -63,22 +63,6 @@ sealed class KotlinNotebookPluginScope : CoroutineScope, Disposable {
         }
     }
 
-    /**
-     * Schedule and waits for execution of the [action] inside current coroutine.
-     * Note that a job may be canceled.
-     * Throws an exception if it happened inside [action].
-     *
-     * @param timeout - timeout in milliseconds
-     */
-    inline fun <T> invokeAndWait(
-        timeout: Duration? = null,
-        crossinline action: suspend (CoroutineScope).() -> T?
-    ): T? {
-        return invokeAndWait(timeout, action) { error ->
-            throw error
-        }
-    }
-
     companion object {
         /**
          * Schedules a coroutine to run on the Event Dispatch Thread.
