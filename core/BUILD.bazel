@@ -121,6 +121,7 @@ jvm_library(
     "@lib//:slf4j-api",
     "@community//plugins/kotlin/base/indices",
     "//plugins/jupyter/execution",
+    "@community//plugins/kotlin/code-insight/api",
     ":scripting_provided",
     ":java-psi_provided",
     ":core_provided",

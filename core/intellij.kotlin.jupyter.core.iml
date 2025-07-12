@@ -151,5 +151,6 @@
     <orderEntry type="library" name="slf4j-api" level="project" />
     <orderEntry type="module" module-name="kotlin.base.indices" />
     <orderEntry type="module" module-name="intellij.jupyter.execution" />
+    <orderEntry type="module" module-name="kotlin.code-insight.api" />
   </component>
 </module>

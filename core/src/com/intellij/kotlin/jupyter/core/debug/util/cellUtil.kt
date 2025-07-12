@@ -1,21 +1,19 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.debug.util
 
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
-import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 
+const val KOTLIN_NOTEBOOK_BASE_CLASS_SUFFIX: String = "_jupyter"
 
 class ExecutedPresentCellInfo(psiFile: PsiFile?) {
     private val knownCellClasses = mutableMapOf<String, JupyterPsiCell>()
-    val cellOrdinalToClassName = mutableMapOf<Int, Set<String>>()
-    val classNameToCellOrdinal = mutableMapOf<String, Int>()
+    val cellOrdinalToClassName: MutableMap<Int, Set<String>> = mutableMapOf()
+    val classNameToCellOrdinal: MutableMap<String, Int> = mutableMapOf()
     var cells: List<JupyterPsiCell>? = null
 
     var jupyterFile: PsiFile? = psiFile
@@ -78,7 +76,7 @@ class ExecutedPresentCellInfo(psiFile: PsiFile?) {
     companion object {
         private val LOG = notebookLogger()
         // curr, prev
-        val NOTEBOOK_CELL_INTERNAL_INFO_KEY = Key.create<Pair<String, String?>>("NOTEBOOK_CELL_INTERNAL_INFO_KEY")
+        private val NOTEBOOK_CELL_INTERNAL_INFO_KEY = Key.create<Pair<String, String?>>("NOTEBOOK_CELL_INTERNAL_INFO_KEY")
 
         // returns previous known class if any
         fun updateCellInjectedInfo(cell: JupyterPsiCell, execNum: Int): String? {
@@ -86,17 +84,10 @@ class ExecutedPresentCellInfo(psiFile: PsiFile?) {
             val snippedName = execNum.toCompiledCellSnippedName() // Line_$N_jupyter
             if (was?.first == snippedName) return was.first
             cell.putUserData(NOTEBOOK_CELL_INTERNAL_INFO_KEY,  Pair(snippedName, was?.first))
-            LOG.debug("Putting into cell: \n ${cell.text}\n info: Line_${execNum}_jupyter; was: $was")
+            LOG.debug("Putting into cell: \n ${cell.text}\n info: ${execNum.toCompiledCellSnippedName()}; was: $was")
             return was?.first
         }
     }
 }
 
-fun Int.toCompiledCellSnippedName(): String = "Line_${this}_jupyter"
-
-fun JupyterPsiCell.updateInfoBeforeExecution(project: Project, virtualFile: BackedNotebookVirtualFile, cellOrdinal: Int?) {
-    runReadAction {
-        NotebookStructureTrackerService.getForFile(project, virtualFile)
-            .updateCellInformationBeforeExecution(this@updateInfoBeforeExecution, cellOrdinal)
-    }
-}
+fun Int.toCompiledCellSnippedName(): String = "Line_${this}$KOTLIN_NOTEBOOK_BASE_CLASS_SUFFIX"

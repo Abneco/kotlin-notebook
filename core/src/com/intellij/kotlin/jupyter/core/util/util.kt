@@ -5,6 +5,7 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
+import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
@@ -107,6 +108,19 @@ internal fun PsiElement?.isInsideKotlinNotebookFile(): Boolean {
     } ?: return false
     return virtualFile.isKotlinNotebook
 }
+
+/**
+ * Returns true only for [KtFile]s injected into Kotlin notebooks
+ */
+val PsiElement.isKotlinNotebookCodeCell: Boolean get() {
+    if (this !is KtFile || !isScript()) return false
+
+    val myVirtualFile = virtualFile ?: originalFile.virtualFile
+    return (myVirtualFile == null || myVirtualFile is VirtualFileWindow || myVirtualFile is LightVirtualFile) &&
+            name.endsWith(JupyterCompilerService.getInstance(project).fileSuffix)
+}
+
+val PsiElement.isInsideKotlinNotebookCodeCell: Boolean get() = containingFile.isKotlinNotebookCodeCell
 
 internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
     val editor = scope.project.getCurrentEditorOrNull() ?: return null
