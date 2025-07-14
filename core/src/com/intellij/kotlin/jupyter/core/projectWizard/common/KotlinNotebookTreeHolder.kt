@@ -146,6 +146,7 @@ internal class KotlinNotebookTreeHolder {
         tree.rowHeight = 0
         tree.border = JBUI.Borders.empty(4, 0)
         tree.emptyText.text = KotlinNotebookBundle.message("kotlin.notebook.no.recent.notebooks.found")
+        tree.accessibleContext.accessibleName = KotlinNotebookBundle.message("kotlin.notebook.recent.notebooks.tree.accessible.name")
         setupTreeProperties()
         setupTreeRenderer()
         setupMouseListener()
