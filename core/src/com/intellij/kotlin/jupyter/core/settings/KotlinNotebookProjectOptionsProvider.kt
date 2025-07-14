@@ -31,10 +31,10 @@ class KotlinNotebookProjectOptionsProvider :
         State::kernelVersion, internalToExternal = { it.orEmpty() }
     ).onChange(Listener::onKernelVersionChanged)
 
-    var ignoreOutdatedKernelVersion by prop(State::ignoreOutdatedKernelVersion)
+    var ignoreOutdatedKernelVersion: Boolean by prop(State::ignoreOutdatedKernelVersion)
         internal set
 
-    val jdk get() = KotlinNotebookJdkOption.fromName(jdkName)
+    val jdk: KotlinNotebookJdkOption get() = KotlinNotebookJdkOption.fromName(jdkName)
     internal var jdkName: String? by prop(
         State::jdkName
     ).onChange(Listener::onJdkChanged)
@@ -45,41 +45,41 @@ class KotlinNotebookProjectOptionsProvider :
         { it?.toCanonicalString() },
     ).onChange(Listener::onJvmTargetForSnippetsChanged)
 
-    var heapMaxLimitInMib by prop(State::heapMaxLimitInMib)
+    var heapMaxLimitInMib: Int by prop(State::heapMaxLimitInMib)
         internal set
-    var extraJvmArguments by prop(State::extraJvmArguments)
+    var extraJvmArguments: MutableList<String> by prop(State::extraJvmArguments)
         internal set
-    var extraCompilerArguments by prop(
+    var extraCompilerArguments: MutableList<String> by prop(
         State::extraCompilerArguments
     ).onChange(Listener::onExtraCompilerArgumentsChanged)
         internal set
-    var extraEnvironmentVariables by prop(State::extraEnvironmentVariables)
+    var extraEnvironmentVariables: MutableMap<String, String> by prop(State::extraEnvironmentVariables)
         internal set
 
-    var shouldLimitTypeHintsByActiveCell by prop(State::shouldLimitTypeHintsByActiveCell)
+    var shouldLimitTypeHintsByActiveCell: Boolean by prop(State::shouldLimitTypeHintsByActiveCell)
         internal set
-    var shouldAddProjectLibrariesToClasspath by prop(State::shouldAddProjectLibrariesToClasspath)
+    var shouldAddProjectLibrariesToClasspath: Boolean by prop(State::shouldAddProjectLibrariesToClasspath)
         internal set
-    var shouldShowNotebookVariables by prop(State::shouldShowNotebookVariables)
+    var shouldShowNotebookVariables: Boolean by prop(State::shouldShowNotebookVariables)
         internal set
 
     class State : BaseState() {
-        var kernelVersion by string(currentKernelVersion.toMavenVersion())
-        var ignoreOutdatedKernelVersion by property(false)
-        var jdkName by string(null)
-        var jvmTargetForSnippets by string(null)
-        var heapMaxLimitInMib by property(DEFAULT_HEAP_MAX_LIMIT_MIB)
-        var extraJvmArguments by list<String>()
-        var extraCompilerArguments by list<String>()
-        var extraEnvironmentVariables by linkedMap<String, String>()
+        var kernelVersion: String? by string(currentKernelVersion.toMavenVersion())
+        var ignoreOutdatedKernelVersion: Boolean by property(false)
+        var jdkName: String? by string(null)
+        var jvmTargetForSnippets: String? by string(null)
+        var heapMaxLimitInMib: Int by property(DEFAULT_HEAP_MAX_LIMIT_MIB)
+        var extraJvmArguments: MutableList<String> by list()
+        var extraCompilerArguments: MutableList<String> by list()
+        var extraEnvironmentVariables: MutableMap<String, String> by linkedMap()
 
-        var shouldLimitTypeHintsByActiveCell by property(false)
+        var shouldLimitTypeHintsByActiveCell: Boolean by property(false)
 
         // default settings for new notebooks
         var shouldAddProjectLibrariesToClasspath: Boolean by property(
             defaultValue = KotlinNotebookDependenciesProperty.defaultValue == KotlinNotebookDependencies.AllLibraries
         )
-        var shouldShowNotebookVariables by property(false)
+        var shouldShowNotebookVariables: Boolean by property(false)
     }
 
     override fun dispose() {}
