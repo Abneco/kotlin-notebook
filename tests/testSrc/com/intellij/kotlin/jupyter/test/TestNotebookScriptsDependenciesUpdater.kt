@@ -20,7 +20,7 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Options to invoke [setUpDependenciesSynchronously] with.
+ * Options to invoke [TestNotebookScriptsDependenciesUpdater.setUpDependenciesSynchronously] with.
  * [NotebookFileFocused] should be used when a notebook file is opened in the Editor,
  * while [FileAgnostic] targets no file, but a project.
  */
@@ -54,7 +54,7 @@ class TestNotebookScriptsDependenciesUpdater(
     }
 
     // We do not fully control when this flow is subscribed to, so make sure to cache all values.
-    private val scriptsUpdateCompleted = MutableSharedFlow<Boolean>(extraBufferCapacity = Int.MAX_VALUE)
+    private val scriptsUpdateCompleted = MutableSharedFlow<Boolean>(replay = Int.MAX_VALUE)
     private val scriptingUpdatesLeft = AtomicInteger(cellsToExecute)
 
     /**
