@@ -1,7 +1,6 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
-import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts.ARTIFACTS_COMMON_PREFIX
 import com.intellij.kotlin.jupyter.k2.project.model.createOrUpdateLibraryForNotebookDependencies
 import com.intellij.kotlin.jupyter.k2.project.model.toK2RuntimeDependencyLibraryName
 import com.intellij.openapi.project.Project

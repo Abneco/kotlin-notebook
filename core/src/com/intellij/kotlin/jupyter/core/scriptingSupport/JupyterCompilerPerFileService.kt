@@ -267,7 +267,7 @@ class JupyterCompilerPerFileService(
             version = version
         )
         val sourcesJars = mavenArtifactsDownloader.downloadArtifactAsync(
-            KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED_SOURCES,
+            KotlinNotebookMavenArtifacts.IDE_CLASSPATH_SHADOWED_SOURCES,
             version = version
         )
 

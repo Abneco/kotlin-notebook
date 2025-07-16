@@ -20,7 +20,7 @@ class ArtifactsDownloaderTest: KotlinNotebookUnitTestCase() {
 
     override fun setUp() {
         super.setUp()
-        setKernelVersion("0.12.0-117")
+        setKernelVersion("0.14.1-541")
     }
 
     override fun tearDown() {

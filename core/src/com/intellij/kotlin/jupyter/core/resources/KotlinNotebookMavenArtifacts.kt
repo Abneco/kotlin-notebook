@@ -10,18 +10,12 @@ object KotlinNotebookMavenArtifacts {
         return this
     }
 
-    val ARTIFACTS_COMMON_PREFIX: String by lazy {
-        all().map { it.artifact }.reduce { acc, string ->
-            acc.commonPrefixWith(string)
-        }
-    }
-
-    val KERNEL_SHADOWED = jupyterKernelLibrary("kernel-shadowed").add()
-    val SCRIPT_CLASSPATH_SHADOWED = jupyterKernelLibrary("script-classpath-shadowed").add()
-    val SCRIPT_CLASSPATH_SHADOWED_ZIP = jupyterKernelLibrary("script-classpath-shadowed", ArtifactKind.ZIP).add()
-    val SCRIPT_CLASSPATH_SHADOWED_SOURCES = jupyterKernelLibrary("script-classpath-shadowed", ArtifactKind.SOURCES).add()
-    val IDE_CLASSPATH_SHADOWED = jupyterKernelLibrary("ide-classpath-shadowed").add()
-    val EMBEDDED_KERNEL = jupyterKernelLibrary("embeddable-kernel").add()
+    val KERNEL_SHADOWED: ArtifactDescriptionWithKind = jupyterKernelLibrary("kernel-shadowed").add()
+    val SCRIPT_CLASSPATH_SHADOWED: ArtifactDescriptionWithKind = jupyterKernelLibrary("script-classpath-shadowed").add()
+    val SCRIPT_CLASSPATH_SHADOWED_ZIP: ArtifactDescriptionWithKind = jupyterKernelLibrary("script-classpath-shadowed", ArtifactKind.ZIP).add()
+    val IDE_CLASSPATH_SHADOWED: ArtifactDescriptionWithKind = jupyterKernelLibrary("ide-classpath-shadowed").add()
+    val IDE_CLASSPATH_SHADOWED_SOURCES: ArtifactDescriptionWithKind = jupyterKernelLibrary("ide-classpath-shadowed", ArtifactKind.SOURCES).add()
+    val EMBEDDED_KERNEL: ArtifactDescriptionWithKind = jupyterKernelLibrary("embeddable-kernel").add()
 
     fun all(): List<ArtifactDescriptionWithKind> = artifactDescriptions
 }
