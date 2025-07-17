@@ -20,7 +20,7 @@ private const val COLUMNS_FIELD = "columns"
 private const val TYPES_FIELD = "types"
 private const val NUM_ROWS_FIELD = "nrow"
 private const val NUM_COLS_FIELD = "ncol"
-private const val VERSION_FIELD = "\$version"
+private const val VERSION_FIELD = $$"$version"
 private const val DATA_FIELD = "data"
 private const val METADATA_FIELD = "metadata"
 private const val COLUMN_KIND_FIELD = "kind"
@@ -104,10 +104,10 @@ private class KotlinDataframeParserImpl(
         val rawJson = mapper.extractRawJson(serializedData)
 
         val rows = rawJson.getByPath(pathToData) as ArrayNode
-        val metadata = rawJson.getByPath(pathToMetadata)
+        val metadata = rawJson.getByPath(pathToMetadata) as ObjectNode
         val columnTypes: List<String> = metadata[TYPES_FIELD]?.map { it: JsonNode ->
             if (it is ObjectNode) {
-                when (it["kind"].asText()) {
+                when (it[COLUMN_KIND_FIELD].asText()) {
                     VALUE_COLUMN -> it["type"].asText()
                     COLUMN_GROUP -> COLUMN_GROUP
                     FRAME_COLUMN -> FRAME_COLUMN
@@ -166,7 +166,7 @@ private class KotlinDataframeParserImpl(
             var childIdx = 0
             val columnData = extractColumnData(jsonNode)
             if (columnData.isObject) {
-                columnData.fields()?.forEach { (key, value) ->
+                columnData.properties()?.forEach { (key, value) ->
                     val child = ColumnTreeNode(key, index++, childIdx++, mutableListOf())
                     columnsNode.columnChildren.add(child)
                     extractColumnsHelper(value, child, path + listOf(key))
@@ -312,15 +312,21 @@ private class KotlinDataframeParserImpl(
 }
 
 private fun JsonNode.isFrame(): Boolean {
-    return has(METADATA_FIELD) && this[METADATA_FIELD][COLUMN_KIND_FIELD].asText() == FRAME_COLUMN
+    return columnKind() == FRAME_COLUMN
 }
 
 private fun JsonNode.isFrameLike(): Boolean {
-    return has(METADATA_FIELD) && this[METADATA_FIELD][COLUMN_KIND_FIELD].asText() == FRAME_CONVERTABLE
+    return columnKind() == FRAME_CONVERTABLE
 }
 
 private fun JsonNode.isColumnGroup(): Boolean {
-    return has(METADATA_FIELD) && this[METADATA_FIELD][COLUMN_KIND_FIELD].asText() == COLUMN_GROUP
+    return columnKind() == COLUMN_GROUP
+}
+
+private val pathToColumnKind = listOf(METADATA_FIELD, COLUMN_KIND_FIELD)
+
+private fun JsonNode.columnKind(): String? {
+    return getByPath(pathToColumnKind)?.asText()
 }
 
 private fun ObjectMapper.extractRawJson(text: String): JsonNode {
@@ -328,10 +334,10 @@ private fun ObjectMapper.extractRawJson(text: String): JsonNode {
     return readTree(data[JSON_PAYLOAD_FIELD].asText())
 }
 
-private fun JsonNode.getByPath(path: List<String>): JsonNode {
+private fun JsonNode.getByPath(path: List<String>): JsonNode? {
     var result: JsonNode = this
     for (field in path) {
-        result = result.get(field)
+        result = result.get(field) ?: return null
     }
 
     return result
