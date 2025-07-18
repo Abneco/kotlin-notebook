@@ -24,9 +24,9 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.annotations.TestOnly
-import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
-import org.jetbrains.kotlinx.jupyter.startup.createRandomZmqKernelPorts
+import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
+import org.jetbrains.kotlinx.jupyter.zmq.protocol.createRandomZmqKernelPorts
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolute

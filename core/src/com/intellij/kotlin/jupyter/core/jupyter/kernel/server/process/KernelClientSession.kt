@@ -8,12 +8,12 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSessio
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.JupyterMessageFilter
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
-import org.jetbrains.kotlinx.jupyter.messaging.JupyterClientSockets
-import org.jetbrains.kotlinx.jupyter.messaging.JupyterZmqClientSocketManager
-import org.jetbrains.kotlinx.jupyter.messaging.JupyterZmqClientSockets
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketSide
+import org.jetbrains.kotlinx.jupyter.protocol.messaging.JupyterClientSockets
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
 import org.jetbrains.kotlinx.jupyter.ws.JupyterWsClientSocketManager
+import org.jetbrains.kotlinx.jupyter.zmq.protocol.JupyterZmqClientSocketManager
+import org.jetbrains.kotlinx.jupyter.zmq.protocol.JupyterZmqClientSockets
 
 sealed class KernelClientSession(
     override val sessionId: JupyterNotebookSessionId,
@@ -63,7 +63,7 @@ private class ZmqJupyterKernelCommunicationClient(
     sessionId = sessionId,
     onMessageCallback = onMessageCallback,
     sockets = JupyterZmqClientSocketManager(DefaultKernelLoggerFactory, JupyterSocketSide.IDE_CLIENT)
-        .open(kernelConfig)
+        .open(kernelConfig.jupyterParams)
 ) {
     override fun closeSockets() {
         super.closeSockets()
@@ -97,5 +97,5 @@ private class WsJupyterKernelCommunicationClient(
     sessionId = sessionId,
     onMessageCallback = onMessageCallback,
     sockets = JupyterWsClientSocketManager(DefaultKernelLoggerFactory)
-        .open(kernelConfig)
+        .open(kernelConfig.jupyterParams)
 )

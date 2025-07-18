@@ -3,12 +3,12 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import kotlinx.serialization.json.JsonElement
-import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.messaging.Message
 import org.jetbrains.kotlinx.jupyter.messaging.MessageContent
 import org.jetbrains.kotlinx.jupyter.messaging.MessageFactory
 import org.jetbrains.kotlinx.jupyter.messaging.MessageHeader
 import org.jetbrains.kotlinx.jupyter.messaging.MessageType
+import org.jetbrains.kotlinx.jupyter.protocol.api.RawMessage
 
 class NoReplyMessageFactory(
     sessionId: JupyterNotebookSessionId,

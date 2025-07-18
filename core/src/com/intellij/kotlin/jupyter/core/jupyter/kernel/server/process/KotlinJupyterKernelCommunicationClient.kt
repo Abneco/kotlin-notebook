@@ -14,9 +14,9 @@ import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.util.ui.EDT
 import kotlinx.coroutines.launch
-import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
-import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
-import org.jetbrains.kotlinx.jupyter.messaging.JupyterClientSockets
+import org.jetbrains.kotlinx.jupyter.protocol.api.JupyterSocketType
+import org.jetbrains.kotlinx.jupyter.protocol.api.RawMessage
+import org.jetbrains.kotlinx.jupyter.protocol.messaging.JupyterClientSockets
 import org.jetbrains.kotlinx.jupyter.util.closeWithTimeout
 import org.zeromq.ZMQException
 import java.nio.channels.ClosedSelectorException

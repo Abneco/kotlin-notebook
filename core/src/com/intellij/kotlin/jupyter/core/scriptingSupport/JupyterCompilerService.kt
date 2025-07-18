@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResu
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
+import org.jetbrains.kotlinx.jupyter.config.defaultRuntimeProperties
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
 import java.io.File
 import java.util.concurrent.atomic.AtomicReference
@@ -102,7 +103,7 @@ class JupyterCompilerService(
             return initialCompileConfigurationValue.getOrSet {
                 getCompilationConfiguration(
                     scriptClasspath = initialClasspath,
-                    compilerArgsConfigurator = DefaultCompilerArgsConfigurator(),
+                    compilerArgsConfigurator = DefaultCompilerArgsConfigurator(jvmTargetVersion = defaultRuntimeProperties.jvmTargetForSnippets),
                     replCompilerMode = KotlinNotebookApplicationOptions.get().replCompilerMode,
                     loggerFactory = DefaultKernelLoggerFactory
                 ) {

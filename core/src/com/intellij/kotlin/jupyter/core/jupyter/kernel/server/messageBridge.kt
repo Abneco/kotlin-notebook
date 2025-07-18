@@ -12,9 +12,9 @@ import com.intellij.kotlin.jupyter.core.util.toJacksonJson
 import com.intellij.kotlin.jupyter.core.util.toKotlinSerializationJson
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
-import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
-import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.protocol.RawMessageImpl
+import org.jetbrains.kotlinx.jupyter.protocol.api.JupyterSocketType
+import org.jetbrains.kotlinx.jupyter.protocol.api.RawMessage
 
 private val messageBytePrefix = listOf(byteArrayOf(1))
 

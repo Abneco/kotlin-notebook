@@ -26,8 +26,8 @@ import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.XDebuggerManager
 import org.jetbrains.annotations.Nls
-import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
-import org.jetbrains.kotlinx.jupyter.startup.create
+import org.jetbrains.kotlinx.jupyter.protocol.startup.PortsGenerator
+import org.jetbrains.kotlinx.jupyter.protocol.startup.create
 
 data class NotebookDebugConnectionHolder(
     val backedFile: BackedNotebookVirtualFile,

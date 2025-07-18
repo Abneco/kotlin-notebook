@@ -13,12 +13,12 @@ import com.intellij.pom.java.LanguageLevel
 import com.intellij.util.lang.JavaVersion
 import org.jetbrains.kotlinx.jupyter.api.JupyterClientType
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
-import org.jetbrains.kotlinx.jupyter.startup.ANY_HOST_NAME
-import org.jetbrains.kotlinx.jupyter.startup.KERNEL_SIGNATURE_SCHEME
-import org.jetbrains.kotlinx.jupyter.startup.KERNEL_TRANSPORT_SCHEME
+import org.jetbrains.kotlinx.jupyter.protocol.startup.ANY_HOST_NAME
+import org.jetbrains.kotlinx.jupyter.protocol.startup.KERNEL_SIGNATURE_SCHEME
+import org.jetbrains.kotlinx.jupyter.protocol.startup.KERNEL_TRANSPORT_SCHEME
+import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelJupyterParams
+import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import org.jetbrains.kotlinx.jupyter.startup.KernelJupyterParams
-import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.parameters.KernelOwnParams
 import java.io.File
 import java.nio.file.Path

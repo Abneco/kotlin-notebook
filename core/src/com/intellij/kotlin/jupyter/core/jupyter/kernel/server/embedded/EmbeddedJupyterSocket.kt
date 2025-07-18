@@ -4,9 +4,9 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.channel
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toJupyterMessage
-import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
-import org.jetbrains.kotlinx.jupyter.api.libraries.RawMessage
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSendReceiveSocket
+import org.jetbrains.kotlinx.jupyter.protocol.api.JupyterSocketType
+import org.jetbrains.kotlinx.jupyter.protocol.api.RawMessage
 import java.util.concurrent.ArrayBlockingQueue
 
 /**

@@ -5,7 +5,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.AbstractKotlinKern
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelStartupOptions
 import com.intellij.openapi.project.Project
 import com.intellij.util.lang.JavaVersion
-import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
+import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelPorts
 import java.io.File
 import java.nio.file.Path
 

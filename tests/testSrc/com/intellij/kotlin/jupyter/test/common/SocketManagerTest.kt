@@ -10,12 +10,12 @@ import io.kotest.matchers.collections.shouldHaveSize
 import org.jetbrains.kotlinx.jupyter.api.DEFAULT
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
-import org.jetbrains.kotlinx.jupyter.messaging.JupyterZmqClientSocketManager
-import org.jetbrains.kotlinx.jupyter.messaging.JupyterZmqClientSockets
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketSide
 import org.jetbrains.kotlinx.jupyter.startup.createClientKotlinKernelConfig
-import org.jetbrains.kotlinx.jupyter.startup.createRandomZmqKernelPorts
 import org.jetbrains.kotlinx.jupyter.util.closeWithTimeout
+import org.jetbrains.kotlinx.jupyter.zmq.protocol.JupyterZmqClientSocketManager
+import org.jetbrains.kotlinx.jupyter.zmq.protocol.JupyterZmqClientSockets
+import org.jetbrains.kotlinx.jupyter.zmq.protocol.createRandomZmqKernelPorts
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
@@ -75,7 +75,7 @@ class SocketManagerTest : KotlinNotebookUnitTestCase() {
         )
 
         return JupyterZmqClientSocketManager(DefaultKernelLoggerFactory, side = JupyterSocketSide.IDE_CLIENT)
-            .open(kernelConfig)
+            .open(kernelConfig.jupyterParams)
     }
 
     override fun runInDispatchThread(): Boolean = false

@@ -9,8 +9,8 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlinx.jupyter.startup.ANY_HOST_NAME
-import org.jetbrains.kotlinx.jupyter.startup.KernelPorts
+import org.jetbrains.kotlinx.jupyter.protocol.startup.ANY_HOST_NAME
+import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.DEFAULT_SPRING_APP_WEBSOCKET_PORT
 import org.jetbrains.kotlinx.jupyter.ws.WsKernelPorts
 import java.util.*

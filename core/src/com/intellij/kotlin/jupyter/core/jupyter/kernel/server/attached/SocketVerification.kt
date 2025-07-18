@@ -1,9 +1,9 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.attached
 
-import org.jetbrains.kotlinx.jupyter.startup.ANY_HOST_NAME
-import org.jetbrains.kotlinx.jupyter.startup.KernelJupyterParams
-import org.jetbrains.kotlinx.jupyter.startup.ZmqKernelPorts
+import org.jetbrains.kotlinx.jupyter.zmq.protocol.ZmqKernelPorts
+import org.jetbrains.kotlinx.jupyter.protocol.startup.ANY_HOST_NAME
+import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelJupyterParams
 import org.jetbrains.kotlinx.jupyter.ws.WsKernelPorts
 import java.io.IOException
 import java.net.InetSocketAddress

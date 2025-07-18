@@ -9,7 +9,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelStartupOptio
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
 import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import org.jetbrains.kotlinx.jupyter.startup.ZmqKernelPorts
+import org.jetbrains.kotlinx.jupyter.zmq.protocol.ZmqKernelPorts
 
 class EmbeddedKernelRunnableHandler(
     startupOptions: KernelStartupOptions,

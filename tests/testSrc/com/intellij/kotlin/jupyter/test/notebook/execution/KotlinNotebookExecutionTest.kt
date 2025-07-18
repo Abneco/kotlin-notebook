@@ -13,10 +13,10 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.waitForSmartMode
 import com.intellij.testFramework.TestDataPath
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
-import org.jetbrains.kotlinx.jupyter.startup.PortsGenerator
-import org.jetbrains.kotlinx.jupyter.startup.create
-import org.jetbrains.kotlinx.jupyter.startup.ZmqKernelPorts
+import org.jetbrains.kotlinx.jupyter.protocol.api.JupyterSocketType
+import org.jetbrains.kotlinx.jupyter.protocol.startup.PortsGenerator
+import org.jetbrains.kotlinx.jupyter.protocol.startup.create
+import org.jetbrains.kotlinx.jupyter.zmq.protocol.ZmqKernelPorts
 import org.junit.Ignore
 import org.junit.Test
 import java.net.ServerSocket

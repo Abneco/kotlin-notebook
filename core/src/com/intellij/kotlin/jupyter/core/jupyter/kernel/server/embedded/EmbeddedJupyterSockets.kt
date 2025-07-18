@@ -2,8 +2,8 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterSocketType
-import org.jetbrains.kotlinx.jupyter.messaging.JupyterServerSockets
+import org.jetbrains.kotlinx.jupyter.protocol.JupyterServerSockets
+import org.jetbrains.kotlinx.jupyter.protocol.api.JupyterSocketType
 
 /**
  * Holds all Jupyter sockets that are needed for messaging
