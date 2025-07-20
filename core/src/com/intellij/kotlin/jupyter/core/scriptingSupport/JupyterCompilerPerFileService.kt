@@ -101,8 +101,11 @@ class JupyterCompilerPerFileService(
 ) : NotebookPerFileChildService(virtualFile, scope) {
     private val project get() = projectService.project
 
-    private val scriptsChangePublisher get() =
-        project.messageBus.syncPublisher(NotebookScriptsStateListener.TOPIC)
+    private val scriptsChangePublisher: NotebookScriptsStateListener? get() {
+        if (project.messageBus.isDisposed) return null
+        return project.messageBus.syncPublisher(NotebookScriptsStateListener.TOPIC)
+    }
+
 
     init {
         Disposer.register(projectService, this)
@@ -515,8 +518,7 @@ class JupyterCompilerPerFileService(
                 if (!project.isDisposed) {
                     NotebookStructureTrackerService.getInstance(project).remove(virtualFile)
                 }
-
-            classesDir.delete(true)
+                classesDir.delete(true)
             }
             coroutineScope.cancel()
         }
@@ -616,12 +618,12 @@ class JupyterCompilerPerFileService(
 
                 if (!scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, vFileUrl)) {
                     LOG.info("Configuration is not consistent for ${virtualFile.file.name}, absent $lastScriptPath, fileUrl: ${vFileUrl.url}")
-                    scriptsChangePublisher.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.INCOMPLETE)
+                    scriptsChangePublisher?.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.INCOMPLETE)
                     return@async
                 }
 
                 updateLastStableConfiguration()
-                scriptsChangePublisher.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.COMPLETE)
+                scriptsChangePublisher?.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.COMPLETE)
 
                 readAction {
                     virtualFile.file.findPsiFile(project)?.let { psiFile ->

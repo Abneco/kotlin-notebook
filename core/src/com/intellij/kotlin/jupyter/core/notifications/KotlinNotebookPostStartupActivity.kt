@@ -30,7 +30,7 @@ class KotlinNotebookPostStartupActivity : ProjectActivity {
 
 
         KotlinNotebookApplicationOptions.get()
-            .addListener(object: KotlinNotebookApplicationOptionsProvider.Listener {
+            .addListener(object : KotlinNotebookApplicationOptionsProvider.Listener {
                 override fun onReplCompilerModeChanged() {
                     resetScriptDefinitionAndShowKernelRestartNeededWarning(project)
                 }
