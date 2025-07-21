@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.idea.base.projectStructure.moduleInfo.IdeaModuleInfo
 import org.jetbrains.kotlin.idea.caches.resolve.ResolveOptimizingOptionsProvider
-import org.jetbrains.kotlin.idea.core.script.dependencies.ScriptModuleInfo
+import org.jetbrains.kotlin.idea.core.script.v1.ScriptModuleInfo
 import org.jetbrains.kotlin.resolve.scopes.optimization.OptimizingOptions
 
 private class KotlinNotebookOptimizingOptionsProvider: ResolveOptimizingOptionsProvider {

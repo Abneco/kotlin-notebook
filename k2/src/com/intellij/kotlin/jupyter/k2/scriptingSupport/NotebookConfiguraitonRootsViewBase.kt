@@ -4,8 +4,8 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport
 import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.workspace.virtualFile
 import com.intellij.platform.workspace.storage.MutableEntityStorage
-import org.jetbrains.kotlin.idea.KotlinScriptLibraryEntity
-import org.jetbrains.kotlin.idea.KotlinScriptLibraryEntityId
+import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntity
+import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
 import java.io.File
 
 /**

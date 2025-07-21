@@ -41,7 +41,6 @@
     <orderEntry type="module" module-name="intellij.kotlin.jupyter.core" />
     <orderEntry type="module" module-name="intellij.platform.core" />
     <orderEntry type="module" module-name="intellij.platform.editor.ui" />
-    <orderEntry type="module" module-name="kotlin.base.scripting" />
     <orderEntry type="module" module-name="kotlin.jvm-debugger.evaluation.k1" />
     <orderEntry type="module" module-name="intellij.platform.backend.workspace" />
     <orderEntry type="module" module-name="intellij.platform.projectModel" />
@@ -59,5 +58,6 @@
     <orderEntry type="module" module-name="kotlin.jvm-debugger.evaluation" />
     <orderEntry type="module" module-name="kotlin.scripting" />
     <orderEntry type="module" module-name="kotlin.base.scripting.k1" />
+    <orderEntry type="module" module-name="kotlin.base.scripting.shared" />
   </component>
 </module>

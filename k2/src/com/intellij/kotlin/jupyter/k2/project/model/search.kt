@@ -7,9 +7,7 @@ import com.intellij.openapi.vfs.newvfs.impl.VirtualDirectoryImpl
 import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.virtualFile
 import com.intellij.platform.backend.workspace.workspaceModel
-import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.search.GlobalSearchScopesCore
-import org.jetbrains.kotlin.idea.KotlinScriptEntity
+import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
 
 fun BackedNotebookVirtualFile.findK2WorkspaceEntityDependencies(project: Project): List<VirtualDirectoryImpl> {
     val currentSnapshot = project.workspaceModel.currentSnapshot
