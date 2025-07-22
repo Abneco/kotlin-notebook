@@ -289,9 +289,9 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private fun getDependencies(module: Module): Array<Module> {
-        val result = mutableSetOf(module)
-        ModuleUtilCore.getDependencies(module, result)
-        return result.toTypedArray()
+        return buildSet<Module> {
+            ModuleUtilCore.getDependencies(module, this)
+        }.toTypedArray()
     }
 
     companion object {
