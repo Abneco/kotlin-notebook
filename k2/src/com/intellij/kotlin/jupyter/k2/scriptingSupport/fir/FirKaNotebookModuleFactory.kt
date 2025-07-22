@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.k2.scriptingSupport.fir
 
 import com.intellij.injected.editor.VirtualFileWindow
-import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.isInsideKotlinNotebook
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -32,26 +31,27 @@ internal class FirKaNotebookModuleFactory : FirKaModuleFactory {
     }
 }
 
-class KaNotebookScriptModuleImpl(
+private class KaNotebookScriptModuleImpl(
     project: Project,
     override val file: KtFile,
     override val virtualFile: VirtualFile
 ) : KaScriptModuleBase(project, file.virtualFile) {
     constructor(file: KtFile) : this(file.project, file, file.virtualFile)
 
-    override val directRegularDependencies: List<KaModule>
-        get() {
-            val ipynbFileUrl =
-                (file.virtualFile as? VirtualFileWindow)?.delegate?.toVirtualFileUrl(virtualFileUrlManager) ?: return emptyList()
+    override val directRegularDependencies: List<KaModule> by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        val ipynbFileUrl =
+            (file.virtualFile as? VirtualFileWindow)?.delegate?.toVirtualFileUrl(virtualFileUrlManager) ?: return@lazy emptyList()
 
+        buildList {
             val current = currentSnapshot
             val index = current.getVirtualFileUrlIndex()
             val entities =
                 index.findEntitiesByUrl(ipynbFileUrl).distinct().filterIsInstance<KotlinScriptEntity>().flatMap { it.dependencies }
                     .mapNotNull { current.resolve(it) }
 
-            return entities.flatMap {
+            addAll(entities.flatMap {
                 project.ideProjectStructureProvider.getKaScriptLibraryModules(it)
-            }.toList()
-        }
+            })
+        } + sdkDependencies
+    }
 }
