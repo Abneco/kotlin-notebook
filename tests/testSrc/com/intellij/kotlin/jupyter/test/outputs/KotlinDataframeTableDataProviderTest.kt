@@ -12,6 +12,7 @@ import com.intellij.kotlin.jupyter.test.KotlinNotebookUnitTestCase
 import com.intellij.kotlin.jupyter.test.baseTestDataPathWithHome
 import com.intellij.scientific.tables.DataId
 import com.intellij.util.asSafely
+import io.kotest.common.runBlocking
 import org.junit.Assert
 import org.junit.Test
 import java.io.File
@@ -54,7 +55,7 @@ class KotlinDataframeTableDataProviderTest : KotlinNotebookUnitTestCase() {
         KotlinNotebookApplicationOptions.get().showDataFrameAsSwing = true
         val provider = dataframeProvider.getDataProviderCapableToParseData(project, data.toString())
 
-        val frameInfo = provider.parseStaticTableToFrameInfo(data.toString())
+        val frameInfo = runBlocking {  provider.parseStaticTableToFrameInfo(data.toString()) }
 
         Assert.assertEquals(frameInfo.rows, 20)
         Assert.assertEquals(frameInfo.columnNames, actualColumns)
@@ -67,7 +68,7 @@ class KotlinDataframeTableDataProviderTest : KotlinNotebookUnitTestCase() {
         KotlinNotebookApplicationOptions.get().showDataFrameAsSwing = true
         val provider = dataframeProvider.getDataProviderCapableToParseData(project, data.toString())
 
-        val tableData = provider.parseStaticTableToTableData(DataId(19), data.toString())
+        val tableData = runBlocking { provider.parseStaticTableToTableData(DataId(19), data.toString()) }
 
         Assert.assertEquals(tableData.cols!!.size, 14)
 
@@ -131,7 +132,7 @@ class KotlinDataframeTableDataProviderTest : KotlinNotebookUnitTestCase() {
         KotlinNotebookApplicationOptions.get().showDataFrameAsSwing = true
         val provider = dataframeProvider.getDataProviderCapableToParseData(project, data.toString())
 
-        val tableData = provider.parseStaticTableToTableData(DataId(19), data.toString())
+        val tableData = runBlocking { provider.parseStaticTableToTableData(DataId(19), data.toString()) }
 
         Assert.assertEquals(tableData.cols!!.size, 11)
     }
@@ -150,7 +151,6 @@ class KotlinDataframeTableDataProviderTest : KotlinNotebookUnitTestCase() {
             ?: throw RuntimeException("${jupyterDataframeResponseFile.path} not found")
     }
 }
-
 
 private val actualColumns = listOf(
     "pclass",

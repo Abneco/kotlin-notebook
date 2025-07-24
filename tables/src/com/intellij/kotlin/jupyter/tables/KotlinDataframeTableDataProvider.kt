@@ -85,16 +85,16 @@ const val NULL: String = "null"
 class KotlinDataFrameProvider(private val project: Project, private val parser: KotlinDataframeParser, private val columnsLimit: Int) : NestedTableDataProvider {
     override fun getType(): DSTableDataType = DSTableDataType.EXTERNAL
 
-    override fun parseStaticTableToFrameInfo(text: String): DSDataFrameInfo {
+    override suspend fun parseStaticTableToFrameInfo(text: String): DSDataFrameInfo {
         return parseFrameInfoFromKotlinDataframeOutput(text, isPreview = true)
     }
 
-    override fun parseStaticTableToTableData(dataId: DataId, table: String): DSTableRawData {
+    override suspend fun parseStaticTableToTableData(dataId: DataId, table: String): DSTableRawData {
         return parseDataFromKotlinDataframeOutput(dataId, table)
     }
 
     @Throws(DSTableDataException::class)
-    override fun loadDynamicTableDataFrameInfo(
+    override suspend fun loadDynamicTableDataFrameInfo(
         commandExecutor: DSTableCommandExecutor,
         tableVariable: String,
         textTableOutput: String
@@ -108,7 +108,7 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
     }
 
     @Throws(DSTableDataException::class)
-    override fun loadDynamicTableData(
+    override suspend fun loadDynamicTableData(
         commandExecutor: DSTableCommandExecutor,
         dataId: DataId,
         tableVariable: String,
@@ -237,7 +237,7 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
         }
     }
 
-    override fun getSortingCommand(
+    override suspend fun getSortingCommand(
         tableVariable: String,
         sortKeys: List<RowSorter.SortKey>,
         columns: List<String>,
@@ -263,7 +263,7 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
             """.trimIndent()
     }
 
-    override fun getFilteringCommand(
+    override suspend fun getFilteringCommand(
         tableVariable: String,
         filters: FilterExpression?,
         tableColumnsNumber: Int
@@ -271,7 +271,7 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
         return tableVariable
     }
 
-    override fun isFallbackToStaticTableSupported(): Boolean = true
+    override suspend fun isFallbackToStaticTableSupported(): Boolean = true
 
     private fun parseFrameInfoFromKotlinDataframeOutput(text: String, isPreview: Boolean): DSDataFrameInfo {
         val info = parser.parseDataFrameInfo(text).asDsTableInfo(isPreview)
