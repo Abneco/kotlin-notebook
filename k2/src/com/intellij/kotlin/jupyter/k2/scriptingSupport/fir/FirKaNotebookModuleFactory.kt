@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.psi.PsiFile
+import com.intellij.util.containers.addIfNotNull
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaLibraryModule
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.jetbrains.kotlin.base.fir.scripting.projectStructure.modules.KaScriptDependencyLibraryModuleImpl
@@ -52,6 +53,8 @@ private class KaNotebookScriptModuleImpl(
             addAll(entities.flatMap {
                 project.ideProjectStructureProvider.getKaScriptLibraryModules(it)
             })
-        } + sdkDependencies
+
+            addIfNotNull(sdkDependency)
+        }
     }
 }
