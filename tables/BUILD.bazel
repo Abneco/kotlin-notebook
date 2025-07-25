@@ -35,6 +35,7 @@ jvm_library(
     "@community//platform/code-style-api:codeStyle",
     "@community//grid/core-impl",
     "@community//grid/impl",
+    "@community//platform/searchEverywhere/shared:searchEverywhere",
   ],
   runtime_deps = [
     ":tables_resources",

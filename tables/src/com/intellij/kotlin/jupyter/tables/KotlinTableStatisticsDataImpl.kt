@@ -8,20 +8,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode
 import com.intellij.database.run.ui.table.statisticsPanel.types.ColumnDescriptionStatistics
 import com.intellij.database.run.ui.table.statisticsPanel.types.StatisticsDescriptionUnit
 import com.intellij.jupyter.core.jackson
-import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.service
+import com.intellij.platform.searchEverywhere.utils.SuspendLazyProperty
+import com.intellij.platform.searchEverywhere.utils.suspendLazy
 import com.intellij.scientific.tables.api.DSTableCommandExecutor
 import com.intellij.scientific.tables.api.TableStatisticsData
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import java.util.concurrent.atomic.AtomicBoolean
-
-@Service(Service.Level.APP)
-private class CommandRunner(val coroutineScope: CoroutineScope)
 
 /**
  * Class responsible for creating a [TableStatisticsData] from a Kotlin DataFrame.
@@ -30,46 +20,26 @@ class KotlinTableStatisticsDataImpl(
     private val commandExecutor: DSTableCommandExecutor,
     private val tableVariable: String,
 ) : TableStatisticsData {
-    private val tableStatisticsDataDeferred = CompletableDeferred<List<ColumnDescriptionStatistics>?>()
-    private val requested = AtomicBoolean(false)
 
-    override suspend fun await() {
-        tableStatisticsDataDeferred.await()
-    }
-
-    override fun request() {
-        if (!requested.compareAndSet(false, true)) return
-        service<CommandRunner>().coroutineScope.launch(Dispatchers.IO) {
-            // Evaluate and parse output of `df.describe()`
-            // We extract as JSON as it makes it easier to manipulate it into the relevant
-            // data structures.
-            val describeJson = commandExecutor.executeCommand("""
+    override val tableStatisticsData: SuspendLazyProperty<List<ColumnDescriptionStatistics>?> = suspendLazy {
+        // Evaluate and parse output of `df.describe()`
+        // We extract as JSON as it makes it easier to manipulate it into the relevant
+        // data structures.
+        val describeJson = commandExecutor.executeCommand(
+            """
                import org.jetbrains.kotlinx.dataframe.jupyter.KotlinNotebookPluginUtils
                // Use println() to force output to STREAM rather than DISPLAY
                val value = $tableVariable 
                println(if (value != null) KotlinNotebookPluginUtils.convertToDataFrame(value).describe().toJson() else "")
-            """.trimIndent())
-            val columnStats = extractDescribeData(describeJson)
-            tableStatisticsDataDeferred.complete(columnStats)
+            """.trimIndent()
+        )
+        extractDescribeData(describeJson)
 
-            // Add support for `df[columnName].valuesCount()` here.
-            // Some questions to figure out:
-            //  - We should probably ignore columns with unique values
-            //  - Should we ignore NA values or not?
-        }.invokeOnCompletion {
-            tableStatisticsDataDeferred.cancel("cannot get description", it)
-        }
+        // Add support for `df[columnName].valuesCount()` here.
+        // Some questions to figure out:
+        //  - We should probably ignore columns with unique values
+        //  - Should we ignore NA values or not?
     }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override val tableStatisticsData: List<ColumnDescriptionStatistics>?
-        get() {
-            return if (tableStatisticsDataDeferred.isCompleted && tableStatisticsDataDeferred.getCompletionExceptionOrNull() == null) {
-                tableStatisticsDataDeferred.getCompleted()
-            } else {
-                null
-            }
-        }
 
     private fun extractDescribeData(descriptionAsJson: String): List<ColumnDescriptionStatistics>? {
         return try {
@@ -109,7 +79,7 @@ class KotlinTableStatisticsDataImpl(
             }
             return columnDescriptionStatistics.ifEmpty { null }
         } catch (ex: Throwable) {
-            when(ex) {
+            when (ex) {
                 is JsonMappingException -> null
                 is JsonProcessingException -> null
                 else -> error(ex)
