@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.settings.actions
 
 import com.intellij.jupyter.core.jupyter.connections.action.shutdownNotebook
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
-import com.intellij.jupyter.core.jupyter.helper.notebookFile
+import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.editor.Editor
@@ -24,7 +24,7 @@ inline fun promptSessionShutdownIfNeeded(
     notebookEditor: Editor,
     crossinline action: () -> Unit
 ) {
-    val notebookFile = notebookEditor.notebookFile
+    val notebookFile = notebookEditor.notebookFileOrNull ?: return
     val project = notebookEditor.project
     if (!notebookFile.isKotlinNotebook || project == null) return
 
