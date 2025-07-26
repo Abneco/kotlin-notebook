@@ -102,8 +102,9 @@ class JupyterCompilerPerFileService(
     private val project get() = projectService.project
 
     private val scriptsChangePublisher: NotebookScriptsStateListener? get() {
-        if (project.messageBus.isDisposed) return null
-        return project.messageBus.syncPublisher(NotebookScriptsStateListener.TOPIC)
+        return project.messageBus
+            .takeIf { !it.isDisposed }
+            ?.syncPublisher(NotebookScriptsStateListener.TOPIC)
     }
 
 
@@ -114,7 +115,7 @@ class JupyterCompilerPerFileService(
     // This lock is used to avoid concurrent modifications of data structures
     // that hold the session state from coroutines.
     // Please don't use it directly.
-    // Also note that acquiring this lock inside read/write action may lead to the deadlock, never do it.
+    // Also note that acquiring this lock inside a read / write action may lead to the deadlock, never do it.
     // Use 'accessDataBlocking' for non-suspended context.
     private val dataLock = Mutex()
     private suspend inline fun <R> accessData(crossinline action: () -> R) = dataLock.withLock(null, action)
@@ -333,7 +334,7 @@ class JupyterCompilerPerFileService(
         val withNewClasspath = withUpdatedClasspath(currentClasspath)
         return ScriptCompilationConfiguration(withNewClasspath) {
             if (_currentClasspath.hasInitialPart) {
-                // `addBaseClas` is the wrong name, but is only used for backwards compatibility.
+                // `addBaseClas` is the wrong name but is only used for backwards compatibility.
                 // Should be renamed once K2 Support is stable.
                 addBaseClass<ScriptTemplateWithDisplayHelpers>()
             }
@@ -528,6 +529,73 @@ class JupyterCompilerPerFileService(
         private val implicitReceiversClassPathData = ConcurrentLinkedQueue<ClassPathSnippetsLoadedData>()
         private val implicitListsUpdateMutex = Mutex()
 
+        val lastLoadedTypeOrNull: KotlinType? get() {
+            val loadedSnippets = implicitReceiversClassPathData.lastOrNull()?.snippetTypes
+            return loadedSnippets?.lastOrNull()
+        }
+
+        override suspend fun getSnippetsReadyForConfigurationUpdate(): List<ClassPathSnippetsLoadedData> {
+            return implicitReceiversClassPathData.toList().filter {
+                val presentTypes = scriptConsistencyVerifier.filterTypesPresentInIndexes(virtualFile, it.snippetTypes)
+                presentTypes == it.snippetTypes
+            }
+        }
+
+        override fun addLoadedSnippet(snippetData: ClassPathSnippetsLoadedData) {
+            implicitReceiversClassPathData.add(snippetData)
+        }
+
+        override fun afterUpdate(notebooks: Collection<BackedNotebookVirtualFile>?) {
+            coroutineScope.async {
+                afterUpdateImpl(notebooks)
+            }
+        }
+
+        fun clear() {
+            implicitReceiversClassPathData.clear()
+        }
+
+        private suspend fun afterUpdateImpl(notebooks: Collection<BackedNotebookVirtualFile>?) {
+            val stateUpdateState = updateScriptConfigurationIfNeeded(notebooks)
+            scriptsChangePublisher?.scriptsConfigurationUpdated(virtualFile, stateUpdateState)
+
+            if (stateUpdateState == NotebookScriptsStateListener.UpdateState.COMPLETE) {
+                // FIXME Why do we only restart HL in case of a complete update?
+                readAction {
+                    virtualFile.file.findPsiFile(project)?.let { psiFile ->
+                        DaemonCodeAnalyzer.getInstance(project).restart(psiFile)
+                    }
+                }
+            }
+        }
+
+        private suspend fun updateScriptConfigurationIfNeeded(
+            notebooks: Collection<BackedNotebookVirtualFile>?
+        ): NotebookScriptsStateListener.UpdateState {
+            // return if afterUpdate triggerred for another service
+            val lastScriptPath = getLastScriptArtifactPath() ?: run {
+                LOG.debug("Configuration for ${virtualFile.file.name} is not updated, no last script path")
+                return NotebookScriptsStateListener.UpdateState.SKIPPED
+            }
+
+            // FIXME logic doesn't seem correct, is it really the only place to set isStateUpdating to false?
+            if (notebooks != null && virtualFile !in notebooks) {
+                isStateUpdating.set(false)
+                LOG.debug("Configuration for ${virtualFile.file.name} is not updated, it's not in the list of updated notebooks ($notebooks)")
+                return NotebookScriptsStateListener.UpdateState.SKIPPED
+            }
+
+            val vFileUrl = lastScriptPath.toVirtualFileUrl(project.workspaceModel.getVirtualFileUrlManager())
+
+            if (!scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, vFileUrl)) {
+                LOG.info("Configuration is not consistent for ${virtualFile.file.name}, absent $lastScriptPath, fileUrl: ${vFileUrl.url}")
+                return NotebookScriptsStateListener.UpdateState.INCOMPLETE
+            }
+
+            updateLastStableConfiguration()
+            return NotebookScriptsStateListener.UpdateState.COMPLETE
+        }
+
         private suspend fun updateLastStableConfiguration() {
             while (true) {
                 val lastStableConf = lastStableConfiguration.get()
@@ -587,54 +655,6 @@ class JupyterCompilerPerFileService(
                 virtualFile,
                 handleBeforeCompilingAsync(project.baseScriptingCompilationConfiguration)
             )
-        }
-
-        val lastLoadedTypeOrNull: KotlinType? get() {
-            val loadedSnippets = implicitReceiversClassPathData.lastOrNull()?.snippetTypes
-            return loadedSnippets?.lastOrNull()
-        }
-
-        override suspend fun getSnippetsReadyForConfigurationUpdate(): List<ClassPathSnippetsLoadedData> {
-            return implicitReceiversClassPathData.toList().filter {
-                val presentTypes = scriptConsistencyVerifier.filterTypesPresentInIndexes(virtualFile, it.snippetTypes)
-                presentTypes == it.snippetTypes
-            }
-        }
-
-        override fun addLoadedSnippet(snippetData: ClassPathSnippetsLoadedData) {
-            implicitReceiversClassPathData.add(snippetData)
-        }
-
-        override fun afterUpdate(notebooks: Collection<BackedNotebookVirtualFile>?) {
-            coroutineScope.async {
-                // return if afterUpdate triggerred for another service
-                val lastScriptPath = getLastScriptArtifactPath() ?: return@async
-                if (notebooks != null && !notebooks.contains(virtualFile)) {
-                    isStateUpdating.set(false)
-                    return@async
-                }
-
-                val vFileUrl = lastScriptPath.toVirtualFileUrl(project.workspaceModel.getVirtualFileUrlManager())
-
-                if (!scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, vFileUrl)) {
-                    LOG.info("Configuration is not consistent for ${virtualFile.file.name}, absent $lastScriptPath, fileUrl: ${vFileUrl.url}")
-                    scriptsChangePublisher?.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.INCOMPLETE)
-                    return@async
-                }
-
-                updateLastStableConfiguration()
-                scriptsChangePublisher?.scriptsConfigurationUpdated(virtualFile, NotebookScriptsStateListener.UpdateState.COMPLETE)
-
-                readAction {
-                    virtualFile.file.findPsiFile(project)?.let { psiFile ->
-                        DaemonCodeAnalyzer.getInstance(project).restart(psiFile)
-                    }
-                }
-            }
-        }
-
-        fun clear() {
-            implicitReceiversClassPathData.clear()
         }
     }
 

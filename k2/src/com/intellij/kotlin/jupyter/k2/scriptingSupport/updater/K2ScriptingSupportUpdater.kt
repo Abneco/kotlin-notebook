@@ -65,7 +65,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
     /**
      * Special handler for a structured concurrency
      */
-    private val exceptionHandler = CoroutineExceptionHandler { context, e ->
+    private val exceptionHandler = CoroutineExceptionHandler { _, e ->
         if (e is CancellationException || project.isDisposed) {
             return@CoroutineExceptionHandler
         }
@@ -112,16 +112,15 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         val notebooks = openFiles
             .filter { it.fileType is JupyterFileType }
             .mapNotNull { it.toKotlinNotebookBackedFile() }
+
+        val notebooksToUpdate = notebooks
             .filter { JupyterCompilerService.getForFile(project, it).needsConfigurationUpdate }
 
-        // Early return
-        if (notebooks.isEmpty()) {
+        if (notebooksToUpdate.isEmpty()) {
             LOG.debug("No notebooks to update")
-            return emptySet()
+        } else {
+            updateK2Impl(project, notebooksToUpdate)
         }
-
-        updateK2Impl(project, notebooks)
-
         return notebooks
     }
 

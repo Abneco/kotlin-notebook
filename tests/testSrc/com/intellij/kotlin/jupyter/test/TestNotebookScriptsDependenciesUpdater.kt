@@ -17,7 +17,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 
 /**
  * Options to invoke [TestNotebookScriptsDependenciesUpdater.setUpDependenciesSynchronously] with.
@@ -42,7 +45,8 @@ class TestNotebookScriptsDependenciesUpdater(
     private val project: Project,
     private val notebookFile: BackedNotebookVirtualFile?,
     private val cellsToExecute: Int,
-    parentDisposable: Disposable
+    parentDisposable: Disposable,
+    private val scriptingUpdateWaitTimeout: Duration = 3.minutes,
 ) {
     init {
         project.messageBus.connect(parentDisposable).subscribe(
@@ -74,12 +78,12 @@ class TestNotebookScriptsDependenciesUpdater(
 
             when (updateState) {
                 UpdateState.COMPLETE -> updateCompleted()
-                UpdateState.INCOMPLETE -> updateNotCompleted()
+                UpdateState.INCOMPLETE, UpdateState.SKIPPED -> updateNotCompleted()
             }
         }
 
         private fun updateCompleted() {
-            val counter = scriptingUpdatesLeft.get()
+            val counter = scriptingUpdatesLeft.getAndDecrement()
             if (counter <= 0) {
                 return
             }
@@ -89,7 +93,6 @@ class TestNotebookScriptsDependenciesUpdater(
                     throw IllegalStateException("Cannot emit to scriptsUpdateCompleted")
                 }
             } else {
-                scriptingUpdatesLeft.set(counter - 1)
                 JupyterCompilerService.getInstance(project).requestScriptingUpdate()
             }
         }
@@ -109,12 +112,14 @@ class TestNotebookScriptsDependenciesUpdater(
         try {
             scriptingUpdatesLeft.set(cellsToExecute)
 
-             //Loop until all updates are completed
-            scriptsUpdateCompleted
-                .takeWhile { scriptUpdated: Boolean -> !scriptUpdated }
-                .collect {
-                    LOG.debug("Dependency update note complete yet. Wait for next update")
-                }
+            // Loop until all updates are completed
+            withTimeout(scriptingUpdateWaitTimeout) {
+                scriptsUpdateCompleted
+                    .takeWhile { scriptUpdated: Boolean -> !scriptUpdated }
+                    .collect {
+                        LOG.debug("Dependency update is not completed yet. Waiting for next update")
+                    }
+            }
 
             // Index is up to date, invoke post-handler
             withContext(Dispatchers.EDT) {

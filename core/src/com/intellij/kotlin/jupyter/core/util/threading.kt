@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.core.util
 
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.progress.util.BackgroundTaskUtil.BackgroundTask
@@ -15,7 +16,10 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-class ComputableWithName<T>(@NlsSafe private val name: String, private val action: () -> T): (() -> T) by action {
+class ComputableWithName<T>(
+    @param:NlsSafe private val name: String,
+    private val action: () -> T,
+): (() -> T) by action {
     override fun toString(): String {
         return name
     }
@@ -69,9 +73,7 @@ class ExecutedOnceBackgroundTask<T> private constructor(
         bgTask.awaitCompletion()
     }
 
-    val isCompletedSuccessfully get() = _completedSuccessfully
-
-    val result get(): T {
+    val result: T get() {
         assert(_completedSuccessfully)
         @Suppress("UNCHECKED_CAST")
         return _result as T
@@ -169,6 +171,6 @@ open class SingleUpdateScheduler(
     }
 
     companion object {
-        val LOG = notebookLogger()
+        val LOG: Logger = notebookLogger()
     }
 }
