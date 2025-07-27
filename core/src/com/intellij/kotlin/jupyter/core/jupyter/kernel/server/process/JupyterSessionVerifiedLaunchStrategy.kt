@@ -18,7 +18,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.JupyterSess
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.FinalizationPreservingCallback
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.sendMessageAndWait
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.updateNotebookMetadata
-import com.intellij.openapi.application.ApplicationManager
+import com.intellij.util.application
 import org.jetbrains.kotlinx.jupyter.messaging.KernelInfoRequest
 import org.jetbrains.kotlinx.jupyter.messaging.MessageType
 
@@ -53,9 +53,10 @@ abstract class JupyterSessionVerifiedLaunchStrategy(
     }
 
     private fun notifySessionVerified(session: JupyterNotebookSession) {
+        val messageBus = application.messageBus.takeIf { !it.isDisposed } ?: return
         val vFile = session.virtualFile
 
-        ApplicationManager.getApplication().messageBus.syncPublisher(JupyterSessionVerifiedListener.TOPIC)
+        messageBus.syncPublisher(JupyterSessionVerifiedListener.TOPIC)
             .verifiedSessionStarting(session.project, vFile)
     }
 
