@@ -11,7 +11,7 @@ import com.intellij.jupyter.core.jackson
 import com.intellij.platform.searchEverywhere.utils.SuspendLazyProperty
 import com.intellij.platform.searchEverywhere.utils.suspendLazy
 import com.intellij.scientific.tables.api.DSTableCommandExecutor
-import com.intellij.scientific.tables.api.TableStatisticsData
+import com.intellij.scientific.tables.api.statisticsHeadersAndTooltips.TableStatisticsData
 
 /**
  * Class responsible for creating a [TableStatisticsData] from a Kotlin DataFrame.

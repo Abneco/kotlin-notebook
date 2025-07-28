@@ -27,7 +27,7 @@ import com.intellij.scientific.tables.api.DSTableDataProvider
 import com.intellij.scientific.tables.api.DSTableDataType
 import com.intellij.scientific.tables.api.DSTableText
 import com.intellij.scientific.tables.api.DescribeTableCommand
-import com.intellij.scientific.tables.api.FilterExpression
+import com.intellij.scientific.tables.api.filters.FilterExpression
 import com.intellij.scientific.tables.api.ImageLoadCommand
 import com.intellij.scientific.tables.api.ImageStartLoadCommand
 import com.intellij.scientific.tables.api.InfoTableCommand
