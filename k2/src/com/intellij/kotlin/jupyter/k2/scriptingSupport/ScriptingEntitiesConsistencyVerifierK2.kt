@@ -6,17 +6,16 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.projectModel.kotlin.getIndexedTopLevelClassifiersFiltered
 import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier
 import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceEntityDependencies
+import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceScriptEntities
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.project.Project
-import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.workspaceModel
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import com.intellij.platform.workspace.storage.url.VirtualFileUrlManager
 import com.intellij.psi.search.GlobalSearchScopesCore
 import com.intellij.util.concurrency.annotations.RequiresReadLock
-import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.toVirtualFileUrl
 import kotlin.collections.toTypedArray
 import kotlin.script.experimental.api.KotlinType
@@ -37,19 +36,16 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     val fileUrlManager: VirtualFileUrlManager
         get() = project.workspaceModel.getVirtualFileUrlManager()
 
-    private fun getDependencyRootsForNotebook(notebookFile: BackedNotebookVirtualFile): List<VirtualFileUrl> {
+    private fun getDependencyRootsForNotebook(notebookFile: BackedNotebookVirtualFile): Collection<VirtualFileUrl> {
         val snapshot = project.workspaceModel.currentSnapshot
-        val index = snapshot.getVirtualFileUrlIndex()
-
-        val kotlinScriptEntity = index.findEntitiesByUrl(notebookFile.file.toVirtualFileUrl(fileUrlManager))
-            .filterIsInstance<KotlinScriptEntity>()
+        val kotlinScriptEntity = notebookFile.findK2WorkspaceScriptEntities(project.workspaceModel)
             .singleOrNull() ?: return emptyList()
 
         return kotlinScriptEntity.dependencies
             .mapNotNull { snapshot.resolve(it) }
-            .flatMap { it.classes }
-            .distinct()
-            .toList()
+            .flatMapTo(mutableSetOf()) {
+                it.classes
+            }
     }
 
     private fun checkSourceIsNotEmpty(notebookFile: BackedNotebookVirtualFile): Boolean {
@@ -69,7 +65,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
 
         if (!isPresent) {
             notebookLogger().debug {
-                val loggedRoots = jars.takeLast(10).joinToString(separator = "\n") { it.presentableUrl }
+                val loggedRoots = jars.toList().takeLast(10).joinToString(separator = "\n") { it.presentableUrl }
                 "For notebook ${virtualFile.file.name} no dependency '${artifactName}' found among roots of size ${jars.size}, last roots:\n $loggedRoots"
             }
         }
@@ -84,10 +80,11 @@ private class ScriptingEntitiesConsistencyVerifierK2(
      */
     @RequiresReadLock
     override suspend fun filterTypesPresentInIndexes(
-        virtualFile: BackedNotebookVirtualFile, types: Collection<KotlinType>
+        virtualFile: BackedNotebookVirtualFile,
+        types: Collection<KotlinType>
     ): Collection<KotlinType> {
         val dependencies = virtualFile.findK2WorkspaceEntityDependencies(project)
-        val scope =  GlobalSearchScopesCore.directoriesScope(project, false, *dependencies.toTypedArray())
+        val scope = GlobalSearchScopesCore.directoriesScope(project, false, *dependencies.toTypedArray())
 
         return smartReadAction(project) {
             val allIndexed = scope.getIndexedTopLevelClassifiersFiltered(project).map {
@@ -135,6 +132,8 @@ private class ScriptingEntitiesConsistencyVerifierK2(
 
     // Check only base things as K2 mode could have extra keys present
     private fun compareConfigurationsData(current: ScriptCompilationConfiguration, cached: ScriptCompilationConfiguration): Boolean {
-        return current[ScriptCompilationConfiguration.baseClass] == cached[ScriptCompilationConfiguration.baseClass] && current[ScriptCompilationConfiguration.implicitReceivers] == cached[ScriptCompilationConfiguration.implicitReceivers] && current[ScriptCompilationConfiguration.dependencies] == cached[ScriptCompilationConfiguration.dependencies]
+        return current[ScriptCompilationConfiguration.baseClass] == cached[ScriptCompilationConfiguration.baseClass]
+                && current[ScriptCompilationConfiguration.implicitReceivers] == cached[ScriptCompilationConfiguration.implicitReceivers]
+                && current[ScriptCompilationConfiguration.dependencies] == cached[ScriptCompilationConfiguration.dependencies]
     }
 }

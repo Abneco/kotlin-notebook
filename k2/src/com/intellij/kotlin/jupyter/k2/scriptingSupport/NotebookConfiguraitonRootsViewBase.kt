@@ -35,7 +35,7 @@ class CompiledSnippets(configurationInfo: KotlinNotebookScriptsModuleConfigurati
     override fun getOrUpdateLibraryDependencies(
         project: Project,
         entityStorage: MutableEntityStorage
-    ): List<KotlinScriptLibraryEntityId> {
+    ): Collection<KotlinScriptLibraryEntityId> {
         val (classes, sources) = getAllLibraryRoots(project)
         if (classes.isEmpty()) return emptyList()
 
@@ -44,7 +44,7 @@ class CompiledSnippets(configurationInfo: KotlinNotebookScriptsModuleConfigurati
             entityStorage addEntity KotlinScriptLibraryEntity(classes, sources, KotlinNotebookScriptEntitySource)
         }
 
-        return listOf(libraryId)
+        return setOf(libraryId)
     }
 }
 
@@ -61,11 +61,11 @@ class Jars(configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo) : No
     override fun getOrUpdateLibraryDependencies(
         project: Project,
         entityStorage: MutableEntityStorage
-    ): List<KotlinScriptLibraryEntityId> {
+    ): Collection<KotlinScriptLibraryEntityId> {
         val (classes, sources) = getAllLibraryRoots(project)
         if (classes.isEmpty()) return emptyList()
 
-        return buildList {
+        return buildSet {
             for (virtualFileUrl in classes) {
                 val libraryName = virtualFileUrl.virtualFile?.name ?: virtualFileUrl.presentableUrl
                 val presentableName = virtualFileUrl.virtualFile?.nameWithoutExtension ?: libraryName

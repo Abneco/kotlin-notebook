@@ -1,7 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.k2.scriptingSupport.fir
 
-import com.intellij.injected.editor.VirtualFileWindow
+import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
 import com.intellij.kotlin.jupyter.core.util.isInsideKotlinNotebook
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -18,6 +18,11 @@ import org.jetbrains.kotlin.idea.base.fir.projectStructure.FirKaModuleFactory
 import org.jetbrains.kotlin.idea.base.projectStructure.ideProjectStructureProvider
 import org.jetbrains.kotlin.psi.KtFile
 
+/**
+ * This class allows customizing which module should be created for the scripts inside the notebook.
+ * Note that this extension should be exclusive
+ * with [org.jetbrains.kotlin.base.fir.scripting.projectStructure.FirKaScriptingModuleFactory].
+ */
 internal class FirKaNotebookModuleFactory : FirKaModuleFactory {
     override fun createScriptLibraryModule(
         project: Project, entity: KotlinScriptLibraryEntity
@@ -40,15 +45,19 @@ private class KaNotebookScriptModuleImpl(
     constructor(file: KtFile) : this(file.project, file, file.virtualFile)
 
     override val directRegularDependencies: List<KaModule> by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        val ipynbFileUrl =
-            (file.virtualFile as? VirtualFileWindow)?.delegate?.toVirtualFileUrl(virtualFileUrlManager) ?: return@lazy emptyList()
+        val notebookFileUrl = file.virtualFile.getTopLevelFileOrNull()
+            ?.toVirtualFileUrl(virtualFileUrlManager)
+        if (notebookFileUrl == null) {
+            return@lazy emptyList()
+        }
 
         buildList {
             val current = currentSnapshot
             val index = current.getVirtualFileUrlIndex()
-            val entities =
-                index.findEntitiesByUrl(ipynbFileUrl).distinct().filterIsInstance<KotlinScriptEntity>().flatMap { it.dependencies }
-                    .mapNotNull { current.resolve(it) }
+            val entities = index.findEntitiesByUrl(notebookFileUrl)
+                .distinct().filterIsInstance<KotlinScriptEntity>()
+                .flatMap { it.dependencies }
+                .mapNotNull { current.resolve(it) }
 
             addAll(entities.flatMap {
                 project.ideProjectStructureProvider.getKaScriptLibraryModules(it)

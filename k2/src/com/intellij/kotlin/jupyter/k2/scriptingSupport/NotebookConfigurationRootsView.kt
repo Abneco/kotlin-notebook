@@ -49,7 +49,7 @@ sealed interface NotebookConfigurationRootsView {
     /**
      * Creates or updates an [entityStorage] based on the dependency roots.
      */
-    fun getOrUpdateLibraryDependencies(project: Project, entityStorage: MutableEntityStorage): List<KotlinScriptLibraryEntityId>
+    fun getOrUpdateLibraryDependencies(project: Project, entityStorage: MutableEntityStorage): Collection<KotlinScriptLibraryEntityId>
 }
 
 

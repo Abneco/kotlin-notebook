@@ -8,6 +8,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.settings.NotebookProjectJdkOption
 import com.intellij.kotlin.jupyter.core.util.debugInTests
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
+import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceScriptEntities
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -175,9 +176,7 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         val workspaceSnapshot = workspaceModel.currentSnapshot
         val tmpSnapshot = MutableEntityStorage.from(workspaceSnapshot)
 
-        val dependencies =
-            workspaceSnapshot.getVirtualFileUrlIndex().findEntitiesByUrl(notebookFile.file.toVirtualFileUrl(virtualFileUrlManager))
-                .filterIsInstance<KotlinScriptEntity>().flatMap { it.dependencies }
+        val dependencies = notebookFile.findK2WorkspaceScriptEntities(workspaceModel).flatMap { it.dependencies }
 
         dependencies.forEach {
             it.resolve(workspaceSnapshot)?.let { libraryEntity ->
@@ -197,7 +196,9 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
     ) {
         fun buildLibraryDependencies(): Collection<KotlinScriptLibraryEntityId> {
             val dependencyViews = notebookModuleConfiguration.createConfigurationDependencyViews()
-            return dependencyViews.flatMap { it.getOrUpdateLibraryDependencies(project, mutableEntityStorage) }.toSet()
+            return dependencyViews.flatMapTo(mutableSetOf()) {
+                it.getOrUpdateLibraryDependencies(project, mutableEntityStorage)
+            }
         }
 
         val virtualFile = notebookModuleConfiguration.notebookFile
