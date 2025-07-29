@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.test.notebook.codeinsight
 
 import com.intellij.codeInsight.intention.IntentionAction
+import com.intellij.codeInsight.intention.IntentionActionDelegate
 import com.intellij.modcommand.ModCommandAction
 
 /**
@@ -17,4 +18,16 @@ internal fun createIntention(classFqn: String): IntentionAction? {
     val newInstance = klass.getDeclaredConstructor().newInstance()
     return (newInstance as? ModCommandAction)?.asIntention() ?: newInstance as? IntentionAction
     ?: error("Class `$classFqn` has to be IntentionAction or ModCommandAction")
+}
+
+internal fun IntentionAction.actionId(): String {
+    val asModCommand = asModCommandAction()
+    if (asModCommand != null) {
+        return asModCommand.javaClass.name
+    }
+
+    return when (this) {
+        is IntentionActionDelegate -> delegate.actionId()
+        else -> javaClass.name
+    }
 }

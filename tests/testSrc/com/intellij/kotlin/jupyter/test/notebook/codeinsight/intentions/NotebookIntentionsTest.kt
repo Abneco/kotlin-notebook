@@ -26,10 +26,25 @@ class NotebookIntentionsTest : KotlinNotebookTestCase() {
     fun convertFunctionToExtension() = runFileIntentionsTest()
 
     @Test
+    fun convertToInvocation() = runFileIntentionsTest()
+
+    @Test
     fun introduceVariable() = runFileIntentionsTest()
 
     @Test
     fun addNamesToArguments() = runFileIntentionsTest()
+
+    @Test
+    fun introduceFunction() = runFileIntentionsTest()
+
+    @Test
+    fun introduceCallablesToClass() = runFileIntentionsTest()
+
+    @Test
+    fun introduceClass() = runFileIntentionsTest()
+
+    @Test
+    fun implementMember() = runFileIntentionsTest()
 
     private fun runFileIntentionsTest() = runNotebookTest {
         assertTestFileHasCaret()

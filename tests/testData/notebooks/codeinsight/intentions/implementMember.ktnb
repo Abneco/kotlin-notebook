@@ -1,0 +1,14 @@
+#%%
+// org.jetbrains.kotlin.idea.core.overrideImplement.KtImplementMembersQuickfix
+
+interface T {
+    fun <T> id(x: T) = x
+
+    fun <T> idAdapter(x: T)
+
+    val name: String
+}
+
+class<caret> B : T {
+    override val name: String = "Slav"
+}

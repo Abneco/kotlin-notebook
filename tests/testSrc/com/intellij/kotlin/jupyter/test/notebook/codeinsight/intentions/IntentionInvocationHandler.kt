@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.test.notebook.codeinsight.intentions
 
 import com.intellij.codeInsight.intention.IntentionAction
+import com.intellij.kotlin.jupyter.test.notebook.codeinsight.actionId
 import com.intellij.kotlin.jupyter.test.notebook.codeinsight.createIntention
 import com.intellij.modcommand.ActionContext
 import com.intellij.modcommand.ModCommand
@@ -43,21 +44,22 @@ class IntentionInvocationHandler(
     fun invokeIntentionsInFile(ktFile: KtFile) {
         val injectionTest = runReadAction { ktFile.text }
 
-        val intentions = injectionTest.parseIntentionsFromText()
-        if (intentions.isEmpty()) {
-            error("No intentions found")
-        }
-
         val project = testFixture.project
         val editor = testFixture.editor
 
-        val applicableActions = runReadAction {
-            intentions.filter { it.isAvailable(project, editor, testFixture.file) }
-        }
-        applicableActions.size shouldNotBe 0
-
         runInEdtAndWait {
             configureCodeStyleAndRun(project, { FormatSettingsUtil.createConfigurator(injectionTest, it).configureSettings() }) {
+                val intentionsFromQuickFixes = getIntentionsFromQuickFixes()
+                val intentions = injectionTest.parseIntentionsFromText(intentionsFromQuickFixes)
+                if (intentions.isEmpty()) {
+                    error("No intentions found")
+                }
+
+                val applicableActions = runReadAction {
+                    intentions.filter { it.isAvailable(project, editor, testFixture.file) }
+                }
+                applicableActions.size shouldNotBe 0
+
                 try {
                     for (action in applicableActions) {
                         action.doInvokeFor(injectionTest, ktFile)
@@ -94,7 +96,7 @@ class IntentionInvocationHandler(
         }
     }
 
-    private fun String.parseIntentionsFromText(): Collection<IntentionAction> {
+    private fun String.parseIntentionsFromText(availableQuickFixes: Collection<IntentionAction>): Collection<IntentionAction> {
         val text = this
         val startingComments = text.split("\n").takeWhile { it.startsWith("//") }
             // take only with fqns specified
@@ -102,8 +104,29 @@ class IntentionInvocationHandler(
 
         return startingComments.mapNotNull {
             val fqn = it.removePrefix("// ")
-            createIntention(fqn)
+            try {
+                // try to create intention from fqn
+                createIntention(fqn)
+            } catch (_: NoSuchMethodException) {
+                // fallback to quickFix register
+                availableQuickFixes.firstOrNull { intentionAction ->
+                    intentionAction.actionId() == fqn
+                }
+            }
         }
+    }
+
+    @RequiresEdt
+    private fun getIntentionsFromQuickFixes(): Collection<IntentionAction> {
+        testFixture.doHighlighting()
+
+        val intentions = testFixture.availableIntentions
+        LOG.warn("Found ${intentions.size} quick fixes:\n ${intentions.joinToString { it.actionId() } + ", "}")
+        if (intentions.isEmpty()) {
+            error("No intentions found from registar")
+        }
+
+        return intentions
     }
 
     @RequiresEdt

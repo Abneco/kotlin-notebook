@@ -1,0 +1,10 @@
+// org.jetbrains.kotlin.idea.k2.codeinsight.quickFixes.createFromUsage.CreateKotlinCallableAction
+
+fun id(x: Int, name: String) {
+    TODO("Not yet implemented")
+}
+
+id(
+  x = 1,
+  name = "john"
+)

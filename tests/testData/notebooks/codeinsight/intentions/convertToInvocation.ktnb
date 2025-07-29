@@ -1,0 +1,6 @@
+#%%
+// org.jetbrains.kotlin.idea.quickfix.ChangeToFunctionInvocationFix
+
+fun foo(i: Int) = 42
+
+foo<caret> - 12
