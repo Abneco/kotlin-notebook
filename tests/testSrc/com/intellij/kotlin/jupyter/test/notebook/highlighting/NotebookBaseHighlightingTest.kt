@@ -27,6 +27,12 @@ class NotebookBaseHighlightingTest: KotlinNotebookTestCase() {
         runHighlighting().assertHighlightResult(HighlightCheckStrategy.ShadowedErrors)
     }
 
+    @Test
+    @K2Only("JDK setup is special for K2 mode")
+    fun jdkTest() = runNotebookTest {
+        runHighlighting().assertHighlightResult(HighlightCheckStrategy.OnlyValidSyntax)
+    }
+
     @K2Only("This fails on K1 for unknown reasons")
     @Test
     fun resolvedAfterExecution() = runNotebookTest {

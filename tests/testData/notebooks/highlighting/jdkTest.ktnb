@@ -1,0 +1,7 @@
+#%%
+val klass = this::class.java
+2 + 2
+#%%
+class Foo {
+  val z = 1
+}
