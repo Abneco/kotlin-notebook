@@ -41,6 +41,7 @@ jvm_library(
     "@community//notebooks/notebook-ui:ui",
     "@community//platform/projectModel-api:projectModel",
     "@community//platform/platform-impl/ui",
+    "@lib//:kotlinx-datetime-jvm",
   ],
   runtime_deps = [
     ":plots_resources",
