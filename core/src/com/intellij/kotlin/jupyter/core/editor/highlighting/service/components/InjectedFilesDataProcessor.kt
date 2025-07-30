@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.editor.highlighting.service.components
 
 import com.intellij.concurrency.ConcurrentCollectionFactory
+import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.Disposable
@@ -64,23 +65,24 @@ internal class InjectedFilesDataProcessor(
         if (cells == null) {
             return
         }
+        if (targetIndexes.isEmpty() && completeRangeInd != null) {
+            val psiCell = cells.getOrNull(completeRangeInd) ?: return
+            targetPsiFile = psiCell.getInjectedKtFiles(injectedLanguageManager).firstOrNull()
+            return
+        }
 
         for (ind in targetIndexes) {
             val psiCell = cells.getOrNull(ind) ?: continue
-            val injectedPsiFiles = injectedLanguageManager.getInjectedPsiFiles(psiCell)
-            if (injectedPsiFiles == null) {
+            val injectedKtFiles = psiCell.getInjectedKtFiles(injectedLanguageManager)
+            // skip non Kt
+            if (injectedKtFiles.isEmpty()) {
                 finishedFilesIndexes.add(ind)
                 continue
             }
 
-            // skip non Kt
-            if (injectedPsiFiles.none { f -> f.first is KtFile }) {
-                finishedFilesIndexes.add(ind)
-                continue
-            }
-            injectedPsiFiles.firstOrNull { f -> f.first is KtFile }?.first?.let { ktFile ->
+            for (ktFile in injectedKtFiles) {
                 val ktFileRange = injectedLanguageManager.injectedToHost(ktFile, ktFile.textRange)
-                fileToInjectionData[ktFile as KtFile] = InjectedFileData(
+                fileToInjectionData[ktFile] = InjectedFileData(
                     ind,
                     ktFile,
                     ktFileRange,
