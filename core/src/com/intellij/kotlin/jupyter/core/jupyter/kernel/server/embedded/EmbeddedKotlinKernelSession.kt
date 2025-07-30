@@ -18,13 +18,14 @@ import org.jetbrains.kotlinx.jupyter.config.defaultRuntimeProperties
 import org.jetbrains.kotlinx.jupyter.libraries.DefaultResolutionInfoProviderFactory
 import org.jetbrains.kotlinx.jupyter.libraries.createLibraryHttpUtil
 import org.jetbrains.kotlinx.jupyter.messaging.MessageHandler
+import org.jetbrains.kotlinx.jupyter.protocol.startup.parameters.KernelConfig
 import org.jetbrains.kotlinx.jupyter.repl.ReplConfig
 import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
-import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
+import org.jetbrains.kotlinx.jupyter.startup.parameters.KotlinKernelOwnParams
 
 class EmbeddedKotlinKernelSession(
     private val project: Project,
-    private val kernelConfig: KernelConfig,
+    private val kernelConfig: KernelConfig<KotlinKernelOwnParams>,
     override val sessionId: JupyterNotebookSessionId,
     private val loggerFactory: EmbeddedKotlinKernelLoggerFactory,
     private val onMessage: (JupyterMessage) -> Unit

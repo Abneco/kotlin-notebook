@@ -8,7 +8,8 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.DefaultKotlinKerne
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelStartupOptions
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
-import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
+import org.jetbrains.kotlinx.jupyter.protocol.startup.parameters.KernelConfig
+import org.jetbrains.kotlinx.jupyter.startup.parameters.KotlinKernelOwnParams
 import org.jetbrains.kotlinx.jupyter.zmq.protocol.ZmqKernelPorts
 
 class EmbeddedKernelRunnableHandler(
@@ -18,7 +19,7 @@ class EmbeddedKernelRunnableHandler(
     startupOptions,
 ) {
     val loggerFactory: EmbeddedKotlinKernelLoggerFactory = EmbeddedKotlinKernelLoggerFactory()
-    private val kernelConfig: KernelConfig = DefaultKotlinKernelConfigFactory(
+    private val kernelConfig: KernelConfig<KotlinKernelOwnParams> = DefaultKotlinKernelConfigFactory(
         startupOptions,
         ZmqKernelPorts { 0 },
     ).create()

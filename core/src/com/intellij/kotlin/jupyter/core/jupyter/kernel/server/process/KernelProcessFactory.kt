@@ -80,13 +80,13 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
         )
 
         val commandLine = GeneralCommandLine(cmdArgs).apply {
-            workingDir?.let { withWorkDirectory(it.toFile()) }
+            workingDir?.let { withWorkingDirectory(it) }
             withEnvironment(options.extraEnvironmentVariables)
             KernelProcessCommandLineCustomizer.customize(this)
         }
 
         return SeparateProcessKotlinKernelRunnableHandler(
-            startupOptions, commandLine, kernelConfig,
+            startupOptions, commandLine, kernelConfig.jupyterParams,
         ).apply {
             addKernelListener(object : KotlinKernelProcessListener {
                 override fun beforeNotificationStarted(event: KotlinKernelNotificationStartedEvent) {

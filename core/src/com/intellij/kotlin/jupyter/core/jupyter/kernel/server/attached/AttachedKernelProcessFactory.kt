@@ -33,7 +33,7 @@ class AttachedKernelProcessFactory : ModeAwareKernelRunnableFactory(
         ).create()
 
         return AttachedKernelProcessHandler(
-            startupOptions, kernelConfig
+            startupOptions, kernelConfig.jupyterParams
         ).apply {
             addBaseKernelListener(MyListener)
         }

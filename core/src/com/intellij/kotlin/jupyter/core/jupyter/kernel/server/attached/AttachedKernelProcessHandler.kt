@@ -10,24 +10,24 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSessio
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.ACCEPT_ALL_MESSAGES
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelWsClientSession
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
-import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
+import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelJupyterParams
 
 class AttachedKernelProcessHandler(
     startupOptions: KernelStartupOptions,
-    private val kernelConfig: KernelConfig,
+    private val jupyterParams: KernelJupyterParams,
 ) : AbstractKotlinKernelRunnableHandler<KotlinKernelListener>(
     KotlinKernelListener::class,
     startupOptions
 ) {
     override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession? {
-        if (!kernelConfig.jupyterParams.areAllSocketsOpen()) {
+        if (!jupyterParams.areAllSocketsOpen()) {
             project.notebookNotifications.showNoKernelToAttach()
             return null
         }
 
         return KernelWsClientSession(
             sessionId,
-            kernelConfig,
+            jupyterParams,
             onMessage,
             ACCEPT_ALL_MESSAGES,
         )

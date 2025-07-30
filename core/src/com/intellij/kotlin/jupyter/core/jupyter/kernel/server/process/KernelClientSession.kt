@@ -10,25 +10,25 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketSide
 import org.jetbrains.kotlinx.jupyter.protocol.messaging.JupyterClientSockets
-import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
+import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelJupyterParams
 import org.jetbrains.kotlinx.jupyter.ws.JupyterWsClientSocketManager
 import org.jetbrains.kotlinx.jupyter.zmq.protocol.JupyterZmqClientSocketManager
 import org.jetbrains.kotlinx.jupyter.zmq.protocol.JupyterZmqClientSockets
 
 sealed class KernelClientSession(
     override val sessionId: JupyterNotebookSessionId,
-    kernelConfig: KernelConfig,
+    jupyterParams: KernelJupyterParams,
     onMessageCallback: (JupyterMessage) -> Unit,
     private val outgoingMessagesFilter: JupyterMessageFilter,
     communicationClientFactory: (
         sessionId: JupyterNotebookSessionId,
-        kernelConfig: KernelConfig,
+        jupyterParams: KernelJupyterParams,
         onMessageCallback: (JupyterMessage) -> Unit,
     ) -> JupyterKernelCommunicationClient,
 ) : JupyterKernelCommunicationClient, KotlinKernelSession {
 
     private val communicationClient = RestartableJupyterKernelCommunicationClient {
-        communicationClientFactory(sessionId, kernelConfig, onMessageCallback)
+        communicationClientFactory(sessionId, jupyterParams, onMessageCallback)
     }
 
     fun restartCommunication(): Unit = communicationClient.restart()
@@ -44,12 +44,12 @@ sealed class KernelClientSession(
 
 class KernelZmqClientSession(
     sessionId: JupyterNotebookSessionId,
-    kernelConfig: KernelConfig,
+    jupyterParams: KernelJupyterParams,
     onMessageCallback: (JupyterMessage) -> Unit,
     outgoingMessagesFilter: JupyterMessageFilter,
 ) : KernelClientSession(
     sessionId = sessionId,
-    kernelConfig = kernelConfig,
+    jupyterParams = jupyterParams,
     onMessageCallback = onMessageCallback,
     outgoingMessagesFilter = outgoingMessagesFilter,
     communicationClientFactory = ::ZmqJupyterKernelCommunicationClient,
@@ -57,13 +57,13 @@ class KernelZmqClientSession(
 
 private class ZmqJupyterKernelCommunicationClient(
     sessionId: JupyterNotebookSessionId,
-    kernelConfig: KernelConfig,
+    jupyterParams: KernelJupyterParams,
     onMessageCallback: (JupyterMessage) -> Unit
 ) : KotlinJupyterKernelCommunicationClient<JupyterZmqClientSockets>(
     sessionId = sessionId,
     onMessageCallback = onMessageCallback,
     sockets = JupyterZmqClientSocketManager(DefaultKernelLoggerFactory, JupyterSocketSide.IDE_CLIENT)
-        .open(kernelConfig.jupyterParams)
+        .open(jupyterParams)
 ) {
     override fun closeSockets() {
         super.closeSockets()
@@ -78,12 +78,12 @@ private class ZmqJupyterKernelCommunicationClient(
 
 class KernelWsClientSession(
     sessionId: JupyterNotebookSessionId,
-    kernelConfig: KernelConfig,
+    jupyterParams: KernelJupyterParams,
     onMessageCallback: (JupyterMessage) -> Unit,
     outgoingMessagesFilter: JupyterMessageFilter,
 ) : KernelClientSession(
     sessionId = sessionId,
-    kernelConfig = kernelConfig,
+    jupyterParams = jupyterParams,
     onMessageCallback = onMessageCallback,
     outgoingMessagesFilter = outgoingMessagesFilter,
     communicationClientFactory = ::WsJupyterKernelCommunicationClient,
@@ -91,11 +91,11 @@ class KernelWsClientSession(
 
 private class WsJupyterKernelCommunicationClient(
     sessionId: JupyterNotebookSessionId,
-    kernelConfig: KernelConfig,
+    jupyterParams: KernelJupyterParams,
     onMessageCallback: (JupyterMessage) -> Unit,
 ) : KotlinJupyterKernelCommunicationClient<JupyterClientSockets>(
     sessionId = sessionId,
     onMessageCallback = onMessageCallback,
     sockets = JupyterWsClientSocketManager(DefaultKernelLoggerFactory)
-        .open(kernelConfig.jupyterParams)
+        .open(jupyterParams)
 )

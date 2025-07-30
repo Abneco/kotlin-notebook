@@ -18,13 +18,13 @@ import org.jetbrains.kotlinx.jupyter.protocol.startup.KERNEL_SIGNATURE_SCHEME
 import org.jetbrains.kotlinx.jupyter.protocol.startup.KERNEL_TRANSPORT_SCHEME
 import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelJupyterParams
 import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelPorts
-import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
-import org.jetbrains.kotlinx.jupyter.startup.parameters.KernelOwnParams
+import org.jetbrains.kotlinx.jupyter.protocol.startup.parameters.KernelConfig
+import org.jetbrains.kotlinx.jupyter.startup.parameters.KotlinKernelOwnParams
 import java.io.File
 import java.nio.file.Path
 
 interface KernelConfigFactory {
-    fun create(): KernelConfig
+    fun create(): KernelConfig<KotlinKernelOwnParams>
 }
 
 abstract class AbstractKotlinKernelConfigFactory(
@@ -35,7 +35,7 @@ abstract class AbstractKotlinKernelConfigFactory(
     protected val replCompilerMode: ReplCompilerMode = startupOptions.replCompilerMode
     protected val extraCompilerArguments: List<String> = startupOptions.extraCompilerArguments
 
-    final override fun create(): KernelConfig = KernelConfig(
+    final override fun create(): KernelConfig<KotlinKernelOwnParams> = KernelConfig(
         jupyterParams = KernelJupyterParams(
             host = getHost(),
             ports = getKernelPorts(),
@@ -43,13 +43,13 @@ abstract class AbstractKotlinKernelConfigFactory(
             signatureScheme = KERNEL_SIGNATURE_SCHEME,
             signatureKey = getSignature(),
         ),
-        ownParams = KernelOwnParams(
+        ownParams = KotlinKernelOwnParams(
             scriptClasspath = getClasspath(),
             // Don't try to resolve libraries against some local directory,
             // use only embedded or remote JSON library files
             homeDir = null,
             debugPort = getDebugPortOrNull(notebookPath),
-            // Kernel provides API for a user to learn in what environment the session is run
+            // Kernel provides an API for a user to learn in what environment the session is run
             // In particular, a client type is available via `notebook.jupyterClientType`
             // in both separate and embedded modes
             clientType = JupyterClientType.KOTLIN_NOTEBOOK.name,

@@ -17,11 +17,11 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.DONT_ACCE
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.warnInTests
 import com.intellij.openapi.util.Key
-import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.EventDispatcher
 import com.intellij.util.application
 import com.intellij.util.io.BaseOutputReader
-import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
+import com.intellij.util.system.OS
+import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelJupyterParams
 
 /**
  * A handler for managing a separate process that runs a Kotlin Jupyter kernel.
@@ -35,14 +35,14 @@ import org.jetbrains.kotlinx.jupyter.startup.KernelConfig
  * @param project The current IDEA project.
  * @param kernelId Generated identifier for the Jupyter kernel.
  * @param commandLine The command line used to start the kernel process.
- * @param kernelConfig Configuration settings for the kernel.
+ * @param jupyterParams Jupyter parameters (ports, host, etc) for the kernel.
  * @param notebookPath The file path of the Jupyter notebook.
  * @param notebookVirtualFile The virtual file of the Jupyter notebook, if any.
  */
 class SeparateProcessKotlinKernelRunnableHandler(
     startupOptions: KernelStartupOptions,
     commandLine: GeneralCommandLine,
-    private val kernelConfig: KernelConfig,
+    private val jupyterParams: KernelJupyterParams,
 ): AbstractKotlinKernelRunnableHandler<KotlinKernelProcessListener>(
     KotlinKernelProcessListener::class,
     startupOptions,
@@ -58,7 +58,7 @@ class SeparateProcessKotlinKernelRunnableHandler(
     }
 
     override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession {
-        return KernelZmqClientSession(sessionId, kernelConfig, onMessage, DONT_ACCEPT_SHUTDOWN)
+        return KernelZmqClientSession(sessionId, jupyterParams, onMessage, DONT_ACCEPT_SHUTDOWN)
     }
 
     override fun dispose() {
@@ -88,8 +88,11 @@ class SeparateProcessKotlinKernelRunnableHandler(
         init {
             // Kotlin kernel process can't be killed gracefully on Linux.
             // For now, reasons are unknown, should be investigated.
-            // On Windows, a process should not be killed plainly, e.g., without using specific Windows API.
-            setShouldKillProcessSoftly(!application.isUnitTestMode && !SystemInfo.isLinux || SystemInfo.isWindows)
+            // On Windows, a process should not be killed plainly, e.g., without using a specific Windows API.
+            val currentOs = OS.CURRENT
+            setShouldKillProcessSoftly(
+                !application.isUnitTestMode && currentOs != OS.Linux || currentOs == OS.Windows
+            )
 
             addProcessListener(object : ProcessListener {
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
