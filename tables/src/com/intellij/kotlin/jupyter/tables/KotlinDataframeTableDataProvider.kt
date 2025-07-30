@@ -220,8 +220,8 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
 
     private fun getCommandCode(tableCommand: TableCommand): String {
         return when (tableCommand) {
-            is DescribeTableCommand, is InfoTableCommand, is VisualizationDataTableCommand, is ImageLoadCommand, is ImageStartLoadCommand -> throw NotImplementedError()
             is SliceTableCommand -> getSliceCommandCode(tableCommand)
+            else -> throw NotImplementedError()
         }
     }
 
