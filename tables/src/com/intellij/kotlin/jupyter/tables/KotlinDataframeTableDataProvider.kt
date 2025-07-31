@@ -18,25 +18,24 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.scientific.tables.DSTableBundle
-import com.intellij.scientific.tables.DSTableRawData
 import com.intellij.scientific.tables.DSTableDataException
+import com.intellij.scientific.tables.DSTableRawData
 import com.intellij.scientific.tables.DataId
 import com.intellij.scientific.tables.api.DSDataFrameInfo
 import com.intellij.scientific.tables.api.DSTableCommandExecutor
 import com.intellij.scientific.tables.api.DSTableDataProvider
 import com.intellij.scientific.tables.api.DSTableDataType
 import com.intellij.scientific.tables.api.DSTableText
-import com.intellij.scientific.tables.api.command.DescribeTableCommand
-import com.intellij.scientific.tables.api.filters.FilterExpression
-import com.intellij.scientific.tables.api.command.ImageLoadCommand
-import com.intellij.scientific.tables.api.command.ImageStartLoadCommand
-import com.intellij.scientific.tables.api.command.InfoTableCommand
 import com.intellij.scientific.tables.api.NestedTableDataProvider
-import com.intellij.scientific.tables.api.command.SliceTableCommand
-import com.intellij.scientific.tables.api.command.TableCommand
 import com.intellij.scientific.tables.api.TableDataProviderFactory
 import com.intellij.scientific.tables.api.TableDataTypeDetector
-import com.intellij.scientific.tables.api.command.VisualizationDataTableCommand
+import com.intellij.scientific.tables.api.command.ImageCommand
+import com.intellij.scientific.tables.api.command.InfoTableCommand
+import com.intellij.scientific.tables.api.command.InspectionsTableCommand
+import com.intellij.scientific.tables.api.command.SliceTableCommand
+import com.intellij.scientific.tables.api.command.StatisticsTableCommand
+import com.intellij.scientific.tables.api.command.TableCommand
+import com.intellij.scientific.tables.api.filters.FilterExpression
 import java.io.IOException
 import javax.swing.RowSorter
 import javax.swing.SortOrder
@@ -220,8 +219,12 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
 
     private fun getCommandCode(tableCommand: TableCommand): String {
         return when (tableCommand) {
-            is SliceTableCommand -> getSliceCommandCode(tableCommand)
-            else -> throw NotImplementedError()
+            is SliceTableCommand -> {
+                getSliceCommandCode(tableCommand)
+            }
+            is InfoTableCommand, is ImageCommand, is StatisticsTableCommand, is InspectionsTableCommand -> {
+                throw UnsupportedOperationException("For Kotlin DataFrame provider only slice command is supported")
+            }
         }
     }
 
