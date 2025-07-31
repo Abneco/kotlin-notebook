@@ -44,7 +44,7 @@ class NotebookIntentionsTest : KotlinNotebookTestCase() {
     fun introduceClass() = runFileIntentionsTest()
 
     @Test
-    fun implementMember() = runFileIntentionsTest()
+    fun implementMembers() = runFileIntentionsTest()
 
     private fun runFileIntentionsTest() = runNotebookTest {
         assertTestFileHasCaret()

@@ -15,19 +15,27 @@ internal fun createIntention(classFqn: String): IntentionAction? {
     } catch (_: ClassNotFoundException) {
         return null
     }
-    val newInstance = klass.getDeclaredConstructor().newInstance()
+    val newInstance = try {
+        klass.getDeclaredConstructor().newInstance()
+    } catch (_: NoSuchMethodException) {
+        // means arguments are required
+        return null
+    }
     return (newInstance as? ModCommandAction)?.asIntention() ?: newInstance as? IntentionAction
     ?: error("Class `$classFqn` has to be IntentionAction or ModCommandAction")
 }
 
-internal fun IntentionAction.actionId(): String {
+/**
+ * Returns underlying class FQN, unwrapping intention, if needed.
+ */
+internal fun IntentionAction.actionFqn(): String {
     val asModCommand = asModCommandAction()
     if (asModCommand != null) {
         return asModCommand.javaClass.name
     }
 
     return when (this) {
-        is IntentionActionDelegate -> delegate.actionId()
+        is IntentionActionDelegate -> delegate.actionFqn()
         else -> javaClass.name
     }
 }
