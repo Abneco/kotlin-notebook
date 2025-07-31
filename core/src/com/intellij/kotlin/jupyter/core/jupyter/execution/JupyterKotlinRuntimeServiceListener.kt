@@ -8,7 +8,6 @@ import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterR
 import com.intellij.kotlin.jupyter.core.projectModel.JupyterKotlinProjectArtifactsService
 import com.intellij.kotlin.jupyter.core.settings.SessionOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.generateSnippet
-import com.intellij.kotlin.jupyter.core.util.KotlinNotebookCodegen
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebookSession
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
@@ -21,7 +20,6 @@ class JupyterKotlinRuntimeServiceListener : JupyterRuntimeListener {
 
         val initCode = """
             ${service<SessionOptionsProvider>().generateSnippet()}
-            ${KotlinNotebookCodegen.generateColorSchemeChangeCode()}
         """.trimIndent()
 
         val callbacks = session.virtualFile.let { virtualFile ->
