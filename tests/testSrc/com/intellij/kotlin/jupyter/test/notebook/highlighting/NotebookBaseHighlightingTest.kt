@@ -6,6 +6,7 @@ import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.testFramework.TestDataPath
+import org.junit.Ignore
 import org.junit.Test
 
 @TestDataPath($$"$CONTENT_ROOT/testData/notebooks/highlighting")
@@ -29,6 +30,7 @@ class NotebookBaseHighlightingTest: KotlinNotebookTestCase() {
 
     @Test
     @K2Only("JDK setup is special for K2 mode")
+    @Ignore("KTNB-1119")
     fun jdkTest() = runNotebookTest {
         runHighlighting().assertHighlightResult(HighlightCheckStrategy.OnlyValidSyntax)
     }

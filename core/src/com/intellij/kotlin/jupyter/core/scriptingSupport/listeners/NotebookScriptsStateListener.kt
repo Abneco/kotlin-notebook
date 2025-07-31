@@ -12,8 +12,21 @@ import com.intellij.util.messages.Topic
  */
 fun interface NotebookScriptsStateListener {
     enum class UpdateState {
+        /**
+         * Update is completed for this notebook.
+         */
         COMPLETE,
-        INCOMPLETE,
+        /**
+         * Notebook requires update.
+         */
+        NEEDS_UPDATE,
+        /**
+         * Update is in progress
+         */
+        PENDING,
+        /**
+         * Update is skipped because it is not required.
+         */
         SKIPPED
     }
 
@@ -34,6 +47,6 @@ fun interface NotebookScriptsStateListener {
         )
 
         val UpdateState.isIncomplete: Boolean
-            get() = this == UpdateState.INCOMPLETE || this == UpdateState.SKIPPED
+            get() = this == UpdateState.NEEDS_UPDATE
     }
 }

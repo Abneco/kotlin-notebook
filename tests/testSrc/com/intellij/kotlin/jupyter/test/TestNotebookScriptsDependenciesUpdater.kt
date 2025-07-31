@@ -78,7 +78,7 @@ class TestNotebookScriptsDependenciesUpdater(
 
             when (updateState) {
                 UpdateState.COMPLETE -> updateCompleted()
-                UpdateState.INCOMPLETE, UpdateState.SKIPPED -> updateNotCompleted()
+                UpdateState.NEEDS_UPDATE, UpdateState.SKIPPED, UpdateState.PENDING -> updateNotCompleted()
             }
         }
 

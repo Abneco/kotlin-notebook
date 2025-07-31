@@ -13,6 +13,7 @@ import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentInde
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDownloader
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
+import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.UpdateState
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.ScriptingSupportUpdateEventsListener
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersionAsString
@@ -48,6 +49,9 @@ import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.kotlin.psi.KtFile
@@ -107,10 +111,12 @@ class JupyterCompilerPerFileService(
             ?.syncPublisher(NotebookScriptsStateListener.TOPIC)
     }
 
-
     init {
         Disposer.register(projectService, this)
     }
+
+    private val _updateState = MutableStateFlow(UpdateState.NEEDS_UPDATE)
+    val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
     // This lock is used to avoid concurrent modifications of data structures
     // that hold the session state from coroutines.
@@ -127,7 +133,6 @@ class JupyterCompilerPerFileService(
 
     private val directoryCounter = AtomicInteger(0)
     private val lastClasspathUpdate = AtomicReference<Path>()
-    private val isStateUpdating = AtomicReference(true)
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -175,15 +180,19 @@ class JupyterCompilerPerFileService(
      * pending update to Scripting infrastructure.
      */
     val needsConfigurationUpdate: Boolean get() {
-        val hasNewReceivers = scriptingSupportUpdatesProcessor.lastLoadedTypeOrNull != null
+        return when (_updateState.value) {
+            UpdateState.NEEDS_UPDATE, UpdateState.PENDING -> true
+            UpdateState.SKIPPED, UpdateState.COMPLETE -> {
+                val hasNewReceivers = scriptingSupportUpdatesProcessor.lastLoadedTypeOrNull != null
 
-        when {
-            hasNewReceivers || isStateUpdating.get() -> return true
-            // means service is restarted; the base class is absent
-            lastStableConfiguration.get() == project.baseScriptingCompilationConfiguration -> return true
+                when {
+                    hasNewReceivers -> true
+                    // means service is restarted; the base class is absent
+                    lastStableConfiguration.get() == project.baseScriptingCompilationConfiguration -> true
+                    else -> false
+                }
+            }
         }
-
-        return isStateUpdating.get()
     }
 
     init {
@@ -236,7 +245,7 @@ class JupyterCompilerPerFileService(
     private fun requestScriptingUpdateTestAware() {
         if (!ApplicationManager.getApplication().isUnitTestMode) {
             projectService.requestScriptingUpdate()
-            isStateUpdating.set(true)
+            _updateState.value = UpdateState.PENDING
         }
     }
 
@@ -286,7 +295,7 @@ class JupyterCompilerPerFileService(
 
         val kernelArtifactPaths = jars.map { it.absolutePath }
         KotlinNotebookPermanentIndexService.getInstance(project)
-                .addToPermanentIndex(kernelArtifactPaths, sourcesJars.map { it.absolutePath })
+            .addToPermanentIndex(kernelArtifactPaths, sourcesJars.map { it.absolutePath })
         kernelArtifactPaths.updateLastClasspathArtifact()
 
         return jars.isNotEmpty() || sourcesJars.isNotEmpty()
@@ -361,8 +370,8 @@ class JupyterCompilerPerFileService(
     }
 
     fun addCompiledSnippet(
-      snippetMetadata: EvaluatedSnippetMetadata,
-      psiCell: JupyterPsiCell?,
+        snippetMetadata: EvaluatedSnippetMetadata,
+        psiCell: JupyterPsiCell?,
     ) {
         coroutineScope.async {
             try {
@@ -382,7 +391,7 @@ class JupyterCompilerPerFileService(
 
     fun requestScriptingUpdate() {
         projectService.requestScriptingUpdate()
-        isStateUpdating.set(true)
+        _updateState.value = UpdateState.PENDING
     }
 
     private fun getLineFolderName(lineNumber: Int) = "line_$lineNumber"
@@ -556,11 +565,11 @@ class JupyterCompilerPerFileService(
         }
 
         private suspend fun afterUpdateImpl(notebooks: Collection<BackedNotebookVirtualFile>?) {
-            val stateUpdateState = updateScriptConfigurationIfNeeded(notebooks)
-            scriptsChangePublisher?.scriptsConfigurationUpdated(virtualFile, stateUpdateState)
+            val updateState = processUpdate(notebooks)
+            _updateState.value = updateState
+            scriptsChangePublisher?.scriptsConfigurationUpdated(virtualFile, updateState)
 
-            if (stateUpdateState == NotebookScriptsStateListener.UpdateState.COMPLETE) {
-                // FIXME Why do we only restart HL in case of a complete update?
+            if (updateState == UpdateState.COMPLETE) {
                 readAction {
                     virtualFile.file.findPsiFile(project)?.let { psiFile ->
                         DaemonCodeAnalyzer.getInstance(project).restart(psiFile)
@@ -569,31 +578,49 @@ class JupyterCompilerPerFileService(
             }
         }
 
-        private suspend fun updateScriptConfigurationIfNeeded(
-            notebooks: Collection<BackedNotebookVirtualFile>?
-        ): NotebookScriptsStateListener.UpdateState {
-            // return if afterUpdate triggerred for another service
-            val lastScriptPath = getLastScriptArtifactPath() ?: run {
-                LOG.debug("Configuration for ${virtualFile.file.name} is not updated, no last script path")
-                return NotebookScriptsStateListener.UpdateState.SKIPPED
+        private suspend fun processUpdate(notebooks: Collection<BackedNotebookVirtualFile>?): UpdateState {
+            val lastScriptPath = getLastScriptArtifactPath()
+            if (!shouldProcessUpdate(lastScriptPath, notebooks)) {
+                return UpdateState.SKIPPED
             }
 
-            // FIXME logic doesn't seem correct, is it really the only place to set isStateUpdating to false?
-            if (notebooks != null && virtualFile !in notebooks) {
-                isStateUpdating.set(false)
-                LOG.debug("Configuration for ${virtualFile.file.name} is not updated, it's not in the list of updated notebooks ($notebooks)")
-                return NotebookScriptsStateListener.UpdateState.SKIPPED
-            }
-
-            val vFileUrl = lastScriptPath.toVirtualFileUrl(project.workspaceModel.getVirtualFileUrlManager())
-
-            if (!scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, vFileUrl)) {
-                LOG.info("Configuration is not consistent for ${virtualFile.file.name}, absent $lastScriptPath, fileUrl: ${vFileUrl.url}")
-                return NotebookScriptsStateListener.UpdateState.INCOMPLETE
+            val mightBeComplete = checkIfUpdatePotentiallyCompleted(lastScriptPath!!)
+            if (!mightBeComplete) {
+                return UpdateState.NEEDS_UPDATE
             }
 
             updateLastStableConfiguration()
-            return NotebookScriptsStateListener.UpdateState.COMPLETE
+
+            return implicitListsUpdateMutex.withLock {
+                updateImplicitLists()
+            }
+        }
+
+        private fun checkIfUpdatePotentiallyCompleted(lastScriptPath: Path): Boolean {
+            val vFileUrl = lastScriptPath.toVirtualFileUrl(project.workspaceModel.getVirtualFileUrlManager())
+
+            return when {
+                !scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, vFileUrl) -> {
+                    LOG.info("Configuration is not consistent for ${virtualFile.file.name}, absent $lastScriptPath, fileUrl: ${vFileUrl.url}")
+                    false
+                }
+                // might be potentially complete, further checks needed
+                else -> true
+            }
+        }
+
+        private fun shouldProcessUpdate(lastScriptPath: Path?, notebooks: Collection<BackedNotebookVirtualFile>?): Boolean {
+            return when {
+                lastScriptPath == null -> {
+                    LOG.debug("Configuration for ${virtualFile.file.name} is not updated, no last script path")
+                    false
+                }
+                notebooks != null && virtualFile !in notebooks -> {
+                    LOG.debug("Configuration for ${virtualFile.file.name} is not updated, it's not in the list of updated notebooks ($notebooks)")
+                    false
+                }
+                else -> true
+            }
         }
 
         private suspend fun updateLastStableConfiguration() {
@@ -603,11 +630,6 @@ class JupyterCompilerPerFileService(
 
                 if (lastStableConfiguration.compareAndSet(lastStableConf, updatedConfiguration)) {
                     LOG.info("Cached configuration updated for ${virtualFile.file.name}!")
-                    coroutineScope.async { // do not wait
-                        implicitListsUpdateMutex.withLock {
-                            updateImplicitLists()
-                        }
-                    }
                     break
                 }
             }
@@ -617,13 +639,14 @@ class JupyterCompilerPerFileService(
          * It might be the case that added new classes are not yet present in stored configurations.
          * For them to appear in the stable configuration cache, we need to invoke update once again.
          */
-        private suspend fun updateImplicitLists() {
+        private suspend fun updateImplicitLists(): UpdateState {
             if (implicitReceiversClassPathData.isEmpty()) {
                 // nothing to update, one needs to check the state
-                isStateUpdating.set(
-                    checkConfigurationNeedsUpdate()
-                )
-                return
+                return if (checkConfigurationNeedsUpdate()) {
+                    UpdateState.NEEDS_UPDATE
+                } else {
+                    UpdateState.COMPLETE
+                }
             }
 
             val newStableReceivers = getSnippetsReadyForConfigurationUpdate()
@@ -633,8 +656,6 @@ class JupyterCompilerPerFileService(
                     implicitsList.addClass(it.fromClass!!)
                 }
             }
-            // Mark state as dirty
-            isStateUpdating.set(true)
 
             LOG.debug {
                 "Added classes in ${virtualFile.file.name} to implicitList: ${newStableReceivers.flatMap { it.snippetTypes.map { type -> type.typeName } }}"
@@ -642,12 +663,13 @@ class JupyterCompilerPerFileService(
 
             // someone already made everything
             if (implicitReceiversClassPathData.isEmpty()) {
-                return
+                return UpdateState.COMPLETE
             }
 
             implicitReceiversClassPathData.removeAll(newStableReceivers.toSet())
 
             requestScriptingUpdate()
+            return UpdateState.PENDING
         }
 
         private suspend fun checkConfigurationNeedsUpdate(): Boolean {
