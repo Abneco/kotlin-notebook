@@ -3,10 +3,11 @@ package com.intellij.kotlin.jupyter.core.jupyter.toolwindow
 
 import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
+import com.intellij.jupyter.execution.listeners.KotlinKernelEvent
+import com.intellij.jupyter.execution.listeners.KernelListener
+import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
+import com.intellij.jupyter.execution.toolwindow.KernelRunnableToolWindowSettings
 import com.intellij.kotlin.jupyter.core.editor.appearance.KotlinNotebookToolWindowBuilder
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelEvent
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWindowManager.Companion.KOTLIN_NOTEBOOK_RUNNER_ID
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -46,7 +47,7 @@ class KotlinNotebookToolWindowManager(
 
     @CalledInAny
     fun showKotlinNotebookServerManagementToolWindow(
-        settings: KotlinNotebookToolWindowSettings,
+        settings: KernelRunnableToolWindowSettings,
     ) {
         coroutineScope.launch(Dispatchers.EDT) {
             showKotlinNotebookServerManagementToolWindowImpl(settings)
@@ -54,25 +55,22 @@ class KotlinNotebookToolWindowManager(
     }
 
     @RequiresEdt
-    private suspend fun showKotlinNotebookServerManagementToolWindowImpl(settings: KotlinNotebookToolWindowSettings) {
+    private suspend fun showKotlinNotebookServerManagementToolWindowImpl(settings: KernelRunnableToolWindowSettings) {
         val project = settings.project
         val notebookPath = settings.notebookPath
         val runnableHandler = settings.handler
 
         val toolWindow: ToolWindow = getOrCreateKotlinNotebookToolWindow()
-
-        val panelHelpId = notebookPath.toNotebookToolWindowPanelHelpId()
         val manager = toolWindow.contentManager
         if (project.isDisposed) return
 
-        val notebookToolWindowBuilder = KotlinNotebookToolWindowBuilder(coroutineScope, settings, panelHelpId, manager)
-
+        val notebookToolWindowBuilder = KotlinNotebookToolWindowBuilder.create(settings, manager)
         val newContent = notebookToolWindowBuilder.createMainContent()
 
         val oldContent = stoppedSessions.remove(notebookPath)
         manager.replaceContent(oldContent, newContent)
 
-        runnableHandler.addBaseKernelListener(object : KotlinKernelListener {
+        runnableHandler.addBaseKernelListener(object : KernelListener {
             override fun kernelWillTerminate(event: KotlinKernelEvent) {
                 handleKernelTermination(notebookPath, newContent)
             }
@@ -118,7 +116,7 @@ class KotlinNotebookToolWindowManager(
     /**
      * Registers content in the appropriate disposer based on the application mode.
      */
-    private fun registerContentInDisposer(runnableHandler: KotlinKernelRunnableHandler, content: Content) {
+    private fun registerContentInDisposer(runnableHandler: KernelRunnableHandler, content: Content) {
         // In tests, Editor disposal assertion comes before project disposal
         val parentDisposable = if (ApplicationManager.getApplication().isUnitTestMode) {
             runnableHandler

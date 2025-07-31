@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 
 import com.intellij.execution.impl.ConsoleViewImpl
-import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWindowSettings
+import com.intellij.jupyter.execution.toolwindow.KernelRunnableToolWindowSettings
 
 /**
  * Class responsible for managing the setup of the tool window when running the kernel in
@@ -10,7 +10,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWin
  */
 class EmbeddedProcessToolWindow(
     override val handler: EmbeddedKernelRunnableHandler,
-): KotlinNotebookToolWindowSettings() {
+): KernelRunnableToolWindowSettings() {
 
     override fun consoleWindowCreated(console: ConsoleViewImpl) {
         handler.loggerFactory.consoleView = console

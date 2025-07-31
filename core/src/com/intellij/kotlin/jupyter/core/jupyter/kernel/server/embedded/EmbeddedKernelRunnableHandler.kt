@@ -3,19 +3,19 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.AbstractKotlinKernelRunnableHandler
+import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOptions
+import com.intellij.jupyter.execution.kernel.AbstractKernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelStartupOptions
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
+import com.intellij.jupyter.execution.listeners.KernelListener
+import com.intellij.jupyter.execution.kernel.JupyterKernelConnection
 import org.jetbrains.kotlinx.jupyter.protocol.startup.parameters.KernelConfig
 import org.jetbrains.kotlinx.jupyter.startup.parameters.KotlinKernelOwnParams
 import org.jetbrains.kotlinx.jupyter.zmq.protocol.ZmqKernelPorts
 
 class EmbeddedKernelRunnableHandler(
     startupOptions: KernelStartupOptions,
-) : AbstractKotlinKernelRunnableHandler<KotlinKernelListener>(
-    KotlinKernelListener::class,
+) : AbstractKernelRunnableHandler<KernelListener>(
+    KernelListener::class,
     startupOptions,
 ) {
     val loggerFactory: EmbeddedKotlinKernelLoggerFactory = EmbeddedKotlinKernelLoggerFactory()
@@ -29,7 +29,7 @@ class EmbeddedKernelRunnableHandler(
         notifyTerminatedAndDispose(event)
     }
 
-    override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): KotlinKernelSession {
+    override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): JupyterKernelConnection {
         return EmbeddedKotlinKernelSession(
             project = project,
             kernelConfig = kernelConfig,

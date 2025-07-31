@@ -3,10 +3,10 @@ package com.intellij.kotlin.jupyter.core.debug.session
 
 import com.intellij.debugger.engine.DebugProcess
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.execution.util.findNotebookVirtualFileOrNull
 import com.intellij.kotlin.jupyter.core.debug.util.connection.DebugConnectionUtility
 import com.intellij.kotlin.jupyter.core.settings.isKernelVersionEnoughForInstrumentation
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
-import com.intellij.kotlin.jupyter.core.util.findNotebookVirtualFileOrNull
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service

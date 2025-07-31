@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.actions
 
 import com.intellij.icons.AllIcons
 import com.intellij.jupyter.core.jupyter.connections.action.shutdownNotebook
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableHandler
+import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -19,10 +19,10 @@ abstract class StopKotlinKernelActionBase : DumbAwareAction(
 )
 
 class StopKotlinKernelAction(
-    private val project: Project,
-    private val virtualFiles: List<VirtualFile>,
-    private val editors: List<Editor>,
-    private val handler: KotlinKernelRunnableHandler,
+  private val project: Project,
+  private val virtualFiles: List<VirtualFile>,
+  private val editors: List<Editor>,
+  private val handler: KernelRunnableHandler,
 ): StopKotlinKernelActionBase() {
     override fun actionPerformed(e: AnActionEvent) {
         shutdownNotebook(this::class, project, editors, virtualFiles)

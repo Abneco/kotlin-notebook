@@ -3,8 +3,8 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 
 import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelStartupOptions
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableHandler
+import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOptions
+import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ModeAwareKernelRunnableFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProcessFactory
 import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWindowManager
@@ -21,10 +21,8 @@ class EmbeddedKernelRunnableFactory : ModeAwareKernelRunnableFactory(
 ) {
     override fun createSpecificKernelRunnableHandler(
         startupOptions: KernelStartupOptions,
-    ): KotlinKernelRunnableHandler {
-        val runnableHandler = EmbeddedKernelRunnableHandler(
-            startupOptions
-        )
+    ): KernelRunnableHandler {
+        val runnableHandler = EmbeddedKernelRunnableHandler(startupOptions)
 
         KotlinNotebookToolWindowManager.getInstance(startupOptions.project)
             .showKotlinNotebookServerManagementToolWindow(

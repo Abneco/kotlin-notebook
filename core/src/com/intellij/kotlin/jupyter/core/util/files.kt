@@ -59,11 +59,6 @@ fun Project.sourceRootsForDependencies(notebookFile: BackedNotebookVirtualFile):
     }
 }
 
-fun Path.findNotebookVirtualFileOrNull(): BackedNotebookVirtualFile? {
-    val virtualFile = VirtualFileManager.getInstance().findFileByNioPath(this) ?: return null
-    return BackedNotebookVirtualFile.Companion.takeBackend(virtualFile)
-}
-
 fun Project.findEditors(virtualFile: VirtualFile): List<Editor> {
     val fileEditorManager = FileEditorManager.getInstance(this)
     return fileEditorManager.getAllEditors(virtualFile)

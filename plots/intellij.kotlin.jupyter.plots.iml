@@ -65,6 +65,7 @@
     <orderEntry type="module" module-name="intellij.notebooks.ui" />
     <orderEntry type="module" module-name="intellij.platform.projectModel" />
     <orderEntry type="module" module-name="intellij.platform.ide.ui" />
+    <orderEntry type="module" module-name="intellij.jupyter.execution" />
     <orderEntry type="library" name="kotlinx-datetime-jvm" level="project" />
   </component>
 </module>

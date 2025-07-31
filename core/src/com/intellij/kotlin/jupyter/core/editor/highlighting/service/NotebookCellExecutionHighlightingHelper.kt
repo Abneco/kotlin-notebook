@@ -8,7 +8,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterR
 import com.intellij.kotlin.jupyter.core.editor.highlighting.events.ExecutionCallbackRegistered
 import com.intellij.kotlin.jupyter.core.editor.highlighting.events.ExecutionCallbackUnregistered
 import com.intellij.kotlin.jupyter.core.editor.highlighting.events.NotebookExecutionRelatedEventsProcessor
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
+import com.intellij.jupyter.execution.listeners.NotebookSessionEventListener
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.withReadLock
 import com.intellij.kotlin.jupyter.core.util.withWriteLock

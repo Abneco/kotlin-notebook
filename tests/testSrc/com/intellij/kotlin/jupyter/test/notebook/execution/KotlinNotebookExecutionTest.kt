@@ -1,8 +1,8 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.execution
 
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelRunnableFactory
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelPortsProvider
+import com.intellij.jupyter.execution.kernel.KernelRunnableFactory
+import com.intellij.jupyter.execution.process.KernelPortsProvider
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProcessFactory
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase

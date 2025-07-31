@@ -52,12 +52,6 @@ fun Logger.errorWithAttachments(message: String, vararg attachments: Attachment)
         RuntimeExceptionWithAttachments(message, *attachments)
     )
 
-fun Logger.warnInTests(messageFactory: () -> String) {
-    if (ApplicationManager.getApplication().isUnitTestMode) {
-        warn(messageFactory())
-    }
-}
-
 fun Logger.debugInTests(messageFactory: () -> String) {
     if (ApplicationManager.getApplication().isUnitTestMode) {
         debug(messageFactory())

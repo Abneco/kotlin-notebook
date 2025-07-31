@@ -5,10 +5,14 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
+import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOptions
+import com.intellij.jupyter.execution.kernel.SeparateProcessKernelRunnableHandler
+import com.intellij.jupyter.execution.process.KernelPortsProvider
+import com.intellij.jupyter.execution.listeners.KernelNotificationStartedEvent
+import com.intellij.jupyter.execution.listeners.KernelProcessListener
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.jupyter.actions.mode
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelStartupOptions
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ModeAwareKernelRunnableFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
@@ -45,7 +49,7 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
     @RequiresBackgroundThread
     override fun createSpecificKernelRunnableHandler(
         startupOptions: KernelStartupOptions,
-    ): SeparateProcessKotlinKernelRunnableHandler {
+    ): SeparateProcessKernelRunnableHandler {
         val kernelPorts = getKernelPorts()
         val kernelConfig = DefaultKotlinKernelConfigFactory(
             startupOptions,
@@ -85,15 +89,15 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
             KernelProcessCommandLineCustomizer.customize(this)
         }
 
-        return SeparateProcessKotlinKernelRunnableHandler(
+        return SeparateProcessKernelRunnableHandler(
             startupOptions, commandLine, kernelConfig.jupyterParams,
         ).apply {
-            addKernelListener(object : KotlinKernelProcessListener {
-                override fun beforeNotificationStarted(event: KotlinKernelNotificationStartedEvent) {
+            addKernelListener(object : KernelProcessListener {
+                override fun beforeNotificationStarted(event: KernelNotificationStartedEvent) {
                     KotlinNotebookToolWindowManager.getInstance(project)
                         .showKotlinNotebookServerManagementToolWindow(
                             KotlinKernelProcessToolWindow(
-                                event.source
+                                event.eventSource
                             )
                         )
                 }

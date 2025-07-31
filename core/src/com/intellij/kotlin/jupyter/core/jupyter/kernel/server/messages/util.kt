@@ -6,9 +6,9 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNoteb
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KERNEL_UPDATE_FILE_PATH_TIMEOUT
+import com.intellij.jupyter.execution.kernel.KERNEL_UPDATE_FILE_PATH_TIMEOUT
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.NoReplyMessageFactory
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.toJupyterMessage
+import com.intellij.jupyter.execution.kernel.toJupyterMessage
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull

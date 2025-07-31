@@ -8,13 +8,14 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMe
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionLaunchStrategy
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KERNEL_VERIFICATION_ATTEMPT_TIMEOUT
+import com.intellij.jupyter.execution.kernel.KERNEL_VERIFICATION_ATTEMPT_TIMEOUT
+import com.intellij.jupyter.execution.listeners.KotlinKernelEvent
+import com.intellij.jupyter.execution.listeners.KernelListener
+import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
+import com.intellij.jupyter.execution.process.KernelClientSession
+import com.intellij.jupyter.execution.process.KernelRunnableProvider
+import com.intellij.jupyter.execution.listeners.JupyterSessionVerifiedListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinInProcessJupyterClient
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelEvent
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelListener
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableHandler
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableProvider
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.JupyterSessionVerifiedListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.FinalizationPreservingCallback
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.sendMessageAndWait
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.updateNotebookMetadata
@@ -35,7 +36,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(
             val sessionData = jupyterClient.sessionDataFactory()
             val session = sessionFactory(sessionData) ?: return null
 
-            val kernel = (jupyterClient as? KotlinKernelRunnableProvider)?.getKernel(sessionData.kernelId)
+            val kernel = (jupyterClient as? KernelRunnableProvider)?.getKernel(sessionData.kernelId)
 
             if (verifySession(session, kernel, sessionData.kernelId)) {
                 session.updateNotebookMetadata()
@@ -62,7 +63,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(
 
     private suspend fun verifySession(
         session: JupyterNotebookSession,
-        kernel: KotlinKernelRunnableHandler?,
+        kernel: KernelRunnableHandler?,
         kernelId: JupyterKernelId,
     ): Boolean {
         repeat(reconnectAttemptsCount) { attemptCounter ->
@@ -77,7 +78,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(
                 content = KernelInfoRequest(),
                 timeout = KERNEL_VERIFICATION_ATTEMPT_TIMEOUT
             ) { verificationDeferred ->
-                kernel?.addBaseKernelListener(object : KotlinKernelListener {
+                kernel?.addBaseKernelListener(object : KernelListener {
                     override fun kernelTerminated(event: KotlinKernelEvent) {
                         verificationDeferred.complete(false)
                     }

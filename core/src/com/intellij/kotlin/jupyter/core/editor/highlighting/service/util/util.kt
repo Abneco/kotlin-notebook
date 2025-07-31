@@ -10,7 +10,7 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHigh
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.InjectedHostHasErrors
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelRunnableHandler
+import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
@@ -86,7 +86,7 @@ internal fun Document.retrieveCellIntervalUnderCaret(virtualFile: VirtualFile, p
 }
 
 internal suspend fun cleanupKernelSession(
-    kernelHandler: KotlinKernelRunnableHandler,
+  kernelHandler: KernelRunnableHandler,
 ) {
     if (!kernelHandler.isVerified) return
     val notebookFile = kernelHandler.notebookVirtualFile ?: return

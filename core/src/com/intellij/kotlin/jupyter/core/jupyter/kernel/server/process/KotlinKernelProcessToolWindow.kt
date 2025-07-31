@@ -3,7 +3,8 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 
 import com.intellij.execution.impl.ConsoleViewImpl
 import com.intellij.jupyter.core.jupyter.server.ui.attachJupyterServerContentCloseListener
-import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWindowSettings
+import com.intellij.jupyter.execution.kernel.SeparateProcessKernelRunnableHandler
+import com.intellij.jupyter.execution.toolwindow.KernelRunnableToolWindowSettings
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.ui.content.Content
 
@@ -12,8 +13,8 @@ import com.intellij.ui.content.Content
  * separate process.
  */
 class KotlinKernelProcessToolWindow(
-  override val handler: SeparateProcessKotlinKernelRunnableHandler,
-): KotlinNotebookToolWindowSettings() {
+  override val handler: SeparateProcessKernelRunnableHandler,
+): KernelRunnableToolWindowSettings() {
     override fun toolWindowContentCreated(newContent: Content) {
         super.toolWindowContentCreated(newContent)
         attachJupyterServerContentCloseListener(

@@ -4,8 +4,8 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelCommunicationClient
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSession
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.asRawMessage
+import com.intellij.jupyter.execution.kernel.JupyterKernelConnection
+import com.intellij.jupyter.execution.kernel.asRawMessage
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.chooseJvmTargetForSnippets
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersion
 import com.intellij.kotlin.jupyter.core.settings.toCanonicalString
@@ -29,7 +29,7 @@ class EmbeddedKotlinKernelSession(
     override val sessionId: JupyterNotebookSessionId,
     private val loggerFactory: EmbeddedKotlinKernelLoggerFactory,
     private val onMessage: (JupyterMessage) -> Unit
-) : KotlinKernelSession, JupyterKernelCommunicationClient {
+) : JupyterKernelConnection, JupyterKernelCommunicationClient {
 
     private val messageHandler = createMessageHandler()
 

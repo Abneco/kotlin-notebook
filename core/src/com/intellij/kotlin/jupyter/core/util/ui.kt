@@ -1,8 +1,6 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.util
 
-import com.intellij.execution.ui.RunnerLayoutUi
-import com.intellij.ui.content.Content
 import com.intellij.util.ui.StartupUiUtil
 import com.intellij.util.ui.UIUtil
 import java.awt.Component
@@ -18,9 +16,9 @@ fun uiFeelsDark(): Boolean {
     return StartupUiUtil.isDarkTheme
 }
 
-fun Component.ancestors() = generateSequence(this) { it.parent }
+fun Component.ancestors(): Sequence<Component> = generateSequence(this) { it.parent }
 
-inline fun <reified T> Component.firstAncestorOfType() = ancestors().firstOfType<T>()
+inline fun <reified T> Component.firstAncestorOfType(): T? = ancestors().firstOfType<T>()
 
 fun Component.dfsDescendants(): Sequence<Component> {
     return sequence {
@@ -41,7 +39,7 @@ fun Component.dfsDescendants(): Sequence<Component> {
 }
 
 @Suppress("UNUSED")
-inline fun <reified T> Component.firstDescendantOfType() = dfsDescendants().firstOfType<T>()
+inline fun <reified T> Component.firstDescendantOfType(): T? = dfsDescendants().firstOfType<T>()
 
 fun interface MouseEventDispatcher {
     fun dispatch(event: MouseEvent?)
@@ -144,12 +142,4 @@ fun Component.addCursorProvider(cursorProviderFactory: CursorProvider.Factory) {
     }
 
     addMouseMotionListener(mouseMotionListener)
-}
-
-fun RunnerLayoutUi.addNotebookTabsContent(vararg contents: Content?) {
-    for (content in contents) {
-        if (content == null) continue
-        content.isCloseable = false
-        addContent(content)
-    }
 }

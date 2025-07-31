@@ -35,9 +35,7 @@
         <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.kernel.kernelProcessCommandLineCustomizer"
                         interface="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer"
                         dynamic="true"/>
-        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.kernel.kernelRunnableFactory"
-                        interface="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelRunnableFactory"
-                        dynamic="true"/>
+
 
         <!-- Kotlin Mode Specific Factories -->
         <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.sessionLibrariesFilter"
@@ -297,6 +295,9 @@
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>
         <kernel.kernelVmCommandCustomizer
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.dataframe.KotlinDataframeKernelVmCommandCustomizer"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij.jupyter.execution">
         <kernel.kernelRunnableFactory
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProcessFactory"/>
         <kernel.kernelRunnableFactory

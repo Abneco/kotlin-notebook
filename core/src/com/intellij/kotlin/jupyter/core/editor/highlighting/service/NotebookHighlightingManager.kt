@@ -7,7 +7,7 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.service.components.D
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.components.HighlightingPassTokensProcessor
 import com.intellij.kotlin.jupyter.core.editor.typing.NotebookCaretListener
 import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.events.NotebookSessionEventListener
+import com.intellij.jupyter.execution.listeners.NotebookSessionEventListener
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookAfterScriptsUpdatePluginAwareHandler

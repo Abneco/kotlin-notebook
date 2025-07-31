@@ -7,9 +7,9 @@ import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.nbformat.DisplayDataContainer
+import com.intellij.jupyter.execution.util.convertObject
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.util.LETS_PLOT_MIME
-import com.intellij.kotlin.jupyter.core.util.convertObject
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.openapi.editor.Editor
 import com.intellij.util.asSafely

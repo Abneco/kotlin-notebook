@@ -1,8 +1,8 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.attached
 
+import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOptions
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.AbstractKotlinKernelConfigFactory
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KernelStartupOptions
 import com.intellij.openapi.project.Project
 import com.intellij.util.lang.JavaVersion
 import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelPorts
