@@ -122,6 +122,7 @@ jvm_library(
     "//plugins/jupyter/execution",
     "@community//plugins/kotlin/code-insight/api",
     "@community//plugins/kotlin/base/scripting/scripting.shared",
+    "@community//plugins/kotlin/base/psi",
     ":community_plugins_kotlin_scripting_provided",
     ":community_java_psi_provided",
     ":plugins_jupyter_core_provided",
