@@ -65,6 +65,8 @@
                 implementation="com.intellij.kotlin.jupyter.core.editor.codeInsight.KotlinNotebookCodeInsightExtension"/>
         <implementationDetailClassNameCheckerProvider
                 implementation="com.intellij.kotlin.jupyter.core.editor.codeInsight.KotlinNotebookImplementationDetailClassNameCheckerProvider"/>
+        <forwardDeclarationPolicyProvider
+                implementation="com.intellij.kotlin.jupyter.core.editor.codeInsight.KotlinNotebookForwardDeclarationPolicyProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.codeInsight.daemon.impl">

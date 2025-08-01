@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.core.editor.codeInsight
 
 import com.intellij.kotlin.jupyter.core.util.isInsideKotlinNotebookCodeCell
-import com.intellij.kotlin.jupyter.core.util.isKotlinNotebookCodeCell
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaDanglingFileResolutionMode
 import org.jetbrains.kotlin.idea.codeinsight.api.applicable.extensions.KotlinIdeCodeInsightExtension
@@ -12,13 +11,5 @@ class KotlinNotebookCodeInsightExtension: KotlinIdeCodeInsightExtension {
         if (!contextElement.isInsideKotlinNotebookCodeCell) return null
 
         return KaDanglingFileResolutionMode.IGNORE_SELF
-    }
-
-    override fun shouldAddDeclarationBeforeUsage(container: PsiElement): Boolean? {
-        if (!container.isKotlinNotebookCodeCell) return null
-
-        // In K2 REPL model, notebook cells are somewhat similar to function bodies,
-        // so we should add declarations before their usage
-        return true
     }
 }
