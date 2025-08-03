@@ -50,8 +50,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.kotlin.psi.KtFile
@@ -116,7 +114,6 @@ class JupyterCompilerPerFileService(
     }
 
     private val _updateState = MutableStateFlow(UpdateState.NEEDS_UPDATE)
-    val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
     // This lock is used to avoid concurrent modifications of data structures
     // that hold the session state from coroutines.
@@ -567,10 +564,10 @@ class JupyterCompilerPerFileService(
         private suspend fun afterUpdateImpl(notebooks: Collection<BackedNotebookVirtualFile>?) {
             val updateState = processUpdate(notebooks)
             _updateState.value = updateState
-            scriptsChangePublisher?.scriptsConfigurationUpdated(virtualFile, updateState)
 
-            if (updateState == UpdateState.COMPLETE) {
-                readAction {
+            readAction {
+                scriptsChangePublisher?.scriptsConfigurationUpdated(virtualFile, updateState)
+                if (updateState == UpdateState.COMPLETE) {
                     virtualFile.file.findPsiFile(project)?.let { psiFile ->
                         DaemonCodeAnalyzer.getInstance(project).restart(psiFile)
                     }
