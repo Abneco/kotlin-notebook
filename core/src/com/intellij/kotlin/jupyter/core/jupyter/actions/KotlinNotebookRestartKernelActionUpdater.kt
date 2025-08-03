@@ -20,7 +20,7 @@ import com.intellij.ui.BadgeIcon
 import com.intellij.util.ui.JBUI
 import java.lang.invoke.MethodHandles
 
-object JupyterKotlinRestartKernelActionUpdater {
+object KotlinNotebookRestartKernelActionUpdater {
     val LOG: Logger = Logger.getInstance(MethodHandles.lookup().lookupClass())
 
     fun update(e: AnActionEvent) {
@@ -35,17 +35,22 @@ object JupyterKotlinRestartKernelActionUpdater {
 
         if (!e.presentation.isEnabled) return
         val fileEditor = e.getData(PlatformDataKeys.FILE_EDITOR) ?: return
-        when (val dependenciesStatus = JupyterNotebookDependencies.getStatus(fileEditor)) {
-            JupyterNotebookDependencies.Status.UpToDate -> return
-            is JupyterNotebookDependencies.Status.NotUpToDate -> {
+        when (val dependenciesStatus = KotlinNotebookRestartNotification.getStatus(fileEditor)) {
+            KotlinNotebookRestartStatus.NotNeeded -> return
+            is KotlinNotebookRestartStatus.Needed -> {
                 e.presentation.icon = BadgeIcon(
                     icon = JupyterCoreIcons.RestartKernel,
                     paint = JBUI.CurrentTheme.IconBadge.INFORMATION,
                     provider = badgeDotProvider()
                 )
 
+                @Suppress("HardCodedStringLiteral")
                 e.presentation.text =
-                    JupyterBundle.message("action.JupyterRestartKernelAction.text") + "<br><br>" + dependenciesStatus.message
+                    buildString {
+                        append(JupyterBundle.message("action.JupyterRestartKernelAction.text"))
+                        append("<br><br>")
+                        append(dependenciesStatus.message)
+                    }
             }
         }
     }

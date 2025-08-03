@@ -10,7 +10,9 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNoteb
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeListener
 import com.intellij.jupyter.core.jupyter.helper.getOriginalVirtualFile
+import com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookRestartStatus
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
+import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookPerFileSettingsCache
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSettings
@@ -166,8 +168,13 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
             val settings = fileSettingsCache.getCachedSettings(file)
             if (settings == null || settings.notebookDependencies.isAffectedBy(changedLibrary, changedModules)) {
                 coroutineScope.launch(Dispatchers.EDT) {
-                    project.service<JupyterKotlinOutdatedDependenciesNotificationService>()
-                        .notify(NotebookId(file.getOriginalVirtualFile()))
+                    KotlinNotebookRestartNeededNotificationService.getInstance(project)
+                        .notify(
+                            NotebookId(file.getOriginalVirtualFile()),
+                            KotlinNotebookRestartStatus.Needed(
+                                KotlinNotebookBundle.message("kotlin.notebook.outdated.dependencies.hint.text")
+                            )
+                        )
                 }
             }
         }
@@ -188,15 +195,14 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private fun addSessionListener() {
-        val sessionListener = object : JupyterRuntimeListener {
-            override fun sessionDeleted(session: JupyterNotebookSession) {
-                sessionData.remove(session.sessionId)
-                session.virtualFile.let {
-                    project.service<JupyterKotlinOutdatedDependenciesNotificationService>().notificationExpire(NotebookId(it.originFile))
+        project.messageBus.connect(this).subscribe(
+            JupyterRuntimeListener.TOPIC,
+            object : JupyterRuntimeListener {
+                override fun sessionDeleted(session: JupyterNotebookSession) {
+                    sessionData.remove(session.sessionId)
                 }
             }
-        }
-        project.messageBus.connect(this).subscribe(JupyterRuntimeListener.TOPIC, sessionListener)
+        )
     }
 
     private suspend fun buildProject(settings: KotlinNotebookSettings): BuildResult {
@@ -225,7 +231,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     fun registerSession(session: JupyterNotebookSession) {
-        val file = session.virtualFile ?: return
+        val file = session.virtualFile
         sessionData[session.sessionId] = SessionData(
             file = file,
             artifacts = coroutineScope.async(start = CoroutineStart.LAZY) {
@@ -255,7 +261,8 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         return buildProjectResult.artifacts + libraries
     }
 
-    override fun dispose() = Unit
+    override fun dispose() {
+    }
 
     private data class SessionData(
         val file: BackedNotebookVirtualFile,

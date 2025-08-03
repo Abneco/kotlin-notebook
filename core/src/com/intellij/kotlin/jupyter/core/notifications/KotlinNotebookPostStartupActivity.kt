@@ -1,6 +1,9 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.notifications
 
+import com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookRestartStatus
+import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookRestartNeededNotificationService
+import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptionsProvider
@@ -43,6 +46,11 @@ class KotlinNotebookPostStartupActivity : ProjectActivity {
 
     private fun resetScriptDefinitionAndShowKernelRestartNeededWarning(project: Project) {
         JupyterCompilerService.getInstance(project).resetScriptDefinition()
-        project.notebookNotifications.showKernelRestartNeeded()
+        KotlinNotebookRestartNeededNotificationService.getInstance(project)
+            .notifyAll(
+                status = KotlinNotebookRestartStatus.Needed(
+                KotlinNotebookBundle.message("kotlin.notebook.kernel.settings.changed.hint.text")
+                )
+            )
     }
 }

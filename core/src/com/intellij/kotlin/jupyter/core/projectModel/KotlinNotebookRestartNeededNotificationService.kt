@@ -3,21 +3,24 @@ package com.intellij.kotlin.jupyter.core.projectModel
 
 import com.intellij.codeInsight.hint.HintUtil
 import com.intellij.concurrency.ConcurrentCollectionFactory
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeListener
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
-import com.intellij.kotlin.jupyter.core.jupyter.actions.JupyterNotebookDependencies
+import com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookRestartNotification
+import com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookRestartStatus
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.registryFlag
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.Balloon
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.HintHint
 import com.intellij.ui.LightweightHint
 import com.intellij.util.concurrency.annotations.RequiresEdt
@@ -30,14 +33,15 @@ import java.awt.Font
 import java.awt.Point
 import javax.swing.event.HyperlinkEvent
 
-@JvmInline
-value class NotebookId(val virtualFile: VirtualFile)
-
 
 @Service(Service.Level.PROJECT)
-class JupyterKotlinOutdatedDependenciesNotificationService(val project: Project, private val coroutineScope: CoroutineScope) : Disposable {
-    private val notebooksWithNotUpToDateDependencies: MutableSet<NotebookId> = ConcurrentCollectionFactory.createConcurrentSet()
-    private val notebooksWithScheduledHint: MutableSet<NotebookId> = ConcurrentCollectionFactory.createConcurrentSet()
+class KotlinNotebookRestartNeededNotificationService(
+    private val project: Project,
+    private val coroutineScope: CoroutineScope,
+) : Disposable {
+    private val notebooksRequiringRestart: MutableSet<NotebookId> = ConcurrentCollectionFactory.createConcurrentSet()
+    private val notebooksWithScheduledHint: MutableMap<NotebookId, KotlinNotebookRestartStatus.Needed> =
+        ConcurrentCollectionFactory.createConcurrentMap()
 
     private var showHints by registryFlag("kotlin.notebook.outdated.dependencies.hints", true)
 
@@ -49,49 +53,70 @@ class JupyterKotlinOutdatedDependenciesNotificationService(val project: Project,
                     val selectedEditor = event.newEditor as? JupyterFileEditor ?: return
                     val notebookId = NotebookId(selectedEditor.file)
 
-                    if (notebooksWithScheduledHint.remove(notebookId)) {
-                        if (showHints && !showHint(selectedEditor)) {
-                            notebooksWithScheduledHint.add(notebookId)
+                    val status = notebooksWithScheduledHint.remove(notebookId)
+                    if (status != null) {
+                        if (showHints && !showHint(selectedEditor, status)) {
+                            notebooksWithScheduledHint[notebookId] = status
                         }
                     }
+                }
+            }
+        )
+
+        project.messageBus.connect(this).subscribe(
+            topic = JupyterRuntimeListener.TOPIC,
+            handler = object : JupyterRuntimeListener {
+                override fun sessionDeleted(session: JupyterNotebookSession) {
+                    expireNotification(NotebookId(session.virtualFile.originFile))
                 }
             }
         )
     }
 
     @RequiresEdt
-    fun notify(notebook: NotebookId) {
-        if (JupyterRuntimeService.getInstance(project).getSession(notebook.virtualFile) == null) {
+    fun notify(
+        notebook: NotebookId,
+        status: KotlinNotebookRestartStatus.Needed,
+    ) {
+        // We can't and don't need to restart the session if it didn't start
+        if (!JupyterRuntimeService.getInstance(project).hasActiveSession(notebook.virtualFile)) {
             return
         }
 
-        notebooksWithNotUpToDateDependencies.add(notebook)
-
-        val fileEditorManager = FileEditorManager.getInstance(project)
-        for (fileEditor in fileEditorManager.getEditors(notebook.virtualFile)) {
-            JupyterNotebookDependencies.setStatus(
-                fileEditor = fileEditor,
-                status = JupyterNotebookDependencies.Status.NotUpToDate(
-                    message = KotlinNotebookBundle.message("kotlin.notebook.outdated.dependencies.hint.text"),
-                )
-            )
-        }
+        notebooksRequiringRestart.add(notebook)
+        updateEditorDependenciesStatus(notebook, status)
 
         if (!showHints) return
 
-        val selectedEditor = fileEditorManager.getSelectedEditors()
+        val selectedEditor = FileEditorManager.getInstance(project)
+            .getSelectedEditors()
             .asSequence()
             .filterIsInstance<JupyterFileEditor>()
             .firstOrNull { it.file.isKotlinNotebook && it.file == notebook.virtualFile }
 
-        if (selectedEditor == null || !showHint(selectedEditor)) {
-            notebooksWithScheduledHint.add(notebook)
+
+        if (selectedEditor == null || !showHint(selectedEditor, status)) {
+            notebooksWithScheduledHint[notebook] = status
+        }
+    }
+
+    @RequiresEdt
+    fun notifyAll(
+        status: KotlinNotebookRestartStatus.Needed,
+    ) {
+        for (editor in FileEditorManager.getInstance(project).allEditors) {
+            if (editor !is JupyterFileEditor) continue
+            if (!editor.file.isKotlinNotebook) continue
+            notify(NotebookId(editor.file), status)
         }
     }
 
     /** Returns whether showing the hint was successful */
     @RequiresEdt
-    private fun showHint(selectedEditor: JupyterFileEditor): Boolean {
+    private fun showHint(
+        selectedEditor: JupyterFileEditor,
+        status: KotlinNotebookRestartStatus.Needed,
+    ): Boolean {
         val button = selectedEditor.jupyterFileEditorToolbar?.getRestartKernelActionButton()
         if (button == null) return false
 
@@ -99,7 +124,7 @@ class JupyterKotlinOutdatedDependenciesNotificationService(val project: Project,
         lightweightHint = LightweightHint(HintUtil.createInformationLabel(
             /* text = */ KotlinNotebookBundle.message(
                 key = "kotlin.notebook.outdated.dependencies.hint.message",
-                KotlinNotebookBundle.message("kotlin.notebook.outdated.dependencies.hint.text"),
+                status.message,
             ),
             /* hyperlinkListener = */ { e ->
                 if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
@@ -132,20 +157,31 @@ class JupyterKotlinOutdatedDependenciesNotificationService(val project: Project,
         return true
     }
 
-    fun notificationExpire(notebook: NotebookId) {
+    private fun expireNotification(notebook: NotebookId) {
         notebooksWithScheduledHint.remove(notebook)
-        if (notebooksWithNotUpToDateDependencies.remove(notebook)) {
-            val fileEditorManager = FileEditorManager.getInstance(project)
+        if (notebooksRequiringRestart.remove(notebook)) {
             coroutineScope.launch(Dispatchers.EDT) {
-                fileEditorManager.getEditors(notebook.virtualFile).forEach {
-                    JupyterNotebookDependencies.setStatus(it, JupyterNotebookDependencies.Status.UpToDate)
-                }
+                updateEditorDependenciesStatus(notebook, KotlinNotebookRestartStatus.NotNeeded)
             }
         }
     }
 
+    private fun updateEditorDependenciesStatus(
+        notebook: NotebookId,
+        status: KotlinNotebookRestartStatus,
+    ) {
+        val fileEditorManager = FileEditorManager.getInstance(project)
+        for (fileEditor in fileEditorManager.getEditors(notebook.virtualFile)) {
+            KotlinNotebookRestartNotification.setStatus(fileEditor, status)
+        }
+    }
+
     override fun dispose() {
-        notebooksWithNotUpToDateDependencies.clear()
+        notebooksRequiringRestart.clear()
         notebooksWithScheduledHint.clear()
+    }
+
+    companion object {
+        fun getInstance(project: Project): KotlinNotebookRestartNeededNotificationService = project.service()
     }
 }

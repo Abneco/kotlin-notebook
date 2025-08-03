@@ -49,7 +49,7 @@ class KotlinNotebookActionPresentationModifier : JupyterActionPresentationModifi
                 event.disable()
             }
         } else if (action is JupyterRestartKernelAction && event.isKotlinNotebookEvent) {
-            JupyterKotlinRestartKernelActionUpdater.update(event)
+            KotlinNotebookRestartKernelActionUpdater.update(event)
         }
     }
 }
