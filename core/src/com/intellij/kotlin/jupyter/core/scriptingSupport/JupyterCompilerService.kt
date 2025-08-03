@@ -88,6 +88,8 @@ class JupyterCompilerService(
     val scriptDefinitionsWrapper: KotlinNotebookScriptDefinitionsWrapper
         get() {
             return scriptDefinitionsWrapperValue.getOrSet {
+                // This logic should be kept side effect free, as long as it might
+                // be called multiple times and even simultaneously.
                 KotlinNotebookScriptDefinitionsWrapper.create(
                     project,
                     ScriptDefinition(
@@ -101,6 +103,8 @@ class JupyterCompilerService(
     private val initialCompileConfiguration: ScriptCompilationConfiguration
         get() {
             return initialCompileConfigurationValue.getOrSet {
+                // This logic should be kept side effect free, as long as it might
+                // be called multiple times and even simultaneously.
                 getCompilationConfiguration(
                     scriptClasspath = initialClasspath,
                     compilerArgsConfigurator = DefaultCompilerArgsConfigurator(jvmTargetVersion = defaultRuntimeProperties.jvmTargetForSnippets),
