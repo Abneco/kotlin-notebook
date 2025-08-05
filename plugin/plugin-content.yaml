@@ -44,10 +44,6 @@
       - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4/lets-plot-export-shadowed-4.jar
       ggdsl-util:
       - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0/ggdsl-util-0.jar
-  library: jetbrains.lets.plot.shadowed
-  files:
-  - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-shadowed/4/lets-plot-shadowed-4.jar
-  reason: <- intellij.kotlin.jupyter.plots
 - name: lib/xml-apis-ext.jar
   library: xml-apis-ext
   files:

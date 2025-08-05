@@ -20,7 +20,6 @@ jvm_library(
   srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
   deps = [
     "//plugins/kotlin/jupyter/core",
-    "@ultimate_lib//:jetbrains-lets-plot-shadowed",
     "@ultimate_lib//:kotlin-jupyter-plots-jetbrains-lets-plot-export-shadowed",
     "@ultimate_lib//:kotlin-jupyter-plots-ggdsl-util",
     "@ultimate_lib//:xml-apis-ext",
@@ -43,6 +42,7 @@ jvm_library(
     "@community//platform/platform-impl/ui",
     "//plugins/jupyter/execution",
     "@lib//:kotlinx-datetime-jvm",
+    "//platform/charts",
   ],
   runtime_deps = [
     ":plots_resources",

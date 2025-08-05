@@ -2,6 +2,7 @@
     <dependencies>
         <module name="intellij.kotlin.jupyter.core"/>
 
+        <module name="intellij.charts"/>
         <module name="intellij.jupyter.psi"/>
         <module name="intellij.jupyter.core"/>
         <module name="intellij.jupyter.execution"/>
