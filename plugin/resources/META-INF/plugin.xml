@@ -1,4 +1,4 @@
-<idea-plugin>
+<idea-plugin allow-bundled-update="true">
     <name>Kotlin Notebook</name>
     <id>org.jetbrains.plugins.kotlin.jupyter</id>
     <vendor>JetBrains</vendor>
