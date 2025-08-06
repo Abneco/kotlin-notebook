@@ -149,7 +149,7 @@ class NotebookTestBuilder(
                         messages: ReceivedMessages
                     ) {
                         output = messages.outputs
-                            .map { it.messageContent["data"] as ObjectNode }
+                            .map { it.messageContent["data"] as? ObjectNode }
                             .singleOrNull() ?: buildJacksonObject { /* Empty object */ }
                     }
                 },
