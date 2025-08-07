@@ -8,8 +8,8 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.ex.ActionButtonLook
-import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.actionSystem.impl.ActionButton
+import com.intellij.openapi.actionSystem.impl.ActionButtonWithText
 import com.intellij.openapi.actionSystem.impl.ActionToolbarImpl
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenUIManager
@@ -69,8 +69,16 @@ internal class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
                 presentation: Presentation,
                 minimumSize: Supplier<out Dimension>
             ): ActionButton {
-                presentation.putClientProperty(ActionUtil.SHOW_TEXT_IN_TOOLBAR, true)
-                return super.createToolbarButton(action, look, place, presentation, minimumSize)
+                val button = super.createTextButton(action, place, presentation, minimumSize)
+                applyToolbarLook(look, presentation, button)
+                return button
+            }
+
+            override fun isDefaultActionButtonImplementation(
+                oldActionButton: ActionButton,
+                newPresentation: Presentation
+            ): Boolean {
+                return oldActionButton.javaClass == ActionButtonWithText::class.java
             }
         }.apply {
             isOpaque = false
