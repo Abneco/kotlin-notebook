@@ -3,18 +3,22 @@ package com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass
 
 import java.util.concurrent.atomic.AtomicReference
 
+internal enum class DaemonState {
+    IDLE,
+    SETUP,
+    IN_PROGRESS;
+
+    val isIdle: Boolean get() = this == IDLE
+    val isInProgress: Boolean get() =this == IN_PROGRESS
+}
+
 internal class DaemonIterationState {
-    enum class DaemonState {
-        IDLE,
-        SETUP,
-        IN_PROGRESS,
-    }
     private val state = AtomicReference(DaemonState.IDLE)
 
     fun get(): DaemonState = state.get()
 
-    val isIdle get() = state.get() == DaemonState.IDLE
-    val isInProgress get() = state.get() == DaemonState.IN_PROGRESS
+    val isIdle: Boolean get() = get().isIdle
+    val isInProgress: Boolean get() = get().isInProgress
 
     fun enterSetupPhase(): Boolean {
         return state.compareAndSet(DaemonState.IDLE, DaemonState.SETUP)

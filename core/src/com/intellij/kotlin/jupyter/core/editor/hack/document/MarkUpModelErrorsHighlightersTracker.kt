@@ -65,6 +65,26 @@ internal class MarkUpModelErrorsHighlightersTracker : HighlightingComponent() {
         }.keys
     }
 
+    fun clear() {
+        fileIndexesToErrors.clear()
+        _errorHighlighters.clear()
+    }
+
+    internal fun resetState(cellInFocus: Int?, completeReset: Boolean) {
+        if (completeReset) {
+            clear()
+            return
+        }
+
+        // transfer seen errors to a dedicated storage
+        val highlighters = _errorHighlighters
+        if (cellInFocus != null) {
+            val focusCellHighlighters = fileIndexesToErrors.getOrPut(cellInFocus) { mutableSetOf() }
+            focusCellHighlighters?.addAll(highlighters)
+        }
+        highlighters.clear()
+    }
+
 
     internal fun removeHighlightersOutSideOfFocus(passConfiguration: NotebookPassConfiguration) {
         val targetIndexes = passConfiguration.filesToHL.map { it.value.notebookCellIndex }
@@ -86,7 +106,7 @@ internal class MarkUpModelErrorsHighlightersTracker : HighlightingComponent() {
     }
 
     override fun dispose() {
-        fileIndexesToErrors.clear()
+        clear()
         super.dispose()
     }
 }
