@@ -6,6 +6,7 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.data.input.JupyterDataInputSettings
 import com.intellij.jupyter.core.jupyter.editor.JupyterEditorCustomizer
 import com.intellij.jupyter.core.jupyter.helper.isJupyter
+import com.intellij.kotlin.jupyter.core.editor.hack.editor.NotebookEditorCreatedListener
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.reactOnThemeChangedEvent
 import com.intellij.kotlin.jupyter.core.editor.typing.NotebookCaretListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
@@ -43,6 +44,10 @@ class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
             val parentDisposable: Disposable = (editor as? EditorImpl)?.disposable ?: compilerService
             KotlinNotebookPluginScope.getForProject(project).async {
                 // do not init on edt
+                project.messageBus.syncPublisher(NotebookEditorCreatedListener.TOPIC).editorCreated(
+                    editor,
+                    virtualFile
+                )
                 readAction {
                     editor.caretModel.addCaretListener(
                         NotebookCaretListener(project, virtualFile, editor, parentDisposable),
