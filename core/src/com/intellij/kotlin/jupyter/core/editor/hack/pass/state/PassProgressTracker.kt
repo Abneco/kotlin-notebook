@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.editor.hack.pass.state
 
 import com.intellij.kotlin.jupyter.core.editor.hack.NotebookPassConfiguration
-import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.psi.KtFile
@@ -14,11 +14,11 @@ import org.jetbrains.kotlin.psi.KtFile
  * This information is stored inside [NotebookPassConfiguration] and to be rebuilt on every pass.
  */
 internal interface PassProgressTracker {
-    val passConfiguration: NotebookPassConfiguration
+    val passConfiguration: NotebookPassConfiguration?
 
     fun passStarting(file: PsiFile, focusCellIndex: Int, indexesToHighlight: Collection<Int>, cellsToHighlight: List<PsiLanguageInjectionHost>)
 
-    fun getRemainingIndexesAfterPassFinished(editor: Editor): Collection<Int>
+    fun getRemainingTargetsAfterPassFinished(editor: EditorEx): NotebookPassProgressRemains
 
     fun fileHighlighted(file: KtFile)
 

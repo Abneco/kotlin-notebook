@@ -7,7 +7,7 @@ import com.intellij.util.messages.Topic
 import java.util.*
 
 fun interface NotebookEditorCreatedListener : EventListener {
-    fun editorCreated(editor: Editor, virtualFile: BackedNotebookVirtualFile)
+    fun editorCreated(editor: Editor, notebookVirtualFile: BackedNotebookVirtualFile)
 
     companion object {
         @Topic.ProjectLevel

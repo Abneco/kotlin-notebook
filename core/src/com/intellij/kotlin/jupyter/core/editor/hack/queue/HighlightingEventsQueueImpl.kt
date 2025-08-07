@@ -9,6 +9,7 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
+import org.jetbrains.kotlin.utils.addIfNotNull
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicReference
 
@@ -41,7 +42,9 @@ internal class HighlightingEventsQueueImpl(
             }
             focusCell = event.focusCell
             prevFocusCell = event.previousFocusCell
+            changedCells.addIfNotNull(prevFocusCell)
         }
+        changedCells.add(focusCell)
 
         return HighlightingEvent(
             focusCell = focusCell,

@@ -24,6 +24,8 @@ internal class DocumentInputEventsTransformer(
 ) : HighlightingComponent() {
     inner class NotebookDocumentListener : DocumentListener {
         override fun beforeDocumentChange(event: DocumentEvent) {
+            if (event.document != document) return
+
             val transformedEvent = documentChangeEventTransformer.transformRawInput(event) ?: return
             highlightingEventsQueue.pushEvent(
                 transformedEvent
@@ -43,6 +45,13 @@ internal class DocumentInputEventsTransformer(
     }
     private val documentChangeEventTransformer = child {
         ChangeEventsTransformer(editor)
+    }
+
+    /**
+     * We do create this component by event trigger, so it should be initialized right away.
+     */
+    init {
+      initialize()
     }
 
     override fun initializeSelf() {

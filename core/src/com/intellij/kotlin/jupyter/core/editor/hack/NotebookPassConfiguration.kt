@@ -13,4 +13,8 @@ internal data class NotebookPassConfiguration(
     val filesToHL: Map<KtFile, InjectedFileData>,
     val targetKtFile: KtFile?,
     val completedFiles: MutableSet<Int>
-)
+) {
+    companion object {
+        val EMPTY = NotebookPassConfiguration(-1, emptyMap(), null, mutableSetOf())
+    }
+}

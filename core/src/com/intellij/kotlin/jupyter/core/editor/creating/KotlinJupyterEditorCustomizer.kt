@@ -7,16 +7,14 @@ import com.intellij.jupyter.core.jupyter.data.input.JupyterDataInputSettings
 import com.intellij.jupyter.core.jupyter.editor.JupyterEditorCustomizer
 import com.intellij.jupyter.core.jupyter.helper.isJupyter
 import com.intellij.kotlin.jupyter.core.editor.hack.editor.NotebookEditorCreatedListener
+import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.reactOnThemeChangedEvent
-import com.intellij.kotlin.jupyter.core.editor.typing.NotebookCaretListener
-import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.settings.registryFlag
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.colors.EditorColorsListener
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.impl.EditorImpl
@@ -40,20 +38,14 @@ class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
                 JupyterDataInputSettings.disableInputCellsForEditor(editor)
             }
 
-            val compilerService = JupyterCompilerService.getInstance(project)
-            val parentDisposable: Disposable = (editor as? EditorImpl)?.disposable ?: compilerService
+            val highlightingService = NotebookHighlightingService.getForFile(project, virtualFile)
+            val parentDisposable: Disposable = (editor as? EditorImpl)?.disposable ?: highlightingService
             KotlinNotebookPluginScope.getForProject(project).async {
                 // do not init on edt
                 project.messageBus.syncPublisher(NotebookEditorCreatedListener.TOPIC).editorCreated(
                     editor,
                     virtualFile
                 )
-                readAction {
-                    editor.caretModel.addCaretListener(
-                        NotebookCaretListener(project, virtualFile, editor, parentDisposable),
-                        parentDisposable
-                    )
-                }
             }
             ApplicationManager.getApplication().messageBus.connect(parentDisposable)
                 .subscribe(EditorColorsManager.TOPIC,

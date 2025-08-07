@@ -7,9 +7,9 @@ import com.intellij.kotlin.jupyter.core.editor.hack.NotebookPassConfiguration
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass.InjectedFilesDataTracker.Companion.INJECTED_SYNTAX_LAYER_BORDER
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass.numberOfNonWhiteSpaceLeaves
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.ex.MarkupModelEx
+import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.markup.HighlighterLayer
+import com.intellij.openapi.editor.markup.HighlighterLayer.SYNTAX
 import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
@@ -17,15 +17,18 @@ import org.jetbrains.kotlin.psi.KtFile
 
 internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingComponent() {
     internal val leftIndexes: Collection<Int>
-        get() = currentConfiguration.filesToHL.values.map { it.notebookCellIndex } - passConfiguration.completedFiles
+        get() = passConfiguration.filesToHL.values.map { it.notebookCellIndex } - passConfiguration.completedFiles
     private val injectedFilesDataRegistry = ConcurrentCollectionFactory.createConcurrentMap<KtFile, InjectedFileData>()
+    private val finishedFilesIndexes: MutableSet<Int> = ConcurrentCollectionFactory.createConcurrentSet()
 
     /**
      * Accumulator of pass information
      */
     private lateinit var currentConfiguration: NotebookPassConfiguration
     override val passConfiguration: NotebookPassConfiguration
-        get() = currentConfiguration
+        get() = ::currentConfiguration.isInitialized.let {
+            if (it) currentConfiguration else NotebookPassConfiguration.EMPTY
+        }
 
     override fun passStarting(
         file: PsiFile,
@@ -55,8 +58,9 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
             }.map { (file, _) -> file }
         }
 
+    // todo: we do not need it anymore
     override fun fileHighlighted(file: KtFile) {
-        val injectedFileData = currentConfiguration.filesToHL[file]
+        val injectedFileData = passConfiguration.filesToHL[file]
         if (injectedFileData != null) {
             passConfiguration.completedFiles.add(injectedFileData.notebookCellIndex)
         }
@@ -68,6 +72,7 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
         cells: List<PsiLanguageInjectionHost>,
         targetIndexes: Collection<Int>
     ): NotebookPassConfiguration {
+        finishedFilesIndexes.clear()
         // todo: assert?
         if (cells.isEmpty()) {
             return NotebookPassConfiguration(
@@ -80,8 +85,6 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
 
         val project = cells.first().project
         val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
-        // todo: is it ok to create each time?
-        val finishedFilesIndexes = ConcurrentCollectionFactory.createConcurrentSet<Int>()
         var targetPsiFile: KtFile? = null
 
         for (ind in targetIndexes) {
@@ -120,11 +123,12 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
         )
     }
 
-    override fun getRemainingIndexesAfterPassFinished(editor: Editor): Collection<Int> {
-        val markupModelEx = editor.markupModel as? MarkupModelEx ?: return emptySet()
+    override fun getRemainingTargetsAfterPassFinished(editor: EditorEx): NotebookPassProgressRemains {
+        val markupModelEx = editor.filteredDocumentMarkupModel
 
         val data = injectedFilesDataRegistry
         val skippedFiles = mutableSetOf<Int>()
+        val errorsToDispose = mutableSetOf<RangeHighlighter>()
 
         for ((_, fileData) in data) {
             val range = fileData.ktFileRange
@@ -135,8 +139,12 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
 
             markupModelEx.processRangeHighlightersOverlappingWith(range.startOffset, range.endOffset) {
                 // injected syntax is greater than regular SYNTAX
-                if ((it.layer < INJECTED_SYNTAX_LAYER_BORDER && it.layer != HighlighterLayer.ERROR) && seenHighlighters.add(it)) {
+                val layer = it.layer
+                if ((layer in SYNTAX..INJECTED_SYNTAX_LAYER_BORDER) && seenHighlighters.add(it)) {
                     fileData.processedTokens.incrementAndGet()
+                }
+                if (layer == HighlighterLayer.ERROR && fileData.notebookCellIndex != passConfiguration.focusCell) {
+                    errorsToDispose.add(it)
                 }
                 true
             }
@@ -147,7 +155,7 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
             }
         }
 
-        return skippedFiles
+        return NotebookPassProgressRemains(skippedFiles, errorsToDispose)
     }
 
     override fun dispose() {

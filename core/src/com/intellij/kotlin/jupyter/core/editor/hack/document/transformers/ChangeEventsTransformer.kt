@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.core.editor.hack.document.transformers
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingComponent
 import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingEvent
+import com.intellij.kotlin.jupyter.core.editor.hack.document.topic.DocumentCellsStructureChangedListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookChangeEventsType
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.notebooks.visualization.getCell
@@ -42,11 +43,20 @@ internal class ChangeEventsTransformer(
         val targetCellIndex = editor.getCell(min(documentChangedLineIndex, editor.document.lineCount - 1)).ordinal
 
         if (documentChangedLineIndex > backedDocumentFile.lineCount - 1) return null // ignore change of the whole document
+        val changedCells = buildSet {
+            if (isCellListChange) {
+                add(targetCellIndex + 1)
+                add(targetCellIndex - 1)
+                editor.project?.messageBus?.syncPublisher(DocumentCellsStructureChangedListener.TOPIC)
+                    ?.cellsChanged(editor, targetCellIndex)
+            }
+            add(targetCellIndex)
+        }
 
         return HighlightingEvent(
             targetCellIndex,
             null,
-            setOf(targetCellIndex)
+            changedCells
         )
     }
 

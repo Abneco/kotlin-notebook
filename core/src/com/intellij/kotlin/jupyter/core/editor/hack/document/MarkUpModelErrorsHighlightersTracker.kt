@@ -4,8 +4,8 @@ package com.intellij.kotlin.jupyter.core.editor.hack.document
 import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingComponent
 import com.intellij.kotlin.jupyter.core.editor.hack.NotebookPassConfiguration
+import com.intellij.kotlin.jupyter.core.editor.hack.disposeOfHighlighters
 import com.intellij.kotlin.jupyter.core.editor.highlighting.service.markup.ShadowingAwareMarkupModelListener
-import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.ex.MarkupModelEx
@@ -32,8 +32,8 @@ internal class MarkUpModelErrorsHighlightersTracker : HighlightingComponent() {
         activeMarkupModelListener = ShadowingAwareMarkupModelListener(_errorHighlighters)
 
         val editorEx = editor as? EditorEx ?: return
-        // todo: can really editor does not have a disposable? throw error then?
-        val parentDisposable = (editor as? EditorImpl)?.disposable ?: this
+        // if the editor is not top-level, connect to the component
+        val parentDisposable = (editorEx as? EditorImpl)?.disposable ?: this
         editorEx
             .filteredDocumentMarkupModel
             .addMarkupModelListener(parentDisposable, activeMarkupModelListener)
@@ -59,7 +59,7 @@ internal class MarkUpModelErrorsHighlightersTracker : HighlightingComponent() {
         toRemove.forEach { fileIndexesToErrors.remove(it) }
         val targetPassed = focusCell in passConfiguration.completedFiles
 
-        // todo: can it be checked without finishedFilesIndexes?
+        // todo: can it be checked without completedFiles?
         return fileIndexesToErrors.filter {
             if (it.key != focusCell) it.value.isNotEmpty() else !targetPassed
         }.keys
@@ -86,23 +86,14 @@ internal class MarkUpModelErrorsHighlightersTracker : HighlightingComponent() {
     }
 
 
-    internal fun removeHighlightersOutSideOfFocus(passConfiguration: NotebookPassConfiguration) {
-        val targetIndexes = passConfiguration.filesToHL.map { it.value.notebookCellIndex }
-        val focusCell = passConfiguration.focusCell
-
+    internal fun removeHighlightersOutSideOfFocus(focusCell: Int) {
         val errorData = fileIndexesToErrors.filter { entry ->
-            entry.key in targetIndexes
-                    && entry.value.isNotEmpty()
+            entry.value.isNotEmpty()
                     && entry.key != focusCell
         }
 
-        KotlinNotebookPluginScope.invokeOnEDT {
-            errorData.forEach { entry ->
-                entry.value.forEach { highlighter ->
-                    highlighter.dispose()
-                }
-            }
-        }
+        disposeOfHighlighters(errorData.values.flatten())
+        errorData.keys.forEach { fileIndexesToErrors.remove(it) }
     }
 
     override fun dispose() {
