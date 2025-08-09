@@ -8,6 +8,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 
+const val KOTLIN_NOTEBOOK_BASE_CLASS_PREFIX: String = "Line_"
 const val KOTLIN_NOTEBOOK_BASE_CLASS_SUFFIX: String = "_jupyter"
 
 class ExecutedPresentCellInfo(psiFile: PsiFile?) {
@@ -29,8 +30,8 @@ class ExecutedPresentCellInfo(psiFile: PsiFile?) {
     fun updateInfoBeforeCellExecution(cell: JupyterPsiCell, ordinal: Int?, nextCompiledClassNumber: Int) {
         val was = updateCellInjectedInfo(cell, nextCompiledClassNumber)
         val cellOrdinal = ordinal ?: cells?.indexOf(cell)
-        val compiledName = nextCompiledClassNumber.toCompiledCellSnippedName()
-        if (was != null && was != nextCompiledClassNumber.toCompiledCellSnippedName()) {
+        val compiledName = nextCompiledClassNumber.toCompiledCellSnippetName()
+        if (was != null && was != nextCompiledClassNumber.toCompiledCellSnippetName()) {
             knownCellClasses.remove(was)
         }
         knownCellClasses[compiledName] = cell
@@ -81,13 +82,13 @@ class ExecutedPresentCellInfo(psiFile: PsiFile?) {
         // returns previous known class if any
         fun updateCellInjectedInfo(cell: JupyterPsiCell, execNum: Int): String? {
             val was = cell.getUserData(NOTEBOOK_CELL_INTERNAL_INFO_KEY)
-            val snippedName = execNum.toCompiledCellSnippedName() // Line_$N_jupyter
-            if (was?.first == snippedName) return was.first
-            cell.putUserData(NOTEBOOK_CELL_INTERNAL_INFO_KEY,  Pair(snippedName, was?.first))
-            LOG.debug("Putting into cell: \n ${cell.text}\n info: ${execNum.toCompiledCellSnippedName()}; was: $was")
+            val snippetName = execNum.toCompiledCellSnippetName() // Line_$N_jupyter
+            if (was?.first == snippetName) return was.first
+            cell.putUserData(NOTEBOOK_CELL_INTERNAL_INFO_KEY,  Pair(snippetName, was?.first))
+            LOG.debug("Putting into cell: \n ${cell.text}\n info: ${execNum.toCompiledCellSnippetName()}; was: $was")
             return was?.first
         }
     }
 }
 
-fun Int.toCompiledCellSnippedName(): String = "Line_${this}$KOTLIN_NOTEBOOK_BASE_CLASS_SUFFIX"
+fun Int.toCompiledCellSnippetName(): String = "$KOTLIN_NOTEBOOK_BASE_CLASS_PREFIX${this}$KOTLIN_NOTEBOOK_BASE_CLASS_SUFFIX"

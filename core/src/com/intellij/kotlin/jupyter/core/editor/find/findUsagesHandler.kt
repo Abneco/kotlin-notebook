@@ -6,6 +6,7 @@ import com.intellij.find.findUsages.FindUsagesHandlerFactory
 import com.intellij.find.findUsages.FindUsagesOptions
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.debug.util.KOTLIN_NOTEBOOK_BASE_CLASS_PREFIX
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookGotoDeclarationProvider.Companion.tryGetPreviousValidResolvedResult
 import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder.tryResolveCompiledDeclaration
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
@@ -34,7 +35,7 @@ import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 
 internal fun isCompiledCellClassDeclaration(element: PsiElement?): Boolean =
-    element?.containingFile?.virtualFile?.name?.matches(Regex("Line_.+\\.class")) == true
+    element?.containingFile?.virtualFile?.name?.matches(Regex("$KOTLIN_NOTEBOOK_BASE_CLASS_PREFIX.+\\.class")) == true
 
 internal fun isFromJVMDeclaration(element: PsiElement?): Boolean = element?.containingFile?.virtualFile?.name?.endsWith(".class") == true
 

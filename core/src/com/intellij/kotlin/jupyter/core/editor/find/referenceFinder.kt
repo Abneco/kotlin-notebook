@@ -1,6 +1,8 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.find
 
+import com.intellij.kotlin.jupyter.core.debug.util.KOTLIN_NOTEBOOK_BASE_CLASS_PREFIX
+import com.intellij.kotlin.jupyter.core.debug.util.KOTLIN_NOTEBOOK_BASE_CLASS_SUFFIX
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.util.Key
 import com.intellij.psi.NavigatablePsiElement
@@ -39,7 +41,7 @@ object NotebookReferenceFinder {
     // Holds compiled class name
     val CELL_CLASS_NAME: Key<Set<String>> = Key.create("COMPILED_CELL_SCRIPT_CLASS_NAME")
 
-    private val classRegex = Regex("Line_.+jupyter")
+    private val classRegex = Regex("$KOTLIN_NOTEBOOK_BASE_CLASS_PREFIX.+$KOTLIN_NOTEBOOK_BASE_CLASS_SUFFIX")
 
     private val declarationsCollectingVisitor = ScriptDeclarationsCollectingVisitor()
 

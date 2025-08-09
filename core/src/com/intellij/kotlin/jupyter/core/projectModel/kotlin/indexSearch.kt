@@ -5,13 +5,17 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.kotlin.idea.stubindex.KotlinFullClassNameIndex
 import org.jetbrains.kotlin.psi.KtClassOrObject
+import kotlin.script.experimental.api.KotlinType
 
-inline fun GlobalSearchScope.getIndexedTopLevelClassifiersFiltered(
+fun GlobalSearchScope.getIndexedTopLevelClassifiersForTypes(
     project: Project,
-    crossinline nameFilter: (String) -> Boolean = { it.startsWith("Line_") }
+    types: Collection<KotlinType>,
 ): Sequence<KtClassOrObject> {
-    return KotlinFullClassNameIndex.getAllElements(project, this) {
-        it.name?.let(nameFilter) == true
+    val scope = this
+    return sequence {
+        for (type in types) {
+            yieldAll(KotlinFullClassNameIndex[type.typeName, project, scope])
+        }
     }
 }
 

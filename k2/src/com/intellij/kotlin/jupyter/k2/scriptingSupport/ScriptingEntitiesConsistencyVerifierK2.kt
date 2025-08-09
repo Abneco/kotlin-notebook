@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
-import com.intellij.kotlin.jupyter.core.projectModel.kotlin.getIndexedTopLevelClassifiersFiltered
+import com.intellij.kotlin.jupyter.core.projectModel.kotlin.getIndexedTopLevelClassifiersForTypes
 import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier
 import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceEntityDependencies
 import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceScriptEntities
@@ -84,10 +84,10 @@ private class ScriptingEntitiesConsistencyVerifierK2(
         types: Collection<KotlinType>
     ): Collection<KotlinType> {
         val dependencies = virtualFile.findK2WorkspaceEntityDependencies(project)
-        val scope = GlobalSearchScopesCore.directoriesScope(project, false, *dependencies.toTypedArray())
+        val scope = GlobalSearchScopesCore.directoriesScope(project, true, *dependencies.toTypedArray())
 
         return smartReadAction(project) {
-            val allIndexed = scope.getIndexedTopLevelClassifiersFiltered(project).map {
+            val allIndexed = scope.getIndexedTopLevelClassifiersForTypes(project, types).map {
                 it.fqName?.asString()
             }
             types.filter { it.typeName in allIndexed }
