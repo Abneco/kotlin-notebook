@@ -5,19 +5,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.kotlin.idea.stubindex.KotlinFullClassNameIndex
 import org.jetbrains.kotlin.psi.KtClassOrObject
-import kotlin.script.experimental.api.KotlinType
-
-fun GlobalSearchScope.getIndexedTopLevelClassifiersForTypes(
-    project: Project,
-    types: Collection<KotlinType>,
-): Sequence<KtClassOrObject> {
-    val scope = this
-    return sequence {
-        for (type in types) {
-            yieldAll(KotlinFullClassNameIndex[type.typeName, project, scope])
-        }
-    }
-}
 
 fun GlobalSearchScope.getIndexedTopLevelClassifiers(project: Project): Sequence<KtClassOrObject> {
     return KotlinFullClassNameIndex.getAllElements<KtClassOrObject>(project, this)

@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
-import com.intellij.kotlin.jupyter.core.projectModel.kotlin.getIndexedTopLevelClassifiersForTypes
 import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsistencyVerifier
 import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceEntityDependencies
 import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceScriptEntities
@@ -17,6 +16,7 @@ import com.intellij.platform.workspace.storage.url.VirtualFileUrlManager
 import com.intellij.psi.search.GlobalSearchScopesCore
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.toVirtualFileUrl
+import org.jetbrains.kotlin.idea.stubindex.KotlinFullClassNameIndex
 import kotlin.collections.toTypedArray
 import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
@@ -87,10 +87,9 @@ private class ScriptingEntitiesConsistencyVerifierK2(
         val scope = GlobalSearchScopesCore.directoriesScope(project, true, *dependencies.toTypedArray())
 
         return smartReadAction(project) {
-            val allIndexed = scope.getIndexedTopLevelClassifiersForTypes(project, types).map {
-                it.fqName?.asString()
+            types.filter { type ->
+                KotlinFullClassNameIndex[type.typeName, project, scope].isNotEmpty()
             }
-            types.filter { it.typeName in allIndexed }
         }
     }
 

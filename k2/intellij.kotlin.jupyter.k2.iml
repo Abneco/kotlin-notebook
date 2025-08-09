@@ -43,5 +43,6 @@
     <orderEntry type="module" module-name="kotlin.base.compiler-configuration" />
     <orderEntry type="module" module-name="kotlin.bundled-compiler-plugins-support" />
     <orderEntry type="module" module-name="intellij.jupyter.psi" />
+    <orderEntry type="module" module-name="kotlin.base.indices" />
   </component>
 </module>
