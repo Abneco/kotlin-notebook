@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.test.notebook.codeinsight.hints
 
 import com.intellij.codeInsight.hints.CollectorWithSettings
 import com.intellij.codeInsight.hints.InlayDumpUtil
-import com.intellij.codeInsight.hints.InlayHintsCollector
 import com.intellij.codeInsight.hints.InlayHintsProvider
 import com.intellij.codeInsight.hints.InlayHintsSinkImpl
 import com.intellij.codeInsight.hints.LinearOrderInlayRenderer
@@ -18,12 +17,9 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
-import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFile
-import com.intellij.psi.SyntaxTraverser
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.intellij.util.containers.isEmpty
@@ -44,8 +40,6 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
         PRESENT,
         ABSENT
     }
-
-    open val isLimitTypeHintsByActiveCell: Boolean = false
 
     @JvmOverloads
     @RequiresEdt
@@ -100,17 +94,6 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
         KotlinNotebookProjectOptionsProvider.getInstance(project).state.shouldLimitTypeHintsByActiveCell = false
     }
 
-
-    protected fun collectTraversingForCellOrAny(collector: InlayHintsCollector, sink: InlayHintsSinkImpl, editor: Editor, file: PsiFile, cell: JupyterPsiCell? = null) {
-        val traverser = SyntaxTraverser.psiTraverser(file)
-        if (cell == null) {
-            traverser.forEach {
-                collector.collect(it, editor, sink)
-            }
-        } else {
-            collector.collect(cell, editor, sink)
-        }
-    }
 
     @RequiresReadLock
     protected fun JupyterPsiCell.toInjectedKtFiles(): List<KtFile> {
@@ -168,7 +151,7 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
         crossinline setupAction: (T) -> Unit,
     ) {
         with(this) {
-            val expectedFileContents = FileUtil.loadFile(getTestFile(".kt"), true)
+            val expectedFileContents = FileUtilRt.loadFile(getTestFile(".kt").toFile(), true)
             val settings = createSettings()
             setupAction(settings)
 

@@ -6,7 +6,10 @@ import com.intellij.platform.backend.workspace.virtualFile
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntity
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.extension
+import kotlin.io.path.isDirectory
+import kotlin.io.path.isRegularFile
 
 /**
  * Base class for manipulating with [NotebookConfigurationRootsView]
@@ -14,12 +17,12 @@ import java.io.File
 abstract class NotebookConfigurationRootsViewBase(
     protected val configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo
 ) : NotebookConfigurationRootsView {
-    override val dependenciesRoots: List<File> get() =
-        filterTargetDependencies(configurationInfo.configuration.dependenciesClassPath)
-    override val dependenciesSources: List<File> get() =
-        filterTargetDependencies(configurationInfo.configuration.dependenciesSources)
+    override val dependenciesRoots: List<Path> get() =
+        filterTargetDependencies(configurationInfo.configuration.dependenciesClassPath.map { it.toPath() })
+    override val dependenciesSources: List<Path> get() =
+        filterTargetDependencies(configurationInfo.configuration.dependenciesSources.map { it.toPath() })
 
-    protected abstract fun filterTargetDependencies(candidates: List<File>): List<File>
+    protected abstract fun filterTargetDependencies(candidates: List<Path>): List<Path>
 }
 
 /**
@@ -28,8 +31,8 @@ abstract class NotebookConfigurationRootsViewBase(
 class CompiledSnippets(configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo) : NotebookConfigurationRootsViewBase(configurationInfo) {
     override val typeName: String = "Compiled"
 
-    override fun filterTargetDependencies(candidates: List<File>): List<File> {
-        return candidates.filter { it.isDirectory }
+    override fun filterTargetDependencies(candidates: List<Path>): List<Path> {
+        return candidates.filter { it.isDirectory() }
     }
 
     override fun getOrUpdateLibraryDependencies(
@@ -54,8 +57,8 @@ class CompiledSnippets(configurationInfo: KotlinNotebookScriptsModuleConfigurati
 class Jars(configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo) : NotebookConfigurationRootsViewBase(configurationInfo) {
     override val typeName: String = "Jars"
 
-    override fun filterTargetDependencies(candidates: List<File>): List<File> {
-        return candidates.filter { it.isFile && it.extension == "jar" }
+    override fun filterTargetDependencies(candidates: List<Path>): List<Path> {
+        return candidates.filter { it.isRegularFile() && it.extension == "jar" }
     }
 
     override fun getOrUpdateLibraryDependencies(

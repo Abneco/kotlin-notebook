@@ -10,7 +10,8 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.openapi.project.Project
 import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.name
 
 abstract class AbstractKotlinDataframeDropHandler(
     @Nls commandName: String,
@@ -28,7 +29,7 @@ abstract class AbstractKotlinDataframeDropHandler(
         context: TableDataFileDropHandlerContext
     ): String
 
-    protected open fun isTargetLibrary(file: File): Boolean {
+    protected open fun isTargetLibrary(file: Path): Boolean {
         return file.name.startsWith("dataframe-core")
     }
 

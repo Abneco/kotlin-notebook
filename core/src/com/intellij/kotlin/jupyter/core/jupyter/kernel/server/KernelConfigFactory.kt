@@ -21,7 +21,6 @@ import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelJupyterParams
 import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.protocol.startup.parameters.KernelConfig
 import org.jetbrains.kotlinx.jupyter.startup.parameters.KotlinKernelOwnParams
-import java.io.File
 import java.nio.file.Path
 
 interface KernelConfigFactory {
@@ -45,7 +44,7 @@ abstract class AbstractKotlinKernelConfigFactory(
             signatureKey = getSignature(),
         ),
         ownParams = KotlinKernelOwnParams(
-            scriptClasspath = getClasspath(),
+            scriptClasspath = getClasspath().map { it.toFile() },
             // Don't try to resolve libraries against some local directory,
             // use only embedded or remote JSON library files
             homeDir = null,
@@ -70,7 +69,7 @@ abstract class AbstractKotlinKernelConfigFactory(
         return "x-x-x"
     }
 
-    protected open fun getClasspath(): List<File> {
+    protected open fun getClasspath(): List<Path> {
         return KotlinNotebookMavenArtifactsDownloader.getInstance(project).getClasspathArtifacts(project)
     }
 
@@ -108,7 +107,7 @@ fun chooseJvmTargetForSnippets(project: Project): LanguageLevel? {
     return myMaxBytecodeVersion
 }
 
-private fun KotlinNotebookMavenArtifactsDownloader.getClasspathArtifacts(project: Project): List<File> {
+private fun KotlinNotebookMavenArtifactsDownloader.getClasspathArtifacts(project: Project): List<Path> {
     return try {
         downloadAndUnzipBlocking(KotlinNotebookMavenArtifacts.SCRIPT_CLASSPATH_SHADOWED_ZIP)
     } catch (e: Exception) {

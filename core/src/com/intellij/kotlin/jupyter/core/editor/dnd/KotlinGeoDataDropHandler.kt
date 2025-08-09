@@ -3,7 +3,8 @@ package com.intellij.kotlin.jupyter.core.editor.dnd
 
 import com.intellij.jupyter.core.editor.handlers.TableDataFileDropHandlerContext
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.name
 
 
 private const val GEOJSON_EXTENSION = "geojson"
@@ -25,7 +26,7 @@ class KotlinGeoDataDropHandler : AbstractKotlinDataframeDropHandler(
         }
     }
 
-    override fun isTargetLibrary(file: File): Boolean {
+    override fun isTargetLibrary(file: Path): Boolean {
         return file.name.startsWith("dataframe-geo")
     }
 

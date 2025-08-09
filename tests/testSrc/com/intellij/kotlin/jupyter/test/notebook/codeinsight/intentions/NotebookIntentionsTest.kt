@@ -5,7 +5,7 @@ import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.kotlin.jupyter.test.runners.RunModeAwareTest
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.testFramework.TestDataPath
 import io.kotest.matchers.string.shouldContain
 import org.junit.Ignore
@@ -55,7 +55,7 @@ class NotebookIntentionsTest : KotlinNotebookTestCase() {
         invokeIntentionsInInjectedFile(ktFile)
 
         val dataName = getTestName(true) + ".kt.expected"
-        val expectedResult = FileUtil.loadFile(getDataFile(dataName), true)
+        val expectedResult = FileUtilRt.loadFile(getDataFile(dataName).toFile(), true)
 
         val textAfter = runReadAction {
             ktFile.text

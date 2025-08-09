@@ -30,7 +30,7 @@ import org.jetbrains.kotlinx.jupyter.compiler.DefaultCompilerArgsConfigurator
 import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.config.defaultRuntimeProperties
 import org.jetbrains.kotlinx.jupyter.config.getCompilationConfiguration
-import java.io.File
+import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.ScriptEvaluationConfiguration
@@ -68,7 +68,7 @@ class JupyterCompilerService(
     private val scriptDefinitionsWrapperValue: AtomicReference<KotlinNotebookScriptDefinitionsWrapper?> = AtomicReference()
     private val initialCompileConfigurationValue: AtomicReference<ScriptCompilationConfiguration?> = AtomicReference()
 
-    private val initialClasspath: List<File> by lazy {
+    private val initialClasspath: List<Path> by lazy {
        emptyList()
     }
 
@@ -106,7 +106,7 @@ class JupyterCompilerService(
                 // This logic should be kept side effect free, as long as it might
                 // be called multiple times and even simultaneously.
                 getCompilationConfiguration(
-                    scriptClasspath = initialClasspath,
+                    scriptClasspath = initialClasspath.map { it.toFile() },
                     compilerArgsConfigurator = DefaultCompilerArgsConfigurator(jvmTargetVersion = defaultRuntimeProperties.jvmTargetForSnippets),
                     replCompilerMode = KotlinNotebookApplicationOptions.get().replCompilerMode,
                     loggerFactory = DefaultKernelLoggerFactory

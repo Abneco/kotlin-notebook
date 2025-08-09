@@ -25,10 +25,12 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.jetbrains.idea.maven.aether.ArtifactKind
 import org.jetbrains.jps.model.library.JpsMavenRepositoryLibraryDescriptor
-import java.io.File
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.io.path.absolute
+import kotlin.io.path.invariantSeparatorsPathString
 
 @Service(Service.Level.PROJECT)
 class KotlinNotebookMavenArtifactsDownloader(
@@ -39,7 +41,7 @@ class KotlinNotebookMavenArtifactsDownloader(
     private val onlySources = setOf(ArtifactKind.SOURCES)
     private val onlyZip = setOf(ArtifactKind.ZIP)
 
-    private val downloadJobs = mutableMapOf<ArtifactDescriptionWithVersion, Deferred<List<File>>>()
+    private val downloadJobs = mutableMapOf<ArtifactDescriptionWithVersion, Deferred<List<Path>>>()
     private val cacheSearchLock = ReentrantLock()
     private val downloadJobsScope = coroutineScope.childScope("Kotlin Notebook artifacts download", Dispatchers.Default)
     private val preloadJobScope = coroutineScope.childScope("Kotlin Notebook artifacts preload", Dispatchers.Default)
@@ -60,7 +62,7 @@ class KotlinNotebookMavenArtifactsDownloader(
     fun downloadArtifactBlocking(
         artifact: ArtifactDescriptionWithKind,
         version: String,
-    ): List<File> {
+    ): List<Path> {
         return runBlockingMaybeCancellable {
             downloadArtifactAsync(artifact, version)
         }
@@ -69,7 +71,7 @@ class KotlinNotebookMavenArtifactsDownloader(
     suspend fun downloadArtifactAsync(
         artifact: ArtifactDescriptionWithKind,
         version: String,
-    ): List<File> {
+    ): List<Path> {
         val artifactWithVersion = ArtifactDescriptionWithVersion(artifact, version)
         @Suppress("DialogTitleCapitalization")
         return withBackgroundProgress(
@@ -89,7 +91,7 @@ class KotlinNotebookMavenArtifactsDownloader(
     fun downloadAndUnzipBlocking(
         artifact: ArtifactDescriptionWithKind,
         version: String = project.selectedKernelVersionAsString,
-    ): List<File> {
+    ): List<Path> {
         return runBlockingMaybeCancellable {
             downloadAndUnzipAsync(artifact, version)
         }
@@ -100,7 +102,7 @@ class KotlinNotebookMavenArtifactsDownloader(
     private suspend fun downloadAndUnzipAsync(
         artifact: ArtifactDescriptionWithKind,
         version: String,
-    ): List<File> {
+    ): List<Path> {
         assert(artifact.kind.extension == "zip")
         val zipFiles = downloadArtifactAsync(artifact, version)
         val outputDirectory = locateDirectoryForArtifactInCache(ArtifactDescriptionWithVersion(artifact, version), "_extracted")
@@ -108,11 +110,10 @@ class KotlinNotebookMavenArtifactsDownloader(
         if (artifacts.isNotEmpty()) {
             return artifacts
         } else {
-            val outputDirPath = outputDirectory.toPath()
             for (zipFile in zipFiles) {
                 ZipUtil.extract(
-                    zipFile.toPath(),
-                    outputDirPath,
+                    zipFile,
+                    outputDirectory,
                     null,
                     true
                 )
@@ -145,7 +146,7 @@ class KotlinNotebookMavenArtifactsDownloader(
      */
     private fun downloadAndSaveToDirectory(
         artifactWithVersion: ArtifactDescriptionWithVersion,
-        directory: File,
+        directory: Path,
     ): Boolean {
         val (artifact, version) = artifactWithVersion
         val resolvedLibraryRoots = JarRepositoryManager.loadDependenciesSync(
@@ -153,7 +154,7 @@ class KotlinNotebookMavenArtifactsDownloader(
             JpsMavenRepositoryLibraryDescriptor(artifact.group, artifact.artifact, version, false, emptyList()),
             artifact.selectKinds(),
             defaultRemoteArtifactsRepositories,
-            directory.absolutePath,
+            directory.absolute().invariantSeparatorsPathString,
         ) ?: return false
 
         resolvedLibraryRoots.mapNotNull { root ->
@@ -174,12 +175,13 @@ class KotlinNotebookMavenArtifactsDownloader(
     /**
      * Searches for artifacts in the local IDEA cache, downloads them otherwise.
      *
-     * @param artifactWithVersion The artifact description with version.
+     * @param artifactWithVersion The artifact description with a version.
      * @param downloader The downloader that takes a cache location as a parameter and returns a boolean indicating the success of the download.
-     * Downloader should save download result in the given location. [downloader] jobs are started inside [downloadJobsScope]
+     * Downloader should save a download result in the given location.
+     * Jobs of [downloader] are started inside [downloadJobsScope]
      * @return A deferred list of downloaded files.
      */
-    private fun downloadWithCache(artifactWithVersion: ArtifactDescriptionWithVersion, downloader: Downloader): Deferred<List<File>> {
+    private fun downloadWithCache(artifactWithVersion: ArtifactDescriptionWithVersion, downloader: Downloader): Deferred<List<Path>> {
         return cacheSearchLock.withLock {
             downloadJobs.getOrPut(artifactWithVersion) {
                 val cacheDirectory = locateDirectoryForArtifactInCache(artifactWithVersion)
@@ -193,19 +195,19 @@ class KotlinNotebookMavenArtifactsDownloader(
         }
     }
 
-    private fun startDownload(cacheDirectory: File, downloader: Downloader): Deferred<List<File>> {
+    private fun startDownload(cacheDirectory: Path, downloader: Downloader): Deferred<List<Path>> {
         return downloadJobsScope.async {
             if (downloader.download(cacheDirectory)) cacheDirectory.files()
             else emptyList()
         }
     }
 
-    private fun File.files() = listFiles()?.toList().orEmpty()
+    private fun Path.files() = Files.list(this).toList()
 
     private fun locateDirectoryForArtifactInCache(
         artifactWithVersion: ArtifactDescriptionWithVersion,
         directorySuffix: String = "",
-    ): File {
+    ): Path {
         val (artifact, version) = artifactWithVersion
         val versionDirectory = kernelsDirectoryPath.resolve(version)
         val artifactDirectoryName = buildString {
@@ -220,12 +222,12 @@ class KotlinNotebookMavenArtifactsDownloader(
             }
         }
         val artifactDirectory = versionDirectory.resolve(artifactDirectoryName + directorySuffix)
-        artifactDirectory.toFile().mkdirs()
-        return artifactDirectory.toFile()
+        Files.createDirectories(artifactDirectory)
+        return artifactDirectory
     }
 
     private fun interface Downloader {
-        suspend fun download(cacheLocation: File): Boolean
+        suspend fun download(cacheLocation: Path): Boolean
     }
 
     private data class ArtifactDescriptionWithVersion(

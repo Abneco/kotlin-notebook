@@ -26,7 +26,7 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Disposer.newDisposable
-import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.psi.PsiFile
@@ -42,7 +42,6 @@ import org.jetbrains.annotations.NonNls
 import org.jetbrains.jupyter.builder.NotebookBuilder
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.base.test.KotlinTestHelpers
-import org.jetbrains.kotlin.idea.intentions.invoke
 import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
 import org.jetbrains.kotlin.idea.test.setUpWithKotlinPlugin
 import org.jetbrains.kotlin.psi.KtFile
@@ -51,9 +50,16 @@ import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.tests.withSwingMarkdownRenderMode
 import org.junit.runner.RunWith
-import java.io.File
+import java.nio.file.FileSystems
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.io.path.Path
+import kotlin.io.path.absolute
+import kotlin.io.path.exists
+import kotlin.io.path.isRegularFile
+import kotlin.io.path.name
+import kotlin.io.path.pathString
 
 /**
  * Base class for all notebook tests. The entry point is the [runNotebookTest] method which provides
@@ -147,16 +153,19 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
     override fun getBasePath(): @NonNls String {
         val testDataPath = this::class.java.findAnnotationInHierarchy<TestDataPath>()?.value
         val testMetadataPath = this::class.java.findAnnotationInHierarchy<TestMetadata>()?.value
-        return FileUtil.toSystemIndependentName(listOfNotNull(testDataPath, testMetadataPath).joinToString(File.separator))
+        return FileUtilRt
+            .toSystemIndependentName(
+                listOfNotNull(testDataPath, testMetadataPath).joinToString(FileSystems.getDefault().separator)
+            )
             .replace(CONTENT_ROOT_VARIABLE, CONTENT_ROOT)
             .replace(PROJECT_ROOT_VARIABLE, PROJECT_ROOT)
     }
 
-    protected fun getTestFile(): File {
+    protected fun getTestFile(): Path {
         // we're using TestCase.getName() to get the function name, should be safe since the test name isn't customized anywhere
         val testMetadata = this::class.java.getMethod(name).getAnnotation(TestMetadata::class.java)
         return if (testMetadata != null) {
-            File(testDataPath, testMetadata.value)
+            Path(testDataPath, testMetadata.value)
         } else {
             val completePath = computeCompletePathFromParentToFile(
                 "${getTestName(true)}.$TEMPLATE_DATA_EXTENSION"
@@ -164,13 +173,12 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
             if (completePath == null) {
                 error("Can't find the requested file '${getTestName(true)}' with parent path: $testDataPath")
             }
-            File(completePath.toUri())
+            completePath.toAbsolutePath()
         }
     }
 
-    fun getDataFile(fileName: String): File {
-        val pathToFile = computeCompletePathFromParentToFile(fileName) ?: error("File $fileName not found")
-        return File(pathToFile.toUri())
+    fun getDataFile(fileName: String): Path {
+        return computeCompletePathFromParentToFile(fileName) ?: error("File $fileName not found")
     }
 
     fun invokeIntentionsInInjectedFile(ktFile: KtFile) {
@@ -190,17 +198,20 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
      * Returns immediately if the search is not necessary.
      */
     private fun computeCompletePathFromParentToFile(fileName: String): Path? {
-        val file = File(testDataPath, fileName)
-        return if (file.exists() && file.isFile) {
-            Path(file.absolutePath)
+        val file = Path.of(testDataPath, fileName).absolute()
+        return if (file.exists() && file.isRegularFile()) {
+            file
         } else {
             findPathFromParentToFile(fileName)
         }
     }
 
     private fun findPathFromParentToFile(fileName: String): Path? {
-        val file = File(testDataPath)
-        return file.walkTopDown().firstOrNull { it.name == fileName }?.toPath()
+        return Files.walk(Paths.get(testDataPath)).use { paths ->
+            paths.filter { it.fileName.toString() == fileName }
+                .findFirst()
+                .orElse(null)
+        }
     }
 
     /**
@@ -272,12 +283,12 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
     }
 
     protected fun assertTestFileHasCaret() {
-        val rawText =  FileUtil.loadFile(getTestFile(), true)
+        val rawText = FileUtilRt.loadFile(getTestFile().toFile(), true)
         assertTrue("\"<caret>\" is missing in file \"${file.name}\"", rawText.contains("<caret>"))
     }
 
     private fun runNotebookTestInternal(
-        testFile: File,
+        testFile: Path,
         setupScriptDependencies: Boolean,
         test: NotebookTestBuilder.() -> Unit,
     ) {
@@ -298,7 +309,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         }
     }
 
-    private fun configureTestFile(notebookFile: File): PsiFile {
+    private fun configureTestFile(notebookFile: Path): PsiFile {
         TestLoggerFactory.enableDebugLogging(myFixture.projectDisposable, javaClass)
         myFixture.setCaresAboutInjection(true)
 
@@ -310,7 +321,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         invokeAndWaitIfNeeded {
             val backedFile = myFixture.configureByJupyterFile(
                 jupyterFileName = notebookFile.name,
-                testDataPath = notebookFile.parentFile.absolutePath,
+                testDataPath = notebookFile.parent.toAbsolutePath().pathString,
             )
             myFixture.editor.setMode(NotebookEditorMode.EDIT)
             originalVirtualFile = myFixture.file.virtualFile

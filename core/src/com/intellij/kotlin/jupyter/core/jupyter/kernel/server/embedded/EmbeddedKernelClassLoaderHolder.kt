@@ -30,7 +30,7 @@ class EmbeddedKernelClassLoaderHolder(private val project: Project) {
         val downloader = KotlinNotebookMavenArtifactsDownloader.getInstance(project)
         val classpath = downloader.downloadArtifactBlocking(KotlinNotebookMavenArtifacts.EMBEDDED_KERNEL, kernelVersion)
         return URLClassLoader(
-            classpath.map { file -> file.toURI().toURL() }.toTypedArray(),
+            classpath.map { file -> file.toUri().toURL() }.toTypedArray(),
             EmbeddedKernelClassLoaderHolder::class.java.classLoader
         )
     }
@@ -42,6 +42,7 @@ class EmbeddedKernelClassLoaderHolder(private val project: Project) {
     }
 
     companion object {
-        fun getInstance(project: Project) = project.service<EmbeddedKernelClassLoaderHolder>()
+        fun getInstance(project: Project): EmbeddedKernelClassLoaderHolder =
+            project.service<EmbeddedKernelClassLoaderHolder>()
     }
 }

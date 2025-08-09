@@ -9,7 +9,8 @@ import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.toVirtualFileUrl
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.pathString
 
 /**
  * Is used to separate script compilation configurations dependencies by 2 main read-only group:
@@ -27,12 +28,12 @@ sealed interface NotebookConfigurationRootsView {
     /**
      * Provides a view on dependencies [OrderRootType.CLASSES] roots
      */
-    val dependenciesRoots: List<File>
+    val dependenciesRoots: List<Path>
 
     /**
      * Provides a view on [OrderRootType.CLASSES] dependencies roots
      */
-    val dependenciesSources: List<File>
+    val dependenciesSources: List<Path>
 
     /**
      * Returns a list of all roots in the format as [LibraryRoot]
@@ -40,8 +41,8 @@ sealed interface NotebookConfigurationRootsView {
     fun getAllLibraryRoots(project: Project): Pair<List<VirtualFileUrl>, List<VirtualFileUrl>> {
         val fileUrlManager = WorkspaceModel.getInstance(project).getVirtualFileUrlManager()
 
-        val classes = dependenciesRoots.map { it.path.toVirtualFileUrl(fileUrlManager) }
-        val sources = dependenciesSources.map { it.path.toVirtualFileUrl(fileUrlManager) }
+        val classes = dependenciesRoots.map { it.pathString.toVirtualFileUrl(fileUrlManager) }
+        val sources = dependenciesSources.map { it.pathString.toVirtualFileUrl(fileUrlManager) }
 
         return classes to sources
     }

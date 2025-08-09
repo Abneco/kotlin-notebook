@@ -5,7 +5,6 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import java.io.File
 import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.host.ScriptingHostConfiguration
 import kotlin.script.experimental.intellij.ScriptDefinitionsProvider
@@ -18,13 +17,13 @@ import kotlin.script.experimental.intellij.ScriptDefinitionsProvider
  */
 class JupyterScriptDefinitionProvider(project: Project) : ScriptDefinitionsProvider, Disposable {
     private val disposable = Disposer.newDisposable()
-    private val projectCompilerService = JupyterCompilerService.Companion.getInstance(project)
+    private val projectCompilerService = JupyterCompilerService.getInstance(project)
 
     override val id: String = "Jupyter Definition provider"
 
     override fun getDefinitionClasses(): Iterable<String> = emptyList()
 
-    override fun getDefinitionsClassPath(): Iterable<File> = emptyList()
+    override fun getDefinitionsClassPath(): Iterable<java.io.File> = emptyList()
 
     override fun useDiscovery(): Boolean = false
 

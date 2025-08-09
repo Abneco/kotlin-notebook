@@ -58,7 +58,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.asDeferred
-import java.io.File
+import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
 
@@ -289,7 +289,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
 
         val buildResult = buildResultDeferred.await()
         val state = if (!buildResult.hasErrors()) DependenciesState.PROVIDED
-        else if (projectClasspath.any { File(it).isNotEmptyDirectory }) DependenciesState.OUTDATED
+        else if (projectClasspath.any { Path.of(it).isNotEmptyDirectory }) DependenciesState.OUTDATED
         else DependenciesState.ABSENT
 
         return BuildResult(projectClasspath, state)

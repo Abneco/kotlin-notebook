@@ -9,11 +9,13 @@ import com.intellij.openapi.util.NlsActions
 import com.intellij.ui.dsl.builder.MutableProperty
 import com.intellij.ui.dsl.builder.panel
 import java.awt.event.ActionEvent
-import java.io.File
+import java.nio.file.Path
 import javax.swing.AbstractAction
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.name
 
 fun showFileAlreadyExistsDialog(
-    file: File,
+    file: Path,
     showRememberChoiceCheckbox: Boolean,
     rememberChoiceProperty: MutableProperty<Boolean>,
     strategyProperty: MutableProperty<FileAlreadyExistsStrategy>
@@ -22,7 +24,7 @@ fun showFileAlreadyExistsDialog(
 
     val dialogPanel = panel {
         row {
-            label(KotlinNotebookPlotsBundle.message("kotlin.notebook.plots.dialog.file.already.exists.text", file.absolutePath))
+            label(KotlinNotebookPlotsBundle.message("kotlin.notebook.plots.dialog.file.already.exists.text", file.absolutePathString()))
         }
 
         if (showRememberChoiceCheckbox) {

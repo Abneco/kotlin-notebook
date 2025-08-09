@@ -13,7 +13,9 @@ import org.jetbrains.kotlin.j2k.copyPaste.ConvertTextJavaCopyPasteProcessor
 import org.junit.Assume
 import org.junit.Test
 import java.awt.datatransfer.StringSelection
-import java.io.File
+import kotlin.io.path.Path
+import kotlin.io.path.exists
+import kotlin.io.path.readText
 
 private enum class ConversionType {
     FROM_TEXT_FILE,
@@ -26,7 +28,7 @@ private class TestData(
 )
 
 @K1Only("Investigate why @Throws is not shortened")
-@TestDataPath("\$CONTENT_ROOT/testData/notebooks/conversion")
+@TestDataPath($$"$CONTENT_ROOT/testData/notebooks/conversion")
 class J2KConversionTest : KotlinNotebookTransformerBaseTestCase() {
     @Test
     fun `testSimpleConversionE FromTextFile`() = doTest(FromTextFile)
@@ -62,7 +64,7 @@ class J2KConversionTest : KotlinNotebookTransformerBaseTestCase() {
         val expectedCellText = prepareExpectedCellText(testData.expectedFileMark)
 
         doSimpleTransformerTest(expectedCellText) {
-            val javaCode = File(testDataPath).resolve("simpleConversion.txt").readText()
+            val javaCode = Path(testDataPath).resolve("simpleConversion.txt").readText()
 
             when (testData.conversionType) {
                 ConversionType.FROM_TEXT_FILE -> {

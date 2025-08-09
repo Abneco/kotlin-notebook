@@ -35,7 +35,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
@@ -59,7 +59,7 @@ import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.tests.awaitBlocking
 import org.junit.jupiter.api.Assertions
-import java.io.File
+import java.nio.file.Path
 import kotlin.time.Duration.Companion.minutes
 
 val baseTestDataPathWithHome = PathManager.getHomePath() + "/plugins/kotlin/jupyter/tests/testData"
@@ -277,13 +277,13 @@ enum class LookupFinishMode(val completionChar: Char) {
 }
 
 /** Creates a temporary notebook file using [build] builder. The file is deleted on JVM exit. */
-fun buildKotlinNotebookFile(name: String, build: NotebookBuilder.() -> Unit): File {
+fun buildKotlinNotebookFile(name: String, build: NotebookBuilder.() -> Unit): Path {
     val notebook = buildNotebook("kotlin", "Kotlin", build)
-    val notebookFile = FileUtil.createTempFile(name, ".ipynb", /* deleteOnExit = */ true)
+    val notebookFile = FileUtilRt.createTempFile(name, ".ipynb", /* deleteOnExit = */ true)
     notebookFile.outputStream().use { out ->
         @OptIn(ExperimentalSerializationApi::class)
         Json.encodeToStream(notebook, out)
     }
-    return notebookFile
+    return notebookFile.toPath()
 }
 

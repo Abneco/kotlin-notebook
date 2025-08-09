@@ -7,8 +7,9 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 import java.awt.datatransfer.StringSelection
+import kotlin.io.path.readText
 
-@TestDataPath("\$CONTENT_ROOT/testData/notebooks/actions/paste")
+@TestDataPath($$"$CONTENT_ROOT/testData/notebooks/actions/paste")
 class PasteTest : KotlinNotebookTransformerBaseTestCase() {
     @Test
     fun indentsAfterPaste() = doTest(

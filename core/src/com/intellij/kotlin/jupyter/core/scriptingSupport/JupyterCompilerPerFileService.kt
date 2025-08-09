@@ -63,13 +63,13 @@ import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
-import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.io.path.absolutePathString
 import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
@@ -98,7 +98,7 @@ import kotlin.script.experimental.jvm.withUpdatedClasspath
 class JupyterCompilerPerFileService(
     private val projectService: JupyterCompilerService,
     virtualFile: BackedNotebookVirtualFile,
-    initialClasspath: List<File>,
+    initialClasspath: List<Path>,
     scope: CoroutineScope
 ) : NotebookPerFileChildService(virtualFile, scope) {
     private val project get() = projectService.project
@@ -137,15 +137,15 @@ class JupyterCompilerPerFileService(
 
     private val deserializer = CompiledScriptsSerializer()
 
-    private val _currentClasspath: TwoPartsList<File> by lazy {
-        TwoPartsList<File>().apply {
+    private val _currentClasspath: TwoPartsList<Path> by lazy {
+        TwoPartsList<Path>().apply {
             addInitial(initialClasspath)
         }
     }
-    val currentClasspath: List<File> get() = _currentClasspath.getList()
+    val currentClasspath: List<Path> get() = _currentClasspath.getList()
 
-    private val _sourceRoots = TwoPartsList<File>()
-    val currentSourceRoots: List<File> get() = _sourceRoots.getList()
+    private val _sourceRoots = TwoPartsList<Path>()
+    val currentSourceRoots: List<Path> get() = _sourceRoots.getList()
 
     private val additionalDefaultImports: TwoPartsList<String> by lazy {
         TwoPartsList<String>().apply {
@@ -290,9 +290,9 @@ class JupyterCompilerPerFileService(
             _sourceRoots.addInitial(sourcesJars)
         }
 
-        val kernelArtifactPaths = jars.map { it.absolutePath }
+        val kernelArtifactPaths = jars.map { it.absolutePathString() }
         KotlinNotebookPermanentIndexService.getInstance(project)
-            .addToPermanentIndex(kernelArtifactPaths, sourcesJars.map { it.absolutePath })
+            .addToPermanentIndex(kernelArtifactPaths, sourcesJars.map { it.absolutePathString() })
         kernelArtifactPaths.updateLastClasspathArtifact()
 
         return jars.isNotEmpty() || sourcesJars.isNotEmpty()
@@ -303,7 +303,7 @@ class JupyterCompilerPerFileService(
         val artifacts = buildService.buildProjectAndGetLibraries(virtualFile).ifEmpty { return false }
         return accessData {
             val oldSize = _currentClasspath.size
-            _currentClasspath.addSnippet(artifacts.map { File(it) })
+            _currentClasspath.addSnippet(artifacts.map { Path.of(it) })
             val newSize = _currentClasspath.size
             oldSize != newSize
         }
@@ -337,7 +337,7 @@ class JupyterCompilerPerFileService(
     }
 
     private fun ScriptCompilationConfiguration.refineConfiguration(): ScriptCompilationConfiguration {
-        val withNewClasspath = withUpdatedClasspath(currentClasspath)
+        val withNewClasspath = withUpdatedClasspath(currentClasspath.map { it.toFile() })
         return ScriptCompilationConfiguration(withNewClasspath) {
             if (_currentClasspath.hasInitialPart) {
                 // `addBaseClas` is the wrong name but is only used for backwards compatibility.
@@ -360,7 +360,8 @@ class JupyterCompilerPerFileService(
             defaultImports(additionalDefaultImports.getList())
             ide.dependenciesSources(
                 JvmDependency(
-                    project.sourceRootsForDependencies(virtualFile) + _sourceRoots.getList().toSet()
+                    (project.sourceRootsForDependencies(virtualFile) + _sourceRoots.getList().toSet())
+                        .map { it.toFile() }
                 )
             )
         }
@@ -405,17 +406,16 @@ class JupyterCompilerPerFileService(
         val nextCounter = directoryCounter.incrementAndGet()
 
         val lineClassesDir = classesDir.resolve(getLineFolderName(nextCounter))
-        val lineClassesDirAsFile = lineClassesDir.toFile()
-        lineClassesDirAsFile.mkdirs()
+        Files.createDirectories(lineClassesDir)
 
         val lineSourcesDir = classesDir.resolve("sources_$nextCounter")
 
         KotlinNotebookPermanentIndexService.getInstance(project).addToPermanentIndex(snippetMetadata.newClasspath, snippetMetadata.newSources)
-        _currentClasspath.addSnippetFromData(snippetMetadata.newClasspath.map { File(it) }, lineClassesDirAsFile)
-        _sourceRoots.addSnippetFromData(snippetMetadata.newSources.map { File(it) }, lineSourcesDir.toFile())
+        _currentClasspath.addSnippetFromData(snippetMetadata.newClasspath.map { Path.of(it) }, lineClassesDir)
+        _sourceRoots.addSnippetFromData(snippetMetadata.newSources.map { Path.of(it) }, lineSourcesDir)
         additionalDefaultImports.addSnippet(snippetMetadata.newImports)
         if (snippetMetadata.newClasspath.isEmpty()) {
-            lastClasspathUpdate.set(lineClassesDirAsFile.toPath())
+            lastClasspathUpdate.set(lineClassesDir)
         } else {
             snippetMetadata.newClasspath.updateLastClasspathArtifact()
         }

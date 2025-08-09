@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResu
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import org.jetbrains.kotlin.utils.addToStdlib.UnsafeCastFunction
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
+import kotlin.io.path.absolutePathString
 import kotlin.script.experimental.api.valueOrNull
 
 class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport {
@@ -94,8 +95,8 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     private fun ScriptClassRootsBuilder.addRootsFromNotebooks(notebooks: Collection<BackedNotebookVirtualFile>) {
         for (notebook in notebooks) {
             val notebookService = JupyterCompilerService.getForFile(project, notebook)
-            addTemplateClassesRoots(notebookService.currentClasspath.map { it.absolutePath })
-            addSources(notebookService.currentSourceRoots.map { it.absolutePath })
+            addTemplateClassesRoots(notebookService.currentClasspath.map { it.absolutePathString() })
+            addSources(notebookService.currentSourceRoots.map { it.absolutePathString() })
 
             warnAboutDependenciesExistence(false)
             try {

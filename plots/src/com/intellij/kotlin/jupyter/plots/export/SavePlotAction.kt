@@ -32,8 +32,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import java.awt.event.ActionEvent
-import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import javax.swing.AbstractAction
+import kotlin.io.path.exists
+import kotlin.io.path.extension
+import kotlin.io.path.nameWithoutExtension
 
 
 abstract class SavePlotAction : AbstractExportPlotAction() {
@@ -55,8 +59,8 @@ abstract class SavePlotAction : AbstractExportPlotAction() {
         letsPlotOutputs: List<LetsPlotOutputDataKey>,
         exportModel: MutablePlotSaveModel
     ) {
-        val savedFiles = mutableListOf<File>()
-        val skippedFiles = mutableListOf<File>()
+        val savedFiles = mutableListOf<Path>()
+        val skippedFiles = mutableListOf<Path>()
         val errors = mutableListOf<Throwable>()
 
         for ((outputIndex, output) in letsPlotOutputs.withIndex()) {
@@ -66,7 +70,7 @@ abstract class SavePlotAction : AbstractExportPlotAction() {
                     val fileSaveRequest = exportModel.createFileSaveRequest(outputIndex + 1, isLastFile)
                     val file = fileSaveRequest.file
                     if (fileSaveRequest.shouldSave) {
-                        file.parentFile.mkdirs()
+                        Files.createDirectories(file.parent)
                         savePlot(output, exportModel, file)
                         savedFiles.add(file)
                     } else {
@@ -227,7 +231,7 @@ abstract class SavePlotAction : AbstractExportPlotAction() {
         suspend fun createFileSaveRequest(outputIndex: Int, isLastFile: Boolean): FileSaveRequest {
             val myDirectory = directory
             val fileNameTemplate = fileName.replace(OUTPUT_INDEX_TEMPLATE, outputIndex.toString())
-            val file = File(myDirectory, fileNameTemplate)
+            val file = Path.of(myDirectory, fileNameTemplate)
             val newFile = ensureFileDoesNotExist(file, !isLastFile)
             return FileSaveRequest(newFile ?: file, newFile != null)
         }
@@ -236,7 +240,7 @@ abstract class SavePlotAction : AbstractExportPlotAction() {
          * Depending on file existence and the strategy chosen by the user,
          * returns the file where the plot should be saved or null if it shouldn't be saved
          */
-        suspend fun ensureFileDoesNotExist(file: File, showRememberChoiceCheckbox: Boolean): File? {
+        suspend fun ensureFileDoesNotExist(file: Path, showRememberChoiceCheckbox: Boolean): Path? {
             if (!file.exists()) return file
 
             if (fileAlreadyExistsStrategy == FileAlreadyExistsStrategy.ASK) {
@@ -262,7 +266,7 @@ abstract class SavePlotAction : AbstractExportPlotAction() {
                 FileAlreadyExistsStrategy.OVERWRITE -> file
                 FileAlreadyExistsStrategy.CREATE_NEW -> {
                     generateSequence(1) { it + 1 }
-                        .map { File(file.parentFile, "${file.nameWithoutExtension} ($it).${file.extension}")  }
+                        .map { file.parent.resolve("${file.nameWithoutExtension} ($it).${file.extension}")  }
                         .first { !it.exists() }
                 }
             }
@@ -284,7 +288,7 @@ abstract class SavePlotAction : AbstractExportPlotAction() {
     }
 
     private class FileSaveRequest(
-        val file: File,
+        val file: Path,
         val shouldSave: Boolean,
     )
 

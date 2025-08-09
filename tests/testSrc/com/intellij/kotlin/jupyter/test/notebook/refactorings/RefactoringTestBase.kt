@@ -12,7 +12,9 @@ import com.intellij.openapi.editor.CaretModel
 import com.intellij.openapi.fileEditor.FileEditorProvider
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
-import java.io.File
+import kotlin.io.path.Path
+import kotlin.io.path.pathString
+import kotlin.io.path.relativeTo
 
 abstract class RefactoringTestBase(private val refactoringActionId: String) : KotlinNotebookBaseTestCase() {
     override lateinit var originalVirtualFile: VirtualFile
@@ -38,8 +40,9 @@ abstract class RefactoringTestBase(private val refactoringActionId: String) : Ko
         }
 
         doEditorActionWithSession(psiFile)
+        val expectedFile = getTestFile(".txt").relativeTo(Path(testDataPath))
 
-        myFixture.checkResultByFile(getTestFile(".txt").relativeTo(File(testDataPath)).path, true)
+        myFixture.checkResultByFile(expectedFile.pathString, true)
     }
 
     private fun doEditorActionWithSession(psiFile: PsiFile) {

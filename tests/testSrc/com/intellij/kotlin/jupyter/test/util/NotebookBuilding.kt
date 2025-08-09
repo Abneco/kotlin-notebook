@@ -2,20 +2,20 @@
 package com.intellij.kotlin.jupyter.test.util
 
 import com.intellij.kotlin.jupyter.test.util.data.parseFromRawInput
-import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.util.io.FileUtilRt
 import org.intellij.lang.annotations.Language
 import org.jetbrains.jupyter.builder.NotebookBuilder
-import java.io.File
+import java.nio.file.Path
 
 fun NotebookBuilder.kotlinCell(@Language("kotlin") kotlin: String) {
     codeCell(kotlin)
 }
 
 /**
- * Build's a notebook from a given [File].
+ * Build's a notebook from a given [file].
  * It's expected that a file follows a template test data format.
  */
-fun NotebookBuilder.fromTemplateFile(file: File) {
-    val templateContent = FileUtil.loadFile(file, true)
+fun NotebookBuilder.fromTemplateFile(file: Path) {
+    val templateContent = FileUtilRt.loadFile(file.toFile(), true)
     parseFromRawInput(templateContent)
 }

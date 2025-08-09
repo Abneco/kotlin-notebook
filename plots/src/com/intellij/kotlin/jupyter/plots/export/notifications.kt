@@ -10,7 +10,9 @@ import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.util.NlsSafe
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.name
 
 private const val KANDY_NOTIFICATIONS_GROUP = "Kandy plot export"
 private val kandyGroup get() = NotificationGroupManager.getInstance().getNotificationGroup(KANDY_NOTIFICATIONS_GROUP)
@@ -29,17 +31,17 @@ fun showPlotExportFailedNotification(throwable: Throwable) {
  * Shows the notification after a plot saving process is finished.
  *
  * If a single plot was successfully saved, it suggests opening the file containing the plot.
- * If a single plot export failed, shows corresponding error stacktrace.
- * If multiple plots were exported, shows first failure if any
- * and suggests to open the folder containing new files (if any).
+ * If a single plot export failed, it shows the corresponding error stacktrace.
+ * If multiple plots were exported, it shows the first failure if any
+ * and suggests opening the folder containing new files (if any).
  *
  * @param savedFiles The collection of files that were successfully saved.
  * @param skippedFiles The collection of files which were not saved because they already exist
  * @param errors The collection of errors that occurred during saving the plots.
  */
 fun showPlotSaveNotification(
-    savedFiles: Collection<File>,
-    skippedFiles: Collection<File>,
+    savedFiles: Collection<Path>,
+    skippedFiles: Collection<Path>,
     errors: Collection<Throwable>,
 ) {
     val allExportsSucceeded = errors.isEmpty() && skippedFiles.isEmpty()
@@ -82,7 +84,7 @@ fun showPlotSaveNotification(
     Notifications.Bus.notify(notification)
 }
 
-private fun showPlotExportedNotification(file: File) {
+private fun showPlotExportedNotification(file: Path) {
     val notification = kandyGroup.createNotification(
         KotlinNotebookPlotsBundle.message("kotlin.notebook.outputs.kandy.export.notification.message", file.name),
         NotificationType.INFORMATION
@@ -93,7 +95,7 @@ private fun showPlotExportedNotification(file: File) {
     Notifications.Bus.notify(notification)
 }
 
-private fun Notification.addPlotOpenAction(files: Collection<File>) {
+private fun Notification.addPlotOpenAction(files: Collection<Path>) {
     val file = files.firstOrNull() ?: return
     val action = if (files.size > 1) {
         NotificationAction.create(KotlinNotebookPlotsBundle.message("kotlin.notebook.outputs.kandy.export.notification.action.open.multiple")) { _ ->
@@ -102,7 +104,7 @@ private fun Notification.addPlotOpenAction(files: Collection<File>) {
     } else {
         NotificationAction.create(KotlinNotebookPlotsBundle.message("kotlin.notebook.outputs.kandy.export.notification.action.open")) { e ->
             val project = e.project ?: return@create
-            OpenFileAction.openFile(file.absolutePath, project)
+            OpenFileAction.openFile(file.absolutePathString(), project)
         }
     }
     addAction(action)

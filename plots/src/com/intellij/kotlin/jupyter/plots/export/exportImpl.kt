@@ -15,13 +15,15 @@ import org.jetbrains.letsPlot.core.util.PlotHtmlExport
 import org.jetbrains.letsPlot.core.util.PlotHtmlHelper
 import java.awt.datatransfer.StringSelection
 import java.awt.datatransfer.Transferable
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.writeBytes
+import kotlin.io.path.writeText
 
 @RequiresBackgroundThread
 fun savePlot(
     plot: LetsPlotOutputDataKey,
     model: PlotExportModel,
-    file: File,
+    file: Path,
 ) {
     val content = exportPlot(plot, model)
     content.saveToFile(file)
@@ -39,12 +41,12 @@ fun copyPlotToClipboard(
 }
 
 private interface PlotContent {
-    fun saveToFile(file: File)
+    fun saveToFile(file: Path)
     fun asTransferable(project: Project): Transferable
 }
 
 private class TextPlotContent(private val text: String) : PlotContent {
-    override fun saveToFile(file: File) {
+    override fun saveToFile(file: Path) {
         file.writeText(text)
     }
 
@@ -57,7 +59,7 @@ private class BinaryPlotContent(
     private val bytes: ByteArray,
     private val extension: String,
 ) : PlotContent {
-    override fun saveToFile(file: File) {
+    override fun saveToFile(file: Path) {
         file.writeBytes(bytes)
     }
 

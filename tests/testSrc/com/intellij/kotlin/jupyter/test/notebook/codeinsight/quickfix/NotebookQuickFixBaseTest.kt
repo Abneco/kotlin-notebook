@@ -10,7 +10,7 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.runInEdtAndWait
@@ -78,7 +78,7 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
             } else {
                 stubComparisonFailure = null
             }
-            val expectedResult = FileUtil.loadFile(getTestFile(".kt.expected"), true)
+            val expectedResult = FileUtilRt.loadFile(getTestFile(".kt.expected").toFile(), true)
             stubComparisonFailure?.let { throw it }
 
             TestCase.assertEquals(expectedResult, myFixture.file.text)
@@ -111,7 +111,7 @@ abstract class NotebookQuickFixBaseTest : KotlinNotebookExecutionBaseTestCase() 
 
         val notebookFile = configureExecutionTest()
         val injectedFile = getInjectedFile(notebookFile, cellInd) ?: error("No suitable KtFile found in a host")
-        val rawContent = FileUtil.loadFile(getTestFile(), true)
+        val rawContent = FileUtilRt.loadFile(getTestFile().toFile(), true)
 
         doTestWithJupyterSessionAndBaseDependencies(notebookFile) {
             doKotlinQuickFixTest(injectedFile, rawContent)

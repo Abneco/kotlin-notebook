@@ -23,6 +23,7 @@ import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDo
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersionAsString
+import com.intellij.kotlin.jupyter.core.util.pathSeparator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VirtualFileManager
@@ -31,9 +32,9 @@ import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.javaCmdLine
 import org.jetbrains.kotlinx.jupyter.zmq.protocol.createRandomZmqKernelPorts
-import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolute
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 import kotlin.io.path.invariantSeparatorsPathString
 
@@ -72,14 +73,13 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
             KernelVmCommandCustomizer.addVmArguments(this)
         }
 
-        val classpathSeparator = File.pathSeparator
         val cmdArgs = kernelConfig.javaCmdLine(
             javaExecutable,
             "kernelProcessConnection",
             KotlinNotebookMavenArtifactsDownloader.getInstance(project).downloadArtifactBlocking(
                 KotlinNotebookMavenArtifacts.KERNEL_SHADOWED,
                 project.selectedKernelVersionAsString
-            ).joinToString(classpathSeparator) { it.absolutePath },
+            ).joinToString(pathSeparator) { it.absolutePathString() },
             extraJavaArgs,
         )
 
@@ -139,12 +139,12 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
         val javaHome: String? = options.jdk.getPath(project)
         if (javaHome == null) return "java"
 
-        val binDir = File(javaHome).absoluteFile.resolve("bin")
+        val binDir = Path.of(javaHome).absolute().resolve("bin")
         val javaExecutable = sequenceOf("java.exe", "java")
             .map { executableName -> binDir.resolve(executableName) }
             .firstOrNull { executable -> executable.exists() }
 
-        return javaExecutable?.absolutePath ?: "java"
+        return javaExecutable?.absolutePathString() ?: "java"
     }
 
     private var _kernelPortsProvider: KernelPortsProvider = KernelPortsProvider {

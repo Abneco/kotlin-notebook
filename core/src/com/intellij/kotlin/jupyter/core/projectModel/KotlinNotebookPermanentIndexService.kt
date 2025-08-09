@@ -13,7 +13,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import java.io.File
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.Path
+import kotlin.io.path.invariantSeparatorsPathString
 
 /**
  * This service is used to store the classpath of the notebooks used in this project
@@ -63,6 +65,7 @@ class KotlinNotebookPermanentIndexService(
         }
     }
 
+    @OptIn(ExperimentalPathApi::class)
     private fun addToPermanentIndexImpl(classpath: List<String>, sourceClasspath: List<String>) {
         val newLibrary = getOrCreatePermanentScriptingLibrary()
 
@@ -71,7 +74,7 @@ class KotlinNotebookPermanentIndexService(
 
         fun addPath(path: String, rootType: OrderRootType) {
             if (path.endsWith(".jar")) {
-                val rootPath = "file://${File(path).invariantSeparatorsPath}"
+                val rootPath = "file://${Path(path).invariantSeparatorsPathString}"
                 if (existingRoots[rootType]!!.contains(rootPath)) return
                 model.addRoot(rootPath, rootType)
             }

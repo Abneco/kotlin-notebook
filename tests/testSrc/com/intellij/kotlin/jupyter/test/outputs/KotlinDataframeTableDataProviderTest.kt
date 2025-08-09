@@ -15,7 +15,8 @@ import com.intellij.util.asSafely
 import io.kotest.common.runBlocking
 import org.junit.Assert
 import org.junit.Test
-import java.io.File
+import kotlin.io.path.Path
+import kotlin.io.path.readText
 
 class KotlinDataframeTableDataProviderTest : KotlinNotebookUnitTestCase() {
     @Test
@@ -146,9 +147,9 @@ class KotlinDataframeTableDataProviderTest : KotlinNotebookUnitTestCase() {
     }
 
     private fun readData(fileName: String): ObjectNode {
-        val jupyterDataframeResponseFile = File("$baseTestDataPathWithHome/outputs/$fileName")
-        return ObjectMapper().readTree(jupyterDataframeResponseFile).asSafely<ObjectNode>()
-            ?: throw RuntimeException("${jupyterDataframeResponseFile.path} not found")
+        val jupyterDataframeResponseFile = Path("$baseTestDataPathWithHome/outputs/$fileName")
+        return ObjectMapper().readTree(jupyterDataframeResponseFile.readText()).asSafely<ObjectNode>()
+            ?: throw RuntimeException("$jupyterDataframeResponseFile not found")
     }
 }
 

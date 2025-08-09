@@ -6,7 +6,6 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.AbstractKotlinKern
 import com.intellij.openapi.project.Project
 import com.intellij.util.lang.JavaVersion
 import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelPorts
-import java.io.File
 import java.nio.file.Path
 
 class AttachedKernelConfigFactory(
@@ -19,6 +18,6 @@ class AttachedKernelConfigFactory(
     override fun getSignature(): String = signature
     override fun getKernelPorts(): KernelPorts = ports
     override fun getDebugPortOrNull(notebookPath: Path): Int? = null
-    override fun getClasspath(): List<File> = emptyList()
+    override fun getClasspath(): List<Path> = emptyList()
     override fun getJvmTargetForSnippets(project: Project): JavaVersion? = null
 }

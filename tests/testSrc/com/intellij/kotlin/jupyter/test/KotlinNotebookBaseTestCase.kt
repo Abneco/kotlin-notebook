@@ -15,7 +15,7 @@ import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Disposer.newDisposable
-import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.TestDataPath
@@ -25,8 +25,8 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.ui.UIUtil
 import io.kotest.common.runBlocking
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
@@ -37,8 +37,12 @@ import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.junit.Rule
 import org.junit.runner.RunWith
-import java.io.File
+import java.nio.file.FileSystems
+import java.nio.file.Path
 import java.time.Instant
+import kotlin.io.path.absolute
+import kotlin.io.path.name
+import kotlin.io.path.pathString
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -59,15 +63,18 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
     override fun getBasePath(): @NonNls String {
         val testDataPath = this::class.java.getAnnotation(TestDataPath::class.java)?.value
         val testMetadataPath = this::class.java.getAnnotation(TestMetadata::class.java)?.value
-        return FileUtil.toSystemIndependentName(listOfNotNull(testDataPath, testMetadataPath).joinToString(File.separator))
+        return FileUtilRt
+            .toSystemIndependentName(
+                listOfNotNull(testDataPath, testMetadataPath).joinToString(FileSystems.getDefault().separator)
+            )
             .replace(CONTENT_ROOT_VARIABLE, CONTENT_ROOT)
             .replace(PROJECT_ROOT_VARIABLE, PROJECT_ROOT)
     }
 
-    protected fun getTestFile(): File {
+    protected fun getTestFile(): Path {
         // we're using TestCase.getName() to get the function name, should be safe since the test name isn't customized anywhere
         val testMetadata = this::class.java.getMethod(name).getAnnotation(TestMetadata::class.java)
-        return File(testDataPath, testMetadata?.value ?: "${getTestName(true)}.ipynb")
+        return Path.of(testDataPath, testMetadata?.value ?: "${getTestName(true)}.ipynb")
     }
 
     protected fun configureByJupyterFile(
@@ -76,7 +83,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
         val testFile = getTestFile()
         myFixture.configureByJupyterFile(
             jupyterFileName = testFile.name,
-            testDataPath = testFile.parentFile.absolutePath,
+            testDataPath = testFile.parent.absolute().pathString,
             fileEditorProvider = fileEditorProvider,
         )
     }
@@ -144,8 +151,8 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
         Disposer.register(testRootDisposable, JupyterServers.getInstance())
     }
 
-    fun getTestFile(suffix: String): File {
-        return File(testDataPath, "${getTestName(true)}$suffix")
+    fun getTestFile(suffix: String): Path {
+        return Path.of(testDataPath, "${getTestName(true)}$suffix")
     }
 
     protected fun CompletionAutoPopupTester.typeAndFinishLookup(

@@ -9,8 +9,10 @@ import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.awt.datatransfer.UnsupportedFlavorException
 import java.io.ByteArrayInputStream
-import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import javax.imageio.ImageIO
+import kotlin.io.path.writeBytes
 
 private class SingleFlavorTransferableFactory<DataT : Any>(
     private val myFlavor: DataFlavor,
@@ -43,7 +45,7 @@ private val ImageTransferableFactory =
     SingleFlavorTransferableFactory<Image>(DataFlavor.imageFlavor)
 
 private val FileTransferableFactory =
-    SingleFlavorTransferableFactory<List<File>>(DataFlavor.javaFileListFlavor)
+    SingleFlavorTransferableFactory<List<Path>>(DataFlavor.javaFileListFlavor)
 
 fun createImageDataTransferable(
     project: Project,
@@ -55,8 +57,7 @@ fun createImageDataTransferable(
             .getKotlinNotebookCacheDirectory()
             .resolve("plotExport")
             .resolve(fileName)
-            .toFile()
-        plotFile.parentFile.mkdirs()
+        Files.createDirectories(plotFile.parent)
         plotFile.writeBytes(imageData)
         FileTransferableFactory.createTransferable(listOf(plotFile))
     } else {
