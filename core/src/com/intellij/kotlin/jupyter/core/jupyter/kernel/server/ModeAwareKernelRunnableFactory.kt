@@ -16,7 +16,7 @@ import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 abstract class ModeAwareKernelRunnableFactory(
     private val mode: KotlinNotebookSessionRunMode,
 ) : KernelRunnableFactory {
-    final override fun createKernelRunnableHandler(
+    final override suspend fun startProcess(
         startupOptions: KernelStartupOptions,
     ): KernelRunnableHandler? {
         if (!startupOptions.notebookVirtualFile.isKotlinNotebook) return null

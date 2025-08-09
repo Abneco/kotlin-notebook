@@ -9,12 +9,12 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMe
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionData
 import com.intellij.jupyter.core.jupyter.connections.session.JupyterSessionLaunchStrategy
 import com.intellij.jupyter.execution.kernel.KERNEL_VERIFICATION_ATTEMPT_TIMEOUT
-import com.intellij.jupyter.execution.listeners.KotlinKernelEvent
-import com.intellij.jupyter.execution.listeners.KernelListener
 import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
+import com.intellij.jupyter.execution.listeners.JupyterSessionVerifiedListener
+import com.intellij.jupyter.execution.listeners.KernelListener
+import com.intellij.jupyter.execution.listeners.NotebookKernelEvent
 import com.intellij.jupyter.execution.process.KernelClientSession
 import com.intellij.jupyter.execution.process.KernelRunnableProvider
-import com.intellij.jupyter.execution.listeners.JupyterSessionVerifiedListener
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinInProcessJupyterClient
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.FinalizationPreservingCallback
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.sendMessageAndWait
@@ -79,7 +79,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(
                 timeout = KERNEL_VERIFICATION_ATTEMPT_TIMEOUT
             ) { verificationDeferred ->
                 kernel?.addBaseKernelListener(object : KernelListener {
-                    override fun kernelTerminated(event: KotlinKernelEvent) {
+                    override fun kernelTerminated(event: NotebookKernelEvent) {
                         verificationDeferred.complete(false)
                     }
                 })

@@ -2,11 +2,11 @@
 package com.intellij.kotlin.jupyter.core.jupyter.toolwindow
 
 import com.intellij.concurrency.ConcurrentCollectionFactory
-import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
-import com.intellij.jupyter.execution.listeners.KotlinKernelEvent
-import com.intellij.jupyter.execution.listeners.KernelListener
 import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
+import com.intellij.jupyter.execution.listeners.KernelListener
+import com.intellij.jupyter.execution.listeners.NotebookKernelEvent
 import com.intellij.jupyter.execution.toolwindow.KernelRunnableToolWindowSettings
+import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
 import com.intellij.kotlin.jupyter.core.editor.appearance.KotlinNotebookToolWindowBuilder
 import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWindowManager.Companion.KOTLIN_NOTEBOOK_RUNNER_ID
 import com.intellij.openapi.Disposable
@@ -71,7 +71,7 @@ class KotlinNotebookToolWindowManager(
         manager.replaceContent(oldContent, newContent)
 
         runnableHandler.addBaseKernelListener(object : KernelListener {
-            override fun kernelWillTerminate(event: KotlinKernelEvent) {
+            override fun kernelWillTerminate(event: NotebookKernelEvent) {
                 handleKernelTermination(notebookPath, newContent)
             }
         })

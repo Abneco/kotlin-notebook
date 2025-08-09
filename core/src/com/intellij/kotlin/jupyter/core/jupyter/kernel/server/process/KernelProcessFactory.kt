@@ -7,9 +7,9 @@ import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
 import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOptions
 import com.intellij.jupyter.execution.kernel.SeparateProcessKernelRunnableHandler
-import com.intellij.jupyter.execution.process.KernelPortsProvider
 import com.intellij.jupyter.execution.listeners.KernelNotificationStartedEvent
 import com.intellij.jupyter.execution.listeners.KernelProcessListener
+import com.intellij.jupyter.execution.process.KernelPortsProvider
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.jupyter.actions.mode
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
@@ -89,21 +89,23 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
             KernelProcessCommandLineCustomizer.customize(this)
         }
 
-        return SeparateProcessKernelRunnableHandler(
-            startupOptions, commandLine, kernelConfig.jupyterParams,
-        ).apply {
-            addKernelListener(object : KernelProcessListener {
-                override fun beforeNotificationStarted(event: KernelNotificationStartedEvent) {
-                    KotlinNotebookToolWindowManager.getInstance(project)
-                        .showKotlinNotebookServerManagementToolWindow(
-                            KotlinKernelProcessToolWindow(
-                                event.eventSource
-                            )
+        val process = commandLine.createProcess()
+
+        val kernelHandler =
+            SeparateProcessKernelRunnableHandler(startupOptions, process, commandLine.commandLineString, kernelConfig.jupyterParams)
+        kernelHandler.addKernelListener(object : KernelProcessListener {
+            override fun beforeNotificationStarted(event: KernelNotificationStartedEvent) {
+                KotlinNotebookToolWindowManager.getInstance(project)
+                    .showKotlinNotebookServerManagementToolWindow(
+                        KotlinKernelProcessToolWindow(
+                            event.eventSource
                         )
-                }
-            })
-            process.startNotify()
-        }
+                    )
+            }
+        })
+
+        kernelHandler.process.startNotify()
+        return kernelHandler
     }
 
     /**
