@@ -10,6 +10,6 @@ import com.intellij.openapi.editor.markup.RangeHighlighter
  * @see [com.intellij.kotlin.jupyter.core.editor.hack.NotebookPassConfiguration]
  */
 data class NotebookPassProgressRemains(
-    val leftIndexesToProcess: Collection<Int>,
+    val leftIndexesToProcess: Set<Int>,
     val errorHighlightersOutsideOfFocus: Collection<RangeHighlighter>
 )

@@ -12,6 +12,7 @@ internal data class NotebookPassConfiguration(
     val focusCell: Int,
     val filesToHL: Map<KtFile, InjectedFileData>,
     val targetKtFile: KtFile?,
+    // todo: do we need it?
     val completedFiles: MutableSet<Int>
 ) {
     companion object {

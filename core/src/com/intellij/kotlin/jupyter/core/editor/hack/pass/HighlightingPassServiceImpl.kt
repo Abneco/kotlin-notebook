@@ -94,7 +94,7 @@ internal class HighlightingPassServiceImpl(
             }
 
             markUpErrorsTracker.resetState(focusCellIndex, false)
-            val targetIndexes = (mergedRanges.changedCells ?: emptyList()) + focusCellIndex
+            val targetIndexes = (mergedRanges.changedCells ?: emptySet()) + focusCellIndex
             passProgressTracker.passStarting(file, focusCellIndex, targetIndexes, cells)
             passStatusIndicator.enterProgressPhase()
 
@@ -135,7 +135,9 @@ internal class HighlightingPassServiceImpl(
             editor, markup, passConfiguration
         )
 
-        val finishedFiles = passConfiguration.completedFiles
+        val finishedFiles = passConfiguration.completedFiles.addAll(
+            passConfiguration.filesToHL.map { it.value.notebookCellIndex } - remaining
+        )
 
         val project = editor.project
         if (project == null) {
@@ -163,9 +165,9 @@ internal class HighlightingPassServiceImpl(
         val remainingErrors = markUpErrorsTracker.determineFilesWithRemainingErrors(
             markup, passConfiguration
         )
-        val passRemains = passProgressTracker.getRemainingTargetsAfterPassFinished(editor)
+        val passRemains = passProgressTracker.getRemainingProgressAfterPassFinished(editor)
         disposeOfHighlighters(passRemains.errorHighlightersOutsideOfFocus)
 
-        return remainingErrors + passRemains.leftIndexesToProcess
+        return passRemains.leftIndexesToProcess
     }
 }

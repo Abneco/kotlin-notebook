@@ -36,13 +36,12 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
         indexesToHighlight: Collection<Int>,
         cellsToHighlight: List<PsiLanguageInjectionHost>,
     ) {
-        val indexesMergedFromPreviousPass = leftIndexes + indexesToHighlight
         injectedFilesDataRegistry.clear()
 
         val newConfiguration = createPassNewConfiguration(
             focusCellIndex,
             cellsToHighlight,
-            indexesMergedFromPreviousPass
+            indexesToHighlight
         )
 
         currentConfiguration = newConfiguration
@@ -57,15 +56,6 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
                 data.notebookCellIndex !in leftIndexes
             }.map { (file, _) -> file }
         }
-
-    // todo: we do not need it anymore
-    override fun fileHighlighted(file: KtFile) {
-        val injectedFileData = passConfiguration.filesToHL[file]
-        if (injectedFileData != null) {
-            passConfiguration.completedFiles.add(injectedFileData.notebookCellIndex)
-        }
-
-    }
 
     private fun createPassNewConfiguration(
         focusCellIndex: Int,
@@ -123,7 +113,7 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
         )
     }
 
-    override fun getRemainingTargetsAfterPassFinished(editor: EditorEx): NotebookPassProgressRemains {
+    override fun getRemainingProgressAfterPassFinished(editor: EditorEx): NotebookPassProgressRemains {
         val markupModelEx = editor.filteredDocumentMarkupModel
 
         val data = injectedFilesDataRegistry
