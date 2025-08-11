@@ -10,7 +10,6 @@ import java.awt.datatransfer.Transferable
 import java.awt.datatransfer.UnsupportedFlavorException
 import java.io.ByteArrayInputStream
 import java.nio.file.Files
-import java.nio.file.Path
 import javax.imageio.ImageIO
 import kotlin.io.path.writeBytes
 
@@ -44,8 +43,9 @@ private class SingleFlavorTransferableFactory<DataT : Any>(
 private val ImageTransferableFactory =
     SingleFlavorTransferableFactory<Image>(DataFlavor.imageFlavor)
 
+// We are required to use java.io.File instead of java.nio.Path, because this data flavor requires us to do so
 private val FileTransferableFactory =
-    SingleFlavorTransferableFactory<List<Path>>(DataFlavor.javaFileListFlavor)
+    SingleFlavorTransferableFactory<List<java.io.File>>(DataFlavor.javaFileListFlavor)
 
 fun createImageDataTransferable(
     project: Project,
@@ -59,7 +59,7 @@ fun createImageDataTransferable(
             .resolve(fileName)
         Files.createDirectories(plotFile.parent)
         plotFile.writeBytes(imageData)
-        FileTransferableFactory.createTransferable(listOf(plotFile))
+        FileTransferableFactory.createTransferable(listOf(plotFile.toFile()))
     } else {
         val image = ImageIO.read(ByteArrayInputStream(imageData))
         ImageTransferableFactory.createTransferable(image)
