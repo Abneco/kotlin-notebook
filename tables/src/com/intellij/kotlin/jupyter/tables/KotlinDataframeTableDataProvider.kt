@@ -14,6 +14,7 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOption
 import com.intellij.kotlin.jupyter.tables.i18n.KotlinNotebookTablesBundle
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.components.serviceAsync
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.registry.Registry
@@ -36,6 +37,7 @@ import com.intellij.scientific.tables.api.command.SliceTableCommand
 import com.intellij.scientific.tables.api.command.StatisticsTableCommand
 import com.intellij.scientific.tables.api.command.TableCommand
 import com.intellij.scientific.tables.api.filters.FilterExpression
+import com.intellij.scientific.tables.utils.launchEdt
 import java.io.IOException
 import javax.swing.RowSorter
 import javax.swing.SortOrder
@@ -133,16 +135,19 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
         } catch (e: JsonParseException) {
             // should be removed after KTNB-385 and KTNB-384
             if (isNonComparableColumnSortingError(textData)) {
-                NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
-                    .createNotification(
-                        KotlinNotebookTablesBundle.message(
-                            "kotlin.jupyter.table.output.sort_column_not_comparable.error",
-                            extractColumnNameFromSortErrorMessage(textData)
-                        ),
-                        extractNonComparableColumnTypeMessage(textData) ?: KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.sort_column_not_comparable.error.message"),
-                        NotificationType.WARNING
-                    )
-                    .notify(project)
+                launchEdt {
+                    serviceAsync<NotificationGroupManager>().getNotificationGroup("Kotlin Notebook output error")
+                        .createNotification(
+                            KotlinNotebookTablesBundle.message(
+                                "kotlin.jupyter.table.output.sort_column_not_comparable.error",
+                                extractColumnNameFromSortErrorMessage(textData)
+                            ),
+                            extractNonComparableColumnTypeMessage(textData)
+                                ?: KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.sort_column_not_comparable.error.message"),
+                            NotificationType.WARNING
+                        )
+                        .notify(project)
+                }
                 throw DSTableDataException(KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.sort_column_not_comparable.error.message"), e)
             }
 
@@ -150,14 +155,15 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
             throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}", e)
         } catch (e: StreamConstraintsException) {
             // users should not encounter this error anymore once KTNB-272 is implemented.
-            NotificationGroupManager.getInstance().getNotificationGroup("Kotlin Notebook output error")
-                .createNotification(
-                    KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.render.dataframe.error"),
-                    KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.parse.dataframe.error"),
-                    NotificationType.WARNING
-                )
-                .notify(project)
-
+            launchEdt {
+                serviceAsync<NotificationGroupManager>().getNotificationGroup("Kotlin Notebook output error")
+                    .createNotification(
+                        KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.render.dataframe.error"),
+                        KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.parse.dataframe.error"),
+                        NotificationType.WARNING
+                    )
+                    .notify(project)
+            }
             throw DSTableDataException("Error parsing data from Kotlin DataFrame output. Reason: ${e.localizedMessage}", e)
         } catch (e: IOException) {
             notifyUnknownParsingException()
