@@ -6,9 +6,6 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookPerFileSettingsCache
 import com.intellij.kotlin.jupyter.core.settings.findModule
 import com.intellij.kotlin.jupyter.core.settings.getSuitableLibraries
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.fileEditor.impl.EditorTabPresentationUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
@@ -46,13 +43,6 @@ fun Project.sourceRootsForDependencies(notebookFile: BackedNotebookVirtualFile):
             tagetModule.sourceRoots.map { Path.of(it.path) }
         }
     }
-}
-
-fun Project.findEditors(virtualFile: VirtualFile): List<Editor> {
-    val fileEditorManager = FileEditorManager.getInstance(this)
-    return fileEditorManager.getAllEditors(virtualFile)
-        .filterIsInstance<TextEditor>()
-        .map { it.editor }
 }
 
 val VirtualFile.parentsWithSelf: Sequence<VirtualFile> get() = generateSequence(this) { it.parent }

@@ -156,7 +156,6 @@ class KotlinNotebookToolWindowManager(
             }
     }
 
-
     override fun dispose() {
         stoppedSessions.clear()
         coroutineScope.cancel()

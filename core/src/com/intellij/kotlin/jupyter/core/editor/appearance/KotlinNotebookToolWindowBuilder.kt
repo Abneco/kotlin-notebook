@@ -3,12 +3,12 @@ package com.intellij.kotlin.jupyter.core.editor.appearance
 
 import com.intellij.jupyter.execution.toolwindow.KernelProcessToolWindowBuilder
 import com.intellij.jupyter.execution.toolwindow.KernelRunnableToolWindowSettings
+import com.intellij.jupyter.execution.util.findEditors
 import com.intellij.kotlin.jupyter.core.debug.util.debugFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
 import com.intellij.kotlin.jupyter.core.jupyter.actions.StopKotlinKernelAction
 import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.toNotebookToolWindowPanelHelpId
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.kotlin.jupyter.core.util.findEditors
 import com.intellij.kotlin.jupyter.core.util.toPresentablePathAsTabTitle
 import com.intellij.kotlin.jupyter.core.variables.NotebookVariablesToolWindowSetup
 import com.intellij.kotlin.jupyter.core.variables.NotebookVarsToolWindowProvider
