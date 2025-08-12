@@ -2,8 +2,8 @@
 package com.intellij.kotlin.jupyter.core.jupyter.outputs.export
 
 import com.intellij.kotlin.jupyter.core.util.getKotlinNotebookCacheDirectory
+import com.intellij.notebooks.visualization.r.inlays.ClipboardUtils
 import com.intellij.openapi.project.Project
-import com.intellij.util.system.OS
 import java.awt.Image
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
@@ -52,7 +52,7 @@ fun createImageDataTransferable(
     imageData: ByteArray,
     fileName: String,
 ): Transferable {
-    return if (isIntermediateFileWorkaroundNeeded()) {
+    return if (ClipboardUtils.isIntermediateFileWorkaroundNeeded()) {
         val plotFile = project
             .getKotlinNotebookCacheDirectory()
             .resolve("plotExport")
@@ -65,7 +65,3 @@ fun createImageDataTransferable(
         ImageTransferableFactory.createTransferable(image)
     }
 }
-
-// Standard copy works incorrectly on Mac, see JBR-6788,
-// But it seemingly was fixed in the newer (15 and later) Mac versions
-private fun isIntermediateFileWorkaroundNeeded(): Boolean = OS.CURRENT == OS.macOS && !OS.CURRENT.isAtLeast(15, 0)
