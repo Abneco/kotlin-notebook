@@ -56,7 +56,8 @@ internal class ChangeEventsTransformer(
         return HighlightingEvent(
             targetCellIndex,
             null,
-            changedCells
+            changedCells,
+            isCustomEditorEvent = false
         )
     }
 

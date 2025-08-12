@@ -11,5 +11,7 @@ package com.intellij.kotlin.jupyter.core.editor.hack
 internal data class HighlightingEvent(
     val focusCell: Int,
     val previousFocusCell: Int?,
-    val changedCells: Collection<Int>?
+    val changedCells: Collection<Int>?,
+    // is used to understand if custom highlighting restart is needed
+    val isCustomEditorEvent: Boolean = false,
 )

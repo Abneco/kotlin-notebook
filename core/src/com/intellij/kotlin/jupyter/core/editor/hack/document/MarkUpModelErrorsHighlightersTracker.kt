@@ -39,6 +39,7 @@ internal class MarkUpModelErrorsHighlightersTracker : HighlightingComponent() {
             .addMarkupModelListener(parentDisposable, activeMarkupModelListener)
     }
 
+    // todo: remove
     fun determineFilesWithRemainingErrors(
         markupModel: MarkupModelEx,
         passConfiguration: NotebookPassConfiguration

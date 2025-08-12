@@ -18,7 +18,7 @@ internal interface PassProgressTracker {
 
     fun passStarting(file: PsiFile, focusCellIndex: Int, indexesToHighlight: Collection<Int>, cellsToHighlight: List<PsiLanguageInjectionHost>)
 
-    fun getRemainingProgressAfterPassFinished(editor: EditorEx): NotebookPassProgressRemains
+    fun getRemainingProgressAfterPassFinished(editor: EditorEx): NotebookPassProgressStatus
 
     val leftToHighlight: Collection<KtFile>
 }

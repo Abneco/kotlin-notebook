@@ -18,9 +18,9 @@ import com.intellij.openapi.editor.event.DocumentListener
  * into [HighlightingEvent]s.
  */
 internal class DocumentInputEventsTransformer(
-  private val editor: Editor,
-  private val document: Document,
-  private val highlightingEventsQueue: HighlightingEventsQueue,
+    private val editor: Editor,
+    private val document: Document,
+    private val highlightingEventsQueue: HighlightingEventsQueue,
 ) : HighlightingComponent() {
     inner class NotebookDocumentListener : DocumentListener {
         override fun beforeDocumentChange(event: DocumentEvent) {
@@ -34,8 +34,9 @@ internal class DocumentInputEventsTransformer(
     }
     inner class NotebookCaretListener : CaretListener {
         override fun caretPositionChanged(event: CaretEvent) {
+            val caretEvent = caretMovementEventTransformer.transformRawInput(event) ?: return
             highlightingEventsQueue.pushEvent(
-                caretMovementEventTransformer.transformRawInput(event)
+                caretEvent
             )
         }
     }

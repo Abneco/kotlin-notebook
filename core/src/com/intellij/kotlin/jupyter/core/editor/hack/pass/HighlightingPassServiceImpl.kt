@@ -17,7 +17,6 @@ import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.notebooks.visualization.getCell
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
-import com.intellij.openapi.editor.ex.MarkupModelEx
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
@@ -94,7 +93,10 @@ internal class HighlightingPassServiceImpl(
             }
 
             markUpErrorsTracker.resetState(focusCellIndex, false)
-            val targetIndexes = (mergedRanges.changedCells ?: emptySet()) + focusCellIndex
+            val targetIndexes = buildSet {
+                addAll(mergedRanges.changedCells ?: emptyList())
+                add(focusCellIndex)
+            }
             passProgressTracker.passStarting(file, focusCellIndex, targetIndexes, cells)
             passStatusIndicator.enterProgressPhase()
 
@@ -107,11 +109,10 @@ internal class HighlightingPassServiceImpl(
     }
 
     override fun passFinished(editor: Editor, file: PsiFile) {
-        val markup = (editor as? EditorEx)?.filteredDocumentMarkupModel ?: return
-        if (passStatusIndicator.isIdle) return
+        if (editor !is EditorEx || passStatusIndicator.isIdle) return
 
         coroutineScope.async {
-            processDaemonFinished(editor, file, markup)
+            processDaemonFinished(editor, file)
         }
     }
 
@@ -120,7 +121,7 @@ internal class HighlightingPassServiceImpl(
     }
 
     @RequiresBackgroundThread
-    private fun processDaemonFinished(editor: EditorEx, psiFile: PsiFile?, markup: MarkupModelEx) {
+    private fun processDaemonFinished(editor: EditorEx, psiFile: PsiFile?) {
         val passConfiguration = passProgressTracker.passConfiguration
 
         if (passStatusIndicator.isIdle) {
@@ -132,7 +133,7 @@ internal class HighlightingPassServiceImpl(
         markUpErrorsTracker.removeHighlightersOutSideOfFocus(passConfiguration.focusCell)
 
         val remaining = determineIndexesLeftToHighlight(
-            editor, markup, passConfiguration
+            editor, passConfiguration
         )
 
         val finishedFiles = passConfiguration.completedFiles.addAll(
@@ -150,21 +151,19 @@ internal class HighlightingPassServiceImpl(
             val event = HighlightingEvent(
                 passConfiguration.focusCell,
                 null,
-                remaining
+                remaining,
+                isCustomEditorEvent = true
             )
             highlightingEventsQueue.pushEvent(event)
         }
         LOG.debug("Reducing queue by $finishedFiles, left: $remaining")
     }
 
-    private fun determineIndexesLeftToHighlight(editor: EditorEx, markup: MarkupModelEx, passConfiguration: NotebookPassConfiguration): Set<Int> {
+    private fun determineIndexesLeftToHighlight(editor: EditorEx, passConfiguration: NotebookPassConfiguration): Set<Int> {
         val completedIndexes = passConfiguration.completedFiles
         completedIndexes.addIfNotNull(passConfiguration.focusCell)
 
         // todo: we don't need it?
-        val remainingErrors = markUpErrorsTracker.determineFilesWithRemainingErrors(
-            markup, passConfiguration
-        )
         val passRemains = passProgressTracker.getRemainingProgressAfterPassFinished(editor)
         disposeOfHighlighters(passRemains.errorHighlightersOutsideOfFocus)
 

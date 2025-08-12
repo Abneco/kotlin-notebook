@@ -49,15 +49,17 @@ internal class HighlightingEventsQueueImpl(
         return HighlightingEvent(
             focusCell = focusCell,
             previousFocusCell = prevFocusCell,
-            changedCells = changedCells
+            changedCells = changedCells,
+            true
         )
     }
 
     override fun pushEvent(event: HighlightingEvent) {
         eventsQueue.add(event)
 
-        // todo: conditional?
-        requestHLRestart()
+        if (event.isCustomEditorEvent) {
+            requestHLRestart()
+        }
     }
 
     override fun pullEvents(): HighlightingEvent? {

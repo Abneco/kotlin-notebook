@@ -4,12 +4,12 @@ package com.intellij.kotlin.jupyter.core.editor.hack.pass.state
 import com.intellij.openapi.editor.markup.RangeHighlighter
 
 /**
- * Represents state after the Notebook Highlighting pass completed.
- * This information is used to dispose of error highlighters and to set up new pass.
+ * Represents the status of Notebook Highlighting pass progress.
+ * This information is used to dispose of error highlighters and to feed left indexes to the next pass.
  *
  * @see [com.intellij.kotlin.jupyter.core.editor.hack.NotebookPassConfiguration]
  */
-data class NotebookPassProgressRemains(
+data class NotebookPassProgressStatus(
     val leftIndexesToProcess: Set<Int>,
     val errorHighlightersOutsideOfFocus: Collection<RangeHighlighter>
 )

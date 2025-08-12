@@ -148,6 +148,7 @@ class NotebookHighlightingFileManager(
                     focusCell = editorCells.focusCell,
                     null,
                     changedCells = editorCells.allCellOrdinals,
+                    isCustomEditorEvent = true
                 )
             )
         }

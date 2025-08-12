@@ -113,7 +113,7 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
         )
     }
 
-    override fun getRemainingProgressAfterPassFinished(editor: EditorEx): NotebookPassProgressRemains {
+    override fun getRemainingProgressAfterPassFinished(editor: EditorEx): NotebookPassProgressStatus {
         val markupModelEx = editor.filteredDocumentMarkupModel
 
         val data = injectedFilesDataRegistry
@@ -145,7 +145,7 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
             }
         }
 
-        return NotebookPassProgressRemains(skippedFiles, errorsToDispose)
+        return NotebookPassProgressStatus(skippedFiles, errorsToDispose)
     }
 
     override fun dispose() {
