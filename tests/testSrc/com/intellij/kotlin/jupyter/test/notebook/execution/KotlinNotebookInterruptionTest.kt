@@ -1,7 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.execution
 
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionInterruptService
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterTaskExecutor
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
@@ -10,14 +10,15 @@ import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterR
 import com.intellij.kotlin.jupyter.test.util.JDKVersionRule
 import com.intellij.kotlin.jupyter.test.util.StopExecutionOnFailureRule
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdkVersion
+import com.intellij.scientific.tables.utils.launchBackground
 import com.intellij.testFramework.TestDataPath
 import junit.framework.TestCase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.delay
 import org.jetbrains.plugins.notebooks.tests.awaitBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -55,11 +56,11 @@ class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest() {
         }, object : JupyterExecutionCallbackAdapter() {
             override fun onStatus(message: JupyterStatusMessage) {
                 if (message.executionState == JupyterExecutionState.BUSY && alreadyInterrupted.compareAndSet(false, true)) {
-                    ApplicationManager.getApplication().executeOnPooledThread {
-                        Thread.sleep(1000)
+                    launchBackground {
+                        delay(1000)
                         val session = sessionDeferred.awaitBlocking(5.seconds)
-                        val file = session.virtualFile ?: return@executeOnPooledThread
-                        JupyterExecutionInterruptService.getInstance(project).interruptExecution(file)
+                        val file = session.virtualFile
+                        JupyterTaskExecutor.interruptExecution(project, file)
                     }
                 }
             }
