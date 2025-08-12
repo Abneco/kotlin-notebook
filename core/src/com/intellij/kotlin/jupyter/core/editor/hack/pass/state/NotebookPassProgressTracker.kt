@@ -4,8 +4,7 @@ package com.intellij.kotlin.jupyter.core.editor.hack.pass.state
 import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingComponent
 import com.intellij.kotlin.jupyter.core.editor.hack.NotebookPassConfiguration
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass.InjectedFilesDataTracker.Companion.INJECTED_SYNTAX_LAYER_BORDER
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.pass.numberOfNonWhiteSpaceLeaves
+import com.intellij.kotlin.jupyter.core.editor.hack.numberOfNonWhiteSpaceLeaves
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.markup.HighlighterLayer
@@ -16,6 +15,10 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.psi.KtFile
 
 internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingComponent() {
+    companion object {
+        internal const val INJECTED_SYNTAX_LAYER_BORDER = HighlighterLayer.CARET_ROW - 1
+    }
+    // todo: remove this and 'passConfiguration.completedFiles'
     internal val leftIndexes: Collection<Int>
         get() = passConfiguration.filesToHL.values.map { it.notebookCellIndex } - passConfiguration.completedFiles
     private val injectedFilesDataRegistry = ConcurrentCollectionFactory.createConcurrentMap<KtFile, InjectedFileData>()

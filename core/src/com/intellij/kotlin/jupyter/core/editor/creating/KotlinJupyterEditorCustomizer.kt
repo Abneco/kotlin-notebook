@@ -6,9 +6,9 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.data.input.JupyterDataInputSettings
 import com.intellij.jupyter.core.jupyter.editor.JupyterEditorCustomizer
 import com.intellij.jupyter.core.jupyter.helper.isJupyter
-import com.intellij.kotlin.jupyter.core.editor.hack.editor.NotebookEditorCreatedListener
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.reactOnThemeChangedEvent
+import com.intellij.kotlin.jupyter.core.editor.highlighting.NotebookHighlightingService
+import com.intellij.kotlin.jupyter.core.editor.highlighting.editor.NotebookEditorCreatedListener
+import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.reactOnThemeChangedEvent
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.settings.registryFlag
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope

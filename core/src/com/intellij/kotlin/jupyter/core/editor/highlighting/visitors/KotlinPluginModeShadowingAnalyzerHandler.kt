@@ -3,8 +3,7 @@ package com.intellij.kotlin.jupyter.core.editor.highlighting.visitors
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.InjectedFileHighlightingHelper
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.convertToShadowedDeclaration
+import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.convertToShadowedDeclaration
 import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandler
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.openapi.extensions.ExtensionPointName
@@ -75,7 +74,7 @@ abstract class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareH
             .onEach(::applyBeforeProcessingDiagnostic)
     }
 
-    protected fun prepareForFile(injectedFile: PsiFile) : InjectedFileHighlightingHelper {
+    protected fun prepareForFile(injectedFile: KtFile) : InjectedFileHighlightingHelper {
         val helper = InjectedFileHighlightingHelper(injectedFile)
         helper.markTargetHost()
 

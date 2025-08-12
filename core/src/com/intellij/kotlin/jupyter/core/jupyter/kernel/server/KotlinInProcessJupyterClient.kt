@@ -4,10 +4,10 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 import com.intellij.jupyter.core.jupyter.connections.filecontentsapi.CachingFileContentsApi
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelBase
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
+import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
 import com.intellij.jupyter.execution.process.InProcessJupyterClient
 import com.intellij.jupyter.execution.process.KernelName
-import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.cleanupKernelSession
+import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.cleanupKernelSession
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.util.DEFAULT_KOTLIN_KERNEL_NAME
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec

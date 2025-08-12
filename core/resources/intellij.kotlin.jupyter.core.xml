@@ -60,7 +60,7 @@
         <postInsertDeclarationCallback
                 implementation="com.intellij.kotlin.jupyter.core.editor.refactoring.KotlinNotebookPostInsertDeclarationCallback"/>
         <kotlinInjectedFilesAnalysisProvider
-                implementation="com.intellij.kotlin.jupyter.core.editor.highlighting.KotlinNotebookInjectedFilesAnalysisPromoter"/>
+                implementation="com.intellij.kotlin.jupyter.core.editor.highlighting.extensions.KotlinNotebookInjectedFilesAnalysisPromoter"/>
         <implementationDetailClassNameCheckerProvider
                 implementation="com.intellij.kotlin.jupyter.core.editor.codeInsight.KotlinNotebookImplementationDetailClassNameCheckerProvider"/>
         <forwardDeclarationPolicyProvider
@@ -72,7 +72,7 @@
     <extensions defaultExtensionNs="com.intellij.codeInsight.daemon.impl">
         <!--suppress PluginXmlDynamicPlugin, PluginXmlValidity -->
         <injectedLanguageHighlightingRangeReducer
-                implementation="com.intellij.kotlin.jupyter.core.editor.highlighting.service.KotlinNotebookInjectedRangeReducer"
+                implementation="com.intellij.kotlin.jupyter.core.editor.highlighting.extensions.KotlinNotebookInjectedRangeReducer"
                 id="kotlinNotebookRangeReducer"
                 order="first"/>
     </extensions>

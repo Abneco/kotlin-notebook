@@ -3,9 +3,9 @@ package com.intellij.kotlin.jupyter.k1.highlighting
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_BASE_CLASS_ERROR
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_DEPENDENCY_PREFIX
+import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.NotebookHighlightingUtilityObject
+import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_BASE_CLASS_ERROR
+import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.NotebookHighlightingUtilityObject.SCRIPTING_MISSING_DEPENDENCY_PREFIX
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.util.reportErrorTestAware
 import com.intellij.lang.annotation.HighlightSeverity

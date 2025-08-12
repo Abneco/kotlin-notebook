@@ -30,11 +30,7 @@ abstract class AbstractKotlinNotebookDelegatingHighlightingVisitorAdapter<T: Abs
 
             return true
         } finally {
-            try {
-                analysisFinished(file)
-            } finally {
-                visitor = null
-            }
+            visitor = null
         }
     }
 }

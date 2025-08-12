@@ -25,7 +25,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import kotlinx.coroutines.async
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.utils.addIfNotNull
 
 /**
  * Manages the lifecycle of highlighting passes, processes and tracks events, and determines files
@@ -132,13 +131,9 @@ internal class HighlightingPassServiceImpl(
         passStatusIndicator.setIdle()
         markUpErrorsTracker.removeHighlightersOutSideOfFocus(passConfiguration.focusCell)
 
-        val remaining = determineIndexesLeftToHighlight(
-            editor, passConfiguration
-        )
+        val remaining = determineIndexesLeftToHighlight(editor)
 
-        val finishedFiles = passConfiguration.completedFiles.addAll(
-            passConfiguration.filesToHL.map { it.value.notebookCellIndex } - remaining
-        )
+        val finishedFiles = passConfiguration.filesToHL.map { it.value.notebookCellIndex } - remaining
 
         val project = editor.project
         if (project == null) {
@@ -159,11 +154,7 @@ internal class HighlightingPassServiceImpl(
         LOG.debug("Reducing queue by $finishedFiles, left: $remaining")
     }
 
-    private fun determineIndexesLeftToHighlight(editor: EditorEx, passConfiguration: NotebookPassConfiguration): Set<Int> {
-        val completedIndexes = passConfiguration.completedFiles
-        completedIndexes.addIfNotNull(passConfiguration.focusCell)
-
-        // todo: we don't need it?
+    private fun determineIndexesLeftToHighlight(editor: EditorEx): Set<Int> {
         val passRemains = passProgressTracker.getRemainingProgressAfterPassFinished(editor)
         disposeOfHighlighters(passRemains.errorHighlightersOutsideOfFocus)
 

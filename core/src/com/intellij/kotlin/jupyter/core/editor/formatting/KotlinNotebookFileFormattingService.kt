@@ -1,22 +1,18 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.formatting
 
-import com.intellij.configurationStore.runAsWriteActionIfNeeded
 import com.intellij.formatting.FormatTextRanges
 import com.intellij.formatting.FormattingContext
 import com.intellij.formatting.service.AbstractDocumentFormattingService
 import com.intellij.formatting.service.CoreFormattingService
 import com.intellij.formatting.service.FormattingService
 import com.intellij.injected.editor.DocumentWindow
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.retrieveCellIntervalUnderCaret
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.buildFlatMap
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.restartAnalyzing
-import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
 import com.intellij.kotlin.jupyter.core.util.toDocument
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ReadAction
@@ -50,31 +46,11 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
         if (!jupyterPsiFile.isValid) return
         val project = formattingContext.project
 
-        // TODO: This logic should be in a listener
-        val highlightingDataProvider = jupyterPsiFile.virtualFile.toBackedNotebookFile()?.let {
-            NotebookHighlightingService.getForFile(project, it).dataController
-        }
-        val renamingRanges = highlightingDataProvider?.renamingRanges
-        if (!renamingRanges.isNullOrEmpty()) return
-
         val cellList = jupyterPsiFile.getNotebookCells().ifEmpty { return }
         val injectedManager = InjectedLanguageManager.getInstance(project)
         val filesToProcess = cellList
             .buildFlatMap { addKotlinFilesWithRanges(it, formattingRanges, injectedManager) }
             .ifEmpty { return }
-
-        // TODO: This logic should be in a listener
-        val invokedInCell = document.retrieveCellIntervalUnderCaret(jupyterPsiFile.virtualFile, project)
-        highlightingDataProvider?.update {
-            reformatDocumentTargets = mutableSetOf()
-        }
-
-        // TODO: Possibly could be removed
-        if (filesToProcess.any { !it.file.isValid }) {
-            runAsWriteActionIfNeeded {
-                jupyterPsiFile.viewProvider.contentsSynchronized()
-            }
-        }
 
         try {
             val formatter = EP_NAME.findExtensionOrFail(CoreFormattingService::class.java)
@@ -91,16 +67,6 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
             }
             notebookLogger().warn("Error occurred during reformatting of Kotlin Notebook", e)
         } finally {
-            // TODO: This logic should be in a listener
-            val targets = highlightingDataProvider?.reformatDocumentTargets
-            highlightingDataProvider?.update {
-                reformatDocumentTargets = null
-                invokedInCell?.ordinal?.let {
-                    notebookChangedCellIndex = it
-                }
-                notebookDocumentTargetRanges = targets
-            }
-
             ReadAction.run<Throwable> {
                 jupyterPsiFile.restartAnalyzing()
             }

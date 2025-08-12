@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.k1.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
+import com.intellij.kotlin.jupyter.core.editor.highlighting.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookScriptingForceUpdateRequestor
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.project.Project

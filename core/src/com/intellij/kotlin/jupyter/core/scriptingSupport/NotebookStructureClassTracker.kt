@@ -4,7 +4,6 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.debug.util.ExecutedPresentCellInfo
 import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookChangeEventsType
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookMoveEvent
@@ -84,9 +83,7 @@ class NotebookStructureClassTracker(
     }
 
     override fun storeCompliedDataInCell(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell) {
-        fun storeReferenceInfo(compiledClassName: MutableSet<String>, cellInd: Int?) {
-            NotebookHighlightingService.getForFile(project, virtualFile)
-                .dataController.invalidateStateAfterCellExecution(executedCellInd = cellInd)
+        fun storeReferenceInfo(compiledClassName: MutableSet<String>) {
             synchronized(psiCell) {
                 val last = psiCell.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)?.firstOrNull()
                 compiledClassName.addIfNotNull(last)
@@ -114,12 +111,12 @@ class NotebookStructureClassTracker(
         } catch (ex: Exception) {
             if (ex is ProcessCanceledException) {
                 coroutineScope.async {
-                    storeReferenceInfo(compiledClassName, nextCellInd)
+                    storeReferenceInfo(compiledClassName)
                 }
                 return
             } else LOG.warn("Exception during storing cell-related data", ex)
         }
-        storeReferenceInfo(compiledClassName, nextCellInd)
+        storeReferenceInfo(compiledClassName)
     }
 
     override fun changeCellsData(

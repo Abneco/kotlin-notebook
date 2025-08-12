@@ -10,8 +10,8 @@ import com.intellij.codeInsight.hints.presentation.InlayPresentation
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.codeInsight.hints.presentation.RecursivelyUpdatingRootPresentation
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.isEitherSymmetricallyContainedRange
+import com.intellij.kotlin.jupyter.core.editor.highlighting.NotebookHighlightingService
+import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.isEitherSymmetricallyContainedRange
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.util.getKtFileStartOffset
@@ -53,10 +53,10 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
                 if (DumbService.isDumb(project) || element !is JupyterPsiCellImpl || !element.isValid) return true
 
-                val highlightingManager = editor.notebookFileOrNull?.let {
-                    NotebookHighlightingService.getForFile(project, it)
-                }
-                val modificationArea = highlightingManager?.dataController?.completeHighlightingRange
+                val notebookFile = editor.notebookFileOrNull ?: return true
+                val highlightingManager = NotebookHighlightingService.getForFile(project, notebookFile)
+                val modificationArea = highlightingManager.focusInformation?.range
+
                 val registry = getOrCreateTypeHintsRegistry(element)
                 val fileOffset = element.getKtFileStartOffset(injectedLanguageManager) ?: return true
                 ProgressManager.checkCanceled()

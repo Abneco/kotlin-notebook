@@ -6,13 +6,12 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecu
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputsBase
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
+import com.intellij.jupyter.execution.util.deserialize
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.debugInTests
-import com.intellij.jupyter.execution.util.deserialize
 import com.intellij.kotlin.jupyter.core.util.logListInfo
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
@@ -92,9 +91,6 @@ class KotlinNotebookCellExecutionCallback(
         if (snippetMetadata != null) {
             JupyterCompilerService.getForFile(project, virtualFile)
                 .addCompiledSnippet(snippetMetadata, psiCell)
-        } else {
-            NotebookHighlightingService.getForFile(project, virtualFile)
-                .dataController.notebookDocumentStructureNontrivialChanged.compareAndSet(false, true)
         }
     }
 

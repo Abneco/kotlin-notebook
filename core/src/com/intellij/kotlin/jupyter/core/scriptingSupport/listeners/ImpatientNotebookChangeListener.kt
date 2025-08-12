@@ -2,14 +2,9 @@
 package com.intellij.kotlin.jupyter.core.scriptingSupport.listeners
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.editor.codeInsight.hints.PsiHostTypeHintsInvalidator
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.util.getErrorPresenceIndicator
-import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
+import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getJupyterFileEditor
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
-import com.intellij.kotlin.jupyter.core.util.splitToRanges
-import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.notebooks.visualization.getCell
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -78,6 +73,7 @@ class ImpatientNotebookChangeListener(
         val cellOfChange = psiCells.getOrNull(targetCellIndex)
 
         if (documentChangedLineIndex > document.lineCount - 1 || cellOfChange == null) return // ignore change of whole document
+        /*
         val notebookDataHolder = NotebookHighlightingService.getForFile(project, virtualFile).dataController
         val isInDocumentReformatAction = notebookDataHolder.reformatDocumentTargets != null
         if (isInDocumentReformatAction) {
@@ -163,7 +159,7 @@ class ImpatientNotebookChangeListener(
         } else null
         notebookDataHolder.update {
             notebookDocumentTargetRanges = targetIndexesAfterAddOrNull
-        }
+        }*/
     }
 
     private fun DocumentEvent.identifyEventChangeType(): NotebookChangeEventsType {

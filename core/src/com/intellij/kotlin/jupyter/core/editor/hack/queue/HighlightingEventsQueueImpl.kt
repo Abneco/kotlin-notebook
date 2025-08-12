@@ -2,9 +2,8 @@
 package com.intellij.kotlin.jupyter.core.editor.hack.queue
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingComponent
-import com.intellij.kotlin.jupyter.core.editor.hack.HighlightingEvent
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingRestarter
+import com.intellij.kotlin.jupyter.core.editor.hack.restarter.NotebookAnalysisRestarter
+import com.intellij.kotlin.jupyter.core.editor.highlighting.HighlightingComponent
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.openapi.project.Project
@@ -91,7 +90,7 @@ internal class HighlightingEventsQueueImpl(
             return
         }
 
-        NotebookHighlightingRestarter.scheduleRegularUpdate(psi)
+        NotebookAnalysisRestarter.scheduleRegularUpdate(psi)
     }
 
     override fun dispose() {

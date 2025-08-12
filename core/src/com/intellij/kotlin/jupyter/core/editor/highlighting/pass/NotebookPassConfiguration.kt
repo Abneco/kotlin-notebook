@@ -1,0 +1,19 @@
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.core.editor.highlighting.pass
+
+import com.intellij.kotlin.jupyter.core.editor.hack.pass.state.InjectedFileData
+import org.jetbrains.kotlin.psi.KtFile
+
+/**
+ * Data class used to represent pass setup upon initialization.
+ * Info is constructed using [com.intellij.kotlin.jupyter.core.editor.hack.queue.HighlightingEvent].
+ */
+internal data class NotebookPassConfiguration(
+  val focusCell: Int,
+  val filesToHL: Map<KtFile, InjectedFileData>,
+  val targetKtFile: KtFile?
+) {
+    companion object {
+        val EMPTY = NotebookPassConfiguration(-1, emptyMap(), null)
+    }
+}
