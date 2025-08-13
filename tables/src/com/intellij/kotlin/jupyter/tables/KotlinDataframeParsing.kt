@@ -118,13 +118,13 @@ private class KotlinDataframeParserImpl(
             }
         } ?: List(metadata[COLUMNS_FIELD].size()) { "" }
 
-        if (rows.isEmpty) {
+        if (rows.isEmpty || rows.all { it == null || it.isNull }) {
             val columnNames = metadata[COLUMNS_FIELD].map { it.asText() }.ifEmpty { listOf(" ") }
             return KotlinDataframeInfo(
                 0,
                 0,
                 columnNames,
-                columnTypes,
+                columnTypes.ifEmpty { listOf(" ") },
                 createRoot(columnNames)
             )
         }
