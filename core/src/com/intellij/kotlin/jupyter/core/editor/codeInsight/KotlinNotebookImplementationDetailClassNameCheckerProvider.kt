@@ -1,7 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.codeInsight
 
-import com.intellij.kotlin.jupyter.core.debug.util.KOTLIN_NOTEBOOK_BASE_CLASS_SUFFIX
+import com.intellij.kotlin.jupyter.core.debug.util.NOTEBOOK_COMPILED_CLASS_NAME_SUFFIX
 import com.intellij.kotlin.jupyter.core.editor.find.isCompiledCellClassDeclaration
 import com.intellij.kotlin.jupyter.core.util.isInsideKotlinNotebookCodeCell
 import com.intellij.psi.PsiElement
@@ -17,7 +17,7 @@ class KotlinNotebookImplementationDetailClassNameCheckerProvider: Implementation
 
     object Checker: ImplementationDetailClassNameChecker {
         override fun isImplementationDetail(className: String): Boolean {
-            return className.endsWith(KOTLIN_NOTEBOOK_BASE_CLASS_SUFFIX)
+            return className.endsWith(NOTEBOOK_COMPILED_CLASS_NAME_SUFFIX)
         }
     }
 }

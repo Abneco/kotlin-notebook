@@ -8,8 +8,12 @@ import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 
-const val KOTLIN_NOTEBOOK_BASE_CLASS_PREFIX: String = "Line_"
-const val KOTLIN_NOTEBOOK_BASE_CLASS_SUFFIX: String = "_jupyter"
+/**
+ * Prefix and suffix of the names of classes to which snippets are compiled,
+ * as well as the corresponding classes names on the IDE side
+ */
+const val NOTEBOOK_COMPILED_CLASS_NAME_PREFIX: String = "Line_"
+const val NOTEBOOK_COMPILED_CLASS_NAME_SUFFIX: String = "_jupyter"
 
 class ExecutedPresentCellInfo(psiFile: PsiFile?) {
     private val knownCellClasses = mutableMapOf<String, JupyterPsiCell>()
@@ -91,4 +95,4 @@ class ExecutedPresentCellInfo(psiFile: PsiFile?) {
     }
 }
 
-fun Int.toCompiledCellSnippetName(): String = "$KOTLIN_NOTEBOOK_BASE_CLASS_PREFIX${this}$KOTLIN_NOTEBOOK_BASE_CLASS_SUFFIX"
+fun Int.toCompiledCellSnippetName(): String = "$NOTEBOOK_COMPILED_CLASS_NAME_PREFIX${this}$NOTEBOOK_COMPILED_CLASS_NAME_SUFFIX"

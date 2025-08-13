@@ -6,7 +6,7 @@ import com.intellij.codeInsight.template.impl.TemplateManagerImpl
 import com.intellij.ide.DataManager
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.debug.util.KOTLIN_NOTEBOOK_BASE_CLASS_PREFIX
+import com.intellij.kotlin.jupyter.core.debug.util.NOTEBOOK_COMPILED_CLASS_NAME_PREFIX
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookGotoDeclarationProvider
 import com.intellij.kotlin.jupyter.core.editor.find.KotlinNotebookElementFindUsagesHandler
 import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder.CELL_CLASS_NAME
@@ -212,7 +212,7 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
         val isCompiledElem = containingFile is KtClsFile
         val manager = InjectedLanguageManager.getInstance(psiFile.project)
         if (isCompiledElem) {
-            if (!containingFile.name.startsWith(KOTLIN_NOTEBOOK_BASE_CLASS_PREFIX)) return false
+            if (!containingFile.name.startsWith(NOTEBOOK_COMPILED_CLASS_NAME_PREFIX)) return false
         }
 
         val cell = (manager.getInjectionHost(psiElement.containingFile) as? JupyterPsiCellImpl)
