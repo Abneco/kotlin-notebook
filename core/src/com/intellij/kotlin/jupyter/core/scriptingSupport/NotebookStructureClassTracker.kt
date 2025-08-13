@@ -5,8 +5,8 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.debug.util.ExecutedPresentCellInfo
 import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
-import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookChangeEventsType
-import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookMoveEvent
+import com.intellij.kotlin.jupyter.core.util.NotebookChangeEventType
+import com.intellij.kotlin.jupyter.core.util.NotebookMoveEvent
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
@@ -25,7 +25,7 @@ import kotlin.math.abs
 
 /**
  * Keeps information about what classes were compiled in the current Notebook.
- * Information is provided with accordance to the cell index in the Notebook structure.
+ * Information is provided in accordance with the cell index in the Notebook structure.
  */
 internal interface NotebookClassesInCellsInfoHandler {
     val nextCompiledClassLineIndex: Int
@@ -38,7 +38,7 @@ internal interface NotebookClassesInCellsInfoHandler {
     fun storeCompliedDataInCell(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell)
 
     fun changeCellsData(effectedIndexes: Collection<Int>,
-                                 eventType: NotebookChangeEventsType,
+                                 eventType: NotebookChangeEventType,
                                  moveEvent: NotebookMoveEvent? = null,
                                  invokedMoveEventInInd: Int? = null)
 
@@ -121,13 +121,13 @@ class NotebookStructureClassTracker(
 
     override fun changeCellsData(
         effectedIndexes: Collection<Int>,
-        eventType: NotebookChangeEventsType,
+        eventType: NotebookChangeEventType,
         moveEvent: NotebookMoveEvent?,
         invokedMoveEventInInd: Int?) {
         if (effectedIndexes.isEmpty()
-            || eventType != NotebookChangeEventsType.CELL_ADD && eventType != NotebookChangeEventsType.CELL_DELETE) return
+            || eventType != NotebookChangeEventType.CELL_ADD && eventType != NotebookChangeEventType.CELL_DELETE) return
         val presentRecords = cellOrdinalToClassNameStructure.filterKeys { it in effectedIndexes || it == invokedMoveEventInInd }.ifEmpty { return }
-        val isAddEvent = eventType == NotebookChangeEventsType.CELL_ADD
+        val isAddEvent = eventType == NotebookChangeEventType.CELL_ADD
 
         val (indexShift, keys) =
             if (isAddEvent) // go from last to first, e.g. shifting very last first

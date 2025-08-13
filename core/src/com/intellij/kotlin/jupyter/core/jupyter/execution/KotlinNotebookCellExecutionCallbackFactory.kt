@@ -7,9 +7,6 @@ import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionT
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import com.intellij.jupyter.core.jupyter.helper.JupyterHelper
-import com.intellij.kotlin.jupyter.core.editor.highlighting.events.ExecutionCallbackRegistered
-import com.intellij.kotlin.jupyter.core.editor.highlighting.events.ExecutionCallbackUnregistered
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.withWriteLock
 import com.intellij.openapi.application.ApplicationManager
@@ -44,11 +41,6 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
             }
             pq.add(cnt)
 
-            with(NotebookHighlightingService.getForFile(project, file).dataController.executionHighlightingHelper) {
-                val eventData = ExecutionCallbackRegistered(cellOrd)
-                onEventHappened(eventData)
-            }
-
             callbacksCounters[file] = (cnt + 1) to pq
             cnt
         }
@@ -60,11 +52,6 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
             pq.remove(index)
             val isAfterSeriesRuns = pq.size == 1 && pq.contains(-1)
             if (isAfterSeriesRuns) pq.remove(-1)
-
-            with(NotebookHighlightingService.getForFile(project, file).dataController.executionHighlightingHelper) {
-                val eventData = ExecutionCallbackUnregistered(index, isAfterSeriesRuns, pq)
-                onEventHappened(eventData)
-            }
         }
     }
 

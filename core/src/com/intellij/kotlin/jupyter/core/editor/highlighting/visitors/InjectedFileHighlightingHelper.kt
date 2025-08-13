@@ -6,7 +6,6 @@ import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.editor.highlighting.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.NotebookHighlightingUtilityObject
-import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.getErrorPresenceIndicator
 import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.isEitherSymmetricallyContainedRange
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
@@ -16,7 +15,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
 import org.jetbrains.kotlin.psi.KtFile
-import java.util.concurrent.atomic.AtomicReference
 
 class InjectedFileHighlightingHelper(private val injectedFile: KtFile) {
     private val project = injectedFile.project
@@ -32,7 +30,7 @@ class InjectedFileHighlightingHelper(private val injectedFile: KtFile) {
     private fun tryUpdateCurrentInjectedFileTarget(): Boolean {
         val highlightingManager =
             topLevelFile?.virtualFile?.let(BackedNotebookVirtualFile.Companion::takeIfBacked)
-                ?.let { NotebookHighlightingService.Companion.getForFile(project, it) }
+                ?.let { NotebookHighlightingService.getForFile(project, it) }
         hostInFocus = injectedManager.getInjectionHost(injectedFile) ?: return false
 
         shouldHighlightErrors = highlightingManager?.isFileTarget(injectedFile)
@@ -46,7 +44,7 @@ class InjectedFileHighlightingHelper(private val injectedFile: KtFile) {
         val manager = InjectedLanguageManager.getInstance(project)
         val topLevelFile = manager.getTopLevelFile(injectedFile)
         return topLevelFile.virtualFile.toKotlinNotebookBackedFile()?.let {
-            NotebookHighlightingService.Companion.getForFile(project, it).focusInformation?.range
+            NotebookHighlightingService.getForFile(project, it).focusInformation?.cellRange
         }
     }
 
@@ -64,13 +62,7 @@ class InjectedFileHighlightingHelper(private val injectedFile: KtFile) {
     }
 
     fun applyReceivedHighlightInfos(foundData: Collection<HighlightInfo>, holder: HighlightInfoHolder) {
-        val errorRef = hostInFocus.getErrorPresenceIndicator()
-                       ?: AtomicReference(foundData.isNotEmpty()).also { hostInFocus.putUserData(
-                         NotebookHighlightingUtilityObject.InjectedHostHasErrors, it) }
-
         val seenInfosOffsets = mutableSetOf<Int>()
-        if (foundData.isNotEmpty()) errorRef.set(true)
-        else errorRef.compareAndSet(true, false)
 
         for (el in foundData) {
             if (seenInfosOffsets.add(el.startOffset) && seenInfosOffsets.add(el.endOffset)) {

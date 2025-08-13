@@ -5,14 +5,14 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.editor.getAllIntervalPointers
 import com.intellij.jupyter.execution.listeners.NotebookSessionEventListener
-import com.intellij.kotlin.jupyter.core.editor.hack.pass.HighlightingPassServiceImpl
-import com.intellij.kotlin.jupyter.core.editor.hack.pass.NotebookCellFocusInformation
-import com.intellij.kotlin.jupyter.core.editor.hack.queue.HighlightingEvent
-import com.intellij.kotlin.jupyter.core.editor.hack.queue.HighlightingEventsQueueImpl
-import com.intellij.kotlin.jupyter.core.editor.hack.restarter.NotebookAnalysisRestarter
-import com.intellij.kotlin.jupyter.core.editor.highlighting.document.DocumentInputEventsTransformer
+import com.intellij.kotlin.jupyter.core.editor.highlighting.components.document.DocumentInputEventsTransformerAdapter
+import com.intellij.kotlin.jupyter.core.editor.highlighting.components.pass.HighlightingPassServiceImpl
+import com.intellij.kotlin.jupyter.core.editor.highlighting.components.pass.NotebookCellFocusInformation
+import com.intellij.kotlin.jupyter.core.editor.highlighting.components.pass.NotebookPassConfiguration
+import com.intellij.kotlin.jupyter.core.editor.highlighting.components.queue.HighlightingEvent
+import com.intellij.kotlin.jupyter.core.editor.highlighting.components.queue.HighlightingEventsQueueImpl
 import com.intellij.kotlin.jupyter.core.editor.highlighting.editor.NotebookEditorCreatedListener
-import com.intellij.kotlin.jupyter.core.editor.highlighting.pass.NotebookPassConfiguration
+import com.intellij.kotlin.jupyter.core.editor.highlighting.restarter.NotebookHighlightingRestarter
 import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
@@ -92,7 +92,7 @@ class NotebookHighlightingFileManager(
                         }
 
                         eventsTransformer = createDisposableChild {
-                            DocumentInputEventsTransformer(editor, document, highlightingEventsQueue)
+                            DocumentInputEventsTransformerAdapter(editor, document, highlightingEventsQueue)
                         }
                         passService.markUpErrorsTracker.addMarkupListener(editor)
                     }
@@ -115,9 +115,7 @@ class NotebookHighlightingFileManager(
     }
 
     private val iterationLock = Mutex(false)
-    // todo: fields can be lazily initialized?
 
-    // NEW
     private val highlightingEventsQueue = createDisposableChild {
         HighlightingEventsQueueImpl(project, virtualFile)
     }
@@ -129,8 +127,7 @@ class NotebookHighlightingFileManager(
         )
     }
 
-    // todo: add execution helper controller
-    private lateinit var eventsTransformer: DocumentInputEventsTransformer
+    private lateinit var eventsTransformer: DocumentInputEventsTransformerAdapter
 
     private var topLevelFile: PsiFile? = null
 
@@ -282,7 +279,7 @@ class NotebookHighlightingFileManager(
                 }
                 updateData(editorCells)
 
-                NotebookAnalysisRestarter.scheduleRegularUpdate(topLevelFile!!)
+                NotebookHighlightingRestarter.scheduleRegularUpdate(topLevelFile!!)
             }.onFailure {
                 LOG.warn("Problem during restarting analysis for $virtualFile: ", it)
             }

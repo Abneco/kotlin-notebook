@@ -7,19 +7,18 @@ import com.intellij.codeInsight.hints.InlayHintsProvider
 import com.intellij.codeInsight.hints.InlayHintsSinkImpl
 import com.intellij.codeInsight.hints.LinearOrderInlayRenderer
 import com.intellij.codeInsight.hints.presentation.PresentationRenderer
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
+import com.intellij.kotlin.jupyter.core.util.getTopLevelEditor
 import com.intellij.kotlin.jupyter.test.getCells
-import com.intellij.kotlin.jupyter.test.kotlinNotebookFile
 import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.intellij.util.containers.isEmpty
@@ -50,6 +49,9 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
                                   settings: T = provider.createSettings(),
                                   verifyHintPresence: Boolean = false) {
         val sourceText = InlayDumpUtil.removeInlays(expectedText)
+        runReadAction {
+            myFixture.doHighlighting()
+        }
         val actualText = runReadAction {
             dumpInlayHints(sourceText, provider, injectionOffset, settings)
         }
@@ -68,15 +70,15 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
                                            provider: InlayHintsProvider<T>,
                                            injectionOffset: Int = 0,
                                            settings: T = provider.createSettings()): String {
-        val file = myFixture.file!!
-        val editor = myFixture.editor
+        val file = myFixture.file
+        val editor = myFixture.editor.getTopLevelEditor()
         val sink = InlayHintsSinkImpl(editor)
         val collector = provider.getCollectorFor(file, editor, settings, sink) ?: error("Collector is expected")
         val collectorWithSettings = CollectorWithSettings(collector, provider.key, file.language, sink)
         collectorWithSettings.collectTraversingAndApply(editor, file, true)
         return InlayDumpUtil.dumpInlays(
             sourceText,
-            editor = myFixture.editor,
+            editor = editor,
             filter = { r -> r.widthInPixels > 0 },
             renderer = { renderer, _ ->
                 if (renderer !is PresentationRenderer && renderer !is LinearOrderInlayRenderer<*>) error("renderer not supported")
@@ -94,7 +96,6 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
         KotlinNotebookProjectOptionsProvider.getInstance(project).state.shouldLimitTypeHintsByActiveCell = false
     }
 
-
     @RequiresReadLock
     protected fun JupyterPsiCell.toInjectedKtFiles(): List<KtFile> {
         val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
@@ -108,7 +109,10 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
         val notebookFile = configureExecutionTest()
         val cells = notebookFile.getCells()
         val neededCell = cells.getOrNull(cellInd) ?: error("Invalid cell index provided")
-        setCompleteAnalysisArea(neededCell)
+        enableLimitByActiveCell()
+        runInEdtAndWait {
+            moveCaretToCell(neededCell)
+        }
         val ktFile = ReadAction.compute<KtFile, Throwable> {
             neededCell.toInjectedKtFiles().first()
         }
@@ -125,23 +129,6 @@ abstract class AbstractNotebookTypeHintsBaseTest : KotlinNotebookExecutionBaseTe
 
         limitedAreaTargetInd?.let {
             disableLimitByActiveCell()
-        }
-    }
-
-    protected fun setCompleteAnalysisArea(targetCellInd: JupyterPsiCell?) {
-        if (targetCellInd == null) {
-            return
-        }
-        val backedNotebook = myFixture.kotlinNotebookFile
-            ?: error("Couldn't find BackedNotebookFile for $originalVirtualFile")
-        val hlManager = NotebookHighlightingService.getForFile(project, backedNotebook)
-
-        enableLimitByActiveCell()
-        val cellRange = ReadAction.compute<TextRange, Exception> {
-            targetCellInd.textRange
-        }
-        hlManager.dataController.update {
-            completeHighlightingRange = cellRange
         }
     }
 

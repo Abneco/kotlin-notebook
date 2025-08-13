@@ -5,6 +5,7 @@ import com.intellij.codeInsight.daemon.impl.InjectedLanguageHighlightingRangeRed
 import com.intellij.kotlin.jupyter.core.editor.highlighting.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
+import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.lang.injection.InjectedLanguageManager
@@ -15,7 +16,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLanguageInjectionHost
-import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 
 /**
@@ -43,7 +43,7 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
         cells?.ensureScriptConfigurations(
             InjectedLanguageManager.getInstance(project)
         )
-        val highlightingManager = NotebookHighlightingService.Companion.getForFile(project, notebookFile)
+        val highlightingManager = NotebookHighlightingService.getForFile(project, notebookFile)
 
         return synchronized(document) {
             highlightingManager.getRangesToHighlight(file, editor, cells).toList()
@@ -51,11 +51,10 @@ internal class KotlinNotebookInjectedRangeReducer : InjectedLanguageHighlighting
     }
 
     private fun Collection<PsiLanguageInjectionHost>?.ensureScriptConfigurations(manager: InjectedLanguageManager) {
-        this?.forEach {
-            manager.getInjectedPsiFiles(it)?.firstOrNull { f -> f.first is KtFile }?.first?.let { ktFile ->
-                if (ktFile is KtFile) {
-                    JupyterCompilerService.getInstance(ktFile.project).ensureScriptConfiguration(ktFile.project, ktFile)
-                }
+        if (this == null) return
+        for (host in this) {
+            host.getInjectedKtFiles(manager).forEach { ktFile ->
+                JupyterCompilerService.getInstance(ktFile.project).ensureScriptConfiguration(ktFile.project, ktFile)
             }
         }
     }

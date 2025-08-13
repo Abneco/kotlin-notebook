@@ -22,7 +22,7 @@ internal class KotlinNotebookInjectedFilesAnalysisPromoter : KotlinIdeInjectedFi
         return if (backedNotebook == null || psiFile !is KtFile) {
             false
         } else {
-            !NotebookHighlightingService.Companion.getForFile(psiFile.project, backedNotebook).isFileTarget(psiFile)
+            !NotebookHighlightingService.getForFile(psiFile.project, backedNotebook).isFileTarget(psiFile)
         }
     }
 

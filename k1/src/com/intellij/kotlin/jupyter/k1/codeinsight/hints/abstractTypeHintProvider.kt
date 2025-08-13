@@ -11,10 +11,12 @@ import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.codeInsight.hints.presentation.RecursivelyUpdatingRootPresentation
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.kotlin.jupyter.core.editor.highlighting.NotebookHighlightingService
+import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.getSelectedCellIndex
 import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.isEitherSymmetricallyContainedRange
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.util.getKtFileStartOffset
+import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.k1.codeinsight.hints.PsiHostTypeHintsRegistry.Companion.getOrCreateTypeHintsRegistry
 import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
@@ -35,6 +37,7 @@ import org.jetbrains.kotlin.idea.codeInsight.hints.KotlinAbstractHintsProvider
 import org.jetbrains.kotlin.idea.codeInsight.hints.getInlayPresentationForInlayInfoDetails
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.BindingContext
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterPsiCellImpl
 
 
@@ -49,13 +52,19 @@ abstract class KotlinNotebookAbstractInlayTypeHintsProvider<T: Any> : KotlinAbst
         return object : FactoryInlayHintsCollector(editor) {
             private val optionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
             private val injectedLanguageManager = InjectedLanguageManager.getInstance(file.project)
+            private val notebookCells = file.getNotebookCells()
+            private fun getSelectedCell(): JupyterPsiCell? {
+                return editor.getSelectedCellIndex?.let {
+                    notebookCells.getOrNull(it)
+                }
+            }
 
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
                 if (DumbService.isDumb(project) || element !is JupyterPsiCellImpl || !element.isValid) return true
 
                 val notebookFile = editor.notebookFileOrNull ?: return true
                 val highlightingManager = NotebookHighlightingService.getForFile(project, notebookFile)
-                val modificationArea = highlightingManager.focusInformation?.range
+                val modificationArea = highlightingManager.focusInformation?.cellRange ?: getSelectedCell()?.textRange
 
                 val registry = getOrCreateTypeHintsRegistry(element)
                 val fileOffset = element.getKtFileStartOffset(injectedLanguageManager) ?: return true

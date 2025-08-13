@@ -1,16 +1,13 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.refactoring
 
-import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.kotlin.jupyter.core.editor.find.KotlinNotebookElementFindUsagesHandler
 import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder
 import com.intellij.kotlin.jupyter.core.editor.find.isIdentifier
-import com.intellij.kotlin.jupyter.core.editor.highlighting.service.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
-import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.visualization.getCell
 import com.intellij.openapi.application.runReadAction
@@ -88,21 +85,11 @@ class NotebookMemberInplaceRenamer(
             private var adjustmentTextRange: Collection<TextRange>? = null
             private var affectedCells: MutableSet<Int>? = null
             private val topLevelEditor = InjectedLanguageEditorUtil.getTopLevelEditor(myEditor)
-            private val notebookHighlightingService = topLevelEditor.notebookFileOrNull?.let {
-                NotebookHighlightingService.getForFile(element.project, it)
-            }
 
             override fun performRefactoring(usages: Array<out UsageInfo>) {
                 if (foundRefsSize > 0) {
                     element.project.notebookNotifications.showRerunActionNeeded()
-                    val hostFile = injectedManager.getTopLevelFile(element)
-                    if (adjustmentTextRange != null) {
-                        notebookHighlightingService?.dataController?.update {
-                            notebookChangedCellIndex = hostFile?.getNotebookCells()?.indexOf(originalHostInvocation)
-                            renamingEnclosedRange = adjustmentTextRange
-                            notebookRangesQueuedForHL?.addAll(affectedCells ?: emptySet())
-                        }
-                    }
+                    // todo: seems like we can not send any HL event here?
                 }
                 runReadAction {
                     super.performRefactoring(usages)

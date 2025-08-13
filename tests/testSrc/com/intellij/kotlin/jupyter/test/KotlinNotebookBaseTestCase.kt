@@ -22,6 +22,7 @@ import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.UIUtil
 import io.kotest.common.runBlocking
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +33,7 @@ import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
 import org.jetbrains.kotlin.idea.test.setUpWithKotlinPlugin
 import org.jetbrains.kotlin.test.TestMetadata
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
@@ -114,7 +116,7 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
 
     /**
      * Waits until all dependencies are set up.
-     * This method should not be called on EDT] as it will cause a deadlock.
+     * This method should not be called on [EDT] as it will cause a deadlock.
      */
     @RequiresBackgroundThread
     protected fun setUpDependenciesSynchronously(
@@ -233,6 +235,12 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
 
             delay(100)
         }
+    }
+
+    @RequiresEdt
+    protected fun moveCaretToCell(targetCellInd: JupyterPsiCell) {
+        val cellRange = targetCellInd.textRange
+        editor.caretModel.moveToOffset(cellRange.startOffset + 1)
     }
 
     private fun actualText() = runReadAction { myFixture.editor.document.text }

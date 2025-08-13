@@ -10,9 +10,11 @@ import com.intellij.codeInsight.hints.SettingsKey
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.kotlin.jupyter.core.editor.highlighting.NotebookHighlightingService
+import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.getSelectedCellIndex
 import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.isEitherSymmetricallyContainedRange
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.util.getKtFileStartOffset
+import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.k1.codeinsight.hints.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.getBindingContext
 import com.intellij.kotlin.jupyter.k1.codeinsight.hints.KotlinNotebookAbstractInlayTypeHintsProvider.Companion.putBindingContext
 import com.intellij.kotlin.jupyter.k1.codeinsight.hints.NotebookTypeHintsRegistry.Companion.psiHostChainHintsRegistry
@@ -20,7 +22,6 @@ import com.intellij.lang.Language
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
@@ -36,6 +37,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.types.KotlinType
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterPsiCellImpl
 
 private class NotebookLambdaTypeHintsProvider: KotlinNotebookAbstractInlayTypeHintsProvider<KotlinLambdasHintsProvider.Settings>() {
@@ -129,9 +131,14 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
         val defaultCollector = super.getCollectorFor(file, editor, settings, sink)
 
         return object : FactoryInlayHintsCollector(editor) {
-            private val document = FileDocumentManager.getInstance().getDocument(file.virtualFile)
             private val optionsProvider = KotlinNotebookProjectOptionsProvider.getInstance(project)
             private val injectedLanguageManager = InjectedLanguageManager.getInstance(file.project)
+            private val notebookCells = file.getNotebookCells()
+            private fun getSelectedCell(): JupyterPsiCell? {
+                return editor.getSelectedCellIndex?.let {
+                    notebookCells.getOrNull(it)
+                }
+            }
 
             override fun collect(element: PsiElement, editor: Editor, sink: InlayHintsSink): Boolean {
                 if (DumbService.getInstance(file.project).isDumb) return true
@@ -143,7 +150,7 @@ class NotebookChainCallHintProvider : KotlinCallChainHintsProvider() {
                 val notebookHighlightingService = editor.notebookFileOrNull?.let {
                     NotebookHighlightingService.getForFile(project, it)
                 }
-                val modificationArea = notebookHighlightingService?.focusInformation?.range
+                val modificationArea = notebookHighlightingService?.focusInformation?.cellRange ?: getSelectedCell()?.textRange
 
                 val registry = PsiHostChainCallTypeHintsRegistry.getOrCreateChainCallTypeHintsRegistry(element)
                 val fileOffset = element.getKtFileStartOffset(injectedLanguageManager) ?: return true
