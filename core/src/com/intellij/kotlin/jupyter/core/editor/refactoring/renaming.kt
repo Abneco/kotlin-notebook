@@ -4,19 +4,15 @@ package com.intellij.kotlin.jupyter.core.editor.refactoring
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.template.impl.TemplateManagerImpl
 import com.intellij.ide.DataManager
-import com.intellij.injected.editor.VirtualFileWindow
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.debug.util.NOTEBOOK_COMPILED_CLASS_NAME_PREFIX
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookGotoDeclarationProvider
 import com.intellij.kotlin.jupyter.core.editor.find.KotlinNotebookElementFindUsagesHandler
-import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder.CELL_CLASS_NAME
 import com.intellij.kotlin.jupyter.core.editor.find.isIdentifier
 import com.intellij.kotlin.jupyter.core.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import com.intellij.kotlin.jupyter.core.editor.refactoring.NotebookRefactoringSupport.tryCastParentToSuitableTarget
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
-import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
 import com.intellij.kotlin.jupyter.core.util.getTopLevelEditor
 import com.intellij.kotlin.jupyter.core.util.isInsideKotlinNotebookFile
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
@@ -40,8 +36,10 @@ import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiReference
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageEditorUtil
+import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.psi.util.isAncestor
 import com.intellij.refactoring.rename.PsiElementRenameHandler
 import com.intellij.refactoring.rename.RenamePsiElementProcessor
 import com.intellij.refactoring.rename.inplace.InplaceRefactoring
@@ -52,6 +50,7 @@ import com.intellij.util.runIf
 import org.jetbrains.kotlin.analysis.decompiler.psi.file.KtClsFile
 import org.jetbrains.kotlin.asJava.namedUnwrappedElement
 import org.jetbrains.kotlin.idea.refactoring.rename.RenameKotlinPropertyProcessor
+import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtFunction
@@ -62,8 +61,6 @@ import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlin.scripting.definitions.isScript
-import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
-import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterPsiCellImpl
 import java.awt.Component
 
 internal object NotebookRefactoringSupport {
@@ -107,7 +104,10 @@ class NotebookPropertyRenameProcessor : RenamePsiElementProcessor() {
         val vFile = containingFile.virtualFile ?: return false
         if (!vFile.isKotlinNotebook && !isKotlinNotebookInjectedFile(containingFile)) return false
         val namedUnwrappedElement = element.namedUnwrappedElement
-        return (namedUnwrappedElement is KtProperty || namedUnwrappedElement is RenameKotlinPropertyProcessor.PropertyMethodWrapper
+        // ignore renamings of local variables in functions
+        val isLocalScope = element.isFromDeclarationsLocalScope()
+
+        return (namedUnwrappedElement is KtProperty && !isLocalScope || namedUnwrappedElement is RenameKotlinPropertyProcessor.PropertyMethodWrapper
                 || (element is LeafPsiElement && namedUnwrappedElement is KtScript))
                 || (namedUnwrappedElement != null && namedUnwrappedElement is KtParameter && namedUnwrappedElement.hasValOrVar())
     }
@@ -210,21 +210,12 @@ class KotlinNotebookPropertiesRenameHandler : MemberInplaceRenameHandler() {
 
         val containingFile = resolvedElement.containingFile
         val isCompiledElem = containingFile is KtClsFile
-        val manager = InjectedLanguageManager.getInstance(psiFile.project)
         if (isCompiledElem) {
             if (!containingFile.name.startsWith(NOTEBOOK_COMPILED_CLASS_NAME_PREFIX)) return false
         }
 
-        val cell = (manager.getInjectionHost(psiElement.containingFile) as? JupyterPsiCellImpl)
-        val ind = (cell?.parent as? JupyterNotebook)?.psiCellList?.indexOf(cell) // todo: might be costy
-        val notebookFile = if (virtualFile is VirtualFileWindow) virtualFile.delegate else virtualFile
-
         return psiFile.isInsideKotlinNotebookFile()
                 && isNotebookRefactoringSupported(resolvedElement)
-                && (isCompiledElem
-                || cell?.getUserData(CELL_CLASS_NAME) != null
-                || NotebookStructureTrackerService.getForFile(psiFile.project, BackedNotebookVirtualFile.takeBackend(notebookFile))
-                    .cellOrdinalToClassNameStructure[ind] != null)
     }
 
     override fun doRename(elementToRename: PsiElement, editor: Editor, dataContext: DataContext?): InplaceRefactoring? {
@@ -300,3 +291,12 @@ fun isKotlinNotebookInjectedFile(file: PsiFile?): Boolean {
 
 internal fun PsiReference.toMoveUsageInfo() =
     MoveRenameUsageInfo(element, this, rangeInElement.startOffset, rangeInElement.endOffset, resolve(), false)
+
+internal fun PsiElement.isFromDeclarationsLocalScope(): Boolean {
+    val searchScope = useScope as? LocalSearchScope ?: return false
+    val scopeElements = searchScope.scope
+
+    return scopeElements.any {
+        (it is KtFunction || it is KtBlockExpression) && it.isAncestor(this)
+    }
+}
