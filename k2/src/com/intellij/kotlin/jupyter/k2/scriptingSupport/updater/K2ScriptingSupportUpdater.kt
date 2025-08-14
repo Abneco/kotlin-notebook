@@ -195,7 +195,6 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
             }.filter { it.value != null }.mapValues { it.value!! }
 
             configurationManager.updateWorkspaceModel(updatedConfigurationsWithSdk)
-            ScriptConfigurationsProviderImpl.getInstance(project).store(updatedConfigurationsWithSdk.values)
 
             edtWriteAction {
                 project.publishGlobalModuleStateModificationEvent()
