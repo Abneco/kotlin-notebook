@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.k2.scriptingSupport.fir
 
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
+import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrSelf
 import com.intellij.kotlin.jupyter.core.util.isInsideKotlinNotebook
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -12,10 +13,12 @@ import org.jetbrains.kotlin.analysis.api.projectStructure.KaLibraryModule
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.jetbrains.kotlin.base.fir.scripting.projectStructure.modules.KaScriptDependencyLibraryModuleImpl
 import org.jetbrains.kotlin.base.fir.scripting.projectStructure.modules.KaScriptModuleBase
-import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
-import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntity
 import org.jetbrains.kotlin.idea.base.fir.projectStructure.FirKaModuleFactory
 import org.jetbrains.kotlin.idea.base.projectStructure.ideProjectStructureProvider
+import org.jetbrains.kotlin.idea.base.projectStructure.toKaLibraryModule
+import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
+import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntity
+import org.jetbrains.kotlin.idea.core.script.v1.ScriptDependencyAware
 import org.jetbrains.kotlin.psi.KtFile
 
 /**
@@ -43,6 +46,11 @@ private class KaNotebookScriptModuleImpl(
     override val virtualFile: VirtualFile
 ) : KaScriptModuleBase(project, file.virtualFile) {
     constructor(file: KtFile) : this(file.project, file, file.virtualFile)
+
+    override val sdkDependency: KaLibraryModule?
+        get() = ScriptDependencyAware.getInstance(project).getScriptSdk(
+            virtualFile.getTopLevelFileOrSelf()
+        )?.toKaLibraryModule(project)
 
     override val directRegularDependencies: List<KaModule> by lazy(LazyThreadSafetyMode.PUBLICATION) {
         val notebookFileUrl = file.virtualFile.getTopLevelFileOrNull()
