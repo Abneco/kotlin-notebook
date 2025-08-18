@@ -74,7 +74,7 @@ internal class RecentKotlinNotebookPanel(): BorderLayoutPanel() {
                 return button
             }
 
-            override fun isDefaultActionButtonImplementation(
+            override fun canReuseActionButton(
                 oldActionButton: ActionButton,
                 newPresentation: Presentation
             ): Boolean {
