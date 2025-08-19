@@ -47,7 +47,7 @@ jvm_library(
   name = "core",
   module_name = "intellij.kotlin.jupyter.core",
   visibility = ["//visibility:public"],
-  srcs = glob(["generated/**/*.kt", "generated/**/*.java", "src/**/*.kt", "src/**/*.java"], allow_empty = True),
+  srcs = glob(["generated/**/*.kt", "generated/**/*.java", "src/**/*.kt", "src/**/*.java", "src/**/*.form"], allow_empty = True),
   kotlinc_opts = ":custom_core",
   deps = [
     "@lib//:jetbrains-annotations-provided",

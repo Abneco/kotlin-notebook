@@ -16,7 +16,7 @@ jvm_library(
   name = "k2",
   module_name = "intellij.kotlin.jupyter.k2",
   visibility = ["//visibility:public"],
-  srcs = glob(["src/**/*.kt", "src/**/*.java", "gen/**/*.kt", "gen/**/*.java"], allow_empty = True),
+  srcs = glob(["src/**/*.kt", "src/**/*.java", "src/**/*.form", "gen/**/*.kt", "gen/**/*.java"], allow_empty = True),
   deps = [
     "@lib//:kotlinc-kotlin-scripting-common-provided",
     "@lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
