@@ -52,7 +52,7 @@ internal class HighlightingPassServiceImpl(
 
     init {
       project.messageBus.connect(this).subscribe(
-          DocumentCellsStructureChangedListener.TOPIC, DocumentCellsStructureChangedListener { editor, cellInFocus ->
+          DocumentCellsStructureChangedListener.TOPIC, DocumentCellsStructureChangedListener { editor, affectedCellIndex ->
               // means our old indices are useless
               markUpErrorsTracker.clear()
           }
@@ -136,7 +136,7 @@ internal class HighlightingPassServiceImpl(
 
         val remaining = determineIndexesLeftToHighlight(editor)
 
-        val finishedFiles = passConfiguration.filesToHL.map { it.value.notebookCellIndex } - remaining
+        val finishedFiles = passConfiguration.cellIndexesToHighlight - remaining
 
         val project = editor.project
         if (project == null) {

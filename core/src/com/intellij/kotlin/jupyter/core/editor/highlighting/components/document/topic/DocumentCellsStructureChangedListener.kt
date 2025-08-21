@@ -9,7 +9,7 @@ import com.intellij.util.messages.Topic
  * Note that there is a guarantee that the underlying 'editor.document' contains a notebook file.
  */
 fun interface DocumentCellsStructureChangedListener {
-    fun cellsChanged(editor: Editor, indexOfCellInFocus: Int)
+    fun cellsChanged(editor: Editor, affectedCellIndex: Int)
 
     companion object {
         @JvmField

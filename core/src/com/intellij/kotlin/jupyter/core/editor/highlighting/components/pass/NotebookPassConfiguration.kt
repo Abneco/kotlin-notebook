@@ -13,6 +13,9 @@ internal data class NotebookPassConfiguration(
   val filesToHL: Map<KtFile, InjectedFileData>,
   val targetKtFile: KtFile?
 ) {
+    val cellIndexesToHighlight: Set<Int>
+        get() = filesToHL.mapTo(mutableSetOf()) { it.value.notebookCellIndex }
+
     companion object {
         val EMPTY = NotebookPassConfiguration(-1, emptyMap(), null)
     }

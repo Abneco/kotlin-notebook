@@ -97,7 +97,7 @@ class NotebookHighlightingFileManager(
                         passService.markUpErrorsTracker.addMarkupListener(editor)
                     }
 
-                    restartAnalysing()
+                    queueEditorCellsToHighlight(editor)
                 }
             }
         }
@@ -154,13 +154,18 @@ class NotebookHighlightingFileManager(
     }
 
     @RequiresReadLock
-    private fun getEditorCellsIndexes(): EditorCells? {
+    private fun getEditorCellsIndexes(editor: Editor? = null): EditorCells? {
         ThreadingAssertions.assertReadAccess()
-        val currentVFile = virtualFile.file
-        val textEditor = FileEditorManager.getInstance(project).getSelectedEditor(currentVFile) as? TextEditor ?: return null
-        val editor = textEditor.editor
-        val cells = getAllIntervalPointers(editor).mapNotNull { it.get()?.ordinal }
-        val focusCell = editor.getCellByOffset(editor.caretModel.offset).ordinal
+        val fileEditor = when {
+            editor == null -> {
+                val currentVFile = virtualFile.file
+                val textEditor = FileEditorManager.getInstance(project).getSelectedEditor(currentVFile) as? TextEditor ?: return null
+                textEditor.editor
+            }
+            else -> editor
+        }
+        val cells = getAllIntervalPointers(fileEditor).mapNotNull { it.get()?.ordinal }
+        val focusCell = fileEditor.getCellByOffset(fileEditor.caretModel.offset).ordinal
         return EditorCells(focusCell, cells)
     }
 
@@ -240,18 +245,22 @@ class NotebookHighlightingFileManager(
     }
 
     private suspend fun initializeService() {
+        queueEditorCellsToHighlight(cachedEditor = null)
+
+        readAction {
+            topLevelFile = virtualFile.file.findPsiFile(project)
+            addListeners()
+        }
+    }
+
+    private suspend fun queueEditorCellsToHighlight(cachedEditor: Editor? = null) {
         val editorCells = readAction {
-            getEditorCellsIndexes()
+            getEditorCellsIndexes(cachedEditor)
         }
         if (editorCells == null) {
             LOG.warn(KotlinNotebookBundle.message("kotlin.jupyter.highlighting.service.null.cells.warning"))
         } else {
             updateData(editorCells)
-        }
-
-        readAction {
-            topLevelFile = virtualFile.file.findPsiFile(project)
-            addListeners()
         }
     }
 
@@ -270,14 +279,7 @@ class NotebookHighlightingFileManager(
     fun restartAnalysing() {
         coroutineScope.async {
             runCatching {
-                val editorCells = readAction {
-                    getEditorCellsIndexes()
-                }
-                if (editorCells == null) {
-                    LOG.warn(KotlinNotebookBundle.message("kotlin.jupyter.highlighting.service.null.cells.warning"))
-                    return@async
-                }
-                updateData(editorCells)
+                queueEditorCellsToHighlight(cachedEditor = null)
 
                 NotebookHighlightingRestarter.scheduleRegularUpdate(topLevelFile!!)
             }.onFailure {
