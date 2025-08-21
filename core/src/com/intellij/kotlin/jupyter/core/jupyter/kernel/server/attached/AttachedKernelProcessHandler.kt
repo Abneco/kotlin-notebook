@@ -20,7 +20,7 @@ class AttachedKernelProcessHandler(
     startupOptions
 ) {
     override fun createSession(sessionId: JupyterNotebookSessionId, onMessage: (JupyterMessage) -> Unit): JupyterKernelConnection? {
-        if (jupyterParams.areAllSocketsOpen()) {
+        if (!jupyterParams.areAllSocketsOpen()) {
             project.notebookNotifications.showNoKernelToAttach()
             return null
         }
