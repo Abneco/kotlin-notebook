@@ -19,7 +19,7 @@ jvm_library(
   visibility = ["//visibility:public"],
   srcs = glob(["src/**/*.kt", "src/**/*.java", "src/**/*.form"], allow_empty = True),
   deps = [
-    "@lib//:kotlin-stdlib-provided",
+    "@ultimate_lib//:kotlin-stdlib-provided",
     "//plugins/kotlin/jupyter/core",
     "@community//platform/editor-ui-api:editor-ui",
     "@community//plugins/kotlin/code-insight/live-templates-shared:kotlin-code-insight-live-templates-shared",
