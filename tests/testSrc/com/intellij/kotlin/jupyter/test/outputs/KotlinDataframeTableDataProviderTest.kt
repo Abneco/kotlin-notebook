@@ -10,7 +10,7 @@ import com.intellij.kotlin.jupyter.tables.KotlinDataframeParsing
 import com.intellij.kotlin.jupyter.tables.KotlinDataframeTableDataProvider
 import com.intellij.kotlin.jupyter.test.KotlinNotebookUnitTestCase
 import com.intellij.kotlin.jupyter.test.baseTestDataPathWithHome
-import com.intellij.scientific.tables.DataId
+import com.intellij.scientific.tables.api.DataId
 import com.intellij.util.asSafely
 import io.kotest.common.runBlocking
 import org.junit.Assert

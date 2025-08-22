@@ -9,7 +9,7 @@ import com.intellij.database.datagrid.DynamicNestedTable
 import com.intellij.database.datagrid.StaticNestedTable
 import com.intellij.database.extractors.ImageInfo
 import com.intellij.jupyter.core.jupyter.nbformat.MimeType
-import com.intellij.scientific.tables.ColumnTreeNode
+import com.intellij.scientific.tables.nestedTable.ColumnTreeNode
 import java.io.ByteArrayOutputStream
 import java.util.*
 import java.util.zip.GZIPInputStream
