@@ -4,11 +4,12 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
 import com.intellij.jupyter.execution.kernel.KERNEL_UPDATE_FILE_PATH_TIMEOUT
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.NoReplyMessageFactory
 import com.intellij.jupyter.execution.kernel.toJupyterMessage
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.NoReplyMessageFactory
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
@@ -39,16 +40,24 @@ suspend fun JupyterNotebookSession.updateNotebookMetadata(): Boolean {
         content = UpdateClientMetadataRequest(notebookFilePath),
         timeout = KERNEL_UPDATE_FILE_PATH_TIMEOUT
     ) { replyDeferred ->
+        val replyReceived: CompletableDeferred<Boolean> = CompletableDeferred()
         object : FinalizationPreservingCallback(
             myFinalizeCallback = {
                 replyDeferred.complete(false)
+                replyReceived.complete(false)
             }
         ) {
             override fun onStatus(message: JupyterStatusMessage) {
                 super.onStatus(message)
                 if (message.executionState == JupyterExecutionState.IDLE) {
-                    replyDeferred.complete(true)
+                    replyReceived.invokeOnCompletion { throwable ->
+                        replyDeferred.complete(throwable == null)
+                    }
                 }
+            }
+
+            override fun onClientMetadataReply(message: JupyterMessage) {
+                replyReceived.complete(true)
             }
         }
     }
