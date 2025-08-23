@@ -182,17 +182,16 @@
         <highlightVisitor implementation="com.intellij.kotlin.jupyter.core.editor.highlighting.visitors.KotlinNotebookShadowingVisitor"
                           id="kotlinNotebookShadowingVisitor" order="first"/>
 
-        <projectConfigurable groupId="tools"
+        <projectConfigurable id="kotlinNotebook"
+                             groupId="tools"
                              bundle="messages.KotlinNotebookBundle"
                              key="kotlin.jupyter.settings.title"
-                             id="kotlinNotebook"
                              instance="com.intellij.kotlin.jupyter.core.settings.ui.KotlinNotebookConfigurable"/>
 
-        <projectConfigurable groupId="tools"
+        <projectConfigurable id="kotlinNotebook.newNotebook"
+                             parentId="kotlinNotebook"
                              bundle="messages.KotlinNotebookBundle"
                              key="kotlin.jupyter.settings.new.notebook.title"
-                             id="kotlinNotebook.newNotebook"
-                             parentId="kotlinNotebook"
                              instance="com.intellij.kotlin.jupyter.core.settings.ui.KotlinNotebookNewNotebookConfigurable"/>
 
         <notificationGroup
