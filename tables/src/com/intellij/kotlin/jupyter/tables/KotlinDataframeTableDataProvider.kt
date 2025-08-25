@@ -121,7 +121,7 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
         val response = commandExecutor.executeCommand(
             SliceTableCommand(tableVariable, false, format, start, end),
             ::getCommandCode
-        )
+        ).getOrThrow()
 
         return executeParsing(response) { parseDataFromKotlinDataframeOutput(dataId, response) }
     }

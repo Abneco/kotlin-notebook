@@ -28,7 +28,7 @@ class SwingOutputDataKeyExtractor : NotebookDisplayOutputDataKeyExtractor {
         val node = dataObject[InMemoryMimeTypes.SWING] as? TextNode ?: return null
         val id = node.textValue()
         val runtimeService = JupyterRuntimeService.getInstance(project)
-        val sessionId = file?.let { runtimeService.getNotebookSession(it)?.sessionId } ?: return null
+        val sessionId = file?.let { runtimeService.getSession(it)?.sessionId } ?: return null
         val inMemoryHolder = InMemoryReplResultsHolderService.getInstance(project).getHolder(sessionId) ?: return null
         return inMemoryHolder.getReplResult(id)?.let {
             SwingOutputDataKey(it, executionCount)

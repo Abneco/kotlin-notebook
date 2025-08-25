@@ -8,13 +8,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.database.datagrid.DynamicNestedTable
 import com.intellij.database.datagrid.StaticNestedTable
 import com.intellij.database.extractors.ImageInfo
-import com.intellij.kotlin.jupyter.core.util.KOTLIN_DATAFRAME_MIME
+import com.intellij.jupyter.core.jupyter.nbformat.MimeType
 import com.intellij.scientific.tables.ColumnTreeNode
 import java.io.ByteArrayOutputStream
 import java.util.*
 import java.util.zip.GZIPInputStream
 
-private const val JSON_PAYLOAD_FIELD = KOTLIN_DATAFRAME_MIME
 private const val SERIALIZED_DATAFRAME_FIELD = "kotlin_dataframe"
 private const val COLUMNS_FIELD = "columns"
 private const val TYPES_FIELD = "types"
@@ -35,8 +34,8 @@ internal const val FRAME_CONVERTABLE = "DataFrameConvertable"
 object KotlinDataframeParsing {
 
     fun isKotlinDataFrame(dataObject: ObjectNode): Boolean {
-        if (!dataObject.has(JSON_PAYLOAD_FIELD)) return false
-        val jsonPayload = dataObject[JSON_PAYLOAD_FIELD].asText() ?: return false
+        if (!dataObject.has(MimeType.KOTLIN_DATAFRAME.mimeType)) return false
+        val jsonPayload = dataObject[MimeType.KOTLIN_DATAFRAME.mimeType].asText() ?: return false
 
         return jsonPayload.contains(SERIALIZED_DATAFRAME_FIELD)
     }
@@ -331,7 +330,13 @@ private fun JsonNode.columnKind(): String? {
 
 private fun ObjectMapper.extractRawJson(text: String): JsonNode {
     val data = readTree(text)
-    return readTree(data[JSON_PAYLOAD_FIELD].asText())
+    //Code wrote is really bad by architecture and in the same time there is expected jupyter output with mimeType and it is possible correct output
+    //It should be rewritten
+    if (data.has(MimeType.KOTLIN_DATAFRAME.mimeType)) {
+        val rawData = data[MimeType.KOTLIN_DATAFRAME.mimeType].asText()
+        return readTree(rawData)
+    }
+    return data
 }
 
 private fun JsonNode.getByPath(path: List<String>): JsonNode? {

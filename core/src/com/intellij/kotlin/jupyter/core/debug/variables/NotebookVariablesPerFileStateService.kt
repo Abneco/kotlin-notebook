@@ -8,7 +8,7 @@ import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.debugger.impl.DebuggerContextImpl
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.editor.completion.JupyterRuntimeProcessListener
+import com.intellij.jupyter.core.jupyter.editor.completion.JupyterVariablesListener
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
@@ -70,7 +70,7 @@ class NotebookVariablesPerFileStateService(
 
     fun requestVariablesUpdate() {
         coroutineScope.async {
-            project.messageBus.syncPublisher(JupyterRuntimeProcessListener.TOPIC)
+            project.messageBus.syncPublisher(JupyterVariablesListener.TOPIC)
                 .notebookSessionEnvironmentUpdated(virtualFile.file, null)
         }
     }

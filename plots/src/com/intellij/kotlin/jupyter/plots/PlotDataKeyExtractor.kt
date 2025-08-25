@@ -7,9 +7,9 @@ import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.nbformat.DisplayDataContainer
+import com.intellij.jupyter.core.jupyter.nbformat.MimeType
 import com.intellij.jupyter.execution.util.convertObject
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
-import com.intellij.kotlin.jupyter.core.util.LETS_PLOT_MIME
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.openapi.editor.Editor
 import com.intellij.util.asSafely
@@ -23,8 +23,8 @@ class PlotDataKeyExtractor: NotebookDisplayOutputDataKeyExtractor {
         if (!KotlinNotebookApplicationOptions.get().showLetsPlotAsSwing) return null
 
         val dataObject = data.toV4Json()
-        if (!dataObject.has(LETS_PLOT_MIME)) return null
-        val plotValue = dataObject[LETS_PLOT_MIME].asSafely<ObjectNode>() ?: return null
+        if (!dataObject.has(MimeType.LETS_PLOT.mimeType)) return null
+        val plotValue = dataObject[MimeType.LETS_PLOT.mimeType].asSafely<ObjectNode>() ?: return null
         val swingEnabled = plotValue[SWING_ENABLED_KEY].asSafely<BooleanNode>()?.asBoolean() != false
         if (!swingEnabled) return null
         val plotType = plotValue[PLOT_TYPE_KEY].asSafely<TextNode>()?.asText() ?: return null

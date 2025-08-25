@@ -7,6 +7,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMe
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputsBase
 import com.intellij.jupyter.execution.util.deserialize
+import com.intellij.jupyter.execution.util.deserialize
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector
@@ -40,10 +41,6 @@ class KotlinNotebookCellExecutionCallback(
     override val channel: JupyterMessageChannel
         get() = JupyterMessageChannel.ANY
     override var finalizeCallback: () -> Unit = {}
-
-    override fun expire() {
-        unregisterCallback()
-    }
 
     override fun onExecuteReply(message: JupyterMessage) {
         KotlinNotebookPluginScope.getForProject(project).async {

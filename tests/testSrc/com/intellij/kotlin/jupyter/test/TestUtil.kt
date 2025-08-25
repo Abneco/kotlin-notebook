@@ -3,15 +3,14 @@ package com.intellij.kotlin.jupyter.test
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.executor.kernel.JupyterKernelCellTask
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionQueueStore
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionTask
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
+import com.intellij.jupyter.core.kernel.executor.JupyterTaskBaseCallback
 import com.intellij.kotlin.jupyter.core.jupyter.actions.CreateNotebookFactory
 import com.intellij.kotlin.jupyter.core.language.emptyNotebookTemplate
 import com.intellij.kotlin.jupyter.core.language.meta.psi.JKTMetaPSIFile
@@ -28,7 +27,6 @@ import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFacto
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.application.impl.NonBlockingReadActionImpl.waitForAsyncTaskCompletion
-import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
@@ -106,13 +104,17 @@ fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     }
 }
 
-fun executeCellsAndShutdownKernel(tester: ReceivedMessagesTester, notebookFile: PsiFile, executionCallback: JupyterExecutionCallback? = null) {
+fun executeCellsAndShutdownKernel(
+    tester: ReceivedMessagesTester,
+    notebookFile: PsiFile,
+    executionCallback: JupyterTaskBaseCallback? = null
+) {
     runWithJupyterSession(notebookFile) {
         executeCells(tester, notebookFile, executionCallback)
     }
 }
 
-fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executionCallback: JupyterExecutionCallback? = null) {
+fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executionCallback: JupyterTaskBaseCallback? = null) {
     val project = notebookFile.project
     val document = PsiDocumentManager.getInstance(project).getDocument(notebookFile)!!
     val notebookCells = notebookFile.getCells()
@@ -145,37 +147,30 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
     fun executeCell(cellNumber: Int): Unit = runBlocking {
         logger<KotlinNotebookExecutionBaseTestCase>().debug("Executing cell #$cellNumber...")
         val messages = ReceivedMessagesBuilder()
-        val cell = notebookCells[cellNumber]
-        executionManager.submitTask(readAction {
-            val cellPointer = NotebookIntervalPointerFactory.get(project, document)
-                .create(NotebookCellLines.get(document).intervals[cellNumber])
-            val task =
-                JupyterExecutionTask(
-                  source = cell.source.text,
-                  options = JupyterExecutionTask.Options.cellExecution(cellPointer),
-                  onError = { ex: Exception ->
-                        endExceptionally(AssertionError("Notebook execution was not successful", ex))
-                    },
-                  callbacks = listOfNotNull(object : JupyterExecutionCallbackAdapter() {
-                        override fun onStatus(message: JupyterStatusMessage) {
-                            if (message.executionState == JupyterExecutionState.IDLE) {
-                                receivedMessages[cellExecutionNumber[cellNumber]!!].complete(messages)
-                            }
-                        }
+        val cellPointer = NotebookIntervalPointerFactory.get(project, document)
+            .create(NotebookCellLines.get(document).intervals[cellNumber])
+        val file = notebookFile.virtualFile
+        val notebookFile = BackedNotebookVirtualFile.takeIfBacked(file)!!
 
-                        override fun onExecuteReply(message: JupyterMessage) {
-                            messages.reply = message
-                        }
+        val queue = JupyterExecutionQueueStore.getQueue(project, notebookFile)
 
-                        override fun onUpdateOutput(message: JupyterMessage) {
-                            messages.outputs.add(message)
-                        }
-                    }, executionCallback),
-                  notebookVirtualFile = backedNotebookFile,
-                  project = project
-                )
-            task
-        })
+        val testCallbacks = listOfNotNull(object : JupyterTaskBaseCallback() {
+            override fun onStatus(message: JupyterStatusMessage) {
+                if (message.executionState == JupyterExecutionState.IDLE) {
+                    receivedMessages[cellExecutionNumber[cellNumber]!!].complete(messages)
+                }
+            }
+
+            override fun onExecuteReply(message: JupyterMessage) {
+                messages.reply = message
+            }
+
+            override fun onUpdateOutput(message: JupyterMessage) {
+                messages.outputs.add(message)
+            }
+        }, executionCallback)
+        val kernelCellTask = JupyterKernelCellTask(cellPointer, notebookFile, project, additionalCallbacks = testCallbacks)
+        queue.submitTask(kernelCellTask).await()
         tester.doAfterCellRun(cellNumber)
     }
 

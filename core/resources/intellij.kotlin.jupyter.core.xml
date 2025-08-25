@@ -22,8 +22,6 @@
     </applicationListeners>
 
     <projectListeners>
-        <listener class="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinRuntimeServiceListener"
-                  topic="com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeListener"/>
         <listener class="com.intellij.kotlin.jupyter.core.settings.KotlinNotebookModuleRenameListener"
                   topic="com.intellij.openapi.project.ModuleListener"/>
     </projectListeners>
@@ -77,10 +75,6 @@
                 order="first"/>
     </extensions>
 
-    <extensions defaultExtensionNs="com.intellij.jupyter.core">
-        <jupyter.data.input.run.jupyterDataInputErrorMessageFactory
-                implementation="com.intellij.kotlin.jupyter.core.editor.dnd.JupyterDataInputKotlinErrorMessageFactory"/>
-    </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
         <scratch.rootType implementation="com.intellij.kotlin.jupyter.core.projectWizard.KotlinNotebookRootType"/>
@@ -239,6 +233,10 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.jupyter.core">
+        <jupyterRuntimeListener implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinRuntimeServiceListener"/>
+        <jupyter.data.input.run.jupyterDataInputErrorMessageFactory
+                implementation="com.intellij.kotlin.jupyter.core.editor.dnd.JupyterDataInputKotlinErrorMessageFactory"/>
+
         <editor.notebookEditorCreatedCallback
                 implementation="com.intellij.kotlin.jupyter.core.editor.creating.KotlinNotebookEditorFactoryListener"/>
         <editor.outputs.notebookObjectOutputDataKeyExtractor

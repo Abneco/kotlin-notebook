@@ -62,15 +62,11 @@ class KotlinNotebookRestartNeededNotificationService(
                 }
             }
         )
-
-        project.messageBus.connect(this).subscribe(
-            topic = JupyterRuntimeListener.TOPIC,
-            handler = object : JupyterRuntimeListener {
-                override fun sessionDeleted(session: JupyterNotebookSession) {
-                    expireNotification(NotebookId(session.virtualFile.originFile))
-                }
+        JupyterRuntimeListener.register(this, object : JupyterRuntimeListener {
+            override fun sessionDeleted(session: JupyterNotebookSession) {
+                expireNotification(NotebookId(session.virtualFile.originFile))
             }
-        )
+        })
     }
 
     @RequiresEdt

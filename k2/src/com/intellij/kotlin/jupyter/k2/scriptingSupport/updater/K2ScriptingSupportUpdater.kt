@@ -3,8 +3,7 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport.updater
 
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightingSettingsPerFile
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JUPYTER_SESSION_LIFETIME_TOPIC
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterSessionLifetimeListener
+import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeListener
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
 import com.intellij.kotlin.jupyter.core.ide.handlers.UpdaterConstructorData
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
@@ -31,7 +30,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.kotlin.analysis.api.platform.modification.publishGlobalModuleStateModificationEvent
 import org.jetbrains.kotlin.analysis.api.platform.modification.publishGlobalScriptModuleStateModificationEvent
-import org.jetbrains.kotlin.idea.core.script.k2.configurations.ScriptConfigurationsProviderImpl
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionProviderImpl
 import org.jetbrains.kotlin.idea.core.script.v1.ScriptDependenciesModificationTracker
 import org.jetbrains.kotlin.psi.KtFile
@@ -51,15 +49,11 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
     init {
         val parentDisposable = updaterConstructorData.parentDisposable
-        project.messageBus.connect(parentDisposable)
-            .subscribe(
-                JUPYTER_SESSION_LIFETIME_TOPIC,
-                object : JupyterSessionLifetimeListener {
-                    override fun sessionWillTerminate(notebookFile: BackedNotebookVirtualFile) {
-                        clearRuntimeDependenciesFor(notebookFile)
-                    }
-                }
-            )
+        JupyterRuntimeListener.register(parentDisposable, object : JupyterRuntimeListener {
+            override fun sessionWillTerminate(notebookFile: BackedNotebookVirtualFile) {
+                clearRuntimeDependenciesFor(notebookFile)
+            }
+        })
     }
 
     /**

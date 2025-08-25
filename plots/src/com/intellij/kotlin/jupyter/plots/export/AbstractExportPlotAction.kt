@@ -7,8 +7,8 @@ import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDat
 import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookFile
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
+import com.intellij.jupyter.core.jupyter.nbformat.MimeType
 import com.intellij.jupyter.core.jupyter.ui.traverseChildrenBreadthFirst
-import com.intellij.kotlin.jupyter.core.util.LETS_PLOT_MIME
 import com.intellij.kotlin.jupyter.core.util.filterIsInstanceAnd
 import com.intellij.kotlin.jupyter.core.util.firstAncestorOfType
 import com.intellij.kotlin.jupyter.plots.LetsPlotComponent
@@ -95,7 +95,7 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
         val extractor = NotebookDisplayOutputDataKeyExtractor.EP_NAME.findExtension(PlotDataKeyExtractor::class.java) ?: return emptyList()
 
         return outputs.outputs.filterIsInstanceAnd<JupyterDisplayDataOutput> { output ->
-            output.data.has(LETS_PLOT_MIME)
+            output.data.has(MimeType.LETS_PLOT.mimeType)
         }.mapNotNull { letPlotOutput ->
             extractor.extractKey(letPlotOutput.data, null)
         }

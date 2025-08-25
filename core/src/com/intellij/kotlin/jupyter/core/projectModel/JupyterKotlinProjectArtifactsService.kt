@@ -195,14 +195,11 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private fun addSessionListener() {
-        project.messageBus.connect(this).subscribe(
-            JupyterRuntimeListener.TOPIC,
-            object : JupyterRuntimeListener {
-                override fun sessionDeleted(session: JupyterNotebookSession) {
-                    sessionData.remove(session.sessionId)
-                }
+        JupyterRuntimeListener.register(this, object : JupyterRuntimeListener {
+            override fun sessionDeleted(session: JupyterNotebookSession) {
+                sessionData.remove(session.sessionId)
             }
-        )
+        })
     }
 
     private suspend fun buildProject(settings: KotlinNotebookSettings): BuildResult {

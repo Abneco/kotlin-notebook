@@ -10,10 +10,10 @@ import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.JupyterWebOut
 import com.intellij.jupyter.core.jupyter.helper.isJupyter
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterExecuteResultOutput
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputType
+import com.intellij.jupyter.core.jupyter.nbformat.MimeType
 import com.intellij.jupyter.tables.JupyterTableOutputDataKey
 import com.intellij.jupyter.tables.createTableOutputDataKey
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
-import com.intellij.kotlin.jupyter.core.util.KOTLIN_DATAFRAME_MIME
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
@@ -53,7 +53,7 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
         if (info !is JupyterWebOutputInfo.Output) return false
 
         val jsonOutput = jackson.readTree(info.output) as ObjectNode
-        return jsonOutput[KOTLIN_DATAFRAME_MIME] != null
+        return jsonOutput[MimeType.KOTLIN_DATAFRAME.mimeType] != null
     }
 
     private fun extractImpl(

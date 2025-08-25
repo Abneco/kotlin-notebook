@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.execution
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.action.JupyterRestartKernelListener
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionTask
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelTask
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import com.intellij.jupyter.core.jupyter.helper.JupyterHelper
@@ -55,7 +55,7 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
         }
     }
 
-    override fun create(task: JupyterExecutionTask): JupyterExecutionCallback? {
+    override fun create(task: JupyterKernelTask): JupyterExecutionCallback? {
         val cellProject = task.project ?: return null
         val file = task.notebookVirtualFile
         if (!file.file.isKotlinNotebook) return null

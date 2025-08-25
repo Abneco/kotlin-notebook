@@ -12,7 +12,8 @@ import com.intellij.debugger.settings.DebuggerSettings
 import com.intellij.execution.configurations.RemoteConnection
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterSessionPath
-import com.intellij.jupyter.core.jupyter.editor.completion.JupyterRuntimeProcessListener
+import com.intellij.jupyter.core.jupyter.editor.completion.JupyterVariablesListener
+import com.intellij.jupyter.execution.listeners.NotebookSessionEventListener
 import com.intellij.kotlin.jupyter.core.debug.breakpoint.KernelSyntheticMethodBreakpoint
 import com.intellij.kotlin.jupyter.core.debug.events.NotebookDebugEventsHandler
 import com.intellij.kotlin.jupyter.core.debug.session.names.KotlinNotebookSessionInternalNamesProvider
@@ -24,7 +25,6 @@ import com.intellij.kotlin.jupyter.core.debug.util.connection.DebugConnectionUti
 import com.intellij.kotlin.jupyter.core.debug.util.connection.NotebookDebugConnectionHolder
 import com.intellij.kotlin.jupyter.core.debug.util.connection.NotebookDebugProcessListener
 import com.intellij.kotlin.jupyter.core.debug.util.debugFeaturesEnabled
-import com.intellij.jupyter.execution.listeners.NotebookSessionEventListener
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
@@ -100,7 +100,7 @@ internal class KotlinNotebookDebugSession(
                 ) {
                     if (debuggerSession?.isConnecting == true || updateState.isIncomplete) return
 
-                    messageBus.syncPublisher(JupyterRuntimeProcessListener.TOPIC)
+                    messageBus.syncPublisher(JupyterVariablesListener.TOPIC)
                         .notebookSessionEnvironmentUpdated(virtualFile.file, null)
                 }
             }

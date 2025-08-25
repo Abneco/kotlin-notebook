@@ -3,17 +3,13 @@ package com.intellij.kotlin.jupyter.core.editor.appearance
 
 import com.intellij.jupyter.execution.toolwindow.KernelProcessToolWindowBuilder
 import com.intellij.jupyter.execution.toolwindow.KernelRunnableToolWindowSettings
-import com.intellij.jupyter.execution.util.findEditors
 import com.intellij.kotlin.jupyter.core.debug.util.debugFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
-import com.intellij.kotlin.jupyter.core.jupyter.actions.StopKotlinKernelAction
 import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.toNotebookToolWindowPanelHelpId
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.toPresentablePathAsTabTitle
 import com.intellij.kotlin.jupyter.core.variables.NotebookVariablesToolWindowSetup
 import com.intellij.kotlin.jupyter.core.variables.NotebookVarsToolWindowProvider
-import com.intellij.openapi.actionSystem.ActionGroup
-import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.readAction
 import com.intellij.ui.content.Content
 import com.intellij.ui.content.ContentManager
@@ -35,20 +31,6 @@ class KotlinNotebookToolWindowBuilder private constructor(
     override fun collectContentTabs(): List<Content> = buildList {
         add(createConsoleView())
         createVariablesView()?.let { add(it) }
-    }
-
-    override fun leftToolbarActions(): ActionGroup {
-        val virtualFile = settings.notebookVirtualFile().file
-        val editors = settings.project.findEditors(virtualFile)
-
-        val stopAction = StopKotlinKernelAction(
-            settings.project,
-            listOf(virtualFile),
-            editors,
-            settings.handler
-        )
-
-        return DefaultActionGroup(stopAction)
     }
 
     private fun createConsoleView(): Content {

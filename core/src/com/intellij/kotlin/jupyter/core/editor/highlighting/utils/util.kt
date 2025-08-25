@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.editor.highlighting.utils
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.jupyter.connections.execution.JupyterFileExecutionQueue
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import com.intellij.jupyter.core.jupyter.helper.selectedInterval
 import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
@@ -60,7 +60,7 @@ internal suspend fun cleanupKernelSession(
 
     resetSessionMetaInformation(project, notebookFile)
     if (!project.isDisposed) {
-        JupyterRuntimeService.getInstance(project).clearRuntime(notebookFile.file).join()
+        JupyterFileExecutionQueue.getInstance(project, notebookFile).killExecution()
     }
 }
 

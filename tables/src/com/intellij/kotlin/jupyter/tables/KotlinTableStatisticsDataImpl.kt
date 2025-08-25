@@ -32,7 +32,7 @@ class KotlinTableStatisticsDataImpl(
                val value = $tableVariable 
                println(if (value != null) KotlinNotebookPluginUtils.convertToDataFrame(value).describe().toJson() else "")
             """.trimIndent()
-        )
+        ).getOrThrow()
         extractDescribeData(describeJson)
 
         // Add support for `df[columnName].valuesCount()` here.

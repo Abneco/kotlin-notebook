@@ -15,14 +15,13 @@ import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterErrorOutput
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutput
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterStreamOutput
+import com.intellij.jupyter.core.jupyter.nbformat.MimeType
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.jupyter.actions.mode
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
 import com.intellij.kotlin.jupyter.core.settings.isAddProjectLibrariesToClasspath
 import com.intellij.kotlin.jupyter.core.settings.isBuildProject
 import com.intellij.kotlin.jupyter.core.settings.notebookDependencies
-import com.intellij.kotlin.jupyter.core.util.KOTLIN_DATAFRAME_MIME
-import com.intellij.kotlin.jupyter.core.util.LETS_PLOT_MIME
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.exceptions.ReplCompilerException
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
@@ -230,16 +229,16 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
         }
 
         private val mimeToOutputType = mapOf(
-            "text/plain" to OutputType.PLAIN_TEXT,
-            "text/html" to OutputType.HTML,
-            "text/markdown" to OutputType.MARKDOWN,
-            "application/json" to OutputType.JSON,
-            "image/png" to OutputType.RASTER_IMAGE,
-            "image/jpeg" to OutputType.RASTER_IMAGE,
-            "image/bmp" to OutputType.RASTER_IMAGE,
-            "image/svg+xml" to OutputType.VECTOR_IMAGE,
-            LETS_PLOT_MIME to OutputType.SWING_LETS_PLOT,
-            KOTLIN_DATAFRAME_MIME to OutputType.SWING_DATAFRAME,
+            MimeType.TEXT_PLAIN.mimeType to OutputType.PLAIN_TEXT,
+            MimeType.TEXT_HTML.mimeType to OutputType.HTML,
+            MimeType.TEXT_MARKDOWN.mimeType to OutputType.MARKDOWN,
+            MimeType.APPLICATION_JSON.mimeType to OutputType.JSON,
+            MimeType.IMAGE_PNG.mimeType to OutputType.RASTER_IMAGE,
+            MimeType.IMAGE_JPG.mimeType to OutputType.RASTER_IMAGE,
+            MimeType.IMAGE_BMP.mimeType to OutputType.RASTER_IMAGE,
+            MimeType.IMAGE_SVG.mimeType to OutputType.VECTOR_IMAGE,
+            MimeType.LETS_PLOT.mimeType to OutputType.SWING_LETS_PLOT,
+            MimeType.KOTLIN_DATAFRAME.mimeType to OutputType.SWING_DATAFRAME,
         )
 
         @JvmStatic
