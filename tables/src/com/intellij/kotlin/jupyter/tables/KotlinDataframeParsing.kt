@@ -142,7 +142,11 @@ private class KotlinDataframeParserImpl(
     override fun parseDataFrameData(serializedData: String): List<ColumnValues> {
         val rawJson = mapper.extractRawJson(serializedData)
 
-        val rows = rawJson.getByPath(pathToData) as ArrayNode
+        val rows = try {
+            rawJson.getByPath(pathToData) as ArrayNode
+        } catch (t: Throwable) {
+            throw IllegalArgumentException("Invalid dataframe data format. Expected an array of rows. Text:\n$serializedData", t)
+        }
         if (rows.isEmpty) return emptyList()
 
         val root = rows.first().extractColumnsHierarchy()
