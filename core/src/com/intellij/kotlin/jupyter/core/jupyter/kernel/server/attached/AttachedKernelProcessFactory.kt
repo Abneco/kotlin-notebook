@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.attached
 
 import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOptions
-import com.intellij.jupyter.execution.listeners.KernelInfoReplyReceivedEvent
+import com.intellij.jupyter.execution.listeners.events.KernelInfoReplyReceivedEvent
 import com.intellij.jupyter.execution.listeners.KernelListener
 import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ModeAwareKernelRunnableFactory

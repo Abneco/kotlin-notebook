@@ -12,7 +12,7 @@ import com.intellij.jupyter.execution.kernel.KERNEL_VERIFICATION_ATTEMPT_TIMEOUT
 import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
 import com.intellij.jupyter.execution.listeners.JupyterSessionVerifiedListener
 import com.intellij.jupyter.execution.listeners.KernelListener
-import com.intellij.jupyter.execution.listeners.NotebookKernelEvent
+import com.intellij.jupyter.execution.listeners.events.NotebookKernelEvent
 import com.intellij.jupyter.execution.process.KernelClientSession
 import com.intellij.jupyter.execution.process.KernelRunnableProvider
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinInProcessJupyterClient

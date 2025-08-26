@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.toolwindow
 import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
 import com.intellij.jupyter.execution.listeners.KernelListener
-import com.intellij.jupyter.execution.listeners.NotebookKernelEvent
+import com.intellij.jupyter.execution.listeners.events.NotebookKernelEvent
 import com.intellij.jupyter.execution.toolwindow.KernelRunnableToolWindowSettings
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
 import com.intellij.kotlin.jupyter.core.editor.appearance.KotlinNotebookToolWindowBuilder

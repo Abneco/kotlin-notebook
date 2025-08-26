@@ -7,7 +7,7 @@ import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
 import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOptions
 import com.intellij.jupyter.execution.kernel.SeparateProcessKernelRunnableHandler
-import com.intellij.jupyter.execution.listeners.KernelNotificationStartedEvent
+import com.intellij.jupyter.execution.listeners.events.KernelNotificationStartedEvent
 import com.intellij.jupyter.execution.listeners.KernelProcessListener
 import com.intellij.jupyter.execution.process.KernelPortsProvider
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
