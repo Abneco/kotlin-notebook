@@ -42,7 +42,7 @@ import java.io.IOException
 import javax.swing.RowSorter
 import javax.swing.SortOrder
 
-internal const val DEFAULT_JSON_MAX_LENGTH = 100000000
+internal const val DEFAULT_JSON_MAX_LENGTH = 100_000_000
 
 private const val JSON_MAX_STRING_LENGTH = "jupyter.notebook.json.maxStringLength"
 

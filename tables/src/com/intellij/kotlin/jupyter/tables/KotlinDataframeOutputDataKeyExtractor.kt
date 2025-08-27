@@ -74,10 +74,10 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
                 val executionCount = (output as? JupyterExecuteResultOutput)?.executionCount
 
                 val kotlinDfDataKey = getKotlinDataframeOutputDataKey(
-                    editor,
-                    cellPointer,
-                    dataObject,
-                    executionCount,
+                    editor = editor,
+                    cellPointer = cellPointer,
+                    dataObject = dataObject,
+                    executionCount = executionCount,
                     isLastForCell = outputIndex == outputSequence.size - 1
                 )
 
@@ -98,6 +98,9 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
         isLastForCell: Boolean
     ): NotebookOutputDataKey? {
         if (!KotlinDataframeParsing.isKotlinDataFrame(dataObject)) {
+            return null
+        }
+        if (KotlinDataframeParsing.dataFrameIsFormatted(dataObject)) {
             return null
         }
 

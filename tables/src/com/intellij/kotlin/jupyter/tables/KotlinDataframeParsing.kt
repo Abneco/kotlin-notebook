@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.tables
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.database.datagrid.DynamicNestedTable
 import com.intellij.database.datagrid.StaticNestedTable
@@ -27,6 +28,7 @@ internal const val VALUE_COLUMN = "ValueColumn"
 internal const val COLUMN_GROUP = "ColumnGroup"
 internal const val FRAME_COLUMN = "FrameColumn"
 internal const val FRAME_CONVERTABLE = "DataFrameConvertable"
+internal const val IS_FORMATTED = "is_formatted"
 
 /**
  * Utils for parsing encoded table data produced by the Kotlin Dataframe library
@@ -38,6 +40,16 @@ object KotlinDataframeParsing {
         val jsonPayload = dataObject[MimeType.KOTLIN_DATAFRAME.mimeType].asText() ?: return false
 
         return jsonPayload.contains(SERIALIZED_DATAFRAME_FIELD)
+    }
+
+    private val mapper by lazy { ObjectMapper() }
+
+    /** Returns `true` if [dataObject] represents a dataframe that has been formatted by the user. */
+    fun dataFrameIsFormatted(dataObject: ObjectNode): Boolean {
+        val jsonObject = mapper.extractRawJson(dataObject.toString())
+        val metadata = jsonObject[METADATA_FIELD] as ObjectNode? ?: return false
+
+        return metadata[IS_FORMATTED] == BooleanNode.TRUE
     }
 
     fun isFormatSupported(serializedData: String): Boolean {
