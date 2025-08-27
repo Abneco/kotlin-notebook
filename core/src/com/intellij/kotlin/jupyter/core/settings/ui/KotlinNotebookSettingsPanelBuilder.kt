@@ -24,7 +24,6 @@ import com.intellij.kotlin.jupyter.core.settings.replCompilerModeSelectorEnabled
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersion
 import com.intellij.kotlin.jupyter.core.util.revealKotlinNotebookLocalKernelsFolder
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
@@ -166,16 +165,14 @@ class KotlinNotebookSettingsPanelBuilder(
                 }
             }
 
-            if (ApplicationManager.getApplication().isInternal) {
-                actionButton(
-                    DumbAwareAction.create(
-                        KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.explore.button.name"),
-                        AllIcons.General.OpenDisk
-                    ) {
-                        project.revealKotlinNotebookLocalKernelsFolder()
-                    }
-                )
-            }
+            actionButton(
+                DumbAwareAction.create(
+                    KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.explore.button.name"),
+                    AllIcons.General.OpenDisk
+                ) {
+                    project.revealKotlinNotebookLocalKernelsFolder()
+                }
+            )
         }
     }
 
