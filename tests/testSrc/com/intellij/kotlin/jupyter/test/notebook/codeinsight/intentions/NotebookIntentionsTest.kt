@@ -16,7 +16,10 @@ import org.junit.Test
 @TestDataPath($$"$CONTENT_ROOT/testData/notebooks/codeinsight")
 class NotebookIntentionsTest : KotlinNotebookTestCase() {
     @Test
-    fun specifyType() = runFileIntentionsTest()
+    fun specifyTypeForFunction() = runFileIntentionsTest()
+
+    @Test
+    fun specifyTypeForProperty() = runFileIntentionsTest()
 
     @Test
     fun convertToBody() = runFileIntentionsTest()

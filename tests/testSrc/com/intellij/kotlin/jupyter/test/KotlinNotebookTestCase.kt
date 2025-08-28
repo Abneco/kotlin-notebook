@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.test
 
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.editor.setHeaderEditingAllowed
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
@@ -102,6 +103,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         super.setUp()
         KotlinNotebookLoggerFactory.enableUnitTestMode()
         intentionInvocationHandler = IntentionInvocationHandler(myFixture)
+        setHeaderEditingAllowed(false, testRootDisposable)
     }
 
     override fun tearDown() {
