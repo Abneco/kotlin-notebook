@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.database.datagrid.DynamicNestedTable
 import com.intellij.database.datagrid.StaticNestedTable
 import com.intellij.database.extractors.ImageInfo
+import com.intellij.jupyter.core.jackson
 import com.intellij.jupyter.core.jupyter.nbformat.MimeType
 import com.intellij.scientific.tables.nestedTable.ColumnTreeNode
 import java.io.ByteArrayOutputStream
@@ -42,12 +43,10 @@ object KotlinDataframeParsing {
         return jsonPayload.contains(SERIALIZED_DATAFRAME_FIELD)
     }
 
-    private val mapper by lazy { ObjectMapper() }
-
     /** Returns `true` if [dataObject] represents a dataframe that has been formatted by the user. */
     fun dataFrameIsFormatted(dataObject: ObjectNode): Boolean {
         val jsonPayload = dataObject[MimeType.KOTLIN_DATAFRAME.mimeType]?.asText() ?: return false
-        val jsonObject = mapper.readTree(jsonPayload)
+        val jsonObject = jackson.readTree(jsonPayload)
         val metadata = jsonObject[METADATA_FIELD] as ObjectNode? ?: return false
 
         return metadata[IS_FORMATTED] == BooleanNode.TRUE
