@@ -118,9 +118,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
     val project = notebookFile.project
     val document = PsiDocumentManager.getInstance(project).getDocument(notebookFile)!!
     val notebookCells = notebookFile.getCells()
-    val backedNotebookFile = notebookFile.virtualFile.toKotlinNotebookBackedFile()!!
     val cellsCount = notebookCells.size
-    val executionManager = JupyterExecutionQueueStore.getQueue(project, backedNotebookFile)
 
     Assertions.assertEquals(tester.expectedCellsCount, cellsCount)
 
@@ -134,14 +132,6 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
     }
     val receivedMessages = List(cellsToExecute.size) {
         CompletableDeferred<ReceivedMessages>()
-    }
-
-    fun endExceptionally(throwable: Throwable) {
-        for (deferred in receivedMessages) {
-            if (!deferred.isCompleted) {
-                deferred.completeExceptionally(throwable)
-            }
-        }
     }
 
     fun executeCell(cellNumber: Int): Unit = runBlocking {
@@ -170,7 +160,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
             }
         }, executionCallback)
         val kernelCellTask = JupyterKernelCellTask(cellPointer, notebookFile, project, additionalCallbacks = testCallbacks)
-        queue.submitTask(kernelCellTask).await()
+        queue.submitTask(kernelCellTask)
         tester.doAfterCellRun(cellNumber)
     }
 
