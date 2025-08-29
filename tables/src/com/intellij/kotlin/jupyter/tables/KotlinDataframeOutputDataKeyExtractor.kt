@@ -102,7 +102,7 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
         }
         // formatted dataframes (`FormattedFrame`) need to be rendered as HTML to show their adapted cell attributes,
         // so we return `null` here when it has `is_formatted: true` in its metadata.
-        if (KotlinDataframeParsing.dataFrameIsFormatted(dataObject)) {
+        if (KotlinDataframeParsing.isFormattedDataFrame(dataObject)) {
             return null
         }
 

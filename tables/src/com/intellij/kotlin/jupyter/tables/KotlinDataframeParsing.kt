@@ -44,7 +44,7 @@ object KotlinDataframeParsing {
     }
 
     /** Returns `true` if [dataObject] represents a dataframe that has been formatted by the user. */
-    fun dataFrameIsFormatted(dataObject: ObjectNode): Boolean {
+    fun isFormattedDataFrame(dataObject: ObjectNode): Boolean {
         val jsonPayload = dataObject[MimeType.KOTLIN_DATAFRAME.mimeType]?.asText() ?: return false
         val jsonObject = jackson.readTree(jsonPayload)
         val metadata = jsonObject[METADATA_FIELD] as ObjectNode? ?: return false
