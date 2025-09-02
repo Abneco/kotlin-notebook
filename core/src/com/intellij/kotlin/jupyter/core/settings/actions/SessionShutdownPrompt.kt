@@ -5,10 +5,9 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterFileExecutionQueue
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.appBasedApi.scriptLoader.utils.launchBackground
-import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
-import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.project.Project
 import com.intellij.ui.components.dialog
 import com.intellij.ui.dsl.builder.panel
 
@@ -17,19 +16,19 @@ import com.intellij.ui.dsl.builder.panel
  * If they agree, [action] will be run, and then the session will be shut down.
  * If they don't, [action] won't be run.
  * If there's no session, [action] will be run immediately.
+ * [action] contains [Boolean] argument to indicate whenever we are going to restart the session or not.
  *
  * It doesn't do anything for non-Kotlin notebooks.
  */
 inline fun promptSessionShutdownIfNeeded(
+    project: Project,
     notebookFile: BackedNotebookVirtualFile,
-    notebookEditor: Editor,
-    crossinline action: () -> Unit
+    crossinline action: (hasActiveJupyterSession: Boolean) -> Unit
 ) {
-    val project = notebookEditor.project
-    if (!notebookFile.isKotlinNotebook || project == null) return
+    if (!notebookFile.isKotlinNotebook) return
 
     if (!JupyterRuntimeService.getInstance(project).hasActiveSession(notebookFile.file)) {
-        action()
+        action(false)
         return
     }
 
@@ -41,9 +40,7 @@ inline fun promptSessionShutdownIfNeeded(
             }
         },
         ok = {
-            action()
-            val project = notebookEditor.project ?: return@dialog null
-            val notebookFile = notebookEditor.notebookFileOrNull ?: return@dialog null
+            action(true)
 
             launchBackground {
                 JupyterFileExecutionQueue.getInstance(project, notebookFile).killExecution()

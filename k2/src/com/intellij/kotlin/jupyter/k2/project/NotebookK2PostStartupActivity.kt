@@ -20,7 +20,7 @@ class NotebookK2PostStartupActivity : ProjectActivity {
                 override fun onCompilerPluginsChanged() {
                     val editor = project.getCurrentEditorOrNull() ?: return
                     val notebookFile = editor.notebookFileOrNull ?: return
-                    promptSessionShutdownIfNeeded(notebookFile, editor) {
+                    promptSessionShutdownIfNeeded(project, notebookFile) {
                         project.notifyCompilerPluginsSettingsChanged()
                     }
                 }

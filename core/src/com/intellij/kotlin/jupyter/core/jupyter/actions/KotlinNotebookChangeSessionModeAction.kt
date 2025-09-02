@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.core.jupyter.actions
 
 import com.intellij.icons.AllIcons
-import com.intellij.jupyter.core.jupyter.helper.editor
 import com.intellij.jupyter.core.jupyter.helper.notebook
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
@@ -38,7 +37,9 @@ sealed class KotlinNotebookChangeSessionModeAction(
     override fun actionPerformed(event: AnActionEvent) {
         val notebook = event.dataContext.notebook ?: return
         if (notebook.sessionRunMode == mode) return
-        promptSessionShutdownIfNeeded(event.notebookFile ?: return, event.editor ?: return) {
+        val project = event.project ?: return
+        val notebookFile = event.notebookFile ?: return
+        promptSessionShutdownIfNeeded(project, notebookFile) {
             if (notebook.sessionRunMode != mode) {
                 WriteAction.run<RuntimeException> {
                     notebook.sessionRunMode = mode
