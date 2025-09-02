@@ -31,7 +31,7 @@ sealed class KotlinNotebookChangeSessionModeAction(
     }
 
     private fun AnActionEvent.getKotlinNotebook(): JupyterNotebook? {
-        val notebookFile = this.dataContext.notebookFile ?: return null
+        val notebookFile = notebookFile ?: return null
         return if (notebookFile.isKotlinNotebook) notebookFile.notebookOrNull else null
     }
 

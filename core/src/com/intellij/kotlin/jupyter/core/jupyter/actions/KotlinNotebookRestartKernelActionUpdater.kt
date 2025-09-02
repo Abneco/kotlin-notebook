@@ -7,7 +7,6 @@ import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterN
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterNotebookSessionSettings
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.ManagedJupyterServerNotebookSessionSettings
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServerUtils.getJupyterServer
-import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookFile
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.notebooks.jupyter.core.icons.JupyterCoreIcons
@@ -25,7 +24,7 @@ object KotlinNotebookRestartKernelActionUpdater {
 
     fun update(e: AnActionEvent) {
         e.presentation.isEnabledAndVisible = true
-        if (e.dataContext.jupyterNotebookFile?.isKotlinNotebook != true) {
+        if (e.notebookFile?.isKotlinNotebook != true) {
             e.presentation.isEnabledAndVisible = false
             return
         }

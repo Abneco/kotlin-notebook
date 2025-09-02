@@ -4,7 +4,6 @@ package com.intellij.kotlin.jupyter.plots.export
 import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
-import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookFile
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
 import com.intellij.jupyter.core.jupyter.nbformat.MimeType
@@ -21,7 +20,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-
 
 abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
 
@@ -80,7 +78,7 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
             }
         }
 
-        val notebookVirtualFile = event.dataContext.jupyterNotebookFile ?: return emptyList()
+        val notebookVirtualFile = event.notebookFile ?: return emptyList()
         val hoveredInterval = event.dataContext.selectedCellInterval ?: return emptyList()
 
         return getLetsPlotOutputs(notebookVirtualFile, hoveredInterval.ordinal)
@@ -100,5 +98,4 @@ abstract class AbstractExportPlotAction : NotebookEditorActionBase() {
             extractor.extractKey(letPlotOutput.data, null)
         }
     }
-
 }

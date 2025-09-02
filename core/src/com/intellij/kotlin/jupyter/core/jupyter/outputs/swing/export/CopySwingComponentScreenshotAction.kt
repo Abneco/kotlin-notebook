@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.outputs.swing.export
 
 import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
-import com.intellij.jupyter.core.jupyter.helper.jupyterNotebookFile
+import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
 import com.intellij.kotlin.jupyter.core.jupyter.outputs.export.createImageDataTransferable
 import com.intellij.kotlin.jupyter.core.jupyter.outputs.swing.SwingComponent
@@ -83,7 +83,7 @@ class CopySwingComponentScreenshotAction : NotebookEditorActionBase() {
         }
 
         val project = event.project
-        val notebookVirtualFile = event.dataContext.jupyterNotebookFile ?: return emptyList()
+        val notebookVirtualFile = event.notebookFile ?: return emptyList()
         val hoveredInterval = event.dataContext.selectedCellInterval ?: return emptyList()
         val cellIndex = hoveredInterval.ordinal
         val notebook = notebookVirtualFile.notebookOrNull ?: return emptyList()
