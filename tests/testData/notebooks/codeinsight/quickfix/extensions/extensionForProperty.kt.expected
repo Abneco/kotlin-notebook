@@ -1,9 +1,8 @@
-// "Create extension function" "true"
+// QUICK_FIX_DESCRIPTION: "Create extension function"
 class Hohoh {}
 val hohoh = Hohoh()
-hohoh.foo()
-
-
 fun Hohoh.foo() {
     TODO("Not yet implemented")
 }
+
+hohoh.foo()

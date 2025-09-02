@@ -1,5 +1,5 @@
 #%%
-// org.jetbrains.kotlin.idea.codeInsight.intentions.shared.IntroduceVariableIntention
+// QUICK_FIX: org.jetbrains.kotlin.idea.codeInsight.intentions.shared.IntroduceVariableIntention
 fun bar(x: Int, y: Int) = x + y
 
 <caret>bar(

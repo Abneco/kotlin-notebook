@@ -1,0 +1,8 @@
+#%%
+@file:DependsOn("org.junit.jupiter:junit-jupiter-api:5.9.2")
+val x = 3
+fun <T> id(x: T) = x
+id(x)
+#%%
+val someVar = 123 + x
+<caret>id(x)

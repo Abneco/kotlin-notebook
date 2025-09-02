@@ -1,0 +1,9 @@
+#%%
+x * 42
+
+#%%
+// QUICK_FIX_DESCRIPTION: "Create extension function"
+class Hohoh<T>(elems: Collection<T>) { private val data = mutableListOf<T>()
+ init { data.addAll(elems) } }
+val h = Hohoh(listOf(1, 2, 42))
+h.foo<caret>()

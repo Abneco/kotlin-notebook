@@ -1,0 +1,8 @@
+#%%
+// QUICK_FIX_DESCRIPTION: "Create extension function"
+class Hohoh {}
+val hohoh = Hohoh()
+hohoh.foo<caret>()
+
+#%%
+x * 42

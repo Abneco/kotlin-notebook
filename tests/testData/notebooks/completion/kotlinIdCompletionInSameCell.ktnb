@@ -1,0 +1,7 @@
+#%%
+val xyz = 33
+val ktp = "string"
+val x2 = 42
+x<caret>
+#%%
+x * 42

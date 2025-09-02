@@ -1,0 +1,9 @@
+#%%
+@file:DependsOn("org.jetbrains.kotlinx:ggdsl-lets-plot:0.2.4-dev-1")
+#%%
+plot {
+    line {
+        type(<caret>)
+    }
+}
+#%%

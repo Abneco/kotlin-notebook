@@ -1,0 +1,8 @@
+val enraged = 0../*<# ≤ #>*/10/*<# ≤ #>*/
+val rangeUntil = 0../*<# ≤ #>*/<1/*<# ≤ #>*/0
+for (index in 0.0.rangeTo(100.0)) {}
+for (index in -100.0.rangeTo(100.0)) {}
+for (index in 0f.rangeTo(100f)) {}
+for (index in 0 /*<# ≤ #>*/.. 1/*<# ≤ #>*/00) {}
+for (index in 'a' /*<# ≤ #>*/.. '/*<# ≤ #>*/z') {}
+for (index in 0L /*<# ≤ #>*/.. 1/*<# ≤ #>*/00L) {}

@@ -1,13 +1,11 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test
 
-import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.editor.setHeaderEditingAllowed
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
-import com.intellij.kotlin.jupyter.test.notebook.codeinsight.intentions.IntentionInvocationHandler
 import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
 import com.intellij.kotlin.jupyter.test.runners.TestContext
 import com.intellij.kotlin.jupyter.test.runners.findAnnotationInHierarchy
@@ -39,6 +37,7 @@ import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.intellij.util.containers.forEachGuaranteed
+import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.jupyter.builder.NotebookBuilder
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
@@ -48,8 +47,12 @@ import org.jetbrains.kotlin.idea.test.setUpWithKotlinPlugin
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.test.TestMetadata
 import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
+import org.jetbrains.plugins.notebooks.tests.cleanJupyterUserData
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.tests.withSwingMarkdownRenderMode
+import org.junit.Rule
+import org.junit.rules.DisableOnDebug
+import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -61,6 +64,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 import kotlin.io.path.pathString
+import kotlin.io.path.readText
 
 /**
  * Base class for all notebook tests. The entry point is the [runNotebookTest] method which provides
@@ -68,6 +72,12 @@ import kotlin.io.path.pathString
  */
 @RunWith(KotlinNotebookTestRunner::class)
 abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginModeProvider {
+
+    @JvmField
+    @Rule
+    var timeout: TestRule = DisableOnDebug(
+        CoroutinesTimeout.seconds(180)
+    )
 
     // We cannot run on the EDT thread as Kernel Execution also runs there, which can result in deadlocks
     // when waiting for kernel status messages.
@@ -82,7 +92,6 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
 
     private var notebookRunner: NotebookTestBuilder? = null
     override lateinit var originalVirtualFile: VirtualFile
-    protected lateinit var intentionInvocationHandler: IntentionInvocationHandler
 
     override val pluginMode: KotlinPluginMode
         get() {
@@ -102,7 +111,6 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
     override fun setUp() {
         super.setUp()
         KotlinNotebookLoggerFactory.enableUnitTestMode()
-        intentionInvocationHandler = IntentionInvocationHandler(myFixture)
         setHeaderEditingAllowed(false, testRootDisposable)
     }
 
@@ -112,6 +120,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         // as they will trigger an assertion in com.intellij.testFramework.common.ThreadLeakTracker.
         try {
             listOf(
+                { myFixture.cleanJupyterUserData() },
                 { resetAndValidateLoggedErrors() },
                 { notebookRunner?.tearDown() },
             ).forEachGuaranteed { it() }
@@ -163,36 +172,47 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
             .replace(PROJECT_ROOT_VARIABLE, PROJECT_ROOT)
     }
 
-    protected fun getTestFile(): Path {
+    /**
+     * Returns the path to the original file being used for this notebook test.
+     *
+     * In the case of ".ktnb" files, it is the template file that is returned and not the .ipynb file generated
+     * from it.
+     */
+    fun getTestFile(): Path {
         // we're using TestCase.getName() to get the function name, should be safe since the test name isn't customized anywhere
         val testMetadata = this::class.java.getMethod(name).getAnnotation(TestMetadata::class.java)
         return if (testMetadata != null) {
             Path(testDataPath, testMetadata.value)
         } else {
-            val completePath = computeCompletePathFromParentToFile(
-                "${getTestName(true)}.$TEMPLATE_DATA_EXTENSION"
-            )
+            val testFileName = "${getTestName(true)}.$TEMPLATE_DATA_EXTENSION"
+            val completePath = computeCompletePathFromParentToFile(testFileName)
             if (completePath == null) {
-                error("Can't find the requested file '${getTestName(true)}' with parent path: $testDataPath")
+                error("Can't find the requested file '$testFileName' with parent path: $testDataPath")
             }
             completePath.toAbsolutePath()
         }
     }
 
-    fun getDataFile(fileName: String): Path {
-        return computeCompletePathFromParentToFile(fileName) ?: error("File $fileName not found")
+    /**
+     * Returns the path to the expected outcome of the test. If the file doesn't exist, an error is thrown.
+     *
+     * The expected outcome file is required to be placed next to the test file (as returned by [getTestFile]).
+     */
+    fun getExpectedTestFile(fileExtension: String = "kt.expected"): Path {
+        val testFile = getTestFile()
+        val expectedFile = testFile.parent.resolve(testFile.name.replaceAfterLast(".", fileExtension))
+        if (!expectedFile.exists()) {
+            error("Expected outcome file doesn't exist: $expectedFile")
+        }
+        return expectedFile
     }
 
-    fun invokeIntentionsInInjectedFile(ktFile: KtFile) {
-        intentionInvocationHandler.invokeIntentionsInFile(ktFile)
-    }
-
-    fun invokeIntention(intention: IntentionAction) {
-        val injectedFile = runReadAction {
-            getKtFileUnderCaret()
-        } ?: error("No KtFile found at caret position ${editor.caretModel.offset}")
-
-        intentionInvocationHandler.invokeIntention(injectedFile, intention)
+    /**
+     * Returns the expected outcome of the test. If the file doesn't exist, an error is thrown.
+     * See [getExpectedTestFile] for more details.
+     */
+    fun getExpectedTestFileContent(): String {
+        return getExpectedTestFile().readText()
     }
 
     /**
@@ -239,7 +259,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
      * The filename is determined by either [TestMetadata] annotation on the test function,
      * or from the test name (discarding the "test" prefix if present and lowercasing the first letter).
      * The directory to search for this file is specified by the [TestDataPath] annotation on the test class.
-     * Once template file is found, [NotebookBuilder] is used to construct the real notebook.
+     * Once the template file is found, [NotebookBuilder] is used to construct the real notebook.
      *
      * @param setupScriptDependencies If `true` test will only continue once script dependencies are available on the classpath.
      * If `false` these are loaded asynchronously which can affect functionality like highlighting.
@@ -247,10 +267,17 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
      * @see [com.intellij.testFramework.fixtures.CodeInsightTestFixture.file].
      */
     fun runNotebookTest(setupScriptDependencies: Boolean = true, test: NotebookTestBuilder.() -> Unit) {
-        val testFile = buildKotlinNotebookFile(
-            name = getTestName(true),
-            build = { fromTemplateFile(getTestFile()) }
-        )
+        // Notebook tests support both Notebook templates (ktnb) and normal notebook files (ipynb)
+        // Normal notebook files are used directly, while templates are created as temporary files.
+        var testFile = getTestFile()
+        if (testFile.name.endsWith(TEMPLATE_DATA_EXTENSION)) {
+            testFile = buildKotlinNotebookFile(
+                name = getTestName(true),
+                build = {
+                    fromTemplateFile(testFile)
+                }
+            )
+        }
         runNotebookTestInternal(
             testFile = testFile,
             setupScriptDependencies = setupScriptDependencies,
@@ -343,7 +370,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
     }
 
     @RequiresReadLock
-    protected fun getKtFileUnderCaret(): KtFile? {
+    fun getKtFileUnderCaret(): KtFile? {
         val hostFile = backedNotebookFile.file.findPsiFile(project) ?: return null
         return InjectedLanguageManager.getInstance(project)
             .findInjectedElementAt(hostFile, myFixture.caretOffset)

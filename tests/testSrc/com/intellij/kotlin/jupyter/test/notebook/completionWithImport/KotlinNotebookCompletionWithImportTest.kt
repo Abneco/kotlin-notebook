@@ -1,37 +1,24 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.completionWithImport
 
-import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
-import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTester
+import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.runners.K1Only
 import com.intellij.testFramework.TestDataPath
-import org.junit.Ignore
+import io.kotest.matchers.shouldBe
 import org.junit.Test
 
 @K1Only("Investigate failures for K2")
 @TestDataPath("\$CONTENT_ROOT/testData/notebooks/completionWithImport")
-class KotlinNotebookCompletionWithImportTest : AbstractKotlinNotebookCompletionWithImportTest() {
+class KotlinNotebookCompletionWithImportTest : KotlinNotebookTestCase() { // AbstractKotlinNotebookCompletionWithImportTest() {
+
     @Test(timeout = 300_000)
     @K1Only("KTNB-829: Completion of named arguments does not work in K2")
-    fun testCompletionWithImport() = doTest(
-        object : ReceivedMessagesTester {
-            override val expectedCellsCount: Int
-                get() = 3
-
-            override val cellsToExecute: List<Int>
-                get() = listOf(0)
-
-            override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) {
-                println("#$cellNum: $messages")
-            }
-        }
-    ) { tester ->
-        tester.typeAndFinishLookup("DASH") {
+    fun completionWithImport() = runNotebookTest {
+        executeCell(0, waitForDependencies = true)
+        typeAndFinishLookup("DASH") {
             it.lookupString.contains("DASHED")
         }
-
-        assertActualText(
-            """
+        currentCellContent shouldBe """
             plot {
                 line {
                     type(LineType.DASHED)
@@ -39,102 +26,72 @@ class KotlinNotebookCompletionWithImportTest : AbstractKotlinNotebookCompletionW
             }
             
         """.trimIndent()
-        )
     }
 
-    @Ignore("KTNB-1074")
     @Test(timeout = 300_000)
-    fun completionInsertionCorrectWithExternalImport() = doTest(
-        object : ReceivedMessagesTester {
-            override val expectedCellsCount: Int = 2
-
-            override val cellsToExecute: List<Int> = listOf(0)
-
-            override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) {
-                println("#$cellNum: $messages")
-            }
-        }
-    ) { tester ->
-        tester.typeAndFinishLookup("fail") {
+    fun completionInsertionCorrectWithExternalImport() = runNotebookTest {
+        executeCell(0, waitForDependencies = true)
+        typeAndFinishLookup("fail") {
             it.lookupString == "fail" &&
                     "fail  {...}" in it.userDataString &&
                     "Assertions" !in it.userDataString
         }
-        assertActualText(
-            """
+        currentCellContent shouldBe """
             import org.junit.jupiter.api.fail
 
             val someVar = 123 + x
             fail {  }id(x)
         """.trimIndent()
-        )
     }
 
+
     @Test(timeout = 300_000)
-    fun completionInsertionWithExternalImportInSecondLine() = doTest(
-        object : ReceivedMessagesTester {
-            override val expectedCellsCount: Int = 2
-
-            override val cellsToExecute: List<Int> = listOf(0)
-
-            override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) = Unit
+    fun completionInsertionWithExternalImportInSecondLine() = runNotebookTest {
+        executeCell(0, waitForDependencies = true)
+        executeCell(1)
+        typeAndFinishLookup("ai") {
+            it.lookupString == "fail" && it.userDataString.contains("fail  {...}")
         }
-    ) { tester ->
-        tester.typeAndFinishLookup("ai") { it.lookupString == "fail" && it.userDataString.contains("fail  {...}") }
-        assertActualText(
-            """
+        currentCellContent shouldBe """
             import org.junit.jupiter.api.fail
 
             fail {  }
             123
         """.trimIndent()
-        )
     }
 
     @Test(timeout = 300_000)
-    fun completionOfRunBlocking() = doTest(
-        object : ReceivedMessagesTester {
-            override val expectedCellsCount: Int = 2
-            override val cellsToExecute: List<Int> = listOf(0)
-            override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) = Unit
+    fun completionOfRunBlocking() = runNotebookTest {
+        executeCell(0, waitForDependencies = true)
+        typeAndFinishLookup("n") {
+            it.lookupString == "runBlocking" && it.userDataString.contains("runBlocking  {...}")
         }
-    ) { tester ->
-        tester.typeAndFinishLookup("n") { it.lookupString == "runBlocking" && it.userDataString.contains("runBlocking  {...}") }
-        assertActualText(
-            """
+        currentCellContent shouldBe """
             runBlocking {  }
         """.trimIndent()
-        )
     }
 
     @Test(timeout = 300_000)
-    fun completionOfRunBlockingWithImport() = doTest(
-        object : ReceivedMessagesTester {
-            override val expectedCellsCount: Int = 2
-            override val cellsToExecute: List<Int> = listOf(0)
-            override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) = Unit
+    fun completionOfRunBlockingWithImport() = runNotebookTest {
+        executeCell(0, waitForDependencies = true)
+        typeAndFinishLookup("n") {
+            it.lookupString == "runBlocking" && it.userDataString.contains("runBlocking  {...}")
         }
-    ) { tester ->
-        tester.typeAndFinishLookup("n") { it.lookupString == "runBlocking" && it.userDataString.contains("runBlocking  {...}") }
-        assertActualText("""
+        currentCellContent shouldBe """
             import kotlinx.coroutines.runBlocking
-            
+
             runBlocking {  }
         """.trimIndent()
-        )
     }
 
     @Test(timeout = 300_000)
-    fun completionInsideLambda() = doTest(
-        object : ReceivedMessagesTester {
-            override val expectedCellsCount: Int = 1
-            override val cellsToExecute: List<Int> = emptyList()
-            override fun assertCellMessages(cellNum: Int, messages: ReceivedMessages) = Unit
+    fun completionInsideLambda() = runNotebookTest {
+        executeCell(0, waitForDependencies = true)
+        typeAndFinishLookup("printl") {
+            it.lookupString == "println"
         }
-    ) { tester ->
-        tester.typeAndFinishLookup("printl") { it.lookupString == "println" }
-        assertActualText("""
+        currentCellContent shouldBe """
             listOf(1, 2, 42).filter { it % 2 == 0 }.map { println() it.plus() }
-        """.trimIndent())
+        """.trimIndent()
     }
 }

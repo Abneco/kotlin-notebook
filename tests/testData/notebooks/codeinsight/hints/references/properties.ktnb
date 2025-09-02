@@ -1,0 +1,9 @@
+#%%
+fun foo() = Any()
+fun bar() = 12
+val a = 100 + "123".length()
+val f = foo()
+val sum = bar()
+
+#%%
+x * 42

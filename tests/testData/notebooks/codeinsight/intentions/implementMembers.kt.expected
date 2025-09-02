@@ -1,4 +1,4 @@
-// org.jetbrains.kotlin.idea.core.overrideImplement.KtImplementMembersQuickfix
+// QUICK_FIX: org.jetbrains.kotlin.idea.core.overrideImplement.KtImplementMembersQuickfix
 
 interface T {
     fun <T> id(x: T) = x

@@ -1,8 +1,9 @@
-// "Create extension function" "true"
+// QUICK_FIX_DESCRIPTION: "Create extension function"
 class Hohoh<T>(elems: Collection<T>) { private val data = mutableListOf<T>()
  init { data.addAll(elems) } }
 val h = Hohoh(listOf(1, 2, 42))
-
-fun <E> Hohoh<E>.foo() {
+fun <T> Hohoh<T>.foo() {
     TODO("Not yet implemented")
 }
+
+h.foo()

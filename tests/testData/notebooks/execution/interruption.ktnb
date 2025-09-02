@@ -1,6 +1,7 @@
 #%%
+// Check required for test to work on JDK 21+
 while(!Thread.interrupted()) {
-
+    
 }
 throw RuntimeException("The execution was interrupted")
 #%%

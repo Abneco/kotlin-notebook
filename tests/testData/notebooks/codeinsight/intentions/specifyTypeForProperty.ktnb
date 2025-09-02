@@ -2,6 +2,6 @@
 42
 
 #%%
-// org.jetbrains.kotlin.idea.k2.codeinsight.intentions.SpecifyTypeExplicitlyIntention
+// QUICK_FIX: org.jetbrains.kotlin.idea.k2.codeinsight.intentions.SpecifyTypeExplicitlyIntention
 
 val xy<caret>z = 88

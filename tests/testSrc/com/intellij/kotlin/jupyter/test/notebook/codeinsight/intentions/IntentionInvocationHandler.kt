@@ -12,9 +12,9 @@ import com.intellij.openapi.application.impl.NonBlockingReadActionImpl
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.UIUtil
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import junit.framework.TestCase
 import org.jetbrains.kotlin.formatter.FormatSettingsUtil
@@ -33,13 +33,31 @@ class IntentionInvocationHandler(
 ) {
     companion object {
         private val LOG = thisLogger()
-
         const val INTENTIONS_DIRECTIVE_NAME: String = "INTENTION_TEXT"
+        // Match intent using its FQN
+        const val INTENTIONS_DIRECTIVE_PREFIX = "// QUICK_FIX: "
+        // Fuzzy match intent by searching the prefix of the user description
+        const val INTENTIONS_DIRECTIVE_DESCRIPTION_PREFIX = "// QUICK_FIX_DESCRIPTION: "
     }
 
     /**
-     * Invokes all the intentions which are specified
-     * in the comments section of this [KtFile] in the beginning.
+     * Invoke the intention specified by the special directive syntax at the top of the file.
+     * If no directive is found, an error is thrown.
+     *
+     * Each file only supports one directive, which has be in one of the below formats:
+     *
+     * ```
+     * // QUICK_FIX: <fullyQualifiedNameOfIntention>
+     * // QUICK_FIX_DESCRIPTION: "<prefixOfIntentDescription>"
+     * ```
+     * - `<fullyQualifiedNameOfIntention>` is the FQN of the Intent class to trigger.
+     * - `<prefixOfIntentDescription>` is the first part of the user visible description for the Intent.
+     *
+     * Example:
+     * ```
+     * // QUICK_FIX: org.jetbrains.kotlin.idea.core.overrideImplement.KtImplementMembersQuickfix
+     * // QUICK_FIX_DESCRIPTION: "Create extension function"
+     * ```
      */
     fun invokeIntentionsInFile(ktFile: KtFile) {
         val injectionTest = runReadAction { ktFile.text }
@@ -47,37 +65,40 @@ class IntentionInvocationHandler(
         val project = testFixture.project
         val editor = testFixture.editor
 
-        runInEdtAndWait {
-            configureCodeStyleAndRun(project, { FormatSettingsUtil.createConfigurator(injectionTest, it).configureSettings() }) {
-                val availableIntentions = getAvailableIntentions()
-                val intentions = injectionTest.parseIntentionsFromText(availableIntentions)
-                if (intentions.isEmpty()) {
-                    error("No intentions found")
-                }
+        configureCodeStyleAndRun(project, { FormatSettingsUtil.createConfigurator(injectionTest, it).configureSettings() }) {
+            val availableIntentions = getAvailableIntentions()
 
-                val applicableActions = runReadAction {
-                    intentions.filter { it.isAvailable(project, editor, testFixture.file) }
-                }
-                applicableActions.size shouldNotBe 0
+            val fqnIntentions = injectionTest.parseFQNIntentionsFromText(availableIntentions)
+            val describedIntentions = injectionTest.parseDescribedIntentionsFromText(availableIntentions)
+            val allIntentions = fqnIntentions + describedIntentions
 
-                try {
-                    for (action in applicableActions) {
-                        action.doInvokeFor(injectionTest, ktFile)
-                    }
-                } catch (e: Exception) {
-                    // ignore until KT-79048 is fixed
-                    if (e !is java.util.NoSuchElementException) {
-                        LOG.error(e)
-                    }
+            if (allIntentions.isEmpty()) {
+                error("No intention directives found")
+            }
+
+            val applicableActions = runReadAction {
+                allIntentions.filter { it.isAvailable(project, editor, testFixture.file) }
+            }
+            applicableActions.size shouldNotBe 0
+
+            try {
+                for (action in applicableActions) {
+                    action.doInvokeFor(injectionTest, ktFile)
+                }
+            } catch (e: Exception) {
+                // ignore until KT-79048 is fixed
+                if (e !is java.util.NoSuchElementException) {
+                    LOG.error(e)
                 }
             }
         }
     }
 
     /**
-     * Invokes specified intention inside a particular file.
+     * Invokes a specified intention inside a particular file at the current caret position.
      * Note, it's important that caret inside [testFixture]'s editor is placed correctly.
      */
+    @RequiresEdt
     fun invokeIntention(ktFile: KtFile, intention: IntentionAction) {
         val isAvailable = runReadAction {
             intention.isAvailable(testFixture.project, testFixture.editor, ktFile)
@@ -87,27 +108,56 @@ class IntentionInvocationHandler(
             return
         }
 
-        runInEdtAndWait {
-            val injectionTest = ktFile.text
+        val injectionTest = ktFile.text
 
-            configureCodeStyleAndRun(testFixture.project, { FormatSettingsUtil.createConfigurator(injectionTest, it).configureSettings() }) {
-                intention.doInvokeFor(injectionTest, ktFile)
-            }
+        configureCodeStyleAndRun(testFixture.project, { FormatSettingsUtil.createConfigurator(injectionTest, it).configureSettings() }) {
+            intention.doInvokeFor(injectionTest, ktFile)
         }
     }
 
-    private fun String.parseIntentionsFromText(availableFromQuickFixes: Collection<IntentionAction>): Collection<IntentionAction> {
+    /**
+     * Similar to [invokeIntention] and [invokeIntentionsInFile], but this method will only check if the quickfix
+     * is available at the current caret position.
+     *
+     * @param intentFqn The fully qualified name of the intention to check for.
+     * @param available Whether the intention is expected to be available.
+     */
+    @RequiresEdt
+    fun checkIntention(intentFqn: String?, available: Boolean) {
+        val hasIntent = getAvailableIntentions().any { it.actionFqn() == intentFqn }
+        hasIntent shouldBe available
+     }
+
+    private fun String.parseFQNIntentionsFromText(availableFromQuickFixes: Collection<IntentionAction>): Collection<IntentionAction> {
+        if (!startsWith(INTENTIONS_DIRECTIVE_PREFIX)) return emptyList()
         val text = this
-        val startingComments = text.split("\n").takeWhile { it.startsWith("//") }
+        val startingComments = text.split("\n").takeWhile { it.startsWith(INTENTIONS_DIRECTIVE_PREFIX) }
             // take only with fqns specified
             .filter { it.contains(".") }
 
         return startingComments.mapNotNull {
-            val fqn = it.removePrefix("// ")
+            val fqn = it.removePrefix(INTENTIONS_DIRECTIVE_PREFIX)
             // try to create an intention from fqn or fallback to quickFix registrar
             createIntention(fqn) ?: availableFromQuickFixes.firstOrNull { intentionAction ->
                 intentionAction.actionFqn() == fqn
             }
+        }
+    }
+
+    private fun String.parseDescribedIntentionsFromText(availableIntentions: Collection<IntentionAction>): Collection<IntentionAction> {
+        if (!startsWith(INTENTIONS_DIRECTIVE_DESCRIPTION_PREFIX)) return emptyList()
+        val text = this
+        val startingComments = text.split("\n").takeWhile { it.startsWith(INTENTIONS_DIRECTIVE_DESCRIPTION_PREFIX) }
+
+        return startingComments.map {
+            val intentDescription = it
+                .removePrefix(INTENTIONS_DIRECTIVE_DESCRIPTION_PREFIX)
+                .removePrefix("\"")
+                .removeSuffix("\"")
+
+            availableIntentions.firstOrNull() { action ->
+                action.text.startsWith(intentDescription)
+            } ?: error("Intention from description was not found: $intentDescription")
         }
     }
 
@@ -126,7 +176,7 @@ class IntentionInvocationHandler(
 
     @RequiresEdt
     private fun IntentionAction.doInvokeFor(fileText: String, file: KtFile) {
-        val intentionTextString = InTextDirectivesUtils.findStringWithPrefixes(fileText, "// $INTENTIONS_DIRECTIVE_NAME: ")
+        val intentionTextString = InTextDirectivesUtils.findStringWithPrefixes(fileText, INTENTIONS_DIRECTIVE_NAME)
         if (intentionTextString != null) {
             TestCase.assertEquals("Intention text mismatch.", intentionTextString, text)
         }
@@ -168,4 +218,5 @@ class IntentionInvocationHandler(
             }
         }
     }
+
 }

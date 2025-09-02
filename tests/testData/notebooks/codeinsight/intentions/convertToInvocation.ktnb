@@ -1,5 +1,5 @@
 #%%
-// org.jetbrains.kotlin.idea.quickfix.ChangeToFunctionInvocationFix
+// QUICK_FIX: org.jetbrains.kotlin.idea.quickfix.ChangeToFunctionInvocationFix
 
 fun foo(i: Int) = 42
 

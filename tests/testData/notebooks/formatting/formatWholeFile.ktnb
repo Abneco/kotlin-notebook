@@ -1,0 +1,5 @@
+#%%
+fun f(i: Int): Int {     return i *i}
+#%%
+%use dataframe
+fun f2(i: Int): Int {     <caret>return i *i}

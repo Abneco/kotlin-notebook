@@ -3,25 +3,21 @@ package com.intellij.kotlin.jupyter.test.notebook.github
 
 import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.jupyter.core.jackson
-import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
+import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.testFramework.TestDataPath
-import io.kotest.matchers.collections.shouldBeSingleton
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeTypeOf
 import org.jetbrains.kotlin.test.TestMetadata
-import org.jetbrains.plugins.github.GithubGistContentsCollector
 import org.junit.Test
 
 
 @TestDataPath("\$CONTENT_ROOT/testData/notebooks")
-class KotlinNotebookCreateGistContentTest : KotlinNotebookBaseTestCase() {
+class KotlinNotebookCreateGistContentTest : KotlinNotebookTestCase() {
     @Test
     @TestMetadata("simple/singleEmptyCellNoCaret.ipynb")
-    fun `gist contents of Jupyter notebook should be JSON, not raw text`() {
-        configureByJupyterFile()
-        val contents = GithubGistContentsCollector.collectContents(project, myFixture.editor, myFixture.file.virtualFile, null)
-        contents.shouldBeSingleton {
-            val notebookJson = jackson.readTree(it.content)
+    fun `gist contents of Jupyter notebook should be JSON, not raw text`() = runNotebookTest {
+        exportAsGist().let { gist ->
+            val notebookJson = jackson.readTree(gist.content)
             val mimetypeNode = notebookJson["metadata"]["language_info"]["mimetype"]
             mimetypeNode.shouldBeTypeOf<TextNode>()
             mimetypeNode.asText() shouldBe "text/x-kotlin"

@@ -1,4 +1,3 @@
-#%%
 open class TestBase {
     @Throws(Exception::class)
     protected open fun tearDown()

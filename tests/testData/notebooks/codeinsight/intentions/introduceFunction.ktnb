@@ -1,5 +1,5 @@
 #%%
-// org.jetbrains.kotlin.idea.k2.codeinsight.quickFixes.createFromUsage.CreateKotlinCallableAction
+// QUICK_FIX: org.jetbrains.kotlin.idea.k2.codeinsight.quickFixes.createFromUsage.CreateKotlinCallableAction
 
 <caret>id(
   x = 1,

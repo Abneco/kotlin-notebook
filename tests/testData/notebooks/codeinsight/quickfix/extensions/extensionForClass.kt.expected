@@ -1,7 +1,8 @@
-// "Create extension function" "true"
+// QUICK_FIX_DESCRIPTION: "Create extension function"
 class Hohoh {}
-Hohoh().foo()
 
 fun Hohoh.foo() {
     TODO("Not yet implemented")
 }
+
+Hohoh().foo()

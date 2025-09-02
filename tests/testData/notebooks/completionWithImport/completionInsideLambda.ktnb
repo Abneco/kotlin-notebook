@@ -1,0 +1,2 @@
+#%%
+listOf(1, 2, 42).filter { it % 2 == 0 }.map { <caret>it.plus() }

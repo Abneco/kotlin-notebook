@@ -1,0 +1,9 @@
+#%%
+x * 42
+
+#%%
+// QUICK_FIX_DESCRIPTION: "Create extension function"
+class Hohoh() { }
+val l = listOf(1, 2, 3)
+val h = Hohoh()
+h.foo<caret>(l, listOf("a, b, c"))

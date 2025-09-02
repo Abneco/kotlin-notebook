@@ -1,30 +1,30 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.codeinsight.hints
 
-
 import com.intellij.kotlin.jupyter.k1.codeinsight.hints.NotebookValuesHintProvider
+import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.runners.K1Only
 import com.intellij.testFramework.TestDataPath
 import org.junit.Test
 
 @K1Only("Not yet supported in K2")
 @TestDataPath("\$CONTENT_ROOT/testData/notebooks/codeinsight/hints/ranges")
-class NotebookRangeHintsTest : AbstractNotebookTypeHintsBaseTest() {
-    override val provider = NotebookValuesHintProvider()
+class NotebookRangeHintsTest : KotlinNotebookTestCase() {
+
+    val provider = NotebookValuesHintProvider()
 
     @Test
-    fun testSimpleRanges() {
-        doTest(provider, 0)
+    fun testSimpleRanges() = runNotebookTest {
+        runInlayProvider(provider, 0).shouldBeEqualToExpectedFile()
     }
 
     @Test
-    fun testLimitedRanges() {
-        doTest(provider, 1, 1)
+    fun testLimitedRanges() = runNotebookTest {
+        runInlayProvider(provider, 1).shouldBeEqualToExpectedFile()
     }
 
     @Test
-    fun testLimitedRangesCombinedWithMagics() {
-        doTest(provider, 1, 1)
+    fun testLimitedRangesCombinedWithMagics() = runNotebookTest {
+        runInlayProvider(provider, 1).shouldBeEqualToExpectedFile()
     }
-
 }

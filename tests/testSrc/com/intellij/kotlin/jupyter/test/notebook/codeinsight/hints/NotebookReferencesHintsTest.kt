@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.test.notebook.codeinsight.hints
 
 import com.intellij.kotlin.jupyter.k1.codeinsight.hints.KotlinNotebookReferencesTypeHintsProvider
+import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.runners.K1Only
 import com.intellij.testFramework.TestDataPath
 import org.junit.Ignore
@@ -9,14 +10,15 @@ import org.junit.Test
 
 @K1Only("Not yet supported in K2")
 @TestDataPath("\$CONTENT_ROOT/testData/notebooks/codeinsight/hints/references")
-class NotebookReferencesHintsTest : AbstractNotebookTypeHintsBaseTest() {
-    override val provider = KotlinNotebookReferencesTypeHintsProvider()
+class NotebookReferencesHintsTest : KotlinNotebookTestCase() {
+
+    val provider = KotlinNotebookReferencesTypeHintsProvider()
 
     @Test
     @Ignore("Correct path to type definition differs on TC")
-    fun testProperties() {
-        doTest(provider, 0) {
-            it.propertyType = true
-        }
+    fun testProperties() = runNotebookTest {
+        runInlayProvider(provider, 0) {
+           it.propertyType = true
+        }.shouldBeEqualToExpectedFile()
     }
 }

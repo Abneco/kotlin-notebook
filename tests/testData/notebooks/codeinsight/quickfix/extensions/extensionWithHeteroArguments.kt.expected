@@ -1,9 +1,9 @@
-// "Create extension function" "true"
+// QUICK_FIX_DESCRIPTION: "Create extension function"
 class Hohoh() { }
 val l = listOf(1, 2, 3)
 val h = Hohoh()
-h.foo(l, listOf("a, b, c"))
-
 fun Hohoh.foo(l: List<Int>, listOf: List<String>) {
     TODO("Not yet implemented")
 }
+
+h.foo(l, listOf("a, b, c"))

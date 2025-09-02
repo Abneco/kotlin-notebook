@@ -4,8 +4,6 @@ package com.intellij.kotlin.jupyter.test.notebook.codeinsight.intentions
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.kotlin.jupyter.test.runners.RunModeAwareTest
-import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.testFramework.TestDataPath
 import io.kotest.matchers.string.shouldContain
 import org.junit.Ignore
@@ -51,18 +49,9 @@ class NotebookIntentionsTest : KotlinNotebookTestCase() {
 
     private fun runFileIntentionsTest() = runNotebookTest {
         assertTestFileHasCaret()
-
-        val ktFile = runReadAction {
-            getKtFileUnderCaret() ?: error("No caret specified in the host file")
-        }
-        invokeIntentionsInInjectedFile(ktFile)
-
-        val dataName = getTestName(true) + ".kt.expected"
-        val expectedResult = FileUtilRt.loadFile(getDataFile(dataName).toFile(), true)
-
-        val textAfter = runReadAction {
-            ktFile.text
-        }
+        runIntentionInActiveCell()
+        val expectedResult = getExpectedTestFileContent()
+        val textAfter = currentCellContent
         textAfter shouldContain expectedResult
     }
 }
