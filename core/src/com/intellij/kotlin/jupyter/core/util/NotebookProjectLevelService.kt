@@ -68,6 +68,11 @@ abstract class NotebookProjectLevelService<Child : NotebookPerFileChildService>(
         }
     }
 
+    fun recreateService(backedFile: BackedNotebookVirtualFile) {
+        remove(backedFile)
+        getOrCreate(backedFile)
+    }
+
     override fun dispose() {
         coroutineScope.cancel()
         mapping.clear()
@@ -75,7 +80,8 @@ abstract class NotebookProjectLevelService<Child : NotebookPerFileChildService>(
 }
 
 /**
- * docs
+ * Helper function to create a nested [Disposable] child of 'this' with a [factory].
+ * Upon disposal, the child is also disposed of.
  */
 internal inline fun <T : Disposable> Disposable.createDisposableChild(crossinline factory: () -> T): T {
     return addDisposableChild(factory())

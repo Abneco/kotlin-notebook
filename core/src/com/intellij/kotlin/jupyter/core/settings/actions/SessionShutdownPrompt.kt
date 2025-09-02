@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.settings.actions
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterFileExecutionQueue
 import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.appBasedApi.scriptLoader.utils.launchBackground
@@ -10,7 +11,6 @@ import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.editor.Editor
 import com.intellij.ui.components.dialog
 import com.intellij.ui.dsl.builder.panel
-import kotlin.reflect.KClass
 
 /**
  * If the session is running, the user will be prompted to shut it down.
@@ -21,11 +21,10 @@ import kotlin.reflect.KClass
  * It doesn't do anything for non-Kotlin notebooks.
  */
 inline fun promptSessionShutdownIfNeeded(
-    classForLogging: KClass<*>,
+    notebookFile: BackedNotebookVirtualFile,
     notebookEditor: Editor,
     crossinline action: () -> Unit
 ) {
-    val notebookFile = notebookEditor.notebookFileOrNull ?: return
     val project = notebookEditor.project
     if (!notebookFile.isKotlinNotebook || project == null) return
 

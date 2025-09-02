@@ -4,7 +4,9 @@ package com.intellij.kotlin.jupyter.core.settings.actions
 import com.intellij.icons.AllIcons
 import com.intellij.jupyter.core.jupyter.helper.editor
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
+import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
+import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
 import com.intellij.kotlin.jupyter.core.settings.findModule
 import com.intellij.kotlin.jupyter.core.settings.getSuitableModules
@@ -114,10 +116,16 @@ class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomCompon
             if (e.getCurrentDependencies() == dependencies) {
                 return
             }
+            val notebookFile = editor.notebookFileOrNull ?: return
 
-            promptSessionShutdownIfNeeded(KotlinNotebookDependenciesComboBoxAction::class, editor) {
-                val notebook = editor.notebookFile.notebookOrNull
+            promptSessionShutdownIfNeeded(notebookFile, editor) {
+                val notebook = notebookFile.notebookOrNull
                 notebook?.notebookDependencies = dependencies
+                val project = e.project
+                // If no cell was executed, we won't have a compiler service restart triggerred by JupyterSession
+                if (project != null) {
+                    JupyterCompilerService.getInstance(project).recreateService(notebookFile)
+                }
             }
         }
 

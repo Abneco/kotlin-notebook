@@ -38,7 +38,7 @@ sealed class KotlinNotebookChangeSessionModeAction(
     override fun actionPerformed(event: AnActionEvent) {
         val notebook = event.dataContext.notebook ?: return
         if (notebook.sessionRunMode == mode) return
-        promptSessionShutdownIfNeeded(KotlinNotebookChangeSessionModeAction::class, event.editor ?: return) {
+        promptSessionShutdownIfNeeded(event.notebookFile ?: return, event.editor ?: return) {
             if (notebook.sessionRunMode != mode) {
                 WriteAction.run<RuntimeException> {
                     notebook.sessionRunMode = mode

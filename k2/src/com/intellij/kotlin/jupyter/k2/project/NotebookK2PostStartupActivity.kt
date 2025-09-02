@@ -1,6 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.k2.project
 
+import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.kotlin.jupyter.core.settings.actions.promptSessionShutdownIfNeeded
 import com.intellij.kotlin.jupyter.core.util.getCurrentEditorOrNull
 import com.intellij.kotlin.jupyter.k2.settings.KotlinNotebookK2ProjectOptionsProvider
@@ -18,7 +19,8 @@ class NotebookK2PostStartupActivity : ProjectActivity {
             addListener(object : KotlinNotebookK2ProjectOptionsProvider.Listener {
                 override fun onCompilerPluginsChanged() {
                     val editor = project.getCurrentEditorOrNull() ?: return
-                    promptSessionShutdownIfNeeded(NotebookK2PostStartupActivity::class, editor) {
+                    val notebookFile = editor.notebookFileOrNull ?: return
+                    promptSessionShutdownIfNeeded(notebookFile, editor) {
                         project.notifyCompilerPluginsSettingsChanged()
                     }
                 }
