@@ -198,7 +198,7 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         notebookModuleConfiguration: KotlinNotebookScriptsModuleConfigurationInfo
     ) {
         fun buildLibraryDependencies(): Collection<KotlinScriptLibraryEntityId> {
-            val dependencyViews = notebookModuleConfiguration.createConfigurationDependencyViews()
+            val dependencyViews = notebookModuleConfiguration.createConfigurationDependencyViews(project)
             return dependencyViews.flatMapTo(mutableSetOf()) {
                 it.getOrUpdateLibraryDependencies(project, mutableEntityStorage)
             }

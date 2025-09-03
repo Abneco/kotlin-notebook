@@ -7,8 +7,8 @@ import com.intellij.platform.backend.workspace.WorkspaceModel
 import com.intellij.platform.workspace.jps.entities.LibraryRoot
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
-import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.toVirtualFileUrl
+import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
 import java.nio.file.Path
 import kotlin.io.path.pathString
 
@@ -31,7 +31,7 @@ sealed interface NotebookConfigurationRootsView {
     val dependenciesRoots: List<Path>
 
     /**
-     * Provides a view on [OrderRootType.CLASSES] dependencies roots
+     * Provides a view on [OrderRootType.SOURCES] dependencies roots
      */
     val dependenciesSources: List<Path>
 
@@ -54,10 +54,10 @@ sealed interface NotebookConfigurationRootsView {
 }
 
 
-internal fun KotlinNotebookScriptsModuleConfigurationInfo.createConfigurationDependencyViews(): List<NotebookConfigurationRootsView> {
+internal fun KotlinNotebookScriptsModuleConfigurationInfo.createConfigurationDependencyViews(project: Project): List<NotebookConfigurationRootsView> {
     val info = this
     return buildList {
-        add(CompiledSnippets(info))
-        add(Jars(info))
+        add(CompiledSnippets(project, info))
+        add(Jars(project, info))
     }
 }

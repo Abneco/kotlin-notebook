@@ -14,6 +14,7 @@
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <k2KaModuleFactory implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.fir.FirKaNotebookModuleFactory"/>
         <scriptDefinitionsSource implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptDefinitionsSource"/>
+        <kotlinContentScopeRefiner implementation="com.intellij.kotlin.jupyter.k2.codeInsight.NotebookKaModuleScopeRefiner"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -30,6 +31,7 @@
                         serviceImplementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.updater.ScriptingForceUpdaterK2Factory"/>
 
         <trafficLightRendererContributor implementation="com.intellij.kotlin.jupyter.k2.codeInsight.NotebookTrafficLightContributor"/>
+        <!--<resolveScopeEnlarger implementation="com.intellij.kotlin.jupyter.k2.codeInsight.NotebookProjectScopeEnlarger"/>-->
 
         <postStartupActivity implementation="com.intellij.kotlin.jupyter.k2.project.NotebookK2PostStartupActivity"/>
     </extensions>

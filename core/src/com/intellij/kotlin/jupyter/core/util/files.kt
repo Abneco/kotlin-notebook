@@ -24,22 +24,33 @@ val Path.isNotEmptyDirectory: Boolean
             Files.exists(this) &&
             Files.newDirectoryStream(this).use { it.iterator().hasNext() }
 
-fun Project.sourceRootsForDependencies(notebookFile: BackedNotebookVirtualFile): List<Path> {
+fun Project.sourceRootsForDependencies(notebookFile: BackedNotebookVirtualFile): Collection<Path> {
     val optionsProvider = KotlinNotebookPerFileSettingsCache.getInstance(this).getSettings(notebookFile)
     val dependencies = optionsProvider.notebookDependencies
 
-    return when (dependencies) {
+    return dependencies.getSourceRoots(this)
+}
+
+fun Project.sourceRootsForProjectModuleDependencies(notebookFile: BackedNotebookVirtualFile): Collection<Path> {
+    val optionsProvider = KotlinNotebookPerFileSettingsCache.getInstance(this).getSettings(notebookFile)
+    val dependencies = optionsProvider.notebookDependencies
+    if (dependencies !is KotlinNotebookDependencies.SingleModule) return emptyList()
+
+    return dependencies.getSourceRoots(this)
+}
+
+fun KotlinNotebookDependencies.getSourceRoots(project: Project): Collection<Path> {
+    return when (this) {
         is KotlinNotebookDependencies.None -> emptyList()
         is KotlinNotebookDependencies.AllLibraries -> {
-            val libraries = getSuitableLibraries(this)
+            val libraries = getSuitableLibraries(project)
             libraries.flatMap { library ->
                 library.rootProvider.getFiles(OrderRootType.SOURCES).map { Path.of(it.path) }
             }
         }
         is KotlinNotebookDependencies.SingleModule -> {
-            val tagetModule = optionsProvider.notebookDependencies.findModule(this)
+            val tagetModule = findModule(project)
             if (tagetModule == null) return emptyList()
-
             tagetModule.sourceRoots.map { Path.of(it.path) }
         }
     }

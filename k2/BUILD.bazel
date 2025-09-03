@@ -52,6 +52,7 @@ jvm_library(
     "@community//plugins/kotlin/bundled-compiler-plugins-support",
     "//plugins/jupyter/psi",
     "@community//plugins/kotlin/base/indices",
+    "@community//java/java-frontback-psi-impl:frontback-psi-impl",
     ":community_plugins_kotlin_scripting_provided",
   ],
   runtime_deps = [":k2_resources"]

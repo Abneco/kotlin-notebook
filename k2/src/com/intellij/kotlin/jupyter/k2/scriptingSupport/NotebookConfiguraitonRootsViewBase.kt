@@ -1,6 +1,8 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
+import com.intellij.kotlin.jupyter.core.util.sourceRootsForProjectModuleDependencies
+import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
 import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.workspace.virtualFile
 import com.intellij.platform.workspace.storage.MutableEntityStorage
@@ -15,24 +17,33 @@ import kotlin.io.path.isRegularFile
  * Base class for manipulating with [NotebookConfigurationRootsView]
  */
 abstract class NotebookConfigurationRootsViewBase(
+    protected val project: Project,
     protected val configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo
 ) : NotebookConfigurationRootsView {
     override val dependenciesRoots: List<Path> get() =
-        filterTargetDependencies(configurationInfo.configuration.dependenciesClassPath.map { it.toPath() })
+        filterTargetDependencies(project, configurationInfo.configuration.dependenciesClassPath.map { it.toPath() })
     override val dependenciesSources: List<Path> get() =
-        filterTargetDependencies(configurationInfo.configuration.dependenciesSources.map { it.toPath() })
+        filterTargetDependencies(project, configurationInfo.configuration.dependenciesSources.map { it.toPath() })
 
-    protected abstract fun filterTargetDependencies(candidates: List<Path>): List<Path>
+    protected abstract fun filterTargetDependencies(project: Project, candidates: List<Path>): List<Path>
 }
 
 /**
  * This group encapsulates only kernel-produced compilation artifacts, like snippets.
+ * Project roots are not included here to prevent accidental conflicts with project sources.
  */
-class CompiledSnippets(configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo) : NotebookConfigurationRootsViewBase(configurationInfo) {
+class CompiledSnippets(
+    project: Project,
+    configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo
+) : NotebookConfigurationRootsViewBase(project, configurationInfo) {
     override val typeName: String = "Compiled"
 
-    override fun filterTargetDependencies(candidates: List<Path>): List<Path> {
-        return candidates.filter { it.isDirectory() }
+    override fun filterTargetDependencies(project: Project, candidates: List<Path>): List<Path> {
+        val backedNotebookFile = configurationInfo.notebookFile.toBackedNotebookFile()
+        val projectModuleDependencies = project
+            .sourceRootsForProjectModuleDependencies(backedNotebookFile)
+            .toSet()
+        return candidates.filter { it.isDirectory() && it !in projectModuleDependencies }
     }
 
     override fun getOrUpdateLibraryDependencies(
@@ -54,10 +65,13 @@ class CompiledSnippets(configurationInfo: KotlinNotebookScriptsModuleConfigurati
 /**
  * This group encapsulates all resolved jar dependencies.
  */
-class Jars(configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo) : NotebookConfigurationRootsViewBase(configurationInfo) {
+class Jars(
+    project: Project,
+    configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo
+) : NotebookConfigurationRootsViewBase(project, configurationInfo) {
     override val typeName: String = "Jars"
 
-    override fun filterTargetDependencies(candidates: List<Path>): List<Path> {
+    override fun filterTargetDependencies(project: Project, candidates: List<Path>): List<Path> {
         return candidates.filter { it.isRegularFile() && it.extension == "jar" }
     }
 
