@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.settings
 
+import com.intellij.kotlin.jupyter.core.projectModel.getExternalBuildSystemModulesInfo
 import com.intellij.openapi.observable.util.whenDisposed
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.JavaSdk
@@ -87,7 +88,7 @@ object NotebookProjectJdkOption : AbstractKotlinNotebookJdkOption() {
 
     private class SdkToTry(
         val sdk: Sdk,
-        val shouldCache: Boolean,
+        val shouldCache: Boolean
     )
 
     private suspend fun SequenceScope<SdkToTry>.yieldSdk(sdk: Sdk?, shouldCache: Boolean) {
@@ -102,7 +103,17 @@ object NotebookProjectJdkOption : AbstractKotlinNotebookJdkOption() {
 
             val jdkType = JavaSdk.getInstance()
             val jdkTable = ProjectJdkTable.getInstance()
-            for (sdk in jdkTable.getSdksOfType(jdkType)) {
+
+            // First, suggest SDKs used by build settings
+            val externalBuildConfiguration = project.getExternalBuildSystemModulesInfo()
+            val resolvedSdk = mutableSetOf<Sdk>()
+            for (conf in externalBuildConfiguration) {
+                val sdk = conf.sdk ?: jdkTable.findJdk(conf.jdkName) ?: continue
+                resolvedSdk.add(sdk)
+                yieldSdk(sdk, shouldCache = false)
+            }
+
+            for (sdk in jdkTable.getSdksOfType(jdkType) - resolvedSdk) {
                 yieldSdk(sdk, shouldCache = false)
             }
             val sdkCache = getCache(project)

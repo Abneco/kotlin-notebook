@@ -2,8 +2,8 @@
 package com.intellij.kotlin.jupyter.k2.codeInsight
 
 import com.intellij.ide.highlighter.JavaFileType
+import com.intellij.kotlin.jupyter.core.util.rootBasePath
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptEntitySource
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.ProjectScope
 import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinContentScopeRefiner
@@ -46,7 +46,7 @@ class NotebookKaModuleScopeRefiner : KotlinContentScopeRefiner {
      * Determines whatever this particular library contains binary roots that correspond to the project files.
      */
     private fun KaEntityBasedLibraryModuleBase<KotlinScriptLibraryEntity, *>.isSearchScopePatchingRequired(): Boolean {
-        val projectPrefix = project.guessProjectDir()?.path ?: project.basePath ?: "/${project.name}/"
+        val projectPrefix = project.rootBasePath ?: "/${project.name}/"
         return binaryRoots.any { root ->
             root.isDirectory()
                     && root.invariantSeparatorsPathString.contains(projectPrefix)

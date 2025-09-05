@@ -5,6 +5,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.jupyter.core.jupyter.helper.editor
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
+import com.intellij.kotlin.jupyter.core.projectModel.showKernelAndModuleJdkAreMatchingWarningIfNeeded
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
@@ -126,6 +127,8 @@ class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomCompon
                 if (!hasActiveSession) {
                     JupyterCompilerService.getInstance(project).recreateService(notebookFile)
                 }
+
+                notebook?.showKernelAndModuleJdkAreMatchingWarningIfNeeded(project)
             }
         }
 

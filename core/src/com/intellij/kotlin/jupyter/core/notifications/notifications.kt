@@ -1,6 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.notifications
 
+import com.intellij.kotlin.jupyter.core.projectModel.KernelJdkAlignmentCheckResult
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersion
@@ -116,6 +117,43 @@ internal class KotlinNotebookNotifications(private val project: Project) {
         notify(
             KotlinNotebookNotificationType.REFACTORING_EXISTING_USAGES_MESSAGE,
             KotlinNotebookBundle.message("kotlin.jupyter.refactor.changed.definition", usagesCount)
+        )
+    }
+
+    fun showKernelAndProjectModuleJdkAreNotAlignedWarning(sdkCheckResult: KernelJdkAlignmentCheckResult.MisalignedWithModule) {
+        val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
+        val suggestedSdk = sdkCheckResult.suggestedSdk
+        val currentSdkName = options.jdk.getVersion(project) ?: options.jdkName ?: return
+
+        notify(
+            KotlinNotebookNotificationType.KERNEL_JDK_INCONSISTENT_ERROR,
+            KotlinNotebookBundle.message(
+                "kotlin.jupyter.session.jdk.inconsistent.error",
+                currentSdkName, sdkCheckResult.conflictingModule
+            ),
+            customizer = {
+                isSuggestionType = true
+
+                addAction(
+                    object : NotificationAction(
+                        KotlinNotebookBundle.message("kotlin.jupyter.session.jdk.inconsistent.fix.action")
+                    ) {
+                        override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+                            when {
+                                suggestedSdk?.name != null -> options.jdkName = suggestedSdk.name
+                                else -> {
+                                    ShowSettingsUtil.getInstance().showSettingsDialog(
+                                        project,
+                                        KotlinNotebookConfigurable::class.java) {
+                                        it.focusOn(KotlinNotebookBundle.message("kotlin.jupyter.settings.JDK.path"))
+                                    }
+                                }
+                            }
+                            notification.expire()
+                        }
+                    }
+                )
+            }
         )
     }
 

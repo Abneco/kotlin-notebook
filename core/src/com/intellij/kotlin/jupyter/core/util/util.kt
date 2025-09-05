@@ -27,6 +27,12 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
+/**
+ * Tries to compute the root path of the project.
+ * According to [Project.basePath] doc, most likely it would be null for the default project.
+ */
+val Project.rootBasePath: String?
+    get() = guessProjectDir()?.path ?: basePath
 
 fun PsiFile.getTopLevelFileOrSelf(): PsiFile {
     return InjectedLanguageManager.getInstance(project).getTopLevelFile(this) ?: this
