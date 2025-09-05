@@ -5,13 +5,11 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile.Companion.takeIfBacked
-import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.InvalidVirtualFileAccessException
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
@@ -100,28 +98,6 @@ fun VirtualFile.findPsiFile(project: Project): PsiFile? {
 internal fun PsiFile.toDocument(): Document? =
     PsiDocumentManager.getInstance(this.project).getDocument(this)
 
-internal fun PsiElement?.isInsideKotlinNotebookFile(): Boolean {
-    val virtualFile = when (val containingFile = this?.containingFile?.virtualFile) {
-        is VirtualFileWindow -> containingFile.delegate
-        is VirtualFile -> containingFile
-        else -> null
-    } ?: return false
-    return virtualFile.isKotlinNotebook
-}
-
-/**
- * Returns true only for [KtFile]s injected into Kotlin notebooks
- */
-val PsiElement.isKotlinNotebookCodeCell: Boolean get() {
-    if (this !is KtFile || !isScript()) return false
-
-    val myVirtualFile = virtualFile ?: originalFile.virtualFile
-    return (myVirtualFile == null || myVirtualFile is VirtualFileWindow || myVirtualFile is LightVirtualFile) &&
-            name.endsWith(JupyterCompilerService.getInstance(project).fileSuffix)
-}
-
-val PsiElement.isInsideKotlinNotebookCodeCell: Boolean get() = containingFile.isKotlinNotebookCodeCell
-
 internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
     val editor = scope.project.getCurrentEditorOrNull() ?: return null
     val caretOffSet = editor.caretModel.offset
@@ -132,14 +108,6 @@ internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
     return (injectInfo as? PsiFile)?.findElementAt(
         (caretOffSet - host.startOffsetInParent - 5).coerceAtLeast(0)
     )
-}
-
-internal inline fun <T> withReadAccess(crossinline block: () -> T): T {
-    return if (ApplicationManager.getApplication().isDispatchThread || ApplicationManager.getApplication().isReadAccessAllowed) {
-        block()
-    } else ReadAction.compute<T, Throwable> {
-        block()
-    }
 }
 
 internal fun PsiFile.restartAnalyzing() {
