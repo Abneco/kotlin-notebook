@@ -28,13 +28,18 @@ private class StatePropertyDelegateImpl<StateT, ListenerT: EventListener, Intern
         return getCurrentValue()
     }
 
+    /**
+     * This method gives no guarantees that [fireChangeEvent] would provide accurate 'old' value,
+     * if [ExternalT] is a sort of concurrent collection.
+     */
     override operator fun setValue(thisRef: Any?, property: KProperty<*>, value: ExternalT) {
         val oldValue = getCurrentValue()
-        //  fire event right away, 'oldValue' might be updated after setter execution
-        if (oldValue != value) {
+        //  NB: 'oldValue' might be updated after setter execution
+        val isChanged = oldValue != value
+        stateProperty.set(stateProvider(), externalToInternal(value))
+        if (isChanged) {
             fireChangeEvent(oldValue, value)
         }
-        stateProperty.set(stateProvider(), externalToInternal(value))
     }
 
     fun fireChangeEvent(oldValue: ExternalT, newValue: ExternalT) {

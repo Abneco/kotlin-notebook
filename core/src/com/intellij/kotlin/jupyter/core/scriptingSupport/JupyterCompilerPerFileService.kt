@@ -10,12 +10,15 @@ import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.projectModel.JupyterKotlinProjectArtifactsService
 import com.intellij.kotlin.jupyter.core.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
 import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
+import com.intellij.kotlin.jupyter.core.projectModel.showKernelAndModuleJdkAreMatchingWarningIfNeeded
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDownloader
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.UpdateState
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.ScriptingSupportUpdateEventsListener
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
+import com.intellij.kotlin.jupyter.core.settings.actions.promptSessionShutdownIfNeeded
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersionAsString
 import com.intellij.kotlin.jupyter.core.util.ComputableWithName
 import com.intellij.kotlin.jupyter.core.util.ExecutedOnceBackgroundTask
@@ -198,6 +201,12 @@ class JupyterCompilerPerFileService(
             SCRIPTING_SUPPORT_TOPIC,
             scriptingSupportUpdatesProcessor
         )
+        KotlinNotebookProjectOptionsProvider.getInstance(project).addListener(
+            object : KotlinNotebookProjectOptionsProvider.Listener {
+                override fun onJdkChanged() {
+                    checkIfSessionRestartIsNeeded()
+                }
+            }, this)
 
         externalDependenciesProvider.startIfNotStarted()
         // We need to ensure we have all dependencies before the test started
@@ -233,6 +242,13 @@ class JupyterCompilerPerFileService(
     fun getFilesToRefine(): List<KtFileScriptSource> {
         val notebookPsiFile = virtualFile.file.findPsiFile(project)
         return notebookPsiFile.getInjectedKtFiles().map { KtFileScriptSource(it) }
+    }
+
+    private fun checkIfSessionRestartIsNeeded() {
+        promptSessionShutdownIfNeeded(project, virtualFile) {
+            val notebook = virtualFile.notebookOrNull
+            notebook?.showKernelAndModuleJdkAreMatchingWarningIfNeeded(project)
+        }
     }
 
     private fun Collection<KtFile>.getSampleConfiguration(): Pair<VirtualFile, ScriptCompilationConfigurationWrapper>? {
