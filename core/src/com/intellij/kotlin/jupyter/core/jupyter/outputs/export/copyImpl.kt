@@ -1,17 +1,12 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.outputs.export
 
-import com.intellij.kotlin.jupyter.core.util.getKotlinNotebookCacheDirectory
-import com.intellij.notebooks.visualization.r.inlays.ClipboardUtils
-import com.intellij.openapi.project.Project
 import java.awt.Image
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.awt.datatransfer.UnsupportedFlavorException
 import java.io.ByteArrayInputStream
-import java.nio.file.Files
 import javax.imageio.ImageIO
-import kotlin.io.path.writeBytes
 
 private class SingleFlavorTransferableFactory<DataT : Any>(
     private val myFlavor: DataFlavor,
@@ -47,21 +42,7 @@ private val ImageTransferableFactory =
 private val FileTransferableFactory =
     SingleFlavorTransferableFactory<List<java.io.File>>(DataFlavor.javaFileListFlavor)
 
-fun createImageDataTransferable(
-    project: Project,
-    imageData: ByteArray,
-    fileName: String,
-): Transferable {
-    return if (ClipboardUtils.isIntermediateFileWorkaroundNeeded()) {
-        val plotFile = project
-            .getKotlinNotebookCacheDirectory()
-            .resolve("plotExport")
-            .resolve(fileName)
-        Files.createDirectories(plotFile.parent)
-        plotFile.writeBytes(imageData)
-        FileTransferableFactory.createTransferable(listOf(plotFile.toFile()))
-    } else {
-        val image = ImageIO.read(ByteArrayInputStream(imageData))
-        ImageTransferableFactory.createTransferable(image)
-    }
+fun createImageDataTransferable(imageData: ByteArray): Transferable {
+    val image = ImageIO.read(ByteArrayInputStream(imageData))
+    return ImageTransferableFactory.createTransferable(image)
 }

@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.outputs.swing.export
 
 import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
@@ -65,7 +65,7 @@ class CopySwingComponentScreenshotAction : NotebookEditorActionBase() {
                         is JComponent -> component.takeScreenshot()
                         else -> throw IllegalStateException("Unsupported component: $component")
                     }?.let { screenshot: BufferedImage ->
-                        copyScreenshotToClipboard(project, screenshot)
+                        copyScreenshotToClipboard(screenshot)
                     }
                 },
                 { throwable ->
@@ -99,10 +99,10 @@ class CopySwingComponentScreenshotAction : NotebookEditorActionBase() {
     }
 
     @RequiresBackgroundThread
-    private fun copyScreenshotToClipboard(project: Project, image: BufferedImage) {
+    private fun copyScreenshotToClipboard(image: BufferedImage) {
         val out = ByteArrayOutputStream()
         ImageIO.write(image, "png", out)
-        val transferable = createImageDataTransferable(project, out.toByteArray(), "screenshot.png")
+        val transferable = createImageDataTransferable(out.toByteArray())
         CopyPasteManager.getInstance().setContents(transferable)
     }
 }

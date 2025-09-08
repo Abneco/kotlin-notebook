@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.plots.export
 
 import com.intellij.kotlin.jupyter.core.jupyter.outputs.export.createImageDataTransferable
@@ -57,14 +57,13 @@ private class TextPlotContent(private val text: String) : PlotContent {
 
 private class BinaryPlotContent(
     private val bytes: ByteArray,
-    private val extension: String,
 ) : PlotContent {
     override fun saveToFile(file: Path) {
         file.writeBytes(bytes)
     }
 
     override fun asTransferable(project: Project): Transferable {
-        return createImageDataTransferable(project, bytes, "plot.$extension")
+        return createImageDataTransferable(bytes)
     }
 }
 
@@ -100,7 +99,7 @@ private fun exportPlot(
                 scalingFactor = model.scalingFactor,
                 targetDPI = model.targetDPI.toDouble(),
             ).bytes
-            BinaryPlotContent(byteArray, format.defFileExt)
+            BinaryPlotContent(byteArray)
         }
     }
 }
