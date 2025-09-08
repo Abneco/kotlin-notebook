@@ -9,7 +9,6 @@ import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.PsiRecursiveElementVisitor
-import com.intellij.psi.util.elementType
 import com.intellij.psi.util.parentOfType
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
@@ -20,6 +19,7 @@ import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtNameReferenceExpression
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtReferenceExpression
@@ -29,8 +29,6 @@ import org.jetbrains.kotlin.psi.psiUtil.getChildrenOfType
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlin.psi.psiUtil.isPropertyParameter
 import org.jetbrains.kotlin.psi.psiUtil.isPublic
-import org.jetbrains.kotlin.psi.stubs.elements.KtClassElementType
-import org.jetbrains.kotlin.psi.stubs.elements.KtNameReferenceExpressionElementType
 
 enum class ReferenceSearchStrategy {
     DECLARATION,
@@ -132,7 +130,7 @@ object NotebookReferenceFinder {
         val targetDeclaration = targetElement.parentOfType<KtDeclaration>(true) ?: return result
         element.containingFile.acceptChildren(object : PsiRecursiveElementVisitor() {
             override fun visitElement(element: PsiElement) {
-                if ((element.elementType is KtNameReferenceExpressionElementType || element is KtCallExpression)
+                if ((element is KtNameReferenceExpression || element is KtCallExpression)
                     // collect all similar expressions and then decide do they correspond to a one KtFile
                     && targetName != null && element.textMatches(targetName)) {
                     val resolvedRefInfo = NotebookReferenceExpressionResolver.tryResolveQualifier(element)
@@ -161,7 +159,7 @@ object NotebookReferenceFinder {
         candidateDeclaration: KtDeclaration,
         referenceInfo: ProvidedReferenceInfo
     ): Boolean {
-        if (referenceInfo.type !is KtClassElementType) {
+        if (referenceInfo.resolvedTo !is KtClass) {
             candidateDeclaration.parentOfType<KtClass>(withSelf = true)?.let {
                 return it.name == referenceInfo.enclosingClass?.name
             }
