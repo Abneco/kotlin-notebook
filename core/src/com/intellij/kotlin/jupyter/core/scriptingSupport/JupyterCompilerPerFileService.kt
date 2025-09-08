@@ -23,11 +23,11 @@ import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersionAsString
 import com.intellij.kotlin.jupyter.core.util.ComputableWithName
 import com.intellij.kotlin.jupyter.core.util.ExecutedOnceBackgroundTask
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
-import com.intellij.kotlin.jupyter.core.util.anyOf
 import com.intellij.kotlin.jupyter.core.util.debugWithAttachments
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
+import com.intellij.kotlin.jupyter.core.util.onAnyOf
 import com.intellij.kotlin.jupyter.core.util.runSafelyTyped
 import com.intellij.kotlin.jupyter.core.util.sourceRootsForDependencies
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
@@ -267,10 +267,10 @@ class JupyterCompilerPerFileService(
         ThreadingAssertions.assertBackgroundThread()
 
         runBlockingCancellable {
-            if (anyOf(
+            onAnyOf(
                 ::updateClasspathWithKernelJars,
                 ::updateClasspathWithProjectArtifactsAsync,
-            )) {
+            ) {
                 requestScriptingUpdateTestAware()
             }
         }

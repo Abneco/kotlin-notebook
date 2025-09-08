@@ -120,11 +120,15 @@ internal fun PsiFile.restartAnalyzing() {
     DaemonCodeAnalyzer.getInstance(this.project).restart(this)
 }
 
-suspend inline fun anyOf(vararg actions: suspend () -> Boolean): Boolean {
+/**
+ * Executes [onSuccess] if any of [actions] returns `true`.
+ */
+suspend inline fun onAnyOf(vararg actions: suspend () -> Boolean, onSuccess: suspend () -> Unit): Boolean {
     var result = false
     for (action in actions) {
         if (action()) {
             result = true
+            onSuccess()
         }
     }
     return result
