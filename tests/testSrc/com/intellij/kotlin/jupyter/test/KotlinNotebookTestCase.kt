@@ -37,7 +37,15 @@ import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.intellij.util.containers.forEachGuaranteed
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.jupyter.builder.NotebookBuilder
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
@@ -58,6 +66,8 @@ import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.io.path.Path
 import kotlin.io.path.absolute
 import kotlin.io.path.exists
@@ -65,6 +75,8 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 import kotlin.io.path.pathString
 import kotlin.io.path.readText
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Base class for all notebook tests. The entry point is the [runNotebookTest] method which provides
@@ -76,8 +88,11 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
     @JvmField
     @Rule
     var timeout: TestRule = DisableOnDebug(
-        CoroutinesTimeout.seconds(180)
+        CoroutinesTimeout.seconds(180, cancelOnTimeout = true)
     )
+
+    // Scope that a all notebook tests unsing `runNotebookTest` uses.
+    val testScope = createCoroutineScope()
 
     // We cannot run on the EDT thread as Kernel Execution also runs there, which can result in deadlocks
     // when waiting for kernel status messages.
@@ -112,6 +127,9 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         super.setUp()
         KotlinNotebookLoggerFactory.enableUnitTestMode()
         setHeaderEditingAllowed(false, testRootDisposable)
+        Disposer.register(testRootDisposable) {
+            testScope.cancel()
+        }
     }
 
     override fun tearDown() {
@@ -236,23 +254,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         }
     }
 
-    /**
-     * Creates a temporary notebook file using [notebookFile] builder, then runs the [test] with this file loaded into the test editor.
-     * The file is deleted on JVM exit.
-     *
-     * @see [com.intellij.testFramework.fixtures.CodeInsightTestFixture.file].
-     */
-    fun runNotebookTest(
-        notebookFile: NotebookBuilder.() -> Unit,
-        setupScriptDependencies: Boolean = true,
-        test: NotebookTestBuilder.() -> Unit,
-    ) {
-        runNotebookTestInternal(
-            testFile = buildKotlinNotebookFile(name = getTestName(true), build = notebookFile),
-            setupScriptDependencies = setupScriptDependencies,
-            test = test,
-        )
-    }
+
 
     /**
      * Runs the [test] with the corresponding file loaded into the test editor.
@@ -263,12 +265,15 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
      *
      * @param setupScriptDependencies If `true` test will only continue once script dependencies are available on the classpath.
      * If `false` these are loaded asynchronously which can affect functionality like highlighting.
-     *
+     * @param timeout Timeout for the test execution, if `null`. The global [KotlinNotebookTestCase.timeout] is used instead.
      * @see [com.intellij.testFramework.fixtures.CodeInsightTestFixture.file].
      */
-    fun runNotebookTest(setupScriptDependencies: Boolean = true, test: NotebookTestBuilder.() -> Unit) {
-        // Notebook tests support both Notebook templates (ktnb) and normal notebook files (ipynb)
-        // Normal notebook files are used directly, while templates are created as temporary files.
+    fun runNotebookTest(
+        setupScriptDependencies: Boolean = true,
+        timeout: Duration? = null,
+        test: suspend NotebookTestBuilder.() -> Unit
+    ) {
+        // Notebook tests requires a Notebook Template File (.ktnb) to be present.
         var testFile = getTestFile()
         if (testFile.name.endsWith(TEMPLATE_DATA_EXTENSION)) {
             testFile = buildKotlinNotebookFile(
@@ -281,6 +286,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         runNotebookTestInternal(
             testFile = testFile,
             setupScriptDependencies = setupScriptDependencies,
+            timeout = timeout,
             test = test,
         )
     }
@@ -300,7 +306,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
             backedNotebookFile
         } else null
         val updater = TestNotebookScriptsDependenciesUpdater(project, fileOrNull, cellEstimation, testCaseDisposable)
-        kotlinx.coroutines.runBlocking {
+        runBlocking {
             updater.setUpDependenciesSynchronously(myFixture)
         }
         waitForReadyIndexes(myFixture)
@@ -319,7 +325,8 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
     private fun runNotebookTestInternal(
         testFile: Path,
         setupScriptDependencies: Boolean,
-        test: NotebookTestBuilder.() -> Unit,
+        timeout: Duration?,
+        test: suspend NotebookTestBuilder.() -> Unit,
     ) {
 
         // Ideally this should be in setUp(), but moving the code causes
@@ -334,7 +341,14 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
             if (setupScriptDependencies) {
                 notebookRunner!!.setupScriptDependencies()
             }
-            test(notebookRunner!!)
+            runBlocking {
+                withTimeout(timeout ?: Int.MAX_VALUE.seconds) {
+                    val job = testScope.launch {
+                        test(notebookRunner!!)
+                    }
+                    job.join()
+                }
+            }
         }
     }
 
@@ -395,4 +409,18 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
             }
         }
     }
+
+    /**
+     * Inspired by com.android.tools.idea.concurrency.CoroutineUtils, but will create a
+     * a scope with [Job], so any failure will cancel the whole test.
+     */
+    private fun createCoroutineScope(
+        dispatcher: CoroutineDispatcher = Dispatchers.Default,
+        extraContext: CoroutineContext = EmptyCoroutineContext,
+    ): CoroutineScope {
+        val job = Job()
+        @Suppress("RAW_SCOPE_CREATION")
+        return CoroutineScope(job + dispatcher + extraContext)
+    }
+
 }

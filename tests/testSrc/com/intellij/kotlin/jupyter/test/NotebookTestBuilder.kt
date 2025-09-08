@@ -35,7 +35,6 @@ import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.thisLogger
@@ -49,7 +48,6 @@ import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
 import com.intellij.testFramework.runInEdtAndGet
-import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.ArrayUtilRt
 import com.intellij.util.asSafely
 import com.intellij.util.concurrency.ThreadingAssertions
@@ -120,11 +118,9 @@ class NotebookTestBuilder(
     private val notebookBackedFile: BackedNotebookVirtualFile
 
     private var jupyterSession: JupyterNotebookSession? = null
-    private val jupyterSessionSetup = {
+    private val jupyterSessionSetup = suspend {
         val project = notebookFile.project
-        jupyterSession = runBlocking {
-            JupyterRuntimeService.getInstance(project).getOrCreateSession(notebookBackedFile)!!
-        }
+        jupyterSession = JupyterRuntimeService.getInstance(project).getOrCreateSession(notebookBackedFile)!!
     }
     private val jupyterSessionCleanup = {
         runBlocking {
@@ -181,7 +177,7 @@ class NotebookTestBuilder(
      * is `false` to match IDE behavior.
      * @return output as a JSON object. If the cell generates no output, an empty object is returned.
      */
-    fun executeCell(
+    suspend fun executeCell(
         cellIndex: Int,
         waitForDependencies: Boolean = false,
     ): ExecutionResult {
@@ -220,8 +216,8 @@ class NotebookTestBuilder(
      * Move the editor caret to the given cell index and place it at [tokenOffset]
      * in the cell. The default is the caret being placed at the start of the cell.
      */
-    fun moveCaretToCell(cellIndex: Int, tokenOffset: Int = 0) {
-        runInEdt {
+    suspend fun moveCaretToCell(cellIndex: Int, tokenOffset: Int = 0) {
+        withContext(Dispatchers.EDT) {
             val nextCell = notebookFile.getCells()[cellIndex]
             testFixture.editor.moveCaret(nextCell.startOffset + tokenOffset)
         }
@@ -233,7 +229,7 @@ class NotebookTestBuilder(
      * If no cells are active, e.g., if [NotebookEditorMode.COMMAND] is set, this method will throw
      * an [AssertionFailedError].
       */
-    val currentCellContent: String
+     val currentCellContent: String
         get() {
             return runInEdtAndGet {
                 // The test fixture editor contains Notebook language (which uses #%% as cell start), and not the
@@ -268,11 +264,11 @@ class NotebookTestBuilder(
     /**
      * Run highlighting on the notebook and return the result of it.
      */
-    fun runHighlighting(): HighlightingResult {
+    suspend fun runHighlighting(): HighlightingResult {
         if (!highlighterDaemonStarted) {
             highlightSetup()
         }
-        val results = runInEdtAndGet {
+        val results = withContext(Dispatchers.EDT) {
             doHighlighting()
         }
         return HighlightingResult(notebookFile, testFixture, results)
@@ -281,9 +277,9 @@ class NotebookTestBuilder(
     /**
      * Execute an editor action on the EDT thread.
      */
-    fun performEditorAction(actionId: String) {
+    suspend fun performEditorAction(actionId: String) {
         // There doesn't seem to be an obvious way to check if a given action actually exists.
-        runInEdtAndWait {
+        with(Dispatchers.EDT) {
             testFixture.performEditorAction(actionId)
         }
     }
@@ -303,7 +299,7 @@ class NotebookTestBuilder(
      * @param string text to type into the cell.
      * @param waitFor How long to wait for completion to finish. The current result is returned after this period.
      */
-    fun typeAndGetLookup(
+    suspend fun typeAndGetLookup(
         string: String,
         waitFor: Duration = 15.seconds
     ): CompletionResult {
@@ -330,15 +326,17 @@ class NotebookTestBuilder(
         completionTester.runWithAutoPopupEnabled {
             var finalLookupElements: List<LookupElement>? = null
             var completedWith: LookupElement? = null
-            typeAndDoWithLookup(string, { filter(it) }) { lookupElements ->
-                if (lookupElements == null) return@typeAndDoWithLookup
-                val firstLookupElement = lookupElements.firstOrNull()
-                if (firstLookupElement == null) {
-                    fail("No elements matching filter: ${lookupElements.map { it.lookupString }}")
+            runBlocking {
+                typeAndDoWithLookup(string, { filter(it) }) { lookupElements ->
+                    if (lookupElements == null) return@typeAndDoWithLookup
+                    val firstLookupElement = lookupElements.firstOrNull()
+                    if (firstLookupElement == null) {
+                        fail("No elements matching filter: ${lookupElements.map { it.lookupString }}")
+                    }
+                    completionTester.lookup.finishLookup(mode.completionChar, firstLookupElement)
+                    finalLookupElements = lookupElements
+                    completedWith = firstLookupElement
                 }
-                completionTester.lookup.finishLookup(mode.completionChar, firstLookupElement)
-                finalLookupElements = lookupElements
-                completedWith = firstLookupElement
             }
             result.set(CompletionResult(finalLookupElements, completedWith))
         }
@@ -402,8 +400,8 @@ class NotebookTestBuilder(
      *
      * Note, only one directive is allowed in a cell
      */
-    fun runIntentionInActiveCell() {
-        runInEdtAndWait {
+    suspend fun runIntentionInActiveCell() {
+        withContext(Dispatchers.EDT) {
             val injectedFile = testCase.getKtFileUnderCaret() ?: error("File not found at caret position")
             intentionInvocationHandler.invokeIntentionsInFile(injectedFile)
         }
@@ -413,8 +411,8 @@ class NotebookTestBuilder(
      * Similar to [runIntentionInActiveCell], but pass in the Intention to run rather than reading it
      * from the special directive.
      */
-    fun runIntention(intention: IntentionAction) {
-        runInEdtAndWait {
+    suspend fun runIntention(intention: IntentionAction) {
+        withContext(Dispatchers.EDT) {
             val injectedFile = testCase.getKtFileUnderCaret() ?: error("File not found at caret position")
             intentionInvocationHandler.invokeIntention(injectedFile, intention)
         }
@@ -428,8 +426,8 @@ class NotebookTestBuilder(
      * @param name The fully qualified name of the intention to check for.
      * @param isAvailable Whether the intention is expected to be available.
      */
-    fun checkIntention(name: String? = null, isAvailable: Boolean = true) {
-        runInEdtAndWait {
+    suspend fun checkIntention(name: String? = null, isAvailable: Boolean = true) {
+        withContext(Dispatchers.EDT) {
             intentionInvocationHandler.checkIntention(name, isAvailable)
         }
     }
@@ -494,21 +492,19 @@ class NotebookTestBuilder(
         return CodeInsightTestFixtureImpl.instantiateAndRun(file, editor, toIgnore, canChangeDocumentDuringHighlighting)
     }
 
-    private fun typeAndDoWithLookup(
+    private suspend fun typeAndDoWithLookup(
         string: String,
         filter: (LookupElement) -> Boolean,
         waitFor: Duration = 15.seconds,
         action: (List<LookupElement>?) -> Unit
     ) {
         ThreadingAssertions.assertBackgroundThread()
-        io.kotest.common.runBlocking {
-            completionTester.typeWithPauses(string)
-            completionTester.joinCommit()
-            withContext(Dispatchers.EDT) {
-                action(completeBasic(timeout = waitFor, filter = filter))
-            }
-            completionTester.joinCommit()
+        completionTester.typeWithPauses(string)
+        completionTester.joinCommit()
+        withContext(Dispatchers.EDT) {
+            action(completeBasic(timeout = waitFor, filter = filter))
         }
+        completionTester.joinCommit()
     }
 
     /**
