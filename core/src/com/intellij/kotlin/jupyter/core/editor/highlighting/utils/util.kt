@@ -2,8 +2,7 @@
 package com.intellij.kotlin.jupyter.core.editor.highlighting.utils
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterFileExecutionQueue
-import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
+import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.helper.selectedInterval
 import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.hints.PsiHostTypeHintsInvalidator
@@ -15,18 +14,13 @@ import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.kotlinNotebookLogger
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.notebooks.visualization.NotebookCellLines
-import com.intellij.notebooks.visualization.getCell
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.util.removeUserData
-import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.kotlin.psi.KtFile
 
 object NotebookHighlightingUtilityObject {
@@ -44,24 +38,15 @@ internal fun BackedNotebookVirtualFile.reactOnThemeChangedEvent(project: Project
     NotebookHighlightingService.getForFile(project, this).restartAnalysing()
 }
 
-internal fun Document.retrieveCellIntervalUnderCaret(virtualFile: VirtualFile, project: Project): NotebookCellLines.Interval? {
-    val editor = (FileEditorManager.getInstance(project).getSelectedEditor(virtualFile) as? JupyterFileEditor)?.editor
-    val caretOffset = editor?.caretModel?.offset ?: return null
-    val lineNumber = getLineNumber(caretOffset)
-    return editor.getCell(lineNumber)
-}
-
 internal suspend fun cleanupKernelSession(
     kernelHandler: KernelRunnableHandler,
 ) {
     if (!kernelHandler.isVerified) return
-    val notebookFile = kernelHandler.notebookVirtualFile ?: return
+    val notebookFile = kernelHandler.notebookVirtualFile
     val project = kernelHandler.project
 
     resetSessionMetaInformation(project, notebookFile)
-    if (!project.isDisposed) {
-        JupyterFileExecutionQueue.getInstance(project, notebookFile).killExecution()
-    }
+    JupyterExecutionManager.getInstance(project, notebookFile).killExecution()
 }
 
 private suspend fun resetSessionMetaInformation(

@@ -2,8 +2,7 @@
 package com.intellij.kotlin.jupyter.core.settings.actions
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterFileExecutionQueue
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.appBasedApi.scriptLoader.utils.launchBackground
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
@@ -27,7 +26,7 @@ inline fun promptSessionShutdownIfNeeded(
 ) {
     if (!notebookFile.isKotlinNotebook) return
 
-    if (!JupyterRuntimeService.getInstance(project).hasActiveSession(notebookFile.file)) {
+    if (!JupyterExecutionManager.getInstance(project, notebookFile).isKernelRunning()) {
         action(false)
         return
     }
@@ -43,7 +42,7 @@ inline fun promptSessionShutdownIfNeeded(
             action(true)
 
             launchBackground {
-                JupyterFileExecutionQueue.getInstance(project, notebookFile).killExecution()
+                JupyterExecutionManager.getInstance(project, notebookFile).killExecution()
             }
             null
         }

@@ -1,11 +1,11 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.execution
 
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterFileExecutionQueue
+import com.intellij.jupyter.core.executor.JupyterExecutionListener
+import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeListener
 import com.intellij.jupyter.core.kernel.executor.JupyterTaskBaseCallback
 import com.intellij.kotlin.jupyter.test.util.JDKVersionRule
 import com.intellij.kotlin.jupyter.test.util.StopExecutionOnFailureRule
@@ -59,7 +59,7 @@ class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest() {
                         delay(1000)
                         val session = sessionDeferred.awaitBlocking(5.seconds)
                         val file = session.virtualFile
-                        JupyterFileExecutionQueue.getInstance(project, file).interruptExecution()
+                        JupyterExecutionManager.getInstance(project, file).interruptExecution()
                     }
                 }
             }
@@ -68,8 +68,8 @@ class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest() {
 
     private fun getSessionDeferred(disposable: Disposable): Deferred<JupyterNotebookSession> {
         val sessionDeferred = CompletableDeferred<JupyterNotebookSession>()
-        JupyterRuntimeListener.register(disposable, object : JupyterRuntimeListener {
-            override fun sessionCreated(session: JupyterNotebookSession) {
+        JupyterExecutionListener.register(disposable, object : JupyterExecutionListener {
+            override suspend fun sessionCreated(session: JupyterNotebookSession) {
                 sessionDeferred.complete(session)
             }
         })

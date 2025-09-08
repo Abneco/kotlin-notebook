@@ -18,8 +18,8 @@ import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrSelf
@@ -91,7 +91,9 @@ class NotebookTestBuilder(
 
     // Returns the number of cells (of all types) in the notebook
     val cellCount: Int
-        get() { return notebookFile.getCells().count() }
+        get() {
+            return notebookFile.getCells().count()
+        }
 
 
     // State required to track if highlighting has been started
@@ -120,7 +122,8 @@ class NotebookTestBuilder(
     private var jupyterSession: JupyterNotebookSession? = null
     private val jupyterSessionSetup = suspend {
         val project = notebookFile.project
-        jupyterSession = JupyterRuntimeService.getInstance(project).getOrCreateSession(notebookBackedFile)!!
+        jupyterSession = JupyterExecutionManager.getInstance(project, notebookFile.virtualFile).getOrCreateSession()
+
     }
     private val jupyterSessionCleanup = {
         runBlocking {
@@ -131,7 +134,8 @@ class NotebookTestBuilder(
     }
 
     init {
-        notebookBackedFile = notebookFile.virtualFile.toKotlinNotebookBackedFile() ?: error("Failed to convert file to notebook backed file: ${notebookFile.virtualFile.toAbsolutePath()}")
+        notebookBackedFile = notebookFile.virtualFile.toKotlinNotebookBackedFile()
+            ?: error("Failed to convert file to notebook backed file: ${notebookFile.virtualFile.toAbsolutePath()}")
     }
 
     /**
@@ -190,7 +194,7 @@ class NotebookTestBuilder(
         return withDisabledJcef {
             var output: ObjectNode? = null
             executeCells(
-                tester = object: ReceivedMessagesTester {
+                tester = object : ReceivedMessagesTester {
                     override val cellsToExecute: List<Int> = listOf(cellIndex)
                     override val expectedCellsCount: Int get() = cellCount
                     override fun assertCellMessages(
@@ -228,8 +232,8 @@ class NotebookTestBuilder(
      *
      * If no cells are active, e.g., if [NotebookEditorMode.COMMAND] is set, this method will throw
      * an [AssertionFailedError].
-      */
-     val currentCellContent: String
+     */
+    val currentCellContent: String
         get() {
             return runInEdtAndGet {
                 // The test fixture editor contains Notebook language (which uses #%% as cell start), and not the
@@ -248,6 +252,7 @@ class NotebookTestBuilder(
         get() = runInEdtAndGet {
             notebookFile.text
         }
+
     /**
      * Returns the injected file that represents a Notebook cell.
      * An error is thrown if the cell is not found.
@@ -365,7 +370,7 @@ class NotebookTestBuilder(
      * Trigger the provided [InlayHintsProvider] on the provided cell.
      * The resulting inlays are returned in [InlayHintsResult].
      */
-    fun <T: Any> runInlayProvider(
+    fun <T : Any> runInlayProvider(
         provider: InlayHintsProvider<T>,
         cellIndex: Int,
         setupAction: (T) -> Unit = {}

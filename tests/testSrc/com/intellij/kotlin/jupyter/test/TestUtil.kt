@@ -3,12 +3,11 @@ package com.intellij.kotlin.jupyter.test
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.executor.kernel.JupyterKernelCellTask
-import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionQueueStore
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
 import com.intellij.jupyter.core.kernel.executor.JupyterTaskBaseCallback
 import com.intellij.kotlin.jupyter.core.jupyter.actions.CreateNotebookFactory
@@ -91,7 +90,7 @@ fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     val project = notebookFile.project
     val backedFile = notebookFile.virtualFile.toKotlinNotebookBackedFile()!!
     val session = runBlocking {
-        JupyterRuntimeService.getInstance(project).getOrCreateSession(backedFile)!!
+        JupyterExecutionManager.getInstance(project, backedFile).getOrCreateSession()!!
     }
     return try {
         action()
@@ -142,7 +141,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
         val file = notebookFile.virtualFile
         val notebookFile = BackedNotebookVirtualFile.takeIfBacked(file)!!
 
-        val queue = JupyterExecutionQueueStore.getQueue(project, notebookFile)
+        val queue = JupyterExecutionManager.getInstance(project, notebookFile)
 
         val testCallbacks = listOfNotNull(object : JupyterTaskBaseCallback() {
             override fun onStatus(message: JupyterStatusMessage) {
@@ -178,7 +177,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
     }
 }
 
-fun <R> withDisabledJcef(action:() -> R): R {
+fun <R> withDisabledJcef(action: () -> R): R {
     return try {
         NotebookOutputComponentFactory.EP_NAME.point.unregisterExtension(JupyterBrowserOutputComponentFactory::class.java)
         action()
@@ -220,7 +219,7 @@ fun waitForReadyIndexes(fixture: CodeInsightTestFixture) {
     DumbService.getInstance(fixture.project).waitForSmartMode()
 }
 
-fun PsiFile.getKtFiles(): List<KtFile>? = when(val psiFile = this) {
+fun PsiFile.getKtFiles(): List<KtFile>? = when (val psiFile = this) {
     is KtFile -> {
         listOf(psiFile)
     }

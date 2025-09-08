@@ -6,9 +6,9 @@ import com.intellij.build.BuildViewManager
 import com.intellij.java.workspace.entities.JavaModuleSettingsEntity
 import com.intellij.java.workspace.entities.JavaSourceRootPropertiesEntity
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeListener
 import com.intellij.jupyter.core.jupyter.helper.getOriginalVirtualFile
 import com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookRestartStatus
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
@@ -195,8 +195,8 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     }
 
     private fun addSessionListener() {
-        JupyterRuntimeListener.register(this, object : JupyterRuntimeListener {
-            override fun sessionDeleted(session: JupyterNotebookSession) {
+        JupyterExecutionListener.register(this, object : JupyterExecutionListener {
+            override suspend fun sessionDeleted(session: JupyterNotebookSession) {
                 sessionData.remove(session.sessionId)
             }
         })

@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport.updater
 
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightingSettingsPerFile
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeListener
+import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
 import com.intellij.kotlin.jupyter.core.ide.handlers.UpdaterConstructorData
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
@@ -49,8 +49,8 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
     init {
         val parentDisposable = updaterConstructorData.parentDisposable
-        JupyterRuntimeListener.register(parentDisposable, object : JupyterRuntimeListener {
-            override fun sessionWillTerminate(notebookFile: BackedNotebookVirtualFile) {
+        JupyterExecutionListener.register(parentDisposable, object : JupyterExecutionListener {
+            override suspend fun sessionWillTerminate(notebookFile: BackedNotebookVirtualFile) {
                 clearRuntimeDependenciesFor(notebookFile)
             }
         })

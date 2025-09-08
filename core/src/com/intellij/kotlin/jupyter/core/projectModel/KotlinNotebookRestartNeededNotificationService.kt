@@ -3,9 +3,9 @@ package com.intellij.kotlin.jupyter.core.projectModel
 
 import com.intellij.codeInsight.hint.HintUtil
 import com.intellij.concurrency.ConcurrentCollectionFactory
+import com.intellij.jupyter.core.executor.JupyterExecutionListener
+import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeListener
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookRestartNotification
 import com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookRestartStatus
@@ -62,8 +62,8 @@ class KotlinNotebookRestartNeededNotificationService(
                 }
             }
         )
-        JupyterRuntimeListener.register(this, object : JupyterRuntimeListener {
-            override fun sessionDeleted(session: JupyterNotebookSession) {
+        JupyterExecutionListener.register(this, object : JupyterExecutionListener {
+            override suspend fun sessionDeleted(session: JupyterNotebookSession) {
                 expireNotification(NotebookId(session.virtualFile.originFile))
             }
         })
@@ -75,7 +75,7 @@ class KotlinNotebookRestartNeededNotificationService(
         status: KotlinNotebookRestartStatus.Needed,
     ) {
         // We can't and don't need to restart the session if it didn't start
-        if (!JupyterRuntimeService.getInstance(project).hasActiveSession(notebook.virtualFile)) {
+        if (!JupyterExecutionManager.getInstance(project, notebook.virtualFile).isKernelRunning()) {
             return
         }
 
@@ -117,20 +117,24 @@ class KotlinNotebookRestartNeededNotificationService(
         if (button == null) return false
 
         lateinit var lightweightHint: LightweightHint
-        lightweightHint = LightweightHint(HintUtil.createInformationLabel(
-            /* text = */ KotlinNotebookBundle.message(
-                key = "kotlin.notebook.outdated.dependencies.hint.message",
-                status.message,
-            ),
-            /* hyperlinkListener = */ { e ->
-                if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
-                    showHints = false
-                    lightweightHint.hide()
-                }
-            },
-            /* mouseListener = */ null,
-            /* updatedTextConsumer = */ null,
-        ))
+        lightweightHint = LightweightHint(
+            HintUtil.createInformationLabel(
+                /* text = */
+                KotlinNotebookBundle.message(
+                    key = "kotlin.notebook.outdated.dependencies.hint.message",
+                    status.message,
+                ),
+                /* hyperlinkListener = */
+                { e ->
+                    if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
+                        showHints = false
+                        lightweightHint.hide()
+                    }
+                },
+                /* mouseListener = */ null,
+                /* updatedTextConsumer = */ null,
+            )
+        )
 
         val hint = HintHint(button, Point(button.width / 2, button.height))
             .setPreferredPosition(Balloon.Position.below)

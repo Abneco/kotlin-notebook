@@ -233,7 +233,7 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.jupyter.core">
-        <jupyterRuntimeListener implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinRuntimeServiceListener"/>
+        <jupyterRuntimeListener implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinExecutionServiceListener"/>
         <jupyter.data.input.run.jupyterDataInputErrorMessageFactory
                 implementation="com.intellij.kotlin.jupyter.core.editor.dnd.JupyterDataInputKotlinErrorMessageFactory"/>
 

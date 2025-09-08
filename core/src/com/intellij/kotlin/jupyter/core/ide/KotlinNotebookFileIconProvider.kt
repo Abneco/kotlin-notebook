@@ -2,14 +2,14 @@
 package com.intellij.kotlin.jupyter.core.ide
 
 import com.intellij.ide.FileIconProvider
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import icons.KotlinJupyterIcons
 import javax.swing.Icon
 
-class KotlinNotebookFileIconProvider: FileIconProvider {
+class KotlinNotebookFileIconProvider : FileIconProvider {
     override fun getIcon(file: VirtualFile, flags: Int, project: Project?): Icon? {
         if (!file.isKotlinNotebook) return null
 
@@ -22,6 +22,6 @@ class KotlinNotebookFileIconProvider: FileIconProvider {
 
     private fun isRunningNotebook(file: VirtualFile, project: Project?): Boolean {
         if (project == null) return false
-        return JupyterRuntimeService.getInstance(project).hasActiveSession(file)
+        return JupyterExecutionManager.getInstance(project, file).isKernelRunning()
     }
 }

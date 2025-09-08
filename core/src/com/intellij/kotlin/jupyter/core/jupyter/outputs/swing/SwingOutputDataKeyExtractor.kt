@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.outputs.swing
 
 import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterRuntimeService
+import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.nbformat.DisplayDataContainer
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded.InMemoryReplResultsHolderService
@@ -27,8 +27,7 @@ class SwingOutputDataKeyExtractor : NotebookDisplayOutputDataKeyExtractor {
         if (!dataObject.has(InMemoryMimeTypes.SWING)) return null
         val node = dataObject[InMemoryMimeTypes.SWING] as? TextNode ?: return null
         val id = node.textValue()
-        val runtimeService = JupyterRuntimeService.getInstance(project)
-        val sessionId = file?.let { runtimeService.getSession(it)?.sessionId } ?: return null
+        val sessionId = file?.let { JupyterExecutionManager.getInstance(project, it).getSession()?.sessionId } ?: return null
         val inMemoryHolder = InMemoryReplResultsHolderService.getInstance(project).getHolder(sessionId) ?: return null
         return inMemoryHolder.getReplResult(id)?.let {
             SwingOutputDataKey(it, executionCount)
