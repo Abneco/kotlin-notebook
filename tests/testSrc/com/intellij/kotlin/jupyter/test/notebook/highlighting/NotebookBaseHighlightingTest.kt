@@ -1,11 +1,15 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.highlighting
 
+import com.intellij.kotlin.jupyter.core.util.getElementTextRangeInHost
 import com.intellij.kotlin.jupyter.test.HighlightCheckStrategy
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.openapi.application.readAction
 import com.intellij.testFramework.TestDataPath
+import io.kotest.matchers.shouldNotBe
+import org.jetbrains.kotlin.psi.KtElement
 import org.junit.Ignore
 import org.junit.Test
 
@@ -53,5 +57,23 @@ class NotebookBaseHighlightingTest: KotlinNotebookTestCase() {
             val importantInfos = result.filter { it.severity > HighlightSeverity.INFORMATION }
             assertEmpty(importantInfos)
         }
+    }
+
+    /**
+     * Note: this test does not check the correctness of visual placement of the fix hint
+     */
+    @Test
+    fun importFixRangeAlignedWithElement() = runNotebookTest {
+        val elementTextRangeInHost = readAction {
+            val elementUnderCaret = elementUnderCaret.parent as KtElement
+
+            elementUnderCaret.getElementTextRangeInHost()
+        }
+
+        val importFix = findQuickFixes { descriptor, _ ->
+            descriptor.action.text.contains("Import")
+                    && descriptor.fixRange.equalsToRange(elementTextRangeInHost.startOffset, elementTextRangeInHost.endOffset)
+        }.firstOrNull()
+        importFix shouldNotBe null
     }
 }

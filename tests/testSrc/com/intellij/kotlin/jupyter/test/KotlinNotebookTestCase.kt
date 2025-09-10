@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test
 
+import com.intellij.injected.editor.EditorWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.editor.setHeaderEditingAllowed
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
@@ -386,8 +387,16 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
     @RequiresReadLock
     fun getKtFileUnderCaret(): KtFile? {
         val hostFile = backedNotebookFile.file.findPsiFile(project) ?: return null
-        return InjectedLanguageManager.getInstance(project)
-            .findInjectedElementAt(hostFile, myFixture.caretOffset)
+        val manager = InjectedLanguageManager.getInstance(project)
+        val hostOffset = when (val fileEditor = editor) {
+            is EditorWindow -> manager.injectedToHost(
+                fileEditor.injectedFile, 0
+            )
+            else -> 0
+        }
+
+        return manager
+            .findInjectedElementAt(hostFile, myFixture.caretOffset + hostOffset)
             ?.containingFile as? KtFile
     }
 
@@ -411,7 +420,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
     }
 
     /**
-     * Inspired by com.android.tools.idea.concurrency.CoroutineUtils, but will create a
+     * Inspired by com.android.tools.idea.concurrency.CoroutineUtils, but will create
      * a scope with [Job], so any failure will cancel the whole test.
      */
     private fun createCoroutineScope(

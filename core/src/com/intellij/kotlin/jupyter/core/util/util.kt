@@ -10,6 +10,7 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
+import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.InvalidVirtualFileAccessException
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
@@ -64,6 +65,16 @@ fun PsiFile?.getInjectedKtFiles(): List<KtFile> {
             )
         }
     }
+}
+
+fun PsiElement.getElementTextRangeInHost(): TextRange {
+    val manager = InjectedLanguageManager.getInstance(project)
+    val isInjection = manager.isInjectedFragment(containingFile)
+    val elementTextRange = textRange
+    if (!isInjection) return elementTextRange
+
+    val host = manager.getInjectionHost(this) ?: return elementTextRange
+    return manager.injectedToHost(host, elementTextRange)
 }
 
 fun BackedNotebookVirtualFile?.getInjectedKtFiles(project: Project): List<KtFile> {

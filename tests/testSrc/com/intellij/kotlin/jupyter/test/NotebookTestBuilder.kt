@@ -35,12 +35,15 @@ import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.util.startOffset
@@ -261,10 +264,14 @@ class NotebookTestBuilder(
         val cells: List<JupyterPsiCell> = notebookFile.getCells()
         val neededCell = cells.getOrNull(cellIndex) ?: error("Invalid cell index provided: $cellIndex. Total cells: $cellCount")
         return ReadAction.compute<PsiFile, Throwable> {
-            (InjectedLanguageManager.getInstance(project)
-                .getInjectedPsiFiles(neededCell)?.firstOrNull { it.first.containingFile.isInjectedKtFile() }?.first as? PsiFile)
+            neededCell.getInjectedKtFiles(InjectedLanguageManager.getInstance(project)).firstOrNull()
         }
     }
+
+    val elementUnderCaret: PsiElement
+        get() = runReadAction {
+            testCase.getKtFileUnderCaret()?.findElementAt(testFixture.editor.caretModel.offset)
+        } ?: throw IllegalStateException("Unable to locate the element under the caret")
 
     /**
      * Run highlighting on the notebook and return the result of it.
@@ -277,6 +284,26 @@ class NotebookTestBuilder(
             doHighlighting()
         }
         return HighlightingResult(notebookFile, testFixture, results)
+    }
+
+    /**
+     * Iterates though all the descriptors for each of the [HighlightInfo] matching the given [predicate].
+     * This method could be used to test quick fixes registration for a particular token.
+     */
+    suspend fun findQuickFixes(predicate: (descriptor: HighlightInfo.IntentionActionDescriptor, targetRange: TextRange?) -> Boolean): List<HighlightInfo.IntentionActionDescriptor> {
+        val highlightingResults = runHighlighting().result
+        return buildList {
+            readAction {
+                for (info in highlightingResults) {
+                    info.findRegisteredQuickFix { desc, range ->
+                        if (predicate(desc, range)) {
+                            add(desc)
+                        }
+                        null
+                    }
+                }
+            }
+        }
     }
 
     /**

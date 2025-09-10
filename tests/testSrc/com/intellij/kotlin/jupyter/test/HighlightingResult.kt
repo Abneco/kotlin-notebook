@@ -19,6 +19,12 @@ class HighlightingResult(
   private val testFixture: CodeInsightTestFixture,
   val result: List<HighlightInfo>
 ) {
+    val errors: List<HighlightInfo>
+        get() = result.filter { it.severity == HighlightSeverity.ERROR }
+
+    val warnings: List<HighlightInfo>
+        get() = result.filter { it.severity == HighlightSeverity.WARNING }
+
     /**
      * Check that the highlighting result matches the provided [HighlightCheckStrategy].
      * If not, a test failure is reported
