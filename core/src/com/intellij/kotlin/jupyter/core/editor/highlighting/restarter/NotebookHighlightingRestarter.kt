@@ -45,7 +45,7 @@ internal object NotebookHighlightingRestarter {
             delay(150)
         }
         readAction {
-            file.restartAnalyzing()
+            file.restartAnalyzing(this)
         }
         afterRequest()
     }

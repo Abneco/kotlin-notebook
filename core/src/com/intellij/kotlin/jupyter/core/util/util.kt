@@ -116,8 +116,8 @@ internal fun retrieveElementUnderCaret(scope: PsiFile): PsiElement? {
     )
 }
 
-internal fun PsiFile.restartAnalyzing() {
-    DaemonCodeAnalyzer.getInstance(this.project).restart(this)
+internal fun PsiFile.restartAnalyzing(reason: Any) {
+    DaemonCodeAnalyzer.getInstance(this.project).restart(this, reason)
 }
 
 /**

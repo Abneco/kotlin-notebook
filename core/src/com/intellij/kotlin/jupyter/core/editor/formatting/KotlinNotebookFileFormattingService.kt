@@ -68,7 +68,7 @@ class KotlinNotebookFileFormattingService : AbstractDocumentFormattingService() 
             notebookLogger().warn("Error occurred during reformatting of Kotlin Notebook", e)
         } finally {
             ReadAction.run<Throwable> {
-                jupyterPsiFile.restartAnalyzing()
+                jupyterPsiFile.restartAnalyzing(this)
             }
         }
     }

@@ -585,7 +585,7 @@ class JupyterCompilerPerFileService(
                 scriptsChangePublisher?.scriptsConfigurationUpdated(virtualFile, updateState)
                 if (updateState == UpdateState.COMPLETE) {
                     virtualFile.file.findPsiFile(project)?.let { psiFile ->
-                        DaemonCodeAnalyzer.getInstance(project).restart(psiFile)
+                        DaemonCodeAnalyzer.getInstance(project).restart(psiFile, this)
                     }
                 }
             }
