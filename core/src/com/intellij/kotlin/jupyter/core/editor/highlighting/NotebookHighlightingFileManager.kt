@@ -135,9 +135,10 @@ class NotebookHighlightingFileManager(
         get() {
             val passConfiguration = passService.currentPassConfiguration
             if (passConfiguration == NotebookPassConfiguration.EMPTY) return null
-            val focusCellData = passConfiguration.filesToHL[passConfiguration.targetKtFile] ?: return null
+            val focusCell = passConfiguration.focusCell
+            val injectionHost = passConfiguration.editorCells.getOrNull(focusCell) ?: return null
 
-            return NotebookCellFocusInformation(focusCellData.notebookCellIndex, focusCellData.injectionHost.textRange)
+            return NotebookCellFocusInformation(focusCell, injectionHost.textRange)
         }
 
     private suspend fun updateData(editorCells: EditorCells) {

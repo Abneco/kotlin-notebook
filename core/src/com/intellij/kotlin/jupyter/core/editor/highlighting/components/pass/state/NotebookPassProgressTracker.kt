@@ -56,13 +56,12 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
             return NotebookPassConfiguration(
                 focusCellIndex,
                 emptyMap(),
-                null
+                cells
             )
         }
 
         val project = cells.first().project
         val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
-        var targetPsiFile: KtFile? = null
 
         for (ind in targetIndexes) {
             val psiCell = cells.getOrNull(ind) ?: continue
@@ -84,17 +83,13 @@ internal class NotebookPassProgressTracker : PassProgressTracker, HighlightingCo
                     psiCell,
                     numberOfNonWhiteSpaceLeaves(ktFile)
                 )
-
-                if (ind == focusCellIndex) {
-                    targetPsiFile = ktFile
-                }
             }
         }
 
         return NotebookPassConfiguration(
             focusCellIndex,
             injectedFilesDataRegistry,
-            targetPsiFile
+            cells
         )
     }
 

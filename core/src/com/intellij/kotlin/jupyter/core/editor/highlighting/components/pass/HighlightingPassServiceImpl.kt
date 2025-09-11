@@ -13,6 +13,7 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.disposeOfHighl
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.visualization.getCell
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
@@ -119,7 +120,16 @@ internal class HighlightingPassServiceImpl(
     }
 
     override fun shouldHighlightErrorsInFile(ktFile: KtFile): Boolean {
-        return passProgressTracker.passConfiguration.targetKtFile == ktFile
+        val focusCell = passProgressTracker.passConfiguration.focusCell
+        // Firstly, check in injected data
+        val cellData = passProgressTracker.passConfiguration.filesToHL[ktFile]
+        if (cellData != null) {
+            return cellData.notebookCellIndex == focusCell
+        }
+        // fallback: we need to find [PsiLanguageInjectionHost] to which it corresponds
+        val host = InjectedLanguageManager.getInstance(ktFile.project).getInjectionHost(ktFile) ?: return false
+
+        return passProgressTracker.passConfiguration.editorCells.indexOf(host) == focusCell
     }
 
     @RequiresBackgroundThread
