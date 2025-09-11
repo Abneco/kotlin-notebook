@@ -1,6 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.projectWizard
 
+import com.intellij.configurationStore.ProjectStorePathManager
 import com.intellij.kotlin.jupyter.core.ide.KotlinNotebookHelpId
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
@@ -32,7 +33,6 @@ import com.intellij.openapi.observable.properties.AtomicProperty
 import com.intellij.openapi.observable.properties.ObservableMutableProperty
 import com.intellij.openapi.observable.properties.ObservableProperty
 import com.intellij.openapi.observable.util.transform
-import com.intellij.openapi.project.ProjectStorePathManager
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.ui.validation.CHECK_DIRECTORY
