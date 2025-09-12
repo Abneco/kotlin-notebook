@@ -1,0 +1,25 @@
+### auto-generated section `build intellij.kotlin.jupyter.buildSystems.gradle` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources")
+
+jvm_resources(
+  name = "gradle_resources",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_library(
+  name = "gradle",
+  module_name = "intellij.kotlin.jupyter.buildSystems.gradle",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java", "src/**/*.form"], allow_empty = True),
+  deps = [
+    "@ultimate_lib//:kotlin-stdlib-provided",
+    "//plugins/kotlin/jupyter/core",
+    "@community//platform/core-api:core",
+    "@community//platform/external-system-api:externalSystem",
+    "@community//platform/projectModel-api:projectModel",
+    "@community//plugins/gradle",
+  ],
+  runtime_deps = [":gradle_resources"]
+)
+### auto-generated section `build intellij.kotlin.jupyter.buildSystems.gradle` end

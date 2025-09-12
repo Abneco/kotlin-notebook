@@ -76,6 +76,7 @@
         <module name="intellij.kotlin.jupyter.core"/>
         <module name="intellij.kotlin.jupyter.tables"/>
         <module name="intellij.kotlin.jupyter.plots"/>
+        <module name="intellij.kotlin.jupyter.buildSystems.gradle"/>
         <module name="intellij.kotlin.jupyter.liveTemplates"/>
         <module name="intellij.kotlin.jupyter.k1"/>
         <module name="intellij.kotlin.jupyter.k2"/>

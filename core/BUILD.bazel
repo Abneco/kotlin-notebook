@@ -123,7 +123,7 @@ jvm_library(
     "@community//plugins/kotlin/code-insight/api",
     "@community//plugins/kotlin/base/scripting/scripting.shared",
     "@community//plugins/kotlin/base/psi",
-    "@community//plugins/gradle",
+    "@community//platform/external-system-api:externalSystem",
     ":community_plugins_kotlin_scripting_provided",
     ":community_java_psi_provided",
     ":plugins_jupyter_core_provided",

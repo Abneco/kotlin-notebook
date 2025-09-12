@@ -11,24 +11,17 @@ import com.intellij.kotlin.jupyter.core.util.getSourceRoots
 import com.intellij.kotlin.jupyter.core.util.rootBasePath
 import com.intellij.openapi.externalSystem.ExternalSystemManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
-import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import kotlin.io.path.invariantSeparatorsPathString
-
-internal data class ExternalBuildSystemSetting(
-    val jdkName: String,
-    val sdk: Sdk?,
-    val moduleNames: Set<String>
-)
 
 /**
  * Traverses all registered [ExternalSystemManager] and returns a sequence of [ExternalBuildSystemSetting] matching current project.
  * The main purpose is to retrieve gradle JDK and module names to suggest a proper JDK for the kernel startup.
- * Right now, only [GradleProjectSettings] are specifying JDK.
+ * Right now, only Gradle settings are supported.
+ *
+ * @see NotebookExternalBuildSystemConfigurationExtractor
  */
 internal fun Project.getExternalBuildSystemModulesInfo(): Sequence<ExternalBuildSystemSetting> {
-    val jdkTable = ProjectJdkTable.getInstance()
     val project = this
 
     return sequence {
@@ -40,21 +33,9 @@ internal fun Project.getExternalBuildSystemModulesInfo(): Sequence<ExternalBuild
                 if (projectPath.isNullOrEmpty()) continue
                 if (projectPath != project.rootBasePath) continue
 
-                val jdkName = when (projectSettings) {
-                    is GradleProjectSettings -> projectSettings.gradleJvm ?: continue
-                    else -> null
+                NotebookExternalBuildSystemConfigurationExtractor.getFromProviders(project, projectSettings).forEach {
+                    yield(it)
                 }
-
-                if (jdkName == null) continue
-                val sdk = jdkTable.findJdk(jdkName) ?: continue
-
-                yield(
-                    ExternalBuildSystemSetting(
-                        jdkName,
-                        sdk,
-                        projectSettings.modules.toSet()
-                    )
-                )
             }
         }
     }

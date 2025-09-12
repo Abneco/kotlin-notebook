@@ -14,7 +14,6 @@
         <module name="kotlin.base.scripting.shared"/>
 
         <plugin id="com.intellij.java"/>
-        <plugin id="com.intellij.gradle"/>
     </dependencies>
 
     <applicationListeners>
@@ -33,6 +32,9 @@
                         dynamic="true"/>
         <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.kernel.kernelProcessCommandLineCustomizer"
                         interface="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer"
+                        dynamic="true"/>
+        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.externalBuildSystemSettingExtractor"
+                        interface="com.intellij.kotlin.jupyter.core.projectModel.NotebookExternalBuildSystemConfigurationExtractor"
                         dynamic="true"/>
 
 
