@@ -308,6 +308,9 @@
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory"/>
         <kernel.kernelRunnableFactory
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.attached.AttachedKernelProcessFactory"/>
+
+        <toolwindow.kernelProcessToolWindowCoordinatorProvider
+                implementation="com.intellij.kotlin.jupyter.core.editor.appearance.KotlinKernelProcessToolWindowCoordinatorProvider"/>
     </extensions>
 
     <actions resource-bundle="messages/KotlinNotebookBundle">

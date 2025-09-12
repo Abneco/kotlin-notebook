@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
  * This allows us to intercept kernel log messages and redirect them to the console window,
  * but this will only work if the `consoleView` has been set. Since there is a circular
  * dependency between this factory and the console view, the console view needs
- * to register itself when created. See [KernelRunnableToolWindowSettings] for more details.
+ * to register itself when created. See [com.intellij.jupyter.execution.toolwindow.KernelProcessToolWindowCoordinator] for more details.
  */
 class EmbeddedKotlinKernelLoggerFactory: KernelLoggerFactory {
     // Reference to the ConsoleView showing the logs. If this is `null`

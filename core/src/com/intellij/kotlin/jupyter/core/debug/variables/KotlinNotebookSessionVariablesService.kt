@@ -64,11 +64,10 @@ class KotlinNotebookSessionVariablesService(
         }
     }
 
-
-    override fun createInstance(backedFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookVariablesPerFileStateService {
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookVariablesPerFileStateService {
         return NotebookVariablesPerFileStateService(
             project,
-            backedFile,
+            virtualFile,
             fileScope,
         )
     }

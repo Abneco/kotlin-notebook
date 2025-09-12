@@ -9,7 +9,9 @@ import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOption
 import com.intellij.jupyter.execution.kernel.SeparateProcessKernelRunnableHandler
 import com.intellij.jupyter.execution.listeners.events.KernelNotificationStartedEvent
 import com.intellij.jupyter.execution.listeners.KernelProcessListener
+import com.intellij.jupyter.execution.listeners.events.KernelProcessEvent
 import com.intellij.jupyter.execution.process.KernelPortsProvider
+import com.intellij.jupyter.execution.toolwindow.KernelProcessToolWindowCoordinatorRegistry
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.jupyter.actions.mode
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
@@ -17,7 +19,6 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ModeAwareKernelRun
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.extensions.KernelVmCommandCustomizer
-import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWindowManager
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDownloader
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
@@ -91,16 +92,21 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
 
         val process = commandLine.createProcess()
 
-        val kernelHandler =
-            SeparateProcessKernelRunnableHandler(startupOptions, process, commandLine.commandLineString, kernelConfig.jupyterParams)
+        val kernelHandler = SeparateProcessKernelRunnableHandler(
+            startupOptions,
+            process,
+            commandLine.commandLineString,
+            kernelConfig.jupyterParams,
+        )
+
         kernelHandler.addKernelListener(object : KernelProcessListener {
             override fun beforeNotificationStarted(event: KernelNotificationStartedEvent) {
-                KotlinNotebookToolWindowManager.getInstance(project)
-                    .showKotlinNotebookServerManagementToolWindow(
-                        KotlinKernelProcessToolWindow(
-                            event.eventSource
-                        )
-                    )
+                KernelProcessToolWindowCoordinatorRegistry.getOrCreate(project, event.eventSource.notebookVirtualFile)
+                    .onStarted(event.eventSource)
+            }
+
+            override fun kernelTerminated(event: KernelProcessEvent) {
+                KernelProcessToolWindowCoordinatorRegistry.get(project, event.eventSource.notebookVirtualFile)?.onTerminated(event)
             }
         })
 
