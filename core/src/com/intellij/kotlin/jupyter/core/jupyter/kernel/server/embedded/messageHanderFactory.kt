@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import org.jetbrains.kotlinx.jupyter.api.embedded.InMemoryReplResultsHolder
 import org.jetbrains.kotlinx.jupyter.execution.JupyterExecutor
 import org.jetbrains.kotlinx.jupyter.execution.JupyterExecutorImpl
 import org.jetbrains.kotlinx.jupyter.messaging.JupyterCommunicationFacility
@@ -18,7 +19,6 @@ import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
 import org.jetbrains.kotlinx.jupyter.repl.creating.ReplComponentsProvider
 import org.jetbrains.kotlinx.jupyter.repl.creating.ReplFactory
 import org.jetbrains.kotlinx.jupyter.repl.creating.loadDefaultReplFactory
-import org.jetbrains.kotlinx.jupyter.repl.embedded.InMemoryReplResultsHolder
 
 fun createEmbeddedMessageHandler(
     project: Project,

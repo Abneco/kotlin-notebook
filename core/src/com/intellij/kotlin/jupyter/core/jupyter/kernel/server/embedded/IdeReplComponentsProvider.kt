@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 
+import org.jetbrains.kotlinx.jupyter.api.embedded.InMemoryReplResultsHolder
 import org.jetbrains.kotlinx.jupyter.api.libraries.CommManager
 import org.jetbrains.kotlinx.jupyter.magics.BasicMagicHandlerFactoryProvider
 import org.jetbrains.kotlinx.jupyter.magics.CompositeMagicsHandler
@@ -13,7 +14,6 @@ import org.jetbrains.kotlinx.jupyter.messaging.JupyterCommunicationFacility
 import org.jetbrains.kotlinx.jupyter.protocol.api.KernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
 import org.jetbrains.kotlinx.jupyter.repl.creating.DefaultReplComponentsProvider
-import org.jetbrains.kotlinx.jupyter.repl.embedded.InMemoryReplResultsHolder
 
 class IdeReplComponentsProvider(
     settings: DefaultReplSettings,

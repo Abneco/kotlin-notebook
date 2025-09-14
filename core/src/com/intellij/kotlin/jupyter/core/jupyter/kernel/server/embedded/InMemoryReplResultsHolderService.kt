@@ -8,8 +8,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.observable.util.whenDisposed
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlinx.jupyter.api.embedded.InMemoryReplResultsHolder
 import org.jetbrains.kotlinx.jupyter.repl.embedded.DefaultInMemoryReplResultsHolder
-import org.jetbrains.kotlinx.jupyter.repl.embedded.InMemoryReplResultsHolder
 
 /**
  * This class contains a service that tracks the lifecycle of [InMemoryReplResultsHolder]'s.
