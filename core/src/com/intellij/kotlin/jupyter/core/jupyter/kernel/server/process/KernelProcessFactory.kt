@@ -101,12 +101,13 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
 
         kernelHandler.addKernelListener(object : KernelProcessListener {
             override fun beforeNotificationStarted(event: KernelNotificationStartedEvent) {
-                KernelProcessToolWindowCoordinatorRegistry.getOrCreate(project, event.eventSource.notebookVirtualFile)
-                    .onStarted(event.eventSource)
+                KernelProcessToolWindowCoordinatorRegistry.getInstance(project)
+                    .getOrCreate(event.eventSource.notebookVirtualFile)?.onStarted(event.eventSource)
             }
 
             override fun kernelTerminated(event: KernelProcessEvent) {
-                KernelProcessToolWindowCoordinatorRegistry.get(project, event.eventSource.notebookVirtualFile)?.onTerminated(event)
+                KernelProcessToolWindowCoordinatorRegistry.getInstance(project)
+                    .get(event.eventSource.notebookVirtualFile)?.onTerminated(event)
             }
         })
 

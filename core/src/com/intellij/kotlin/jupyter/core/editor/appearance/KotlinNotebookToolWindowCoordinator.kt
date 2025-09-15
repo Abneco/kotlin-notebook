@@ -23,12 +23,7 @@ class KotlinNotebookToolWindowCoordinator(
     }
 
     override fun createVariablesView(layoutUi: RunnerLayoutUi, handler: KernelProcessAttachable): Content? {
-        // TODO: must be a better way to determine that
-        val isApplicable = when(handler) {
-            is SeparateProcessKernelRunnableHandler -> true
-            else -> false
-        }
-
+        val isApplicable = handler is SeparateProcessKernelRunnableHandler
         val enabled = debugFeaturesEnabled && isApplicable
 
         val setupData = NotebookVariablesToolWindowSetup(

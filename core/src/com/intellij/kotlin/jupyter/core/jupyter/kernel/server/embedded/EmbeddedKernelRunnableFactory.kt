@@ -24,8 +24,8 @@ class EmbeddedKernelRunnableFactory : ModeAwareKernelRunnableFactory(
     ): KernelRunnableHandler {
         val runnableHandler = EmbeddedKernelRunnableHandler(startupOptions)
 
-        KernelProcessToolWindowCoordinatorRegistry.getOrCreate(startupOptions.project, startupOptions.notebookVirtualFile)
-            .onStarted(runnableHandler)
+        KernelProcessToolWindowCoordinatorRegistry.getInstance(startupOptions.project)
+            .getOrCreate(startupOptions.notebookVirtualFile)?.onStarted(runnableHandler)
 
         return runnableHandler
     }
