@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.execution
 
 import com.intellij.jupyter.core.executor.JupyterExecutionListener
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.kotlin.jupyter.core.projectModel.JupyterKotlinProjectArtifactsService
@@ -26,7 +26,7 @@ class JupyterKotlinExecutionServiceListener : JupyterExecutionListener {
             val project = session.project
             listOf(
                 kotlinNotebookCellExecutionCallbackFactory.createUnboundCallback(project, virtualFile),
-                object : JupyterExecutionCallbackAdapter() {
+                object : JupyterExecutionCallback {
                     override fun onExecuteReply(message: JupyterMessage) {
                         logger<JupyterKotlinExecutionServiceListener>().debug("Kotlin session has been initialized with response: ${message.json}")
                     }

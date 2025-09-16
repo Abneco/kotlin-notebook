@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.execution
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputsBase
 import com.intellij.jupyter.execution.util.deserialize
@@ -14,6 +14,7 @@ import com.intellij.kotlin.jupyter.core.util.debugInTests
 import com.intellij.kotlin.jupyter.core.util.logListInfo
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.async
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
@@ -35,9 +36,7 @@ class KotlinNotebookCellExecutionCallback(
   private val psiCell: JupyterPsiCell?,
   private val index: Int,
   private val executionStartedMs: Long,
-) : JupyterExecutionCallbackAdapter() {
-  override var finalizeCallback: () -> Unit = {}
-
+) : JupyterExecutionCallback {
     override fun onExecuteReply(message: JupyterMessage) {
         KotlinNotebookPluginScope.getForProject(project).async {
             try {
@@ -48,7 +47,7 @@ class KotlinNotebookCellExecutionCallback(
                 }
                 LOG.warn("Kotlin execution callback failed", e)
             } finally {
-                finalizeCallback()
+                Disposer.dispose(this@KotlinNotebookCellExecutionCallback)
             }
         }
     }

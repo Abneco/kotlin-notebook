@@ -11,6 +11,7 @@ import com.intellij.jupyter.execution.kernel.KERNEL_UPDATE_FILE_PATH_TIMEOUT
 import com.intellij.jupyter.execution.kernel.toJupyterMessage
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.NoReplyMessageFactory
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
+import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.kotlinx.jupyter.messaging.MessageContent
@@ -45,18 +46,21 @@ suspend fun JupyterNotebookSession.updateNotebookMetadata(): Boolean {
             myFinalizeCallback = {
                 replyDeferred.complete(false)
                 replyReceived.complete(false)
+
             }
         ) {
             override fun onStatus(message: JupyterStatusMessage) {
                 super.onStatus(message)
                 if (message.executionState == JupyterKernelState.IDLE) {
                     replyReceived.invokeOnCompletion { throwable ->
+                        Disposer.dispose(this)
                         replyDeferred.complete(throwable == null)
                     }
                 }
             }
 
             override fun onClientMetadataReply(message: JupyterMessage) {
+                Disposer.dispose(this)
                 replyReceived.complete(true)
             }
         }

@@ -19,6 +19,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinInProcessJup
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.FinalizationPreservingCallback
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.sendMessageAndWait
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.updateNotebookMetadata
+import com.intellij.openapi.util.Disposer
 import com.intellij.util.application
 import org.jetbrains.kotlinx.jupyter.messaging.KernelInfoRequest
 import org.jetbrains.kotlinx.jupyter.messaging.MessageType
@@ -89,6 +90,12 @@ abstract class JupyterSessionVerifiedLaunchStrategy(
                         verificationDeferred.complete(false)
                     }
                 ) {
+                    init {
+                        verificationDeferred.invokeOnCompletion {
+                            Disposer.dispose(this)
+                        }
+                    }
+
                     override fun onKernelInfoReply(message: JupyterMessage) {
                         kernel?.onKernelInfoReply(message)
                         verificationDeferred.complete(true)

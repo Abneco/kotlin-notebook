@@ -1,7 +1,8 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages
 
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
+import com.intellij.openapi.util.Disposer
 
 /**
  * An abstract callback class that ensures proper finalization of kernel message handling while preserving
@@ -15,15 +16,13 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecu
  */
 abstract class FinalizationPreservingCallback(
     private val myFinalizeCallback : () -> Unit,
-): JupyterExecutionCallbackAdapter() {
+): JupyterExecutionCallback {
     private var externalFinalizeCallback: () -> Unit = {}
 
-    override var finalizeCallback: () -> Unit
-        get() = {
+    init {
+        Disposer.register(this) {
             externalFinalizeCallback()
             myFinalizeCallback()
         }
-        set(value) {
-            externalFinalizeCallback = value
-        }
+    }
 }
