@@ -5,6 +5,7 @@ import org.jetbrains.kotlinx.jupyter.api.AbstractKernelRunMode
 import org.jetbrains.kotlinx.jupyter.api.StreamSubstitutionType
 import org.jetbrains.kotlinx.jupyter.util.ClassLoadingDelegatingStrategy
 import org.jetbrains.kotlinx.jupyter.util.DelegatingClassLoader
+import org.jetbrains.kotlinx.jupyter.util.MultiDelegatingClassLoader
 import org.jetbrains.kotlinx.jupyter.util.kernelFqnPrefixes
 
 class IntellijProcessKernelRunMode(
