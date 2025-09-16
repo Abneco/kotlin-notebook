@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages
 
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterKernelState
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
@@ -49,7 +49,7 @@ suspend fun JupyterNotebookSession.updateNotebookMetadata(): Boolean {
         ) {
             override fun onStatus(message: JupyterStatusMessage) {
                 super.onStatus(message)
-                if (message.executionState == JupyterExecutionState.IDLE) {
+                if (message.executionState == JupyterKernelState.IDLE) {
                     replyReceived.invokeOnCompletion { throwable ->
                         replyDeferred.complete(throwable == null)
                     }

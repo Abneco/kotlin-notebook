@@ -21,7 +21,8 @@ class KotlinNotebookFileIconProvider : FileIconProvider {
     }
 
     private fun isRunningNotebook(file: VirtualFile, project: Project?): Boolean {
-        if (project == null) return false
-        return JupyterExecutionManager.getInstance(project, file).isKernelRunning()
+        if (project == null)
+            return false
+        return JupyterExecutionManager.getInstance(project, file).hasSession()
     }
 }

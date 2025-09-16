@@ -5,7 +5,7 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.executor.kernel.JupyterKernelCellTask
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterKernelState
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
 import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
@@ -145,7 +145,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
 
         val testCallbacks = listOfNotNull(object : JupyterTaskBaseCallback() {
             override fun onStatus(message: JupyterStatusMessage) {
-                if (message.executionState == JupyterExecutionState.IDLE) {
+                if (message.executionState == JupyterKernelState.IDLE) {
                     receivedMessages[cellExecutionNumber[cellNumber]!!].complete(messages)
                 }
             }

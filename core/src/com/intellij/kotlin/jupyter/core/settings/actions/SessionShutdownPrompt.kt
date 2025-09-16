@@ -26,7 +26,7 @@ inline fun promptSessionShutdownIfNeeded(
 ) {
     if (!notebookFile.isKotlinNotebook) return
 
-    if (!JupyterExecutionManager.getInstance(project, notebookFile).isKernelRunning()) {
+    if (!JupyterExecutionManager.getInstance(project, notebookFile).hasSession()) {
         action(false)
         return
     }

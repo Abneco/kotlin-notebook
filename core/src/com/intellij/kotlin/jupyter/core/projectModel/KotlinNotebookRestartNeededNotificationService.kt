@@ -75,7 +75,7 @@ class KotlinNotebookRestartNeededNotificationService(
         status: KotlinNotebookRestartStatus.Needed,
     ) {
         // We can't and don't need to restart the session if it didn't start
-        if (!JupyterExecutionManager.getInstance(project, notebook.virtualFile).isKernelRunning()) {
+        if (!JupyterExecutionManager.getInstance(project, notebook.virtualFile).hasSession()) {
             return
         }
 

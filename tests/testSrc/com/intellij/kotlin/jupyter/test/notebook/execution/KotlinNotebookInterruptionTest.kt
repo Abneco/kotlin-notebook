@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.test.notebook.execution
 import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterExecutionState
+import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterKernelState
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
 import com.intellij.jupyter.core.kernel.executor.JupyterTaskBaseCallback
 import com.intellij.kotlin.jupyter.test.util.JDKVersionRule
@@ -54,7 +54,7 @@ class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest() {
             }
         }, object : JupyterTaskBaseCallback() {
             override fun onStatus(message: JupyterStatusMessage) {
-                if (message.executionState == JupyterExecutionState.BUSY && alreadyInterrupted.compareAndSet(false, true)) {
+                if (message.executionState == JupyterKernelState.BUSY && alreadyInterrupted.compareAndSet(false, true)) {
                     launchBackground {
                         delay(1000)
                         val session = sessionDeferred.awaitBlocking(5.seconds)
