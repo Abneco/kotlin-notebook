@@ -13,13 +13,13 @@ import com.intellij.openapi.editor.impl.EditorImpl
  * text sent from the kernel that is displayed in
  * [com.intellij.jupyter.core.jupyter.editor.outputs.error.JupyterErrorOutputConsoleView]
  */
-class KotlinJupyterErrorOutputFiltersProvider: JupyterErrorOutputFiltersProvider {
-    override fun getFilters(editor: EditorImpl, exceptionType: String, exceptionValue: String): List<Filter> {
+class KotlinJupyterErrorOutputFiltersProvider : JupyterErrorOutputFiltersProvider {
+    override suspend fun getFilters(editor: EditorImpl, exceptionType: String, exceptionValue: String): List<Filter> {
         val notebookFile: BackedNotebookVirtualFile? = editor.virtualFile?.toBackedNotebookFile()
         return if (notebookFile?.isKotlinNotebook == true) {
-          listOf(KotlinNotebookLineLinkFilter(editor))
+            listOf(KotlinNotebookLineLinkFilter(editor))
         } else {
-          emptyList()
+            emptyList()
         }
     }
 }
