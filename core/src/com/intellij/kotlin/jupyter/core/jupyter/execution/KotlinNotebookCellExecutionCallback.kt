@@ -4,9 +4,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.execution
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallbackAdapter
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessageChannel
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputsBase
-import com.intellij.jupyter.execution.util.deserialize
 import com.intellij.jupyter.execution.util.deserialize
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
@@ -38,9 +36,7 @@ class KotlinNotebookCellExecutionCallback(
   private val index: Int,
   private val executionStartedMs: Long,
 ) : JupyterExecutionCallbackAdapter() {
-    override val channel: JupyterMessageChannel
-        get() = JupyterMessageChannel.ANY
-    override var finalizeCallback: () -> Unit = {}
+  override var finalizeCallback: () -> Unit = {}
 
     override fun onExecuteReply(message: JupyterMessage) {
         KotlinNotebookPluginScope.getForProject(project).async {
