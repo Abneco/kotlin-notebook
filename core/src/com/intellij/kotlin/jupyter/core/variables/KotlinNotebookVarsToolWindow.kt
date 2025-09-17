@@ -2,19 +2,23 @@
 package com.intellij.kotlin.jupyter.core.variables
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.editor.completion.JupyterVariablesListener
 import com.intellij.jupyter.core.jupyter.variables.common.JupyterVarsToolWindowPanel
 import com.intellij.kotlin.jupyter.core.debug.KotlinNotebookDebugEditorsProvider
 import com.intellij.kotlin.jupyter.core.debug.frame.KotlinNotebookVariablesFrame
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
 import com.intellij.kotlin.jupyter.core.debug.util.shouldShowNotebookVariables
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.getPreferredFocusedComponent
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.ClickListener
 import com.intellij.ui.ListenerUtil
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.content.Content
+import com.intellij.xdebugger.frame.XValueChildrenList
 import com.intellij.xdebugger.impl.frame.XStandaloneVariablesView
 import java.awt.BorderLayout
 import java.awt.event.MouseEvent
@@ -23,7 +27,26 @@ class KotlinNotebookVarsToolWindow(
     project: Project,
     notebookFile: BackedNotebookVirtualFile,
     private val panelSetupData: NotebookVariablesToolWindowSetup
-) : JupyterVarsToolWindowPanel(project, notebookFile) {
+) : JupyterVarsToolWindowPanel(project, notebookFile), JupyterVariablesListener {
+    init {
+        subscribeToEvents()
+    }
+
+    private fun subscribeToEvents() {
+        project.messageBus.connect(this).subscribe(JupyterVariablesListener.TOPIC, this)
+    }
+
+    override fun notebookSessionEnvironmentUpdated(
+        virtualFile: VirtualFile,
+        values: XValueChildrenList?
+    ) {
+        if (notebookFile.originFile != virtualFile) return
+
+        KotlinNotebookPluginScope.invokeOnEDT {
+            rebuildView()
+        }
+    }
+
     override val shouldBeAddedOnTopLevel: Boolean = false
 
     override fun getName() =
