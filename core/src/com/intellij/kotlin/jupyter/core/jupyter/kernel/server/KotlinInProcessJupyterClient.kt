@@ -8,7 +8,6 @@ import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
 import com.intellij.jupyter.execution.process.InProcessJupyterClient
 import com.intellij.jupyter.execution.process.KernelName
 import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.cleanupKernelSession
-import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.util.DEFAULT_KOTLIN_KERNEL_NAME
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 
@@ -30,10 +29,6 @@ class KotlinInProcessJupyterClient() : InProcessJupyterClient() {
         if (removeAndDisposeSession(kernelHandler.kernelId)) {
             cleanupKernelSession(kernelHandler)
         }
-    }
-
-    override fun doAfterRestart(handler: KernelRunnableHandler) {
-        handler.project.notebookNotifications.showKernelRestart()
     }
 
     companion object {

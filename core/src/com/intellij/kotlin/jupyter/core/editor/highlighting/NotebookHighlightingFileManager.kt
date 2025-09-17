@@ -181,8 +181,8 @@ class NotebookHighlightingFileManager(
         project.messageBus.connect(this).subscribe(
             NotebookSessionEventListener.TOPIC,
             object : NotebookSessionEventListener {
-                override fun sessionStarted(virtualFile: BackedNotebookVirtualFile, isAfterRestart: Boolean) {
-                    if (targetFile != virtualFile || !isAfterRestart) return
+                override fun sessionStarted(virtualFile: BackedNotebookVirtualFile) {
+                    if (targetFile != virtualFile ) return
 
                     restartAnalysing()
                 }

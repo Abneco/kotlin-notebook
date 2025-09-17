@@ -109,7 +109,7 @@ internal class KotlinNotebookDebugSession(
         messageBus.connect(parentDisposable).subscribe(
           NotebookSessionEventListener.TOPIC,
           object : NotebookSessionEventListener {
-                override fun sessionStarted(virtualFile: BackedNotebookVirtualFile, isAfterRestart: Boolean) {
+                override fun sessionStarted(virtualFile: BackedNotebookVirtualFile) {
                     this@KotlinNotebookDebugSession.coroutineScope.launch {
                         if (project.isDisposed) return@launch
 

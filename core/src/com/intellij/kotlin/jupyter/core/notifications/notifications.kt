@@ -93,12 +93,6 @@ internal class KotlinNotebookNotifications(private val project: Project) {
         }
     }
 
-    fun showKernelRestart() =
-        notify(
-            KotlinNotebookNotificationType.KERNEL_RESTART,
-            KotlinNotebookBundle.message("kotlin.jupyter.session.restart")
-        )
-
     fun showRerunActionNeeded() {
         notify(
             KotlinNotebookNotificationType.RERUN_ACTION_NEEDED,
