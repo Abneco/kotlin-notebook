@@ -54,7 +54,7 @@ internal class HighlightingEventsQueueImpl(
             focusCell = focusCell,
             previousFocusCell = prevFocusCell,
             changedCells = changedCells,
-            true
+            false
         )
     }
 

@@ -89,7 +89,7 @@ internal class HighlightingPassServiceImpl(
             // pass can be started earlier than call back about the daemon end could fire
             val inProgress = passStatusIndicator.isInProgress
             if (!passStatusIndicator.enterSetupPhase() && !inProgress || inProgress) {
-                LOG.debug("Another pass is in setup, aborting, state: ${passStatusIndicator.get()}")
+                LOG.debug("Another pass is in setup, aborting, state: ${passStatusIndicator.get()}, changedCells: $changedCells")
                 return targetRanges
             }
 
@@ -106,6 +106,7 @@ internal class HighlightingPassServiceImpl(
             // abort and save
             if (mergedEvent != null) {
                 highlightingEventsQueue.pushEvent(mergedEvent)
+                passStatusIndicator.setIdle()
             }
             throw ex
         }
