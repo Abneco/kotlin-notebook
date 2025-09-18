@@ -111,10 +111,10 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
 
     override val pluginMode: KotlinPluginMode
         get() {
-            val vmValue = System.getProperty("idea.kotlin.plugin.use.k2") ?: return KotlinPluginMode.K1
+            val vmValue = System.getProperty("idea.kotlin.plugin.use.k1") ?: return KotlinPluginMode.K2
             return when (vmValue) {
-                "true" -> KotlinPluginMode.K2
-                else -> KotlinPluginMode.K1
+                "true" -> KotlinPluginMode.K1
+                else -> KotlinPluginMode.K2
             }
         }
 
