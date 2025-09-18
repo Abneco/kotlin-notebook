@@ -236,6 +236,8 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.jupyter.core">
+        <notebookSessionFactory implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSessionFactory"/>
+
         <jupyterRuntimeListener implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinExecutionServiceListener"/>
         <jupyter.data.input.run.jupyterDataInputErrorMessageFactory
                 implementation="com.intellij.kotlin.jupyter.core.editor.dnd.JupyterDataInputKotlinErrorMessageFactory"/>
@@ -256,7 +258,8 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.jupyter.core.jupyter">
-        <jupyterCellExecutionCallbackFactory
+
+    <jupyterCellExecutionCallbackFactory
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.KotlinNotebookCellExecutionCallbackFactory"/>
         <connections.execution.preExecutionSourceModifier
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinPreExecutionSourceModifier"/>
@@ -267,16 +270,6 @@
                 implementation="com.intellij.kotlin.jupyter.core.variables.NotebookVarsToolWindowProvider"/>
         <jupyterActionPresentationModifier
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookActionPresentationModifier"/>
-        <connections.execution.core.jupyterServersFactory
-                order="before default"
-                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinServersFactory"/>
-        <connections.execution.core.managedJupyterServerRunner
-                order="before default"
-                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ManagedKotlinNotebookServerRunner"/>
-        <connections.execution.notebookPathProvider
-                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinNotebookPathProvider"/>
-        <connections.execution.core.jupyterSessionLaunchStrategy
-                implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KotlinNotebookSessionLaunchStrategy"/>
         <csvDropHandler
                 id="KotlinCsvDropHandler"
                 implementation="com.intellij.kotlin.jupyter.core.editor.dnd.KotlinCsvDropHandler"/>

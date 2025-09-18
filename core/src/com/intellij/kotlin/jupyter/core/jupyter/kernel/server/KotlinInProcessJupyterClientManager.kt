@@ -5,17 +5,20 @@ import com.intellij.jupyter.core.jupyter.connections.filecontentsapi.CachingFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelBase
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterKernelSpec
 import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
-import com.intellij.jupyter.execution.process.InProcessJupyterClient
+import com.intellij.jupyter.execution.process.InProcessJupyterClientManager
 import com.intellij.jupyter.execution.process.KernelName
 import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.cleanupKernelSession
 import com.intellij.kotlin.jupyter.core.util.DEFAULT_KOTLIN_KERNEL_NAME
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 
 /**
  * Jupyter client that is running in the IDE process.
  */
-class KotlinInProcessJupyterClient() : InProcessJupyterClient() {
-    override val kernelSpecs: Map<KernelName, JupyterKernelSpec> = Companion.kernelSpecs
+@Service(Service.Level.PROJECT)
+class KotlinInProcessJupyterClientManager : InProcessJupyterClientManager() {
+    override val kernelSpecs: Map<KernelName, JupyterKernelSpec> = kotlinKernelSpecs
 
     override val fileContentsApi: CachingFileContentsApi
         get() = error("Kotlin is not support file contents")
@@ -27,12 +30,17 @@ class KotlinInProcessJupyterClient() : InProcessJupyterClient() {
     }
 
     companion object {
-        private val kernelSpecs: Map<KernelName, JupyterKernelSpec> = mapOf(
-            DEFAULT_KOTLIN_KERNEL_NAME to JupyterKernelBase(
-                notebookKernelSpec.displayName,
-                notebookKernelSpec.language,
-                notebookKernelSpec.name
-            )
+        private val kotlinKernelSpec = JupyterKernelBase(
+            notebookKernelSpec.displayName,
+            notebookKernelSpec.language,
+            notebookKernelSpec.name
         )
+
+        private val kotlinKernelSpecs: Map<KernelName, JupyterKernelSpec> = mapOf(
+            DEFAULT_KOTLIN_KERNEL_NAME to kotlinKernelSpec
+        )
+
+        fun getInstance(project: Project): KotlinInProcessJupyterClientManager =
+            project.getService(KotlinInProcessJupyterClientManager::class.java)
     }
 }

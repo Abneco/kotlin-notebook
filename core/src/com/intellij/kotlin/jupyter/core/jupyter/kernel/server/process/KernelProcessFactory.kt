@@ -3,12 +3,12 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
+import com.intellij.jupyter.core.jupyter.connections.client.JupyterClientManager
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
 import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOptions
 import com.intellij.jupyter.execution.kernel.SeparateProcessKernelRunnableHandler
-import com.intellij.jupyter.execution.listeners.events.KernelNotificationStartedEvent
 import com.intellij.jupyter.execution.listeners.KernelProcessListener
+import com.intellij.jupyter.execution.listeners.events.KernelNotificationStartedEvent
 import com.intellij.jupyter.execution.listeners.events.KernelProcessEvent
 import com.intellij.jupyter.execution.process.KernelPortsProvider
 import com.intellij.jupyter.execution.toolwindow.KernelProcessToolWindowCoordinatorService
@@ -41,7 +41,7 @@ import kotlin.io.path.invariantSeparatorsPathString
 
 /**
  * Factory for creating Kotlin kernels that will run in their own process. In particular, they
- * will not share the process with neither the [JupyterClient] nor the [JupyterServer].
+ * will not share the process with neither the [JupyterClientManager] nor the [JupyterServer].
  *
  * For kernels running in the same process, see [EmbeddedKernelRunnableFactory].
  */
@@ -155,7 +155,7 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
     }
 
     private var _kernelPortsProvider: KernelPortsProvider = KernelPortsProvider {
-        Thread.currentThread().setContextClassLoader(KernelPortsProvider::class.java.classLoader)
+        Thread.currentThread().contextClassLoader = KernelPortsProvider::class.java.classLoader
         createRandomZmqKernelPorts()
     }
 

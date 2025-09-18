@@ -1,7 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 
-import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
+import com.intellij.jupyter.core.jupyter.connections.client.JupyterClientManager
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterKernelId
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
@@ -15,7 +15,7 @@ import com.intellij.jupyter.execution.listeners.KernelListener
 import com.intellij.jupyter.execution.listeners.events.NotebookKernelEvent
 import com.intellij.jupyter.execution.process.KernelClientSession
 import com.intellij.jupyter.execution.process.KernelRunnableProvider
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinInProcessJupyterClient
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinInProcessJupyterClientManager
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.FinalizationPreservingCallback
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.sendMessageAndWait
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.updateNotebookMetadata
@@ -29,13 +29,13 @@ abstract class JupyterSessionVerifiedLaunchStrategy(
     private val reconnectAttemptsCount: Int,
 ) : JupyterSessionLaunchStrategy {
     override suspend fun createAndVerifySession(
-        jupyterClient: JupyterClient,
-        sessionDataFactory: suspend JupyterClient.() -> JupyterSessionData,
-        sessionFactory: (JupyterSessionData) -> JupyterNotebookSession?
-    ): JupyterNotebookSession? {
+        jupyterClient: JupyterClientManager,
+        sessionDataFactory: suspend JupyterClientManager.() -> JupyterSessionData,
+        sessionFactory: (JupyterSessionData) -> JupyterNotebookSession
+    ): JupyterNotebookSession {
         repeat(verificationAttemptsCount) {
             val sessionData = jupyterClient.sessionDataFactory()
-            val session = sessionFactory(sessionData) ?: return null
+            val session = sessionFactory(sessionData)
 
             val kernel = (jupyterClient as? KernelRunnableProvider)?.getKernel(sessionData.kernelId)
 
@@ -47,11 +47,11 @@ abstract class JupyterSessionVerifiedLaunchStrategy(
             }
 
             // Let's wait for a proper session cleanup to ensure state consistency
-            (jupyterClient as KotlinInProcessJupyterClient)
+            (jupyterClient as KotlinInProcessJupyterClientManager)
                 .deleteSessionAndWaitForTermination(sessionData.sessionId)
             session.deleteSession()
         }
-        return null
+        throw IllegalStateException("Unable to verify session after $verificationAttemptsCount attempts")
     }
 
     private fun notifySessionVerified(session: JupyterNotebookSession) {
@@ -69,7 +69,7 @@ abstract class JupyterSessionVerifiedLaunchStrategy(
     ): Boolean {
         repeat(reconnectAttemptsCount) { attemptCounter ->
             if (attemptCounter > 0) {
-                val kernelClientSession = (session.jupyterServer.client as KotlinInProcessJupyterClient)
+                val kernelClientSession = (session.jupyterClientManager as KotlinInProcessJupyterClientManager)
                     .getKernelSession(kernelId) as? KernelClientSession
                 kernelClientSession?.restartCommunication()
             }

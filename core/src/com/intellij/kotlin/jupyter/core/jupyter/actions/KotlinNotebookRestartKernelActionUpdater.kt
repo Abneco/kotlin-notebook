@@ -2,11 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.actions
 
 import com.intellij.jupyter.core.jupyter.JupyterBundle
-import com.intellij.jupyter.core.jupyter.connections.action.getJupyterNotebookRuntimeSettings
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterNotebookOfflineSettings
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.JupyterNotebookSessionSettings
-import com.intellij.jupyter.core.jupyter.connections.execution.notebook.ManagedJupyterServerNotebookSessionSettings
-import com.intellij.jupyter.core.jupyter.connections.server.JupyterServerUtils.getJupyterServer
+import com.intellij.jupyter.core.jupyter.connections.action.notebookSession
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.notebooks.jupyter.core.icons.JupyterCoreIcons
@@ -61,34 +57,13 @@ object KotlinNotebookRestartKernelActionUpdater {
     }
 
     private fun checkKernelAvailable(e: AnActionEvent) {
-        checkKernelAvailable(e) {
-            e.presentation.isEnabled = it
-            if (e.place == ActionPlaces.PROJECT_VIEW_POPUP) {
-                e.presentation.isVisible = it
-            }
+        val notebookSession = e.notebookSession
+        if (notebookSession == null) {
+            e.presentation.isEnabledAndVisible = false
         }
-    }
-
-    private fun checkKernelAvailable(e: AnActionEvent, callback: (Boolean) -> Unit) {
-        val project = e.project ?: return
-        val virtualFile = e.notebookFile?.file ?: return
-        val runtimeSettings = e.getJupyterNotebookRuntimeSettings()
-        if (runtimeSettings == null) {
-            val kernelSpecs = getJupyterServer(project, virtualFile)?.kernels
-            callback(!kernelSpecs.isNullOrEmpty())
-        } else {
-            fun serverIsOffline() = callback(false)
-            fun serverIsOnline() = callback(true)
-
-            when (runtimeSettings) {
-                is JupyterNotebookOfflineSettings -> serverIsOffline()
-                is JupyterNotebookSessionSettings -> serverIsOnline()
-                is ManagedJupyterServerNotebookSessionSettings -> if (runtimeSettings.jupyterServerExecution.state.isStarted()) {
-                    serverIsOnline()
-                } else {
-                    serverIsOffline()
-                }
-            }
+        e.presentation.isEnabled = true
+        if (e.place == ActionPlaces.PROJECT_VIEW_POPUP) {
+            e.presentation.isVisible = true
         }
     }
 }

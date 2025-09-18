@@ -3,13 +3,8 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process
 
 import com.intellij.jupyter.execution.kernel.KERNEL_VERIFICATION_ATTEMPTS_COUNT
 import com.intellij.jupyter.execution.kernel.KERNEL_VERIFICATION_RECONNECT_ATTEMPTS_COUNT
-import com.intellij.kotlin.jupyter.core.util.isKotlinKernelName
 
 class KotlinNotebookSessionLaunchStrategy : JupyterSessionVerifiedLaunchStrategy(
     verificationAttemptsCount = KERNEL_VERIFICATION_ATTEMPTS_COUNT,
     reconnectAttemptsCount = KERNEL_VERIFICATION_RECONNECT_ATTEMPTS_COUNT,
-) {
-    override suspend fun isApplicable(kernelName: String): Boolean {
-        return isKotlinKernelName(kernelName)
-    }
-}
+)
