@@ -184,9 +184,13 @@ class NotebookVariablesPerFileStateService(
         }
     }
 
-    override fun dispose() {
-        coroutineScope.cancel()
+    fun clear() {
         variablesMetaData = null
         variableToolWindowHandler.clear()
+    }
+
+    override fun dispose() {
+        coroutineScope.cancel()
+        clear()
     }
 }

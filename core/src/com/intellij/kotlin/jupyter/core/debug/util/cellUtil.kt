@@ -6,6 +6,7 @@ import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiFile
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 
 /**
@@ -15,7 +16,10 @@ import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 const val NOTEBOOK_COMPILED_CLASS_NAME_PREFIX: String = "Line_"
 const val NOTEBOOK_COMPILED_CLASS_NAME_SUFFIX: String = "_jupyter"
 
-class ExecutedPresentCellInfo(psiFile: PsiFile?) {
+/**
+ * NB: this class is not thread-safe
+ */
+class ExecutedPresentCellInfo(psiFile: JupyterFile?) {
     private val knownCellClasses = mutableMapOf<String, JupyterPsiCell>()
     val cellOrdinalToClassName: MutableMap<Int, Set<String>> = mutableMapOf()
     val classNameToCellOrdinal: MutableMap<String, Int> = mutableMapOf()
