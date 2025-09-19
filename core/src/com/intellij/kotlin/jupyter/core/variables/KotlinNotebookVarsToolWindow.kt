@@ -33,24 +33,26 @@ class KotlinNotebookVarsToolWindow(
     project: Project,
     notebookFile: BackedNotebookVirtualFile,
     private val panelSetupData: NotebookVariablesToolWindowSetup
-) : JupyterVarsToolWindowPanel(project, notebookFile), JupyterVariablesListener, UiDataProvider {
+) : JupyterVarsToolWindowPanel(project, notebookFile), UiDataProvider {
+    private inner class VariablesListener: JupyterVariablesListener {
+        override fun notebookSessionEnvironmentUpdated(
+            virtualFile: VirtualFile,
+            values: XValueChildrenList?
+        ) {
+            if (notebookFile.originFile != virtualFile) return
+
+            KotlinNotebookPluginScope.invokeOnEDT {
+                rebuildView()
+            }
+        }
+    }
+
     init {
         subscribeToEvents()
     }
 
     private fun subscribeToEvents() {
-        project.messageBus.connect(this).subscribe(JupyterVariablesListener.TOPIC, this)
-    }
-
-    override fun notebookSessionEnvironmentUpdated(
-        virtualFile: VirtualFile,
-        values: XValueChildrenList?
-    ) {
-        if (notebookFile.originFile != virtualFile) return
-
-        KotlinNotebookPluginScope.invokeOnEDT {
-            rebuildView()
-        }
+        project.messageBus.connect(this).subscribe(JupyterVariablesListener.TOPIC, VariablesListener())
     }
 
     override val shouldBeAddedOnTopLevel: Boolean = false

@@ -39,7 +39,7 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
         sourceElement.reference?.resolve()?.let { return arrayOf(it) }
         val refExpr = sourceElement.getParentOfType<KtReferenceExpression>(true) ?: return emptyArray()
         if (refExpr.references.none { it.resolve() != null } )  return emptyArray()
-        tryGetPreviousValidResolvedResult(sourceElement)?.let { return arrayOf(it) }
+        tryGetPreviousResolvedResult(sourceElement)?.let { return arrayOf(it) }
 
         if (PsiTreeUtil.getParentOfType(sourceElement, KtReferenceExpression::class.java) == null) {
             return null
@@ -65,7 +65,7 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
     }
 
     companion object {
-        internal fun tryGetPreviousValidResolvedResult(sourceElement: PsiElement): PsiElement? {
+        internal fun tryGetPreviousResolvedResult(sourceElement: PsiElement): PsiElement? {
             sourceElement.getUserData(IN_EDITOR_ELEM_REF_KEY)?.let {
                 val knownRef = sourceElement.parent?.reference?.resolve()
                 if (!it.isValid || !it.containingFile.isValid) {

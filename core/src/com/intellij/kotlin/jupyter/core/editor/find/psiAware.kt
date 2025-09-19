@@ -32,7 +32,7 @@ fun searchForElementDeclarationOrUsages(
     val backedNotebookVirtualFile = virtualFile.toBackedNotebookFile()
 
     val notebookStructureTracker = NotebookStructureTrackerService.getForFile(project, backedNotebookVirtualFile)
-    val ordinalMap = notebookStructureTracker.cellOrdinalToCompiledlassNames
+    val ordinalMap = notebookStructureTracker.cellOrdinalToCompiledClassNames
 
     val injectionManager = InjectedLanguageManager.getInstance(project)
     val targetHost = injectionManager.getInjectionHost(target.containingFile)

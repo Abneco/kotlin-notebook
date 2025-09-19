@@ -39,7 +39,7 @@ class KotlinNotebookSessionVariablesService(
         project.messageBus.connect(this).subscribe(
             NotebookSessionEventListener.TOPIC,
             object : NotebookSessionEventListener {
-                override fun sessionStarted(virtualFile: BackedNotebookVirtualFile, isAfterRestart: Boolean) {
+                override fun sessionStarted(virtualFile: BackedNotebookVirtualFile) {
                     if (!virtualFile.isKotlinNotebook) return
 
                     // We need to clear panels in case of session restart

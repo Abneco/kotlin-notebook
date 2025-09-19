@@ -18,12 +18,10 @@ import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtNamedDeclaration
 import org.jetbrains.kotlin.util.getValueOrNull
@@ -39,7 +37,7 @@ import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 internal interface NotebookClassesInCellsInfoHandler {
     val nextCompiledClassLineIndex: Int
 
-    val cellOrdinalToCompiledlassNames: Map<Int, Set<String>>
+    val cellOrdinalToCompiledClassNames: Map<Int, Set<String>>
     val classNameToCellOrdinalStructure: MutableMap<String, Int>
 
     fun storeCompliedDataInCell(snippetMetadata: EvaluatedSnippetMetadata, executedCellData: ExecutedCellData)
@@ -72,11 +70,11 @@ class NotebookStructurePerFileTracker(
     }
     private val knownCellInfo by knownCellInfoDelegate
 
-    override val cellOrdinalToCompiledlassNames: Map<Int, Set<String>>
+    override val cellOrdinalToCompiledClassNames: Map<Int, Set<String>>
         get() = buildMap {
             for ((index, cell) in notebook.computeCells().withIndex()) {
-                val compiledClassSet = cell.executionMetadata?.compiledClasses?.toSet()
-                put(index, compiledClassSet ?: emptySet())
+                val compiledClassSet = cell.executionMetadata?.compiledClasses?.toSet().orEmpty()
+                put(index, compiledClassSet)
             }
         }
 
@@ -151,21 +149,16 @@ class NotebookStructurePerFileTracker(
         val psiCell = executedCellData.psiCell
         val cellIndex = executedCellData.cellIndex
         val notebookCell = notebook.getCell(cellIndex)
-        notebookCell.storeExecutionRelatedMetaData(compiledClassNames)
-
-        try {
-            if (cellIndex != -1) {
-                compiledClassNames.forEach { classNamesToCellOrdinal[it] = cellIndex }
-            }
-        } catch (ex: Exception) {
-            if (ex is ProcessCanceledException) {
-                coroutineScope.async {
-                    psiCell.storeReferenceInfo(compiledClassNames)
-                }
-                return
-            } else LOG.warn("Exception during storing cell-related data", ex)
+        if (cellIndex != -1) {
+            compiledClassNames.forEach { classNamesToCellOrdinal[it] = cellIndex }
         }
         psiCell.storeReferenceInfo(compiledClassNames)
+
+        try {
+            notebookCell.storeExecutionRelatedMetaData(compiledClassNames)
+        } catch (ex: Exception) {
+            LOG.warn("Exception during storing cell-related data", ex)
+        }
     }
 
     fun updateCellInformationBeforeExecution(cell: JupyterPsiCell, ordinal: Int?) {

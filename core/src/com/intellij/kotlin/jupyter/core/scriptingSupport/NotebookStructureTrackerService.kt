@@ -19,10 +19,7 @@ class NotebookStructureTrackerService(
         project.messageBus.connect(this).subscribe(
             NotebookSessionEventListener.TOPIC,
             object : NotebookSessionEventListener {
-                override fun sessionStarted(
-                    virtualFile: BackedNotebookVirtualFile,
-                    isAfterRestart: Boolean
-                ) {
+                override fun sessionStarted(virtualFile: BackedNotebookVirtualFile) {
                     getOrCreate(virtualFile).clearData()
                 }
             }

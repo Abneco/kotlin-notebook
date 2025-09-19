@@ -182,7 +182,7 @@ class NotebookHighlightingFileManager(
             NotebookSessionEventListener.TOPIC,
             object : NotebookSessionEventListener {
                 override fun sessionStarted(virtualFile: BackedNotebookVirtualFile) {
-                    if (targetFile != virtualFile ) return
+                    if (targetFile != virtualFile) return
 
                     restartAnalysing()
                 }
