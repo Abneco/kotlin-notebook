@@ -35,6 +35,7 @@ class KotlinNotebookToolWindowHandler {
         return newPanel
     }
 
+    @Synchronized
     fun clear() {
         notebookVariablesWindow = null
     }

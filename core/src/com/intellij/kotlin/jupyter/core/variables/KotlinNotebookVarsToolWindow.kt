@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.core.variables
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.completion.JupyterVariablesListener
+import com.intellij.jupyter.core.jupyter.helper.JupyterHelper.FORCED_NOTEBOOK
 import com.intellij.jupyter.core.jupyter.variables.common.JupyterVarsToolWindowPanel
 import com.intellij.kotlin.jupyter.core.debug.KotlinNotebookDebugEditorsProvider
 import com.intellij.kotlin.jupyter.core.debug.frame.KotlinNotebookVariablesFrame
@@ -10,6 +11,9 @@ import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSession
 import com.intellij.kotlin.jupyter.core.debug.util.shouldShowNotebookVariables
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.openapi.actionSystem.DataSink
+import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.actionSystem.UiDataProvider
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.getPreferredFocusedComponent
 import com.intellij.openapi.util.Disposer
@@ -19,7 +23,9 @@ import com.intellij.ui.ListenerUtil
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.content.Content
 import com.intellij.xdebugger.frame.XValueChildrenList
+import com.intellij.xdebugger.impl.frame.XDebugSessionProxy
 import com.intellij.xdebugger.impl.frame.XStandaloneVariablesView
+import com.intellij.xdebugger.impl.frame.asProxy
 import java.awt.BorderLayout
 import java.awt.event.MouseEvent
 
@@ -27,7 +33,7 @@ class KotlinNotebookVarsToolWindow(
     project: Project,
     notebookFile: BackedNotebookVirtualFile,
     private val panelSetupData: NotebookVariablesToolWindowSetup
-) : JupyterVarsToolWindowPanel(project, notebookFile), JupyterVariablesListener {
+) : JupyterVarsToolWindowPanel(project, notebookFile), JupyterVariablesListener, UiDataProvider {
     init {
         subscribeToEvents()
     }
@@ -114,5 +120,10 @@ class KotlinNotebookVarsToolWindow(
                     panel.getPreferredFocusedComponent()
                 )
         }
+    }
+
+    override fun uiDataSnapshot(sink: DataSink) {
+        val session = KotlinNotebookDebugSessionManager.getForFile(project, notebookFile).currentXSession ?: return
+        sink[XDebugSessionProxy.DEBUG_SESSION_PROXY_KEY] = session.asProxy()
     }
 }
