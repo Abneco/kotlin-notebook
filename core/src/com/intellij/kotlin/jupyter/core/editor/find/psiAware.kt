@@ -1,11 +1,12 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.find
 
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureClassTracker.Companion.CELL_CLASS_NAME
+import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructurePerFileTracker.Companion.CELL_CLASS_NAME
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
+import com.intellij.kotlin.jupyter.core.util.getNotebookCells
+import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
@@ -15,7 +16,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.util.runIf
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtScript
-import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
 
 
 fun searchForElementDeclarationOrUsages(
@@ -28,20 +28,18 @@ fun searchForElementDeclarationOrUsages(
     val injectedManager = InjectedLanguageManager.getInstance(project)
     val foundData = mutableSetOf<PsiElement>()
     val asPsiFile = virtualFile.findPsiFile(project) ?: return null
-    val notebookCells = (asPsiFile.children.firstOrNull() as? JupyterNotebook)?.psiCellList ?: return null
-    val ordinalMap =
-        NotebookStructureTrackerService.getForFile(
-            project,
-            BackedNotebookVirtualFile.takeBackend(virtualFile)
-        ).cellOrdinalToClassNameStructure
+    val notebookCells = asPsiFile.getNotebookCells().ifEmpty { return null }
+    val backedNotebookVirtualFile = virtualFile.toBackedNotebookFile()
+
+    val notebookStructureTracker = NotebookStructureTrackerService.getForFile(project, backedNotebookVirtualFile)
+    val ordinalMap = notebookStructureTracker.cellOrdinalToCompiledlassNames
+
     val injectionManager = InjectedLanguageManager.getInstance(project)
     val targetHost = injectionManager.getInjectionHost(target.containingFile)
-    val targetClassName = runIf(searchStrategy == ReferenceSearchStrategy.REFERENCES) {
-        targetHost?.let {
-            val name = ordinalMap[notebookCells.indexOf(it)]
-            if (it.getUserData(CELL_CLASS_NAME) == null && name != null) it.putUserData(CELL_CLASS_NAME, name)
-            name
-        }
+    val targetClassName = runIf(searchStrategy == ReferenceSearchStrategy.REFERENCES && targetHost != null) {
+        val name = ordinalMap[notebookCells.indexOf(targetHost!!)]
+        if (targetHost.getUserData(CELL_CLASS_NAME) == null && name != null) targetHost.putUserData(CELL_CLASS_NAME, name)
+        name
     }
     if (target.parent == null) return null // means we have inconsistent notebook state
     val targetContainingFile = target.containingFile
@@ -53,11 +51,11 @@ fun searchForElementDeclarationOrUsages(
         isLocalSearch = isItGeneratedNameInsideLambdaCall(target, target)
     }
     // println("isLocalSearch: $isLocalSearch for ${target.text}")
-    val properContainer = if (isLocalSearch) listOf(injectionManager.getInjectionHost(targetContainingFile)) else notebookCells
+    val scopeContainers = if (isLocalSearch) listOf(injectionManager.getInjectionHost(targetContainingFile)) else notebookCells
 
     return runReadAction {
-        for (ind in properContainer.indices) {
-            val gotHost = properContainer[ind] ?: continue
+        for (ind in scopeContainers.indices) {
+            val gotHost = scopeContainers[ind] ?: continue
             val host = if (isLocalSearch) gotHost else notebookCells[ind]
             val firstInjectedFileInfo = injectedManager.getInjectedPsiFiles(host)?.firstOrNull() ?: continue
             val psiFile = firstInjectedFileInfo.first ?: continue
@@ -68,7 +66,7 @@ fun searchForElementDeclarationOrUsages(
             if (psiFile !is KtFile || (psiFile == targetContainingFile && searchStrategy == ReferenceSearchStrategy.DECLARATION)) continue
             val scriptBlock = psiFile.findChildrenByClass(KtScript::class.java).firstOrNull()?.blockExpression ?: continue
             val elements = mutableListOf<NavigatablePsiElement>()
-            val possibleClassName = ordinalMap[ind]
+            val possibleClassName = ordinalMap[ind].orEmpty()
             NotebookReferenceFinder.traverseChildrenAndSearch(
                 injectionManager, host, targetClassName ?: possibleClassName, scriptBlock, target, searchStrategy,
                 elements

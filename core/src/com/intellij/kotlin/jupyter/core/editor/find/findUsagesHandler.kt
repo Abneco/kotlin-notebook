@@ -6,11 +6,13 @@ import com.intellij.find.findUsages.FindUsagesHandlerFactory
 import com.intellij.find.findUsages.FindUsagesOptions
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.helper.notebookVirtualFile
 import com.intellij.kotlin.jupyter.core.debug.util.NOTEBOOK_COMPILED_CLASS_NAME_PREFIX
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookGotoDeclarationProvider.Companion.tryGetPreviousValidResolvedResult
 import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder.tryResolveCompiledDeclaration
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
+import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
 import com.intellij.openapi.application.ReadActionProcessor
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -65,7 +67,7 @@ internal fun tryResolveCompiledDeclarationInNotebook(element: PsiElement, scope:
     var ans: PsiElement? = null
     runReadAction {
         val targets = scope.getNotebookCells()
-        ans = tryResolveCompiledDeclaration(element, targets)
+        ans = tryResolveCompiledDeclaration(scope.virtualFile.toBackedNotebookFile(), element, targets)
         if (ans != null) {
             element.putUserData(IN_EDITOR_ELEM_REF_KEY, ans)
         }

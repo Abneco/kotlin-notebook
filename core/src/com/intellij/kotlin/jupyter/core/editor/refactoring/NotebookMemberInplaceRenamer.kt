@@ -2,13 +2,12 @@
 package com.intellij.kotlin.jupyter.core.editor.refactoring
 
 import com.intellij.kotlin.jupyter.core.editor.find.KotlinNotebookElementFindUsagesHandler
-import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder
 import com.intellij.kotlin.jupyter.core.editor.find.isIdentifier
 import com.intellij.kotlin.jupyter.core.editor.refactoring.NotebookRefactoringSupport.isNotebookRefactoringSupported
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
-import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureClassTracker.Companion.CELL_CLASS_NAME
+import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructurePerFileTracker.Companion.CELL_CLASS_NAME
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.visualization.getCell
 import com.intellij.openapi.application.runReadAction

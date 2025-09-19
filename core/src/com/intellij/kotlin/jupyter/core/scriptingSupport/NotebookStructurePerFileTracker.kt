@@ -6,7 +6,7 @@ import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.kotlin.jupyter.core.debug.util.ExecutedPresentCellInfo
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.findAllDeclarationsOfType
 import com.intellij.kotlin.jupyter.core.jupyter.cells.ExecutedCellData
-import com.intellij.kotlin.jupyter.core.jupyter.cells.NotebookExecutionRelatedDataKey
+import com.intellij.kotlin.jupyter.core.jupyter.cells.NotebookExecutionRelatedMetaData
 import com.intellij.kotlin.jupyter.core.jupyter.cells.NotebookExecutionRelatedMetaData.Companion.storeExecutionRelatedMetaData
 import com.intellij.kotlin.jupyter.core.jupyter.cells.clearAllCellsDataByKey
 import com.intellij.kotlin.jupyter.core.jupyter.cells.executionMetadata
@@ -39,7 +39,7 @@ import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 internal interface NotebookClassesInCellsInfoHandler {
     val nextCompiledClassLineIndex: Int
 
-    val cellOrdinalToClassNameStructure: MutableMap<Int, Set<String>>
+    val cellOrdinalToCompiledlassNames: Map<Int, Set<String>>
     val classNameToCellOrdinalStructure: MutableMap<String, Int>
 
     fun storeCompliedDataInCell(snippetMetadata: EvaluatedSnippetMetadata, executedCellData: ExecutedCellData)
@@ -47,11 +47,12 @@ internal interface NotebookClassesInCellsInfoHandler {
     fun findPsiCellByClassName(className: String): JupyterPsiCell?
 
     fun findPsiDeclarationsInsideCompliedCellByName(className: String, elementName: String): Collection<PsiElement>?
+
+    fun clearData()
 }
 
 
-
-class NotebookStructureClassTracker(
+class NotebookStructurePerFileTracker(
     private val project: Project,
     virtualFile: BackedNotebookVirtualFile,
     scope: CoroutineScope,
@@ -71,8 +72,13 @@ class NotebookStructureClassTracker(
     }
     private val knownCellInfo by knownCellInfoDelegate
 
-    override val cellOrdinalToClassNameStructure: MutableMap<Int, Set<String>>
-        get() = knownCellInfo.cellOrdinalToClassName
+    override val cellOrdinalToCompiledlassNames: Map<Int, Set<String>>
+        get() = buildMap {
+            for ((index, cell) in notebook.computeCells().withIndex()) {
+                val compiledClassSet = cell.executionMetadata?.compiledClasses?.toSet()
+                put(index, compiledClassSet ?: emptySet())
+            }
+        }
 
     override val classNameToCellOrdinalStructure: MutableMap<String, Int>
         get() = knownCellInfo.classNameToCellOrdinal
@@ -146,15 +152,10 @@ class NotebookStructureClassTracker(
         val cellIndex = executedCellData.cellIndex
         val notebookCell = notebook.getCell(cellIndex)
         notebookCell.storeExecutionRelatedMetaData(compiledClassNames)
-        if (cellIndex != -1) {
-            cellOrdinalToClassNameStructure[cellIndex] = compiledClassNames
-            compiledClassNames.forEach { classNamesToCellOrdinal[it] = cellIndex }
-        }
 
         try {
-            //todo: let's not store injected-related data
-            for (file in psiFile.getInjectedKtFiles()) {
-                file.putUserData(CELL_CLASS_NAME, compiledClassNames)
+            if (cellIndex != -1) {
+                compiledClassNames.forEach { classNamesToCellOrdinal[it] = cellIndex }
             }
         } catch (ex: Exception) {
             if (ex is ProcessCanceledException) {
@@ -175,13 +176,13 @@ class NotebookStructureClassTracker(
         )
     }
 
-    private fun clear() {
+    override fun clearData() {
         knownCellInfoDelegate.getValueOrNull()?.clear()
-        notebook.clearAllCellsDataByKey(NotebookExecutionRelatedDataKey)
+        notebook.clearAllCellsDataByKey(NotebookExecutionRelatedMetaData.DATA_KEY)
     }
 
     override fun dispose() {
-        clear()
+        clearData()
     }
 
     companion object {

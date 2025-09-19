@@ -8,9 +8,10 @@ import com.intellij.kotlin.jupyter.core.editor.find.IN_EDITOR_ELEM_REF_KEY
 import com.intellij.kotlin.jupyter.core.editor.find.ReferenceSearchStrategy
 import com.intellij.kotlin.jupyter.core.editor.find.searchForElementDeclarationOrUsages
 import com.intellij.kotlin.jupyter.core.editor.find.tryResolveCompiledDeclarationInNotebook
-import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureClassTracker.Companion.CELL_CLASS_NAME
+import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructurePerFileTracker.Companion.CELL_CLASS_NAME
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.model.psi.PsiSymbolService
 import com.intellij.model.psi.impl.targetSymbols
 import com.intellij.openapi.editor.Editor
@@ -71,7 +72,9 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
                     sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, null)
                     return null
                 }
-                val storedClassName = it.containingFile.getUserData(CELL_CLASS_NAME)
+
+                val injectedManager = InjectedLanguageManager.getInstance(sourceElement.project)
+                val storedClassName = injectedManager.getInjectionHost(it)?.getUserData(CELL_CLASS_NAME)
                 if (knownRef != null && it.isValid && storedClassName?.contains(knownRef.containingFile.name.substringBefore(".class")) == true
                     || storedClassName?.contains(sourceElement.containingFile.name.substringBefore(".class")) == true) {
                     if (it.containingFile.isValid) {

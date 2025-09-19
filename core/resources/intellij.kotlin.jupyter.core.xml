@@ -370,6 +370,9 @@
             <reference ref="XDebugger.CopyValue"/>
             <reference ref="XDebugger.CompareValueWithClipboard"/>
             <reference ref="XDebugger.CopyName"/>
+            <separator/>
+            <reference ref="XDebugger.JumpToSource"/>
+            <reference ref="XDebugger.JumpToTypeSource"/>
             <reference ref="Debugger.CustomizeContextView"/>
             <separator/>
             <reference ref="Debugger.ViewText"/>

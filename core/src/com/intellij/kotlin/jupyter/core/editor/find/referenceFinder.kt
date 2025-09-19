@@ -1,11 +1,13 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.find
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.debug.util.NOTEBOOK_COMPILED_CLASS_NAME_PREFIX
 import com.intellij.kotlin.jupyter.core.debug.util.NOTEBOOK_COMPILED_CLASS_NAME_SUFFIX
-import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureClassTracker.Companion.CELL_CLASS_NAME
+import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructurePerFileTracker.Companion.CELL_CLASS_NAME
+import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.openapi.util.Key
+import com.intellij.openapi.project.Project
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiLanguageInjectionHost
@@ -41,30 +43,34 @@ object NotebookReferenceFinder {
 
     private val declarationsCollectingVisitor = ScriptDeclarationsCollectingVisitor()
 
-    fun tryResolveCompiledDeclaration(psiElement: PsiElement, searchTargets: Collection<PsiLanguageInjectionHost>): PsiElement? {
+    private fun Collection<PsiLanguageInjectionHost>.findPsiCellRelatedToCompiledClass(project: Project, notebookFile: BackedNotebookVirtualFile, className: String): PsiLanguageInjectionHost? {
+        val hostFromService = NotebookStructureTrackerService.getForFile(project, notebookFile).findPsiCellByClassName(className)
+        if (hostFromService != null) return hostFromService
+        // fallback: traverse by stored class names related to a PSI
+        return firstOrNull { host ->
+            host.getUserData(CELL_CLASS_NAME)?.contains(className) == true
+        }
+    }
+
+    fun tryResolveCompiledDeclaration(notebookFile: BackedNotebookVirtualFile, psiElement: PsiElement, searchTargets: Collection<PsiLanguageInjectionHost>): PsiElement? {
         val project = psiElement.project
         val injectionManager = InjectedLanguageManager.getInstance(project)
         val targetName = psiElement.containingFile.name.removeSuffix(".class")
         val isNavigationTargetCellClassItself = (psiElement as? KtClass)?.name?.matches(classRegex) == true
 
-        searchTargets.firstOrNull { host ->
-            val compiledName = host.getUserData(CELL_CLASS_NAME) ?: return@firstOrNull false
-            compiledName.contains(targetName)
-        }?.let {
-            val asPsiFile = injectionManager.getInjectedPsiFiles(it)?.firstOrNull()?.first as? KtFile ?: return null
-            if (isNavigationTargetCellClassItself) return asPsiFile
-            val ans = mutableListOf<NavigatablePsiElement>()
-            traverseChildrenAndSearch(injectionManager, it, setOf(targetName), asPsiFile, psiElement, foundData = ans)
-            return ans.firstOrNull()
-        }
+        val containingCell = searchTargets.findPsiCellRelatedToCompiledClass(project, notebookFile, targetName) ?: return null
+        val asPsiFile = injectionManager.getInjectedPsiFiles(containingCell)?.firstOrNull()?.first as? KtFile ?: return null
+        if (isNavigationTargetCellClassItself) return asPsiFile
 
-        return null
+        val ans = mutableListOf<NavigatablePsiElement>()
+        traverseChildrenAndSearch(injectionManager, containingCell, setOf(targetName), asPsiFile, psiElement, foundData = ans)
+        return ans.firstOrNull()
     }
 
     fun traverseChildrenAndSearch(
         injectionManager: InjectedLanguageManager,
         injectionHost: PsiLanguageInjectionHost,
-        possibleClassNames: Set<String>?,
+        possibleClassNames: Set<String>,
         element: PsiElement,
         targetElement: PsiElement,
         searchStrategy: ReferenceSearchStrategy = ReferenceSearchStrategy.DECLARATION,
@@ -105,7 +111,7 @@ object NotebookReferenceFinder {
                             && declarationMatchResult
                 }?.let { listOf(it as NavigatablePsiElement) }
             }
-            ReferenceSearchStrategy.REFERENCES -> getProperUsagesForTargetElement(injectionHost, possibleClassNames, element, targetElement)
+            ReferenceSearchStrategy.REFERENCES -> getUsagesForTargetElement(injectionHost, possibleClassNames, element, targetElement)
         }?.let {
             foundData?.addAll(it)
             return
@@ -122,7 +128,7 @@ object NotebookReferenceFinder {
         }
     }
 
-    private fun getProperUsagesForTargetElement(injectionHost: PsiLanguageInjectionHost, possibleClassNames: Set<String>?, element: PsiElement, targetElement: PsiElement): List<NavigatablePsiElement> {
+    private fun getUsagesForTargetElement(injectionHost: PsiLanguageInjectionHost, possibleClassNames: Set<String>, element: PsiElement, targetElement: PsiElement): List<NavigatablePsiElement> {
         val result = mutableListOf<NavigatablePsiElement>()
         val targetName: String? = if (targetElement is KtObjectDeclaration) targetElement.nameAsSafeName.asString() else targetElement.text
         val targetDeclaration = targetElement.parentOfType<KtDeclaration>(true) ?: return result
@@ -153,7 +159,7 @@ object NotebookReferenceFinder {
 
     private fun tryMatchWithDeclaration(
         host: PsiLanguageInjectionHost,
-        possibleClassName: Set<String>?,
+        possibleClassName: Set<String>,
         candidateDeclaration: KtDeclaration,
         referenceInfo: ProvidedReferenceInfo
     ): Boolean {
@@ -163,8 +169,9 @@ object NotebookReferenceFinder {
             }
         }
 
-        val compiledClassName = possibleClassName
-                                ?: host.getUserData(CELL_CLASS_NAME)
+        val compiledClassName = possibleClassName.ifEmpty {
+            host.getUserData(CELL_CLASS_NAME)
+        }
 
         return compiledClassName?.contains(referenceInfo.enclosingClass?.name) == true
     }

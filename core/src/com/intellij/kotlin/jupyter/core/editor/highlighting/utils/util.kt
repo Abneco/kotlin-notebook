@@ -6,10 +6,10 @@ import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.helper.selectedInterval
 import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.hints.PsiHostTypeHintsInvalidator
-import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder
 import com.intellij.kotlin.jupyter.core.editor.highlighting.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
+import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructurePerFileTracker.Companion.CELL_CLASS_NAME
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.kotlinNotebookLogger
@@ -66,10 +66,10 @@ private suspend fun resetSessionMetaInformation(
         compilerService.removeSession(backedNotebookVirtualFile)
         val cells = psiFile?.getNotebookCells()
         val injectedManager = InjectedLanguageManager.getInstance(project)
-        psiFile?.removeUserData(NotebookReferenceFinder.CELL_CLASS_NAME)
+        psiFile?.removeUserData(CELL_CLASS_NAME)
 
         cells?.forEach { cell ->
-            cell.removeUserData(NotebookReferenceFinder.CELL_CLASS_NAME)
+            cell.removeUserData(CELL_CLASS_NAME)
             PsiHostTypeHintsInvalidator.invalidateTypeHintsRegistry(cell)
 
             injectedManager.getInjectedPsiFiles(cell)?.forEach { elementWithRange ->

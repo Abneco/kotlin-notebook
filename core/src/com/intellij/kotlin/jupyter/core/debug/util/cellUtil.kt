@@ -18,6 +18,8 @@ const val NOTEBOOK_COMPILED_CLASS_NAME_SUFFIX: String = "_jupyter"
 
 /**
  * NB: this class is not thread-safe
+ *
+ * todo: to be removed
  */
 class ExecutedPresentCellInfo(psiFile: JupyterFile?) {
     private val knownCellClasses = mutableMapOf<String, JupyterPsiCell>()

@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.execution.listeners.NotebookSessionEventListener
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -12,16 +13,30 @@ import kotlinx.coroutines.CoroutineScope
 class NotebookStructureTrackerService(
     project: Project,
     coroutineScope: CoroutineScope
-) : NotebookProjectLevelService<NotebookStructureClassTracker>(project, coroutineScope) {
+) : NotebookProjectLevelService<NotebookStructurePerFileTracker>(project, coroutineScope) {
 
-    override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookStructureClassTracker {
-        return NotebookStructureClassTracker(project, virtualFile, fileScope)
+    init {
+        project.messageBus.connect(this).subscribe(
+            NotebookSessionEventListener.TOPIC,
+            object : NotebookSessionEventListener {
+                override fun sessionStarted(
+                    virtualFile: BackedNotebookVirtualFile,
+                    isAfterRestart: Boolean
+                ) {
+                    getOrCreate(virtualFile).clearData()
+                }
+            }
+        )
+    }
+
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookStructurePerFileTracker {
+        return NotebookStructurePerFileTracker(project, virtualFile, fileScope)
     }
 
     companion object {
         fun getInstance(project: Project): NotebookStructureTrackerService = project.service<NotebookStructureTrackerService>()
 
-        fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): NotebookStructureClassTracker {
+        fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): NotebookStructurePerFileTracker {
             return getInstance(project).getOrCreate(virtualFile)
         }
     }
