@@ -5,10 +5,10 @@ import com.intellij.codeInsight.navigation.actions.GotoDeclarationHandler
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.editor.find.IN_EDITOR_ELEM_REF_KEY
-import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder.CELL_CLASS_NAME
 import com.intellij.kotlin.jupyter.core.editor.find.ReferenceSearchStrategy
 import com.intellij.kotlin.jupyter.core.editor.find.searchForElementDeclarationOrUsages
 import com.intellij.kotlin.jupyter.core.editor.find.tryResolveCompiledDeclarationInNotebook
+import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureClassTracker.Companion.CELL_CLASS_NAME
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.model.psi.PsiSymbolService

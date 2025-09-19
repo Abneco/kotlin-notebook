@@ -33,7 +33,7 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
     private val callbacksCounters = mutableMapOf<BackedNotebookVirtualFile, Pair<Int, PriorityQueue<Int>>>()
     private val executionDataLock = ReentrantReadWriteLock()
 
-    private fun registerNextIndexForCallback(project: Project, file: BackedNotebookVirtualFile, cellOrd: Int?): Int {
+    private fun registerNextIndexForCallback(file: BackedNotebookVirtualFile): Int {
         return executionDataLock.write {
             val (cnt, pq) = callbacksCounters[file] ?: (0 to PriorityQueue<Int>())
             if (pq.size > 1 && !pq.contains(-1)) {
@@ -46,7 +46,7 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
         }
     }
 
-    fun unregisterCallback(project: Project, file: BackedNotebookVirtualFile, index: Int) {
+    fun unregisterCallback(file: BackedNotebookVirtualFile, index: Int) {
         executionDataLock.write {
             val (_, pq) = callbacksCounters[file] ?: return@write
             pq.remove(index)
@@ -65,14 +65,16 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
           JupyterHelper.getPsiCells(cellProject, task.notebookVirtualFile)?.getOrNull(cellIndex) to cellIndex
         }
         val cell = jupyterPsiCellData?.first ?: return null
+        val cellIndex = jupyterPsiCellData.second
 
-        val index = registerNextIndexForCallback(cellProject, file, jupyterPsiCellData.second)
+        val index = registerNextIndexForCallback(file)
 
         return KotlinNotebookCellExecutionCallback(
             cellProject,
             file,
             cell,
             index,
+            cellIndex,
             System.currentTimeMillis(),
         )
     }
@@ -81,12 +83,13 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
         project: Project,
         virtualFile: BackedNotebookVirtualFile
     ): JupyterExecutionCallback {
-        val index = registerNextIndexForCallback(project, virtualFile, null)
+        val index = registerNextIndexForCallback(virtualFile)
         return KotlinNotebookCellExecutionCallback(
             project,
             virtualFile,
             null,
             index,
+            null,
             System.currentTimeMillis(),
         )
     }

@@ -49,6 +49,10 @@ abstract class NotebookProjectLevelService<Child : NotebookPerFileChildService>(
         fileScope: CoroutineScope
     ): Child
 
+    fun getOrNull(backedFile: BackedNotebookVirtualFile): Child? {
+        return mapping[backedFile.file]
+    }
+
     fun getOrCreate(backedFile: BackedNotebookVirtualFile): Child {
         return mapping.getOrPut(backedFile.file) {
             addDisposableChild(

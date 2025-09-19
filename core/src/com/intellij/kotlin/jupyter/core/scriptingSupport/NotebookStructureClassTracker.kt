@@ -2,26 +2,35 @@
 package com.intellij.kotlin.jupyter.core.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.kotlin.jupyter.core.debug.util.ExecutedPresentCellInfo
-import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder
+import com.intellij.kotlin.jupyter.core.editor.codeInsight.findAllDeclarationsOfType
+import com.intellij.kotlin.jupyter.core.jupyter.cells.ExecutedCellData
+import com.intellij.kotlin.jupyter.core.jupyter.cells.NotebookExecutionRelatedDataKey
+import com.intellij.kotlin.jupyter.core.jupyter.cells.NotebookExecutionRelatedMetaData.Companion.storeExecutionRelatedMetaData
+import com.intellij.kotlin.jupyter.core.jupyter.cells.clearAllCellsDataByKey
+import com.intellij.kotlin.jupyter.core.jupyter.cells.executionMetadata
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
-import com.intellij.kotlin.jupyter.core.util.NotebookChangeEventType
-import com.intellij.kotlin.jupyter.core.util.NotebookMoveEvent
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
+import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
+import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiFile
+import com.intellij.openapi.util.Key
+import com.intellij.psi.PsiElement
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import org.jetbrains.kotlin.psi.KtDeclaration
+import org.jetbrains.kotlin.psi.KtNamedDeclaration
 import org.jetbrains.kotlin.util.getValueOrNull
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
-import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterNotebook
+import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
-import kotlin.math.abs
 
 /**
  * Keeps information about what classes were compiled in the current Notebook.
@@ -33,19 +42,11 @@ internal interface NotebookClassesInCellsInfoHandler {
     val cellOrdinalToClassNameStructure: MutableMap<Int, Set<String>>
     val classNameToCellOrdinalStructure: MutableMap<String, Int>
 
-    fun updateCellInformationBeforeExecution(cell: JupyterPsiCell, ordinal: Int?)
-
-    fun storeCompliedDataInCell(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell)
-
-    fun changeCellsData(effectedIndexes: Collection<Int>,
-                                 eventType: NotebookChangeEventType,
-                                 moveEvent: NotebookMoveEvent? = null,
-                                 invokedMoveEventInInd: Int? = null)
+    fun storeCompliedDataInCell(snippetMetadata: EvaluatedSnippetMetadata, executedCellData: ExecutedCellData)
 
     fun findPsiCellByClassName(className: String): JupyterPsiCell?
 
-    // Handlers for events
-    fun notebookDataCleared()
+    fun findPsiDeclarationsInsideCompliedCellByName(className: String, elementName: String): Collection<PsiElement>?
 }
 
 
@@ -57,9 +58,13 @@ class NotebookStructureClassTracker(
 ): NotebookPerFileChildService(virtualFile, scope), NotebookClassesInCellsInfoHandler {
     private val psiFile by lazy {
         withReadAccess {
-            virtualFile.file.findPsiFile(project)
+            virtualFile.file.findPsiFile(project) as JupyterFile
         }
     }
+    private val notebook: JupyterNotebook
+        get() = virtualFile.notebook
+    private val injectedManager: InjectedLanguageManager
+        get() = InjectedLanguageManager.getInstance(project)
 
     private val knownCellInfoDelegate = lazy {
         ExecutedPresentCellInfo(psiFile)
@@ -78,124 +83,91 @@ class NotebookStructureClassTracker(
             return  if (cellsCounter == -1) 1 else cellsCounter + 1
         }
 
+    /**
+     * Search is performed by relying on the stored meta-data about compiled classes.
+     * @see [com.intellij.kotlin.jupyter.core.jupyter.cells.NotebookExecutionRelatedMetaData]
+     */
     override fun findPsiCellByClassName(className: String): JupyterPsiCell? {
-        return knownCellInfo.correspondingCellToClass(className)
+        val (ktFiles, jupyterCells) = runReadAction {
+            psiFile.getInjectedKtFiles() to virtualFile.notebook.computeCells()
+        }
+        if (ktFiles.isEmpty()) {
+            LOG.warn("No injected KtFiles present inside ${virtualFile.file.name}")
+            return null
+        }
+
+        val psiCells = psiFile.getNotebookCells()
+        for ((index, cell) in jupyterCells.withIndex()) {
+            val cellExecutionRelatedData = cell.executionMetadata ?: continue
+            val compiledClasses = cellExecutionRelatedData.compiledClasses
+            if (className in compiledClasses) {
+                return psiCells.getOrNull(index)
+            }
+        }
+
+        return null
     }
 
-    override fun storeCompliedDataInCell(snippetMetadata: EvaluatedSnippetMetadata, psiCell: JupyterPsiCell) {
-        fun storeReferenceInfo(compiledClassName: MutableSet<String>) {
-            synchronized(psiCell) {
-                val last = psiCell.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)?.firstOrNull()
-                compiledClassName.addIfNotNull(last)
-                psiCell.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, compiledClassName)
+    override fun findPsiDeclarationsInsideCompliedCellByName(className: String, elementName: String): Collection<PsiElement>? {
+        val psiCell = findPsiCellByClassName(className) ?: return null
+        val ktFiles = psiCell.getInjectedKtFiles(injectedManager)
+        val matchedDeclarations = mutableSetOf<KtDeclaration>()
+
+        for (file in ktFiles) {
+            val declarations = file.findAllDeclarationsOfType<KtNamedDeclaration>()
+
+            for (declaration in declarations) {
+                if (elementName in declaration.nameAsName?.identifier.orEmpty()) {
+                    matchedDeclarations.add(declaration)
+                }
             }
         }
-        val injectManager = InjectedLanguageManager.getInstance(project)
+
+        return null
+    }
+
+    override fun storeCompliedDataInCell(snippetMetadata: EvaluatedSnippetMetadata, executedCellData: ExecutedCellData) {
+        fun JupyterPsiCell?.storeReferenceInfo(compiledClassName: MutableSet<String>) {
+            if (this == null) return
+            synchronized(this) {
+                val last = getUserData(CELL_CLASS_NAME)?.firstOrNull()
+                compiledClassName.addIfNotNull(last)
+                putUserData(CELL_CLASS_NAME, compiledClassName)
+            }
+        }
         val classNamesToCellOrdinal = classNameToCellOrdinalStructure
 
-        val compiledClassName = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
+        val compiledClassNames = snippetMetadata.compiledData.sources.mapTo(mutableSetOf()) {
             it.fileName.substringBefore(".kts").let { f -> f + "_jupyter" }
         }
-        var nextCellInd: Int? = null
-        (psiCell.parent as? JupyterNotebook)?.psiCellList?.let { cells ->
-            val executedCellInd = cells.indexOf(psiCell)
-            if (executedCellInd != -1) {
-                cellOrdinalToClassNameStructure[executedCellInd] = compiledClassName
-                compiledClassName.forEach { classNamesToCellOrdinal[it] = executedCellInd }
-                nextCellInd = if (executedCellInd + 1 != cells.size) executedCellInd + 1 else null
-            }
+        if (compiledClassNames.isEmpty()) return
+
+        val psiCell = executedCellData.psiCell
+        val cellIndex = executedCellData.cellIndex
+        val notebookCell = notebook.getCell(cellIndex)
+        notebookCell.storeExecutionRelatedMetaData(compiledClassNames)
+        if (cellIndex != -1) {
+            cellOrdinalToClassNameStructure[cellIndex] = compiledClassNames
+            compiledClassNames.forEach { classNamesToCellOrdinal[it] = cellIndex }
         }
+
         try {
-            (injectManager.getInjectedPsiFiles(psiCell)?.firstOrNull()?.first as? PsiFile)
-                ?.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, compiledClassName)
+            //todo: let's not store injected-related data
+            for (file in psiFile.getInjectedKtFiles()) {
+                file.putUserData(CELL_CLASS_NAME, compiledClassNames)
+            }
         } catch (ex: Exception) {
             if (ex is ProcessCanceledException) {
                 coroutineScope.async {
-                    storeReferenceInfo(compiledClassName)
+                    psiCell.storeReferenceInfo(compiledClassNames)
                 }
                 return
             } else LOG.warn("Exception during storing cell-related data", ex)
         }
-        storeReferenceInfo(compiledClassName)
+        psiCell.storeReferenceInfo(compiledClassNames)
     }
 
-    override fun changeCellsData(
-        effectedIndexes: Collection<Int>,
-        eventType: NotebookChangeEventType,
-        moveEvent: NotebookMoveEvent?,
-        invokedMoveEventInInd: Int?) {
-        if (effectedIndexes.isEmpty()
-            || eventType != NotebookChangeEventType.CELL_ADD && eventType != NotebookChangeEventType.CELL_DELETE) return
-        val presentRecords = cellOrdinalToClassNameStructure.filterKeys { it in effectedIndexes || it == invokedMoveEventInInd }.ifEmpty { return }
-        val isAddEvent = eventType == NotebookChangeEventType.CELL_ADD
-
-        val (indexShift, keys) =
-            if (isAddEvent) // go from last to first, e.g. shifting very last first
-                1 to presentRecords.keys.sortedDescending()
-            else -1 to presentRecords.keys.toList()
-
-        val separatedByGaps = mutableListOf<MutableSet<Int>>().also {
-            val consecutiveData = mutableSetOf<Int>()
-            var ind = 0
-            if (keys.size == 1) {
-                consecutiveData.add(keys.first())
-                it.add(consecutiveData)
-                return@also
-            }
-            while (ind < keys.size - 1) {
-                val first = keys[ind]
-                val next = keys[ind + 1]
-                if (abs(first - next) > 1) {
-                    consecutiveData.add(first)
-                    it.add(consecutiveData.toMutableSet())
-                    consecutiveData.clear()
-                    consecutiveData.add(next)
-                } else {
-                    consecutiveData.add(first)
-                    if (ind + 1 == keys.size - 1) consecutiveData.add(next)
-                }
-                ind++
-            }
-            it.add(consecutiveData)
-        }
-
-        moveEvent?.let {
-            val invokedInCell = invokedMoveEventInInd ?: return@let
-            val storedData = cellOrdinalToClassNameStructure[invokedInCell]
-            val isCellUp = it == NotebookMoveEvent.CELL_UP
-            val anotherAffectedInd = if (isCellUp) invokedInCell - 1 else invokedInCell + 1
-            // skip if it will be processed later
-            separatedByGaps.firstOrNull { set -> invokedInCell in set || anotherAffectedInd in set }?.let { foundContainer ->
-                foundContainer.removeIf { elem -> elem == invokedInCell || elem == anotherAffectedInd }
-            }
-
-            val storedInAnother = cellOrdinalToClassNameStructure[anotherAffectedInd]
-            if (storedData != null) {
-                cellOrdinalToClassNameStructure[anotherAffectedInd] = storedData
-            } else cellOrdinalToClassNameStructure.remove(anotherAffectedInd)
-            if (storedInAnother != null) {
-                cellOrdinalToClassNameStructure[invokedInCell] = storedInAnother
-            } else cellOrdinalToClassNameStructure.remove(invokedInCell)
-        }
-
-
-        val toRemove = mutableSetOf<Int>()
-        for (consecutiveData in separatedByGaps) {
-            consecutiveData.forEach { ind ->
-                val data = presentRecords[ind] ?: return@forEach
-                val newInd = ind + indexShift
-                if (newInd >= 0) {
-                    cellOrdinalToClassNameStructure[newInd] = data
-                }
-            }
-            toRemove.addIfNotNull(consecutiveData.lastOrNull())
-        }
-
-        toRemove.forEach { cellOrdinalToClassNameStructure.remove(it) }
-        knownCellInfo.structureChanged()
-    }
-
-    override fun updateCellInformationBeforeExecution(cell: JupyterPsiCell, ordinal: Int?) {
+    fun updateCellInformationBeforeExecution(cell: JupyterPsiCell, ordinal: Int?) {
         knownCellInfo.updateInfoBeforeCellExecution(
             cell,
             ordinal,
@@ -203,15 +175,19 @@ class NotebookStructureClassTracker(
         )
     }
 
-    override fun notebookDataCleared() {
+    private fun clear() {
         knownCellInfoDelegate.getValueOrNull()?.clear()
+        notebook.clearAllCellsDataByKey(NotebookExecutionRelatedDataKey)
     }
 
     override fun dispose() {
-        notebookDataCleared()
+        clear()
     }
 
     companion object {
+        // Holds compiled class name
+        val CELL_CLASS_NAME: Key<Set<String>> = Key.create("COMPILED_CELL_SCRIPT_CLASS_NAME")
+
         private val LOG = notebookLogger()
     }
 }

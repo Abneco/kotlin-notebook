@@ -31,11 +31,12 @@ import kotlin.system.measureTimeMillis
  * language-agnostic features, contribute to the Jupyter plugin directly.
  */
 class KotlinNotebookCellExecutionCallback(
-  private val project: Project,
-  private val virtualFile: BackedNotebookVirtualFile,
-  private val psiCell: JupyterPsiCell?,
-  private val index: Int,
-  private val executionStartedMs: Long,
+    private val project: Project,
+    private val virtualFile: BackedNotebookVirtualFile,
+    private val psiCell: JupyterPsiCell?,
+    private val executionIndex: Int,
+    private val cellIndex: Int?,
+    private val executionStartedMs: Long,
 ) : JupyterExecutionCallback {
     override fun onExecuteReply(message: JupyterMessage) {
         KotlinNotebookPluginScope.getForProject(project).async {
@@ -82,7 +83,7 @@ class KotlinNotebookCellExecutionCallback(
 
         if (snippetMetadata != null) {
             JupyterCompilerService.getForFile(project, virtualFile)
-                .addCompiledSnippet(snippetMetadata, psiCell)
+                .addCompiledSnippet(snippetMetadata, psiCell, cellIndex ?: -1)
         }
     }
 
@@ -92,9 +93,8 @@ class KotlinNotebookCellExecutionCallback(
     }
 
     private fun unregisterCallback() {
-        kotlinNotebookCellExecutionCallbackFactory.unregisterCallback(project, virtualFile, index)
+        kotlinNotebookCellExecutionCallbackFactory.unregisterCallback(virtualFile, executionIndex)
     }
-
 
     companion object {
         private val LOG = notebookLogger()

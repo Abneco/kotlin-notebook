@@ -8,6 +8,7 @@ import com.intellij.kotlin.jupyter.core.editor.refactoring.NotebookRefactoringSu
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
+import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureClassTracker.Companion.CELL_CLASS_NAME
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.notebooks.visualization.getCell
 import com.intellij.openapi.application.runReadAction
@@ -52,14 +53,14 @@ class NotebookMemberInplaceRenamer(
     private val originalElement: PsiElement = substituted
     private val isSameScope = originalElement.containingFile == elementToRename.containingFile
     private var foundRefsSize: Int = 0
-    private val prevClassData = myElementToRename.containingFile.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME)
+    private val prevClassData = originalHostInvocation?.getUserData(CELL_CLASS_NAME)
     private val fileSuffix: String get() = JupyterCompilerService.getInstance(originalElement.project).fileSuffix
     private val topLevelDocument = PsiDocumentManagerBase.getTopLevelDocument(myEditor.document)
 
     override fun performRenameInner(element: PsiElement?, newName: String?) {
         super.performRenameInner(element, newName)
         if (element != null && newName?.isNotEmpty() == true && prevClassData != null) {
-            element.containingFile.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, prevClassData)
+            originalHostInvocation?.putUserData(CELL_CLASS_NAME, prevClassData)
         }
     }
 

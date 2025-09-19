@@ -43,7 +43,7 @@ class KotlinNotebookSessionVariablesService(
                     if (!virtualFile.isKotlinNotebook) return
 
                     // We need to clear panels in case of session restart
-                    getOrCreate(virtualFile).clear()
+                    getOrNull(virtualFile)?.clear()
                 }
             })
     }

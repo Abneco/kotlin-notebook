@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
+import com.intellij.kotlin.jupyter.core.jupyter.cells.ExecutedCellData
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
@@ -386,11 +387,13 @@ class JupyterCompilerPerFileService(
     fun addCompiledSnippet(
         snippetMetadata: EvaluatedSnippetMetadata,
         psiCell: JupyterPsiCell?,
+        cellIndex: Int = ABSENT_CELL_INDEX
     ) {
         coroutineScope.async {
             try {
+                val executedCellData = ExecutedCellData(cellIndex, psiCell, virtualFile.notebook.getCellOrNull(cellIndex))
                 accessData {
-                    addNewDependencies(snippetMetadata, psiCell)
+                    addNewDependencies(snippetMetadata, executedCellData)
                 }
 
                 requestScriptingUpdate()
@@ -416,7 +419,7 @@ class JupyterCompilerPerFileService(
 
     private fun addNewDependencies(
         snippetMetadata: EvaluatedSnippetMetadata,
-        psiCell: JupyterPsiCell?
+        executedCellData: ExecutedCellData
     ) {
         // TODO: compare text in snippet metadata with cell source and add a source file to directory and to the container
         val nextCounter = directoryCounter.incrementAndGet()
@@ -436,15 +439,16 @@ class JupyterCompilerPerFileService(
             snippetMetadata.newClasspath.updateLastClasspathArtifact()
         }
 
-        if (psiCell != null) {
-            coroutineScope.async {
+        val psiCell = executedCellData.psiCell
+        coroutineScope.async {
+            if (psiCell != null) {
                 smartReadAction(project) {
                     NotebookStructureTrackerService.getForFile(project, virtualFile)
-                        .storeCompliedDataInCell(snippetMetadata, psiCell)
+                        .storeCompliedDataInCell(snippetMetadata, executedCellData)
                 }
-                KotlinNotebookSessionVariablesService.getForFile(project, virtualFile)
-                    .updateSnippetsMetaData(snippetMetadata)
             }
+            KotlinNotebookSessionVariablesService.getForFile(project, virtualFile)
+                .updateSnippetsMetaData(snippetMetadata)
         }
 
         val compiledClassifiers = snippetMetadata.compiledData.scripts.filterNot { it.isImplicitReceiver }
@@ -695,6 +699,12 @@ class JupyterCompilerPerFileService(
 
     companion object {
         private val LOG = KotlinNotebookLoggerFactory.getInstance(JupyterCompilerPerFileService::class)
+
+        /**
+         * Default value for a cell for which we can't determine the index,
+         * e.g., if some session code was executed.
+         */
+        private const val ABSENT_CELL_INDEX: Int = 1
 
         fun getConfiguration(ktFile: KtFile): ScriptCompilationConfigurationWrapper? {
             val scriptDef = ktFile.findScriptDefinition() ?: return null

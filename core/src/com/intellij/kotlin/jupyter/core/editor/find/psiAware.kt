@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.editor.find
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureClassTracker.Companion.CELL_CLASS_NAME
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
@@ -38,7 +39,7 @@ fun searchForElementDeclarationOrUsages(
     val targetClassName = runIf(searchStrategy == ReferenceSearchStrategy.REFERENCES) {
         targetHost?.let {
             val name = ordinalMap[notebookCells.indexOf(it)]
-            if (it.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME) == null && name != null) it.putUserData(NotebookReferenceFinder.CELL_CLASS_NAME, name)
+            if (it.getUserData(CELL_CLASS_NAME) == null && name != null) it.putUserData(CELL_CLASS_NAME, name)
             name
         }
     }
@@ -46,7 +47,7 @@ fun searchForElementDeclarationOrUsages(
     val targetContainingFile = target.containingFile
 
     var isLocalSearch = if (searchStrategy == ReferenceSearchStrategy.REFERENCES) {
-        targetHost?.getUserData(NotebookReferenceFinder.CELL_CLASS_NAME) == null && !isCompiledCellClassDeclaration(target)
+        targetHost?.getUserData(CELL_CLASS_NAME) == null && !isCompiledCellClassDeclaration(target)
     } else false
     if (!isLocalSearch && targetContainingFile.name.contains(NotebookUsagesContributorFactory.DATAFRAME_PREFIX)) {
         isLocalSearch = isItGeneratedNameInsideLambdaCall(target, target)

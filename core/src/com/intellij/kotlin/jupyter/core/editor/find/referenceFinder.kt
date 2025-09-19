@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.core.editor.find
 
 import com.intellij.kotlin.jupyter.core.debug.util.NOTEBOOK_COMPILED_CLASS_NAME_PREFIX
 import com.intellij.kotlin.jupyter.core.debug.util.NOTEBOOK_COMPILED_CLASS_NAME_SUFFIX
+import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureClassTracker.Companion.CELL_CLASS_NAME
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.util.Key
 import com.intellij.psi.NavigatablePsiElement
@@ -36,9 +37,6 @@ enum class ReferenceSearchStrategy {
 }
 
 object NotebookReferenceFinder {
-    // Holds compiled class name
-    val CELL_CLASS_NAME: Key<Set<String>> = Key.create("COMPILED_CELL_SCRIPT_CLASS_NAME")
-
     private val classRegex = Regex("$NOTEBOOK_COMPILED_CLASS_NAME_PREFIX.+$NOTEBOOK_COMPILED_CLASS_NAME_SUFFIX")
 
     private val declarationsCollectingVisitor = ScriptDeclarationsCollectingVisitor()
@@ -167,7 +165,6 @@ object NotebookReferenceFinder {
 
         val compiledClassName = possibleClassName
                                 ?: host.getUserData(CELL_CLASS_NAME)
-                                ?: candidateDeclaration.containingKtFile.getUserData(CELL_CLASS_NAME)
 
         return compiledClassName?.contains(referenceInfo.enclosingClass?.name) == true
     }
