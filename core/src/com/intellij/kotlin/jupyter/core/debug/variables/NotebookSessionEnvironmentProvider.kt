@@ -1,10 +1,11 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.debug.variables
 
-import com.intellij.debugger.engine.DebuggerUtils
 import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.debug.util.findFieldByName
+import com.intellij.kotlin.jupyter.core.debug.util.getFieldValueByName
 import com.sun.jdi.Field
 import com.sun.jdi.IntegerValue
 import com.sun.jdi.ObjectReference
@@ -42,15 +43,12 @@ internal class NotebookSessionNoSuspensionEnvironmentProvider(
         if (virtualMachine !is VirtualMachineProxyImpl) return null
         val notebookReference = retrieveNotebookReference(virtualMachine) ?: return null
 
-        val sharedContextField = DebuggerUtils.findField(notebookReference.referenceType(), "sharedReplContext")
-        val sharedContextReference = notebookReference.getValue(sharedContextField) as? ObjectReference ?: return null
+        val sharedContextReference = notebookReference.getFieldValueByName("sharedReplContext")
+                as? ObjectReference ?: return null
 
-        val evaluatorField = DebuggerUtils.findField(sharedContextReference.referenceType(), "evaluator")
-        val evaluatorImpl = sharedContextReference.getValue(evaluatorField) as ObjectReference
+        val evaluatorImpl = sharedContextReference.getFieldValueByName("evaluator") as ObjectReference
 
-        val variablesHolderField = DebuggerUtils.findField(evaluatorImpl.referenceType(), "variablesHolder")
-
-        return evaluatorImpl.getValue(variablesHolderField) as ObjectReference
+        return evaluatorImpl.getFieldValueByName("variablesHolder") as? ObjectReference
     }
 
     private fun retrieveValueFromVariableState(variablesState: Value, variableName: String): Pair<ObjectReference?, Field> {
@@ -60,10 +58,9 @@ internal class NotebookSessionNoSuspensionEnvironmentProvider(
         }
 
         // another way round by scriptInstance and field reflection
-        val scriptInstance = DebuggerUtils.findField(objectReference.referenceType(), "scriptInstance").let {
-            objectReference.getValue(it) as ObjectReference
-        }
-        val suitableFieldAccessor = scriptInstance.referenceType().fieldByName(variableName)
+        val scriptInstance = objectReference.getFieldValueByName("scriptInstance") as ObjectReference
+        val suitableFieldAccessor = scriptInstance.findFieldByName(variableName)
+            ?: throw IllegalArgumentException("Could not find variable with name: $variableName")
 
         return scriptInstance to suitableFieldAccessor
     }
@@ -74,12 +71,10 @@ internal class NotebookSessionNoSuspensionEnvironmentProvider(
         if (declaringClass.name() != "java.util.LinkedHashMap") {
             throw UnsupportedOperationException("VariablesState shall be an instance of LinkedMap")
         }
-        val sizeField = DebuggerUtils.findField(declaringClass, "size")
-        val currentSize = (variablesStateReference.getValue(sizeField) as? IntegerValue)?.value()
-        val headField = DebuggerUtils.findField(declaringClass, "head")
+        val currentSize = (variablesStateReference.getFieldValueByName("size") as? IntegerValue)?.value()
         if (currentSize == null) {
             throw IllegalArgumentException("Could not retrieve size from VariablesState")
         }
-        return variablesStateReference.getValue(headField) as? ObjectReference to currentSize
+        return variablesStateReference.getFieldValueByName("head") as? ObjectReference to currentSize
     }
 }
