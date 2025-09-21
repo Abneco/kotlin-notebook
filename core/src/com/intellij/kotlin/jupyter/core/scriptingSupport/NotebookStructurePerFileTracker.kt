@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.kotlin.jupyter.core.debug.util.ExecutedPresentCellInfo
+import com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookGotoDeclarationProvider.Companion.clearResolvedUsagesCaches
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.findAllDeclarationsOfType
 import com.intellij.kotlin.jupyter.core.jupyter.cells.ExecutedCellData
 import com.intellij.kotlin.jupyter.core.jupyter.cells.NotebookExecutionRelatedMetaData
@@ -167,6 +168,17 @@ class NotebookStructurePerFileTracker(
             ordinal,
             nextCompiledClassLineIndex
         )
+    }
+
+    /**
+     * Clears temporary data stored in the PSI level
+     * used in [com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookGotoDeclarationProvider]
+     */
+    fun clearPsiLevelReferencesData() {
+        // maybe we don't need caching at all?
+        for (file in psiFile.getInjectedKtFiles()) {
+            file.clearResolvedUsagesCaches()
+        }
     }
 
     override fun clearData() {

@@ -22,7 +22,10 @@ import com.intellij.psi.search.searches.ReferenceSearcher
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.Query
+import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtReferenceExpression
+import org.jetbrains.kotlin.psi.psiUtil.forEachDescendantOfType
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 
@@ -66,24 +69,31 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
 
     companion object {
         internal fun tryGetPreviousResolvedResult(sourceElement: PsiElement): PsiElement? {
-            sourceElement.getUserData(IN_EDITOR_ELEM_REF_KEY)?.let {
-                val knownRef = sourceElement.parent?.reference?.resolve()
-                if (!it.isValid || !it.containingFile.isValid) {
-                    sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, null)
-                    return null
-                }
-
-                val injectedManager = InjectedLanguageManager.getInstance(sourceElement.project)
-                val storedClassName = injectedManager.getInjectionHost(it)?.getUserData(CELL_CLASS_NAME)
-                if (knownRef != null && it.isValid && storedClassName?.contains(knownRef.containingFile.name.substringBefore(".class")) == true
-                    || storedClassName?.contains(sourceElement.containingFile.name.substringBefore(".class")) == true) {
-                    if (it.containingFile.isValid) {
-                        return it
-                    }
-                }
+            val cachedElement = sourceElement.getUserData(IN_EDITOR_ELEM_REF_KEY) ?: return null
+            val knownRef = sourceElement.parent?.reference?.resolve()
+            val containingFile = cachedElement.containingFile
+            if (!cachedElement.isValid || !containingFile.isValid) {
                 sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, null)
+                return null
             }
+
+            val injectedManager = InjectedLanguageManager.getInstance(sourceElement.project)
+            val storedClassName = injectedManager.getInjectionHost(cachedElement)?.getUserData(CELL_CLASS_NAME)
+            if (knownRef != null && cachedElement.isValid && storedClassName?.contains(knownRef.containingFile.name.substringBefore(".class")) == true
+                || storedClassName?.contains(sourceElement.containingFile.name.substringBefore(".class")) == true) {
+                if (containingFile.isValid) {
+                    return cachedElement
+                }
+            }
+
+            sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, null)
             return null
+        }
+
+        internal fun KtFile.clearResolvedUsagesCaches() {
+            forEachDescendantOfType<KtElement> {
+                it.putUserData(IN_EDITOR_ELEM_REF_KEY, null)
+            }
         }
     }
 

@@ -3,9 +3,12 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.execution.listeners.NotebookSessionEventListener
+import com.intellij.kotlin.jupyter.core.editor.highlighting.components.document.topic.DocumentCellsStructureChangedListener
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
+import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 
@@ -24,6 +27,12 @@ class NotebookStructureTrackerService(
                 }
             }
         )
+        project.messageBus.connect(this).subscribe(
+            DocumentCellsStructureChangedListener.TOPIC,
+            DocumentCellsStructureChangedListener { editor, changedCells ->
+                val notebookFile = FileDocumentManager.getInstance().getFile(editor.document)?.toKotlinNotebookBackedFile() ?: return@DocumentCellsStructureChangedListener
+                getOrCreate(notebookFile).clearPsiLevelReferencesData()
+            })
     }
 
     override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): NotebookStructurePerFileTracker {

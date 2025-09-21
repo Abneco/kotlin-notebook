@@ -67,9 +67,6 @@ internal fun tryResolveCompiledDeclarationInNotebook(element: PsiElement, scope:
     runReadAction {
         val targets = scope.getNotebookCells()
         ans = tryResolveCompiledDeclaration(scope.virtualFile.toBackedNotebookFile(), element, targets)
-        if (ans != null) {
-            element.putUserData(IN_EDITOR_ELEM_REF_KEY, ans)
-        }
     }
     return ans
 }
