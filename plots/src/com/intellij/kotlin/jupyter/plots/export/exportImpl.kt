@@ -11,8 +11,6 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
 import org.jetbrains.letsPlot.awt.plot.PlotSvgExport
 import org.jetbrains.letsPlot.core.plot.export.PlotImageExport
-import org.jetbrains.letsPlot.core.util.PlotHtmlExport
-import org.jetbrains.letsPlot.core.util.PlotHtmlHelper
 import java.awt.datatransfer.StringSelection
 import java.awt.datatransfer.Transferable
 import java.nio.file.Path
@@ -83,7 +81,7 @@ private fun exportPlot(
             TextPlotContent(svg)
         }
         ExportFormat.HTML -> {
-            val html = PlotHtmlExport.buildHtmlFromRawSpecs(spec, iFrame = true, scriptUrl = PlotHtmlHelper.scriptUrl("4.0.0"))
+            val html = buildHtmlFromRawPlotSpec(spec)
             TextPlotContent(html)
         }
         else -> {

@@ -5,6 +5,7 @@ import com.intellij.kotlin.jupyter.core.util.MouseEventDeepReDispatcher
 import com.intellij.kotlin.jupyter.core.util.RetargetingCursorProvider
 import com.intellij.kotlin.jupyter.core.util.addCursorProvider
 import com.intellij.kotlin.jupyter.core.util.addDispatchingMouseListener
+import com.intellij.kotlin.jupyter.plots.export.buildHtmlFromRawPlotSpec
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.ui.PopupHandler
@@ -18,8 +19,6 @@ import org.jetbrains.letsPlot.core.spec.config.CompositeFigureConfig
 import org.jetbrains.letsPlot.core.spec.config.PlotConfig
 import org.jetbrains.letsPlot.core.spec.front.PlotConfigFrontend
 import org.jetbrains.letsPlot.core.util.MonolithicCommon
-import org.jetbrains.letsPlot.core.util.PlotHtmlExport
-import org.jetbrains.letsPlot.core.util.PlotHtmlHelper
 import org.jetbrains.letsPlot.core.util.PlotSizeHelper
 import org.jetbrains.letsPlot.core.util.sizing.SizingPolicy
 import java.awt.Dimension
@@ -139,11 +138,10 @@ class LetsPlotComponent : JBLayeredPane() {
     }
 
     @TestOnly
-    fun getPlotHtml() = dataKey?.let {
-        PlotHtmlExport.buildHtmlFromRawSpecs(
-            deserializeSpec(it.spec).toMutableMap(),
-            iFrame = true,
-            scriptUrl = PlotHtmlHelper.scriptUrl("4.0.0")
+    @Suppress("unused")
+    fun getPlotHtml(): String = dataKey?.let {
+        buildHtmlFromRawPlotSpec(
+            deserializeSpec(it.spec).toMutableMap()
         )
     } ?: ""
 
