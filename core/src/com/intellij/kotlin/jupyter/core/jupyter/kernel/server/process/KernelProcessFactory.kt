@@ -11,7 +11,7 @@ import com.intellij.jupyter.execution.listeners.events.KernelNotificationStarted
 import com.intellij.jupyter.execution.listeners.KernelProcessListener
 import com.intellij.jupyter.execution.listeners.events.KernelProcessEvent
 import com.intellij.jupyter.execution.process.KernelPortsProvider
-import com.intellij.jupyter.execution.toolwindow.KernelProcessToolWindowCoordinatorRegistry
+import com.intellij.jupyter.execution.toolwindow.KernelProcessToolWindowCoordinatorService
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.jupyter.actions.mode
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
@@ -101,12 +101,12 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
 
         kernelHandler.addKernelListener(object : KernelProcessListener {
             override fun beforeNotificationStarted(event: KernelNotificationStartedEvent) {
-                KernelProcessToolWindowCoordinatorRegistry.getInstance(project)
+                KernelProcessToolWindowCoordinatorService.getInstance(project)
                     .getOrCreate(event.eventSource.notebookVirtualFile)?.onStarted(event.eventSource)
             }
 
             override fun kernelTerminated(event: KernelProcessEvent) {
-                KernelProcessToolWindowCoordinatorRegistry.getInstance(project)
+                KernelProcessToolWindowCoordinatorService.getInstance(project)
                     .get(event.eventSource.notebookVirtualFile)?.onTerminated(event)
             }
         })

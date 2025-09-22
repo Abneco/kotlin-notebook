@@ -5,7 +5,7 @@ import com.intellij.jupyter.core.jupyter.connections.client.JupyterClient
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
 import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOptions
 import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
-import com.intellij.jupyter.execution.toolwindow.KernelProcessToolWindowCoordinatorRegistry
+import com.intellij.jupyter.execution.toolwindow.KernelProcessToolWindowCoordinatorService
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ModeAwareKernelRunnableFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProcessFactory
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
@@ -24,7 +24,7 @@ class EmbeddedKernelRunnableFactory : ModeAwareKernelRunnableFactory(
     ): KernelRunnableHandler {
         val runnableHandler = EmbeddedKernelRunnableHandler(startupOptions)
 
-        KernelProcessToolWindowCoordinatorRegistry.getInstance(startupOptions.project)
+        KernelProcessToolWindowCoordinatorService.getInstance(startupOptions.project)
             .getOrCreate(startupOptions.notebookVirtualFile)?.onStarted(runnableHandler)
 
         return runnableHandler
