@@ -18,7 +18,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.impl.welcomeScreen.WelcomeScreenActionsUtil
 
-class OpenKotlinNotebookAction : OpenFileAction() {
+internal class OpenKotlinNotebookAction : OpenFileAction() {
     override fun createTemplatePresentation(): Presentation {
         return super.createTemplatePresentation().apply {
             text = KotlinNotebookBundle.message("action.OpenKotlinNotebookAction.text")
