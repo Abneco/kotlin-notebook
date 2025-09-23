@@ -85,7 +85,7 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             var markdownCellsCount = 0
             var codeCellsCount = 0
             notebook.computeCells().forEach { cell ->
-                when (cell.cellType) {
+                when (cell.cellTypeProvider.getJupyterCellType()) {
                     JupyterCellType.RAW,
                     JupyterCellType.HEADING,
                     JupyterCellType.HTML,
