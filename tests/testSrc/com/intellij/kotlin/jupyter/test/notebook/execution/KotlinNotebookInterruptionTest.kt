@@ -1,7 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.execution
 
-import com.intellij.jupyter.core.executor.JupyterExecutionListener
+import com.intellij.jupyter.core.executor.JupyterSessionEventsListener
 import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterKernelState
@@ -68,7 +68,7 @@ class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest() {
 
     private fun getSessionDeferred(disposable: Disposable): Deferred<JupyterNotebookSession> {
         val sessionDeferred = CompletableDeferred<JupyterNotebookSession>()
-        JupyterExecutionListener.register(disposable, object : JupyterExecutionListener {
+        JupyterSessionEventsListener.register(disposable, object : JupyterSessionEventsListener {
             override suspend fun sessionCreated(session: JupyterNotebookSession) {
                 sessionDeferred.complete(session)
             }

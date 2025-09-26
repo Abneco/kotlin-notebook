@@ -11,7 +11,7 @@ import com.intellij.debugger.jdi.StackFrameProxyImpl
 import com.intellij.debugger.settings.DebuggerSettings
 import com.intellij.execution.configurations.RemoteConnection
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.executor.JupyterExecutionListener
+import com.intellij.jupyter.core.executor.JupyterSessionEventsListener
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterSessionPath
 import com.intellij.jupyter.core.jupyter.editor.completion.JupyterVariablesListener
 import com.intellij.kotlin.jupyter.core.debug.breakpoint.KernelSyntheticMethodBreakpoint
@@ -105,7 +105,7 @@ internal class KotlinNotebookDebugSession(
             }
         )
 
-        JupyterExecutionListener.register(parentDisposable, object : JupyterExecutionListener {
+        JupyterSessionEventsListener.register(parentDisposable, object : JupyterSessionEventsListener {
             override suspend fun sessionIsStarted(notebookFile: BackedNotebookVirtualFile) {
                 if (project.isDisposed) return
 
