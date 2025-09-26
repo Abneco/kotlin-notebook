@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.execution.listeners.NotebookSessionEventListener
+import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.kotlin.jupyter.core.editor.highlighting.components.document.topic.DocumentCellsStructureChangedListener
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
@@ -19,14 +19,11 @@ class NotebookStructureTrackerService(
 ) : NotebookProjectLevelService<NotebookStructurePerFileTracker>(project, coroutineScope) {
 
     init {
-        project.messageBus.connect(this).subscribe(
-            NotebookSessionEventListener.TOPIC,
-            object : NotebookSessionEventListener {
-                override fun sessionStarted(virtualFile: BackedNotebookVirtualFile) {
-                    getOrCreate(virtualFile).clearData()
-                }
+        JupyterExecutionListener.register(this, object : JupyterExecutionListener {
+            override suspend fun sessionWillTerminate(notebookFile: BackedNotebookVirtualFile) {
+                getOrNull(notebookFile)?.clearData()
             }
-        )
+        })
         project.messageBus.connect(this).subscribe(
             DocumentCellsStructureChangedListener.TOPIC,
             DocumentCellsStructureChangedListener { editor, changedCells ->

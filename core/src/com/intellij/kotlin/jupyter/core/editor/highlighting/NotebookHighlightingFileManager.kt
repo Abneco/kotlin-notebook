@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.core.editor.highlighting
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.editor.getAllIntervalPointers
-import com.intellij.jupyter.execution.listeners.NotebookSessionEventListener
+import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.kotlin.jupyter.core.editor.highlighting.components.document.DocumentInputEventsTransformerAdapter
 import com.intellij.kotlin.jupyter.core.editor.highlighting.components.pass.HighlightingPassServiceImpl
 import com.intellij.kotlin.jupyter.core.editor.highlighting.components.pass.NotebookCellFocusInformation
@@ -178,16 +178,13 @@ class NotebookHighlightingFileManager(
 
     private fun addNotebookSessionEventListener() {
         val targetFile = virtualFile
-        project.messageBus.connect(this).subscribe(
-            NotebookSessionEventListener.TOPIC,
-            object : NotebookSessionEventListener {
-                override fun sessionStarted(virtualFile: BackedNotebookVirtualFile) {
-                    if (targetFile != virtualFile) return
+        JupyterExecutionListener.register(this, object : JupyterExecutionListener {
+            override suspend fun sessionIsStarted(notebookFile: BackedNotebookVirtualFile) {
+                if (targetFile != virtualFile) return
 
-                    restartAnalysing()
-                }
+                restartAnalysing()
             }
-        )
+        })
     }
 
     private fun addNotebookScriptsStateListener() {

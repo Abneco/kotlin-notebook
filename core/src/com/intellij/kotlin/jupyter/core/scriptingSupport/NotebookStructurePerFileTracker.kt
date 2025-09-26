@@ -187,7 +187,7 @@ class NotebookStructurePerFileTracker(
     }
 
     override fun dispose() {
-        clearData()
+        knownCellInfoDelegate.getValueOrNull()?.clear()
     }
 
     companion object {

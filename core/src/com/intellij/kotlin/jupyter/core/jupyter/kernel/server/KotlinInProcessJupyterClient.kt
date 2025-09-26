@@ -14,16 +14,11 @@ import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 /**
  * Jupyter client that is running in the IDE process.
  */
-
 class KotlinInProcessJupyterClient() : InProcessJupyterClient() {
     override val kernelSpecs: Map<KernelName, JupyterKernelSpec> = Companion.kernelSpecs
 
     override val fileContentsApi: CachingFileContentsApi
         get() = error("Kotlin is not support file contents")
-
-    init {
-        subscribeToSessionVerified()
-    }
 
     override suspend fun clearSessionAndRuntimeImpl(kernelHandler: KernelRunnableHandler) {
         if (removeAndDisposeSession(kernelHandler.kernelId)) {
