@@ -1,6 +1,6 @@
 ### auto-generated section `build intellij.kotlin.jupyter.core` start
 load("@community//build:compiler-options.bzl", "create_kotlinc_options")
-load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_provided_library", "jvm_resources")
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_provided_library", "resourcegroup")
 
 create_kotlinc_options(
   name = "custom_core",
@@ -11,15 +11,15 @@ create_kotlinc_options(
   ]
 )
 
-jvm_resources(
+resourcegroup(
   name = "core_resources",
-  files = glob(["resources/**/*"]),
+  srcs = glob(["resources/**/*"]),
   strip_prefix = "resources"
 )
 
-jvm_resources(
+resourcegroup(
   name = "core_resources_1",
-  files = glob(["resources-en/**/*"]),
+  srcs = glob(["resources-en/**/*"]),
   strip_prefix = "resources-en"
 )
 
@@ -48,6 +48,10 @@ jvm_library(
   module_name = "intellij.kotlin.jupyter.core",
   visibility = ["//visibility:public"],
   srcs = glob(["generated/**/*.kt", "generated/**/*.java", "src/**/*.kt", "src/**/*.java", "src/**/*.form"], allow_empty = True),
+  resources = [
+    ":core_resources",
+    ":core_resources_1",
+  ],
   kotlinc_opts = ":custom_core",
   deps = [
     "@ultimate_lib//:jetbrains-annotations-provided",
@@ -129,10 +133,6 @@ jvm_library(
     ":plugins_jupyter_core_provided",
     ":plugins_jupyter_psi_provided",
   ],
-  exports = ["@ultimate_lib//:kotlin-jupyter-core-jetbrains-kotlinx-kotlin-jupyter-ws-server"],
-  runtime_deps = [
-    ":core_resources",
-    ":core_resources_1",
-  ]
+  exports = ["@ultimate_lib//:kotlin-jupyter-core-jetbrains-kotlinx-kotlin-jupyter-ws-server"]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.core` end

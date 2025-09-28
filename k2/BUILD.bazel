@@ -1,9 +1,9 @@
 ### auto-generated section `build intellij.kotlin.jupyter.k2` start
-load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_provided_library", "jvm_resources")
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_provided_library", "resourcegroup")
 
-jvm_resources(
+resourcegroup(
   name = "k2_resources",
-  files = glob(["resources/**/*"]),
+  srcs = glob(["resources/**/*"]),
   strip_prefix = "resources"
 )
 
@@ -17,6 +17,7 @@ jvm_library(
   module_name = "intellij.kotlin.jupyter.k2",
   visibility = ["//visibility:public"],
   srcs = glob(["src/**/*.kt", "src/**/*.java", "src/**/*.form", "gen/**/*.kt", "gen/**/*.java"], allow_empty = True),
+  resources = [":k2_resources"],
   deps = [
     "@ultimate_lib//:kotlinc-kotlin-scripting-common-provided",
     "@ultimate_lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
@@ -54,7 +55,6 @@ jvm_library(
     "@community//plugins/kotlin/base/indices",
     "@community//java/java-frontback-psi-impl:frontback-psi-impl",
     ":community_plugins_kotlin_scripting_provided",
-  ],
-  runtime_deps = [":k2_resources"]
+  ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.k2` end
