@@ -100,5 +100,6 @@
     <orderEntry type="module" module-name="intellij.jupyter.execution" />
     <orderEntry type="module" module-name="kotlin.idea.tests" scope="TEST" />
     <orderEntry type="module" module-name="kotlin.base.util" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.notebooks.jupyter.core" scope="TEST" />
   </component>
 </module>

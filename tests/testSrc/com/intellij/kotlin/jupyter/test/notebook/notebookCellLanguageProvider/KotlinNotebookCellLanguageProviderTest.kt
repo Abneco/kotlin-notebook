@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.test.notebook.notebookCellLanguageProvider
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
-import com.intellij.notebooks.visualization.CellType
+import com.intellij.notebooks.jupyter.core.jupyter.CellType
 import com.intellij.notebooks.visualization.CodeCellLinesChecker
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileTypes.PlainTextLanguage

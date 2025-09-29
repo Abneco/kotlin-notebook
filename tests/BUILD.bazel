@@ -71,6 +71,7 @@ jvm_library(
     "@community//plugins/kotlin/idea/tests:tests_test_lib",
     "@community//plugins/kotlin/base/util",
     "@community//plugins/kotlin/base/util:util_test_lib",
+    "@community//jupyter:notebooks-jupyter-core",
   ],
   runtime_deps = ["//:idea-ultimate-main"]
 )
