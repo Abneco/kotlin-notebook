@@ -3,11 +3,23 @@ package com.intellij.kotlin.jupyter.core.variables
 
 import com.intellij.execution.ui.RunnerLayoutUi
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.editor.appearance.KotlinNotebookToolWindowBuilder
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsSafe
 
-
-class KotlinNotebookToolWindowHandler {
+/**
+ * Class that manages the creation and disposal of [KotlinNotebookVarsToolWindow]s.
+ *
+ * This class is a property of [com.intellij.kotlin.jupyter.core.debug.variables.NotebookVariablesPerFileStateService], however,
+ * since [KotlinNotebookVarsToolWindow] is required during whole notebook tool window setup, it should be
+ * recreated on demand or changes.
+ *
+ * @see [KotlinNotebookToolWindowBuilder]
+ */
+class KotlinNotebookToolWindowHandler : Disposable {
     private var notebookVariablesWindow: KotlinNotebookVarsToolWindow? = null
 
     val isToolWindowReady: Boolean
@@ -22,7 +34,8 @@ class KotlinNotebookToolWindowHandler {
         providedSetupData: NotebookVariablesToolWindowSetup?
     ): KotlinNotebookVarsToolWindow {
         val toolWindow = notebookVariablesWindow
-        if (toolWindow != null) {
+        // we need to recreate a tool window if the provided setup data is different from the current
+        if (toolWindow != null && providedSetupData == toolWindow.panelSetupData) {
             return toolWindow
         }
 
@@ -31,12 +44,22 @@ class KotlinNotebookToolWindowHandler {
         }
 
         val newPanel = KotlinNotebookVarsToolWindow(project, virtualFile, providedSetupData)
+        toolWindow?.disposeOf()
         notebookVariablesWindow = newPanel
         return newPanel
     }
 
-    @Synchronized
-    fun clear() {
+    private fun KotlinNotebookVarsToolWindow?.disposeOf() {
+        val window = this ?: return
+
+        KotlinNotebookPluginScope.invokeOnEDT {
+            Disposer.dispose(window)
+        }
+    }
+
+    override fun dispose() {
+        val window = notebookVariablesWindow ?: return
+        window.disposeOf()
         notebookVariablesWindow = null
     }
 }

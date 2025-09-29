@@ -133,7 +133,7 @@ class NotebookTestBuilder(
             jupyterSession?.deleteSession()
         }
         // make sure to drop previous data
-        JupyterCompilerService.getInstance(project).removeSession(notebookBackedFile)
+        JupyterCompilerService.getInstance(project).remove(notebookBackedFile)
     }
 
     init {

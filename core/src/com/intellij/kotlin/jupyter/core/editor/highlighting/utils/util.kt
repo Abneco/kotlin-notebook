@@ -63,7 +63,7 @@ private suspend fun resetSessionMetaInformation(
     readAction {
         if (project.isDisposed) return@readAction
         val psiFile = virtualFile.findPsiFile(project)
-        compilerService.removeSession(backedNotebookVirtualFile)
+        compilerService.remove(backedNotebookVirtualFile)
         val cells = psiFile?.getNotebookCells()
         val injectedManager = InjectedLanguageManager.getInstance(project)
         psiFile?.removeUserData(CELL_CLASS_NAME)

@@ -99,7 +99,7 @@ fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
             session.deleteSession()
         }
         // make sure to drop previous data
-        JupyterCompilerService.getInstance(project).removeSession(backedFile)
+        JupyterCompilerService.getInstance(project).remove(backedFile)
     }
 }
 

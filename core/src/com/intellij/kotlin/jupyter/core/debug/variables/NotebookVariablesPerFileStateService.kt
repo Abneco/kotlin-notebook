@@ -12,6 +12,7 @@ import com.intellij.jupyter.core.jupyter.editor.completion.JupyterVariablesListe
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
+import com.intellij.kotlin.jupyter.core.util.createDisposableChild
 import com.intellij.kotlin.jupyter.core.variables.KotlinNotebookToolWindowHandler
 import com.intellij.kotlin.jupyter.core.variables.KotlinNotebookVarsToolWindow
 import com.intellij.kotlin.jupyter.core.variables.NotebookVariablesToolWindowSetup
@@ -48,7 +49,9 @@ class NotebookVariablesPerFileStateService(
         )
     }
 
-    private val variableToolWindowHandler = KotlinNotebookToolWindowHandler()
+    private val variableToolWindowHandler = createDisposableChild {
+        KotlinNotebookToolWindowHandler()
+    }
     private val notebookSessionEnvironmentProvider = NotebookSessionNoSuspensionEnvironmentProvider(virtualFile)
     var variablesMetaData: Map<String, String?>? = null
         private set
@@ -186,7 +189,6 @@ class NotebookVariablesPerFileStateService(
 
     fun clear() {
         variablesMetaData = null
-        variableToolWindowHandler.clear()
     }
 
     override fun dispose() {

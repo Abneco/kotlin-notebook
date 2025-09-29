@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.core.variables
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.completion.JupyterVariablesListener
-import com.intellij.jupyter.core.jupyter.helper.JupyterHelper.FORCED_NOTEBOOK
 import com.intellij.jupyter.core.jupyter.variables.common.JupyterVarsToolWindowPanel
 import com.intellij.kotlin.jupyter.core.debug.KotlinNotebookDebugEditorsProvider
 import com.intellij.kotlin.jupyter.core.debug.frame.KotlinNotebookVariablesFrame
@@ -12,7 +11,6 @@ import com.intellij.kotlin.jupyter.core.debug.util.shouldShowNotebookVariables
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.actionSystem.DataSink
-import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.actionSystem.UiDataProvider
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.getPreferredFocusedComponent
@@ -32,7 +30,7 @@ import java.awt.event.MouseEvent
 class KotlinNotebookVarsToolWindow(
     project: Project,
     notebookFile: BackedNotebookVirtualFile,
-    private val panelSetupData: NotebookVariablesToolWindowSetup
+    internal val panelSetupData: NotebookVariablesToolWindowSetup
 ) : JupyterVarsToolWindowPanel(project, notebookFile), UiDataProvider {
     private inner class VariablesListener: JupyterVariablesListener {
         override fun notebookSessionEnvironmentUpdated(
@@ -125,6 +123,7 @@ class KotlinNotebookVarsToolWindow(
     }
 
     override fun uiDataSnapshot(sink: DataSink) {
+        super.uiDataSnapshot(sink)
         val session = KotlinNotebookDebugSessionManager.getForFile(project, notebookFile).currentXSession ?: return
         sink[XDebugSessionProxy.DEBUG_SESSION_PROXY_KEY] = session.asProxy()
     }

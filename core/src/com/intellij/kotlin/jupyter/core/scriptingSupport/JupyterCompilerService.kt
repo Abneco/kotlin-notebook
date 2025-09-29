@@ -163,10 +163,6 @@ class JupyterCompilerService(
 
     fun requestScriptingUpdate(): Unit = scriptingSupportUpdateScheduler.requestUpdate()
 
-    fun removeSession(virtualFile: BackedNotebookVirtualFile) {
-        mapping.remove(virtualFile.file)?.let { Disposer.dispose(it) }
-    }
-
     fun get(virtualFile: BackedNotebookVirtualFile): JupyterCompilerPerFileService? {
         return mapping[virtualFile.file]
     }

@@ -92,7 +92,7 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         CoroutinesTimeout.seconds(180, cancelOnTimeout = true)
     )
 
-    // Scope that a all notebook tests unsing `runNotebookTest` uses.
+    // Scope that all notebook tests unsing `runNotebookTest` uses.
     val testScope = createCoroutineScope()
 
     // We cannot run on the EDT thread as Kernel Execution also runs there, which can result in deadlocks

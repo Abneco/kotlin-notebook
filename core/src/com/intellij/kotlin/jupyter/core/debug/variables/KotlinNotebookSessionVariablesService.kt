@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.core.debug.variables
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.executor.JupyterSessionEventsListener
 import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWindowManager
 import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.toNotebookToolWindowPanelHelpId
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
@@ -36,14 +35,6 @@ class KotlinNotebookSessionVariablesService(
             FileEditorManagerListener.FILE_EDITOR_MANAGER,
             KotlinFileEditorManagerListener()
         )
-        JupyterSessionEventsListener.register(this, object : JupyterSessionEventsListener {
-            override suspend fun sessionWillTerminate(notebookFile: BackedNotebookVirtualFile) {
-                if (!notebookFile.isKotlinNotebook) return
-
-                // We need to clear panels in case of session disposal
-                getOrNull(notebookFile)?.clear()
-            }
-        })
     }
 
     private inner class KotlinFileEditorManagerListener : FileEditorManagerListener {
