@@ -273,7 +273,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         val taskManager = ProjectTaskManager.getInstance(project)
         val buildTask = taskManager.createModulesBuildTask(module, true, true, false)
         val buildTaskContext = ProjectTaskContext().apply {
-            enableCollectionOfGeneratedFiles()
+            isCollectionOfGeneratedFilesEnabled = true
         }
 
         val buildResultDeferred = taskManager.run(buildTaskContext, buildTask).asDeferred()
