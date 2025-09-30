@@ -22,10 +22,10 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
 import com.intellij.kotlin.jupyter.core.settings.isAddProjectLibrariesToClasspath
 import com.intellij.kotlin.jupyter.core.settings.isBuildProject
 import com.intellij.kotlin.jupyter.core.settings.notebookDependencies
+import com.intellij.notebooks.jupyter.core.jupyter.CellType
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.exceptions.ReplCompilerException
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
-import org.jetbrains.plugins.notebooks.psi.jupyter.nbformat.JupyterCellType
 
 class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
     override fun getGroup(): EventLogGroup {
@@ -85,27 +85,14 @@ class KotlinNotebookFeatureUsagesCollector : FeatureUsagesCollector() {
             var markdownCellsCount = 0
             var codeCellsCount = 0
             notebook.computeCells().forEach { cell ->
-                when (cell.cellTypeProvider.getJupyterCellType()) {
-                    JupyterCellType.RAW,
-                    JupyterCellType.HEADING,
-                    JupyterCellType.HTML,
-                    JupyterCellType.UNDEFINED -> {
+                when (cell.cellTypeProvider.getCellType()) {
+                    CellType.RAW -> {
                         //nothing
                     }
-                    JupyterCellType.MARKDOWN -> {
+                    CellType.MARKDOWN -> {
                         ++markdownCellsCount
                     }
-                    JupyterCellType.CODE_OR_MAGIC,
-                    JupyterCellType.CODE,
-                    JupyterCellType.MAGIC,
-                    JupyterCellType.SQL,
-                    JupyterCellType.DATA_INPUT,
-                    JupyterCellType.DATA_WRANGLER,
-                    JupyterCellType.CHECKBOX,
-                    JupyterCellType.DROPDOWN,
-                    JupyterCellType.TEXT_FIELD,
-                    JupyterCellType.VISUALIZATION,
-                    JupyterCellType.NUMBER_FIELD -> {
+                    CellType.CODE -> {
                         ++codeCellsCount
                     }
                 }
