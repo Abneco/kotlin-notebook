@@ -118,7 +118,7 @@ class KotlinNotebookVarsToolWindow(
                     title,
                     null,
                     panel.getPreferredFocusedComponent()
-                )
+                ).apply { isCloseable = false }
         }
     }
 
