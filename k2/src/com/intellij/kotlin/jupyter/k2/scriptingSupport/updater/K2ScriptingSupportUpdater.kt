@@ -31,6 +31,7 @@ import kotlinx.coroutines.sync.withLock
 import org.jetbrains.kotlin.analysis.api.platform.modification.publishGlobalModuleStateModificationEvent
 import org.jetbrains.kotlin.analysis.api.platform.modification.publishGlobalScriptModuleStateModificationEvent
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionProviderImpl
+import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionsModificationTracker
 import org.jetbrains.kotlin.idea.core.script.v1.ScriptDependenciesModificationTracker
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
@@ -75,7 +76,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
             if (project.isDisposed) return@launch
 
             val updatedNotebooks = updateK2Configurations(editorManager, project)
-            ScriptDefinitionProviderImpl.getInstance(project).notifyDefinitionsChanged()
+            ScriptDefinitionsModificationTracker.getInstance(project).incModificationCount()
             project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).afterUpdate(updatedNotebooks)
         }
     }
