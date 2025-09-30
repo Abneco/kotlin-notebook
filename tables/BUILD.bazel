@@ -34,7 +34,7 @@ jvm_library(
     "//python/scientific-tables",
     "@ultimate_lib//:jackson-databind-provided",
     "@ultimate_lib//:jackson-provided",
-    "@lib//:kotlinc-kotlin-compiler-common-provided",
+    "@ultimate_lib//:kotlinc-kotlin-compiler-common-provided",
     "//plugins/jupyter/tables",
     "@community//platform/code-style-api:codeStyle",
     "@community//grid/core-impl",
