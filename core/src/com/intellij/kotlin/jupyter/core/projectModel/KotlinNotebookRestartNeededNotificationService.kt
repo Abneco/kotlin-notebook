@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.projectModel
 
 import com.intellij.codeInsight.hint.HintUtil
 import com.intellij.concurrency.ConcurrentCollectionFactory
-import com.intellij.jupyter.core.executor.JupyterSessionEventsListener
+import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
@@ -62,7 +62,7 @@ class KotlinNotebookRestartNeededNotificationService(
                 }
             }
         )
-        JupyterSessionEventsListener.register(this, object : JupyterSessionEventsListener {
+        JupyterExecutionListener.register(this, object : JupyterExecutionListener {
             override suspend fun sessionDeleted(session: JupyterNotebookSession) {
                 expireNotification(NotebookId(session.virtualFile.originFile))
             }

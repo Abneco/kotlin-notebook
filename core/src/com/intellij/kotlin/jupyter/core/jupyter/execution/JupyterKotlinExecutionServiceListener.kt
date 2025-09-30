@@ -1,7 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.execution
 
-import com.intellij.jupyter.core.executor.JupyterSessionEventsListener
+import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
@@ -12,7 +12,7 @@ import com.intellij.kotlin.jupyter.core.util.isKotlinNotebookSession
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 
-class JupyterKotlinExecutionServiceListener : JupyterSessionEventsListener {
+class JupyterKotlinExecutionServiceListener : JupyterExecutionListener {
     override suspend fun sessionCreated(session: JupyterNotebookSession) {
         if (!session.isKotlinNotebookSession()) return
 

@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.executor.JupyterSessionEventsListener
+import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.kotlin.jupyter.core.editor.highlighting.components.document.topic.DocumentCellsStructureChangedListener
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
@@ -19,7 +19,7 @@ class NotebookStructureTrackerService(
 ) : NotebookProjectLevelService<NotebookStructurePerFileTracker>(project, coroutineScope) {
 
     init {
-        JupyterSessionEventsListener.register(this, object : JupyterSessionEventsListener {
+        JupyterExecutionListener.register(this, object : JupyterExecutionListener {
             override suspend fun sessionWillTerminate(notebookFile: BackedNotebookVirtualFile) {
                 getOrNull(notebookFile)?.clearData()
             }
