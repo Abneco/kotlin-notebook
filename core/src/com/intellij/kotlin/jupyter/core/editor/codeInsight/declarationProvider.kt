@@ -42,7 +42,6 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
         sourceElement.reference?.resolve()?.let { return arrayOf(it) }
         val refExpr = sourceElement.getParentOfType<KtReferenceExpression>(true) ?: return emptyArray()
         if (refExpr.references.none { it.resolve() != null } )  return emptyArray()
-        tryGetPreviousResolvedResult(sourceElement)?.let { return arrayOf(it) }
 
         if (PsiTreeUtil.getParentOfType(sourceElement, KtReferenceExpression::class.java) == null) {
             return null
@@ -52,7 +51,6 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
         val adjustedElement = if (targetSymbol != null) PsiSymbolService.getInstance().extractElementFromSymbol(targetSymbol) ?: sourceElement else sourceElement
         (notebookFile.findPsiFile(project) as? JupyterFile)?.let {
             tryResolveCompiledDeclarationInNotebook(adjustedElement, it)?.let { foundDeclaration ->
-                sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, foundDeclaration)
                 return arrayOf(foundDeclaration)
             }
         }
@@ -62,41 +60,9 @@ class NotebookGotoDeclarationProvider: GotoDeclarationHandler {
             project, sourceElement, notebookFile,
             ReferenceSearchStrategy.DECLARATION
         )?.firstOrNull()?.let {
-            sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, it)
             arrayOf(it)
         } ?: emptyArray()
     }
-
-    companion object {
-        internal fun tryGetPreviousResolvedResult(sourceElement: PsiElement): PsiElement? {
-            val cachedElement = sourceElement.getUserData(IN_EDITOR_ELEM_REF_KEY) ?: return null
-            val knownRef = sourceElement.parent?.reference?.resolve()
-            val containingFile = cachedElement.containingFile
-            if (!cachedElement.isValid || !containingFile.isValid) {
-                sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, null)
-                return null
-            }
-
-            val injectedManager = InjectedLanguageManager.getInstance(sourceElement.project)
-            val storedClassName = injectedManager.getInjectionHost(cachedElement)?.getUserData(CELL_CLASS_NAME)
-            if (knownRef != null && cachedElement.isValid && storedClassName?.contains(knownRef.containingFile.name.substringBefore(".class")) == true
-                || storedClassName?.contains(sourceElement.containingFile.name.substringBefore(".class")) == true) {
-                if (containingFile.isValid) {
-                    return cachedElement
-                }
-            }
-
-            sourceElement.putUserData(IN_EDITOR_ELEM_REF_KEY, null)
-            return null
-        }
-
-        internal fun KtFile.clearResolvedUsagesCaches() {
-            forEachDescendantOfType<KtElement> {
-                it.putUserData(IN_EDITOR_ELEM_REF_KEY, null)
-            }
-        }
-    }
-
 }
 
 
