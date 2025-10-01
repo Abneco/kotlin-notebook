@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.core.debug.util
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSession
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
+import com.intellij.kotlin.jupyter.core.settings.isKernelVersionEnoughForInstrumentation
 import com.intellij.kotlin.jupyter.core.util.getKotlinNotebookVirtualFile
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
@@ -33,6 +34,12 @@ internal fun DataContext.getNotebookXSessionOrNull(): XDebugSession? {
     return debugSession?.currentXSession
 }
 
+internal val Project.notebookDebugFeaturesSupported: Boolean
+    get() = debugFeaturesEnabled && isKernelVersionEnoughForInstrumentation
+
 internal val Project.shouldShowNotebookVariables: Boolean
     get() = KotlinNotebookProjectOptionsProvider.getInstance(this).shouldShowNotebookVariables
             && debugFeaturesEnabled
+
+internal val Project.hasNotebookDebugSession: Boolean
+    get() = debugFeaturesEnabled && KotlinNotebookDebugSessionManager.getInstance(this).hasAnyAttachedProcess

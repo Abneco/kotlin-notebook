@@ -28,6 +28,18 @@ internal class KotlinNotebookDebugSessionManager(
                 portsGenerator.randomPort()
             else null
         }
+    /**
+     * Indicates whether there is at least one registered XDebugSession.
+     * NB: it may be suspended or terminated.
+     */
+    val hasAnyXDebugSession: Boolean
+        get() = mapping.any { it.value.isLiveSession }
+
+    /**
+     * Indicates whether there is at least one attached [DebugProcess].
+     */
+    val hasAnyAttachedProcess: Boolean
+        get() = mapping.any { it.value.debuggerSession?.process?.isAttached == true }
 
     fun getByDebugProcessOrNull(debugProcess: DebugProcess?): KotlinNotebookDebugSession? {
         if (debugProcess == null) return null

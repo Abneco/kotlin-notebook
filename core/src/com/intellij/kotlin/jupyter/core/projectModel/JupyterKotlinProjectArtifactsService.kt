@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.core.projectModel
 
 import com.intellij.build.BuildProgressListener
 import com.intellij.build.BuildViewManager
+import com.intellij.debugger.ui.HotSwapUIImpl.SKIP_HOT_SWAP_KEY
 import com.intellij.java.workspace.entities.JavaModuleSettingsEntity
 import com.intellij.java.workspace.entities.JavaSourceRootPropertiesEntity
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
@@ -10,6 +11,9 @@ import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
 import com.intellij.jupyter.core.jupyter.helper.getOriginalVirtualFile
+import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
+import com.intellij.kotlin.jupyter.core.debug.util.hasNotebookDebugSession
+import com.intellij.kotlin.jupyter.core.debug.util.notebookDebugFeaturesSupported
 import com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookRestartStatus
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
@@ -164,9 +168,11 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
     ) {
         if (changedLibrary != null && changedModules.isEmpty()) return
         val fileSettingsCache = KotlinNotebookPerFileSettingsCache.getInstance(project)
-        sessionData.values.map { it.file.file }.forEach { file ->
+        val hasDebugConnection = project.hasNotebookDebugSession
+
+        for (file in sessionData.values.map { it.file.file }) {
             val settings = fileSettingsCache.getCachedSettings(file)
-            if (settings == null || settings.notebookDependencies.isAffectedBy(changedLibrary, changedModules)) {
+            if (settings == null || settings.notebookDependencies.isAffectedBy(changedLibrary, changedModules) && !hasDebugConnection) {
                 coroutineScope.launch(Dispatchers.EDT) {
                     KotlinNotebookRestartNeededNotificationService.getInstance(project)
                         .notify(
@@ -274,6 +280,7 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         val buildTask = taskManager.createModulesBuildTask(module, true, true, false)
         val buildTaskContext = ProjectTaskContext().apply {
             isCollectionOfGeneratedFilesEnabled = true
+            configureDebugHotSwapOption()
         }
 
         val buildResultDeferred = taskManager.run(buildTaskContext, buildTask).asDeferred()
@@ -290,6 +297,19 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         else DependenciesState.ABSENT
 
         return BuildResult(projectClasspath, state)
+    }
+
+    private fun ProjectTaskContext.configureDebugHotSwapOption() {
+        if (!project.notebookDebugFeaturesSupported) return
+
+        val isDirty = dirtyOutputPaths.isPresent
+        if (isDirty) {
+            // if there's a running session, we should stick to hot swap
+            val hasAnyNotebookSession = KotlinNotebookDebugSessionManager.getInstance(project).hasAnyXDebugSession
+            if (hasAnyNotebookSession) return
+        }
+
+        withUserData(SKIP_HOT_SWAP_KEY, true)
     }
 
     private fun getDependencies(module: Module): Array<Module> {
