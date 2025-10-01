@@ -22,7 +22,7 @@ import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterPsiCellImpl
 import java.util.concurrent.atomic.AtomicInteger
 
 private val ELEMENTS_TO_INJECT = mutableListOf(JupyterPsiCellImpl::class.java)
-private val NON_CODE_CELL_REGEX = Regex("""${CELL_MARKER}(${nonCodeCellSuffixes.joinToString("|")})\n?""")
+private val NON_CODE_CELL_REGEX get() = Regex("""${CELL_MARKER}(${nonCodeCellSuffixes.joinToString("|")})\n?""")
 
 val NotebookPsiCell.isNonCode get() = cellMarker.text.matches(NON_CODE_CELL_REGEX)
 
