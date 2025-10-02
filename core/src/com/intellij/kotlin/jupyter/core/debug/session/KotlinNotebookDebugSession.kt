@@ -13,7 +13,7 @@ import com.intellij.execution.configurations.RemoteConnection
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterSessionPath
-import com.intellij.jupyter.core.jupyter.editor.completion.JupyterVariablesListener
+import com.intellij.jupyter.core.jupyter.variables.common.JupyterEnvironmentUpdateListener
 import com.intellij.kotlin.jupyter.core.debug.breakpoint.KernelSyntheticMethodBreakpoint
 import com.intellij.kotlin.jupyter.core.debug.events.NotebookDebugEventsHandler
 import com.intellij.kotlin.jupyter.core.debug.session.names.KotlinNotebookSessionInternalNamesProvider
@@ -99,8 +99,8 @@ internal class KotlinNotebookDebugSession(
                 ) {
                     if (debuggerSession?.isConnecting == true || updateState.isIncomplete) return
 
-                    messageBus.syncPublisher(JupyterVariablesListener.TOPIC)
-                        .notebookSessionEnvironmentUpdated(virtualFile.file, null)
+                    messageBus.syncPublisher(JupyterEnvironmentUpdateListener.TOPIC)
+                        .onJupyterEnvironmentUpdated(virtualFile, null)
                 }
             }
         )

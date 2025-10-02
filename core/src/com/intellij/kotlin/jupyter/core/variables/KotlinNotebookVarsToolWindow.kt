@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.variables
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.editor.completion.JupyterVariablesListener
+import com.intellij.jupyter.core.jupyter.variables.common.JupyterEnvironmentUpdateListener
 import com.intellij.jupyter.core.jupyter.variables.common.JupyterVarsToolWindowPanel
 import com.intellij.kotlin.jupyter.core.debug.KotlinNotebookDebugEditorsProvider
 import com.intellij.kotlin.jupyter.core.debug.frame.KotlinNotebookVariablesFrame
@@ -15,7 +15,6 @@ import com.intellij.openapi.actionSystem.UiDataProvider
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.getPreferredFocusedComponent
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.ClickListener
 import com.intellij.ui.ListenerUtil
 import com.intellij.ui.PopupHandler
@@ -32,12 +31,9 @@ class KotlinNotebookVarsToolWindow(
     notebookFile: BackedNotebookVirtualFile,
     internal val panelSetupData: NotebookVariablesToolWindowSetup
 ) : JupyterVarsToolWindowPanel(project, notebookFile), UiDataProvider {
-    private inner class VariablesListener: JupyterVariablesListener {
-        override fun notebookSessionEnvironmentUpdated(
-            virtualFile: VirtualFile,
-            values: XValueChildrenList?
-        ) {
-            if (notebookFile.originFile != virtualFile) return
+    private inner class VariablesListener: JupyterEnvironmentUpdateListener {
+        override fun onJupyterEnvironmentUpdated(backedNotebookVirtualFile: BackedNotebookVirtualFile, values: XValueChildrenList?) {
+            if (notebookFile != backedNotebookVirtualFile) return
 
             KotlinNotebookPluginScope.invokeOnEDT {
                 rebuildView()
@@ -50,7 +46,7 @@ class KotlinNotebookVarsToolWindow(
     }
 
     private fun subscribeToEvents() {
-        project.messageBus.connect(this).subscribe(JupyterVariablesListener.TOPIC, VariablesListener())
+        project.messageBus.connect(this).subscribe(JupyterEnvironmentUpdateListener.TOPIC, VariablesListener())
     }
 
     override val shouldBeAddedOnTopLevel: Boolean = false
@@ -99,6 +95,9 @@ class KotlinNotebookVarsToolWindow(
 
         validate()
         repaint()
+    }
+    override fun updateVariablesView() {
+        variablesView?.rebuildView()
     }
 
     override fun createPanelContent(): Content {
