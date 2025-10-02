@@ -34,7 +34,9 @@ import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.util.CheckedDisposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsContexts
+import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.dsl.builder.ButtonsGroup
+import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.builder.actionButton
@@ -90,7 +92,7 @@ class KotlinNotebookSettingsPanelBuilder(
             }
             if (debugFeaturesEnabled) {
                 group(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug")) {
-                    createDebugOptions()
+                    createVariablesViewSelector()
                 }
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session")) {
@@ -276,9 +278,10 @@ class KotlinNotebookSettingsPanelBuilder(
         return buildCompilerPluginsOptionsSelector(project, this)
     }
 
-    private fun Panel.createDebugOptions(): Row {
-        return row {
-            checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables"))
+    private fun Panel.createVariablesViewSelector() {
+        var variablesBox: Cell<JBCheckBox>? = null
+        row {
+            variablesBox = checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables"))
                 .accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.description"))
                 .comment(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.comment", DEBUG_SUPPORTED.toMavenVersion()))
                 .bindSelected(projectOptions::shouldShowNotebookVariables)
@@ -286,6 +289,17 @@ class KotlinNotebookSettingsPanelBuilder(
                     toolTipText = KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.comment")
                     subscribeOnKernelVersionSelectionChange { newVersion ->
                         isEnabled = newVersion?.isKernelVersionEnoughForInstrumentation ?: false
+                    }
+                }
+        }
+        row {
+            checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.focus.check.box"))
+                .bindSelected(projectOptions::shouldFocusOnVariables)
+                .accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.focus.check.box.description"))
+                .applyToComponent {
+                    isEnabled = projectOptions.shouldShowNotebookVariables
+                    variablesBox?.onChanged {
+                        isEnabled = it.isEnabled && it.isSelected
                     }
                 }
         }

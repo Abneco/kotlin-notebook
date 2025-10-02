@@ -62,6 +62,8 @@ class KotlinNotebookProjectOptionsProvider :
         internal set
     var shouldShowNotebookVariables: Boolean by prop(State::shouldShowNotebookVariables)
         internal set
+    var shouldFocusOnVariables: Boolean by prop(State::shouldFocusOnNotebookVariables)
+        internal set
 
     class State : BaseState() {
         var kernelVersion: String? by string(currentKernelVersion.toMavenVersion())
@@ -80,6 +82,7 @@ class KotlinNotebookProjectOptionsProvider :
             defaultValue = KotlinNotebookDependenciesProperty.defaultValue == KotlinNotebookDependencies.AllLibraries
         )
         var shouldShowNotebookVariables: Boolean by property(false)
+        var shouldFocusOnNotebookVariables: Boolean by property(false)
     }
 
     override fun dispose() {}

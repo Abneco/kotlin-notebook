@@ -41,5 +41,8 @@ internal val Project.shouldShowNotebookVariables: Boolean
     get() = KotlinNotebookProjectOptionsProvider.getInstance(this).shouldShowNotebookVariables
             && debugFeaturesEnabled
 
+internal val Project.shouldFocusOnVariablesToolWindow: Boolean
+    get() = shouldShowNotebookVariables && KotlinNotebookProjectOptionsProvider.getInstance(this).shouldFocusOnVariables
+
 internal val Project.hasNotebookDebugSession: Boolean
     get() = debugFeaturesEnabled && KotlinNotebookDebugSessionManager.getInstance(this).hasAnyAttachedProcess

@@ -7,9 +7,12 @@ import com.intellij.jupyter.core.jupyter.variables.common.JupyterVarsToolWindowP
 import com.intellij.kotlin.jupyter.core.debug.KotlinNotebookDebugEditorsProvider
 import com.intellij.kotlin.jupyter.core.debug.frame.KotlinNotebookVariablesFrame
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
+import com.intellij.kotlin.jupyter.core.debug.util.shouldFocusOnVariablesToolWindow
 import com.intellij.kotlin.jupyter.core.debug.util.shouldShowNotebookVariables
+import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWindowManager
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.util.isCurrentlySelectedInEditor
 import com.intellij.openapi.actionSystem.DataSink
 import com.intellij.openapi.actionSystem.UiDataProvider
 import com.intellij.openapi.project.Project
@@ -33,16 +36,39 @@ class KotlinNotebookVarsToolWindow(
 ) : JupyterVarsToolWindowPanel(project, notebookFile), UiDataProvider {
     private inner class VariablesListener: JupyterEnvironmentUpdateListener {
         override fun onJupyterEnvironmentUpdated(backedNotebookVirtualFile: BackedNotebookVirtualFile, values: XValueChildrenList?) {
-            if (notebookFile != backedNotebookVirtualFile) return
+            if (notebookFile != backedNotebookVirtualFile || !project.shouldShowNotebookVariables) return
 
             KotlinNotebookPluginScope.invokeOnEDT {
                 rebuildView()
+
+                if (shouldFocusOnFile) {
+                    requestFocusOnTab()
+                }
             }
         }
     }
 
     init {
         subscribeToEvents()
+    }
+
+    private val shouldFocusOnFile: Boolean
+        get() = project.shouldFocusOnVariablesToolWindow && notebookFile.isCurrentlySelectedInEditor(project)
+
+    private fun requestFocusOnTab() {
+        val runnerUi = panelSetupData.uiRunnerLayoutUi
+        val contentManager = runnerUi.contentManager
+        val variablesContent = runnerUi.contents.firstOrNull {
+            it.tabName == panelSetupData.title
+        }
+        if (variablesContent == null || variablesContent.isSelected) return
+
+        contentManager.setSelectedContent(variablesContent, true)
+
+        val notebookToolWindow = KotlinNotebookToolWindowManager.getInstance(project).getOrCreateKotlinNotebookToolWindow()
+        if (!notebookToolWindow.isActive) {
+            notebookToolWindow.show()
+        }
     }
 
     private fun subscribeToEvents() {
