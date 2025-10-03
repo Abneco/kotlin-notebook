@@ -18,8 +18,8 @@
     <orderEntry type="module" module-name="intellij.platform.ide.impl" />
     <orderEntry type="module" module-name="intellij.platform.projectModel" />
     <orderEntry type="module" module-name="intellij.scientific.tables" />
-    <orderEntry type="library" scope="PROVIDED" name="jackson-databind" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="jackson" level="project" />
+    <orderEntry type="module" module-name="intellij.libraries.jackson.databind" scope="PROVIDED" />
+    <orderEntry type="module" module-name="intellij.libraries.jackson" scope="PROVIDED" />
     <orderEntry type="library" scope="PROVIDED" name="kotlinc.kotlin-compiler-common" level="project" />
     <orderEntry type="module" module-name="intellij.jupyter.tables" />
     <orderEntry type="module" module-name="intellij.platform.codeStyle" />

@@ -1,5 +1,5 @@
 ### auto-generated section `build intellij.kotlin.jupyter.plots` start
-load("@rules_jvm//:jvm.bzl", "jvm_library", "resourcegroup")
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_provided_library", "resourcegroup")
 
 resourcegroup(
   name = "plots_resources",
@@ -11,6 +11,16 @@ resourcegroup(
   name = "plots_resources_1",
   srcs = glob(["resources-en/**/*"]),
   strip_prefix = "resources-en"
+)
+
+jvm_provided_library(
+  name = "community_libraries_jackson_jackson_provided",
+  lib = "@community//libraries/jackson/jackson"
+)
+
+jvm_provided_library(
+  name = "community_libraries_jackson_databind_provided",
+  lib = "@community//libraries/jackson/databind"
 )
 
 jvm_library(
@@ -29,8 +39,6 @@ jvm_library(
     "@ultimate_lib//:xml-apis-ext",
     "@ultimate_lib//:batik-transcoder",
     "@ultimate_lib//:kotlin-stdlib-provided",
-    "@ultimate_lib//:jackson-provided",
-    "@ultimate_lib//:jackson-databind-provided",
     "@community//libraries/kotlinx/serialization/core",
     "@community//libraries/kotlinx/serialization/json",
     "@community//platform/code-style-api:codeStyle",
@@ -47,6 +55,8 @@ jvm_library(
     "//plugins/jupyter/execution",
     "@lib//:kotlinx-datetime-jvm",
     "//platform/charts",
+    ":community_libraries_jackson_jackson_provided",
+    ":community_libraries_jackson_databind_provided",
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.plots` end
