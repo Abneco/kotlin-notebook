@@ -7,6 +7,8 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.restarter.NotebookHi
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
+import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.utils.addIfNotNull
@@ -68,14 +70,20 @@ internal class HighlightingEventsQueueImpl(
 
     override fun pullEvents(): HighlightingEvent? {
         val events = mutableListOf<HighlightingEvent>()
-        
+
         // Drain all events atomically
-        while (true) {
-            val event = eventsQueue.poll() ?: break
-            events.add(event)
+        try {
+            while (true) {
+                val event = eventsQueue.poll() ?: break
+                events.add(event)
+            }
+            ProgressManager.checkCanceled()
+
+            return mergeEvents(events)
+        } catch (t: ProcessCanceledException) {
+            eventsQueue.addAll(events)
+            throw t
         }
-        
-        return mergeEvents(events)
     }
 
     override fun clear() {
