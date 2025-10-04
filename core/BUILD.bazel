@@ -25,6 +25,11 @@ resourcegroup(
 )
 
 jvm_provided_library(
+  name = "community_libraries_kotlin-reflect_provided",
+  lib = "@community//libraries/kotlin-reflect"
+)
+
+jvm_provided_library(
   name = "community_plugins_kotlin_scripting_provided",
   lib = "@community//plugins/kotlin/scripting"
 )
@@ -62,7 +67,6 @@ jvm_library(
     "@community//platform/foldings",
     "@community//platform/ide-core-impl",
     "@ultimate_lib//:kotlin-jupyter-core-jetbrains-kotlinx-kotlin-jupyter-ws-server",
-    "@ultimate_lib//:kotlin-reflect-provided",
     "@ultimate_lib//:kotlinx-serialization-core-provided",
     "@community//libraries/kotlinx/serialization/json",
     "@lib//:kotlinx-coroutines-core",
@@ -131,6 +135,7 @@ jvm_library(
     "@community//platform/external-system-api:externalSystem",
     "@community//plugins/kotlin/code-insight/impl-base",
     "@community//plugins/kotlin/code-insight/utils",
+    ":community_libraries_kotlin-reflect_provided",
     ":community_plugins_kotlin_scripting_provided",
     ":community_java_psi_provided",
     ":plugins_jupyter_core_provided",
