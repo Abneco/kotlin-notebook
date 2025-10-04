@@ -239,6 +239,7 @@
         <notebookSessionFactory implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.server.KotlinKernelSessionFactory"/>
 
         <jupyterRuntimeListener implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinExecutionServiceListener"/>
+        <jupyterRuntimeListener implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinSessionClearHandler"/>
         <jupyter.data.input.run.jupyterDataInputErrorMessageFactory
                 implementation="com.intellij.kotlin.jupyter.core.editor.dnd.JupyterDataInputKotlinErrorMessageFactory"/>
 

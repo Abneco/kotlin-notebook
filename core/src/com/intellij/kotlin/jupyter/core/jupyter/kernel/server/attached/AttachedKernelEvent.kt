@@ -4,5 +4,5 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.attached
 import com.intellij.jupyter.execution.listeners.events.NotebookKernelEvent
 
 class AttachedKernelEvent(
-    override val eventSource: AttachedKernelProcessHandler
+    override val kernelsProcessHandler: AttachedKernelProcessHandler
 ) : NotebookKernelEvent

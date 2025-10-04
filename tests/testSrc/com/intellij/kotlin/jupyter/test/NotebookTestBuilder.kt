@@ -41,6 +41,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
@@ -129,9 +130,7 @@ class NotebookTestBuilder(
 
     }
     private val jupyterSessionCleanup = {
-        runBlocking {
-            jupyterSession?.deleteSession()
-        }
+        jupyterSession?.let { Disposer.dispose(it) }
         // make sure to drop previous data
         JupyterCompilerService.getInstance(project).remove(notebookBackedFile)
     }

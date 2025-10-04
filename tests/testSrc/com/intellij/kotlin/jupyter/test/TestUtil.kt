@@ -29,9 +29,9 @@ import com.intellij.openapi.application.impl.NonBlockingReadActionImpl.waitForAs
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
@@ -95,9 +95,7 @@ fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     return try {
         action()
     } finally {
-        runBlockingMaybeCancellable {
-            session.deleteSession()
-        }
+        Disposer.dispose(session)
         // make sure to drop previous data
         JupyterCompilerService.getInstance(project).remove(backedFile)
     }

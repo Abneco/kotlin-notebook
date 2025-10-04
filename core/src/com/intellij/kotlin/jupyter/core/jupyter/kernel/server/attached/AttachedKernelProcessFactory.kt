@@ -2,15 +2,15 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.attached
 
 import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOptions
-import com.intellij.jupyter.execution.listeners.events.KernelInfoReplyReceivedEvent
-import com.intellij.jupyter.execution.listeners.KernelListener
 import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
-import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ModeAwareKernelRunnableFactory
 import com.intellij.jupyter.execution.kernel.asRawMessage
+import com.intellij.jupyter.execution.listeners.KernelListener
+import com.intellij.jupyter.execution.listeners.events.KernelInfoReplyReceivedEvent
+import com.intellij.jupyter.execution.util.jsonConfig
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ModeAwareKernelRunnableFactory
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookAttachedModeOptions
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
-import com.intellij.jupyter.execution.util.jsonConfig
 import kotlinx.serialization.json.decodeFromJsonElement
 import org.jetbrains.kotlinx.jupyter.messaging.KernelInfoReplyMetadata
 import org.jetbrains.kotlinx.jupyter.startup.DEFAULT_SPRING_SIGNATURE_KEY
@@ -41,9 +41,9 @@ class AttachedKernelProcessFactory : ModeAwareKernelRunnableFactory(
 
     private object MyListener : KernelListener {
         override fun kernelInfoReplyReceived(event: KernelInfoReplyReceivedEvent) {
-            val kernel = event.eventSource
+            val kernel = event.kernelsProcessHandler
             val project = kernel.project
-            val notebookFile = kernel.notebookVirtualFile ?: return
+            val notebookFile = kernel.notebookVirtualFile
             val compilerService = JupyterCompilerService.getForFile(project, notebookFile)
 
             val message = event.message

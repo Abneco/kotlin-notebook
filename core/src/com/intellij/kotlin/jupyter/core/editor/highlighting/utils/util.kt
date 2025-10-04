@@ -2,9 +2,7 @@
 package com.intellij.kotlin.jupyter.core.editor.highlighting.utils
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.helper.selectedInterval
-import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.hints.PsiHostTypeHintsInvalidator
 import com.intellij.kotlin.jupyter.core.editor.highlighting.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.NotebookHighlightingUtilityObject.NonTargetHostErrorMark
@@ -38,18 +36,7 @@ internal fun BackedNotebookVirtualFile.reactOnThemeChangedEvent(project: Project
     NotebookHighlightingService.getForFile(project, this).restartAnalysing()
 }
 
-internal suspend fun cleanupKernelSession(
-    kernelHandler: KernelRunnableHandler,
-) {
-    if (!kernelHandler.isVerified) return
-    val notebookFile = kernelHandler.notebookVirtualFile
-    val project = kernelHandler.project
-
-    resetSessionMetaInformation(project, notebookFile)
-    JupyterExecutionManager.getInstance(project, notebookFile).killExecution()
-}
-
-private suspend fun resetSessionMetaInformation(
+internal suspend fun resetSessionMetaInformation(
     project: Project,
     backedNotebookVirtualFile: BackedNotebookVirtualFile,
 ) {

@@ -3,4 +3,4 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 
 import com.intellij.jupyter.execution.listeners.events.NotebookKernelEvent
 
-class EmbeddedKernelEvent(override val eventSource: EmbeddedKernelRunnableHandler) : NotebookKernelEvent
+class EmbeddedKernelEvent(override val kernelsProcessHandler: EmbeddedKernelRunnableHandler) : NotebookKernelEvent

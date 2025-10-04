@@ -107,7 +107,7 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
 
             override fun kernelWillTerminate(event: KernelProcessEvent) {
                 KernelProcessToolWindowCoordinatorService.getInstance(project)
-                    .get(event.eventSource.notebookVirtualFile)?.onWillTerminate(event)
+                    .get(event.kernelsProcessHandler.notebookVirtualFile)?.onWillTerminate(event)
             }
         })
 

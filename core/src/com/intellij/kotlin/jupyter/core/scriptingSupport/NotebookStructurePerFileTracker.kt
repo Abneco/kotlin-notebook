@@ -61,8 +61,8 @@ class NotebookStructurePerFileTracker(
             virtualFile.file.findPsiFile(project) as JupyterFile
         }
     }
-    private val notebook: JupyterNotebook
-        get() = virtualFile.notebook
+    private val notebook: JupyterNotebook?
+        get() = virtualFile.notebookOrNull
     private val injectedManager: InjectedLanguageManager
         get() = InjectedLanguageManager.getInstance(project)
 
@@ -73,6 +73,7 @@ class NotebookStructurePerFileTracker(
 
     override val cellOrdinalToCompiledClassNames: Map<Int, Set<String>>
         get() = buildMap {
+            val notebook = notebook ?: return@buildMap
             for ((index, cell) in notebook.computeCells().withIndex()) {
                 val compiledClassSet = cell.executionMetadata?.compiledClasses?.toSet().orEmpty()
                 put(index, compiledClassSet)
@@ -149,7 +150,7 @@ class NotebookStructurePerFileTracker(
 
         val psiCell = executedCellData.psiCell
         val cellIndex = executedCellData.cellIndex
-        val notebookCell = notebook.getCell(cellIndex)
+        val notebookCell = notebook?.getCell(cellIndex) ?: return
         if (cellIndex != -1) {
             compiledClassNames.forEach { classNamesToCellOrdinal[it] = cellIndex }
         }
@@ -183,7 +184,7 @@ class NotebookStructurePerFileTracker(
 
     override fun clearData() {
         knownCellInfoDelegate.getValueOrNull()?.clear()
-        notebook.clearAllCellsDataByKey(NotebookExecutionRelatedMetaData.DATA_KEY)
+        notebook?.clearAllCellsDataByKey(NotebookExecutionRelatedMetaData.DATA_KEY)
     }
 
     override fun dispose() {
