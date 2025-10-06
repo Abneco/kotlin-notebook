@@ -29,6 +29,7 @@ jvm_library(
     "@community//plugins/kotlin/code-insight/live-templates-shared:kotlin-code-insight-live-templates-shared",
     "@community//platform/analysis-api:analysis",
     "@community//platform/core-api:core",
+    "@community//platform/core-impl",
     "@community//platform/platform-impl:ide-impl",
   ]
 )
