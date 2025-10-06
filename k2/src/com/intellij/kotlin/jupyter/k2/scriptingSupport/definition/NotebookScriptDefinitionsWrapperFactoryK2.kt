@@ -8,6 +8,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.configurationResolverDelegate
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.scriptWorkspaceModelManagerDelegate
+import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionsModificationTracker
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import kotlin.script.experimental.api.SourceCode
 import kotlin.script.experimental.api.ide
@@ -37,6 +38,9 @@ internal class K2NotebookScriptDefinitionsWrapper(
             }
             refineNotebookWithSelectedBundledCompilerPlugins(project)
         }
+        // notify definition update, as lazy value computed
+        ScriptDefinitionsModificationTracker.getInstance(project).incModificationCount()
+
         object : org.jetbrains.kotlin.scripting.definitions.ScriptDefinition.FromConfigurations(
             defaultJvmScriptingHostConfiguration,
             compilationConfiguration,

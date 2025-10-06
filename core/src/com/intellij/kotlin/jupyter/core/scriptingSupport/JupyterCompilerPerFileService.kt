@@ -707,6 +707,7 @@ class JupyterCompilerPerFileService(
         private const val ABSENT_CELL_INDEX: Int = 1
 
         fun getConfiguration(ktFile: KtFile): ScriptCompilationConfigurationWrapper? {
+            // should we prefer getting our own definition directly?
             val scriptDef = ktFile.findScriptDefinition() ?: return null
             val conf = refineScriptCompilationConfiguration(KtFileScriptSource(ktFile), scriptDef, ktFile.project).valueOrNull()
             if (conf == null || conf.dependenciesClassPath.isEmpty()) {

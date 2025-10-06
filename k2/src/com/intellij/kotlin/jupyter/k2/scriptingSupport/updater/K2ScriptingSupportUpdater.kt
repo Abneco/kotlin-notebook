@@ -9,6 +9,7 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.UpdaterConstructorData
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerPerFileService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
+import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.notebookScriptDefinitionWrapper
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
@@ -76,9 +77,21 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
             if (project.isDisposed) return@launch
 
             val updatedNotebooks = updateK2Configurations(editorManager, project)
-            ScriptDefinitionsModificationTracker.getInstance(project).incModificationCount()
+            requestDefinitionReloadIfNecessary()
             project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).afterUpdate(updatedNotebooks)
         }
+    }
+
+    /**
+     * Prefer lazy reload
+     * Note: calling 'currentDefinitions' might invoke computations
+     */
+    private fun requestDefinitionReloadIfNecessary() {
+        val notebookDefinition = project.notebookScriptDefinitionWrapper
+        val definitions = ScriptDefinitionProviderImpl.getInstance(project).currentDefinitions
+        if (definitions.contains(notebookDefinition.compilationScriptDefinition)) return
+
+        ScriptDefinitionsModificationTracker.getInstance(project).incModificationCount()
     }
 
     override fun ensureScriptConfiguration(project: Project, ktFile: KtFile) {
