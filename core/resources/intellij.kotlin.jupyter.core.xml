@@ -1,4 +1,4 @@
-<idea-plugin package="com.intellij.kotlin.jupyter.core">
+<idea-plugin visibility="internal" package="com.intellij.kotlin.jupyter.core">
     <dependencies>
         <plugin id="org.jetbrains.kotlin"/>
 

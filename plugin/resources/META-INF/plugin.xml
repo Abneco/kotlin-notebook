@@ -72,7 +72,7 @@
         ]]>
     </change-notes>
 
-    <content>
+    <content namespace="jetbrains">
         <module name="intellij.kotlin.jupyter.core"/>
         <module name="intellij.kotlin.jupyter.tables"/>
         <module name="intellij.kotlin.jupyter.plots"/>
