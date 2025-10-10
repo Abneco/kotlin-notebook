@@ -43,7 +43,7 @@ jvm_library(
     "@community//jupyter:notebooks-jupyter-core",
     "@community//platform/platform-impl:ide-impl",
     "@community//plugins/kotlin/base/code-insight",
-    "@community//plugins/kotlin/base/scripting/scripting.k2",
+    "@community//plugins/kotlin/base/scripting/scripting.k2:kotlin-base-scripting",
     "@community//plugins/kotlin/base/fir/project-structure",
     "@community//plugins/kotlin/base/fir/scripting",
     "@community//plugins/kotlin/base/project-structure",

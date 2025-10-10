@@ -33,16 +33,16 @@
     <orderEntry type="module" module-name="kotlin.scripting" scope="PROVIDED" />
     <orderEntry type="module" module-name="intellij.notebooks.jupyter.core" />
     <orderEntry type="module" module-name="intellij.platform.ide.impl" />
-    <orderEntry type="module" module-name="kotlin.base.code-insight" />
-    <orderEntry type="module" module-name="kotlin.base.scripting.k2" />
-    <orderEntry type="module" module-name="kotlin.base.fir.project-structure" />
-    <orderEntry type="module" module-name="kotlin.base.fir.scripting" />
-    <orderEntry type="module" module-name="kotlin.base.project-structure" />
-    <orderEntry type="module" module-name="kotlin.base.scripting.shared" />
-    <orderEntry type="module" module-name="kotlin.base.compiler-configuration" />
+    <orderEntry type="module" module-name="intellij.kotlin.base.codeInsight" />
+    <orderEntry type="module" module-name="intellij.kotlin.base.scripting" />
+    <orderEntry type="module" module-name="intellij.kotlin.projectStructure" />
+    <orderEntry type="module" module-name="intellij.kotlin.scripting" />
+    <orderEntry type="module" module-name="intellij.kotlin.base.projectStructure" />
+    <orderEntry type="module" module-name="intellij.kotlin.base.scripting.shared" />
+    <orderEntry type="module" module-name="intellij.kotlin.base.compilerConfiguration" />
     <orderEntry type="module" module-name="kotlin.bundled-compiler-plugins-support" />
     <orderEntry type="module" module-name="intellij.jupyter.psi" />
-    <orderEntry type="module" module-name="kotlin.base.indices" />
+    <orderEntry type="module" module-name="intellij.kotlin.base.indices" />
     <orderEntry type="module" module-name="intellij.java.frontback.psi.impl" />
   </component>
 </module>

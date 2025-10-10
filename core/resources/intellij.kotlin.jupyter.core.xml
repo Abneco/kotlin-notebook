@@ -11,7 +11,7 @@
         <module name="intellij.jupyter.psi"/>
         <module name="intellij.jupyter.core"/>
         <module name="intellij.jupyter.execution"/>
-        <module name="kotlin.base.scripting.shared"/>
+        <module name="intellij.kotlin.base.scripting.shared"/>
 
         <plugin id="com.intellij.java"/>
     </dependencies>

@@ -49,7 +49,7 @@ jvm_library(
     "@lib//:kotlinc-kotlin-compiler-common",
     "@community//plugins/kotlin/base/code-insight/minimal",
     "@lib//:kotlinx-coroutines-debug",
-    "@community//plugins/kotlin/code-insight/impl-base",
+    "@community//plugins/kotlin/code-insight/impl-base:kotlin-codeInsight-shared",
     "@community//plugins/kotlin/base/plugin",
     "@community//plugins/kotlin/base/plugin:plugin_test_lib",
     "//plugins/jupyter/plugin",

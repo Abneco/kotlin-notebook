@@ -133,7 +133,7 @@ jvm_library(
     "@community//plugins/kotlin/base/scripting/scripting.shared",
     "@community//plugins/kotlin/base/psi",
     "@community//platform/external-system-api:externalSystem",
-    "@community//plugins/kotlin/code-insight/impl-base",
+    "@community//plugins/kotlin/code-insight/impl-base:kotlin-codeInsight-shared",
     "@community//plugins/kotlin/code-insight/utils",
     ":community_libraries_kotlin_reflect_provided",
     ":community_plugins_kotlin_scripting_provided",
