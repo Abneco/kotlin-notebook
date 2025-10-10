@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.core.debug.frame
 import com.intellij.debugger.engine.JavaDebuggerEvaluator
 import com.intellij.debugger.engine.JavaStackFrame
 import com.intellij.debugger.impl.PrioritizedTask
+import com.intellij.icons.AllIcons
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSession
 import com.intellij.kotlin.jupyter.core.debug.util.createScreeningAttachment
 import com.intellij.kotlin.jupyter.core.debug.util.shouldShowNotebookVariables
@@ -13,6 +14,7 @@ import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.errorUnderDebug
 import com.intellij.kotlin.jupyter.core.util.warnUnderDebug
 import com.intellij.openapi.project.Project
+import com.intellij.ui.SimpleTextAttributes
 import com.intellij.xdebugger.XSourcePosition
 import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
 import com.intellij.xdebugger.frame.XCompositeNode
@@ -98,8 +100,17 @@ internal class KotlinNotebookVariablesFrame(
             try {
                 val virtualMachine = context.suspendContext.virtualMachineProxy
 
+                val variablesState = variablesService.representVariablesStateAsXContainer(virtualMachine, context)
+                if (variablesState.size() == 0) {
+                    node.setMessage(
+                        KotlinNotebookBundle.message("kotlin.jupyter.debug.node.empty.session.variables.message"),
+                        AllIcons.General.Information,
+                        SimpleTextAttributes.REGULAR_ATTRIBUTES, null
+                    )
+                    return@invoke
+                }
                 node.addChildren(
-                    variablesService.representVariablesStateAsXContainer(virtualMachine, context),
+                    variablesState,
                     true
                 )
             } catch (ex: Exception) {
