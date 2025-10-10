@@ -53,7 +53,7 @@ jvm_library(
     "@community//platform/projectModel-api:projectModel",
     "@community//platform/platform-impl/ui",
     "//plugins/jupyter/execution",
-    "@lib//:kotlinx-datetime-jvm",
+    "@community//libraries/kotlinx/datetime",
     "//platform/charts",
     ":community_libraries_jackson_jackson_provided",
     ":community_libraries_jackson_databind_provided",
