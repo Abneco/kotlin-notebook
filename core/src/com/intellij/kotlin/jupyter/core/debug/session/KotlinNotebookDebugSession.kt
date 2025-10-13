@@ -101,7 +101,7 @@ internal class KotlinNotebookDebugSession(
                     if (debuggerSession?.isConnecting == true || updateState.isIncomplete) return
 
                     messageBus.syncPublisher(JupyterEnvironmentUpdateListener.TOPIC)
-                        .onJupyterEnvironmentUpdated(virtualFile, null)
+                        .onRuntimeEnvironmentUpdate(virtualFile, null)
                 }
             }
         )

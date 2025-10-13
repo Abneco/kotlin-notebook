@@ -74,7 +74,7 @@ class NotebookVariablesPerFileStateService(
     fun requestVariablesUpdate() {
         coroutineScope.async {
             project.messageBus.syncPublisher(JupyterEnvironmentUpdateListener.TOPIC)
-                .onJupyterEnvironmentUpdated(virtualFile, null)
+                .onRuntimeEnvironmentUpdate(virtualFile, null)
         }
     }
 

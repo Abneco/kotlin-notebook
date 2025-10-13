@@ -2,10 +2,11 @@
 package com.intellij.kotlin.jupyter.core.jupyter.execution
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.jupyter.core.executor.kernel.JupyterKernelTask
-import com.intellij.jupyter.core.jupyter.connections.action.JupyterRestartKernelListener
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterCellExecutionCallbackFactory
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.helper.JupyterHelper
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.withWriteLock
@@ -22,12 +23,15 @@ import kotlin.concurrent.write
  */
 class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackFactory {
     init {
-      ApplicationManager.getApplication().messageBus.connect()
-          .subscribe(JupyterRestartKernelListener.TOPIC, JupyterRestartKernelListener { notebookFile ->
-              executionDataLock.withWriteLock {
-                  callbacksCounters.remove(notebookFile)
-              }
-          })
+        JupyterExecutionListener.register(
+            ApplicationManager.getApplication().messageBus,
+            object : JupyterExecutionListener {
+                override suspend fun sessionDeleted(session: JupyterNotebookSession) {
+                    executionDataLock.withWriteLock {
+                        callbacksCounters.remove(session.virtualFile)
+                    }
+                }
+            })
     }
 
     private val callbacksCounters = mutableMapOf<BackedNotebookVirtualFile, Pair<Int, PriorityQueue<Int>>>()
@@ -61,8 +65,8 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
         if (!file.file.isKotlinNotebook) return null
 
         val jupyterPsiCellData = runReadAction {
-          val cellIndex = task.options.cellPointer?.get()?.ordinal ?: return@runReadAction null
-          JupyterHelper.getPsiCells(cellProject, task.notebookVirtualFile)?.getOrNull(cellIndex) to cellIndex
+            val cellIndex = task.options.cellPointer?.get()?.ordinal ?: return@runReadAction null
+            JupyterHelper.getPsiCells(cellProject, task.notebookVirtualFile)?.getOrNull(cellIndex) to cellIndex
         }
         val cell = jupyterPsiCellData?.first ?: return null
         val cellIndex = jupyterPsiCellData.second
@@ -96,7 +100,8 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
 
 }
 
-val kotlinNotebookCellExecutionCallbackFactory: KotlinNotebookCellExecutionCallbackFactory get() {
-    return JupyterCellExecutionCallbackFactory.EP_NAME
-        .findExtensionOrFail(KotlinNotebookCellExecutionCallbackFactory::class.java)
-}
+val kotlinNotebookCellExecutionCallbackFactory: KotlinNotebookCellExecutionCallbackFactory
+    get() {
+        return JupyterCellExecutionCallbackFactory.EP_NAME
+            .findExtensionOrFail(KotlinNotebookCellExecutionCallbackFactory::class.java)
+    }

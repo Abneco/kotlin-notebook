@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.k1.scriptingSupport
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
+import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.kotlin.jupyter.core.scriptingSupport.IndexAwareScriptDefinitionsLoadRequestor
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
@@ -11,7 +11,6 @@ import com.intellij.kotlin.jupyter.core.util.errorWithAttachments
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
-import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
 import com.intellij.openapi.diagnostic.Attachment
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -60,16 +59,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
 
     override fun collectConfigurations(builder: ScriptClassRootsBuilder) {
         val editors = editorManager?.allEditors ?: return
-
-        val openFiles = editors.mapNotNull {
-          (it as? JupyterFileEditor)?.getNotebookFile()
-        }.filter { it.fileType is JupyterFileType }.ifEmpty {
-            editors.mapNotNull { BackedNotebookVirtualFile.takeIfBacked(it.file)?.file }
-        }
-        val notebookFiles = openFiles
-            .filter { it.fileType is JupyterFileType }
-            .mapNotNull { BackedNotebookVirtualFile.takeIfBacked(it) }
-            .filter { it.file.isKotlinNotebook }
+        val notebookFiles = editors.mapNotNull { it?.notebookFileOrNull }.filter { it.file.isKotlinNotebook }
         builder.addRootsFromNotebooks(notebookFiles)
     }
 

@@ -267,8 +267,6 @@
         <editorCustomizer implementation="com.intellij.kotlin.jupyter.core.editor.creating.KotlinJupyterEditorCustomizer"/>
         <notebookToolWindowSelector
                 implementation="com.intellij.kotlin.jupyter.core.editor.appearance.KotlinNotebookToolWindowSelector"/>
-        <notebookVarsToolWindowPanelProvider
-                implementation="com.intellij.kotlin.jupyter.core.variables.NotebookVarsToolWindowProvider"/>
         <jupyterActionPresentationModifier
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookActionPresentationModifier"/>
         <csvDropHandler

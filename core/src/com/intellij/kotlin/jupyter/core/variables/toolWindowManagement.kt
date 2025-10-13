@@ -3,8 +3,8 @@ package com.intellij.kotlin.jupyter.core.variables
 
 import com.intellij.execution.ui.RunnerLayoutUi
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.editor.appearance.KotlinNotebookToolWindowCoordinator
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
