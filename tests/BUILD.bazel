@@ -1,10 +1,20 @@
 ### auto-generated section `build intellij.kotlin.jupyter.tests` start
-load("@rules_jvm//:jvm.bzl", "jvm_library")
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_provided_library")
 
 jvm_library(
   name = "tests",
   visibility = ["//visibility:public"],
   srcs = glob([], allow_empty = True)
+)
+
+jvm_provided_library(
+  name = "community_plugins_kotlin_core_provided",
+  lib = "@community//plugins/kotlin/core"
+)
+
+jvm_provided_library(
+  name = "community_platform_lang-impl_provided",
+  lib = "@community//platform/lang-impl"
 )
 
 jvm_library(
@@ -22,7 +32,6 @@ jvm_library(
     "@community//platform/editor-ui-api:editor-ui",
     "@community//jps/model-api:model",
     "@community//platform/projectModel-api:projectModel",
-    "@community//plugins/kotlin/core",
     "@community//plugins/kotlin/scripting",
     "@community//platform/testFramework",
     "@community//platform/testFramework:testFramework_test_lib",
@@ -33,7 +42,6 @@ jvm_library(
     "//plugins/jupyter/psi",
     "@community//libraries/jackson/databind",
     "@community//libraries/jackson/jackson",
-    "@community//platform/lang-impl",
     "@community//plugins/kotlin/base/test:test_test_lib",
     "@community//platform/lang-api:lang",
     "@community//notebooks/notebook-ui:ui",
@@ -72,6 +80,8 @@ jvm_library(
     "@community//plugins/kotlin/base/util",
     "@community//plugins/kotlin/base/util:util_test_lib",
     "@community//jupyter:notebooks-jupyter-core",
+    ":community_plugins_kotlin_core_provided",
+    ":community_platform_lang-impl_provided",
   ],
   runtime_deps = ["//:idea-ultimate-main"]
 )
