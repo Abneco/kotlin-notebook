@@ -93,7 +93,7 @@
         <registryKey key="kotlin.notebook.allow.attached.kernel" defaultValue="false"
                      description="When enabled, Kotlin Notebook may attach to running kernel sessions"/>
 
-        <registryKey key="kotlin.notebook.debug.enabled" defaultValue="false"
+        <registryKey key="kotlin.notebook.debug.enabled" defaultValue="true"
                      description="When enabled, establishing debug session with Kernel is possible"/>
 
         <registryKey key="kotlin.notebook.outdated.dependencies.hints" defaultValue="true"
