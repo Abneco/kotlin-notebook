@@ -100,7 +100,7 @@ internal class KotlinNotebookVariablesFrame(
             try {
                 val virtualMachine = context.suspendContext.virtualMachineProxy
 
-                val variablesState = variablesService.representVariablesStateAsXContainer(virtualMachine, context)
+                val variablesState = variablesService.buildXValueListForVariablesState(virtualMachine, context)
                 if (variablesState.size() == 0) {
                     node.setMessage(
                         KotlinNotebookBundle.message("kotlin.jupyter.debug.node.empty.session.variables.message"),

@@ -7,14 +7,33 @@ import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.xdebugger.frame.XValueChildrenList
 import com.sun.jdi.ObjectReference
 
-internal interface NotebookAbstractSessionEnvironmentExplorer {
+/**
+ * Represents a runtime environment explorer of the a [com.intellij.debugger.engine.DebugProcess]
+ * for a Kotlin Notebook session.
+ *
+ * NB: right now it works under an assumption for a separate notebook process.
+ *
+ * TODO: it's better to use typed proxy instances instead of [ObjectReference].
+ */
+internal interface NotebookAbstractSessionRuntimeEnvironmentExplorer {
+    /**
+     * Returns a reference to the NotebookImpl instance mirror.
+     */
     fun getNotebookReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference?
 
+    /**
+     * Returns a reference to the VariablesState instance mirror.
+     */
     fun getVariablesStateReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference?
 
-    fun representVariablesStateAsXContainer(virtualMachineProxy: VirtualMachineProxy, evaluationContext: EvaluationContextImpl): XValueChildrenList
+    /**
+     * Builds a debugger-api container [XValueChildrenList] for all the variables in the VariablesState.
+     */
+    fun buildXValueListForVariablesState(virtualMachineProxy: VirtualMachineProxy, evaluationContext: EvaluationContextImpl): XValueChildrenList
 
-    fun getXValueChildrenList(): XValueChildrenList?
-
+    /**
+     * Returns an existing [JavaValue] by its name inside the VariablesState,
+     * or null otherwise.
+     */
     fun getVariableValueByNameOrNull(name: String): JavaValue?
 }

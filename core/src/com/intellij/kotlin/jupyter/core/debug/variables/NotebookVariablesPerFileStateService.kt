@@ -38,7 +38,7 @@ class NotebookVariablesPerFileStateService(
     private val project: Project,
     virtualFile: BackedNotebookVirtualFile,
     coroutineScope: CoroutineScope,
-) : NotebookPerFileChildService(virtualFile, coroutineScope), NotebookAbstractSessionEnvironmentExplorer {
+) : NotebookPerFileChildService(virtualFile, coroutineScope), NotebookAbstractSessionRuntimeEnvironmentExplorer {
     companion object {
         private val LOG = notebookLogger()
 
@@ -78,22 +78,22 @@ class NotebookVariablesPerFileStateService(
         }
     }
 
-    override fun getNotebookReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference? {
-        return notebookSessionEnvironmentProvider.notebookReferenceProvider(virtualMachineProxy)
-    }
-
-    override fun getVariablesStateReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference? {
-        return notebookSessionEnvironmentProvider.variableStateReferenceProvider(virtualMachineProxy)
-    }
-
-    override fun getXValueChildrenList(): XValueChildrenList? {
+    fun getXValueChildrenList(): XValueChildrenList? {
         val debugSession = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
         val vmProxy = debugSession.currentStackFrameProxy?.virtualMachine
         val evalContext = debugSession.evaluationContext
         if (vmProxy == null || evalContext == null) {
             return null
         }
-        return representVariablesStateAsXContainer(vmProxy, evalContext)
+        return buildXValueListForVariablesState(vmProxy, evalContext)
+    }
+
+    override fun getNotebookReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference? {
+        return notebookSessionEnvironmentProvider.notebookReferenceProvider(virtualMachineProxy)
+    }
+
+    override fun getVariablesStateReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference? {
+        return notebookSessionEnvironmentProvider.variableStateReferenceProvider(virtualMachineProxy)
     }
 
     override fun getVariableValueByNameOrNull(name: String): JavaValue? {
@@ -109,7 +109,7 @@ class NotebookVariablesPerFileStateService(
         return foundVariable
     }
 
-    override fun representVariablesStateAsXContainer(virtualMachineProxy: VirtualMachineProxy, evaluationContext: EvaluationContextImpl): XValueChildrenList {
+    override fun buildXValueListForVariablesState(virtualMachineProxy: VirtualMachineProxy, evaluationContext: EvaluationContextImpl): XValueChildrenList {
         fun XValueChildrenList.addInternalVariables(
             variablesStateSize: Int,
             accessorData: VariablesStateAccessorData,
