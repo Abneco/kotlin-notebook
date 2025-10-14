@@ -19,9 +19,7 @@ object KotlinNotebookRestartKernelActionUpdater {
     val LOG: Logger = Logger.getInstance(MethodHandles.lookup().lookupClass())
 
     fun update(e: AnActionEvent) {
-        e.presentation.isEnabledAndVisible = true
         if (e.notebookFile?.isKotlinNotebook != true) {
-            e.presentation.isEnabledAndVisible = false
             return
         }
 
