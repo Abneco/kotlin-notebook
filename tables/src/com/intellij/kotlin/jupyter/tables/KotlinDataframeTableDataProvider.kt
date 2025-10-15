@@ -37,6 +37,7 @@ import com.intellij.scientific.tables.api.command.StatisticsTableCommand
 import com.intellij.scientific.tables.api.command.TableCommand
 import com.intellij.scientific.tables.api.filters.FilterExpression
 import com.intellij.scientific.tables.utils.exceptions.DSTableDataException
+import com.intellij.scientific.tables.utils.exceptions.DSTableLoadingInterruptedException
 import com.intellij.scientific.tables.utils.launchEdt
 import java.io.IOException
 import javax.swing.RowSorter
@@ -108,7 +109,7 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
         return info.copy(dataStatistics = dataStatistics)
     }
 
-    @Throws(DSTableDataException::class)
+    @Throws(DSTableDataException::class, DSTableLoadingInterruptedException::class)
     override suspend fun loadDynamicTableData(
         commandExecutor: DSTableCommandExecutor,
         dataId: DataId,
@@ -121,7 +122,9 @@ class KotlinDataFrameProvider(private val project: Project, private val parser: 
         val response = commandExecutor.executeCommand(
             SliceTableCommand(tableVariable, false, format, start, end),
             ::getCommandCode
-        ).getOrThrow()
+        ).getOrElse {
+            throw DSTableLoadingInterruptedException("Cannot execute the command", it)
+        }
 
         return executeParsing(response) { parseDataFromKotlinDataframeOutput(dataId, response) }
     }
