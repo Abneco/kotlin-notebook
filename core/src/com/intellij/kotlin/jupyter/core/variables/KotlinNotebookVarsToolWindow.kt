@@ -7,10 +7,12 @@ import com.intellij.jupyter.core.jupyter.variables.common.JupyterVarsToolWindowP
 import com.intellij.kotlin.jupyter.core.debug.KotlinNotebookDebugEditorsProvider
 import com.intellij.kotlin.jupyter.core.debug.frame.KotlinNotebookVariablesFrame
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
+import com.intellij.kotlin.jupyter.core.debug.util.debugFeaturesSupported
 import com.intellij.kotlin.jupyter.core.debug.util.shouldFocusOnVariablesToolWindow
 import com.intellij.kotlin.jupyter.core.debug.util.shouldShowNotebookVariables
 import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWindowManager
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
+import com.intellij.kotlin.jupyter.core.settings.getSessionRunMode
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.isCurrentlySelectedInEditor
 import com.intellij.openapi.actionSystem.DataSink
@@ -53,7 +55,9 @@ class KotlinNotebookVarsToolWindow(
     }
 
     private val shouldFocusOnFile: Boolean
-        get() = project.shouldFocusOnVariablesToolWindow && notebookFile.isCurrentlySelectedInEditor(project)
+        get() = project.shouldFocusOnVariablesToolWindow
+                && notebookFile.debugFeaturesSupported(project)
+                && notebookFile.isCurrentlySelectedInEditor(project)
 
     private fun requestFocusOnTab() {
         val runnerUi = panelSetupData.uiRunnerLayoutUi
@@ -75,6 +79,23 @@ class KotlinNotebookVarsToolWindow(
         project.messageBus.connect(this).subscribe(JupyterEnvironmentUpdateListener.TOPIC, VariablesListener())
     }
 
+    private val shouldUpdateVariablesList: Boolean
+        get() = when {
+            project.isDisposed || !project.shouldShowNotebookVariables -> {
+                showMessage(
+                    KotlinNotebookBundle.message("kotlin.jupyter.debug.node.default.message")
+                )
+                false
+            }
+            !notebookFile.debugFeaturesSupported(project) -> {
+                showMessage(
+                    KotlinNotebookBundle.message("kotlin.jupyter.debug.node.not.enabled.message")
+                )
+                false
+            }
+            else -> true
+        }
+
     override val shouldBeAddedOnTopLevel: Boolean = false
 
     override fun getName() =
@@ -83,18 +104,8 @@ class KotlinNotebookVarsToolWindow(
         )
 
     override fun initVariablesView() {
-        if (project.isDisposed || !project.shouldShowNotebookVariables) {
-            showMessage(
-                KotlinNotebookBundle.message("kotlin.jupyter.debug.node.default.message")
-            )
-            return
-        }
-        if (!panelSetupData.isEnabled) {
-            showMessage(
-                KotlinNotebookBundle.message("kotlin.jupyter.debug.node.not.enabled.message")
-            )
-            return
-        }
+        if (!shouldUpdateVariablesList) return
+
         removeAll()
         val debugManager = KotlinNotebookDebugSessionManager.getForFile(project, notebookFile)
 
@@ -122,7 +133,10 @@ class KotlinNotebookVarsToolWindow(
         validate()
         repaint()
     }
+
     override fun updateVariablesView() {
+        if (!shouldUpdateVariablesList) return
+
         variablesView?.rebuildView()
     }
 

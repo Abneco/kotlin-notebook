@@ -92,6 +92,9 @@ class KotlinNotebookSettingsPanelBuilder(
             }
             if (debugFeaturesEnabled) {
                 group(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug")) {
+                    row {
+                        comment(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.features.separate.process.note"))
+                    }
                     createVariablesViewSelector()
                 }
             }

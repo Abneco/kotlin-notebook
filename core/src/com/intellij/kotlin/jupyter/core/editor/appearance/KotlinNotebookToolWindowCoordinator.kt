@@ -4,12 +4,10 @@ package com.intellij.kotlin.jupyter.core.editor.appearance
 import com.intellij.execution.ui.RunnerLayoutUi
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.execution.kernel.KernelProcessAttachable
-import com.intellij.jupyter.execution.kernel.SeparateProcessKernelRunnableHandler
 import com.intellij.jupyter.execution.toolwindow.KernelProcessToolWindowCoordinator
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
 import com.intellij.openapi.project.Project
 import com.intellij.ui.content.Content
-import com.intellij.kotlin.jupyter.core.debug.util.debugFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.toAbsolutePath
 import com.intellij.kotlin.jupyter.core.variables.NotebookVariablesToolWindowSetup
@@ -23,14 +21,10 @@ class KotlinNotebookToolWindowCoordinator(
     }
 
     override fun createVariablesView(layoutUi: RunnerLayoutUi, handler: KernelProcessAttachable): Content? {
-        val isApplicable = handler is SeparateProcessKernelRunnableHandler
-        val enabled = debugFeaturesEnabled && isApplicable
-
         val setupData = NotebookVariablesToolWindowSetup(
             layoutUi,
             helpId,
-            KotlinNotebookBundle.message("kotlin.jupyter.toolbar.tabs.variables"),
-            enabled
+            KotlinNotebookBundle.message("kotlin.jupyter.toolbar.tabs.variables")
         )
 
         /**
@@ -42,8 +36,7 @@ class KotlinNotebookToolWindowCoordinator(
             .getForFile(project, vfile)
             .getToolWindow(setupData)
 
-        // Only create the Content (the actual UI tab) if the feature is enabled.
-        return if (enabled) toolWindowPanel.createContent() else null
+        return toolWindowPanel.createContent()
     }
 
     companion object {

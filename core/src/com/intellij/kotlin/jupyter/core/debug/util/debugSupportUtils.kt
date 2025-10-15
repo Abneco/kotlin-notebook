@@ -1,10 +1,14 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.debug.util
 
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSession
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
+import com.intellij.kotlin.jupyter.core.settings.getSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.isKernelVersionEnoughForInstrumentation
+import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
 import com.intellij.kotlin.jupyter.core.util.getKotlinNotebookVirtualFile
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
@@ -46,3 +50,18 @@ internal val Project.shouldFocusOnVariablesToolWindow: Boolean
 
 internal val Project.hasNotebookDebugSession: Boolean
     get() = debugFeaturesEnabled && KotlinNotebookDebugSessionManager.getInstance(this).hasAnyAttachedProcess
+
+internal val KotlinNotebookSessionRunMode.debugFeaturesSupported: Boolean
+    get() = when (this) {
+        KotlinNotebookSessionRunMode.SEPARATE_PROCESS -> true
+        KotlinNotebookSessionRunMode.IDE_PROCESS,
+        KotlinNotebookSessionRunMode.ATTACHED_PROCESS -> false
+    }
+
+/**
+ * Checks if debug session could be instantiated for the notebook settings
+ */
+internal fun BackedNotebookVirtualFile.debugFeaturesSupported(project: Project): Boolean {
+    if (!project.notebookDebugFeaturesSupported) return false
+    return getSessionRunMode(project).debugFeaturesSupported
+}

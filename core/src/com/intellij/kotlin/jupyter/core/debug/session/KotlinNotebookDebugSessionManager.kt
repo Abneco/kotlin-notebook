@@ -5,6 +5,8 @@ import com.intellij.debugger.engine.DebugProcess
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.execution.util.findNotebookVirtualFileOrNull
 import com.intellij.kotlin.jupyter.core.debug.util.connection.DebugConnectionUtility
+import com.intellij.kotlin.jupyter.core.debug.util.debugFeaturesSupported
+import com.intellij.kotlin.jupyter.core.settings.getSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.isKernelVersionEnoughForInstrumentation
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.openapi.application.ApplicationManager
@@ -21,13 +23,15 @@ internal class KotlinNotebookDebugSessionManager(
 ) : NotebookProjectLevelService<KotlinNotebookDebugSession>(project, coroutineScope) {
     private val portsGenerator = DebugConnectionUtility.debugPortsGenerator
 
-    private val nextTargetDebugPortOrNull: Int?
-        get() {
-            val isSuitable = project.isKernelVersionEnoughForInstrumentation
-            return if (isSuitable && !ApplicationManager.getApplication().isUnitTestMode)
-                portsGenerator.randomPort()
-            else null
-        }
+    private fun nextTargetDebugPortOrNullFor(file: BackedNotebookVirtualFile): Int? {
+        // Only separate mode is supported for now
+        if (!file.debugFeaturesSupported(project)) return null
+
+        val isSuitable = project.isKernelVersionEnoughForInstrumentation
+        return if (isSuitable && !ApplicationManager.getApplication().isUnitTestMode) {
+            portsGenerator.randomPort()
+        } else null
+    }
     /**
      * Indicates whether there is at least one registered XDebugSession.
      * NB: it may be suspended or terminated.
@@ -62,7 +66,7 @@ internal class KotlinNotebookDebugSessionManager(
             virtualFile,
             project,
             fileScope
-        ) { nextTargetDebugPortOrNull }
+        ) { nextTargetDebugPortOrNullFor(virtualFile) }
     }
 
     companion object {

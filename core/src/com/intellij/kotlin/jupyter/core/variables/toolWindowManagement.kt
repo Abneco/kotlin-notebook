@@ -67,6 +67,5 @@ class KotlinNotebookToolWindowHandler : Disposable {
 data class NotebookVariablesToolWindowSetup(
     val uiRunnerLayoutUi: RunnerLayoutUi,
     val helpId: String,
-    @NlsSafe val title: String,
-    val isEnabled: Boolean,
+    @NlsSafe val title: String
 )
