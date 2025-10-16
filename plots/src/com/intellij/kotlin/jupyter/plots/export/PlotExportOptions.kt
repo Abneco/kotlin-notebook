@@ -84,6 +84,6 @@ class PlotExportOptions :
          */
         val SCALING_FACTOR = RangeWithDefault(2.0, 0.1, 10.0)
 
-        val TARGET_DPI = RangeWithDefault(4000, 72, 4000)
+        val TARGET_DPI = RangeWithDefault(300, 72, 4000)
     }
 }
