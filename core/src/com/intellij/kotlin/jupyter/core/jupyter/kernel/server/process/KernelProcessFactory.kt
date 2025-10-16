@@ -16,6 +16,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.jupyter.actions.mode
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.DefaultKotlinKernelConfigFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ModeAwareKernelRunnableFactory
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.defaultSystemProperties
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded.EmbeddedKernelRunnableFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.extensions.KernelProcessCommandLineCustomizer
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.extensions.KernelVmCommandCustomizer
@@ -24,6 +25,7 @@ import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDo
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersionAsString
+import com.intellij.kotlin.jupyter.core.util.addMissingSystemProperties
 import com.intellij.kotlin.jupyter.core.util.pathSeparator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -68,9 +70,11 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
         val extraJavaArgs = buildList {
             workingDir?.let { add("-Duser.dir=${workingDir.invariantSeparatorsPathString}/") }
             add("-Xmx${options.heapMaxLimitInMib}M")
-            for (extraArg in options.extraJvmArguments) {
+            val jvmArguments = options.extraJvmArguments
+            for (extraArg in jvmArguments) {
                 add(extraArg)
             }
+            addMissingSystemProperties(jvmArguments, defaultSystemProperties)
             KernelVmCommandCustomizer.addVmArguments(this)
         }
 
