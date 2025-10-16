@@ -1,8 +1,8 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
-import com.intellij.openapi.projectRoots.Sdk
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.workspace.jps.entities.SdkId
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.ScriptConfigurationWithSdk
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import kotlin.script.experimental.api.valueOrNull
@@ -22,7 +22,7 @@ class KotlinNotebookScriptModel(
 data class KotlinNotebookScriptsModuleConfigurationInfo(
     val notebookFile: VirtualFile,
     val configuration: ScriptCompilationConfigurationWrapper,
-    val sdkInfo: Sdk?
+    val sdkId: SdkId?
 )
 
 /**
@@ -30,7 +30,7 @@ data class KotlinNotebookScriptsModuleConfigurationInfo(
  * Each [KotlinNotebookScriptsModuleConfigurationInfo] contains all necessary information for each cell.
  */
 internal fun Map<VirtualFile, ScriptConfigurationWithSdk>.toConfigurationInfoPerNotebook(): Map<VirtualFile, KotlinNotebookScriptsModuleConfigurationInfo> {
-    val sdk = values.firstOrNull()?.sdk
+    val sdk = values.firstOrNull()?.sdkId
     val configurations = this.mapValues { it.value.scriptConfiguration }
 
     return configurations.filterNot {

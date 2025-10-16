@@ -21,8 +21,6 @@ import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
 import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.workspaceModel
-import com.intellij.platform.workspace.jps.entities.InheritedSdkDependency
-import com.intellij.platform.workspace.jps.entities.SdkDependency
 import com.intellij.platform.workspace.jps.entities.SdkId
 import com.intellij.platform.workspace.storage.EntitySource
 import com.intellij.platform.workspace.storage.MutableEntityStorage
@@ -111,13 +109,13 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         return rootClasses.isNotEmpty() && rootClasses.all { it.isValid }
     }
 
-    private fun getSelectedSdkOrAnyAcceptable(): Sdk? {
+    private fun getSelectedSdkOrAnyAcceptable(): SdkId? {
         val registeredJdks = ProjectJdkTable.getInstance().allJdks.toSet().ifEmpty {
             return null
         }
         return NotebookProjectJdkOption.suggestJdks(project).firstOrNull {
             it.canBeUsedForScript() && it in registeredJdks
-        }
+        }?.let { SdkId(it.name, it.sdkType.name) }
     }
 
     @OptIn(KaImplementationDetail::class)
@@ -211,11 +209,12 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
             "Updating scripting module for notebook '${virtualFile.nameWithoutExtension}' with libraries: $libraryIds"
         }
 
-        val sdk = notebookModuleConfiguration.sdkInfo?.let { SdkDependency(SdkId(it.name, it.sdkType.name)) } ?: InheritedSdkDependency
         mutableEntityStorage addEntity KotlinScriptEntity(
-            virtualFile.toVirtualFileUrl(virtualFileUrlManager), libraryIds, sdk,
+            virtualFile.toVirtualFileUrl(virtualFileUrlManager), libraryIds,
             KotlinNotebookScriptEntitySource
-        )
+        ) {
+            this.sdkId = notebookModuleConfiguration.sdkId
+        }
     }
 
     companion object {
