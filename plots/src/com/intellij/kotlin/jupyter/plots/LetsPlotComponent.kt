@@ -15,16 +15,19 @@ import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
 import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
 import org.jetbrains.letsPlot.commons.geometry.DoubleVector
 import org.jetbrains.letsPlot.core.spec.FigKind
+import org.jetbrains.letsPlot.core.spec.Option
 import org.jetbrains.letsPlot.core.spec.config.CompositeFigureConfig
 import org.jetbrains.letsPlot.core.spec.config.PlotConfig
 import org.jetbrains.letsPlot.core.spec.front.PlotConfigFrontend
 import org.jetbrains.letsPlot.core.util.MonolithicCommon
 import org.jetbrains.letsPlot.core.util.PlotSizeHelper
 import org.jetbrains.letsPlot.core.util.sizing.SizingPolicy
+import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Rectangle
 import java.awt.event.ComponentEvent
 import java.awt.event.MouseEvent
+import javax.swing.JButton
 import javax.swing.JPanel
 import kotlin.math.roundToInt
 
@@ -97,12 +100,14 @@ class LetsPlotComponent : JBLayeredPane() {
             }
         )
 
+        val showToolbar = processedSpec.containsKey(Option.Meta.Kind.GG_TOOLBAR)
         val plotPanel: PlotPanel = object : PlotPanel(
             plotComponentProvider = plotComponentProvider,
             preferredSizeFromPlot = true,
             repaintDelay = 200,
             applicationContext = IdeaSwingContextBatik,
-            sizingPolicy = SizingPolicy.fitContainerSize(true)
+            sizingPolicy = SizingPolicy.fitContainerSize(preserveAspectRatio = !showToolbar),
+            showToolbar = showToolbar,
         ){}
 
         plotPanel.isOpaque = true
@@ -119,14 +124,31 @@ class LetsPlotComponent : JBLayeredPane() {
                     when (e.id) {
                         MouseEvent.MOUSE_CLICKED,
                         MouseEvent.MOUSE_PRESSED,
-                        MouseEvent.MOUSE_RELEASED -> false
+                        MouseEvent.MOUSE_RELEASED -> {
+                            // Popup trigger events shouldn't be redispatched to children as long as they trigger
+                            // a popup menu with Copy and Save actions on the plot panel
+                            // Otherwise we should redispatch these events: they trigger toolbar button actions
+                            !e.isPopupTrigger
+                        }
                         else -> true
                     }
                 }
             )
 
             addCursorProvider(
-                RetargetingCursorProvider.Factory(plotPanel)
+                RetargetingCursorProvider.Factory(
+                    boundsSource = plotPanel,
+                    customCursorGetter = { component ->
+                        when {
+                            /** Toolbar buttons */
+                            component is JButton -> Cursor.getDefaultCursor()
+
+                            /** The rest of the toolbar */
+                            component.javaClass.name.contains("PlotPanelToolbar") -> Cursor.getDefaultCursor()
+                            else -> null
+                        }
+                    }
+                )
             )
         }
 

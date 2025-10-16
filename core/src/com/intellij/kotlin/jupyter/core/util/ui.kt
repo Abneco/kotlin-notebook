@@ -52,13 +52,60 @@ class MouseEventDeepReDispatcher(
     private val newTarget: Component,
     private val eventFilter: (e: MouseEvent) -> Boolean = { true },
 ): MouseEventDispatcher {
+    private var previousMouseMoveTarget: Component? = null
+    
     override fun dispatch(event: MouseEvent?) {
         if (event == null || !eventFilter(event)) return
         val newTargetEvent = SwingUtilities.convertMouseEvent(event.component, event, newTarget)
         val deepestChild = SwingUtilities.getDeepestComponentAt(newTarget, newTargetEvent.x, newTargetEvent.y) ?: return
+        handleMouseMovedEvent(event, deepestChild)
         val deepestChildEvent = SwingUtilities.convertMouseEvent(newTargetEvent.component, newTargetEvent, deepestChild)
         deepestChild.dispatchEvent(deepestChildEvent)
+    }
 
+    private fun handleMouseMovedEvent(event: MouseEvent, deepestChild: Component) {
+        if (event.id != MouseEvent.MOUSE_MOVED) return
+
+        val previousDeepestChild = previousMouseMoveTarget
+        if (deepestChild != previousDeepestChild) {
+            dispatchComponentChangeEvents(
+                previousDeepestChild,
+                deepestChild,
+                event,
+            )
+        }
+
+        previousMouseMoveTarget = deepestChild
+    }
+
+    private fun dispatchComponentChangeEvents(previousComponent: Component?, currentComponent: Component, sourceEvent: MouseEvent) {
+        // Send MOUSE_EXITED to the previous component
+        if (previousComponent != null) {
+            val exitEvent = MouseEvent(
+                previousComponent,
+                MouseEvent.MOUSE_EXITED,
+                sourceEvent.getWhen(),
+                sourceEvent.modifiersEx,
+                sourceEvent.x, sourceEvent.y,
+                sourceEvent.clickCount,
+                sourceEvent.isPopupTrigger,
+                sourceEvent.button
+            )
+            previousComponent.dispatchEvent(exitEvent)
+        }
+
+        // Send MOUSE_ENTERED to the current component
+        val enterEvent = MouseEvent(
+            currentComponent,
+            MouseEvent.MOUSE_ENTERED,
+            sourceEvent.getWhen(),
+            sourceEvent.modifiersEx,
+            sourceEvent.x, sourceEvent.y,
+            sourceEvent.clickCount,
+            sourceEvent.isPopupTrigger,
+            sourceEvent.button
+        )
+        currentComponent.dispatchEvent(enterEvent)
     }
 }
 
@@ -107,16 +154,27 @@ abstract class CursorProvider(protected val component: Component) {
     }
 }
 
-class RetargetingCursorProvider(component: Component, private val boundsSource: Component): CursorProvider(component) {
+class RetargetingCursorProvider(
+    component: Component,
+    private val boundsSource: Component,
+    private val customCursorGetter: (Component) -> Cursor? = { null },
+): CursorProvider(component) {
     override fun provideCursor(x: Int, y: Int): Cursor? {
         val pointWithinSource = SwingUtilities.convertPoint(component, x, y, boundsSource)
         val cursorSource = SwingUtilities.getDeepestComponentAt(boundsSource, pointWithinSource.x, pointWithinSource.y) ?: return null
-        return cursorSource.cursor
+        return customCursorGetter(cursorSource) ?: cursorSource.cursor
     }
 
-    class Factory(private val boundsSource: Component): CursorProvider.Factory {
+    class Factory(
+        private val boundsSource: Component,
+        private val customCursorGetter: (Component) -> Cursor? = { null },
+    ): CursorProvider.Factory {
         override fun create(component: Component): CursorProvider {
-            return RetargetingCursorProvider(component, boundsSource)
+            return RetargetingCursorProvider(
+                component,
+                boundsSource,
+                customCursorGetter,
+            )
         }
     }
 }
