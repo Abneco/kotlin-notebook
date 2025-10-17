@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.util
 
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.StartupUiUtil
 import com.intellij.util.ui.UIUtil
 import java.awt.Component
@@ -63,6 +64,7 @@ class MouseEventDeepReDispatcher(
         deepestChild.dispatchEvent(deepestChildEvent)
     }
 
+    @RequiresEdt
     private fun handleMouseMovedEvent(event: MouseEvent, deepestChild: Component) {
         if (event.id != MouseEvent.MOUSE_MOVED) return
 
@@ -73,37 +75,24 @@ class MouseEventDeepReDispatcher(
                 deepestChild,
                 event,
             )
+            previousMouseMoveTarget = deepestChild
         }
-
-        previousMouseMoveTarget = deepestChild
     }
 
     private fun dispatchComponentChangeEvents(previousComponent: Component?, currentComponent: Component, sourceEvent: MouseEvent) {
         // Send MOUSE_EXITED to the previous component
         if (previousComponent != null) {
-            val exitEvent = MouseEvent(
-                previousComponent,
-                MouseEvent.MOUSE_EXITED,
-                sourceEvent.getWhen(),
-                sourceEvent.modifiersEx,
-                sourceEvent.x, sourceEvent.y,
-                sourceEvent.clickCount,
-                sourceEvent.isPopupTrigger,
-                sourceEvent.button
+            val exitEvent = sourceEvent.copy(
+                component = previousComponent,
+                id = MouseEvent.MOUSE_EXITED,
             )
             previousComponent.dispatchEvent(exitEvent)
         }
 
         // Send MOUSE_ENTERED to the current component
-        val enterEvent = MouseEvent(
-            currentComponent,
-            MouseEvent.MOUSE_ENTERED,
-            sourceEvent.getWhen(),
-            sourceEvent.modifiersEx,
-            sourceEvent.x, sourceEvent.y,
-            sourceEvent.clickCount,
-            sourceEvent.isPopupTrigger,
-            sourceEvent.button
+        val enterEvent = sourceEvent.copy(
+            component = currentComponent,
+            id = MouseEvent.MOUSE_ENTERED,
         )
         currentComponent.dispatchEvent(enterEvent)
     }
@@ -155,6 +144,14 @@ abstract class CursorProvider(protected val component: Component) {
     }
 }
 
+/**
+ * When over [component], changes its cursor to the value provided by [customCursorGetter].
+ *
+ * [customCursorGetter] gets the deepest child of [boundsSource] under cursor as an argument.
+ * If it returns `null`, the cursor of the deepest child is used.
+ *
+ * Useful when [component] overlaps with [boundsSource] and catches all the events.
+ */
 class RetargetingCursorProvider(
     component: Component,
     private val boundsSource: Component,
@@ -201,4 +198,21 @@ fun Component.addCursorProvider(cursorProviderFactory: CursorProvider.Factory) {
     }
 
     addMouseMotionListener(mouseMotionListener)
+}
+
+private fun MouseEvent.copy(
+    component: Component = this.component,
+    id: Int = this.id,
+): MouseEvent {
+    return MouseEvent(
+        /* source = */ component,
+        /* id = */ id,
+        /* when = */ `when`,
+        /* modifiers = */ modifiersEx,
+        /* x = */ x,
+        /* y = */ y,
+        /* clickCount = */ clickCount,
+        /* popupTrigger = */ isPopupTrigger,
+        /* button = */ button
+    )
 }
