@@ -55,7 +55,7 @@ fun getReplFactory(
 ): ReplFactory {
     ThreadingAssertions.assertBackgroundThread()
     updateHomePathProperty()
-    setDefaultSystemProperties()
+    ensureSystemPropertiesSet(defaultSystemProperties)
     val classLoader = EmbeddedKernelClassLoaderHolder.getInstance(project).getClassLoader(kernelVersion)
     return loadDefaultReplFactory(replComponentsProvider, classLoader)
 }
@@ -76,10 +76,10 @@ private fun updateHomePathProperty() {
 }
 
 /**
- * Sets some system properties to the default values if they are not set yet.
+ * Sets [systemProperties] to the default values if they are not set yet.
  */
-private fun setDefaultSystemProperties() {
-    for ((key, value) in defaultSystemProperties) {
+private fun ensureSystemPropertiesSet(systemProperties: Map<String, String>) {
+    for ((key, value) in systemProperties) {
         getOrSetSystemProperty(key) { value }
     }
 }

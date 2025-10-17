@@ -25,7 +25,7 @@ import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDo
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersionAsString
-import com.intellij.kotlin.jupyter.core.util.addMissingSystemProperties
+import com.intellij.kotlin.jupyter.core.util.ensureSystemPropertiesPresent
 import com.intellij.kotlin.jupyter.core.util.pathSeparator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
@@ -74,7 +74,7 @@ class KernelProcessFactory : ModeAwareKernelRunnableFactory(
             for (extraArg in jvmArguments) {
                 add(extraArg)
             }
-            addMissingSystemProperties(jvmArguments, defaultSystemProperties)
+            ensureSystemPropertiesPresent(jvmArguments, defaultSystemProperties)
             KernelVmCommandCustomizer.addVmArguments(this)
         }
 

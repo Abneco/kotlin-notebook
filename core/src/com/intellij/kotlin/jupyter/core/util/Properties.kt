@@ -26,16 +26,16 @@ fun getOrSetSystemProperty(
  * This method checks the provided list [jvmArgumentsList] of JVM argument strings for any system properties
  * defined in the given map [systemProperties] and adds missing ones to the builder.
  */
-fun MutableList<String>.addMissingSystemProperties(
+fun MutableList<String>.ensureSystemPropertiesPresent(
     jvmArgumentsList: List<String>,
     systemProperties: Map<String, String>,
 ) {
-    val definedProperties = jvmArgumentsList.mapNotNull { arg ->
+    val definedPropertiesNames = jvmArgumentsList.mapNotNull { arg ->
         systemPropertyArgumentRegex.matchEntire(arg)?.let { match ->
             match.groupValues[1]
         }
     }.toSet()
-    for ((key, value) in (systemProperties - definedProperties)) {
+    for ((key, value) in (systemProperties - definedPropertiesNames)) {
         add("-D$key=$value")
     }
 }
