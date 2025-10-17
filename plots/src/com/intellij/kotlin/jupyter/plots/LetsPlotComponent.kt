@@ -8,6 +8,7 @@ import com.intellij.kotlin.jupyter.core.util.addDispatchingMouseListener
 import com.intellij.kotlin.jupyter.plots.export.buildHtmlFromRawPlotSpec
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.components.JBLayeredPane
 import org.jetbrains.annotations.TestOnly
@@ -111,6 +112,7 @@ class LetsPlotComponent : JBLayeredPane() {
         ){}
 
         plotPanel.isOpaque = true
+        plotPanel.background = EditorColorsManager.getInstance().getGlobalScheme().defaultBackground
 
         alignmentX = CENTER_ALIGNMENT
         alignmentY = CENTER_ALIGNMENT

@@ -110,7 +110,7 @@ class MouseEventDeepReDispatcher(
 }
 
 fun Component.addDispatchingMouseListener(dispatcher: MouseEventDispatcher) {
-    val mouseMotionListener = object : MouseMotionListener {
+    addMouseMotionListener(object : MouseMotionListener {
         override fun mouseDragged(e: MouseEvent?) {
             dispatcher.dispatch(e)
         }
@@ -118,9 +118,9 @@ fun Component.addDispatchingMouseListener(dispatcher: MouseEventDispatcher) {
         override fun mouseMoved(e: MouseEvent?) {
             dispatcher.dispatch(e)
         }
-    }
+    })
 
-    val mouseListener = object : MouseListener {
+    addMouseListener(object : MouseListener {
         override fun mouseClicked(e: MouseEvent?) {
             dispatcher.dispatch(e)
         }
@@ -140,10 +140,11 @@ fun Component.addDispatchingMouseListener(dispatcher: MouseEventDispatcher) {
         override fun mouseExited(e: MouseEvent?) {
             dispatcher.dispatch(e)
         }
-    }
+    })
 
-    addMouseMotionListener(mouseMotionListener)
-    addMouseListener(mouseListener)
+    addMouseWheelListener { e ->
+        dispatcher.dispatch(e)
+    }
 }
 
 abstract class CursorProvider(protected val component: Component) {
