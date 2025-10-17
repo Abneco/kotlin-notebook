@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.defaultSystemProperties
 import com.intellij.kotlin.jupyter.core.util.getOrSetSystemProperty
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.project.Project
@@ -54,6 +55,7 @@ fun getReplFactory(
 ): ReplFactory {
     ThreadingAssertions.assertBackgroundThread()
     updateHomePathProperty()
+    setDefaultSystemProperties()
     val classLoader = EmbeddedKernelClassLoaderHolder.getInstance(project).getClassLoader(kernelVersion)
     return loadDefaultReplFactory(replComponentsProvider, classLoader)
 }
@@ -70,5 +72,14 @@ fun getReplFactory(
 private fun updateHomePathProperty() {
     getOrSetSystemProperty(PathManager.PROPERTY_HOME_PATH) {
         PathManager.getHomeDir(true).pathString
+    }
+}
+
+/**
+ * Sets some system properties to the default values if they are not set yet.
+ */
+private fun setDefaultSystemProperties() {
+    for ((key, value) in defaultSystemProperties) {
+        getOrSetSystemProperty(key) { value }
     }
 }
