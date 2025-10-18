@@ -61,6 +61,7 @@ jvm_library(
     "@community//plugins/kotlin/jvm-debugger/evaluation/k1",
     "@community//platform/backend/workspace",
     "@community//platform/projectModel-api:projectModel",
+    "@community//platform/core-impl",
     "@community//platform/projectModel-impl",
     "@community//platform/analysis-api:analysis",
     "@community//platform/workspace/storage",
