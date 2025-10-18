@@ -76,7 +76,7 @@ private fun updateHomePathProperty() {
 }
 
 /**
- * Sets [systemProperties] to the default values if they are not set yet.
+ * Sets system properties to the default values provided in [systemProperties], if they are not set yet.
  */
 private fun ensureSystemPropertiesSet(systemProperties: Map<String, String>) {
     for ((key, value) in systemProperties) {
