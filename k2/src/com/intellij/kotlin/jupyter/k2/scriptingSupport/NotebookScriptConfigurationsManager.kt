@@ -5,23 +5,19 @@ import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
-import com.intellij.kotlin.jupyter.core.settings.NotebookProjectJdkOption
+import com.intellij.kotlin.jupyter.core.scriptingSupport.getSelectedSdkOrAnyAcceptable
+import com.intellij.kotlin.jupyter.core.scriptingSupport.with
 import com.intellij.kotlin.jupyter.core.util.debugInTests
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
 import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceScriptEntities
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.projectRoots.JavaSdkType
-import com.intellij.openapi.projectRoots.ProjectJdkTable
-import com.intellij.openapi.projectRoots.Sdk
-import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
 import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.workspaceModel
-import com.intellij.platform.workspace.jps.entities.SdkId
 import com.intellij.platform.workspace.storage.EntitySource
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrlManager
@@ -29,15 +25,18 @@ import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModuleProvider
 import org.jetbrains.kotlin.analysis.api.projectStructure.analysisContextModule
-import org.jetbrains.kotlin.idea.core.script.k2.configurations.ScriptConfigurationWithSdk
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
 import org.jetbrains.kotlin.idea.core.script.k2.modules.ScriptRefinedConfigurationResolver
 import org.jetbrains.kotlin.idea.core.script.k2.modules.ScriptWorkspaceModelManager
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
+import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.script.experimental.api.asSuccess
+import kotlin.script.experimental.jvm.jdkHome
+import kotlin.script.experimental.jvm.jvm
 
 /**
  * Special marker used to distinguish Kotlin Notebook-related entities
@@ -57,7 +56,8 @@ object KotlinNotebookScriptEntitySource : EntitySource
  */
 @Service(Service.Level.PROJECT)
 class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedConfigurationResolver, ScriptWorkspaceModelManager {
-    val cache: ConcurrentHashMap<VirtualFile, ScriptConfigurationWithSdk> = ConcurrentHashMap<VirtualFile, ScriptConfigurationWithSdk>()
+    val cache: ConcurrentHashMap<VirtualFile, ScriptCompilationConfigurationResult> =
+        ConcurrentHashMap<VirtualFile, ScriptCompilationConfigurationResult>()
     val workspaceModel: WorkspaceModel
         get() = project.workspaceModel
 
@@ -70,13 +70,13 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
      */
     override suspend fun create(
         virtualFile: VirtualFile, definition: ScriptDefinition
-    ): ScriptConfigurationWithSdk? = get(virtualFile)
+    ): ScriptCompilationConfigurationResult? = get(virtualFile)
 
     /**
      * Depending on a [VirtualFileWindow] is dangerous as it might get invalidated soon after it was processed.
      * For this end, one should associate configuration with top level [VirtualFile].
      */
-    override fun get(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
+    override fun get(virtualFile: VirtualFile): ScriptCompilationConfigurationResult? {
         val topLevelFile = virtualFile.getTopLevelFileOrNull()
 
         if (topLevelFile == null) { // We may get there in the case of a light file we usually get as an intermediate result
@@ -88,7 +88,7 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         val configuration = cache[topLevelFile]
 
         return if (cache.isEmpty()) {
-            getDefaultConfiguration(topLevelFile)
+            JupyterCompilerService.getInstance(project).getDefaultConfiguration(topLevelFile)
         } else {
             if (configuration == null) {
                 notebookLogger().warn("No configuration found for ${topLevelFile.name}")
@@ -97,41 +97,25 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         }
     }
 
-    fun getDefaultConfiguration(virtualFile: VirtualFile): ScriptConfigurationWithSdk? {
-        val configuration = JupyterCompilerService.getInstance(project).getDefaultConfiguration(virtualFile) ?: return null
-
-        return ScriptConfigurationWithSdk(configuration, getSelectedSdkOrAnyAcceptable())
-    }
-
-    private fun Sdk.canBeUsedForScript(): Boolean {
-        if (sdkType !is JavaSdkType) return false
-        val rootClasses = rootProvider.getFiles(OrderRootType.CLASSES)
-        return rootClasses.isNotEmpty() && rootClasses.all { it.isValid }
-    }
-
-    private fun getSelectedSdkOrAnyAcceptable(): SdkId? {
-        val registeredJdks = ProjectJdkTable.getInstance().allJdks.toSet().ifEmpty {
-            return null
-        }
-        return NotebookProjectJdkOption.suggestJdks(project).firstOrNull {
-            it.canBeUsedForScript() && it in registeredJdks
-        }?.let { SdkId(it.name, it.sdkType.name) }
-    }
-
     @OptIn(KaImplementationDetail::class)
     fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
-        val sdk = getSelectedSdkOrAnyAcceptable()
-        if (sdk == null) {
+        val sdkHomePath = getSelectedSdkOrAnyAcceptable(project)?.homePath
+        if (sdkHomePath == null) {
             notebookLogger().warn("No JDK SDK is set for the project")
         }
 
         val configurations = scripts.associate { ktScript ->
             val virtualFile = ktScript.virtualFile
             virtualFile.analysisContextModule = null
-            val configuration = ktScript.refinedConfigurationResult.asSuccess()
+
+            val configurationWrapper = ktScript.refinedConfigurationResult.with {
+                if (sdkHomePath != null) {
+                    jvm.jdkHome(File(sdkHomePath))
+                }
+            }.asSuccess()
 
             val topLevelFile = (virtualFile as VirtualFileWindow).delegate
-            topLevelFile to ScriptConfigurationWithSdk(configuration, sdk)
+            topLevelFile to configurationWrapper
         }
 
         cache.putAll(configurations)
@@ -152,7 +136,7 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         this.analysisContextModule = randomModule
     }
 
-    override suspend fun updateWorkspaceModel(configurationPerFile: Map<VirtualFile, ScriptConfigurationWithSdk>) {
+    override suspend fun updateWorkspaceModel(configurationPerFile: Map<VirtualFile, ScriptCompilationConfigurationResult>) {
         val tmp = MutableEntityStorage.create()
 
         val configurationsByNotebook = cache.toConfigurationInfoPerNotebook()

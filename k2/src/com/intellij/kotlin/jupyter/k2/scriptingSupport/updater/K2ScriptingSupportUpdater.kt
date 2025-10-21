@@ -97,9 +97,8 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
     override fun ensureScriptConfiguration(project: Project, ktFile: KtFile) {
         JupyterCompilerService.getInstance(ktFile.project).getDefaultConfiguration(ktFile.virtualFile)
     }
-
     /**
-     * Clears [org.jetbrains.kotlin.idea.core.script.k2.configurations.ScriptConfiguration] for a particular [BackedNotebookVirtualFile]
+     * Clears [org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult] for a particular [BackedNotebookVirtualFile]
      */
     private fun clearRuntimeDependenciesFor(notebookFile: BackedNotebookVirtualFile) {
         val scope = KotlinNotebookPluginScope.getForProject(project)
@@ -163,7 +162,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                 }
 
                 val storedConfiguration = configurationCache[notebook.file]
-                    ?.scriptConfiguration?.valueOrNull()?.configuration
+                    ?.valueOrNull()?.configuration
 
                 // skip if exists
                 if (storedConfiguration == refinedConfiguration) {

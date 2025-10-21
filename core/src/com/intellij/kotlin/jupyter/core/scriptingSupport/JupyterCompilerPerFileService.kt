@@ -67,6 +67,7 @@ import org.jetbrains.kotlinx.jupyter.config.addBaseClass
 import org.jetbrains.kotlinx.jupyter.config.defaultGlobalImports
 import org.jetbrains.kotlinx.jupyter.repl.EvaluatedSnippetMetadata
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
+import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
@@ -87,6 +88,8 @@ import kotlin.script.experimental.api.valueOrNull
 import kotlin.script.experimental.host.getScriptingClass
 import kotlin.script.experimental.host.with
 import kotlin.script.experimental.jvm.JvmDependency
+import kotlin.script.experimental.jvm.jdkHome
+import kotlin.script.experimental.jvm.jvm
 import kotlin.script.experimental.jvm.withUpdatedClasspath
 
 /**
@@ -467,7 +470,11 @@ class JupyterCompilerPerFileService(
         return ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
             sourceCode,
             lastStableConfiguration.get()
-        ).asSuccess()
+        ).with {
+            getSelectedSdkOrAnyAcceptable(project)?.homePath?.let {
+                jvm.jdkHome(File(it))
+            }
+        }.asSuccess()
     }
 
     private fun <T> TwoPartsList<T>.addSnippetFromData(collection: Collection<T>, vararg elements: T) {
