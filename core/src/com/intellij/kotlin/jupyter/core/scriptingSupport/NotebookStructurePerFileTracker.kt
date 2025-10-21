@@ -74,7 +74,7 @@ class NotebookStructurePerFileTracker(
         get() = buildMap {
             val notebook = notebook ?: return@buildMap
             for ((index, cell) in notebook.computeCells().withIndex()) {
-                val compiledClassSet = cell.executionMetadata?.compiledClasses?.toSet().orEmpty()
+                val compiledClassSet = cell.executionMetadata?.compiledClasses.orEmpty()
                 put(index, compiledClassSet)
             }
         }

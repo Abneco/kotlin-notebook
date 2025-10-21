@@ -7,7 +7,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.cells.NotebookExecutionRelatedMe
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class NotebookExecutionRelatedMetaData(
-    val compiledClasses: List<String> = emptyList()
+    val compiledClasses: Set<String> = emptySet()
 ) : StorableCellMetadata {
     companion object {
         internal val DATA_KEY: StorableCellMetadataKey<NotebookExecutionRelatedMetaData> = StorableCellMetadataKey(
@@ -16,7 +16,7 @@ data class NotebookExecutionRelatedMetaData(
         )
 
         internal fun JupyterCell.storeExecutionRelatedMetaData(classes: Collection<String>) {
-            val presentClasses = executionMetadata?.compiledClasses ?: emptyList()
+            val presentClasses = executionMetadata?.compiledClasses ?: emptySet()
             executionMetadata = NotebookExecutionRelatedMetaData(compiledClasses = presentClasses + classes)
         }
     }
