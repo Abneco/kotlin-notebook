@@ -8,6 +8,7 @@ import com.intellij.jupyter.core.editor.handlers.LanguageTableDataFileDropHandle
 import com.intellij.jupyter.core.editor.handlers.TableDataFileDropHandlerContext
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.io.OSAgnosticPathUtil
 import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import java.nio.file.Path
@@ -42,7 +43,7 @@ abstract class AbstractKotlinDataframeDropHandler(
     }
 
     override fun generateCellCode(context: TableDataFileDropHandlerContext): String {
-        val dataFilePath = context.resolveFilePath()
+        val dataFilePath = OSAgnosticPathUtil.expandUserHome(context.resolveFilePath())
         val dfName = context.dataframeName ?: nameSuggester.createDataframeName(context.projectOrNull, context.dataFileNameWithoutExtension)
         val importExpression = generateImportExpression(dataFilePath, context)
         return generateCode(importExpression, dfName, context.shouldGenerateUseStatement())

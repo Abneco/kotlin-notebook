@@ -26,6 +26,7 @@ import com.intellij.ui.dsl.builder.toNullableProperty
 import com.intellij.ui.dsl.listCellRenderer.textListCellRenderer
 import com.intellij.ui.layout.selectedValueMatches
 import com.intellij.ui.util.preferredWidth
+import com.intellij.util.SystemProperties
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.Dispatchers
@@ -212,8 +213,8 @@ abstract class SavePlotAction : AbstractExportPlotAction() {
     }
 
     private data class MutablePlotSaveModel(
-      private val options: PlotExportOptions,
-      var directory: String = System.getProperty("user.home"),
+        private val options: PlotExportOptions,
+        var directory: String = SystemProperties.getUserHome(),
     ): PlotExportModel {
         override var format
             get() = options.format
