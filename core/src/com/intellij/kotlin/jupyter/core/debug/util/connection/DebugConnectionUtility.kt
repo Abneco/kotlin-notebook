@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.debug.util.connection
 
+import com.intellij.debugger.DebugEnvironment
 import com.intellij.debugger.DebuggerManagerEx
 import com.intellij.debugger.DefaultDebugEnvironment
 import com.intellij.debugger.engine.JavaDebugProcess
@@ -18,6 +19,7 @@ import com.intellij.execution.remote.RemoteConfigurationType
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
+import com.intellij.kotlin.jupyter.core.debug.util.DebugSessionConfig
 import com.intellij.openapi.project.Project
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
@@ -46,6 +48,22 @@ internal object DebugConnectionUtility {
         }
     }
 
+    fun buildDebugEnvironment(project: Project, debugPort: Int?, config: DebugSessionConfig): DebugEnvironmentData? {
+        if (debugPort == null) return null
+
+        val runnerSettings = buildRunnerSettings(
+            config.transport,
+            debugPort.toString(),
+            config.isLocal
+        )
+        val executionEnvironment = project.buildExecutionEnvironment(runnerSettings)
+        val remoteConnection = RemoteConnection(true, "127.0.0.1", debugPort.toString(), false)
+        val runProfileState = executionEnvironment.buildRemoteRunProfileState(remoteConnection)
+        val debugEnvironment = DefaultDebugEnvironment(executionEnvironment, runProfileState, remoteConnection, true)
+
+        return DebugEnvironmentData(executionEnvironment, debugEnvironment)
+    }
+
 
     fun ExecutionEnvironment.buildRemoteRunProfileState(remoteConnection: RemoteConnection): RunProfileState {
         return object : RemoteState {
@@ -56,7 +74,7 @@ internal object DebugConnectionUtility {
         }
     }
 
-    fun ExecutionEnvironment.attachDebuggerCreateSession(@Nls sessionName: String, project: Project, debugEnvironment: DefaultDebugEnvironment, headless: Boolean = false): DebuggerSession {
+    fun ExecutionEnvironment.attachDebuggerCreateSession(@Nls sessionName: String, project: Project, debugEnvironment: DebugEnvironment, headless: Boolean = false): DebuggerSession {
         fun XDebuggerManager.createSession(debugStarter: XDebugProcessStarter): XDebugSession {
             return when (headless) {
                 true -> startSession(this@attachDebuggerCreateSession, debugStarter)

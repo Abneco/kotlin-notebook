@@ -1,16 +1,14 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.debug.session
 
+import com.intellij.debugger.DebugEnvironment
 import com.intellij.debugger.DebuggerManagerEx
-import com.intellij.debugger.DefaultDebugEnvironment
 import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.impl.DebuggerSession
 import com.intellij.debugger.impl.PrioritizedTask
 import com.intellij.debugger.jdi.StackFrameProxyImpl
 import com.intellij.debugger.settings.DebuggerSettings
-import com.intellij.execution.configurations.RemoteConnection
-import com.intellij.execution.configurations.RunProfileState
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.executor.JupyterExecutionListener
@@ -22,10 +20,8 @@ import com.intellij.kotlin.jupyter.core.debug.events.NotebookDebugEventsHandler
 import com.intellij.kotlin.jupyter.core.debug.session.names.KotlinNotebookSessionInternalNamesProvider
 import com.intellij.kotlin.jupyter.core.debug.util.DebugSessionConfig
 import com.intellij.kotlin.jupyter.core.debug.util.SessionRelatedInfo
-import com.intellij.kotlin.jupyter.core.debug.util.connection.DebugConnectionUtility
 import com.intellij.kotlin.jupyter.core.debug.util.connection.DebugConnectionUtility.attachDebuggerCreateSession
-import com.intellij.kotlin.jupyter.core.debug.util.connection.DebugConnectionUtility.buildExecutionEnvironment
-import com.intellij.kotlin.jupyter.core.debug.util.connection.DebugConnectionUtility.buildRemoteRunProfileState
+import com.intellij.kotlin.jupyter.core.debug.util.connection.DebugConnectionUtility.buildDebugEnvironment
 import com.intellij.kotlin.jupyter.core.debug.util.connection.NotebookDebugProcessListener
 import com.intellij.kotlin.jupyter.core.debug.util.debugFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
@@ -86,7 +82,7 @@ internal class KotlinNotebookDebugSession(
         kernelThreadBreakpoint.createRequest(debugProcess)
     }
 
-    private val sessionInfo = SessionRelatedInfo(project, virtualFile)
+    private val sessionInfo = SessionRelatedInfo(project)
 
     @Volatile
     private var myDebugSession: DebuggerSession? = null
@@ -144,19 +140,6 @@ internal class KotlinNotebookDebugSession(
     val isLiveSession: Boolean
         get() = currentXSession != null
 
-    fun trySuspend() {
-        debuggerSession?.process?.managerThread?.invoke(PrioritizedTask.Priority.HIGH) {
-            debuggerSession?.pause()
-        }
-    }
-
-    fun onCellExecutedCallback() {
-        if (isSilent) return
-        if (isLiveSession) {
-            disposeCurrentSession()
-        }
-    }
-
     fun ensureSilentSessionAlive(debugPort: Int? = targetDebugPort) {
         if (isLiveSession || debugPort == null) return
 
@@ -169,6 +152,16 @@ internal class KotlinNotebookDebugSession(
         }
     }
 
+    private fun configureSessionAfterAttach(config: DebugSessionConfig) {
+        addProcessListener()
+
+        if (!config.silent) {
+            XDebuggerManagerImpl.getNotificationGroup().createNotification(
+                KotlinNotebookBundle.message("kotlin.jupyter.debug.support.text"), MessageType.INFO
+            ).notify(project)
+        }
+    }
+
     // see JavaAttachDebuggerProvider
     @Synchronized
     fun getOrCreateDebuggerSession(
@@ -176,43 +169,47 @@ internal class KotlinNotebookDebugSession(
         config: DebugSessionConfig,
         forceRestart: Boolean = false
     ): DebuggerSession? {
-        if (isLiveSession) {
-            if (forceRestart) {
-                disposeCurrentSession()
-            } else return debuggerSession
+        if (checkSessionCouldBeReused(forceRestart)) {
+            return debuggerSession
         }
 
         DebuggerSettings.getInstance().transport = config.transport
         sessionInfo.updateWith(project, config.port)
 
-        val knownDebugPort = sessionInfo.debugPort ?: return null
+        val environmentData = buildDebugEnvironment(project, sessionInfo.debugPort, config) ?: return null
 
-        val runnerSettings = DebugConnectionUtility.buildRunnerSettings(config.transport, knownDebugPort.toString(), config.isLocal)
-        val executionEnvironment = project.buildExecutionEnvironment(runnerSettings)
-        val remoteConnection = RemoteConnection(true, "127.0.0.1", knownDebugPort.toString(), false)
-        val runProfileState = executionEnvironment.buildRemoteRunProfileState(remoteConnection)
-
-        val wasSuccessful = tryAttachToTargetVM(project, executionEnvironment, runProfileState, remoteConnection, config.silent)
+        val wasSuccessful = tryAttachToTargetVM(
+            project,
+            environmentData.debugEnvironment,
+            environmentData.executionEnvironment,
+            config.silent
+        )
         if (!wasSuccessful) {
-            clearDebugSession()
+            clearDebugSessionData()
             return null
         }
         isSilent = config.silent
 
         coroutineScope.async {
-            addProcessListener()
-
-            if (!config.silent) {
-                XDebuggerManagerImpl.getNotificationGroup().createNotification(
-                    KotlinNotebookBundle.message("kotlin.jupyter.debug.support.text"), MessageType.INFO
-                ).notify(project)
-            }
+            configureSessionAfterAttach(config)
         }
 
         return debuggerSession
     }
 
-    private fun clearDebugSession() {
+    private fun checkSessionCouldBeReused(forceRestart: Boolean): Boolean {
+        if (!isLiveSession) return false
+
+        return when {
+            forceRestart -> {
+                disposeCurrentSession()
+                false
+            }
+            else -> true
+        }
+    }
+
+    private fun clearDebugSessionData() {
         myDebugSession = null
         sessionInfo.debugPort = null
         sessionInfo.updateWith(project)
@@ -221,29 +218,14 @@ internal class KotlinNotebookDebugSession(
     fun disposeCurrentSession() {
         currentXSession?.let {
             it.stop()
-            clearDebugSession()
-        }
-    }
-
-    fun updateSessionCellInfo(
-      cell: JupyterPsiCell,
-      cellPointer: NotebookIntervalPointer,
-      cellFileName: String? = null,
-      sessionPath: String? = null
-    ) {
-        sessionInfo.apply {
-            this.cell = cell
-            this.cellPointer = cellPointer
-            this.cellFileName = cellFileName
-            this.sessionPath = sessionPath
+            clearDebugSessionData()
         }
     }
 
     private fun tryAttachToTargetVM(
         project: Project,
+        debugEnvironment: DebugEnvironment,
         executionEnvironment: ExecutionEnvironment,
-        runProfileState: RunProfileState,
-        remoteConnection: RemoteConnection,
         isSilent: Boolean
     ): Boolean {
         var wasSuccessful = true
@@ -252,7 +234,6 @@ internal class KotlinNotebookDebugSession(
                 return false
             }
 
-            val debugEnvironment = DefaultDebugEnvironment(executionEnvironment, runProfileState, remoteConnection, true)
             ApplicationManager.getApplication().invokeAndWait {
                 if (project.isDisposed) return@invokeAndWait
                 myDebugSession = executionEnvironment
@@ -290,10 +271,9 @@ internal class KotlinNotebookDebugSession(
         )
     }
 
-
     override fun dispose() {
         disposeCurrentSession()
-        clearDebugSession()
+        clearDebugSessionData()
         processListener = null
     }
 
