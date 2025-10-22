@@ -18,8 +18,6 @@ import com.intellij.execution.remote.RemoteConfigurationType
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.debug.util.SessionRelatedInfo
 import com.intellij.openapi.project.Project
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
@@ -28,24 +26,6 @@ import com.intellij.xdebugger.XDebuggerManager
 import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlinx.jupyter.protocol.startup.PortsGenerator
 import org.jetbrains.kotlinx.jupyter.protocol.startup.create
-
-data class NotebookDebugConnectionHolder(
-    val backedFile: BackedNotebookVirtualFile,
-    val sessionRelatedInfo: SessionRelatedInfo,
-) {
-    @Volatile
-    var myEnvironment: ExecutionEnvironment? = null
-    lateinit var runProfileState: RunProfileState
-    @Volatile
-    var myDebugSession: DebuggerSession? = null
-
-    fun clearKnownConnection(project: Project) {
-        myDebugSession = null
-        sessionRelatedInfo.debugPort = null
-        myEnvironment = null
-        sessionRelatedInfo.updateWith(project)
-    }
-}
 
 internal object DebugConnectionUtility {
     fun Project.buildExecutionEnvironment(runnerSettings: RunnerSettings): ExecutionEnvironment =

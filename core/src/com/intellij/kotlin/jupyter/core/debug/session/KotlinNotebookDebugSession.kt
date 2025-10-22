@@ -10,6 +10,8 @@ import com.intellij.debugger.impl.PrioritizedTask
 import com.intellij.debugger.jdi.StackFrameProxyImpl
 import com.intellij.debugger.settings.DebuggerSettings
 import com.intellij.execution.configurations.RemoteConnection
+import com.intellij.execution.configurations.RunProfileState
+import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
@@ -18,12 +20,12 @@ import com.intellij.jupyter.core.jupyter.variables.common.JupyterEnvironmentUpda
 import com.intellij.kotlin.jupyter.core.debug.breakpoint.KernelSyntheticMethodBreakpoint
 import com.intellij.kotlin.jupyter.core.debug.events.NotebookDebugEventsHandler
 import com.intellij.kotlin.jupyter.core.debug.session.names.KotlinNotebookSessionInternalNamesProvider
+import com.intellij.kotlin.jupyter.core.debug.util.DebugSessionConfig
 import com.intellij.kotlin.jupyter.core.debug.util.SessionRelatedInfo
 import com.intellij.kotlin.jupyter.core.debug.util.connection.DebugConnectionUtility
 import com.intellij.kotlin.jupyter.core.debug.util.connection.DebugConnectionUtility.attachDebuggerCreateSession
 import com.intellij.kotlin.jupyter.core.debug.util.connection.DebugConnectionUtility.buildExecutionEnvironment
 import com.intellij.kotlin.jupyter.core.debug.util.connection.DebugConnectionUtility.buildRemoteRunProfileState
-import com.intellij.kotlin.jupyter.core.debug.util.connection.NotebookDebugConnectionHolder
 import com.intellij.kotlin.jupyter.core.debug.util.connection.NotebookDebugProcessListener
 import com.intellij.kotlin.jupyter.core.debug.util.debugFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
@@ -84,10 +86,10 @@ internal class KotlinNotebookDebugSession(
         kernelThreadBreakpoint.createRequest(debugProcess)
     }
 
-    private val debugConnectionHolder = NotebookDebugConnectionHolder(
-        virtualFile,
-        SessionRelatedInfo(project, virtualFile)
-    )
+    private val sessionInfo = SessionRelatedInfo(project, virtualFile)
+
+    @Volatile
+    private var myDebugSession: DebuggerSession? = null
 
     private fun Project.initServiceListeners(parentDisposable: Disposable) {
         val messageBus = messageBus
@@ -110,7 +112,10 @@ internal class KotlinNotebookDebugSession(
             override suspend fun sessionCreated(session: JupyterNotebookSession) {
                 if (project.isDisposed) return
 
-                val session = getOrCreateDebuggerSession(project, forceRestart = true)
+                val port = targetDebugPort ?: return
+                val session = getOrCreateDebuggerSession(project,
+                    DebugSessionConfig(port),
+                    forceRestart = true)
                 LOG.info("Debugger session after start: $session")
             }
         })
@@ -119,7 +124,7 @@ internal class KotlinNotebookDebugSession(
     init {
         project.initServiceListeners(this)
 
-        debugConnectionHolder.sessionRelatedInfo.updateWith(project, targetDebugPort)
+        sessionInfo.updateWith(project, targetDebugPort)
     }
 
     companion object {
@@ -127,10 +132,10 @@ internal class KotlinNotebookDebugSession(
     }
 
     val currentXSession: XDebugSession?
-        get() = debugConnectionHolder.myDebugSession?.xDebugSession
+        get() = myDebugSession?.xDebugSession
 
     val debuggerSession: DebuggerSession?
-        get() = debugConnectionHolder.myDebugSession
+        get() = myDebugSession
 
     private var isSilent: Boolean = false
 
@@ -156,47 +161,48 @@ internal class KotlinNotebookDebugSession(
         if (isLiveSession || debugPort == null) return
 
         coroutineScope.async {
-            val newSession = getOrCreateDebuggerSession(project, debugPort) ?: return@async
+            val newSession = getOrCreateDebuggerSession(
+                project,
+                DebugSessionConfig(debugPort)
+            ) ?: return@async
             LOG.warn("Session was successfully created: $newSession")
         }
     }
 
     // see JavaAttachDebuggerProvider
     @Synchronized
-    fun getOrCreateDebuggerSession(project: Project, debugPort: Int? = targetDebugPort, transport: Int = 0, forceRestart: Boolean = false, isLocal: Boolean = true, silent: Boolean = true) : DebuggerSession? {
+    fun getOrCreateDebuggerSession(
+        project: Project,
+        config: DebugSessionConfig,
+        forceRestart: Boolean = false
+    ): DebuggerSession? {
         if (isLiveSession) {
             if (forceRestart) {
                 disposeCurrentSession()
             } else return debuggerSession
         }
 
-        if (debugPort == null) {
-            LOG.debug("Could not connect to a debugger session, debug port provided is null")
-            return null
-        }
+        DebuggerSettings.getInstance().transport = config.transport
+        sessionInfo.updateWith(project, config.port)
 
-        DebuggerSettings.getInstance().transport = transport
-        debugConnectionHolder.sessionRelatedInfo.updateWith(project, debugPort)
+        val knownDebugPort = sessionInfo.debugPort ?: return null
 
-        val knownDebugPort = debugConnectionHolder.sessionRelatedInfo.debugPort ?: return null
-
-        val runnerSettings = DebugConnectionUtility.buildRunnerSettings(transport, knownDebugPort.toString(), isLocal)
+        val runnerSettings = DebugConnectionUtility.buildRunnerSettings(config.transport, knownDebugPort.toString(), config.isLocal)
         val executionEnvironment = project.buildExecutionEnvironment(runnerSettings)
         val remoteConnection = RemoteConnection(true, "127.0.0.1", knownDebugPort.toString(), false)
+        val runProfileState = executionEnvironment.buildRemoteRunProfileState(remoteConnection)
 
-        debugConnectionHolder.myEnvironment = executionEnvironment
-        debugConnectionHolder.runProfileState = executionEnvironment.buildRemoteRunProfileState(remoteConnection)
-        val wasSuccessful = tryAttachToTargetVM(project, remoteConnection, silent)
+        val wasSuccessful = tryAttachToTargetVM(project, executionEnvironment, runProfileState, remoteConnection, config.silent)
         if (!wasSuccessful) {
-            debugConnectionHolder.clearKnownConnection(project)
+            clearDebugSession()
             return null
         }
-        isSilent = silent
+        isSilent = config.silent
 
         coroutineScope.async {
             addProcessListener()
 
-            if (!silent) {
+            if (!config.silent) {
                 XDebuggerManagerImpl.getNotificationGroup().createNotification(
                     KotlinNotebookBundle.message("kotlin.jupyter.debug.support.text"), MessageType.INFO
                 ).notify(project)
@@ -206,10 +212,16 @@ internal class KotlinNotebookDebugSession(
         return debuggerSession
     }
 
+    private fun clearDebugSession() {
+        myDebugSession = null
+        sessionInfo.debugPort = null
+        sessionInfo.updateWith(project)
+    }
+
     fun disposeCurrentSession() {
         currentXSession?.let {
             it.stop()
-            debugConnectionHolder.clearKnownConnection(project)
+            clearDebugSession()
         }
     }
 
@@ -219,7 +231,7 @@ internal class KotlinNotebookDebugSession(
       cellFileName: String? = null,
       sessionPath: String? = null
     ) {
-        debugConnectionHolder.sessionRelatedInfo.apply {
+        sessionInfo.apply {
             this.cell = cell
             this.cellPointer = cellPointer
             this.cellFileName = cellFileName
@@ -227,25 +239,30 @@ internal class KotlinNotebookDebugSession(
         }
     }
 
-    private fun tryAttachToTargetVM(project: Project, remoteConnection: RemoteConnection, isSilent: Boolean): Boolean {
+    private fun tryAttachToTargetVM(
+        project: Project,
+        executionEnvironment: ExecutionEnvironment,
+        runProfileState: RunProfileState,
+        remoteConnection: RemoteConnection,
+        isSilent: Boolean
+    ): Boolean {
         var wasSuccessful = true
-        val executionEnvironment = debugConnectionHolder.myEnvironment ?: return false
         try {
             if (project.isDisposed) {
                 return false
             }
 
-            val debugEnvironment = DefaultDebugEnvironment(executionEnvironment, debugConnectionHolder.runProfileState, remoteConnection, true)
+            val debugEnvironment = DefaultDebugEnvironment(executionEnvironment, runProfileState, remoteConnection, true)
             ApplicationManager.getApplication().invokeAndWait {
                 if (project.isDisposed) return@invokeAndWait
-                debugConnectionHolder.myDebugSession = executionEnvironment
+                myDebugSession = executionEnvironment
                     .attachDebuggerCreateSession(virtualFile.file.name, project, debugEnvironment, headless = isSilent)
             }
 
             if (project.isDisposed) {
                 return false
             }
-            val handler = debugConnectionHolder.myDebugSession?.process?.processHandler
+            val handler = myDebugSession?.process?.processHandler
             if (isSilent) {
                 // important
                 handler?.startNotify()
@@ -268,7 +285,7 @@ internal class KotlinNotebookDebugSession(
             project, JupyterSessionPath(virtualFile), virtualFile, isSilent
         )
 
-        debugConnectionHolder.myDebugSession?.process?.addDebugProcessListener(
+        myDebugSession?.process?.addDebugProcessListener(
             processListener, this
         )
     }
@@ -276,7 +293,7 @@ internal class KotlinNotebookDebugSession(
 
     override fun dispose() {
         disposeCurrentSession()
-        debugConnectionHolder.clearKnownConnection(project)
+        clearDebugSession()
         processListener = null
     }
 
