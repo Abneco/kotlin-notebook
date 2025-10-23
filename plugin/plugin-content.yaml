@@ -20,6 +20,7 @@
 - name: lib/kotlin-jupyter-plugin.jar
   modules:
   - name: intellij.kotlin.jupyter.plugin
+- name: lib/modules/intellij.kotlin.jupyter.buildSystems.gradle.jar
   contentModules:
   - name: intellij.kotlin.jupyter.buildSystems.gradle
 - name: lib/modules/intellij.kotlin.jupyter.core.jar
