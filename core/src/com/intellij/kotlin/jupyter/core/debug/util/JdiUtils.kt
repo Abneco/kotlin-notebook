@@ -24,3 +24,11 @@ internal fun ObjectReference.findFieldByName(name: String): Field? {
 internal fun ReferenceType.findFieldByName(name: String): Field? {
     return DebuggerUtils.findField(this, name)
 }
+
+internal inline fun <reified T : Any> ReferenceType.isOfTypeByName(): Boolean {
+    return name() == T::class.java.name
+}
+
+internal inline fun <reified T : Any> ObjectReference.isOfTypeByName(): Boolean {
+    return referenceType().name() == T::class.java.name
+}

@@ -4,8 +4,13 @@ package com.intellij.kotlin.jupyter.core.debug.variables
 import com.intellij.debugger.engine.JavaValue
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.engine.jdi.VirtualMachineProxy
+import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.NotebookJdiProxy
+import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state.VariableStateJdiProxy
 import com.intellij.xdebugger.frame.XValueChildrenList
 import com.sun.jdi.ObjectReference
+import org.jetbrains.kotlinx.jupyter.api.Notebook
+import org.jetbrains.kotlinx.jupyter.api.VariableState
+import org.jetbrains.kotlinx.jupyter.repl.notebook.impl.NotebookImpl
 
 /**
  * Represents a runtime environment explorer of the a [com.intellij.debugger.engine.DebugProcess]
@@ -13,18 +18,17 @@ import com.sun.jdi.ObjectReference
  *
  * NB: right now it works under an assumption for a separate notebook process.
  *
- * TODO: it's better to use typed proxy instances instead of [ObjectReference].
  */
 internal interface NotebookAbstractSessionRuntimeEnvironmentExplorer {
     /**
      * Returns a reference to the NotebookImpl instance mirror.
      */
-    fun getNotebookReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference?
+    fun getNotebookReferenceProxy(virtualMachineProxy: VirtualMachineProxy): NotebookJdiProxy?
 
     /**
      * Returns a reference to the VariablesState instance mirror.
      */
-    fun getVariablesStateReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference?
+    fun getVariablesStateReferenceProxy(virtualMachineProxy: VirtualMachineProxy): Map<String, VariableStateJdiProxy>?
 
     /**
      * Builds a debugger-api container [XValueChildrenList] for all the variables in the VariablesState.

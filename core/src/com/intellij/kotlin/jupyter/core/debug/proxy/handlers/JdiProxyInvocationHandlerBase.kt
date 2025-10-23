@@ -1,0 +1,71 @@
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.core.debug.proxy.handlers
+
+import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.kotlin.jupyter.core.debug.proxy.conversion.convertToJdiValue
+import com.intellij.kotlin.jupyter.core.debug.util.getFieldValueByName
+import com.sun.jdi.ObjectReference
+import com.sun.jdi.ReferenceType
+import com.sun.jdi.Value
+import java.lang.reflect.InvocationHandler
+
+/**
+ * Base class for [java.lang.reflect.InvocationHandler] implementations
+ * that delegate to a JDI [ObjectReference]
+ */
+abstract class JdiProxyInvocationHandlerBase(
+    protected val debugProcess: DebugProcessImpl,
+    protected val objectReference: ObjectReference,
+) : InvocationHandler {
+    protected fun findJdiMethod(refType: ReferenceType, methodName: String, paramTypes: Array<Class<*>>): com.sun.jdi.Method? {
+        val methods = refType.allMethods()
+
+        return methods.firstOrNull { jdiMethod ->
+            jdiMethod.name() == methodName && jdiMethod.argumentTypes().size == paramTypes.size
+        }
+    }
+
+    /**
+     * This method requires an active breakpoint to be visible inside the IJ debugger.
+     * Now, we don't have any.
+     */
+    @Suppress("UNUSED")
+    private fun invokeMethod(jdiMethod: com.sun.jdi.Method, args: Array<out Any>?): Value? {
+        // Get any suspended thread to invoke method
+        val thread = objectReference.virtualMachine().allThreads().firstOrNull { it.isSuspended }
+            ?: throw IllegalStateException("No suspended threads available for method invocation")
+
+        // Convert to JDI
+        val jdiArgs = args?.map { convertToJdiValue(it) } ?: emptyList()
+
+        // Invoke method on remote object
+        val suspendContext = debugProcess.suspendManager.pausedContexts.firstOrNull { it.thread == thread } ?: return null
+        val evaluationContext = suspendContext.evaluationContext ?: return null
+        val result = debugProcess.invokeMethod(
+            evaluationContext,
+            objectReference,
+            jdiMethod,
+            jdiArgs
+        )
+
+        return result
+    }
+
+    protected fun invokeAsFieldAccess(methodName: String): Value? {
+        // Try to access field for getter methods (getXxx -> xxx, isXxx -> xxx)
+        val fieldName = when {
+            methodName.startsWith("get") && methodName.length > 3 ->
+                methodName.substring(3).replaceFirstChar { it.lowercase() }
+            methodName.startsWith("is") && methodName.length > 2 ->
+                methodName.substring(2).replaceFirstChar { it.lowercase() }
+            else -> methodName
+        }
+
+        return objectReference.getFieldValueByName(fieldName)
+    }
+
+    protected fun convertToJdiValue(value: Any): Value {
+        val vm = objectReference.virtualMachine()
+        return value.convertToJdiValue(vm)
+    }
+}

@@ -46,6 +46,11 @@
                         interface="com.intellij.kotlin.jupyter.core.settings.extensions.NotebookCompilerPluginSettingsBuilder"
                         dynamic="true"/>
 
+        <!-- Debug -->
+        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.debug.jdiInvocationHandlerProvider"
+                        interface="com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyInvocationHandlerProvider"
+                        dynamic="true"/>
+
         <!-- shadowing -->
         <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.core.shadowingVisitorFactory"
                         interface="com.intellij.kotlin.jupyter.core.editor.highlighting.visitors.KotlinPluginModeShadowingAnalyzerHandler$Factory"
@@ -294,6 +299,15 @@
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.spark.SparkKernelVmCommandCustomizer"/>
         <kernel.kernelVmCommandCustomizer
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.kernel.dataframe.KotlinDataframeKernelVmCommandCustomizer"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.debug">
+        <jdiInvocationHandlerProvider
+                implementation="com.intellij.kotlin.jupyter.core.debug.proxy.providers.LinkedMapJdiInvocationHandlerProvider"/>
+        <jdiInvocationHandlerProvider
+                implementation="com.intellij.kotlin.jupyter.core.debug.proxy.providers.NotebookJdiInvocationHandlerProvider"/>
+        <jdiInvocationHandlerProvider
+                implementation="com.intellij.kotlin.jupyter.core.debug.proxy.providers.VariableStateJdiHandlerProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.jupyter.execution">

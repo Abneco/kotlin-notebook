@@ -1,7 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.debug.variables
 
-import com.intellij.debugger.engine.DebuggerUtils
 import com.intellij.debugger.engine.JavaValue
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.engine.jdi.VirtualMachineProxy
@@ -9,6 +8,8 @@ import com.intellij.debugger.impl.DebuggerContextImpl
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.variables.common.JupyterEnvironmentUpdateListener
+import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.NotebookJdiProxy
+import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state.VariableStateJdiProxy
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
@@ -21,7 +22,6 @@ import com.intellij.xdebugger.frame.XValueChildrenList
 import com.sun.jdi.ClassType
 import com.sun.jdi.Field
 import com.sun.jdi.ObjectReference
-import com.sun.jdi.StringReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -52,7 +52,7 @@ class NotebookVariablesPerFileStateService(
     private val variableToolWindowHandler = createDisposableChild {
         KotlinNotebookToolWindowHandler()
     }
-    private val notebookSessionEnvironmentProvider = NotebookSessionNoSuspensionEnvironmentProvider(virtualFile)
+    private val notebookSessionValuesProvider = NotebookSessionNoSuspensionValuesProvider(virtualFile)
     var variablesMetaData: Map<String, String?>? = null
         private set
 
@@ -88,12 +88,12 @@ class NotebookVariablesPerFileStateService(
         return buildXValueListForVariablesState(vmProxy, evalContext)
     }
 
-    override fun getNotebookReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference? {
-        return notebookSessionEnvironmentProvider.notebookReferenceProvider(virtualMachineProxy)
+    override fun getNotebookReferenceProxy(virtualMachineProxy: VirtualMachineProxy): NotebookJdiProxy? {
+        return notebookSessionValuesProvider.notebookProxyProvider(virtualMachineProxy)
     }
 
-    override fun getVariablesStateReference(virtualMachineProxy: VirtualMachineProxy): ObjectReference? {
-        return notebookSessionEnvironmentProvider.variableStateReferenceProvider(virtualMachineProxy)
+    override fun getVariablesStateReferenceProxy(virtualMachineProxy: VirtualMachineProxy): Map<String, VariableStateJdiProxy>? {
+        return notebookSessionValuesProvider.variablesStateProvider(virtualMachineProxy)
     }
 
     override fun getVariableValueByNameOrNull(name: String): JavaValue? {
@@ -110,30 +110,18 @@ class NotebookVariablesPerFileStateService(
     }
 
     override fun buildXValueListForVariablesState(virtualMachineProxy: VirtualMachineProxy, evaluationContext: EvaluationContextImpl): XValueChildrenList {
-        fun XValueChildrenList.addInternalVariables(
-            variablesStateSize: Int,
-            accessorData: VariablesStateAccessorData,
+        fun XValueChildrenList.populateFrameWithVariables(
+            variablesState: Map<String, VariableStateJdiProxy>,
             debuggerContext: DebuggerContextImpl
         ) {
-            var mapEntryReference = accessorData.mapEntryReference
-            val nextEntryField = accessorData.nextEntryFieldAccessor
-            val keyField = DebuggerUtils.findField(accessorData.hashMapNodeClassType, "key")
-            val valueField = DebuggerUtils.findField(accessorData.hashMapNodeClassType, "value")
             val nodeManager = debuggerContext.debugProcess?.xdebugProcess?.nodeManager
 
-
-            for (i in 0 until variablesStateSize) {
-                val keyReference = mapEntryReference.getValue(keyField) as? StringReference ?: continue
-                val variableStateValued = mapEntryReference.getValue(valueField)
-                val (variableStateReference, fieldAccessor) = notebookSessionEnvironmentProvider
-                    .variableValueFromStateProvider(
-                        variableStateValued, keyReference.value()
-                    )
-
-                if (variableStateReference == null) continue
+            for ((variableName, valueProxy) in variablesState) {
+                val fieldAccessor = valueProxy.findVariableField(variableName) ?: continue
+                val scriptInstance = valueProxy.scriptInstanceReference ?: continue
                 val fieldDescriptor = nodeManager?.getFieldDescriptor(
                     null,
-                    variableStateReference,
+                    scriptInstance,
                     fieldAccessor
                 )
                 if (fieldDescriptor == null) {
@@ -149,11 +137,7 @@ class NotebookVariablesPerFileStateService(
                     false
                 )
 
-                add(keyReference.value(), xValue)
-
-                (mapEntryReference.getValue(nextEntryField) as? ObjectReference?)?.let {
-                    mapEntryReference = it
-                }
+                add(variableName, xValue)
             }
         }
 
@@ -161,26 +145,13 @@ class NotebookVariablesPerFileStateService(
         if (virtualMachineProxy !is VirtualMachineProxyImpl) return list
         if (!virtualMachineProxy.canBeModified()) return list
 
-        val variablesHolderReference = getVariablesStateReference(virtualMachineProxy) ?: return list
-
-        val (mapEntryReference, stateSize) = notebookSessionEnvironmentProvider.variableStateFirstEntryAndSizeProvider(variablesHolderReference)
-        if (mapEntryReference == null) return list
-        val mapEntryReferenceType = mapEntryReference.referenceType()
-        val hashMapNodeType = (mapEntryReferenceType as ClassType).superclass()
-        if (hashMapNodeType == null) {
-            throw IllegalArgumentException("Parent interface for Entry shall not be null")
-        }
-
-        val nextEntryFieldAccessor = DebuggerUtils.findField(mapEntryReferenceType, "after") ?: return list
+        val variablesHolderProxy = notebookSessionValuesProvider.variablesStateProvider(virtualMachineProxy) ?: return list
         val processImpl = virtualMachineProxy.debugProcess ?: return list
 
         return list.apply {
             processImpl.invokeInManagerThread {
-                addInternalVariables(
-                    stateSize,
-                    VariablesStateAccessorData(
-                        nextEntryFieldAccessor, mapEntryReference, hashMapNodeType
-                    ),
+                populateFrameWithVariables(
+                    variablesHolderProxy,
                     processImpl.debuggerContext
                 )
             }
