@@ -1,4 +1,4 @@
-<idea-plugin package="com.intellij.kotlin.jupyter.k2">
+<idea-plugin>
 
     <dependencies>
         <module name="intellij.jupyter.psi"/>

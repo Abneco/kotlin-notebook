@@ -21,11 +21,7 @@
   modules:
   - name: intellij.kotlin.jupyter.plugin
   contentModules:
-  - name: intellij.kotlin.jupyter.tables
   - name: intellij.kotlin.jupyter.buildSystems.gradle
-  - name: intellij.kotlin.jupyter.liveTemplates
-  - name: intellij.kotlin.jupyter.k1
-  - name: intellij.kotlin.jupyter.k2
 - name: lib/modules/intellij.kotlin.jupyter.core.jar
   contentModules:
   - name: intellij.kotlin.jupyter.core
@@ -37,6 +33,15 @@
       - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0/kotlin-jupyter-lib-0.jar
       - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0/kotlin-jupyter-common-dependencies-0.jar
       - name: $MAVEN_REPOSITORY$/com/github/ajalt/clikt/2/clikt-2.jar
+- name: lib/modules/intellij.kotlin.jupyter.k1.jar
+  contentModules:
+  - name: intellij.kotlin.jupyter.k1
+- name: lib/modules/intellij.kotlin.jupyter.k2.jar
+  contentModules:
+  - name: intellij.kotlin.jupyter.k2
+- name: lib/modules/intellij.kotlin.jupyter.liveTemplates.jar
+  contentModules:
+  - name: intellij.kotlin.jupyter.liveTemplates
 - name: lib/modules/intellij.kotlin.jupyter.plots.jar
   contentModules:
   - name: intellij.kotlin.jupyter.plots
@@ -45,6 +50,9 @@
       - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4/lets-plot-export-shadowed-4.jar
       ggdsl-util:
       - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0/ggdsl-util-0.jar
+- name: lib/modules/intellij.kotlin.jupyter.tables.jar
+  contentModules:
+  - name: intellij.kotlin.jupyter.tables
 - name: lib/xml-apis-ext.jar
   library: xml-apis-ext
   files:

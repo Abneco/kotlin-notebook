@@ -1,4 +1,4 @@
-<idea-plugin package="com.intellij.kotlin.jupyter.liveTemplates">
+<idea-plugin>
     <dependencies>
         <module name="intellij.kotlin.jupyter.core"/>
         <module name="kotlin.code-insight.live-templates.shared"/>
