@@ -6,7 +6,7 @@ import com.intellij.jupyter.core.editor.handlers.TableDataFileExtensions
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 
 class KotlinParquetDropHandler : AbstractKotlinDataframeDropHandler(
-    KotlinNotebookBundle.message("kotlin.jupyter.editor.dnd.json.dataframe.command"),
+    KotlinNotebookBundle.message("kotlin.jupyter.editor.dnd.parquet.dataframe.command"),
     setOf(
         TableDataFileExtensions.PARQUET,
         TableDataFileExtensions.PARQ,
