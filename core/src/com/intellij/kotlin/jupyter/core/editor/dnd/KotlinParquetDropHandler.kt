@@ -1,0 +1,18 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.core.editor.dnd
+
+import com.intellij.jupyter.core.editor.handlers.TableDataFileDropHandlerContext
+import com.intellij.jupyter.core.editor.handlers.TableDataFileExtensions
+import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
+
+class KotlinParquetDropHandler : AbstractKotlinDataframeDropHandler(
+    KotlinNotebookBundle.message("kotlin.jupyter.editor.dnd.json.dataframe.command"),
+    setOf(
+        TableDataFileExtensions.PARQUET,
+        TableDataFileExtensions.PARQ,
+    )
+) {
+    override fun generateImportExpression(dataFilePath: String, context: TableDataFileDropHandlerContext): String {
+        return "DataFrame.readParquet(\"$dataFilePath\")"
+    }
+}

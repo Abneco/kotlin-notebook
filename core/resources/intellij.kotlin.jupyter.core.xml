@@ -283,6 +283,9 @@
         <csvDropHandler
                 id="KotlinGeoJsonDropHandler"
                 implementation="com.intellij.kotlin.jupyter.core.editor.dnd.KotlinGeoDataDropHandler"/>
+        <csvDropHandler
+                id="KotlinParquetDropHandler"
+                implementation="com.intellij.kotlin.jupyter.core.editor.dnd.KotlinParquetDropHandler"/>
         <errorOutputContentProvider
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.outputs.error.KotlinErrorOutputContentProvider"/>
         <executionSettingsProvider
