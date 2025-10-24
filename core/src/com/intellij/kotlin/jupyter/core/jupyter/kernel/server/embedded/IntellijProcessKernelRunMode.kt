@@ -5,7 +5,6 @@ import org.jetbrains.kotlinx.jupyter.api.AbstractKernelRunMode
 import org.jetbrains.kotlinx.jupyter.api.StreamSubstitutionType
 import org.jetbrains.kotlinx.jupyter.util.ClassLoadingDelegatingStrategy
 import org.jetbrains.kotlinx.jupyter.util.DelegatingClassLoader
-import org.jetbrains.kotlinx.jupyter.util.MultiDelegatingClassLoader
 import org.jetbrains.kotlinx.jupyter.util.kernelFqnPrefixes
 
 class IntellijProcessKernelRunMode(
@@ -43,7 +42,7 @@ private fun createIdeDelegatingClassLoader(parent: ClassLoader): ClassLoader {
         }
 
     val mainClassLoader = DelegatingClassLoader(parent, strategy)
-    return MultiDelegatingClassLoader().apply {
+    return IntellijProcessClassLoader().apply {
         addParent(mainClassLoader)
     }
 }
