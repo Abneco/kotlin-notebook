@@ -49,8 +49,8 @@
     libraries:
       jetbrains.lets.plot.export.shadowed:
       - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4/lets-plot-export-shadowed-4.jar
-      jetbrains.kotlinx.kandy.util:
-      - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kandy-util/0/kandy-util-0.jar
+      jetbrains.lets.plot.kotlin.json:
+      - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-kotlin-json/4/lets-plot-kotlin-json-4.jar
 - name: lib/modules/intellij.kotlin.jupyter.tables.jar
   contentModules:
   - name: intellij.kotlin.jupyter.tables

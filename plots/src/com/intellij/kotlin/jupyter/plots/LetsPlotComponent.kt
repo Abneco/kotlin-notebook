@@ -12,8 +12,6 @@ import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.components.JBLayeredPane
 import org.jetbrains.annotations.TestOnly
-import org.jetbrains.kotlinx.kandy.util.serialization.LetsPlotSpec
-import org.jetbrains.kotlinx.kandy.util.serialization.deserializeSpec
 import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
 import org.jetbrains.letsPlot.commons.geometry.DoubleVector
 import org.jetbrains.letsPlot.core.spec.FigKind
@@ -24,6 +22,7 @@ import org.jetbrains.letsPlot.core.spec.front.PlotConfigFrontend
 import org.jetbrains.letsPlot.core.util.MonolithicCommon
 import org.jetbrains.letsPlot.core.util.PlotSizeHelper
 import org.jetbrains.letsPlot.core.util.sizing.SizingPolicy
+import org.jetbrains.letsPlot.toolkit.json.deserializeJsonMap
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Rectangle
@@ -166,7 +165,7 @@ class LetsPlotComponent : JBLayeredPane() {
     @Suppress("unused")
     fun getPlotHtml(): String = dataKey?.let {
         buildHtmlFromRawPlotSpec(
-            deserializeSpec(it.spec).toMutableMap()
+            deserializeJsonMap(it.spec).toMutableMap()
         )
     } ?: ""
 
@@ -177,7 +176,7 @@ class LetsPlotComponent : JBLayeredPane() {
 
 private fun getSpec(dataKey: LetsPlotOutputDataKey) = getSpec(dataKey, getCurrentLetsPlotFlavor())
 private fun getSpec(dataKey: LetsPlotOutputDataKey, flavor: LetsPlotFlavor): MutableLetsPlotSpec {
-    val rawSpec = deserializeSpec(dataKey.spec).toMutableMap().also {
+    val rawSpec = deserializeJsonMap(dataKey.spec).toMutableMap().also {
         if (dataKey.applyColorScheme) {
             updateFlavor(it, flavor)
         }

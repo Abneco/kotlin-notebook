@@ -50,20 +50,20 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="jetbrains.kotlinx.kandy.util" type="repository">
-        <properties include-transitive-deps="false" maven-id="org.jetbrains.kotlinx:kandy-util:0.9.0-dev-86">
+      <library name="jetbrains.lets.plot.kotlin.json" type="repository">
+        <properties include-transitive-deps="false" maven-id="org.jetbrains.lets-plot:lets-plot-kotlin-json:4.11.2">
           <verification>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kandy-util/0.9.0-dev-86/kandy-util-0.9.0-dev-86.jar">
-              <sha256sum>972f77a5997269652bb00b21f1d8907dd4716ce1f25b1670528e7e43759745f0</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-kotlin-json/4.11.2/lets-plot-kotlin-json-4.11.2.jar">
+              <sha256sum>8b0a6ad65fd87d65f89529e1f18950c6b617fc816e0174443fb5ae4c093d7e69</sha256sum>
             </artifact>
           </verification>
         </properties>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kandy-util/0.9.0-dev-86/kandy-util-0.9.0-dev-86.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-kotlin-json/4.11.2/lets-plot-kotlin-json-4.11.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kandy-util/0.9.0-dev-86/kandy-util-0.9.0-dev-86-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-kotlin-json/4.11.2/lets-plot-kotlin-json-4.11.2-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>

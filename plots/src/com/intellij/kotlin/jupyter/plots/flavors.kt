@@ -5,7 +5,6 @@ import com.intellij.kotlin.jupyter.core.util.uiFeelsDark
 import com.intellij.kotlin.jupyter.plots.i18n.KotlinNotebookPlotsBundle
 import com.intellij.openapi.util.NlsContexts
 import com.intellij.util.asSafely
-import org.jetbrains.kotlinx.kandy.util.serialization.LetsPlotSpec
 import org.jetbrains.letsPlot.core.plot.builder.defaultTheme.values.ThemeOption
 import org.jetbrains.letsPlot.core.spec.FigKind
 import org.jetbrains.letsPlot.core.spec.config.PlotConfig

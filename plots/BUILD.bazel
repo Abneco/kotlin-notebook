@@ -35,7 +35,7 @@ jvm_library(
   deps = [
     "//plugins/kotlin/jupyter/core",
     "@ultimate_lib//:kotlin-jupyter-plots-jetbrains-lets-plot-export-shadowed",
-    "@ultimate_lib//:kotlin-jupyter-plots-jetbrains-kotlinx-kandy-util",
+    "@ultimate_lib//:kotlin-jupyter-plots-jetbrains-lets-plot-kotlin-json",
     "@ultimate_lib//:xml-apis-ext",
     "@ultimate_lib//:batik-transcoder",
     "@ultimate_lib//:kotlin-stdlib-provided",

@@ -8,9 +8,9 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import org.jetbrains.kotlinx.kandy.util.serialization.deserializeSpec
 import org.jetbrains.letsPlot.awt.plot.PlotSvgExport
 import org.jetbrains.letsPlot.core.plot.export.PlotImageExport
+import org.jetbrains.letsPlot.toolkit.json.deserializeJsonMap
 import java.awt.datatransfer.StringSelection
 import java.awt.datatransfer.Transferable
 import java.nio.file.Path
@@ -103,4 +103,4 @@ private fun exportPlot(
 }
 
 private fun LetsPlotOutputDataKey.toMutableSpec() =
-    deserializeSpec(spec).toMutableMap()
+    deserializeJsonMap(spec).toMutableMap()
