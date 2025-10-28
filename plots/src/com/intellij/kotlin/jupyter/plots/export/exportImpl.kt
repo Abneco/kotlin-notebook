@@ -8,7 +8,7 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
+import org.jetbrains.kotlinx.kandy.util.serialization.deserializeSpec
 import org.jetbrains.letsPlot.awt.plot.PlotSvgExport
 import org.jetbrains.letsPlot.core.plot.export.PlotImageExport
 import java.awt.datatransfer.StringSelection

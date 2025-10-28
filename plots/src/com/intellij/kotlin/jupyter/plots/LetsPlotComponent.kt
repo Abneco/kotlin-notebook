@@ -12,7 +12,8 @@ import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.components.JBLayeredPane
 import org.jetbrains.annotations.TestOnly
-import org.jetbrains.kotlinx.ggdsl.util.serialization.deserializeSpec
+import org.jetbrains.kotlinx.kandy.util.serialization.LetsPlotSpec
+import org.jetbrains.kotlinx.kandy.util.serialization.deserializeSpec
 import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
 import org.jetbrains.letsPlot.commons.geometry.DoubleVector
 import org.jetbrains.letsPlot.core.spec.FigKind

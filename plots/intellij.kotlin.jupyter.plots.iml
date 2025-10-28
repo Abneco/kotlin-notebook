@@ -50,20 +50,20 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="ggdsl-util" type="repository">
-        <properties include-transitive-deps="false" maven-id="org.jetbrains.kotlinx:ggdsl-util:0.4.0-dev-10">
+      <library name="jetbrains.kotlinx.kandy.util" type="repository">
+        <properties include-transitive-deps="false" maven-id="org.jetbrains.kotlinx:kandy-util:0.9.0-dev-86">
           <verification>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10.jar">
-              <sha256sum>17fb93d3a94f2384865dcd0c8cb157c6659bd9cb4e9a4a6c8f213317c7ca285a</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kandy-util/0.9.0-dev-86/kandy-util-0.9.0-dev-86.jar">
+              <sha256sum>972f77a5997269652bb00b21f1d8907dd4716ce1f25b1670528e7e43759745f0</sha256sum>
             </artifact>
           </verification>
         </properties>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kandy-util/0.9.0-dev-86/kandy-util-0.9.0-dev-86.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/ggdsl-util/0.4.0-dev-10/ggdsl-util-0.4.0-dev-10-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kandy-util/0.9.0-dev-86/kandy-util-0.9.0-dev-86-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
