@@ -26,11 +26,9 @@ internal open class JdiProxyFieldAccessorsInvocationHandler(
 
     private fun invokeRemoteMethod(method: Method, args: Array<out Any>?): Any? {
         val methodName = method.name
-        val refType = objectReference.referenceType()
         if (methodName == "getObjectReference") return objectReference
 
-        // Find matching JDI method
-        findJdiMethod(refType, methodName, method.parameterTypes)!!
-        return invokeAsFieldAccess(methodName).convertFromJdiValue(debugProcess, method.returnType)
+        // Try invoking the method as field access
+        return invokeAsFieldAccess(method).convertFromJdiValue(debugProcess, method.returnType)
     }
 }

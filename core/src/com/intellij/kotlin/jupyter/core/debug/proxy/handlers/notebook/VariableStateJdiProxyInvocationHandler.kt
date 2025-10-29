@@ -22,10 +22,6 @@ internal class VariableStateJdiProxyInvocationHandler(
                 val name = args?.firstOrNull() as? String
                 findVariableField(name)
             }
-            "getScriptInstanceReference" -> {
-                objectReference.getFieldValueByName("scriptInstance") as? ObjectReference
-            }
-
             // Delegate to base handler
             else -> super.invoke(proxy, method, args)
         }

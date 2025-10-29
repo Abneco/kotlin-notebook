@@ -52,7 +52,7 @@ internal fun Value?.convertFromJdiValue(
         is StringReference -> value.value()
         is ObjectReference -> {
             // If the return type is interface, create a typed proxy
-            if (returnType?.isInterface == true) {
+            if (returnType?.isInterface == true && returnType != ObjectReference::class.java) {
                 createJdiObjectProxy(debugProcess, value, returnType)
             } else {
                 value

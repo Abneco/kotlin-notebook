@@ -1,9 +1,11 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.debug.proxy.notebook
 
+import com.intellij.kotlin.jupyter.core.debug.proxy.JdiFieldAccessPath
 import com.intellij.kotlin.jupyter.core.debug.proxy.JdiObjectReferenceProxy
+import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyArtificialField
 import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state.VariableStateJdiProxy
-import com.intellij.kotlin.jupyter.core.debug.proxy.repl.context.SharedReplContextProvider
+import com.intellij.kotlin.jupyter.core.debug.proxy.repl.context.SharedReplContextJdiProxy
 import com.sun.jdi.ObjectReference
 import org.jetbrains.kotlinx.jupyter.api.Notebook
 
@@ -12,7 +14,13 @@ import org.jetbrains.kotlinx.jupyter.api.Notebook
  *
  * @see [com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.NotebookJdiProxyInvocationHandler]
  */
-interface NotebookJdiProxy : SharedReplContextProvider, Notebook, JdiObjectReferenceProxy {
+interface NotebookJdiProxy : Notebook, JdiObjectReferenceProxy {
+    @get:JdiProxyArtificialField("variablesHolderProxy")
     val variablesHolderProxy: Map<String, VariableStateJdiProxy>
+
+    @get:JdiFieldAccessPath("sharedReplContext.evaluator.variablesHolder")
     val variablesHolderReference: ObjectReference
+
+    @get:JdiFieldAccessPath("sharedReplContext")
+    val sharedReplContext: SharedReplContextJdiProxy?
 }

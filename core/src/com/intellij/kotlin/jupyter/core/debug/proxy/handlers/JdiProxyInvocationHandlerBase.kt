@@ -2,12 +2,15 @@
 package com.intellij.kotlin.jupyter.core.debug.proxy.handlers
 
 import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.kotlin.jupyter.core.debug.proxy.JdiFieldAccessPath
+import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyArtificialField
 import com.intellij.kotlin.jupyter.core.debug.proxy.conversion.convertToJdiValue
 import com.intellij.kotlin.jupyter.core.debug.util.getFieldValueByName
 import com.sun.jdi.ObjectReference
 import com.sun.jdi.ReferenceType
 import com.sun.jdi.Value
 import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Method
 
 /**
  * Base class for [java.lang.reflect.InvocationHandler] implementations
@@ -51,16 +54,39 @@ abstract class JdiProxyInvocationHandlerBase(
         return result
     }
 
-    protected fun invokeAsFieldAccess(methodName: String): Value? {
-        // Try to access field for getter methods (getXxx -> xxx, isXxx -> xxx)
-        val fieldName = when {
-            methodName.startsWith("get") && methodName.length > 3 ->
-                methodName.substring(3).replaceFirstChar { it.lowercase() }
-            methodName.startsWith("is") && methodName.length > 2 ->
-                methodName.substring(2).replaceFirstChar { it.lowercase() }
-            else -> methodName
+    protected fun Method.getJdiArtificialFieldName(): String? {
+        return getAnnotation(JdiProxyArtificialField::class.java)?.name
+    }
+
+    /**
+     * Traverses the inheritance hierarchy of the object to find a field with the given name.
+     */
+    protected fun getViaFieldAccessPath(method: Method): Value? {
+        val pathAnnotation = method.getAnnotation(JdiFieldAccessPath::class.java)?.path ?: return null
+        val path = pathAnnotation.split(".")
+        if (path.isEmpty()) return null
+
+        var current: Value? = objectReference
+        for (fieldName in path) {
+            if (current !is ObjectReference) return null
+            current = current.getFieldValueByName(fieldName)
         }
 
+        return current
+    }
+
+    protected fun getFieldNameByMethodName(method: Method): String? {
+        val name = method.name
+        if (!name.startsWith("get")) return null
+
+        return name.removePrefix("get").replaceFirstChar { it.lowercase() }
+    }
+
+    protected fun invokeAsFieldAccess(method: Method): Value? {
+        val byFieldAccessPath = getViaFieldAccessPath(method)
+        if (byFieldAccessPath != null) return byFieldAccessPath
+
+        val fieldName = getFieldNameByMethodName(method) ?: return null
         return objectReference.getFieldValueByName(fieldName)
     }
 

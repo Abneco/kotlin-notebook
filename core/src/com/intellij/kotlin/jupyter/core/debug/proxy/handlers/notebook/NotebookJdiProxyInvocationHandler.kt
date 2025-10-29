@@ -5,15 +5,11 @@ import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.kotlin.jupyter.core.debug.proxy.JdiObjectReferenceProxy
 import com.intellij.kotlin.jupyter.core.debug.proxy.createJdiObjectProxy
 import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.JdiProxyFieldAccessorsInvocationHandler
-import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.collections.LinkedHashMapJdiProxyInvocationHandler
 import com.intellij.kotlin.jupyter.core.debug.proxy.isLinkedHashMap
 import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.NotebookJdiProxy
 import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state.VariableStateJdiProxy
-import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.VariableStateJdiProxyInvocationHandler
-import com.intellij.kotlin.jupyter.core.debug.util.getFieldValueByName
 import com.sun.jdi.ObjectReference
 import java.lang.reflect.Method
-import java.lang.reflect.Proxy
 
 /**
  * Specialized [java.lang.reflect.InvocationHandler] for [com.intellij.kotlin.jupyter.core.debug.proxy.notebook.NotebookJdiProxy] that delegates to base handler
@@ -33,9 +29,9 @@ internal class NotebookJdiProxyInvocationHandler(
         }
 
         // Special handling for unique methods
-        return when (method.name) {
-            "getVariablesHolderProxy" -> getVariablesHolderProxyMap(proxy)
-            "getVariablesHolderReference" -> proxy.getVariablesHolderReference()
+        val annotatedName = method.getJdiArtificialFieldName()
+        return when (annotatedName) {
+            "variablesHolderProxy" -> getVariablesHolderProxyMap(proxy)
             else -> super.invoke(proxy, method, args)
         }
     }
@@ -46,8 +42,7 @@ internal class NotebookJdiProxyInvocationHandler(
      * which later on wrapped in a [com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state.VariableStateJdiProxy].
      */
     private fun getVariablesHolderProxyMap(proxy: NotebookJdiProxy): Map<String, VariableStateJdiProxy> {
-        val variablesHolderRef = proxy.getVariablesHolderReference()
-            ?: return emptyMap()
+        val variablesHolderRef = proxy.variablesHolderReference
 
         if (!variablesHolderRef.isLinkedHashMap()) {
             throw IllegalStateException("Expected variablesHolder to be a LinkedHashMap, got ${variablesHolderRef.referenceType().name()}")
@@ -76,11 +71,5 @@ internal class NotebookJdiProxyInvocationHandler(
         }
 
         return result
-    }
-
-    private fun NotebookJdiProxy.getVariablesHolderReference(): ObjectReference? {
-        val replContext = sharedReplContext ?: return null
-        val evaluatorObjectReference = replContext.evaluator.objectReference
-        return evaluatorObjectReference.getFieldValueByName("variablesHolder") as? ObjectReference
     }
 }
