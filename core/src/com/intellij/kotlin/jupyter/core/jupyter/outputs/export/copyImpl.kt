@@ -38,10 +38,6 @@ private class SingleFlavorTransferableFactory<DataT : Any>(
 private val ImageTransferableFactory =
     SingleFlavorTransferableFactory<Image>(DataFlavor.imageFlavor)
 
-// We are required to use java.io.File instead of java.nio.Path, because this data flavor requires us to do so
-private val FileTransferableFactory =
-    SingleFlavorTransferableFactory<List<java.io.File>>(DataFlavor.javaFileListFlavor)
-
 fun createImageDataTransferable(imageData: ByteArray): Transferable {
     val image = ImageIO.read(ByteArrayInputStream(imageData))
     return ImageTransferableFactory.createTransferable(image)

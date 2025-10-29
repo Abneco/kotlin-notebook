@@ -5,7 +5,6 @@ import com.intellij.kotlin.jupyter.core.jupyter.outputs.export.createImageDataTr
 import com.intellij.kotlin.jupyter.plots.LetsPlotOutputDataKey
 import com.intellij.kotlin.jupyter.plots.updateFlavor
 import com.intellij.openapi.ide.CopyPasteManager
-import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import org.jetbrains.letsPlot.awt.plot.PlotSvgExport
@@ -29,18 +28,17 @@ fun savePlot(
 
 @RequiresBackgroundThread
 fun copyPlotToClipboard(
-    project: Project,
     plot: LetsPlotOutputDataKey,
     model: PlotExportModel
 ) {
     val content = exportPlot(plot, model)
-    val transferable = content.asTransferable(project)
+    val transferable = content.asTransferable()
     CopyPasteManager.getInstance().setContents(transferable)
 }
 
 private interface PlotContent {
     fun saveToFile(file: Path)
-    fun asTransferable(project: Project): Transferable
+    fun asTransferable(): Transferable
 }
 
 private class TextPlotContent(private val text: String) : PlotContent {
@@ -48,7 +46,7 @@ private class TextPlotContent(private val text: String) : PlotContent {
         file.writeText(text)
     }
 
-    override fun asTransferable(project: Project): Transferable {
+    override fun asTransferable(): Transferable {
         return StringSelection(text)
     }
 }
@@ -60,7 +58,7 @@ private class BinaryPlotContent(
         file.writeBytes(bytes)
     }
 
-    override fun asTransferable(project: Project): Transferable {
+    override fun asTransferable(): Transferable {
         return createImageDataTransferable(bytes)
     }
 }
