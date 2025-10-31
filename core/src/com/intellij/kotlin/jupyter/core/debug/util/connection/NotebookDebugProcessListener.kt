@@ -9,6 +9,7 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionManager
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterSessionPath
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
+import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.openapi.project.Project
 
@@ -26,6 +27,7 @@ class NotebookDebugProcessListener(
     override fun paused(suspendContext: SuspendContext) {
         LOG.warn("PAUSED")
         if (!isSilent) return
+        KotlinNotebookSessionVariablesService.getForFile(project, virtualFile).requestVariablesUpdate()
     }
 
     override fun resumed(suspendContext: SuspendContext?) {
