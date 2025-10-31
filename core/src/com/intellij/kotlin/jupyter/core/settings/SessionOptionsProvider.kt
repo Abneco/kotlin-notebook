@@ -20,18 +20,21 @@ class SessionOptionsProvider:
     DelegatingOptionsProvider<SessionOptionsProvider.State, SessionOptionsProvider.Listener>(State(), Listener::class.java), SessionOptions
 {
 
-    override var resolveMpp: Boolean by prop(State::resolveMpp).onChange(Listener::onResolveMppChanged)
+    override var resolveMpp: Boolean
+        get() = true
+        set(_) {}
     override var resolveSources: Boolean by prop(State::resolveSources).onChange(Listener::onResolveSourcesChanged)
     override var serializeScriptData: Boolean by prop(State::serializeScriptData).onChange(Listener::onSerializeScriptDataChanged)
 
     class State: BaseState(), SessionOptions {
-        override var resolveMpp: Boolean by property(false)
+        override var resolveMpp: Boolean
+            get() = true
+            set(_) {}
         override var resolveSources: Boolean by property(true)
         override var serializeScriptData: Boolean by property(true)
     }
 
     interface Listener : EventListener {
-        fun onResolveMppChanged(oldValue: Boolean, newValue: Boolean) {}
         fun onResolveSourcesChanged(oldValue: Boolean, newValue: Boolean) {}
         fun onSerializeScriptDataChanged(oldValue: Boolean, newValue: Boolean) {}
     }
@@ -41,6 +44,7 @@ fun SessionOptions.generateSnippet(): String {
     val options = this
     return buildString {
         for (property in SessionOptions::class.declaredMemberProperties) {
+            if (property.name == "resolveMpp") continue
             append("SessionOptions.")
             append(property.name)
             append(" = ")

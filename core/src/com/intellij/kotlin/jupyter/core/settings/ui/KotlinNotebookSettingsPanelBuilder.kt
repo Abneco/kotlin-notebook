@@ -105,7 +105,6 @@ class KotlinNotebookSettingsPanelBuilder(
                     applicationOptions::shouldStopExecutionOnFailure
                 )
                 singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.sources"), sessionOptions::resolveSources)
-                singleRowCheckBox(KotlinNotebookBundle.message("checkbox.resolve.multiplatform"), sessionOptions::resolveMpp)
             }
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.outputs")) {
                 singleRowCheckBox(

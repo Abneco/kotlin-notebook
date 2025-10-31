@@ -14,7 +14,6 @@ class SessionOptionsTest: KotlinNotebookUnitTestCase() {
 
         assertEquals(
             """
-                SessionOptions.resolveMpp = false
                 SessionOptions.resolveSources = true
                 SessionOptions.serializeScriptData = true
 
@@ -27,17 +26,12 @@ class SessionOptionsTest: KotlinNotebookUnitTestCase() {
                 assertEquals(true, oldValue)
                 assertEquals(false, newValue)
             }
-
-            override fun onResolveMppChanged(oldValue: Boolean, newValue: Boolean) {
-                fail("resolveMpp shouldn't change")
-            }
         }, testRootDisposable)
 
         options.resolveSources = false
 
         assertEquals(
             """
-                SessionOptions.resolveMpp = false
                 SessionOptions.resolveSources = false
                 SessionOptions.serializeScriptData = true
 
