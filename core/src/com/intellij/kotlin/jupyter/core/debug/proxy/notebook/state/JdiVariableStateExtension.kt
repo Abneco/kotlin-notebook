@@ -1,6 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state
 
+import com.intellij.debugger.collections.visualizer.core.backend.XCollectionAccessor
 import com.intellij.debugger.engine.JavaValue
 import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyApiExtension
 import com.sun.jdi.Field
@@ -27,4 +28,9 @@ interface JdiVariableStateExtension : JdiProxyApiExtension {
 
     fun findVariableField(name: String): Field?
 
+    /**
+     * Tries to find a collection accessor for this variable.
+     * If it's not a collection or is of an unsupported type returns null.
+     */
+    suspend fun findAccessor(): XCollectionAccessor?
 }

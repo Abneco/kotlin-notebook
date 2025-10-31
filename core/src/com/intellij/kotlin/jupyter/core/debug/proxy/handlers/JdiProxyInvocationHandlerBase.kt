@@ -5,6 +5,7 @@ import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.kotlin.jupyter.core.debug.proxy.JdiFieldAccessPath
 import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyApiExtension
 import com.intellij.kotlin.jupyter.core.debug.proxy.conversion.convertToJdiValue
+import com.intellij.kotlin.jupyter.core.debug.proxy.conversion.findFieldNameByGetterOrNull
 import com.intellij.kotlin.jupyter.core.debug.util.getFieldValueByName
 import com.sun.jdi.ObjectReference
 import com.sun.jdi.ReferenceType
@@ -78,18 +79,11 @@ abstract class JdiProxyInvocationHandlerBase(
         return current
     }
 
-    protected fun getFieldNameByMethodName(method: Method): String? {
-        val name = method.name
-        if (!name.startsWith("get")) return null
-
-        return name.removePrefix("get").replaceFirstChar { it.lowercase() }
-    }
-
     protected fun invokeAsFieldAccess(method: Method): Value? {
         val byFieldAccessPath = getViaFieldAccessPath(method)
         if (byFieldAccessPath != null) return byFieldAccessPath
 
-        val fieldName = getFieldNameByMethodName(method) ?: return null
+        val fieldName = method.findFieldNameByGetterOrNull() ?: return null
         return objectReference.getFieldValueByName(fieldName)
     }
 

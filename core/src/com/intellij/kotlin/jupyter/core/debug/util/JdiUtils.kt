@@ -30,5 +30,5 @@ internal inline fun <reified T : Any> ReferenceType.isOfTypeByName(): Boolean {
 }
 
 internal inline fun <reified T : Any> ObjectReference.isOfTypeByName(): Boolean {
-    return referenceType().name() == T::class.java.name
+    return referenceType().isOfTypeByName<T>()
 }

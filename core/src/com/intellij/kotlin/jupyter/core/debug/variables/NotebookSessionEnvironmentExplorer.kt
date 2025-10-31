@@ -7,10 +7,6 @@ import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.NotebookJdiProxy
 import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state.VariableStateJdiProxy
 import com.intellij.xdebugger.frame.XValueChildrenList
-import com.sun.jdi.ObjectReference
-import org.jetbrains.kotlinx.jupyter.api.Notebook
-import org.jetbrains.kotlinx.jupyter.api.VariableState
-import org.jetbrains.kotlinx.jupyter.repl.notebook.impl.NotebookImpl
 
 /**
  * Represents a runtime environment explorer of the a [com.intellij.debugger.engine.DebugProcess]
@@ -23,12 +19,12 @@ internal interface NotebookAbstractSessionRuntimeEnvironmentExplorer {
     /**
      * Returns a reference to the NotebookImpl instance mirror.
      */
-    fun getNotebookReferenceProxy(virtualMachineProxy: VirtualMachineProxy): NotebookJdiProxy?
+    fun getNotebookReferenceProxy(): NotebookJdiProxy?
 
     /**
      * Returns a reference to the VariablesState instance mirror.
      */
-    fun getVariablesStateReferenceProxy(virtualMachineProxy: VirtualMachineProxy): Map<String, VariableStateJdiProxy>?
+    fun getVariablesStateReferenceProxy(): Map<String, VariableStateJdiProxy>?
 
     /**
      * Builds a debugger-api container [XValueChildrenList] for all the variables in the VariablesState.

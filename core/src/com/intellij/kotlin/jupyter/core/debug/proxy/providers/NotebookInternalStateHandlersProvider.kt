@@ -4,12 +4,10 @@ package com.intellij.kotlin.jupyter.core.debug.proxy.providers
 import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyInvocationHandlerProvider
 import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.collections.LinkedHashMapJdiProxyInvocationHandler
-import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.extensions.JdiMapExtensionHandlerImpl
 import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.NotebookJdiProxyInvocationHandler
 import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.VariableStateJdiProxyInvocationHandler
 import com.intellij.kotlin.jupyter.core.debug.proxy.isLinkedHashMap
 import com.intellij.kotlin.jupyter.core.debug.proxy.isNotebookProxy
-import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.NotebookJdiProxy
 import com.intellij.kotlin.jupyter.core.debug.util.isOfTypeByName
 import com.sun.jdi.ObjectReference
 import org.jetbrains.kotlinx.jupyter.api.VariableStateImpl

@@ -5,8 +5,8 @@ import com.intellij.debugger.collections.visualizer.core.backend.XCollectionAcce
 import com.intellij.debugger.collections.visualizer.core.backend.XCollectionAccessorProvider
 import com.intellij.debugger.engine.JavaValue
 import com.intellij.debugger.ui.tree.ValueDescriptor
-import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state.JdiVariableStateExtension
 import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.VariableStateJdiProxyInvocationHandler
+import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state.JdiVariableStateExtension
 import com.intellij.kotlin.jupyter.core.debug.util.findFieldByName
 import com.intellij.kotlin.jupyter.core.debug.util.getFieldValueByName
 import com.sun.jdi.Field
@@ -39,6 +39,11 @@ internal class JdiVariableStateExtensionHandler(
 
         // Find field by name in scriptInstance's reference type
         return scriptInstance.findFieldByName(name)
+    }
+
+    override suspend fun findAccessor(): XCollectionAccessor? {
+        val xValue = javaValue ?: return null
+        return XCollectionAccessorProvider.findAccessor(xValue)
     }
 
     private fun findVariableValueObjectReference(): ObjectReference? {

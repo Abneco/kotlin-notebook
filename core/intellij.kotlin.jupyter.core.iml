@@ -157,5 +157,8 @@
     <orderEntry type="module" module-name="intellij.platform.externalSystem" />
     <orderEntry type="module" module-name="intellij.kotlin.codeInsight.shared" />
     <orderEntry type="module" module-name="intellij.kotlin.codeInsight.utils" />
+    <orderEntry type="module" module-name="intellij.debugger.collections.visualizer.core.backend" />
+    <orderEntry type="module" module-name="intellij.debugger.collections.visualizer.core" />
+    <orderEntry type="module" module-name="intellij.debugger.collections.visualizer.jvm" />
   </component>
 </module>

@@ -12,7 +12,7 @@ import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state.VariableState
 import com.sun.jdi.ObjectReference
 
 /**
- * Core handler of [JdiNotebookExtension] for [NotebookJdiProxy].
+ * Base handler of [JdiNotebookExtension] for [NotebookJdiProxy].
  *
  * @see [NotebookJdiProxyInvocationHandler]
  */

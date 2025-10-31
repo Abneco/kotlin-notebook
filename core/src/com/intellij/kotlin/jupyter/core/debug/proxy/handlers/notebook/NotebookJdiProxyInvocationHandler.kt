@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook
 
 import com.intellij.debugger.engine.DebugProcessImpl
-import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyApiExtension
 import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.JdiProxyFieldAccessorsInvocationHandler
 import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.extensions.notebook.JdiNotebookExtensionHandler
 import com.sun.jdi.ObjectReference

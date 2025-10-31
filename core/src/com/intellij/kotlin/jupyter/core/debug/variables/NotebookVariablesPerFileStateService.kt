@@ -5,6 +5,7 @@ import com.intellij.debugger.engine.JavaValue
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.debugger.impl.DebuggerContextImpl
+import com.intellij.debugger.jdi.StackFrameProxyImpl
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.variables.common.JupyterEnvironmentUpdateListener
@@ -19,9 +20,6 @@ import com.intellij.kotlin.jupyter.core.variables.KotlinNotebookVarsToolWindow
 import com.intellij.kotlin.jupyter.core.variables.NotebookVariablesToolWindowSetup
 import com.intellij.openapi.project.Project
 import com.intellij.xdebugger.frame.XValueChildrenList
-import com.sun.jdi.ClassType
-import com.sun.jdi.Field
-import com.sun.jdi.ObjectReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -41,18 +39,18 @@ class NotebookVariablesPerFileStateService(
 ) : NotebookPerFileChildService(virtualFile, coroutineScope), NotebookAbstractSessionRuntimeEnvironmentExplorer {
     companion object {
         private val LOG = notebookLogger()
-
-        data class VariablesStateAccessorData(
-            val nextEntryFieldAccessor: Field,
-            var mapEntryReference: ObjectReference,
-            val hashMapNodeClassType: ClassType
-        )
     }
 
     private val variableToolWindowHandler = createDisposableChild {
         KotlinNotebookToolWindowHandler()
     }
-    private val notebookSessionValuesProvider = NotebookSessionNoSuspensionValuesProvider(virtualFile)
+    private val notebookSessionValuesProvider = NotebookSessionNoSuspensionValuesProxyFinder(virtualFile)
+
+    private val currentFrameProxy: StackFrameProxyImpl?
+        get() = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile).currentStackFrameProxy
+
+    private val xValuesByName: MutableMap<String, JavaValue> = mutableMapOf()
+
     var variablesMetaData: Map<String, String?>? = null
         private set
 
@@ -88,25 +86,26 @@ class NotebookVariablesPerFileStateService(
         return buildXValueListForVariablesState(vmProxy, evalContext)
     }
 
-    override fun getNotebookReferenceProxy(virtualMachineProxy: VirtualMachineProxy): NotebookJdiProxy? {
+    override fun getNotebookReferenceProxy(): NotebookJdiProxy? {
+        val virtualMachineProxy = currentFrameProxy?.virtualMachine ?: return null
         return notebookSessionValuesProvider.notebookProxyProvider(virtualMachineProxy)
     }
 
-    override fun getVariablesStateReferenceProxy(virtualMachineProxy: VirtualMachineProxy): Map<String, VariableStateJdiProxy>? {
-        return notebookSessionValuesProvider.variablesStateProvider(virtualMachineProxy)
+    override fun getVariablesStateReferenceProxy(): Map<String, VariableStateJdiProxy>? {
+        val virtualMachineProxy = currentFrameProxy?.virtualMachine ?: return null
+        return notebookSessionValuesProvider.variablesStateProvider(virtualMachineProxy)?.apply {
+            val variablesNames = keys
+            for (variableName in variablesNames) {
+                val proxy = get(variableName) ?: continue
+                proxy.updateFromRuntimeContext(
+                    getVariableValueByNameOrNull(variableName)
+                )
+            }
+        }
     }
 
     override fun getVariableValueByNameOrNull(name: String): JavaValue? {
-        val variables = getXValueChildrenList() ?: return null
-        var foundVariable: JavaValue? = null
-        for (i in 0 until variables.size()) {
-            val varName = variables.getName(i)
-            if (varName == name) {
-                foundVariable = variables.getValue(i) as? JavaValue
-                break
-            }
-        }
-        return foundVariable
+        return xValuesByName[name]
     }
 
     override fun buildXValueListForVariablesState(virtualMachineProxy: VirtualMachineProxy, evaluationContext: EvaluationContextImpl): XValueChildrenList {
@@ -115,6 +114,7 @@ class NotebookVariablesPerFileStateService(
             debuggerContext: DebuggerContextImpl
         ) {
             val nodeManager = debuggerContext.debugProcess?.xdebugProcess?.nodeManager
+            xValuesByName.clear()
 
             for ((variableName, valueProxy) in variablesState) {
                 val fieldAccessor = valueProxy.findVariableField(variableName) ?: continue
@@ -136,6 +136,7 @@ class NotebookVariablesPerFileStateService(
                     nodeManager,
                     false
                 )
+                xValuesByName[variableName] = xValue
 
                 add(variableName, xValue)
             }
@@ -160,6 +161,7 @@ class NotebookVariablesPerFileStateService(
 
     fun clear() {
         variablesMetaData = null
+        xValuesByName.clear()
     }
 
     override fun dispose() {

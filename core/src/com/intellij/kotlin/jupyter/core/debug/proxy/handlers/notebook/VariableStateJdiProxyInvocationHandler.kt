@@ -7,7 +7,6 @@ import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.JdiProxyFieldAccess
 import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.extensions.notebook.state.JdiVariableStateExtensionHandler
 import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state.VariableStateJdiProxy
 import com.sun.jdi.ObjectReference
-import java.lang.reflect.Method
 
 /**
  * Specialized [java.lang.reflect.InvocationHandler] for invoking custom methods on [VariableStateJdiProxy].
