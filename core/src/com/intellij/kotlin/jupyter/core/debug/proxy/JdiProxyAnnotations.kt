@@ -2,13 +2,6 @@
 package com.intellij.kotlin.jupyter.core.debug.proxy
 
 /**
- * Annotation for marking special created properties for [JdiObjectReferenceProxy],
- * so that it would be possible to distinguish them from own properties of the [com.sun.jdi.ReferenceType].
- */
-@Target(AnnotationTarget.PROPERTY, AnnotationTarget.PROPERTY_GETTER)
-annotation class JdiProxyArtificialField(val name: String)
-
-/**
  * Annotation for specifying the path to the field in the [com.sun.jdi.ObjectReference] hierarchy
  * to access actual value of the property.
  *

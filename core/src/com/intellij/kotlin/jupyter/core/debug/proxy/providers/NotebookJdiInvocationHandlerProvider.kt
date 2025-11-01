@@ -3,8 +3,8 @@ package com.intellij.kotlin.jupyter.core.debug.proxy.providers
 
 import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyInvocationHandlerProvider
-import com.intellij.kotlin.jupyter.core.debug.proxy.isNotebookProxy
 import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.NotebookJdiProxyInvocationHandler
+import com.intellij.kotlin.jupyter.core.debug.proxy.isNotebookProxy
 import com.intellij.kotlin.jupyter.core.debug.util.isOfTypeByName
 import com.sun.jdi.ObjectReference
 import org.jetbrains.kotlinx.jupyter.repl.notebook.impl.NotebookImpl
@@ -20,6 +20,9 @@ class NotebookJdiInvocationHandlerProvider : JdiProxyInvocationHandlerProvider {
             return null
         }
 
-        return NotebookJdiProxyInvocationHandler(process, reference)
+        return NotebookJdiProxyInvocationHandler(
+            process,
+            reference
+        )
     }
 }

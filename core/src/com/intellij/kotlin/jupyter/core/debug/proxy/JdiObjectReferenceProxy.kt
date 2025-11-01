@@ -7,6 +7,5 @@ import com.sun.jdi.ObjectReference
  * Base proxy wrapper for JDI object, used to get access to [ObjectReference].
  */
 interface JdiObjectReferenceProxy {
-    @get:JdiProxyArtificialField("objectReference")
     val objectReference: ObjectReference
 }

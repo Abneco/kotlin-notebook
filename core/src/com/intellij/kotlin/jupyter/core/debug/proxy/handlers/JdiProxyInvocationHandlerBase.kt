@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.core.debug.proxy.handlers
 
 import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.kotlin.jupyter.core.debug.proxy.JdiFieldAccessPath
-import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyArtificialField
+import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyApiExtension
 import com.intellij.kotlin.jupyter.core.debug.proxy.conversion.convertToJdiValue
 import com.intellij.kotlin.jupyter.core.debug.util.getFieldValueByName
 import com.sun.jdi.ObjectReference
@@ -19,6 +19,7 @@ import java.lang.reflect.Method
 abstract class JdiProxyInvocationHandlerBase(
     protected val debugProcess: DebugProcessImpl,
     protected val objectReference: ObjectReference,
+    apiExtensionHandler: JdiProxyApiExtension,
 ) : InvocationHandler {
     protected fun findJdiMethod(refType: ReferenceType, methodName: String, paramTypes: Array<Class<*>>): com.sun.jdi.Method? {
         val methods = refType.allMethods()
@@ -27,6 +28,12 @@ abstract class JdiProxyInvocationHandlerBase(
             jdiMethod.name() == methodName && jdiMethod.argumentTypes().size == paramTypes.size
         }
     }
+
+    /**
+     * Handler for [JdiProxyApiExtension] methods.
+     * Override this property in subclasses to provide custom extension logic.
+     */
+    protected open val extensionHandler: JdiProxyApiExtension? = apiExtensionHandler
 
     /**
      * This method requires an active breakpoint to be visible inside the IJ debugger.
@@ -52,10 +59,6 @@ abstract class JdiProxyInvocationHandlerBase(
         )
 
         return result
-    }
-
-    protected fun Method.getJdiArtificialFieldName(): String? {
-        return getAnnotation(JdiProxyArtificialField::class.java)?.name
     }
 
     /**

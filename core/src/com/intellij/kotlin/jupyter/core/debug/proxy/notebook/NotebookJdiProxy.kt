@@ -2,9 +2,6 @@
 package com.intellij.kotlin.jupyter.core.debug.proxy.notebook
 
 import com.intellij.kotlin.jupyter.core.debug.proxy.JdiFieldAccessPath
-import com.intellij.kotlin.jupyter.core.debug.proxy.JdiObjectReferenceProxy
-import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyArtificialField
-import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state.VariableStateJdiProxy
 import com.intellij.kotlin.jupyter.core.debug.proxy.repl.context.SharedReplContextJdiProxy
 import com.sun.jdi.ObjectReference
 import org.jetbrains.kotlinx.jupyter.api.Notebook
@@ -14,9 +11,7 @@ import org.jetbrains.kotlinx.jupyter.api.Notebook
  *
  * @see [com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.NotebookJdiProxyInvocationHandler]
  */
-interface NotebookJdiProxy : Notebook, JdiObjectReferenceProxy {
-    @get:JdiProxyArtificialField("variablesHolderProxy")
-    val variablesHolderProxy: Map<String, VariableStateJdiProxy>
+interface NotebookJdiProxy : Notebook, JdiNotebookExtension {
 
     @get:JdiFieldAccessPath("sharedReplContext.evaluator.variablesHolder")
     val variablesHolderReference: ObjectReference

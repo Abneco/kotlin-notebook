@@ -5,6 +5,7 @@ import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.kotlin.jupyter.core.debug.proxy.JdiObjectReferenceProxy
 import com.intellij.kotlin.jupyter.core.debug.proxy.createJdiObjectProxy
 import com.sun.jdi.*
+import kotlin.reflect.KProperty
 
 
 /**
@@ -61,3 +62,8 @@ internal fun Value?.convertFromJdiValue(
         else -> null
     }
 }
+
+/**
+ * Converts a property reference to its getter method name.
+ */
+internal fun KProperty<*>.toGetterName(): String = "get${this.name.replaceFirstChar { it.uppercaseChar() }}"

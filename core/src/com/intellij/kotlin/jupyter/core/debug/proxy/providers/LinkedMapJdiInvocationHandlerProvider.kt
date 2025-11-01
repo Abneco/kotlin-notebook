@@ -16,7 +16,9 @@ class LinkedMapJdiInvocationHandlerProvider : JdiProxyInvocationHandlerProvider 
         return if (!reference.isLinkedHashMap()) {
             null
         } else {
-            LinkedHashMapJdiProxyInvocationHandler(process, reference)
+            LinkedHashMapJdiProxyInvocationHandler(
+                process, reference
+            )
         }
     }
 }

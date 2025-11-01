@@ -18,6 +18,8 @@ class VariableStateJdiHandlerProvider : JdiProxyInvocationHandlerProvider {
             return null
         }
 
-        return VariableStateJdiProxyInvocationHandler(process, reference)
+        return VariableStateJdiProxyInvocationHandler(
+            process, reference
+        )
     }
 }
