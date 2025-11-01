@@ -303,11 +303,7 @@
 
     <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.debug">
         <jdiInvocationHandlerProvider
-                implementation="com.intellij.kotlin.jupyter.core.debug.proxy.providers.LinkedMapJdiInvocationHandlerProvider"/>
-        <jdiInvocationHandlerProvider
-                implementation="com.intellij.kotlin.jupyter.core.debug.proxy.providers.NotebookJdiInvocationHandlerProvider"/>
-        <jdiInvocationHandlerProvider
-                implementation="com.intellij.kotlin.jupyter.core.debug.proxy.providers.VariableStateJdiHandlerProvider"/>
+                implementation="com.intellij.kotlin.jupyter.core.debug.proxy.providers.NotebookInternalStateHandlersProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.jupyter.execution">
