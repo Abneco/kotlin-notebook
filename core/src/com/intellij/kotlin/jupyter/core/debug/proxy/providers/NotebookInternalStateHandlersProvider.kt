@@ -1,18 +1,21 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.debug.proxy.providers
 
-import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.kotlin.jupyter.core.debug.proxy.DebugValueContext
+import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyApiDelegate
 import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyInvocationHandlerProvider
-import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.collections.LinkedHashMapJdiProxyInvocationHandler
-import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.NotebookJdiProxyInvocationHandler
-import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.VariableStateJdiProxyInvocationHandler
+import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.JdiFieldAccessInvocationHandler
+import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.JdiMethodEvaluationInvocationHandler
+import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.JdiProxyDelegatingInvocationHandler
+import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.JdiProxyInvocationHandler
+import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.delegates.JdiMapDelegateExtensionHandlerImpl
+import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.delegates.notebook.JdiNotebookDelegateHandler
+import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.delegates.notebook.state.JdiVariableStateDelegateHandler
 import com.intellij.kotlin.jupyter.core.debug.proxy.isLinkedHashMap
 import com.intellij.kotlin.jupyter.core.debug.proxy.isNotebookProxy
 import com.intellij.kotlin.jupyter.core.debug.util.isOfTypeByName
-import com.sun.jdi.ObjectReference
 import org.jetbrains.kotlinx.jupyter.api.VariableStateImpl
 import org.jetbrains.kotlinx.jupyter.repl.notebook.impl.NotebookImpl
-import java.lang.reflect.InvocationHandler
 
 /**
  * Unified provider for all notebook-related JDI invocation handlers.
@@ -23,21 +26,29 @@ import java.lang.reflect.InvocationHandler
  * - map proxies for state traversal
  */
 class NotebookInternalStateHandlersProvider : JdiProxyInvocationHandlerProvider {
-    override fun suggestInvocationHandlerFor(
-        process: DebugProcessImpl,
-        reference: ObjectReference
-    ): InvocationHandler? {
+    override fun suggestInvocationHandlersForCompoundProvider(valueContext: DebugValueContext): List<JdiProxyInvocationHandler> {
+        return listOf(
+            JdiFieldAccessInvocationHandler(valueContext),
+            JdiProxyDelegatingInvocationHandler(valueContext),
+            JdiMethodEvaluationInvocationHandler(valueContext)
+        )
+    }
+
+    override fun suggestInvocationHandlerDelegateForReference(
+        valueContext: DebugValueContext
+    ): JdiProxyApiDelegate? {
+        val reference = valueContext.objectReference
         val type = reference.referenceType()
 
         return when {
             type.isOfTypeByName<VariableStateImpl>() -> {
-                VariableStateJdiProxyInvocationHandler(process, reference)
+                JdiVariableStateDelegateHandler(valueContext)
             }
             reference.isNotebookProxy() || type.isOfTypeByName<NotebookImpl>() -> {
-                NotebookJdiProxyInvocationHandler(process, reference)
+                JdiNotebookDelegateHandler(valueContext)
             }
             reference.isLinkedHashMap() -> {
-                LinkedHashMapJdiProxyInvocationHandler(process, reference)
+                JdiMapDelegateExtensionHandlerImpl(valueContext)
             }
             else -> null
         }

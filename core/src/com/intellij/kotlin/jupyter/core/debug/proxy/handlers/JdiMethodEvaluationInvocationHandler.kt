@@ -1,0 +1,79 @@
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.core.debug.proxy.handlers
+
+import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.kotlin.jupyter.core.debug.proxy.DebugValueContext
+import com.intellij.kotlin.jupyter.core.debug.proxy.conversion.convertToJdiValue
+import com.intellij.kotlin.jupyter.core.debug.session.names.KotlinNotebookSessionInternalNamesProvider
+import com.sun.jdi.ObjectReference
+import com.sun.jdi.ReferenceType
+import com.sun.jdi.Value
+import java.lang.reflect.Method
+
+/**
+ * InvocationHandler for evaluation of a method on a JDI [ObjectReference].
+ * This requires [com.intellij.debugger.engine.evaluation.EvaluationContext] to be present for some suspension point.
+ */
+class JdiMethodEvaluationInvocationHandler(
+    valueContext: DebugValueContext,
+) : JdiProxyInvocationHandler {
+    private val evaluationThread: String = KotlinNotebookSessionInternalNamesProvider.notebookDebugThreadName
+
+    private val suspendContext
+        get() = debugProcess.suspendManager.pausedContexts.firstOrNull {
+            it.thread?.name() == evaluationThread
+        }
+
+    private fun findJdiMethod(refType: ReferenceType, methodName: String, paramTypes: Array<Class<Any>>): com.sun.jdi.Method? {
+        val methods = refType.allMethods()
+
+        return methods.firstOrNull { jdiMethod ->
+            jdiMethod.name() == methodName && jdiMethod.argumentTypes().size == paramTypes.size
+        }
+    }
+
+    override val debugProcess: DebugProcessImpl = valueContext.debugProcess
+
+    override val objectReference: ObjectReference = valueContext.objectReference
+
+    override fun isApplicable(obj: Any, method: Method): Boolean {
+        return suspendContext?.evaluationContext != null
+    }
+
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
+        val argumentTypes = args?.map { it.javaClass }.orEmpty().toTypedArray()
+        val method = findJdiMethod(objectReference.referenceType(), method.name, argumentTypes)
+        if (method == null) {
+            return null
+        }
+
+        return invokeMethod(method, args)
+    }
+
+    /**
+     * This method requires an active breakpoint to be visible inside the IJ debugger.
+     * Now, we don't have any.
+     */
+    @Suppress("UNUSED")
+    private fun invokeMethod(jdiMethod: com.sun.jdi.Method, args: Array<out Any>?): Value? {
+        // Convert to JDI
+        val jdiArgs = args?.map { convertToJdiValue(it) } ?: emptyList()
+
+        // Invoke method on remote object
+        val suspendContext = suspendContext ?: return null
+        val evaluationContext = suspendContext.evaluationContext ?: return null
+        val result = debugProcess.invokeMethod(
+            evaluationContext,
+            objectReference,
+            jdiMethod,
+            jdiArgs
+        )
+
+        return result
+    }
+
+    private fun convertToJdiValue(value: Any): Value {
+        val vm = objectReference.virtualMachine()
+        return value.convertToJdiValue(vm)
+    }
+}

@@ -3,14 +3,14 @@ package com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state
 
 import com.intellij.debugger.collections.visualizer.core.backend.XCollectionAccessor
 import com.intellij.debugger.engine.JavaValue
-import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyApiExtension
+import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyApiDelegate
 import com.sun.jdi.Field
 import com.sun.jdi.ObjectReference
 
 /**
  * Extension for [org.jetbrains.kotlinx.jupyter.api.VariableState] remote object proxy.
  */
-interface JdiVariableStateExtension : JdiProxyApiExtension {
+interface JdiVariableStateExtension : JdiProxyApiDelegate {
     /**
      * Rendered text representation from the runtime context.
      */

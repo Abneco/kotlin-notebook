@@ -1,11 +1,11 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.debug.proxy.handlers.extensions
+package com.intellij.kotlin.jupyter.core.debug.proxy.handlers.delegates
 
 import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.kotlin.jupyter.core.debug.proxy.DebugValueContext
 import com.intellij.kotlin.jupyter.core.debug.proxy.conversion.convertFromJdiValue
 import com.intellij.kotlin.jupyter.core.debug.proxy.conversion.convertToJdiValue
-import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.collections.JdiMapExtensionHandler
-import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.collections.LinkedHashMapJdiProxyInvocationHandler
+import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.collections.JdiMapDelegateHandler
 import com.intellij.kotlin.jupyter.core.debug.util.getFieldValueByName
 import com.sun.jdi.IntegerValue
 import com.sun.jdi.ObjectReference
@@ -17,14 +17,20 @@ import com.sun.jdi.Value
  * Implementation for LinkedHashMap.
  * Traverses entries using the internal linked list structure (head/tail fields).
  *
- * @see [LinkedHashMapJdiProxyInvocationHandler]
+ * Structure:
+ * - head: Entry<K, V> - first entry
+ * - tail: Entry<K, V> - last entry
+ * - Each Entry has: key, value, before, after fields
+ *
+ * This allows retrieving all entries by traversing from head to tail
+ * without invoking remote methods.
+ *
  */
-internal class JdiMapExtensionHandlerImpl(
-    private val debugProcess: DebugProcessImpl,
-    private val linkedHashMapRef: ObjectReference
-) : JdiMapExtensionHandler {
-    override val objectReference: ObjectReference
-        get() = linkedHashMapRef
+internal class JdiMapDelegateExtensionHandlerImpl(
+    valueContext: DebugValueContext,
+) : JdiMapDelegateHandler {
+    override val debugProcess: DebugProcessImpl = valueContext.debugProcess
+    override val objectReference: ObjectReference = valueContext.objectReference
 
     /**
      * Traverses entries using head -> after -> ... -> tail structure
@@ -33,7 +39,7 @@ internal class JdiMapExtensionHandlerImpl(
         val entries = mutableListOf<EntryData>()
 
         // Get head entry
-        var currentEntry: ObjectReference? = linkedHashMapRef.getFieldValueByName("head") as? ObjectReference
+        var currentEntry: ObjectReference? = objectReference.getFieldValueByName("head") as? ObjectReference
 
         // Loop through a linked list
         while (currentEntry != null) {
@@ -50,7 +56,7 @@ internal class JdiMapExtensionHandlerImpl(
 
     override val size: Int
         get() {
-            val sizeValue = linkedHashMapRef.getFieldValueByName("size")
+            val sizeValue = objectReference.getFieldValueByName("size")
             return (sizeValue as? IntegerValue)?.value() ?: 0
         }
 
@@ -97,7 +103,7 @@ internal class JdiMapExtensionHandlerImpl(
     }
 
     private fun convertToJdiValue(value: Any): Value {
-        val vm = linkedHashMapRef.virtualMachine()
+        val vm = objectReference.virtualMachine()
         return value.convertToJdiValue(vm)
     }
 

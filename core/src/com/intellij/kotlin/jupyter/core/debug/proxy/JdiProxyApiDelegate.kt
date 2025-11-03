@@ -1,7 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.debug.proxy
 
-import com.sun.jdi.ObjectReference
+import com.intellij.debugger.engine.DebugProcessImpl
 
 /**
  * Marker interface for JDI proxy extension interfaces.
@@ -10,9 +10,6 @@ import com.sun.jdi.ObjectReference
  * but add functionality specific to the proxy implementation (e.g., accessing runtime context).
  *
  */
-interface JdiProxyApiExtension : JdiObjectReferenceProxy
-
-
-internal class BaseJdiProxyApiExtension(
-    override val objectReference: ObjectReference
-) : JdiProxyApiExtension
+interface JdiProxyApiDelegate : JdiObjectReferenceProxy {
+    val debugProcess: DebugProcessImpl
+}

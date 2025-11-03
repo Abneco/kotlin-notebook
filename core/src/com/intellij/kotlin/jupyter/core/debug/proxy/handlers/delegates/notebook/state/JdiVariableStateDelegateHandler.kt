@@ -1,11 +1,12 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.debug.proxy.handlers.extensions.notebook.state
+package com.intellij.kotlin.jupyter.core.debug.proxy.handlers.delegates.notebook.state
 
 import com.intellij.debugger.collections.visualizer.core.backend.XCollectionAccessor
 import com.intellij.debugger.collections.visualizer.core.backend.XCollectionAccessorProvider
+import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.debugger.engine.JavaValue
 import com.intellij.debugger.ui.tree.ValueDescriptor
-import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.VariableStateJdiProxyInvocationHandler
+import com.intellij.kotlin.jupyter.core.debug.proxy.DebugValueContext
 import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.state.JdiVariableStateExtension
 import com.intellij.kotlin.jupyter.core.debug.util.findFieldByName
 import com.intellij.kotlin.jupyter.core.debug.util.getFieldValueByName
@@ -15,11 +16,14 @@ import com.sun.jdi.ObjectReference
 /**
  * Base handler for [JdiVariableStateExtension] extension API.
  *
- * @see [VariableStateJdiProxyInvocationHandler]
  */
-internal class JdiVariableStateExtensionHandler(
-    override val objectReference: ObjectReference
+internal class JdiVariableStateDelegateHandler(
+    valueContext: DebugValueContext,
 ) : JdiVariableStateExtension {
+    override val debugProcess: DebugProcessImpl = valueContext.debugProcess
+
+    override val objectReference: ObjectReference = valueContext.objectReference
+
     @Volatile
     private var javaValue: JavaValue? = null
 

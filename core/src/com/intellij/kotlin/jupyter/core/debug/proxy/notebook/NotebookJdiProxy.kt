@@ -9,7 +9,7 @@ import org.jetbrains.kotlinx.jupyter.api.Notebook
 /**
  * This class mimics the [Notebook] API, with special getters which are suitable for JDI.
  *
- * @see [com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.NotebookJdiProxyInvocationHandler]
+ * @see [com.intellij.kotlin.jupyter.core.debug.proxy.handlers.delegates.notebook.JdiNotebookDelegateHandler]
  */
 interface NotebookJdiProxy : Notebook, JdiNotebookExtension {
 

@@ -2,9 +2,10 @@
 package com.intellij.kotlin.jupyter.core.debug.proxy
 
 import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.JdiProxyCompoundInvocationHandler
 import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.NotebookJdiProxy
 import com.intellij.kotlin.jupyter.core.debug.util.isOfTypeByName
-import com.sun.jdi.*
+import com.sun.jdi.ObjectReference
 import java.lang.reflect.Proxy
 
 /**
@@ -37,7 +38,9 @@ internal fun createJdiObjectProxy(
     require(type.isInterface) {
         "Type parameter T must be an interface, got ${type.name}"
     }
-    val handler = JdiProxyInvocationHandlerProvider.findInvocationHandlerForReference(debugProcess, objectReference)
+    val handler = JdiProxyCompoundInvocationHandler(
+        DebugValueContext(debugProcess, objectReference)
+    )
 
     return Proxy.newProxyInstance(
         JdiObjectReferenceProxy::class.java.classLoader,

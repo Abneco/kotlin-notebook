@@ -1,10 +1,10 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.jupyter.core.debug.proxy.handlers.extensions.notebook
+package com.intellij.kotlin.jupyter.core.debug.proxy.handlers.delegates.notebook
 
 import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.kotlin.jupyter.core.debug.proxy.DebugValueContext
 import com.intellij.kotlin.jupyter.core.debug.proxy.JdiObjectReferenceProxy
 import com.intellij.kotlin.jupyter.core.debug.proxy.createJdiObjectProxy
-import com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.NotebookJdiProxyInvocationHandler
 import com.intellij.kotlin.jupyter.core.debug.proxy.isLinkedHashMap
 import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.JdiNotebookExtension
 import com.intellij.kotlin.jupyter.core.debug.proxy.notebook.NotebookJdiProxy
@@ -14,15 +14,16 @@ import com.sun.jdi.ObjectReference
 /**
  * Base handler of [JdiNotebookExtension] for [NotebookJdiProxy].
  *
- * @see [NotebookJdiProxyInvocationHandler]
  */
-class JdiNotebookExtensionHandler(
-    private val debugProcess: DebugProcessImpl,
-    override val objectReference: ObjectReference,
+class JdiNotebookDelegateHandler(
+    valueContext: DebugValueContext,
 ) : JdiNotebookExtension {
     private val notebookProxy by lazy {
         createJdiObjectProxy<NotebookJdiProxy>(debugProcess, objectReference)
     }
+
+    override val debugProcess: DebugProcessImpl = valueContext.debugProcess
+    override val objectReference: ObjectReference = valueContext.objectReference
 
     override val variablesHolderProxy: Map<String, VariableStateJdiProxy>
         get() = getVariablesHolderProxyMap()

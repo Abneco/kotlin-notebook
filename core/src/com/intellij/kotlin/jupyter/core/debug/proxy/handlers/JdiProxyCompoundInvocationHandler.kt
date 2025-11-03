@@ -1,0 +1,25 @@
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.core.debug.proxy.handlers
+
+import com.intellij.kotlin.jupyter.core.debug.proxy.DebugValueContext
+import com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyInvocationHandlerProvider
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Method
+
+
+/**
+ * Base [InvocationHandler] which delegates invocation to a list of [JdiProxyInvocationHandler],
+ * picking the first applicable one.
+ *
+ * @see [JdiProxyInvocationHandlerProvider]
+ */
+class JdiProxyCompoundInvocationHandler(
+    valueContext: DebugValueContext
+) : InvocationHandler {
+    private val invocationHandlers: List<JdiProxyInvocationHandler> = JdiProxyInvocationHandlerProvider.findInvocationHandlersForCompoundProvider(valueContext)
+
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? {
+        val handlerDelegate = invocationHandlers.firstOrNull { it.isApplicable(proxy, method) }
+        return handlerDelegate?.invoke(proxy, method, args)
+    }
+}

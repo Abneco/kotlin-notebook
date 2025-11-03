@@ -8,7 +8,7 @@ import org.jetbrains.kotlinx.jupyter.api.VariableState
 /**
  * Proxy wrapper for [VariableState]
  *
- * @see [com.intellij.kotlin.jupyter.core.debug.proxy.handlers.notebook.VariableStateJdiProxyInvocationHandler]
+ * @see [com.intellij.kotlin.jupyter.core.debug.proxy.JdiProxyInvocationHandlerProvider]
  */
 interface VariableStateJdiProxy : JdiVariableStateExtension, VariableState {
     /**
