@@ -66,7 +66,7 @@ jvm_library(
     "@community//plugins/github/github-core:vcs-github_test_lib",
     "//plugins/jupyter/github",
     "@community//plugins/kotlin/j2k/shared",
-    "@ultimate_lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
+    "@lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
     "//plugins/kotlin/jupyter/k1",
     "//plugins/kotlin/jupyter/k2",
     "@lib//:kotlinc-kotlin-compiler-tests",
