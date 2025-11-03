@@ -33,19 +33,19 @@
     <orderEntry type="module" module-name="intellij.kotlin.jupyter.core" />
     <orderEntry type="module-library">
       <library name="jetbrains.lets.plot.export.shadowed" type="repository">
-        <properties maven-id="org.jetbrains.lets-plot:lets-plot-export-shadowed:4.7.3-31">
+        <properties maven-id="org.jetbrains.lets-plot:lets-plot-export-shadowed:4.7.3-32">
           <verification>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.7.3-31/lets-plot-export-shadowed-4.7.3-31.jar">
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.7.3-32/lets-plot-export-shadowed-4.7.3-32.jar">
               <sha256sum>426a8a21aa7621b1494d6951469810cab94b3976845b1c560e3b81580854a222</sha256sum>
             </artifact>
           </verification>
         </properties>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.7.3-31/lets-plot-export-shadowed-4.7.3-31.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.7.3-32/lets-plot-export-shadowed-4.7.3-32.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.7.3-31/lets-plot-export-shadowed-4.7.3-31-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4.7.3-32/lets-plot-export-shadowed-4.7.3-32-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
