@@ -38,7 +38,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import java.util.concurrent.ExecutionException
 
-internal class KotlinNotebookFileDebugSession(
+class KotlinNotebookFileDebugSession(
     public override val virtualFile: BackedNotebookVirtualFile,
     private val project: Project,
     coroutineScope: CoroutineScope,
@@ -164,7 +164,7 @@ internal class KotlinNotebookFileDebugSession(
 
     // see JavaAttachDebuggerProvider
     @Synchronized
-    fun getOrCreateDebuggerSession(
+    internal fun getOrCreateDebuggerSession(
         project: Project,
         config: DebugSessionConfig,
         forceRestart: Boolean = false

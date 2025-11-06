@@ -1,7 +1,6 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.debug.proxy
 
-import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.JdiProxyCompoundInvocationHandler
 import com.intellij.kotlin.jupyter.debug.proxy.notebook.NotebookJdiProxy
 import com.intellij.kotlin.jupyter.debug.util.isOfTypeByName
@@ -9,7 +8,7 @@ import com.sun.jdi.ObjectReference
 import java.lang.reflect.Proxy
 
 /**
- * Creates a dynamic proxy for a JDI [objectReference] based on a class [T].
+ * Creates a dynamic proxy for a JDI [valueContext] based on a class [T].
  *
  * This allows type-safe access to remote objects by implementing their interfaces.
  * Methods are delegated to the actual JDI object using invokeMethod() or field access.
@@ -21,25 +20,23 @@ import java.lang.reflect.Proxy
  *
  */
 internal inline fun <reified T> createJdiObjectProxy(
-    debugProcess: DebugProcessImpl,
-    objectReference: ObjectReference
+    valueContext: DebugValueContext
 ): T {
     @Suppress("UNCHECKED_CAST")
     return createJdiObjectProxy(
-        debugProcess, objectReference, T::class.java
+        valueContext, T::class.java
     ) as T
 }
 
 internal fun createJdiObjectProxy(
-    debugProcess: DebugProcessImpl,
-    objectReference: ObjectReference,
+    valueContext: DebugValueContext,
     type: Class<*>
 ): Any {
     require(type.isInterface) {
         "Type parameter T must be an interface, got ${type.name}"
     }
     val handler = JdiProxyCompoundInvocationHandler(
-        DebugValueContext(debugProcess, objectReference)
+        valueContext
     )
 
     return Proxy.newProxyInstance(

@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.debug.proxy
 
 import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.sun.jdi.ObjectReference
 
 /**
@@ -10,5 +11,6 @@ import com.sun.jdi.ObjectReference
  */
 data class DebugValueContext(
     val debugProcess: DebugProcessImpl,
-    val objectReference: ObjectReference
+    val objectReference: ObjectReference,
+    val evaluationContext: EvaluationContextImpl? = null,
 )

@@ -46,10 +46,12 @@ class NotebookVariablesPerFileStateService(
     private val variableToolWindowHandler = createDisposableChild {
         KotlinNotebookToolVariablesWindowHandler()
     }
-    private val notebookSessionValuesProvider = NotebookSessionNoSuspensionValuesProxyFinder(virtualFile)
+    private val notebookDebugSession = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
+
+    private val notebookSessionValuesProvider = NotebookSessionNoSuspensionValuesProxyFinder(notebookDebugSession)
 
     private val currentFrameProxy: StackFrameProxyImpl?
-        get() = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile).currentStackFrameProxy
+        get() = notebookDebugSession.currentStackFrameProxy
 
     private val xValuesByName: MutableMap<String, JavaValue> = mutableMapOf()
 

@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.debug.proxy.notebook
 
 import com.intellij.kotlin.jupyter.debug.proxy.JdiFieldAccessPath
+import com.intellij.kotlin.jupyter.debug.proxy.JdiMethodInvocationSignature
 import com.intellij.kotlin.jupyter.debug.proxy.repl.context.SharedReplContextJdiProxy
 import com.sun.jdi.ObjectReference
 import org.jetbrains.kotlinx.jupyter.api.Notebook
@@ -18,4 +19,7 @@ interface NotebookJdiProxy : Notebook, JdiNotebookExtension {
 
     @get:JdiFieldAccessPath("sharedReplContext")
     val sharedReplContext: SharedReplContextJdiProxy?
+
+    @get:JdiMethodInvocationSignature("getKernelVersion")
+    val kernelVersionProxy: JdiKernelVersionProxy
 }

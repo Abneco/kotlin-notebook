@@ -8,7 +8,7 @@ import com.intellij.kotlin.jupyter.debug.proxy.handlers.JdiFieldAccessInvocation
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.JdiMethodEvaluationInvocationHandler
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.JdiProxyDelegatingInvocationHandler
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.JdiProxyInvocationHandler
-import com.intellij.kotlin.jupyter.debug.proxy.handlers.delegates.JdiMapDelegateExtensionHandlerImpl
+import com.intellij.kotlin.jupyter.debug.proxy.handlers.delegates.JdiMapDelegateExtensionHandler
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.delegates.notebook.JdiNotebookDelegateHandler
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.delegates.notebook.state.JdiVariableStateDelegateHandler
 import com.intellij.kotlin.jupyter.debug.proxy.isLinkedHashMap
@@ -48,7 +48,7 @@ class NotebookInternalStateHandlersProvider : JdiProxyInvocationHandlerProvider 
                 JdiNotebookDelegateHandler(valueContext)
             }
             reference.isLinkedHashMap() -> {
-                JdiMapDelegateExtensionHandlerImpl(valueContext)
+                JdiMapDelegateExtensionHandler(valueContext)
             }
             else -> null
         }

@@ -26,11 +26,12 @@ import com.sun.jdi.Value
  * without invoking remote methods.
  *
  */
-internal class JdiMapDelegateExtensionHandlerImpl(
+internal class JdiMapDelegateExtensionHandler(
     valueContext: DebugValueContext,
 ) : JdiMapDelegateHandler {
     override val debugProcess: DebugProcessImpl = valueContext.debugProcess
     override val objectReference: ObjectReference = valueContext.objectReference
+    private val evaluationContext by lazy { valueContext.evaluationContext }
 
     /**
      * Traverses entries using head -> after -> ... -> tail structure
@@ -99,7 +100,7 @@ internal class JdiMapDelegateExtensionHandlerImpl(
     }
 
     private fun convertJdiValue(value: Value?): Any? {
-        return value.convertFromJdiValue(debugProcess)
+        return value.convertFromJdiValue(debugProcess, evaluationContext = evaluationContext)
     }
 
     private fun convertToJdiValue(value: Any): Value {

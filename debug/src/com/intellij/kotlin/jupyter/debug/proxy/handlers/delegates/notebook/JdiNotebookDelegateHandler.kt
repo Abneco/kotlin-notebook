@@ -19,11 +19,12 @@ class JdiNotebookDelegateHandler(
     valueContext: DebugValueContext,
 ) : JdiNotebookExtension {
     private val notebookProxy by lazy {
-        createJdiObjectProxy<NotebookJdiProxy>(debugProcess, objectReference)
+        createJdiObjectProxy<NotebookJdiProxy>(valueContext)
     }
 
     override val debugProcess: DebugProcessImpl = valueContext.debugProcess
     override val objectReference: ObjectReference = valueContext.objectReference
+    private val evaluationContext by lazy { valueContext.evaluationContext }
 
     override val variablesHolderProxy: Map<String, VariableStateJdiProxy>
         get() = getVariablesHolderProxyMap()
@@ -41,8 +42,11 @@ class JdiNotebookDelegateHandler(
         }
 
         val mapProxy = createJdiObjectProxy<Map<*, *>>(
-            debugProcess,
-            variablesHolderRef
+            DebugValueContext(
+                debugProcess,
+                variablesHolderRef,
+                evaluationContext
+            )
         )
 
         val result = mutableMapOf<String, VariableStateJdiProxy>()
@@ -56,8 +60,11 @@ class JdiNotebookDelegateHandler(
             }
 
             val variableStateProxy = createJdiObjectProxy<VariableStateJdiProxy>(
-                debugProcess,
-                valueRef
+                DebugValueContext(
+                    debugProcess,
+                    valueRef,
+                    evaluationContext
+                )
             )
             result[keyString] = variableStateProxy
         }

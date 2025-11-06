@@ -23,6 +23,7 @@ class JdiFieldAccessInvocationHandler(
 ) : JdiProxyInvocationHandler {
     override val debugProcess: DebugProcessImpl = valueContext.debugProcess
     override val objectReference: ObjectReference = valueContext.objectReference
+    private val evalContext by lazy { valueContext.evaluationContext }
 
     override fun isApplicable(obj: Any, method: Method): Boolean {
         val isFromAnnotation = method.isAnnotationPresent(JdiFieldAccessPath::class.java)
@@ -32,7 +33,7 @@ class JdiFieldAccessInvocationHandler(
     }
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? {
-        return invokeAsFieldAccess(method)?.convertFromJdiValue(debugProcess, method.returnType)
+        return invokeAsFieldAccess(method)?.convertFromJdiValue(debugProcess, method.returnType, evalContext)
     }
 
     /**

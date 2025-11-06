@@ -3,11 +3,12 @@ package com.intellij.kotlin.jupyter.debug.variables.context
 
 import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.debug.proxy.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.JdiObjectReferenceProxy
 import com.intellij.kotlin.jupyter.debug.proxy.createJdiObjectProxy
 import com.intellij.kotlin.jupyter.debug.proxy.notebook.NotebookJdiProxy
 import com.intellij.kotlin.jupyter.debug.proxy.notebook.state.VariableStateJdiProxy
+import com.intellij.kotlin.jupyter.debug.session.KotlinNotebookFileDebugSession
 import org.jetbrains.kotlinx.jupyter.repl.notebook.impl.NotebookImpl
 
 /**
@@ -20,7 +21,7 @@ internal sealed interface NotebookSessionValuesProxyFinder {
 }
 
 internal class NotebookSessionNoSuspensionValuesProxyFinder(
-    private val virtualFile: BackedNotebookVirtualFile
+    private val debugSession: KotlinNotebookFileDebugSession
 ) : NotebookSessionValuesProxyFinder {
     override val notebookProxyProvider: (VirtualMachineProxy) -> NotebookJdiProxy?
         get() = ::retrieveNotebookProxy
@@ -34,9 +35,14 @@ internal class NotebookSessionNoSuspensionValuesProxyFinder(
             .get("${NotebookImpl::class.java.name}")
             .firstOrNull() ?: return null
         val notebookRef = notebookClass.instances(1).firstOrNull() ?: return null
+        val valueContext = DebugValueContext(
+            virtualMachine.debugProcess,
+            notebookRef,
+            debugSession.evaluationContext,
+        )
 
         return createJdiObjectProxy<NotebookJdiProxy>(
-          virtualMachine.debugProcess, objectReference = notebookRef
+            valueContext
         )
     }
 

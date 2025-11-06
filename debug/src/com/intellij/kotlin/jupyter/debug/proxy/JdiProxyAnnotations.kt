@@ -1,6 +1,8 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.debug.proxy
 
+import com.intellij.kotlin.jupyter.debug.proxy.handlers.JdiMethodEvaluationInvocationHandler
+
 /**
  * Annotation for specifying the path to the field in the [com.sun.jdi.ObjectReference] hierarchy
  * to access actual value of the property.
@@ -10,3 +12,10 @@ package com.intellij.kotlin.jupyter.debug.proxy
  */
 @Target(AnnotationTarget.PROPERTY, AnnotationTarget.PROPERTY_GETTER)
 annotation class JdiFieldAccessPath(val path: String)
+
+/**
+ * Annotation for overriding the default JDI method invocation signature.
+ * This annotation is used by [JdiMethodEvaluationInvocationHandler].
+ */
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER)
+annotation class JdiMethodInvocationSignature(val name: String)

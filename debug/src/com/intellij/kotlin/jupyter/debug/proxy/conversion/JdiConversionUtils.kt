@@ -2,6 +2,8 @@
 package com.intellij.kotlin.jupyter.debug.proxy.conversion
 
 import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
+import com.intellij.kotlin.jupyter.debug.proxy.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.JdiObjectReferenceProxy
 import com.intellij.kotlin.jupyter.debug.proxy.createJdiObjectProxy
 import com.sun.jdi.BooleanValue
@@ -17,6 +19,7 @@ import com.sun.jdi.StringReference
 import com.sun.jdi.Value
 import com.sun.jdi.VirtualMachine
 import java.lang.reflect.Method
+import kotlin.reflect.KFunction
 import kotlin.reflect.KProperty
 
 
@@ -49,6 +52,7 @@ internal fun Any.convertToJdiValue(vm: VirtualMachine): Value {
 internal fun Value?.convertFromJdiValue(
     debugProcess: DebugProcessImpl,
     returnType: Class<*>? = null,
+    evaluationContext: EvaluationContextImpl? = null,
 ): Any? {
     val value = this
     if (value == null) return null
@@ -66,7 +70,14 @@ internal fun Value?.convertFromJdiValue(
         is ObjectReference -> {
             // If the return type is interface, create a typed proxy
             if (returnType?.isInterface == true && returnType != ObjectReference::class.java) {
-                createJdiObjectProxy(debugProcess, value, returnType)
+                createJdiObjectProxy(
+                    DebugValueContext(
+                        debugProcess,
+                        value,
+                        evaluationContext,
+                    ),
+                    returnType,
+                )
             } else {
                 value
             }
@@ -104,4 +115,8 @@ internal fun Method.findFieldNameByGetterOrNull(): String? {
         }
         else -> null
     }
+}
+
+internal fun KFunction<*>.findAsMethod(owner: Any): Method? {
+    return owner::class.java.methods.firstOrNull { it.name == name }
 }
