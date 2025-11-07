@@ -39,6 +39,6 @@
     <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.core">
         <shadowingVisitorFactory implementation="com.intellij.kotlin.jupyter.k2.highlighting.ShadowingVisitorHandlerFactory"/>
         <sessionLibrariesFilter implementation="com.intellij.kotlin.jupyter.k2.project.model.K2SessionLibrariesFilter"/>
-        <settings.compilerPluginsBuilder implementation="com.intellij.kotlin.jupyter.k2.settings.ui.CompilerPluginsSettingsBuilderK2"/>/>
+        <settings.settingsPanelBuilder implementation="com.intellij.kotlin.jupyter.k2.settings.ui.CompilerPluginsSettingsBuilderK2"/>/>
     </extensions>
 </idea-plugin>

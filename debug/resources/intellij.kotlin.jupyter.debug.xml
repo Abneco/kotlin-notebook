@@ -1,0 +1,58 @@
+<idea-plugin visibility="internal">
+    <dependencies>
+        <plugin id="com.intellij.java"/>
+
+        <module name="intellij.jupyter.core"/>
+        <module name="intellij.kotlin.jupyter.core"/>
+        <module name="intellij.debugger.collections.visualizer.core.backend"/>
+        <module name="intellij.debugger.collections.visualizer.jvm"/>
+    </dependencies>
+
+    <extensionPoints>
+        <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.debug.jdiInvocationHandlerProvider"
+                        interface="com.intellij.kotlin.jupyter.debug.proxy.JdiProxyInvocationHandlerProvider"
+                        dynamic="true"/>
+    </extensionPoints>
+
+
+    <extensions defaultExtensionNs="com.intellij">
+        <debugger.sourcePositionProvider
+                implementation="com.intellij.kotlin.jupyter.debug.variables.context.NotebookFieldSourcePositionProvider" order="first"/>
+
+        <registryKey key="kotlin.notebook.debug.enabled" defaultValue="true"
+                     description="When enabled, establishing debug session with Kernel is possible"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.debug">
+        <jdiInvocationHandlerProvider
+                implementation="com.intellij.kotlin.jupyter.debug.proxy.providers.NotebookInternalStateHandlersProvider"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.core">
+        <notebookVariablesUiContentProvider
+                implementation="com.intellij.kotlin.jupyter.debug.variables.presentation.NotebookVariablesUiContentProvider"/>
+        <settings.settingsPanelBuilder
+                implementation="com.intellij.kotlin.jupyter.debug.settings.ui.NotebookDebugFeaturesOptionsPanelBuilder"/>
+        <moduleDependencyBehaviourRefiner
+                implementation="com.intellij.kotlin.jupyter.debug.extensions.dependencies.NotebookDebugAwareDependenciesRefiner"/>
+        <kernel.debugOptionsCustomizer
+                implementation="com.intellij.kotlin.jupyter.debug.extensions.NotebookDebugVmOptionCustomizer"/>
+    </extensions>
+
+    <actions resource-bundle="messages/KotlinNotebookDebugBundle">
+        <group id="Notebook.XDebugger.StateValueGroup" popup="false">
+            <reference ref="XDebugger.Inspect"/>
+            <reference ref="XDebugger.CompareValueWithClipboard"/>
+            <reference ref="XDebugger.CopyName"/>
+            <reference ref="XDebugger.CopyValue"/>
+            <separator/>
+            <reference ref="XDebugger.JumpToSource"/>
+            <reference ref="XDebugger.JumpToTypeSource"/>
+            <separator/>
+            <reference ref="Debugger.ViewText"/>
+            <reference ref="Debugger.ViewAsGroup"/>
+            <separator/>
+            <reference ref="Debugger.CustomizeContextView"/>
+        </group>
+    </actions>
+</idea-plugin>

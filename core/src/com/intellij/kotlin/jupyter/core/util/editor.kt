@@ -24,7 +24,7 @@ internal fun VirtualFile.isCurrentlySelectedInEditor(project: Project): Boolean 
     return project.getCurrentEditorOrNull()?.virtualFile == this
 }
 
-internal fun BackedNotebookVirtualFile.isCurrentlySelectedInEditor(project: Project): Boolean {
+fun BackedNotebookVirtualFile.isCurrentlySelectedInEditor(project: Project): Boolean {
     return file.isCurrentlySelectedInEditor(project)
 }
 

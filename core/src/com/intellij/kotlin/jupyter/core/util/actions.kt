@@ -19,7 +19,7 @@ internal fun DataContext.getLastActiveFileEditor(): FileEditor? = PlatformDataKe
 internal fun DataContext.getLastActiveJupyterFileEditor(): JupyterFileEditor? = PlatformDataKeys.LAST_ACTIVE_FILE_EDITOR.getData(this) as? JupyterFileEditor
 internal fun AnActionEvent.getLastActiveFileEditor(): FileEditor? = dataContext.getLastActiveFileEditor()
 
-internal fun DataContext.getKotlinNotebookVirtualFile(): BackedNotebookVirtualFile? {
+fun DataContext.getKotlinNotebookVirtualFile(): BackedNotebookVirtualFile? {
     val virtualFile = when (val vFile = getVirtualFile()) {
         null -> getLastActiveJupyterFileEditor()?.getNotebookFile()
         else -> vFile

@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 
 import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOptions
-import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.extensions.KernelDebugOptionsCustomizer
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDownloader
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
@@ -85,7 +85,7 @@ class DefaultKotlinKernelConfigFactory(
     override fun getKernelPorts(): KernelPorts = kernelPorts
 
     override fun getDebugPortOrNull(notebookPath: Path): Int? {
-        return KotlinNotebookDebugSessionManager.getInstance(project).getByPath(notebookPath)?.provideFreshDebugPort()
+        return KernelDebugOptionsCustomizer.getDebugPort(project, notebookPath)
     }
 }
 

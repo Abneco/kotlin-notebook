@@ -1,7 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.settings
 
-import com.intellij.kotlin.jupyter.core.debug.util.debugFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.settings.ui.MavenVersionComboBox
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
@@ -15,7 +14,6 @@ val KotlinKernelVersion.isKernelVersionEnoughForInstrumentation: Boolean
 
 val Project.isKernelVersionEnoughForInstrumentation: Boolean
     get() = (selectedKernelVersion?.isKernelVersionEnoughForInstrumentation ?: false)
-            && debugFeaturesEnabled
 
 val MavenVersionComboBox.selectedKernelVersion: KotlinKernelVersion?
     get() = KotlinKernelVersion.fromMavenVersion(version)

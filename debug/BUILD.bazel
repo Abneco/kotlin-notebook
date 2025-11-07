@@ -1,0 +1,62 @@
+### auto-generated section `build intellij.kotlin.jupyter.debug` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "resourcegroup")
+
+resourcegroup(
+  name = "debug_resources",
+  srcs = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+resourcegroup(
+  name = "debug_resources_1",
+  srcs = glob(["resources-en/**/*"]),
+  strip_prefix = "resources-en"
+)
+
+jvm_library(
+  name = "debug",
+  module_name = "intellij.kotlin.jupyter.debug",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java", "src/**/*.form"], allow_empty = True),
+  resources = [
+    ":debug_resources",
+    ":debug_resources_1",
+  ],
+  deps = [
+    "@ultimate_lib//:kotlin-stdlib-provided",
+    "@ultimate_lib//:kotlinc-kotlin-compiler-common-provided",
+    "@ultimate_lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
+    "@community//libraries/jackson/jackson",
+    "@community//libraries/jackson/databind",
+    "//plugins/kotlin/jupyter/core",
+    "//plugins/jupyter/core",
+    "//plugins/jupyter/execution",
+    "@community//notebooks/visualization",
+    "//plugins/jupyter/psi",
+    "@community//jupyter:notebooks-jupyter-core",
+    "@community//platform/core-api:core",
+    "@community//platform/xdebugger-api:debugger",
+    "@community//platform/xdebugger-impl:debugger-impl",
+    "@community//platform/xdebugger-impl/ui",
+    "@community//java/debugger/openapi:java-debugger",
+    "@community//java/debugger/impl",
+    "@community//java/debugger/shared",
+    "@community//plugins/kotlin/jvm-debugger/core",
+    "@community//plugins/kotlin/jvm-debugger/evaluation",
+    "//plugins/debugger/debugger-collections-visualizer/core/backend",
+    "//plugins/debugger/debugger-collections-visualizer/core",
+    "//plugins/debugger/debugger-collections-visualizer/jvm",
+    "@community//platform/core-ui",
+    "@community//platform/util",
+    "@community//platform/util/concurrency",
+    "@community//platform/util/jdom",
+    "@community//platform/projectModel-api:projectModel",
+    "@community//platform/execution-impl",
+    "@community//java/execution/openapi:java-execution",
+    "@community//java/execution/impl",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/analysis-api:analysis",
+    "@community//platform/core-impl",
+  ]
+)
+### auto-generated section `build intellij.kotlin.jupyter.debug` end

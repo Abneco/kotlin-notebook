@@ -6,8 +6,8 @@ import com.intellij.find.findUsages.FindUsagesHandlerFactory
 import com.intellij.find.findUsages.FindUsagesOptions
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.debug.util.NOTEBOOK_COMPILED_CLASS_NAME_PREFIX
 import com.intellij.kotlin.jupyter.core.editor.find.NotebookReferenceFinder.tryResolveCompiledDeclaration
+import com.intellij.kotlin.jupyter.core.util.NOTEBOOK_COMPILED_CLASS_NAME_PREFIX
 import com.intellij.kotlin.jupyter.core.util.getNotebookCells
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile

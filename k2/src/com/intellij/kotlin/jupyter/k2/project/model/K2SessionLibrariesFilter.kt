@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.k2.project.model
 
 import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
-import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookSessionLibrariesFilter
+import com.intellij.kotlin.jupyter.core.projectModel.extensions.KotlinNotebookSessionLibrariesFilter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.libraries.Library

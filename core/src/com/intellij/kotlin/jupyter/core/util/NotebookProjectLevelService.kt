@@ -87,11 +87,11 @@ abstract class NotebookProjectLevelService<Child : NotebookPerFileChildService>(
  * Helper function to create a nested [Disposable] child of 'this' with a [factory].
  * Upon disposal, the child is also disposed of.
  */
-internal inline fun <T : Disposable> Disposable.createDisposableChild(crossinline factory: () -> T): T {
+inline fun <T : Disposable> Disposable.createDisposableChild(crossinline factory: () -> T): T {
     return addDisposableChild(factory())
 }
 
-internal fun <T : Disposable> Disposable.addDisposableChild(child: T): T {
+fun <T : Disposable> Disposable.addDisposableChild(child: T): T {
     Disposer.register(this, child)
     return child
 }

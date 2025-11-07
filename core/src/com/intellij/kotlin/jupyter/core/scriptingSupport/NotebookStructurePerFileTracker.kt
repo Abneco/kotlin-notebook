@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
-import com.intellij.kotlin.jupyter.core.debug.util.ExecutedPresentCellInfo
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.findAllDeclarationsOfType
 import com.intellij.kotlin.jupyter.core.jupyter.cells.ExecutedCellData
 import com.intellij.kotlin.jupyter.core.jupyter.cells.NotebookExecutionRelatedMetaData
@@ -11,6 +10,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.cells.NotebookExecutionRelatedMe
 import com.intellij.kotlin.jupyter.core.jupyter.cells.clearAllCellsDataByKey
 import com.intellij.kotlin.jupyter.core.jupyter.cells.executionMetadata
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
+import com.intellij.kotlin.jupyter.core.util.ExecutedPresentCellInfo
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles

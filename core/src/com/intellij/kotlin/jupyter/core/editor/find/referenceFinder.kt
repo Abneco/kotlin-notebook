@@ -2,10 +2,10 @@
 package com.intellij.kotlin.jupyter.core.editor.find
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.debug.util.NOTEBOOK_COMPILED_CLASS_NAME_PREFIX
-import com.intellij.kotlin.jupyter.core.debug.util.NOTEBOOK_COMPILED_CLASS_NAME_SUFFIX
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructurePerFileTracker.Companion.CELL_CLASS_NAME
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookStructureTrackerService
+import com.intellij.kotlin.jupyter.core.util.NOTEBOOK_COMPILED_CLASS_NAME_PREFIX
+import com.intellij.kotlin.jupyter.core.util.NOTEBOOK_COMPILED_CLASS_NAME_SUFFIX
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.NavigatablePsiElement

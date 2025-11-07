@@ -4,19 +4,17 @@ package com.intellij.kotlin.jupyter.core.settings.ui
 import com.intellij.execution.ExecutionBundle
 import com.intellij.execution.configuration.EnvironmentVariablesTextFieldWithBrowseButton
 import com.intellij.icons.AllIcons
-import com.intellij.kotlin.jupyter.core.debug.util.debugFeaturesEnabled
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.resources.defaultRemoteArtifactsRepositories
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.kotlin.jupyter.core.settings.KotlinKernelVersions.DEBUG_SUPPORTED
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookAttachedModeOptions
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.SessionOptionsProvider
-import com.intellij.kotlin.jupyter.core.settings.extensions.NotebookCompilerPluginSettingsBuilder.Companion.buildCompilerPluginsOptionsSelector
+import com.intellij.kotlin.jupyter.core.settings.extensions.KotlinNotebookSettingsPanelsBuilder.Companion.buildAdditionalJvmAndBuildOptions
+import com.intellij.kotlin.jupyter.core.settings.extensions.KotlinNotebookSettingsPanelsBuilder.Companion.buildAdditionalOptionPanels
 import com.intellij.kotlin.jupyter.core.settings.isAvailable
-import com.intellij.kotlin.jupyter.core.settings.isKernelVersionEnoughForInstrumentation
 import com.intellij.kotlin.jupyter.core.settings.isSuitableForStartingKernel
 import com.intellij.kotlin.jupyter.core.settings.minJdkVersion
 import com.intellij.kotlin.jupyter.core.settings.projectWideExtraCompilerArgumentsSelectionEnabled
@@ -34,9 +32,7 @@ import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.util.CheckedDisposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsContexts
-import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.dsl.builder.ButtonsGroup
-import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.builder.actionButton
@@ -82,7 +78,7 @@ class KotlinNotebookSettingsPanelBuilder(
                 createExtraJvmArgumentsField()
                 createCompilerExtraArgumentsField()
                 createEnvironmentVariablesField()
-                createCompilerPluginsOptionsSelector()
+                createJvmOptionsFromPlugins()
             }
             if (KotlinNotebookSessionRunMode.ATTACHED_PROCESS.isAvailable) {
                 group(KotlinNotebookBundle.message("kotlin.jupyter.attached.process.mode.settings.group")) {
@@ -90,14 +86,7 @@ class KotlinNotebookSettingsPanelBuilder(
                     createAttachedProcessPortSelector()
                 }
             }
-            if (debugFeaturesEnabled) {
-                group(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug")) {
-                    row {
-                        comment(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.features.separate.process.note"))
-                    }
-                    createVariablesViewSelector()
-                }
-            }
+            createAdditionalPanelsFromPlugins()
             group(KotlinNotebookBundle.message("kotlin.jupyter.settings.session")) {
                 singleRowCheckBox(
                     KotlinNotebookBundle.message("checkbox.should.stop.execution.on.failure"),
@@ -276,35 +265,12 @@ class KotlinNotebookSettingsPanelBuilder(
         }
     }
 
-    private fun Panel.createCompilerPluginsOptionsSelector(): Row? {
-        return buildCompilerPluginsOptionsSelector(project, this)
+    private fun Panel.createJvmOptionsFromPlugins(): List<Row> {
+        return project.buildAdditionalJvmAndBuildOptions(this, parentDisposable)
     }
 
-    private fun Panel.createVariablesViewSelector() {
-        var variablesBox: Cell<JBCheckBox>? = null
-        row {
-            variablesBox = checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables"))
-                .accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.description"))
-                .comment(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.port.comment", DEBUG_SUPPORTED.toMavenVersion()))
-                .bindSelected(projectOptions::shouldShowNotebookVariables)
-                .applyToComponent {
-                    toolTipText = KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.comment")
-                    subscribeOnKernelVersionSelectionChange { newVersion ->
-                        isEnabled = newVersion?.isKernelVersionEnoughForInstrumentation ?: false
-                    }
-                }
-        }
-        row {
-            checkBox(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.focus.check.box"))
-                .bindSelected(projectOptions::shouldFocusOnVariables)
-                .accessibleDescription(KotlinNotebookBundle.message("kotlin.jupyter.settings.jvm.debug.variables.focus.check.box.description"))
-                .applyToComponent {
-                    isEnabled = projectOptions.shouldShowNotebookVariables
-                    variablesBox?.onChanged {
-                        isEnabled = it.isEnabled && it.isSelected
-                    }
-                }
-        }
+    private fun Panel.createAdditionalPanelsFromPlugins(): List<Row> {
+        return project.buildAdditionalOptionPanels(this, parentDisposable)
     }
 
     private fun Panel.createAttachedProcessKernelHostField(): Row {
@@ -386,12 +352,12 @@ class KotlinNotebookSettingsPanelBuilder(
         messageBus.connect(parentDisposable).subscribe(KernelVersionSelectionChangedListener.TOPIC, listener)
     }
 
-    private fun interface KernelVersionSelectionChangedListener {
+    fun interface KernelVersionSelectionChangedListener {
         fun onKernelVersionSelectionChanged(newVersion: KotlinKernelVersion?)
 
         companion object {
             @Topic.ProjectLevel
-            val TOPIC = Topic(KernelVersionSelectionChangedListener::class.java, Topic.BroadcastDirection.NONE)
+            val TOPIC: Topic<KernelVersionSelectionChangedListener> = Topic(KernelVersionSelectionChangedListener::class.java, Topic.BroadcastDirection.NONE)
         }
     }
 

@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.jupyter.core.jupyter.nbformat.notifyNotebookChanged
 import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
-import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookSessionLibrariesFilter
+import com.intellij.kotlin.jupyter.core.projectModel.extensions.KotlinNotebookSessionLibrariesFilter
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager

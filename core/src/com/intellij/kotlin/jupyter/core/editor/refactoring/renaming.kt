@@ -4,7 +4,6 @@ package com.intellij.kotlin.jupyter.core.editor.refactoring
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.template.impl.TemplateManagerImpl
 import com.intellij.ide.DataManager
-import com.intellij.kotlin.jupyter.core.debug.util.NOTEBOOK_COMPILED_CLASS_NAME_PREFIX
 import com.intellij.kotlin.jupyter.core.editor.codeInsight.NotebookGotoDeclarationProvider
 import com.intellij.kotlin.jupyter.core.editor.find.KotlinNotebookElementFindUsagesHandler
 import com.intellij.kotlin.jupyter.core.editor.find.isIdentifier
@@ -13,6 +12,7 @@ import com.intellij.kotlin.jupyter.core.editor.refactoring.NotebookRefactoringSu
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
+import com.intellij.kotlin.jupyter.core.util.NOTEBOOK_COMPILED_CLASS_NAME_PREFIX
 import com.intellij.kotlin.jupyter.core.util.getTopLevelEditor
 import com.intellij.kotlin.jupyter.core.util.isInsideKotlinNotebookFile
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook

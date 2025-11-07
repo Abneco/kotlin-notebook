@@ -1,0 +1,78 @@
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.debug.session
+
+import com.intellij.debugger.engine.DebugProcess
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.execution.util.findNotebookVirtualFileOrNull
+import com.intellij.kotlin.jupyter.core.settings.isKernelVersionEnoughForInstrumentation
+import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
+import com.intellij.kotlin.jupyter.debug.util.connection.DebugConnectionUtility
+import com.intellij.kotlin.jupyter.debug.util.debugFeaturesSupported
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import kotlinx.coroutines.CoroutineScope
+import java.nio.file.Path
+
+@Service(Service.Level.PROJECT)
+internal class KotlinNotebookDebugSessionManager(
+    project: Project,
+    coroutineScope: CoroutineScope
+) : NotebookProjectLevelService<KotlinNotebookFileDebugSession>(project, coroutineScope) {
+    private val portsGenerator = DebugConnectionUtility.debugPortsGenerator
+
+    private fun nextTargetDebugPortOrNullFor(file: BackedNotebookVirtualFile): Int? {
+        // Only separate mode is supported for now
+        if (!file.debugFeaturesSupported(project)) return null
+
+        val isSuitable = project.isKernelVersionEnoughForInstrumentation
+        return if (isSuitable && !ApplicationManager.getApplication().isUnitTestMode) {
+            portsGenerator.randomPort()
+        } else null
+    }
+    /**
+     * Indicates whether there is at least one registered XDebugSession.
+     * NB: it may be suspended or terminated.
+     */
+    val hasAnyXDebugSession: Boolean
+        get() = mapping.any { it.value.isLiveSession }
+
+    /**
+     * Indicates whether there is at least one attached [DebugProcess].
+     */
+    val hasAnyAttachedProcess: Boolean
+        get() = mapping.any { it.value.debuggerSession?.process?.isAttached == true }
+
+    fun getByDebugProcessOrNull(debugProcess: DebugProcess?): KotlinNotebookFileDebugSession? {
+        if (debugProcess == null) return null
+        return mapping.firstNotNullOfOrNull {
+            if (it.value.debuggerSession?.process == debugProcess) it.value else null
+        }
+    }
+
+    fun getByPath(path: Path): KotlinNotebookFileDebugSession? {
+        return mapping.firstNotNullOfOrNull {
+            if (it.key.path == path.toString()) it.value else null
+        } ?: run {
+            val backedNotebookVirtualFile = path.findNotebookVirtualFileOrNull() ?: return null
+            getOrCreate(backedNotebookVirtualFile)
+        }
+    }
+
+    override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): KotlinNotebookFileDebugSession {
+        return KotlinNotebookFileDebugSession(
+            virtualFile,
+            project,
+            fileScope
+        ) { nextTargetDebugPortOrNullFor(virtualFile) }
+    }
+
+    companion object {
+        fun getInstance(project: Project) = project.service<KotlinNotebookDebugSessionManager>()
+
+        fun getForFile(project: Project, virtualFile: BackedNotebookVirtualFile): KotlinNotebookFileDebugSession {
+            return getInstance(project).getOrCreate(virtualFile)
+        }
+    }
+}

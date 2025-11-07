@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
 import com.intellij.kotlin.jupyter.core.jupyter.cells.ExecutedCellData
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
@@ -450,8 +449,6 @@ class JupyterCompilerPerFileService(
                         .storeCompliedDataInCell(snippetMetadata, executedCellData)
                 }
             }
-            KotlinNotebookSessionVariablesService.getForFile(project, virtualFile)
-                .updateSnippetsMetaData(snippetMetadata)
         }
 
         val compiledClassifiers = snippetMetadata.compiledData.scripts.filterNot { it.isImplicitReceiver }

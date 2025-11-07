@@ -16,7 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import java.nio.file.Path
 
-internal fun Path.toNotebookToolWindowPanelHelpId(): String {
+fun Path.toNotebookToolWindowPanelHelpId(): String {
     return KOTLIN_NOTEBOOK_RUNNER_ID + this.toAbsolutePath()
 }
 
@@ -27,7 +27,7 @@ class KotlinNotebookToolWindowManager(
 ) : Disposable {
 
     @RequiresEdt
-    internal fun getOrCreateKotlinNotebookToolWindow(): ToolWindow {
+    fun getOrCreateKotlinNotebookToolWindow(): ToolWindow {
         return ToolWindowManager.getInstance(project).getToolWindow(KOTLIN_NOTEBOOK_TOOL_WINDOW_ID)
             ?: createKotlinNotebookToolWindow()
     }
