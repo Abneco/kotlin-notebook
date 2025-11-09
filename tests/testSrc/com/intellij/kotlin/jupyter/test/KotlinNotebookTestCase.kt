@@ -8,6 +8,8 @@ import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
 import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
+import com.intellij.kotlin.jupyter.test.runners.ListenableTest
+import com.intellij.kotlin.jupyter.test.runners.ListenableTestImpl
 import com.intellij.kotlin.jupyter.test.runners.TestContext
 import com.intellij.kotlin.jupyter.test.runners.findAnnotationInHierarchy
 import com.intellij.kotlin.jupyter.test.util.data.TEMPLATE_DATA_EXTENSION
@@ -42,9 +44,9 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.annotations.NonNls
@@ -84,7 +86,11 @@ import kotlin.time.Duration.Companion.seconds
  * access to an API wrapper making it possible to write tests in a more human-readable way.
  */
 @RunWith(KotlinNotebookTestRunner::class)
-abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginModeProvider {
+abstract class KotlinNotebookTestCase :
+    JupyterBaseTestCase(),
+    ExpectedPluginModeProvider,
+    ListenableTest by ListenableTestImpl()
+{
 
     @JvmField
     @Rule
@@ -100,9 +106,9 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
     override fun runInDispatchThread(): Boolean = false
 
     companion object {
-        private const val CONTENT_ROOT_VARIABLE: @NonNls String = "\$CONTENT_ROOT"
+        private const val CONTENT_ROOT_VARIABLE: @NonNls String = $$"$CONTENT_ROOT"
         private const val CONTENT_ROOT: @NonNls String = "/plugins/kotlin/jupyter/tests"
-        private const val PROJECT_ROOT_VARIABLE: @NonNls String = "\$PROJECT_ROOT"
+        private const val PROJECT_ROOT_VARIABLE: @NonNls String = $$"$PROJECT_ROOT"
         private const val PROJECT_ROOT: @NonNls String = ""
     }
 
@@ -125,11 +131,13 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         }
 
     override fun setUp() {
-        super.setUp()
-        KotlinNotebookLoggerFactory.enableUnitTestMode()
-        setHeaderEditingAllowed(false, testRootDisposable)
-        Disposer.register(testRootDisposable) {
-            testScope.cancel()
+        wrapSetUp(this) {
+            super.setUp()
+            KotlinNotebookLoggerFactory.enableUnitTestMode()
+            setHeaderEditingAllowed(false, testRootDisposable)
+            Disposer.register(testRootDisposable) {
+                testScope.cancel()
+            }
         }
     }
 
@@ -137,20 +145,22 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
         // We attempt to run as much teardown logic as possible.
         // This is mostly done in an attempt to close any threads or thread pools,
         // as they will trigger an assertion in com.intellij.testFramework.common.ThreadLeakTracker.
-        try {
-            listOf(
-                { myFixture.cleanJupyterUserData() },
-                { resetAndValidateLoggedErrors() },
-                { notebookRunner?.tearDown() },
-            ).forEachGuaranteed { it() }
-        } catch (e: Throwable) {
-            addSuppressedException(e)
-        } finally {
-            listOf(
-                { super.tearDown() },
-                // Uncomment for testing project leak. See KTNB-527.
-                // { TestApplicationManager.testProjectLeak() }
-            ).forEachGuaranteed { it() }
+        wrapTearDown(this) {
+            try {
+                listOf(
+                    { myFixture.cleanJupyterUserData() },
+                    { resetAndValidateLoggedErrors() },
+                    { notebookRunner?.tearDown() },
+                ).forEachGuaranteed { it() }
+            } catch (e: Throwable) {
+                addSuppressedException(e)
+            } finally {
+                listOf(
+                    { super.tearDown() },
+                    // Uncomment for testing project leak. See KTNB-527.
+                    // { TestApplicationManager.testProjectLeak() }
+                ).forEachGuaranteed { it() }
+            }
         }
     }
 
@@ -344,10 +354,9 @@ abstract class KotlinNotebookTestCase : JupyterBaseTestCase(), ExpectedPluginMod
             }
             runBlocking {
                 withTimeout(timeout ?: Int.MAX_VALUE.seconds) {
-                    val job = testScope.launch {
+                    testScope.async {
                         test(notebookRunner!!)
-                    }
-                    job.join()
+                    }.await()
                 }
             }
         }

@@ -3,12 +3,17 @@ package com.intellij.kotlin.jupyter.test.metaLanguage
 
 import com.intellij.kotlin.jupyter.test.baseTestDataPathWithHome
 import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
+import com.intellij.kotlin.jupyter.test.runners.ListenableTest
+import com.intellij.kotlin.jupyter.test.runners.ListenableTestImpl
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(KotlinNotebookTestRunner::class)
-class JKTMetaCodeInsightTest : LightJavaCodeInsightFixtureTestCase() {
+class JKTMetaCodeInsightTest :
+    LightJavaCodeInsightFixtureTestCase(),
+    ListenableTest by ListenableTestImpl()
+{
     /**
      * @return path to test data file directory relative to root of this module.
      */
@@ -34,5 +39,13 @@ class JKTMetaCodeInsightTest : LightJavaCodeInsightFixtureTestCase() {
         assertEquals("0.4.0-dev-16", variants.last().lookupString)
         // Check that library parameters are placed first
         assertTrue('.' !in variants.first().lookupString)
+    }
+
+    override fun setUp() {
+        wrapSetUp(this) { super.setUp() }
+    }
+
+    override fun tearDown() {
+        wrapTearDown(this) { super.tearDown() }
     }
 }

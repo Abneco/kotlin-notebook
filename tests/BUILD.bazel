@@ -23,6 +23,7 @@ jvm_library(
   visibility = ["//visibility:public"],
   srcs = glob(["testSrc/**/*.kt", "testSrc/**/*.java", "testSrc/**/*.form"], allow_empty = True),
   deps = [
+    "@lib//:kotlinc-analysis-api",
     "//plugins/kotlin/jupyter/plugin",
     "//plugins/kotlin/jupyter/core",
     "//plugins/kotlin/jupyter/tables",

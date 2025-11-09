@@ -9,6 +9,8 @@ import com.intellij.kotlin.jupyter.core.settings.notebookDependencies
 import com.intellij.kotlin.jupyter.test.createEmptyNotebook
 import com.intellij.kotlin.jupyter.test.delete
 import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
+import com.intellij.kotlin.jupyter.test.runners.ListenableTest
+import com.intellij.kotlin.jupyter.test.runners.ListenableTestImpl
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.application.runWriteActionAndWait
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -33,7 +35,10 @@ import kotlin.io.path.pathString
 
 
 @RunWith(KotlinNotebookTestRunner::class)
-class KotlinNotebookLibraryDependenciesTest : UsefulTestCase() {
+class KotlinNotebookLibraryDependenciesTest :
+    UsefulTestCase(),
+    ListenableTest by ListenableTestImpl()
+{
     private lateinit var fixture: IdeaProjectTestFixture
     private lateinit var librariesDirectory: Path
     private var _notebookVirtualFile: BackedNotebookVirtualFile? = null
@@ -71,33 +76,37 @@ class KotlinNotebookLibraryDependenciesTest : UsefulTestCase() {
     }
 
     override fun setUp() {
-        super.setUp()
+        wrapSetUp(this) {
+            super.setUp()
 
-        fixture = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(name).getFixture()
-        fixture.setUp()
+            fixture = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(name).getFixture()
+            fixture.setUp()
 
-        librariesDirectory = TemporaryDirectory.generateTemporaryPath("libraries")
-        repeat(3) {
-            val classesDirectory = librariesDirectory.resolve("classes$it")
-            createLibrary("lib$it", classesDirectory)
+            librariesDirectory = TemporaryDirectory.generateTemporaryPath("libraries")
+            repeat(3) {
+                val classesDirectory = librariesDirectory.resolve("classes$it")
+                createLibrary("lib$it", classesDirectory)
+            }
+
+            _notebookVirtualFile = project.createEmptyNotebook("test.ipynb", testRootDisposable)
         }
-
-        _notebookVirtualFile = project.createEmptyNotebook("test.ipynb", testRootDisposable)
     }
 
     override fun tearDown() {
-        listOf(
-            {
-                @Suppress("UsagesOfObsoleteApi")
-                runWriteAction {
-                    FileDocumentManager.getInstance().saveAllDocuments()
-                }
-            },
-            { librariesDirectory.deleteRecursively() },
-            { notebookVirtualFile.delete() },
-            { fixture.tearDown() },
-            { super.tearDown() },
-        ).forEachGuaranteed { it() }
+        wrapTearDown(this) {
+            listOf(
+                {
+                    @Suppress("UsagesOfObsoleteApi")
+                    runWriteAction {
+                        FileDocumentManager.getInstance().saveAllDocuments()
+                    }
+                },
+                { librariesDirectory.deleteRecursively() },
+                { notebookVirtualFile.delete() },
+                { fixture.tearDown() },
+                { super.tearDown() },
+            ).forEachGuaranteed { it() }
+        }
     }
 
     private fun createLibrary(name: String, classesPath: Path) {

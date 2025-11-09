@@ -1,14 +1,14 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test
 
-import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
 import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
+import com.intellij.kotlin.jupyter.test.runners.ListenableTest
+import com.intellij.kotlin.jupyter.test.runners.ListenableTestImpl
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.fileEditor.FileEditorProvider
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.projectRoots.Sdk
@@ -19,21 +19,13 @@ import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.TestDataPath
-import com.intellij.testFramework.fixtures.CompletionAutoPopupTester
-import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.intellij.util.ui.UIUtil
 import io.kotest.common.runBlocking
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
 import org.jetbrains.kotlin.idea.test.setUpWithKotlinPlugin
 import org.jetbrains.kotlin.test.TestMetadata
-import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
@@ -41,12 +33,9 @@ import org.junit.Rule
 import org.junit.runner.RunWith
 import java.nio.file.FileSystems
 import java.nio.file.Path
-import java.time.Instant
 import kotlin.io.path.absolute
 import kotlin.io.path.name
 import kotlin.io.path.pathString
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 private const val CONTENT_ROOT_VARIABLE: @NonNls String = $$"$CONTENT_ROOT"
 private const val CONTENT_ROOT: @NonNls String = "/plugins/kotlin/jupyter/tests"
@@ -55,7 +44,11 @@ private const val PROJECT_ROOT: @NonNls String = ""
 
 // TODO Migrate this class KotlinNotebookTestCase
 @RunWith(KotlinNotebookTestRunner::class)
-abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPluginModeProvider {
+abstract class KotlinNotebookBaseTestCase :
+    JupyterBaseTestCase(),
+    ExpectedPluginModeProvider,
+    ListenableTest by ListenableTestImpl()
+{
     protected open val notebookFile: BackedNotebookVirtualFile
         get() = when (val file = myFixture.kotlinNotebookFile) {
             is BackedNotebookVirtualFile -> file
@@ -149,109 +142,19 @@ abstract class KotlinNotebookBaseTestCase : JupyterBaseTestCase(), ExpectedPlugi
         get() = currentKotlinPluginMode
 
     override fun setUp() {
-        setUpWithKotlinPlugin { super.setUp() }
-        Disposer.register(testRootDisposable, JupyterServers.getInstance())
+        wrapSetUp(this) {
+            setUpWithKotlinPlugin { super.setUp() }
+            Disposer.register(testRootDisposable, JupyterServers.getInstance())
+        }
+    }
+
+    override fun tearDown() {
+        wrapTearDown(this@KotlinNotebookBaseTestCase) {
+            super.tearDown()
+        }
     }
 
     fun getTestFile(suffix: String): Path {
         return Path.of(testDataPath, "${getTestName(true)}$suffix")
-    }
-
-    protected fun CompletionAutoPopupTester.typeAndFinishLookup(
-        string: String,
-        mode: LookupFinishMode = LookupFinishMode.ENTER,
-        filter: (LookupElement) -> Boolean
-    ) {
-        typeAndDoWithLookup(string, filter) { lookupElements ->
-            if (lookupElements == null) return@typeAndDoWithLookup
-            val firstLookupElement = lookupElements.firstOrNull()
-            if (firstLookupElement == null) {
-                fail("No elements matching filter: ${lookupElements.map { it.lookupString }}")
-            }
-            lookup.finishLookup(mode.completionChar, firstLookupElement)
-        }
-    }
-
-    /**
-     * Returns null if the single element was auto-completed
-     * Returns empty list if no lookup appeared
-     */
-    protected fun CompletionAutoPopupTester.typeAndGetLookup(
-        string: String,
-    ): List<LookupElement>? {
-        var result: List<LookupElement>? = emptyList()
-        typeAndDoWithLookup(string, { true }) {
-            result = it
-        }
-        return result
-    }
-
-    private fun CompletionAutoPopupTester.typeAndDoWithLookup(
-        string: String,
-        filter: (LookupElement) -> Boolean,
-        action: (List<LookupElement>?) -> Unit
-    ) {
-        ThreadingAssertions.assertBackgroundThread()
-        runBlocking {
-            typeWithPauses(string)
-            joinCommit()
-            withContext(Dispatchers.EDT) {
-                action(completeBasic(filter = filter))
-            }
-            joinCommit()
-        }
-    }
-
-    protected fun assertActualText(expectedText: String) {
-        assertEquals(expectedText, actualText())
-    }
-
-    protected fun assertActualTextContains(expectedText: String) {
-        val actualText = actualText()
-        assertTrue("<$actualText> should contain <$expectedText>", actualText.contains(expectedText))
-    }
-
-    /**
-     * Returns null if the single element was auto-completed
-     * Returns empty list if no lookup appeared in a given [timeout]
-     */
-    protected suspend fun completeBasic(
-        timeout: Duration = 15.seconds,
-        filter: (LookupElement) -> Boolean = { true },
-    ): List<LookupElement>? {
-        val start = Instant.now()
-        val timeoutMillis = timeout.inWholeMilliseconds
-
-        while (true) {
-            val myResult = myFixture.completeBasic()
-            if (myResult == null) return null
-            val filteredResult = myResult.filter(filter)
-            if (filteredResult.isNotEmpty()) return filteredResult
-            val passedMillis = Instant.now().toEpochMilli() - start.toEpochMilli()
-            if (passedMillis > timeoutMillis) {
-                return emptyList()
-            }
-            LOG.warn("Lookup didn't show up yet, time passed: $passedMillis ms")
-
-            delay(100)
-        }
-    }
-
-    @RequiresEdt
-    protected fun moveCaretToCell(targetCellInd: JupyterPsiCell) {
-        val cellRange = targetCellInd.textRange
-        editor.caretModel.moveToOffset(cellRange.startOffset + 1)
-    }
-
-    private fun actualText() = runReadAction { myFixture.editor.document.text }
-
-    /**
-     * With high probability, avoids deadlocks when using invokeAndWait() in tests
-     * Avoid using invokeAndWait, but if it's impossible to avoid, place the call of this method before it.
-     */
-    protected fun processInvocationEvents() {
-        UIUtil.dispatchAllInvocationEvents()
-        Thread.sleep(3000)
-        UIUtil.dispatchAllInvocationEvents()
     }
 }

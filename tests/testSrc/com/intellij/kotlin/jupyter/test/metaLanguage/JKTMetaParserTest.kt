@@ -5,12 +5,17 @@ import com.intellij.kotlin.jupyter.core.language.meta.JKTMetaFileType
 import com.intellij.kotlin.jupyter.core.language.meta.grammar.JKTMetaParserDefinition
 import com.intellij.kotlin.jupyter.test.baseTestDataPathWithHome
 import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
+import com.intellij.kotlin.jupyter.test.runners.ListenableTest
+import com.intellij.kotlin.jupyter.test.runners.ListenableTestImpl
 import com.intellij.testFramework.ParsingTestCase
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(KotlinNotebookTestRunner::class)
-class JKTMetaParserTest : ParsingTestCase("", JKTMetaFileType.EXTENSION, JKTMetaParserDefinition()) {
+class JKTMetaParserTest :
+    ParsingTestCase("", JKTMetaFileType.EXTENSION, JKTMetaParserDefinition()),
+    ListenableTest by ListenableTestImpl()
+{
     /**
      * @return path to test data file directory relative to root of this module.
      */
@@ -27,5 +32,13 @@ class JKTMetaParserTest : ParsingTestCase("", JKTMetaFileType.EXTENSION, JKTMeta
     @Test
     fun testCommandsParsing() {
         doTest(true)
+    }
+
+    override fun setUp() {
+        wrapSetUp(this) { super.setUp() }
+    }
+
+    override fun tearDown() {
+        wrapTearDown(this) { super.tearDown() }
     }
 }

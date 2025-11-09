@@ -5,11 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
-import com.intellij.kotlin.jupyter.test.executeCells
-import com.intellij.kotlin.jupyter.test.runWithJupyterSession
 import com.intellij.kotlin.jupyter.test.runners.TestContext
-import com.intellij.kotlin.jupyter.test.waitForReadyIndexes
-import com.intellij.kotlin.jupyter.test.withDisabledJcef
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
@@ -97,22 +93,5 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
         }
         setUpProjectSdkIfNeeded()
         return notebookFile
-    }
-
-    protected fun doTestAfterExecution(
-        executionTester: ReceivedMessagesTester,
-        testAction: () -> Unit
-    ) {
-
-        withDisabledJcef {
-            val notebookFile = configureExecutionTest()
-
-            runWithJupyterSession(notebookFile) {
-                executeCells(executionTester, notebookFile)
-                setUpDependenciesSynchronously(executionTester.cellsToExecute)
-                waitForReadyIndexes(myFixture)
-                testAction()
-            }
-        }
     }
 }

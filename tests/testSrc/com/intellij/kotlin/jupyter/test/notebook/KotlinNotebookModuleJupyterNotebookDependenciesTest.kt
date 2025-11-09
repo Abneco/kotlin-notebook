@@ -9,6 +9,8 @@ import com.intellij.kotlin.jupyter.core.settings.notebookDependencies
 import com.intellij.kotlin.jupyter.test.createEmptyNotebook
 import com.intellij.kotlin.jupyter.test.delete
 import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
+import com.intellij.kotlin.jupyter.test.runners.ListenableTest
+import com.intellij.kotlin.jupyter.test.runners.ListenableTestImpl
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -35,7 +37,10 @@ import java.nio.file.Path
 import kotlin.io.path.pathString
 
 @RunWith(KotlinNotebookTestRunner::class)
-class KotlinNotebookModuleDependenciesTest : UsefulTestCase() {
+class KotlinNotebookModuleDependenciesTest :
+    UsefulTestCase(),
+    ListenableTest by ListenableTestImpl()
+{
     private lateinit var fixture: CodeInsightTestFixture
     private lateinit var modulesDirectory: Path
     private var _notebookVirtualFile: BackedNotebookVirtualFile? = null
@@ -76,35 +81,39 @@ class KotlinNotebookModuleDependenciesTest : UsefulTestCase() {
 
     override fun setUp() {
         runInEdtAndWait {
-            super.setUp()
+            wrapSetUp(this) {
+                super.setUp()
 
-            val projectBuilder = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(name)
-            fixture = JavaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture(projectBuilder.getFixture())
+                val projectBuilder = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(name)
+                fixture = JavaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture(projectBuilder.getFixture())
 
-            modulesDirectory = TemporaryDirectory.generateTemporaryPath("modules")
-            repeat(3) { projectBuilder.createModule(modulesDirectory) }
+                modulesDirectory = TemporaryDirectory.generateTemporaryPath("modules")
+                repeat(3) { projectBuilder.createModule(modulesDirectory) }
 
-            fixture.setUp()
+                fixture.setUp()
 
-            _notebookVirtualFile = project.createEmptyNotebook("test.ipynb", testRootDisposable)
+                _notebookVirtualFile = project.createEmptyNotebook("test.ipynb", testRootDisposable)
+            }
         }
     }
 
     override fun tearDown() {
         runInEdtAndWait {
-            listOf(
-                {
-                    @Suppress("UsagesOfObsoleteApi")
-                    runWriteAction {
-                        FileDocumentManager.getInstance().saveAllDocuments()
-                    }
-                },
-                { JavaAwareProjectJdkTableImpl.removeInternalJdkInTests() }, // remove internal jdk created by BuildManager
-                { notebookVirtualFile.delete() },
-                { fixture.tearDown() },
-                { modulesDirectory.deleteRecursively() },
-                { super.tearDown() },
-            ).forEachGuaranteed { it() }
+            wrapTearDown(this) {
+                listOf(
+                    {
+                        @Suppress("UsagesOfObsoleteApi")
+                        runWriteAction {
+                            FileDocumentManager.getInstance().saveAllDocuments()
+                        }
+                    },
+                    { JavaAwareProjectJdkTableImpl.removeInternalJdkInTests() }, // remove internal jdk created by BuildManager
+                    { notebookVirtualFile.delete() },
+                    { fixture.tearDown() },
+                    { modulesDirectory.deleteRecursively() },
+                    { super.tearDown() },
+                ).forEachGuaranteed { it() }
+            }
         }
     }
 

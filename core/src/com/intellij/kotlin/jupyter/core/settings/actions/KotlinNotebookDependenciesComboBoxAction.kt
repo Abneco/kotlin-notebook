@@ -123,7 +123,7 @@ class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomCompon
             promptSessionShutdownIfNeeded(project, notebookFile) { hasActiveSession: Boolean ->
                 val notebook = notebookFile.notebookOrNull
                 notebook?.notebookDependencies = dependencies
-                // If no cell was executed, we won't have a compiler service restart triggerred by JupyterSession
+                // If no cells were executed, we won't have a compiler service restart triggerred by JupyterSession
                 if (!hasActiveSession) {
                     JupyterCompilerService.getInstance(project).recreateService(notebookFile)
                 }

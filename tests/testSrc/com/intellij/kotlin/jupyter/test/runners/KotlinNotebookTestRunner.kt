@@ -19,6 +19,33 @@ class KotlinNotebookTestRunner(klass: Class<*>) : BlockJUnit4ClassRunner(klass) 
         KernelRunModeTransformer,
     )
 
+    private val testListeners = listOf<TestListener>(
+        TestRegistryManager,
+    )
+
+    private val compoundTestListener = object : TestListener {
+        override fun beforeSetUp(testInstance: Any) {
+            for (listener in testListeners) {
+                listener.beforeSetUp(testInstance)
+            }
+        }
+        override fun afterSetUp(testInstance: Any) {
+            for (listener in testListeners.asReversed()) {
+                listener.afterSetUp(testInstance)
+            }
+        }
+        override fun beforeTearDown(testInstance: Any) {
+            for (listener in testListeners) {
+                listener.beforeTearDown(testInstance)
+            }
+        }
+        override fun afterTearDown(testInstance: Any) {
+            for (listener in testListeners.asReversed()) {
+                listener.afterTearDown(testInstance)
+            }
+        }
+    }
+
     private fun isIgnoredByHierarchy(method: FrameworkMethod): Boolean {
         return method.declaringClass.findAnnotationInHierarchy<Ignore>() != null
     }
@@ -51,6 +78,14 @@ class KotlinNotebookTestRunner(klass: Class<*>) : BlockJUnit4ClassRunner(klass) 
                 test.description,
                 notifier,
             )
+        }
+    }
+
+    override fun createTest(method: FrameworkMethod): Any? {
+        return super.createTest(method).also { testInstance ->
+            if (testInstance is ListenableTest) {
+                testInstance.addListener(compoundTestListener)
+            }
         }
     }
 }

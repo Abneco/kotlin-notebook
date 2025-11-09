@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.test.notebook.codeinsight.intentions
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.kotlin.jupyter.test.notebook.codeinsight.actionFqn
 import com.intellij.kotlin.jupyter.test.notebook.codeinsight.createIntention
+import com.intellij.kotlin.jupyter.test.util.setUntilDisposed
 import com.intellij.modcommand.ActionContext
 import com.intellij.modcommand.ModCommand
 import com.intellij.modcommand.ModCommandAction
@@ -17,6 +18,8 @@ import com.intellij.util.ui.UIUtil
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import junit.framework.TestCase
+import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
+import org.jetbrains.kotlin.analysis.api.permissions.KaAnalysisPermissionRegistry
 import org.jetbrains.kotlin.formatter.FormatSettingsUtil
 import org.jetbrains.kotlin.idea.base.test.InTextDirectivesUtils
 import org.jetbrains.kotlin.idea.intentions.computeOnBackground
@@ -76,6 +79,10 @@ class IntentionInvocationHandler(
                 error("No intention directives found")
             }
 
+            // We need to disable analysis permission checks for the intention to work in our test.
+            @OptIn(KaImplementationDetail::class)
+            KaAnalysisPermissionRegistry.getInstance()::isAnalysisAllowedOnEdt
+                .setUntilDisposed(testFixture.testRootDisposable, true)
             val applicableActions = runReadAction {
                 allIntentions.filter { it.isAvailable(project, editor, testFixture.file) }
             }

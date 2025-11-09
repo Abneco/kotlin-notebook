@@ -42,6 +42,7 @@ import com.intellij.testFramework.IndexingTestUtil
 import com.intellij.testFramework.PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.runInEdtAndWait
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -55,7 +56,6 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.tests.awaitBlocking
-import org.junit.jupiter.api.Assertions
 import java.nio.file.Path
 import kotlin.time.Duration.Companion.minutes
 
@@ -71,8 +71,6 @@ val CodeInsightTestFixture.kotlinNotebookFile: BackedNotebookVirtualFile?
     }
 
 fun PsiFile.getCells(): List<JupyterPsiCell> = descendantsOfType<JupyterPsiCell>().toList()
-
-fun PsiFile.isInjectedKtFile(): Boolean = name.endsWith("kts")
 
 val defaultTestDuration = 3.minutes
 
@@ -90,7 +88,7 @@ fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     val project = notebookFile.project
     val backedFile = notebookFile.virtualFile.toKotlinNotebookBackedFile()!!
     val session = runBlocking {
-        JupyterExecutionManager.getInstance(project, backedFile).getOrCreateSession()!!
+        JupyterExecutionManager.getInstance(project, backedFile).getOrCreateSession()
     }
     return try {
         action()
@@ -117,7 +115,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
     val notebookCells = notebookFile.getCells()
     val cellsCount = notebookCells.size
 
-    Assertions.assertEquals(tester.expectedCellsCount, cellsCount)
+    cellsCount shouldBe tester.expectedCellsCount
 
     val testTimeout = defaultTestDuration
 

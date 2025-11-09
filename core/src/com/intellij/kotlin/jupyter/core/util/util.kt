@@ -73,8 +73,7 @@ fun PsiElement.getElementTextRangeInHost(): TextRange {
     val elementTextRange = textRange
     if (!isInjection) return elementTextRange
 
-    val host = manager.getInjectionHost(this) ?: return elementTextRange
-    return manager.injectedToHost(host, elementTextRange)
+    return manager.injectedToHost(this, elementTextRange)
 }
 
 fun BackedNotebookVirtualFile?.getInjectedKtFiles(project: Project): List<KtFile> {
