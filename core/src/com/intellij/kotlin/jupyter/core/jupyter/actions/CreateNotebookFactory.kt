@@ -5,6 +5,7 @@ import com.intellij.ide.fileTemplates.FileTemplate
 import com.intellij.ide.scratch.ScratchUtil
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.actions.createFileFromTemplateWithProperties
+import com.intellij.jupyter.core.jupyter.nbformat.schema.JUPYTER_NOTEBOOK_SCHEMA_VERSION_4_5
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
@@ -15,7 +16,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.kotlinx.jupyter.config.notebookKernelSpec
 import org.jetbrains.kotlinx.jupyter.config.notebookLanguageInfo
@@ -55,6 +55,11 @@ object CreateNotebookFactory {
     private const val VAR_KERNEL_SPEC = "KERNEL_SPEC"
     private const val VAR_LANGUAGE_SPEC = "LANGUAGE_SPEC"
     private const val VAR_KTNB_METADATA = "KTNB_METADATA"
+    private const val VAR_NBFORMAT_MAJOR = "NBFORMAT_MAJOR"
+    private const val VAR_NBFORMAT_MINOR = "NBFORMAT_MINOR"
+
+    private val defaultSchemaVersion = JUPYTER_NOTEBOOK_SCHEMA_VERSION_4_5
+
     private val LOG = logger<CreateNotebookFactory>()
 
     private fun createTemplateValues(project: Project, mode: NotebookMode): Map<String, String> {
@@ -68,6 +73,8 @@ object CreateNotebookFactory {
         return buildMap {
             put(VAR_KERNEL_SPEC, kernelSpec)
             put(VAR_LANGUAGE_SPEC, languageSpec)
+            put(VAR_NBFORMAT_MAJOR, defaultSchemaVersion.major.toString())
+            put(VAR_NBFORMAT_MINOR, defaultSchemaVersion.minor.toString())
             if (notebookSettings != null) {
                 put(VAR_KTNB_METADATA, notebookSettings)
             }
