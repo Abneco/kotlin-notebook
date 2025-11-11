@@ -8,7 +8,6 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.ScriptingUpdateMode
 import com.intellij.kotlin.jupyter.test.runners.RunModeAwareTest
-import com.intellij.kotlin.jupyter.test.runners.TestContext
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.waitForSmartMode
 import com.intellij.testFramework.TestDataPath
@@ -60,7 +59,7 @@ class KotlinNotebookExecutionTest : KotlinNotebookTestCase() {
                 executeCell(3).assertOutput(emptyOutput())
             }
 
-            when (TestContext.kernelRunMode) {
+            when (testContext.kernelRunMode) {
                 KotlinNotebookSessionRunMode.SEPARATE_PROCESS, KotlinNotebookSessionRunMode.ATTACHED_PROCESS -> {
                     assertTrue("Kernel restart was not attempted, attempts count: $attemptCount", attemptCount >= 2)
                 }

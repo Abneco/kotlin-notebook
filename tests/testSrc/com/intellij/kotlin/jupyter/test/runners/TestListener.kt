@@ -9,13 +9,23 @@ interface TestListener {
 }
 
 interface ListenableTest {
+    val testContext: TestContext
+    fun setTestContext(context: TestContext)
+
     fun addListener(listener: TestListener)
 
     fun wrapSetUp(testInstance: Any, setUp: () -> Unit)
     fun wrapTearDown(testInstance: Any, tearDown: () -> Unit)
 }
 
-class ListenableTestImpl: ListenableTest {
+class ListenableTestImpl : ListenableTest {
+    private var _testContext: TestContext? = null
+    override fun setTestContext(context: TestContext) {
+        _testContext = context
+    }
+    
+    override val testContext get() = _testContext!!
+
     private val listeners = mutableListOf<TestListener>()
 
     override fun addListener(listener: TestListener) {

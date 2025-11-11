@@ -9,12 +9,12 @@ import org.junit.runners.model.FrameworkMember
 /**
  * A JUnit test or class annotated with this will only run if the Kotlin Compiler is running in K1 mode.
  */
-annotation class K1Only(val reason: String = "")
+annotation class K1Only(@Suppress("unused") val reason: String = "")
 
 /**
  * A JUnit test or class annotated with this will only run if the Kotlin Compiler is running in K2 mode.
  */
-annotation class K2Only(val reason: String = "")
+annotation class K2Only(@Suppress("unused") val reason: String = "")
 
 object KotlinModeTransformer : TestTransformer {
     override fun transformTest(testData: TestData): List<TestData> {
@@ -29,13 +29,7 @@ object KotlinModeTransformer : TestTransformer {
             testData.description
         }
 
-        val newTestData = TestData(
-            newDescription,
-            testData.method,
-            testData.testBody,
-        )
-
-        return listOf(newTestData)
+        return listOf(testData.copy(description = newDescription))
     }
 
     internal fun FrameworkMember<*>?.isIgnoredByPluginMode(): Boolean {

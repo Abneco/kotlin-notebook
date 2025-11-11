@@ -50,6 +50,8 @@ class KotlinNotebookTestRunner(klass: Class<*>) : BlockJUnit4ClassRunner(klass) 
         return method.declaringClass.findAnnotationInHierarchy<Ignore>() != null
     }
 
+    private val testContext = ThreadLocal<TestContext>()
+
     public override fun runChild(method: FrameworkMethod, notifier: RunNotifier) {
         val defaultDescription = describeChild(method)
         if (isIgnored(method) || isIgnoredByHierarchy(method)) {
@@ -58,11 +60,10 @@ class KotlinNotebookTestRunner(klass: Class<*>) : BlockJUnit4ClassRunner(klass) 
         }
 
         val initialTestData = TestData(
-            defaultDescription,
-            method
-        ) { method, description, notifier ->
-            runLeaf(methodBlock(method), description, notifier)
-        }
+            description = defaultDescription,
+            method = method,
+            context = TestContext(),
+        )
 
         val transformedTests = myTransformers.fold(listOf(initialTestData)) { acc, transformer ->
             buildList {
@@ -73,17 +74,19 @@ class KotlinNotebookTestRunner(klass: Class<*>) : BlockJUnit4ClassRunner(klass) 
         }
 
         for (test in transformedTests) {
-            test.testBody.runTest(
-                test.method,
-                test.description,
-                notifier,
-            )
+            testContext.set(test.context)
+            try {
+                runLeaf(methodBlock(test.method), test.description, notifier)
+            } finally {
+                testContext.remove()
+            }
         }
     }
 
     override fun createTest(method: FrameworkMethod): Any? {
         return super.createTest(method).also { testInstance ->
             if (testInstance is ListenableTest) {
+                testInstance.setTestContext(testContext.get() ?: error("Test context is not set"))
                 testInstance.addListener(compoundTestListener)
             }
         }

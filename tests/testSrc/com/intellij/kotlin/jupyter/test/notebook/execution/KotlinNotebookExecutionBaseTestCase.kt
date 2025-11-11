@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
-import com.intellij.kotlin.jupyter.test.runners.TestContext
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
 import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
@@ -82,9 +81,8 @@ abstract class KotlinNotebookExecutionBaseTestCase : KotlinNotebookBaseTestCase(
             backedNotebookVirtualFile
         }
         originalVirtualFile = myFixture.file.virtualFile // `myFixture.file` may return the file which is injected inside one of the cells
-        val testRunMode = TestContext.kernelRunMode
         invokeAndWaitIfNeeded {
-            backedFile.notebook.sessionRunMode = testRunMode
+            backedFile.notebook.sessionRunMode = testContext.kernelRunMode
             FileDocumentManager.getInstance().saveAllDocuments()
         }
 

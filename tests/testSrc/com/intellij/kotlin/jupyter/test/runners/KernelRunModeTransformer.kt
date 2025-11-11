@@ -5,15 +5,9 @@ import com.intellij.kotlin.jupyter.core.settings.DEFAULT
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import org.junit.runner.Description
 
-object TestContext {
-    private val modeThreadLocal = object : ThreadLocal<KotlinNotebookSessionRunMode>() {
-        override fun initialValue() = KotlinNotebookSessionRunMode.DEFAULT
-    }
-
-    var kernelRunMode: KotlinNotebookSessionRunMode
-        get() = modeThreadLocal.get()
-        set(value) = modeThreadLocal.set(value)
-}
+data class TestContext(
+    val kernelRunMode: KotlinNotebookSessionRunMode = KotlinNotebookSessionRunMode.DEFAULT
+)
 
 annotation class RunModeAwareTest
 
@@ -29,17 +23,10 @@ object KernelRunModeTransformer : TestTransformer {
             val testName = "${testData.description.methodName} ($mode)"
             val newDescription = Description.createTestDescription(testData.method.declaringClass, testName)
 
-            TestData(
-                newDescription,
-                testData.method
-            ) { method, description, notifier ->
-                try {
-                    TestContext.kernelRunMode = mode
-                    testData.testBody.runTest(method, description, notifier)
-                } finally {
-                    TestContext.kernelRunMode = KotlinNotebookSessionRunMode.DEFAULT
-                }
-            }
+            testData.copy(
+                description = newDescription,
+                context = testData.context.copy(kernelRunMode = mode),
+            )
         }
     }
 }

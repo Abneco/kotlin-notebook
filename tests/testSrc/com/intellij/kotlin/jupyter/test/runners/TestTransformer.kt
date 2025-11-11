@@ -2,18 +2,12 @@
 package com.intellij.kotlin.jupyter.test.runners
 
 import org.junit.runner.Description
-import org.junit.runner.notification.RunNotifier
 import org.junit.runners.model.FrameworkMethod
-
-
-fun interface TestBody {
-    fun runTest(method: FrameworkMethod, description: Description, notifier: RunNotifier)
-}
 
 data class TestData(
     val description: Description,
     val method: FrameworkMethod,
-    val testBody: TestBody,
+    val context: TestContext,
 )
 
 interface TestTransformer {

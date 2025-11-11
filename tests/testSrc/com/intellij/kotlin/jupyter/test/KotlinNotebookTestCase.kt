@@ -10,7 +10,6 @@ import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
 import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
 import com.intellij.kotlin.jupyter.test.runners.ListenableTest
 import com.intellij.kotlin.jupyter.test.runners.ListenableTestImpl
-import com.intellij.kotlin.jupyter.test.runners.TestContext
 import com.intellij.kotlin.jupyter.test.runners.findAnnotationInHierarchy
 import com.intellij.kotlin.jupyter.test.util.data.TEMPLATE_DATA_EXTENSION
 import com.intellij.kotlin.jupyter.test.util.fromTemplateFile
@@ -91,7 +90,6 @@ abstract class KotlinNotebookTestCase :
     ExpectedPluginModeProvider,
     ListenableTest by ListenableTestImpl()
 {
-
     @JvmField
     @Rule
     var timeout: TestRule = DisableOnDebug(
@@ -371,7 +369,6 @@ abstract class KotlinNotebookTestCase :
         // it may trigger daemon restarting later asynchronously
         (myFixture as CodeInsightTestFixtureImpl).canChangeDocumentDuringHighlighting(true)
 
-        val testRunMode = TestContext.kernelRunMode
         invokeAndWaitIfNeeded {
             val backedFile = myFixture.configureByJupyterFile(
                 jupyterFileName = notebookFile.name,
@@ -380,7 +377,7 @@ abstract class KotlinNotebookTestCase :
             myFixture.editor.setMode(NotebookEditorMode.EDIT)
             originalVirtualFile = myFixture.file.virtualFile
             // `myFixture.file` may return the file which is injected inside one of the cells
-            backedFile.notebook.sessionRunMode = testRunMode
+            backedFile.notebook.sessionRunMode = testContext.kernelRunMode
             FileDocumentManager.getInstance().saveAllDocuments()
         }
 
