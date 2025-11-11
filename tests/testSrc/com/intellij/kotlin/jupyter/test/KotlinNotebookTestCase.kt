@@ -98,9 +98,6 @@ abstract class KotlinNotebookTestCase :
         CoroutinesTimeout.seconds(180, cancelOnTimeout = true)
     )
 
-    // Scope that all notebook tests unsing `runNotebookTest` uses.
-    val testScope = createCoroutineScope()
-
     // We cannot run on the EDT thread as Kernel Execution also runs there, which can result in deadlocks
     // when waiting for kernel status messages.
     override fun runInDispatchThread(): Boolean = false
@@ -135,9 +132,6 @@ abstract class KotlinNotebookTestCase :
             super.setUp()
             KotlinNotebookLoggerFactory.enableUnitTestMode()
             setHeaderEditingAllowed(false, testRootDisposable)
-            Disposer.register(testRootDisposable) {
-                testScope.cancel()
-            }
         }
     }
 
@@ -352,11 +346,18 @@ abstract class KotlinNotebookTestCase :
             if (setupScriptDependencies) {
                 notebookRunner!!.setupScriptDependencies()
             }
+
+            // We run `async` in a separate scope so that `runBlocking` does not block after the timeout is over
+            val testScope = createCoroutineScope()
             runBlocking {
-                withTimeout(timeout ?: Int.MAX_VALUE.seconds) {
-                    testScope.async {
-                        test(notebookRunner!!)
-                    }.await()
+                try {
+                    withTimeout(timeout ?: Int.MAX_VALUE.seconds) {
+                        testScope.async {
+                            test(notebookRunner!!)
+                        }.await()
+                    }
+                } finally {
+                    testScope.cancel()
                 }
             }
         }
