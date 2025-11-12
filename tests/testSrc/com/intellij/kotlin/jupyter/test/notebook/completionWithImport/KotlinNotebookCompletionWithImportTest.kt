@@ -5,10 +5,11 @@ import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.runners.K1Only
 import com.intellij.testFramework.TestDataPath
 import io.kotest.matchers.shouldBe
+import org.junit.Ignore
 import org.junit.Test
 
 @K1Only("Investigate failures for K2")
-@TestDataPath("\$CONTENT_ROOT/testData/notebooks/completionWithImport")
+@TestDataPath($$"$CONTENT_ROOT/testData/notebooks/completionWithImport")
 class KotlinNotebookCompletionWithImportTest : KotlinNotebookTestCase() { // AbstractKotlinNotebookCompletionWithImportTest() {
 
     @Test(timeout = 300_000)
@@ -72,6 +73,7 @@ class KotlinNotebookCompletionWithImportTest : KotlinNotebookTestCase() { // Abs
     }
 
     @Test(timeout = 300_000)
+    @Ignore("KTNB-1240")
     fun completionOfRunBlockingWithImport() = runNotebookTest {
         executeCell(0, waitForDependencies = true)
         typeAndFinishLookup("n") {
