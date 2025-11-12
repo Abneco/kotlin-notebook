@@ -6,14 +6,13 @@ import com.intellij.debugger.DebuggerManagerEx
 import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.intellij.debugger.impl.DebuggerSession
-import com.intellij.debugger.impl.PrioritizedTask
 import com.intellij.debugger.jdi.StackFrameProxyImpl
 import com.intellij.debugger.settings.DebuggerSettings
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.debugger.common.JupyterSessionPath
+import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionPath
 import com.intellij.jupyter.core.jupyter.variables.common.JupyterEnvironmentUpdateListener
 import com.intellij.kotlin.jupyter.core.debug.breakpoint.KernelSyntheticMethodBreakpoint
 import com.intellij.kotlin.jupyter.core.debug.events.NotebookDebugEventsHandler
@@ -29,7 +28,6 @@ import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.Companion.isIncomplete
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
-import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
@@ -38,7 +36,6 @@ import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.impl.XDebuggerManagerImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
-import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import java.util.concurrent.ExecutionException
 
 internal class KotlinNotebookDebugSession(
@@ -263,7 +260,7 @@ internal class KotlinNotebookDebugSession(
 
     private fun addProcessListener() {
         processListener = NotebookDebugProcessListener(
-            project, JupyterSessionPath(virtualFile), virtualFile, isSilent
+            project, JupyterDebugSessionPath(virtualFile), virtualFile, isSilent
         )
 
         myDebugSession?.process?.addDebugProcessListener(

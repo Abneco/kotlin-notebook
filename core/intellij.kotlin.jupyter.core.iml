@@ -160,5 +160,6 @@
     <orderEntry type="module" module-name="intellij.debugger.collections.visualizer.core.backend" />
     <orderEntry type="module" module-name="intellij.debugger.collections.visualizer.core" />
     <orderEntry type="module" module-name="intellij.debugger.collections.visualizer.jvm" />
+    <orderEntry type="module" module-name="intellij.platform.util.jdom" />
   </component>
 </module>

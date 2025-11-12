@@ -7,7 +7,7 @@ import com.intellij.debugger.engine.DebugProcessListener
 import com.intellij.debugger.engine.SuspendContext
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionManager
-import com.intellij.jupyter.core.jupyter.debugger.common.JupyterSessionPath
+import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionPath
 import com.intellij.kotlin.jupyter.core.debug.session.KotlinNotebookDebugSessionManager
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
@@ -16,7 +16,7 @@ import com.intellij.openapi.project.Project
 
 class NotebookDebugProcessListener(
     private val project: Project,
-    private val sessionPath: JupyterSessionPath,
+    private val sessionPath: JupyterDebugSessionPath,
     private val virtualFile: BackedNotebookVirtualFile,
     private val isSilent: Boolean = false
 ) : DebugProcessListener {
