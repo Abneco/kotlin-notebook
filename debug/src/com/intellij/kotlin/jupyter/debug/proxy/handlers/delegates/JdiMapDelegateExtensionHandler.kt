@@ -2,7 +2,8 @@
 package com.intellij.kotlin.jupyter.debug.proxy.handlers.delegates
 
 import com.intellij.debugger.engine.DebugProcessImpl
-import com.intellij.kotlin.jupyter.debug.proxy.DebugValueContext
+import com.intellij.kotlin.jupyter.debug.proxy.context.DebugValueContext
+import com.intellij.kotlin.jupyter.debug.proxy.context.ReturnTypeInfo
 import com.intellij.kotlin.jupyter.debug.proxy.conversion.convertFromJdiValue
 import com.intellij.kotlin.jupyter.debug.proxy.conversion.convertToJdiValue
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.collections.JdiMapDelegateHandler
@@ -100,7 +101,16 @@ internal class JdiMapDelegateExtensionHandler(
     }
 
     private fun convertJdiValue(value: Value?): Any? {
-        return value.convertFromJdiValue(debugProcess, evaluationContext = evaluationContext)
+        // Since we are interested only in values to create proxies later on, return as is
+        val typeInfo = ReturnTypeInfo(
+            Any::class.java,
+            Any::class.java,
+        )
+        return value.convertFromJdiValue(
+            debugProcess,
+            typeInfo,
+            evaluationContext,
+        )
     }
 
     private fun convertToJdiValue(value: Any): Value {

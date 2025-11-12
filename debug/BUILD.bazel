@@ -57,6 +57,7 @@ jvm_library(
     "@community//platform/core-impl",
     "@community//platform/xdebugger-impl/shared",
     "@community//platform/lang-api:lang",
+    "@community//java/java-psi-api:psi",
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.debug` end

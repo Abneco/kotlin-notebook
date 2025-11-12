@@ -3,8 +3,9 @@ package com.intellij.kotlin.jupyter.debug.proxy.conversion
 
 import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
-import com.intellij.kotlin.jupyter.debug.proxy.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.JdiObjectReferenceProxy
+import com.intellij.kotlin.jupyter.debug.proxy.context.DebugValueContext
+import com.intellij.kotlin.jupyter.debug.proxy.context.ReturnTypeInfo
 import com.intellij.kotlin.jupyter.debug.proxy.createJdiObjectProxy
 import com.sun.jdi.BooleanValue
 import com.sun.jdi.ByteValue
@@ -46,12 +47,11 @@ internal fun Any.convertToJdiValue(vm: VirtualMachine): Value {
 }
 
 /**
- * Convert JDI [Value] to a Java object.
- * For [ObjectReference], creates a proxy.
+ * Overload that accepts [ReturnTypeInfo] to reduce boilerplate at call sites.
  */
 internal fun Value?.convertFromJdiValue(
     debugProcess: DebugProcessImpl,
-    returnType: Class<*>? = null,
+    type: ReturnTypeInfo,
     evaluationContext: EvaluationContextImpl? = null,
 ): Any? {
     val value = this
@@ -68,19 +68,18 @@ internal fun Value?.convertFromJdiValue(
         is DoubleValue -> value.value()
         is StringReference -> value.value()
         is ObjectReference -> {
-            // If the return type is interface, create a typed proxy
-            if (returnType?.isInterface == true && returnType != ObjectReference::class.java) {
+            val returnType = type.runtimeReturnClass
+            if (returnType.isInterface && returnType != ObjectReference::class.java && returnType != Any::class.java) {
                 createJdiObjectProxy(
                     DebugValueContext(
                         debugProcess,
                         value,
                         evaluationContext,
+                        genericType = type.genericType,
                     ),
                     returnType,
                 )
-            } else {
-                value
-            }
+            } else value
         }
         else -> null
     }

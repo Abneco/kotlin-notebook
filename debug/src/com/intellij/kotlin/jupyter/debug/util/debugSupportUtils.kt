@@ -1,6 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.debug.util
 
+import com.intellij.debugger.engine.DebuggerManagerThreadImpl
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.getSessionRunMode
@@ -56,6 +57,9 @@ internal val KotlinNotebookSessionRunMode.debugFeaturesSupported: Boolean
         KotlinNotebookSessionRunMode.IDE_PROCESS,
         KotlinNotebookSessionRunMode.ATTACHED_PROCESS -> false
     }
+
+internal val isDebuggerManagerThread: Boolean
+    get() = DebuggerManagerThreadImpl.isManagerThread()
 
 /**
  * Checks if debug session could be instantiated for the notebook settings

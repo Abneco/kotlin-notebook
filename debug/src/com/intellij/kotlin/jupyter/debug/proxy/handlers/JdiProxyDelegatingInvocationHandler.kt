@@ -2,9 +2,10 @@
 package com.intellij.kotlin.jupyter.debug.proxy.handlers
 
 import com.intellij.debugger.engine.DebugProcessImpl
-import com.intellij.kotlin.jupyter.debug.proxy.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.JdiProxyApiDelegate
 import com.intellij.kotlin.jupyter.debug.proxy.JdiProxyInvocationHandlerProvider
+import com.intellij.kotlin.jupyter.debug.proxy.context.DebugValueContext
+import com.intellij.kotlin.jupyter.debug.util.isTopType
 import com.sun.jdi.ObjectReference
 import java.lang.reflect.Method
 
@@ -23,7 +24,7 @@ class JdiProxyDelegatingInvocationHandler(
 
     override fun isApplicable(obj: Any, method: Method): Boolean {
         val declaringClass = method.declaringClass
-        return declaringClass.isInstance(extensionDelegate)
+        return !declaringClass.isTopType() && declaringClass.isInstance(extensionDelegate)
     }
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? {

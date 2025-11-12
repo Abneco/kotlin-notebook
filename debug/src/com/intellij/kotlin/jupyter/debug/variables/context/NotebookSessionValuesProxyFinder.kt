@@ -3,8 +3,8 @@ package com.intellij.kotlin.jupyter.debug.variables.context
 
 import com.intellij.debugger.engine.jdi.VirtualMachineProxy
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl
-import com.intellij.kotlin.jupyter.debug.proxy.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.JdiObjectReferenceProxy
+import com.intellij.kotlin.jupyter.debug.proxy.context.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.createJdiObjectProxy
 import com.intellij.kotlin.jupyter.debug.proxy.notebook.NotebookJdiProxy
 import com.intellij.kotlin.jupyter.debug.proxy.notebook.state.VariableStateJdiProxy

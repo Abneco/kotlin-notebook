@@ -1,10 +1,9 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.debug.proxy.handlers
 
-import com.intellij.debugger.engine.DebugProcessImpl
-import com.intellij.kotlin.jupyter.debug.proxy.DebugValueContext
+import com.intellij.kotlin.jupyter.debug.proxy.JdiDescriptorValueOrigin
 import com.intellij.kotlin.jupyter.debug.proxy.JdiFieldAccessPath
-import com.intellij.kotlin.jupyter.debug.proxy.conversion.convertFromJdiValue
+import com.intellij.kotlin.jupyter.debug.proxy.context.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.conversion.findFieldNameByGetterOrNull
 import com.intellij.kotlin.jupyter.debug.util.findFieldByName
 import com.intellij.kotlin.jupyter.debug.util.getFieldValueByName
@@ -20,10 +19,7 @@ import java.lang.reflect.Method
  */
 class JdiFieldAccessInvocationHandler(
     valueContext: DebugValueContext
-) : JdiProxyInvocationHandler {
-    override val debugProcess: DebugProcessImpl = valueContext.debugProcess
-    override val objectReference: ObjectReference = valueContext.objectReference
-    private val evalContext by lazy { valueContext.evaluationContext }
+) : AbstractJdiInvocationHandler(valueContext) {
 
     override fun isApplicable(obj: Any, method: Method): Boolean {
         val isFromAnnotation = method.isAnnotationPresent(JdiFieldAccessPath::class.java)
@@ -33,7 +29,21 @@ class JdiFieldAccessInvocationHandler(
     }
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? {
-        return invokeAsFieldAccess(method)?.convertFromJdiValue(debugProcess, method.returnType, evalContext)
+        val jdiValue = invokeAsFieldAccess(method) ?: return null
+        val fieldName = method.getFieldNameViaPathAnnotation() ?: method.findFieldNameByGetterOrNull()
+
+        return jdiValue.convertValueAndBindToDescriptor(
+            method,
+            fieldName,
+            objectReference,
+            origin = JdiDescriptorValueOrigin.FieldValue,
+        )
+    }
+
+    private fun Method.getFieldNameViaPathAnnotation(): String? {
+        val pathAnnotation = getAnnotation(JdiFieldAccessPath::class.java)?.path ?: return null
+        val path = pathAnnotation.split(".")
+        return path.last()
     }
 
     /**

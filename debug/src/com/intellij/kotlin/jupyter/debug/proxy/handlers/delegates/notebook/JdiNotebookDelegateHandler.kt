@@ -3,8 +3,8 @@ package com.intellij.kotlin.jupyter.debug.proxy.handlers.delegates.notebook
 
 import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.jupyter.execution.logging.notebookLogger
-import com.intellij.kotlin.jupyter.debug.proxy.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.JdiObjectReferenceProxy
+import com.intellij.kotlin.jupyter.debug.proxy.context.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.createJdiObjectProxy
 import com.intellij.kotlin.jupyter.debug.proxy.isLinkedHashMap
 import com.intellij.kotlin.jupyter.debug.proxy.notebook.JdiNotebookExtension

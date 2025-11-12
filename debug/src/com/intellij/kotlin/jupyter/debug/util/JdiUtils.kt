@@ -25,6 +25,11 @@ internal fun ReferenceType.findFieldByName(name: String): Field? {
     return DebuggerUtils.findField(this, name)
 }
 
+
+internal fun ReferenceType.isOfTypeByNameMatch(regex: Regex): Boolean {
+    return name().contains(regex)
+}
+
 internal inline fun <reified T : Any> ReferenceType.isOfTypeByName(): Boolean {
     return name() == T::class.java.name
 }

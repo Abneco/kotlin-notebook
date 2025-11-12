@@ -1,12 +1,13 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.debug.proxy.providers
 
-import com.intellij.kotlin.jupyter.debug.proxy.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.JdiProxyApiDelegate
 import com.intellij.kotlin.jupyter.debug.proxy.JdiProxyInvocationHandlerProvider
+import com.intellij.kotlin.jupyter.debug.proxy.context.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.JdiFieldAccessInvocationHandler
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.JdiMethodEvaluationInvocationHandler
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.JdiProxyDelegatingInvocationHandler
+import com.intellij.kotlin.jupyter.debug.proxy.handlers.JdiProxyDescriptorAwareBaseHandler
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.JdiProxyInvocationHandler
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.delegates.JdiMapDelegateExtensionHandler
 import com.intellij.kotlin.jupyter.debug.proxy.handlers.delegates.notebook.JdiNotebookDelegateHandler
@@ -24,6 +25,7 @@ import org.jetbrains.kotlinx.jupyter.repl.notebook.impl.NotebookImpl
  * - notebook object proxy
  * - variable state proxies
  * - map proxies for state traversal
+ * - default handler with minimal proxy-specific functionality
  */
 class NotebookInternalStateHandlersProvider : JdiProxyInvocationHandlerProvider {
     override fun suggestInvocationHandlersForCompoundProvider(valueContext: DebugValueContext): List<JdiProxyInvocationHandler> {
@@ -36,7 +38,7 @@ class NotebookInternalStateHandlersProvider : JdiProxyInvocationHandlerProvider 
 
     override fun suggestInvocationHandlerDelegateForReference(
         valueContext: DebugValueContext
-    ): JdiProxyApiDelegate? {
+    ): JdiProxyApiDelegate {
         val reference = valueContext.objectReference
         val type = reference.referenceType()
 
@@ -50,7 +52,9 @@ class NotebookInternalStateHandlersProvider : JdiProxyInvocationHandlerProvider 
             reference.isLinkedHashMap() -> {
                 JdiMapDelegateExtensionHandler(valueContext)
             }
-            else -> null
+            // Fallback: provide a base handler for any ObjectReference
+            // This allows all proxies to have access to base implementation
+            else -> JdiProxyDescriptorAwareBaseHandler(valueContext)
         }
     }
 }

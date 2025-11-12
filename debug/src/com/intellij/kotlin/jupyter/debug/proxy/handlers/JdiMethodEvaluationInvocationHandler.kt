@@ -1,16 +1,16 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.debug.proxy.handlers
 
-import com.intellij.debugger.engine.DebugProcessImpl
-import com.intellij.kotlin.jupyter.debug.proxy.DebugValueContext
+import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
+import com.intellij.kotlin.jupyter.debug.proxy.JdiDescriptorValueOrigin
 import com.intellij.kotlin.jupyter.debug.proxy.JdiMethodInvocationSignature
-import com.intellij.kotlin.jupyter.debug.proxy.conversion.convertFromJdiValue
+import com.intellij.kotlin.jupyter.debug.proxy.context.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.conversion.convertToJdiValue
 import com.intellij.kotlin.jupyter.debug.session.names.KotlinNotebookSessionInternalNamesProvider
 import com.sun.jdi.ObjectReference
 import com.sun.jdi.ReferenceType
 import com.sun.jdi.Value
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import org.jetbrains.kotlin.idea.debugger.core.invokeInManagerThread
 import java.lang.reflect.Method
 
 /**
@@ -19,11 +19,10 @@ import java.lang.reflect.Method
  */
 class JdiMethodEvaluationInvocationHandler(
     valueContext: DebugValueContext,
-) : JdiProxyInvocationHandler {
+) : AbstractJdiInvocationHandler(valueContext) {
     private val evaluationThread: String = KotlinNotebookSessionInternalNamesProvider.notebookDebugThreadName
-    private val breakpointContext = valueContext.evaluationContext
-    private val evaluationContext
-        get() = breakpointContext ?: suspendContext?.evaluationContext
+    override val evaluationContext: EvaluationContextImpl?
+        get() = ctx.evaluationContext ?: suspendContext?.evaluationContext
 
     private val suspendContext
         get() = debugProcess.suspendManager.pausedContexts.firstOrNull {
@@ -38,13 +37,8 @@ class JdiMethodEvaluationInvocationHandler(
         }
     }
 
-    override val debugProcess: DebugProcessImpl = valueContext.debugProcess
-
-    override val objectReference: ObjectReference = valueContext.objectReference
-
     override fun isApplicable(obj: Any, method: Method): Boolean {
-        // until it's stable
-        return suspendContext?.evaluationContext != null
+        return evaluationContext != null
     }
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any? {
@@ -55,12 +49,16 @@ class JdiMethodEvaluationInvocationHandler(
             return null
         }
 
-        return invokeMethod(jdiMethod, args)
-            ?.convertFromJdiValue(
-                debugProcess,
-                method.returnType,
-                evaluationContext = evaluationContext,
+        return debugProcess.invokeInManagerThread {
+            val jdiResult = invokeMethod(jdiMethod, args) ?: return@invokeInManagerThread null
+
+            jdiResult.convertValueAndBindToDescriptor(
+                method,
+                methodName,
+                jdiResult,
+                origin = JdiDescriptorValueOrigin.MethodEvaluation,
             )
+        }
     }
 
     private fun getMethodName(method: Method): String {
@@ -72,8 +70,6 @@ class JdiMethodEvaluationInvocationHandler(
      * This method requires an active breakpoint to be visible inside the IJ debugger.
      * Now, we don't have any.
      */
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Suppress("UNUSED")
     private fun invokeMethod(jdiMethod: com.sun.jdi.Method, args: Array<out Any>?): Value? {
         // Convert to JDI
         val jdiArgs = args?.map { convertToJdiValue(it) } ?: emptyList()

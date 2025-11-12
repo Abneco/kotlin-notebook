@@ -97,7 +97,7 @@ class NotebookVariablesPerFileStateService(
             val variablesNames = keys
             for (variableName in variablesNames) {
                 val proxy = get(variableName) ?: continue
-                proxy.updateFromRuntimeContext(
+                proxy.bindValueFromRuntime(
                     getVariableValueByNameOrNull(variableName)
                 )
             }

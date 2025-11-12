@@ -1,10 +1,10 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.debug.proxy.handlers.delegates.notebook.state
 
-import com.intellij.debugger.engine.DebugProcessImpl
-import com.intellij.debugger.engine.JavaValue
 import com.intellij.debugger.ui.tree.ValueDescriptor
-import com.intellij.kotlin.jupyter.debug.proxy.DebugValueContext
+import com.intellij.kotlin.jupyter.debug.proxy.context.DebugValueContext
+import com.intellij.kotlin.jupyter.debug.proxy.createJdiObjectProxy
+import com.intellij.kotlin.jupyter.debug.proxy.handlers.JdiProxyDescriptorAwareBaseHandler
 import com.intellij.kotlin.jupyter.debug.proxy.notebook.state.JdiVariableStateExtension
 import com.intellij.kotlin.jupyter.debug.util.findFieldByName
 import com.intellij.kotlin.jupyter.debug.util.getFieldValueByName
@@ -16,24 +16,10 @@ import com.sun.jdi.ObjectReference
  *
  */
 internal class JdiVariableStateDelegateHandler(
-    valueContext: DebugValueContext,
-) : JdiVariableStateExtension {
-    override val debugProcess: DebugProcessImpl = valueContext.debugProcess
-
-    override val objectReference: ObjectReference = valueContext.objectReference
-
-    @Volatile
-    override var javaValue: JavaValue? = null
-
-    override val renderedText: String?
-        get() = javaValue?.descriptor?.valueText
-
+    private val valueContext: DebugValueContext,
+) : JdiVariableStateExtension, JdiProxyDescriptorAwareBaseHandler(valueContext) {
     override val variableValueObjectReference: ObjectReference?
         get() = findVariableValueObjectReference()
-
-    override fun updateFromRuntimeContext(javaValue: JavaValue?) {
-        this.javaValue = javaValue
-    }
 
     override fun findVariableField(name: String): Field? {
         val scriptInstance = getScriptInstance()
@@ -41,6 +27,20 @@ internal class JdiVariableStateDelegateHandler(
 
         // Find field by name in scriptInstance's reference type
         return scriptInstance.findFieldByName(name)
+    }
+
+    override fun <T : Any> createProxyForValue(proxyType: Class<T>): T? {
+        require(proxyType.isInterface) {
+            "Type parameter T must be an interface, got ${proxyType.name}"
+        }
+        val underlyingValue = variableValueObjectReference ?: return null
+        val context = DebugValueContext(
+            debugProcess,
+            underlyingValue,
+            valueContext.evaluationContext
+        )
+
+        return createJdiObjectProxy(context, proxyType) as T?
     }
 
     private fun findVariableValueObjectReference(): ObjectReference? {
