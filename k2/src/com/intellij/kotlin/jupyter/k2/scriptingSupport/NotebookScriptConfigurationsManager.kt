@@ -27,8 +27,8 @@ import org.jetbrains.kotlin.analysis.api.projectStructure.KaModuleProvider
 import org.jetbrains.kotlin.analysis.api.projectStructure.analysisContextModule
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
-import org.jetbrains.kotlin.idea.core.script.k2.modules.ScriptRefinedConfigurationResolver
-import org.jetbrains.kotlin.idea.core.script.k2.modules.ScriptWorkspaceModelManager
+import org.jetbrains.kotlin.idea.core.script.k2.modules.ScriptConfigurationProviderExtension
+import org.jetbrains.kotlin.idea.core.script.k2.modules.updateKotlinScriptEntities
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
@@ -55,9 +55,9 @@ object KotlinNotebookScriptEntitySource : EntitySource
  *  Note that now for each [BackedNotebookVirtualFile] a separate module is created, and for module there are its own dependencies.
  */
 @Service(Service.Level.PROJECT)
-class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedConfigurationResolver, ScriptWorkspaceModelManager {
-    val cache: ConcurrentHashMap<VirtualFile, ScriptCompilationConfigurationResult> =
-        ConcurrentHashMap<VirtualFile, ScriptCompilationConfigurationResult>()
+class NotebookScriptConfigurationsManager(val project: Project) : ScriptConfigurationProviderExtension {
+    val cache: ConcurrentHashMap<VirtualFile, ScriptCompilationConfigurationResult> = ConcurrentHashMap()
+
     val workspaceModel: WorkspaceModel
         get() = project.workspaceModel
 
@@ -70,13 +70,12 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
      */
     override suspend fun create(
         virtualFile: VirtualFile, definition: ScriptDefinition
-    ): ScriptCompilationConfigurationResult? = get(virtualFile)
+    ): ScriptCompilationConfigurationResult? = get(project, virtualFile)
 
-    /**
-     * Depending on a [VirtualFileWindow] is dangerous as it might get invalidated soon after it was processed.
-     * For this end, one should associate configuration with top level [VirtualFile].
-     */
-    override fun get(virtualFile: VirtualFile): ScriptCompilationConfigurationResult? {
+    override fun get(
+        project: Project,
+        virtualFile: VirtualFile
+    ): ScriptCompilationConfigurationResult? {
         val topLevelFile = virtualFile.getTopLevelFileOrNull()
 
         if (topLevelFile == null) { // We may get there in the case of a light file we usually get as an intermediate result
@@ -98,7 +97,7 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
     }
 
     @OptIn(KaImplementationDetail::class)
-    fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
+    suspend fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
         val sdkHomePath = getSelectedSdkOrAnyAcceptable(project)?.homePath
         if (sdkHomePath == null) {
             notebookLogger().warn("No JDK SDK is set for the project")
@@ -118,6 +117,8 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
             topLevelFile to configurationWrapper
         }
 
+        updateWorkspaceModel()
+
         cache.putAll(configurations)
     }
 
@@ -136,13 +137,13 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptRefinedC
         this.analysisContextModule = randomModule
     }
 
-    override suspend fun updateWorkspaceModel(configurationPerFile: Map<VirtualFile, ScriptCompilationConfigurationResult>) {
+    suspend fun updateWorkspaceModel() {
         val tmp = MutableEntityStorage.create()
 
         val configurationsByNotebook = cache.toConfigurationInfoPerNotebook()
         creteOrUpdateScriptModules(configurationsByNotebook, tmp)
 
-        project.workspaceModel.update("Updating Kotlin Notebook scripting modules") { model -> // add new data, target only the base K2 script source
+        project.updateKotlinScriptEntities(KotlinNotebookScriptEntitySource) { model -> // add new data, target only the base K2 script source
             model.replaceBySource({ it is KotlinNotebookScriptEntitySource }, tmp)
         }
     }

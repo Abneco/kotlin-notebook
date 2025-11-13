@@ -197,11 +197,11 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         val configurationManager = NotebookScriptConfigurationsManager.getInstance(project)
 
         return KotlinNotebookPluginScope.getForProject(project).launch {
-            val updatedConfigurationsWithSdk = notebookModels.associate {
-                it.virtualFile to configurationManager.get(it.virtualFile)
+            notebookModels.associate {
+                it.virtualFile to configurationManager.get(project, it.virtualFile)
             }.filter { it.value != null }.mapValues { it.value!! }
 
-            configurationManager.updateWorkspaceModel(updatedConfigurationsWithSdk)
+            configurationManager.updateWorkspaceModel()
 
             edtWriteAction {
                 project.publishGlobalModuleStateModificationEvent()
