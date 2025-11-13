@@ -1,7 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.debug.proxy.libraries
 
-import com.intellij.kotlin.jupyter.debug.proxy.JdiDescriptorAwareApiDelegateProxy
+import com.intellij.kotlin.jupyter.debug.proxy.JdiDescriptorAwareProxy
 import com.intellij.kotlin.jupyter.debug.proxy.JdiFieldAccessPath
 import com.intellij.kotlin.jupyter.debug.proxy.JdiMethodInvocationSignature
 import com.intellij.kotlin.jupyter.debug.proxy.JdiProxyApiDelegate
@@ -29,12 +29,12 @@ interface DataFrameJdiProxy : JdiProxyApiDelegate {
 }
 
 
-interface DataFrameJdiColumnContainerProxy : JdiDescriptorAwareApiDelegateProxy, List<DataFrameJdiColumnProxy> {
+interface DataFrameJdiColumnContainerProxy : JdiDescriptorAwareProxy, List<DataFrameJdiColumnProxy> {
     override fun iterator(): Iterator<DataFrameJdiColumnProxy>
 }
 
 
-interface DataFrameJdiColumnProxy : JdiDescriptorAwareApiDelegateProxy {
+interface DataFrameJdiColumnProxy : JdiDescriptorAwareProxy {
     @get:JdiFieldAccessPath("name")
     val name: String
 
@@ -46,7 +46,7 @@ interface DataFrameJdiColumnProxy : JdiDescriptorAwareApiDelegateProxy {
 
     // Access it plainly, all the work is done by XCollectionAccessor
     @get:JdiMethodInvocationSignature("getValues")
-    val values: JdiDescriptorAwareApiDelegateProxy
+    val values: JdiDescriptorAwareProxy
 
     @JdiMethodInvocationSignature("get")
     fun get(index: Int): Any
