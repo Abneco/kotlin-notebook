@@ -48,16 +48,14 @@ internal object DebugConnectionUtility {
         }
     }
 
-    fun buildDebugEnvironment(project: Project, debugPort: Int?, config: DebugSessionConfig): DebugEnvironmentData? {
-        if (debugPort == null) return null
-
+    fun buildDebugEnvironment(project: Project, config: DebugSessionConfig): DebugEnvironmentData? {
         val runnerSettings = buildRunnerSettings(
             config.transport,
-            debugPort.toString(),
+            config.port.toString(),
             config.isLocal
         )
         val executionEnvironment = project.buildExecutionEnvironment(runnerSettings)
-        val remoteConnection = RemoteConnection(true, "127.0.0.1", debugPort.toString(), false)
+        val remoteConnection = RemoteConnection(true, "127.0.0.1", config.port.toString(), false)
         val runProfileState = executionEnvironment.buildRemoteRunProfileState(remoteConnection)
         val debugEnvironment = DefaultDebugEnvironment(executionEnvironment, runProfileState, remoteConnection, true)
 

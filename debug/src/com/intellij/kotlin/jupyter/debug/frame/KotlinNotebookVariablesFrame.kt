@@ -88,7 +88,6 @@ internal class KotlinNotebookVariablesFrame(
     override fun getSourcePosition(): XSourcePosition? = sourcePosition
 
     override fun computeChildren(node: XCompositeNode) {
-        debugSession.ensureSilentSessionAlive()
         if (!project.shouldShowNotebookVariables) {
             super.computeChildren(node)
             return

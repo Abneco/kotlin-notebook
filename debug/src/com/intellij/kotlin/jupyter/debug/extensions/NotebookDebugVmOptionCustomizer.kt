@@ -5,6 +5,7 @@ import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.extensions.KernelD
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
 import com.intellij.kotlin.jupyter.debug.session.KotlinNotebookDebugSessionManager
+import com.intellij.kotlin.jupyter.debug.util.debugFeaturesSupported
 import com.intellij.openapi.project.Project
 import java.nio.file.Path
 
@@ -19,8 +20,8 @@ class NotebookDebugVmOptionCustomizer : KernelDebugOptionsCustomizer {
             return null
         }
 
-        val isSeparate = debugService.virtualFile.notebook.sessionRunMode == KotlinNotebookSessionRunMode.SEPARATE_PROCESS
-        if (!isSeparate) return null
+        val isEnabled = debugService.virtualFile.notebook.sessionRunMode.debugFeaturesSupported
+        if (!isEnabled) return null
 
         return debugService.provideFreshDebugPort()
     }

@@ -3,7 +3,7 @@ package com.intellij.kotlin.jupyter.debug.session
 
 import com.intellij.debugger.engine.DebugProcess
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.execution.util.findNotebookVirtualFileOrNull
+import com.intellij.jupyter.execution.util.findNotebookVirtualFileByPath
 import com.intellij.kotlin.jupyter.core.settings.isKernelVersionEnoughForInstrumentation
 import com.intellij.kotlin.jupyter.core.util.NotebookProjectLevelService
 import com.intellij.kotlin.jupyter.debug.util.connection.DebugConnectionUtility
@@ -52,12 +52,14 @@ internal class KotlinNotebookDebugSessionManager(
     }
 
     fun getByPath(path: Path): KotlinNotebookFileDebugSession? {
-        return mapping.firstNotNullOfOrNull {
+        val existingSession = mapping.firstNotNullOfOrNull {
             if (it.key.path == path.toString()) it.value else null
-        } ?: run {
-            val backedNotebookVirtualFile = path.findNotebookVirtualFileOrNull() ?: return null
-            getOrCreate(backedNotebookVirtualFile)
         }
+
+        return if (existingSession == null) {
+            val backedNotebookVirtualFile = findNotebookVirtualFileByPath(path) ?: return null
+            getOrCreate(backedNotebookVirtualFile)
+        } else existingSession
     }
 
     override fun createInstance(virtualFile: BackedNotebookVirtualFile, fileScope: CoroutineScope): KotlinNotebookFileDebugSession {
