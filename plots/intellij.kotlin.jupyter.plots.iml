@@ -67,8 +67,6 @@
         </SOURCES>
       </library>
     </orderEntry>
-    <orderEntry type="library" name="xml-apis-ext" level="project" />
-    <orderEntry type="library" name="batik-transcoder" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="kotlin-stdlib" level="project" />
     <orderEntry type="module" module-name="intellij.libraries.jackson" scope="PROVIDED" />
     <orderEntry type="module" module-name="intellij.libraries.jackson.databind" scope="PROVIDED" />
@@ -87,6 +85,7 @@
     <orderEntry type="module" module-name="intellij.platform.ide.ui" />
     <orderEntry type="module" module-name="intellij.jupyter.execution" />
     <orderEntry type="module" module-name="intellij.libraries.kotlinx.datetime" />
+    <orderEntry type="module" module-name="intellij.libraries.batik" scope="PROVIDED" />
     <orderEntry type="module" module-name="intellij.charts" />
   </component>
 </module>

@@ -23,6 +23,11 @@ jvm_provided_library(
   lib = "@community//libraries/jackson/databind"
 )
 
+jvm_provided_library(
+  name = "libraries_batik_provided",
+  lib = "//libraries/batik"
+)
+
 jvm_library(
   name = "plots",
   module_name = "intellij.kotlin.jupyter.plots",
@@ -36,8 +41,6 @@ jvm_library(
     "//plugins/kotlin/jupyter/core",
     "@ultimate_lib//:kotlin-jupyter-plots-jetbrains-lets-plot-export-shadowed",
     "@ultimate_lib//:kotlin-jupyter-plots-jetbrains-lets-plot-kotlin-json",
-    "@ultimate_lib//:xml-apis-ext",
-    "@ultimate_lib//:batik-transcoder",
     "@ultimate_lib//:kotlin-stdlib-provided",
     "@community//libraries/kotlinx/serialization/core",
     "@community//libraries/kotlinx/serialization/json",
@@ -57,6 +60,7 @@ jvm_library(
     "//platform/charts",
     ":community_libraries_jackson_jackson_provided",
     ":community_libraries_jackson_databind_provided",
+    ":libraries_batik_provided",
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.plots` end

@@ -1,5 +1,6 @@
 - name: lib/batik-transcoder.jar
   library: batik-transcoder
+  module: intellij.libraries.batik
   files:
   - name: $MAVEN_REPOSITORY$/org/jetbrains/intellij/deps/batik/batik-transcoder/1/batik-transcoder-1.jar
   - name: $MAVEN_REPOSITORY$/org/jetbrains/intellij/deps/batik/batik-awt-util/1/batik-awt-util-1.jar
@@ -16,7 +17,6 @@
   - name: $MAVEN_REPOSITORY$/org/jetbrains/intellij/deps/batik/batik-util/1/batik-util-1.jar
   - name: $MAVEN_REPOSITORY$/org/jetbrains/intellij/deps/batik/batik-constants/1/batik-constants-1.jar
   - name: $MAVEN_REPOSITORY$/org/jetbrains/intellij/deps/batik/batik-xml/1/batik-xml-1.jar
-  reason: withProjectLibrary
 - name: lib/kotlin-jupyter-plugin.jar
   modules:
   - name: intellij.kotlin.jupyter.plugin
@@ -56,6 +56,6 @@
   - name: intellij.kotlin.jupyter.tables
 - name: lib/xml-apis-ext.jar
   library: xml-apis-ext
+  module: intellij.libraries.batik
   files:
   - name: $MAVEN_REPOSITORY$/xml-apis/xml-apis-ext/1/xml-apis-ext-1.jar
-  reason: withProjectLibrary
