@@ -2,12 +2,7 @@
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.workspace.jps.entities.SdkId
-import org.jetbrains.kotlin.idea.core.script.k2.configurations.sdkId
-import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
-import kotlin.script.experimental.api.valueOrNull
-import kotlin.script.experimental.api.valueOrThrow
 
 /**
  * K2-based plugin abstraction for describing configuration data for the script.
@@ -17,37 +12,5 @@ import kotlin.script.experimental.api.valueOrThrow
  */
 class KotlinNotebookScriptModel(
     val virtualFile: VirtualFile,
-    val refinedConfigurationResult: ScriptCompilationConfigurationWrapper
+    val refinedConfiguration: ScriptCompilationConfigurationWrapper
 )
-
-data class KotlinNotebookScriptsModuleConfigurationInfo(
-    val notebookFile: VirtualFile,
-    val configuration: ScriptCompilationConfigurationWrapper,
-    val sdkId: SdkId?
-)
-
-/**
- * Transforms all passed [ScriptCompilationConfigurationResult] to a map separated by [com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile]
- * Each [KotlinNotebookScriptsModuleConfigurationInfo] contains all necessary information for each cell.
- */
-internal fun Map<VirtualFile, ScriptCompilationConfigurationResult>.toConfigurationInfoPerNotebook(): Map<VirtualFile, KotlinNotebookScriptsModuleConfigurationInfo> {
-    val sdk = values.firstOrNull()?.valueOrNull()?.configuration?.sdkId
-    val configurations = this.mapValues { it.value }
-
-    return configurations.filterNot {
-        it.value.valueOrNull() == null
-    }.mapValues { entry ->
-        val (topLevelFile, configuration) = entry
-        KotlinNotebookScriptsModuleConfigurationInfo(
-            topLevelFile,
-            configuration.valueOrThrow(),
-            sdk
-        )
-    }
-}
-
-internal fun Map<VirtualFile, ScriptCompilationConfigurationResult>.getConfigurationForNotebook(notebookFile: VirtualFile): ScriptCompilationConfigurationWrapper? {
-    if (this.isEmpty()) return null
-
-    return this[notebookFile]?.valueOrNull()
-}

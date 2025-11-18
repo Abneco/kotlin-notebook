@@ -7,7 +7,6 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.ScriptingEntitiesConsis
 import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceEntityDependencies
 import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceScriptEntities
 import com.intellij.openapi.application.smartReadAction
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.workspace.workspaceModel
@@ -17,12 +16,12 @@ import com.intellij.psi.search.GlobalSearchScopesCore
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.toVirtualFileUrl
 import org.jetbrains.kotlin.idea.stubindex.KotlinFullClassNameIndex
-import kotlin.collections.toTypedArray
 import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.baseClass
 import kotlin.script.experimental.api.dependencies
 import kotlin.script.experimental.api.implicitReceivers
+import kotlin.script.experimental.api.valueOrNull
 
 private class ScriptingEntitiesConsistencyVerifierFactoryK2 : ScriptingEntitiesConsistencyVerifier.Factory {
     override fun create(project: Project): ScriptingEntitiesConsistencyVerifier {
@@ -49,8 +48,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     }
 
     private fun checkSourceIsNotEmpty(notebookFile: BackedNotebookVirtualFile): Boolean {
-        val scriptConfigurationsSource = project.service<NotebookScriptConfigurationsManager>().cache
-        return scriptConfigurationsSource.getConfigurationForNotebook(notebookFile.file) != null
+        return NotebookScriptConfigurationsManager.getInstance(project).get(project, notebookFile.file) != null
     }
 
     /**
@@ -100,9 +98,9 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     override fun isScriptFileConfigurationConsistentWithModel(
         virtualFile: BackedNotebookVirtualFile, compilationConfiguration: ScriptCompilationConfiguration
     ): Boolean {
-        val configurationsCache = project.service<NotebookScriptConfigurationsManager>().cache
-        val configurationForNotebook = configurationsCache.getConfigurationForNotebook(virtualFile.file)
-        if (configurationForNotebook == null) return false
+        val configurationForNotebook =
+            NotebookScriptConfigurationsManager.getInstance(project).get(project, virtualFile.file)?.valueOrNull()
+                ?: return false
 
         /**
          * Here we need to perform 2 steps check:

@@ -18,12 +18,12 @@ import kotlin.io.path.isRegularFile
  */
 abstract class NotebookConfigurationRootsViewBase(
     protected val project: Project,
-    protected val configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo
+    protected val configurationInfo: KotlinNotebookScriptModel
 ) : NotebookConfigurationRootsView {
     override val dependenciesRoots: List<Path> get() =
-        filterTargetDependencies(project, configurationInfo.configuration.dependenciesClassPath.map { it.toPath() })
+        filterTargetDependencies(project, configurationInfo.refinedConfiguration.dependenciesClassPath.map { it.toPath() })
     override val dependenciesSources: List<Path> get() =
-        filterTargetDependencies(project, configurationInfo.configuration.dependenciesSources.map { it.toPath() })
+        filterTargetDependencies(project, configurationInfo.refinedConfiguration.dependenciesSources.map { it.toPath() })
 
     protected abstract fun filterTargetDependencies(project: Project, candidates: List<Path>): List<Path>
 }
@@ -34,12 +34,12 @@ abstract class NotebookConfigurationRootsViewBase(
  */
 class CompiledSnippets(
     project: Project,
-    configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo
+    configurationInfo: KotlinNotebookScriptModel
 ) : NotebookConfigurationRootsViewBase(project, configurationInfo) {
     override val typeName: String = "Compiled"
 
     override fun filterTargetDependencies(project: Project, candidates: List<Path>): List<Path> {
-        val backedNotebookFile = configurationInfo.notebookFile.toBackedNotebookFile()
+        val backedNotebookFile = configurationInfo.virtualFile.toBackedNotebookFile()
         val projectModuleDependencies = project
             .sourceRootsForProjectModuleDependencies(backedNotebookFile)
             .toSet()
@@ -67,7 +67,7 @@ class CompiledSnippets(
  */
 class Jars(
     project: Project,
-    configurationInfo: KotlinNotebookScriptsModuleConfigurationInfo
+    configurationInfo: KotlinNotebookScriptModel
 ) : NotebookConfigurationRootsViewBase(project, configurationInfo) {
     override val typeName: String = "Jars"
 

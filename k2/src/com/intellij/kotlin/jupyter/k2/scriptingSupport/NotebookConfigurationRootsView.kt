@@ -54,7 +54,7 @@ sealed interface NotebookConfigurationRootsView {
 }
 
 
-internal fun KotlinNotebookScriptsModuleConfigurationInfo.createConfigurationDependencyViews(project: Project): List<NotebookConfigurationRootsView> {
+internal fun KotlinNotebookScriptModel.createConfigurationDependencyViews(project: Project): List<NotebookConfigurationRootsView> {
     val info = this
     return buildList {
         add(CompiledSnippets(project, info))

@@ -1,7 +1,6 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.k2.scriptingSupport.updater
 
-import com.intellij.codeInsight.daemon.impl.analysis.HighlightingSettingsPerFile
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
@@ -16,7 +15,6 @@ import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptModel
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsManager
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
-import com.intellij.openapi.application.edtWriteAction
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.serviceAsync
 import com.intellij.openapi.components.serviceIfCreated
@@ -24,16 +22,12 @@ import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.jetbrains.kotlin.analysis.api.platform.modification.publishGlobalModuleStateModificationEvent
-import org.jetbrains.kotlin.analysis.api.platform.modification.publishGlobalScriptModuleStateModificationEvent
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionProviderImpl
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionsModificationTracker
-import org.jetbrains.kotlin.idea.core.script.v1.ScriptDependenciesModificationTracker
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import java.util.concurrent.CancellationException
@@ -136,18 +130,17 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         LOG.debug("Performing update for notebooks: $notebookNames")
 
         val scripts = mutableMapOf<KotlinNotebookScriptModel, KtFile>()
-        val configurationCache = project.serviceAsync<NotebookScriptConfigurationsManager>().cache
         for (notebook in notebooks) {
             val notebookService = JupyterCompilerService.getForFile(project, notebook)
             val perFileScripts = readAction {
-                val scriptsToRefine = notebookService.getFilesToRefine().firstOrNull { it.virtualFile.isValid }
-                if (scriptsToRefine == null) {
+                val scriptToRefine = notebookService.getFilesToRefine().firstOrNull { it.virtualFile.isValid }
+                if (scriptToRefine == null) {
                     return@readAction null
                 }
 
                 // refine only once as they are the same per notebook
                 val refinedConfiguration = try {
-                    val anyKtFile = scriptsToRefine.ktFile
+                    val anyKtFile = scriptToRefine.ktFile
                     JupyterCompilerPerFileService.getConfiguration(anyKtFile)?.configuration!!
                 } catch (e: Throwable) {
                     throw e
@@ -161,7 +154,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                     "Stable implicit receivers for notebook '${notebook.file.name}': ${stableClasses?.map { it.typeName }}"
                 }
 
-                val storedConfiguration = configurationCache[notebook.file]
+                val storedConfiguration = NotebookScriptConfigurationsManager.getInstance(project).get(project, notebook.file)
                     ?.valueOrNull()?.configuration
 
                 // skip if exists
@@ -170,12 +163,12 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                 }
 
                 KotlinNotebookScriptModel(
-                    scriptsToRefine.virtualFile,
+                    scriptToRefine.virtualFile,
                     ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
-                        scriptsToRefine,
+                        scriptToRefine,
                         refinedConfiguration
                     )
-                ) to scriptsToRefine.ktFile
+                ) to scriptToRefine.ktFile
             }
 
             if (perFileScripts != null) {
@@ -189,27 +182,5 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         }
 
         project.serviceAsync<NotebookScriptConfigurationsManager>().updateConfigurations(scripts.keys)
-        // Might be the case our own strategy is needed
-        updateWorkspaceConfiguration(scripts.keys).join()
-    }
-
-    private fun updateWorkspaceConfiguration(notebookModels: Collection<KotlinNotebookScriptModel>): Job {
-        val configurationManager = NotebookScriptConfigurationsManager.getInstance(project)
-
-        return KotlinNotebookPluginScope.getForProject(project).launch {
-            notebookModels.associate {
-                it.virtualFile to configurationManager.get(project, it.virtualFile)
-            }.filter { it.value != null }.mapValues { it.value!! }
-
-            configurationManager.updateWorkspaceModel()
-
-            edtWriteAction {
-                project.publishGlobalModuleStateModificationEvent()
-                project.publishGlobalScriptModuleStateModificationEvent()
-            }
-
-            ScriptDependenciesModificationTracker.getInstance(project).incModificationCount()
-            HighlightingSettingsPerFile.getInstance(project).incModificationCount()
-        }
     }
 }

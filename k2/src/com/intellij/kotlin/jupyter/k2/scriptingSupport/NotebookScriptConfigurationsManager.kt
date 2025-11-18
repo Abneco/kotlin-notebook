@@ -4,7 +4,6 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
-import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.getSelectedSdkOrAnyAcceptable
 import com.intellij.kotlin.jupyter.core.scriptingSupport.with
 import com.intellij.kotlin.jupyter.core.util.debugInTests
@@ -14,27 +13,25 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
 import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.workspaceModel
 import com.intellij.platform.workspace.storage.EntitySource
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrlManager
-import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
-import org.jetbrains.kotlin.analysis.api.projectStructure.KaModuleProvider
 import org.jetbrains.kotlin.analysis.api.projectStructure.analysisContextModule
+import org.jetbrains.kotlin.idea.core.script.k2.asEntity
+import org.jetbrains.kotlin.idea.core.script.k2.configurations.sdkId
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
 import org.jetbrains.kotlin.idea.core.script.k2.modules.ScriptConfigurationProviderExtension
 import org.jetbrains.kotlin.idea.core.script.k2.modules.updateKotlinScriptEntities
-import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import java.io.File
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.script.experimental.api.asSuccess
+import kotlin.script.experimental.api.valueOrNull
 import kotlin.script.experimental.jvm.jdkHome
 import kotlin.script.experimental.jvm.jvm
 
@@ -56,8 +53,6 @@ object KotlinNotebookScriptEntitySource : EntitySource
  */
 @Service(Service.Level.PROJECT)
 class NotebookScriptConfigurationsManager(val project: Project) : ScriptConfigurationProviderExtension {
-    val cache: ConcurrentHashMap<VirtualFile, ScriptCompilationConfigurationResult> = ConcurrentHashMap()
-
     val workspaceModel: WorkspaceModel
         get() = project.workspaceModel
 
@@ -65,36 +60,29 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptConfigur
         get() = project.workspaceModel.getVirtualFileUrlManager()
 
     /**
-     * For now, we do not create it here
-     * as we have our own cycle of updates.
+     * For now, we do not create it here as we have our own cycle of updates.
+     * Notebook scheduler should control workspace model updates
      */
     override suspend fun create(
         virtualFile: VirtualFile, definition: ScriptDefinition
-    ): ScriptCompilationConfigurationResult? = get(project, virtualFile)
+    ): ScriptCompilationConfigurationResult? = null
 
     override fun get(
         project: Project,
         virtualFile: VirtualFile
-    ): ScriptCompilationConfigurationResult? {
-        val topLevelFile = virtualFile.getTopLevelFileOrNull()
-
-        if (topLevelFile == null) { // We may get there in the case of a light file we usually get as an intermediate result
-            // of some refactorings / intention previews
-            notebookLogger().info("No top level file found for ${virtualFile.name}")
-            return null
-        }
-
-        val configuration = cache[topLevelFile]
-
-        return if (cache.isEmpty()) {
-            JupyterCompilerService.getInstance(project).getDefaultConfiguration(topLevelFile)
-        } else {
-            if (configuration == null) {
-                notebookLogger().warn("No configuration found for ${topLevelFile.name}")
-            }
-            configuration
-        }
+    ): ScriptCompilationConfigurationResult? = virtualFile.topLevelFile?.let {
+        super.get(project, it)
     }
+
+    private val VirtualFile.topLevelFile: VirtualFile?
+        get() {
+            val topLevelFile = getTopLevelFileOrNull()
+            if (topLevelFile == null) {
+                notebookLogger().info("No top level file found for ${name}")
+            }
+
+            return topLevelFile
+        }
 
     @OptIn(KaImplementationDetail::class)
     suspend fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
@@ -107,7 +95,7 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptConfigur
             val virtualFile = ktScript.virtualFile
             virtualFile.analysisContextModule = null
 
-            val configurationWrapper = ktScript.refinedConfigurationResult.with {
+            val configurationWrapper = ktScript.refinedConfiguration.with {
                 if (sdkHomePath != null) {
                     jvm.jdkHome(File(sdkHomePath))
                 }
@@ -117,44 +105,23 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptConfigur
             topLevelFile to configurationWrapper
         }
 
-        updateWorkspaceModel()
-
-        cache.putAll(configurations)
+        updateWorkspaceModel(configurations)
     }
 
-    /**
-     * Since we already detected that there is no configuration provided,
-     * one needs to set up any existing context module to be analyzed for the smooth analysis.
-     * Note, it's important to invalidate this key as soon as possible.
-     * It happens in [updateConfigurations].
-     */
-    @OptIn(KaImplementationDetail::class)
-    @RequiresReadLock
-    private fun VirtualFile.setUpTemporaryModuleForAnalysis(donorInjectedFile: VirtualFile) {
-        val randomKtFile = donorInjectedFile.findPsiFile(project) as? KtFile ?: return
-        val randomModule = KaModuleProvider.getInstance(project).getModule(randomKtFile, null)
-
-        this.analysisContextModule = randomModule
-    }
-
-    suspend fun updateWorkspaceModel() {
+    suspend fun updateWorkspaceModel(resultPerFile: Map<VirtualFile, ScriptCompilationConfigurationResult>) {
         val tmp = MutableEntityStorage.create()
 
-        val configurationsByNotebook = cache.toConfigurationInfoPerNotebook()
-        creteOrUpdateScriptModules(configurationsByNotebook, tmp)
+        for ((file, result) in resultPerFile) {
+            tmp.addNotebookConfiguration(
+                KotlinNotebookScriptModel(
+                    file,
+                    result.valueOrNull() ?: continue
+                )
+            )
+        }
 
         project.updateKotlinScriptEntities(KotlinNotebookScriptEntitySource) { model -> // add new data, target only the base K2 script source
             model.replaceBySource({ it is KotlinNotebookScriptEntitySource }, tmp)
-        }
-    }
-
-    // this might be parallel
-    private suspend fun creteOrUpdateScriptModules(
-        configurationsPerNotebook: Map<VirtualFile, KotlinNotebookScriptsModuleConfigurationInfo>,
-        mutableEntityStorage: MutableEntityStorage
-    ) {
-        for ((_, moduleConfigurations) in configurationsPerNotebook) {
-            updateNotebookConfiguration(project, mutableEntityStorage, moduleConfigurations)
         }
     }
 
@@ -170,35 +137,36 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptConfigur
             }
         }
 
+        // Could be clean with replaceBySource ({ it is NotebookEntitySource }, tmp)
+        // where tmp contains only 1 script entity with default dependencies
         workspaceModel.update("Clearing Kotlin Notebook scripting modules for ${notebookFile.file.name}") { model ->
             model.applyChangesFrom(tmpSnapshot)
         }
     }
 
-    private fun updateNotebookConfiguration(
-        project: Project,
-        mutableEntityStorage: MutableEntityStorage,
-        notebookModuleConfiguration: KotlinNotebookScriptsModuleConfigurationInfo
+    private fun MutableEntityStorage.addNotebookConfiguration(
+        notebookModuleConfiguration: KotlinNotebookScriptModel
     ) {
         fun buildLibraryDependencies(): Collection<KotlinScriptLibraryEntityId> {
             val dependencyViews = notebookModuleConfiguration.createConfigurationDependencyViews(project)
             return dependencyViews.flatMapTo(mutableSetOf()) {
-                it.getOrUpdateLibraryDependencies(project, mutableEntityStorage)
+                it.getOrUpdateLibraryDependencies(project, this)
             }
         }
 
-        val virtualFile = notebookModuleConfiguration.notebookFile
+        val virtualFile = notebookModuleConfiguration.virtualFile
         val libraryIds = buildLibraryDependencies().toList()
 
         notebookLogger().debugInTests {
             "Updating scripting module for notebook '${virtualFile.nameWithoutExtension}' with libraries: $libraryIds"
         }
 
-        mutableEntityStorage addEntity KotlinScriptEntity(
+        this addEntity KotlinScriptEntity(
             virtualFile.toVirtualFileUrl(virtualFileUrlManager), libraryIds,
             KotlinNotebookScriptEntitySource
         ) {
-            this.sdkId = notebookModuleConfiguration.sdkId
+            configuration = notebookModuleConfiguration.refinedConfiguration.configuration?.asEntity()
+            sdkId = notebookModuleConfiguration.refinedConfiguration.configuration?.sdkId
         }
     }
 
