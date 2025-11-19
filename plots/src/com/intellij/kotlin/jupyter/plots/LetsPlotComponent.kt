@@ -40,12 +40,12 @@ class LetsPlotComponent : JBLayeredPane() {
     private var _showToolbar: Boolean = false
     val showToolbar: Boolean get() = _showToolbar
 
-    private val currentState get() = LetsPlotComponentConfiguredState(
+    private val currentState get() = LetsPlotComponentState(
         dataKey,
         getCurrentLetsPlotFlavor(),
         showToolbar,
     )
-    private var previousState: LetsPlotComponentConfiguredState? = null
+    private var previousState: LetsPlotComponentState? = null
 
     fun initialize(dataKey: LetsPlotOutputDataKey) {
         _dataKey = dataKey
@@ -63,7 +63,7 @@ class LetsPlotComponent : JBLayeredPane() {
         if (currentState == previousState) return
         previousState = currentState
 
-        reinitComponent()
+        reinitComponent(currentState)
     }
 
     override fun doLayout() {
@@ -89,7 +89,11 @@ class LetsPlotComponent : JBLayeredPane() {
     }
 
     private fun reinitComponent() {
-        reinitComponent(getSpec() ?: return)
+        reinitComponent(currentState)
+    }
+
+    private fun reinitComponent(state: LetsPlotComponentState) {
+        reinitComponent(getSpec(state) ?: return)
     }
 
     private fun reinitComponent(spec: MutableLetsPlotSpec) {
@@ -192,7 +196,7 @@ class LetsPlotComponent : JBLayeredPane() {
 }
 
 private fun getSpec(
-    state: LetsPlotComponentConfiguredState,
+    state: LetsPlotComponentState,
 ): MutableLetsPlotSpec? {
     val dataKey = state.dataKey ?: return null
     val rawSpec = dataKey.spec.toMutableMap().also { spec ->
