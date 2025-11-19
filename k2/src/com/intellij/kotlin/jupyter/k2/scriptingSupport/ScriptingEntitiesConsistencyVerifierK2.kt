@@ -48,7 +48,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     }
 
     private fun checkSourceIsNotEmpty(notebookFile: BackedNotebookVirtualFile): Boolean {
-        return NotebookScriptConfigurationsManager.getInstance(project).get(project, notebookFile.file) != null
+        return NotebookScriptConfigurationsManager.getInstance(project).getConfiguration(notebookFile.file) != null
     }
 
     /**
@@ -99,7 +99,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
         virtualFile: BackedNotebookVirtualFile, compilationConfiguration: ScriptCompilationConfiguration
     ): Boolean {
         val configurationForNotebook =
-            NotebookScriptConfigurationsManager.getInstance(project).get(project, virtualFile.file)?.valueOrNull()
+            NotebookScriptConfigurationsManager.getInstance(project).getConfiguration(virtualFile.file)?.valueOrNull()
                 ?: return false
 
         /**

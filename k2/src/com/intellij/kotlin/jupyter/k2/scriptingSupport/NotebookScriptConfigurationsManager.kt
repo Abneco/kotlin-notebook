@@ -52,7 +52,7 @@ object KotlinNotebookScriptEntitySource : EntitySource
  *  Note that now for each [BackedNotebookVirtualFile] a separate module is created, and for module there are its own dependencies.
  */
 @Service(Service.Level.PROJECT)
-class NotebookScriptConfigurationsManager(val project: Project) : ScriptConfigurationProviderExtension {
+class NotebookScriptConfigurationsManager(override val project: Project) : ScriptConfigurationProviderExtension {
     val workspaceModel: WorkspaceModel
         get() = project.workspaceModel
 
@@ -63,15 +63,12 @@ class NotebookScriptConfigurationsManager(val project: Project) : ScriptConfigur
      * For now, we do not create it here as we have our own cycle of updates.
      * Notebook scheduler should control workspace model updates
      */
-    override suspend fun create(
+    override suspend fun createConfiguration(
         virtualFile: VirtualFile, definition: ScriptDefinition
     ): ScriptCompilationConfigurationResult? = null
 
-    override fun get(
-        project: Project,
-        virtualFile: VirtualFile
-    ): ScriptCompilationConfigurationResult? = virtualFile.topLevelFile?.let {
-        super.get(project, it)
+    override fun getConfiguration(virtualFile: VirtualFile): ScriptCompilationConfigurationResult? = virtualFile.topLevelFile?.let {
+        super.getConfiguration(it)
     }
 
     private val VirtualFile.topLevelFile: VirtualFile?

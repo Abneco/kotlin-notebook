@@ -154,7 +154,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                     "Stable implicit receivers for notebook '${notebook.file.name}': ${stableClasses?.map { it.typeName }}"
                 }
 
-                val storedConfiguration = NotebookScriptConfigurationsManager.getInstance(project).get(project, notebook.file)
+                val storedConfiguration = NotebookScriptConfigurationsManager.getInstance(project).getConfiguration(notebook.file)
                     ?.valueOrNull()?.configuration
 
                 // skip if exists
