@@ -15,14 +15,12 @@ import org.jetbrains.annotations.TestOnly
 import org.jetbrains.letsPlot.awt.plot.component.PlotPanel
 import org.jetbrains.letsPlot.commons.geometry.DoubleVector
 import org.jetbrains.letsPlot.core.spec.FigKind
-import org.jetbrains.letsPlot.core.spec.Option
 import org.jetbrains.letsPlot.core.spec.config.CompositeFigureConfig
 import org.jetbrains.letsPlot.core.spec.config.PlotConfig
 import org.jetbrains.letsPlot.core.spec.front.PlotConfigFrontend
 import org.jetbrains.letsPlot.core.util.MonolithicCommon
 import org.jetbrains.letsPlot.core.util.PlotSizeHelper
 import org.jetbrains.letsPlot.core.util.sizing.SizingPolicy
-import org.jetbrains.letsPlot.toolkit.json.deserializeJsonMap
 import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Rectangle
@@ -35,23 +33,37 @@ import kotlin.math.roundToInt
 class LetsPlotComponent : JBLayeredPane() {
     private var plotPanel: PlotPanel? = null
     private var transparentPanel: JPanel? = null
-    private var _dataKey: LetsPlotOutputDataKey? = null
-    private var previousColorFlavor: LetsPlotFlavor? = null
 
+    private var _dataKey: LetsPlotOutputDataKey? = null
     val dataKey: LetsPlotOutputDataKey? get() = _dataKey
 
+    private var _showToolbar: Boolean = false
+    val showToolbar: Boolean get() = _showToolbar
+
+    private val currentState get() = LetsPlotComponentConfiguredState(
+        dataKey,
+        getCurrentLetsPlotFlavor(),
+        showToolbar,
+    )
+    private var previousState: LetsPlotComponentConfiguredState? = null
+
     fun initialize(dataKey: LetsPlotOutputDataKey) {
-        reinitComponent(getSpec(dataKey))
         _dataKey = dataKey
+        _showToolbar = dataKey.spec.isToolbarEnabled
+        reinitComponent()
+    }
+
+    fun toggleToolbar() {
+        _showToolbar = !_showToolbar
+        reinitComponent()
     }
 
     override fun updateUI() {
-        val colorFlavor = getCurrentLetsPlotFlavor()
-        val data = dataKey ?: return
-        if (previousColorFlavor == colorFlavor) return
-        previousColorFlavor = colorFlavor
+        val currentState = this.currentState
+        if (currentState == previousState) return
+        previousState = currentState
 
-        reinitComponent(getSpec(data, colorFlavor))
+        reinitComponent()
     }
 
     override fun doLayout() {
@@ -60,8 +72,7 @@ class LetsPlotComponent : JBLayeredPane() {
         if (mySize.width <= 0 || mySize.height <= 0) return
 
         val myComponent = plotPanel ?: return
-        val myData = dataKey ?: return
-        val spec = getSpec(myData)
+        val spec = getSpec() ?: return
         val plotSize = plotSize(spec, mySize, SizingPolicy.fitContainerSize(true)) ?: mySize
         myComponent.bounds = Rectangle(plotSize)
         // This is a workaround: a plot panel may skip first resize event, but we need it to rebuild the plot
@@ -72,9 +83,13 @@ class LetsPlotComponent : JBLayeredPane() {
     }
 
     override fun getPreferredSize(): Dimension {
-        return dataKey?.let {
-            plotSize(getSpec(it), parent?.size, SizingPolicy.notebookCell())
+        return getSpec()?.let {
+            plotSize(it, parent?.size, SizingPolicy.notebookCell())
         } ?: plotPanel?.preferredSize ?: super.getPreferredSize()
+    }
+
+    private fun reinitComponent() {
+        reinitComponent(getSpec() ?: return)
     }
 
     private fun reinitComponent(spec: MutableLetsPlotSpec) {
@@ -101,7 +116,7 @@ class LetsPlotComponent : JBLayeredPane() {
             }
         )
 
-        val showToolbar = processedSpec.containsKey(Option.Meta.Kind.GG_TOOLBAR)
+        val showToolbar = processedSpec.isToolbarEnabled
         val plotPanel: PlotPanel = object : PlotPanel(
             plotComponentProvider = plotComponentProvider,
             preferredSizeFromPlot = true,
@@ -161,11 +176,13 @@ class LetsPlotComponent : JBLayeredPane() {
         this.transparentPanel = transparentPanel
     }
 
+    private fun getSpec() = getSpec(currentState)
+
     @TestOnly
     @Suppress("unused")
     fun getPlotHtml(): String = dataKey?.let {
         buildHtmlFromRawPlotSpec(
-            deserializeJsonMap(it.spec).toMutableMap()
+            it.spec.toMutableMap()
         )
     } ?: ""
 
@@ -174,12 +191,15 @@ class LetsPlotComponent : JBLayeredPane() {
     }
 }
 
-private fun getSpec(dataKey: LetsPlotOutputDataKey) = getSpec(dataKey, getCurrentLetsPlotFlavor())
-private fun getSpec(dataKey: LetsPlotOutputDataKey, flavor: LetsPlotFlavor): MutableLetsPlotSpec {
-    val rawSpec = deserializeJsonMap(dataKey.spec).toMutableMap().also {
+private fun getSpec(
+    state: LetsPlotComponentConfiguredState,
+): MutableLetsPlotSpec? {
+    val dataKey = state.dataKey ?: return null
+    val rawSpec = dataKey.spec.toMutableMap().also { spec ->
         if (dataKey.applyColorScheme) {
-            updateFlavor(it, flavor)
+            updateFlavor(spec, state.colorFlavor)
         }
+        configureToolbar(spec, state.showToolbar)
     }
     val processedSpec = MonolithicCommon.processRawSpecs(rawSpec, false)
     return processedSpec.toMutableMap()
@@ -202,5 +222,5 @@ private fun plotSize(spec: LetsPlotSpec, containerSize: Dimension?, sizingPolicy
             PlotSizeHelper.singlePlotSize(spec, containerSizeVec, sizingPolicy, config.facets, config.containsLiveMap)
         }
     }
-    return plotSize.run { Dimension(x.roundToInt(),y.roundToInt()) }
+    return plotSize.run { Dimension(x.roundToInt(), y.roundToInt()) }
 }

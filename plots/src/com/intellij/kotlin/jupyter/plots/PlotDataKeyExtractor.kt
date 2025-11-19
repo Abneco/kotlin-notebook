@@ -13,6 +13,7 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOption
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.openapi.editor.Editor
 import com.intellij.util.asSafely
+import org.jetbrains.letsPlot.toolkit.json.deserializeJsonMap
 
 
 class PlotDataKeyExtractor: NotebookDisplayOutputDataKeyExtractor {
@@ -32,7 +33,7 @@ class PlotDataKeyExtractor: NotebookDisplayOutputDataKeyExtractor {
             "lets_plot_spec" -> plotValue["output"].asSafely<ObjectNode>()?.let { outputSpec ->
                 val applyColorScheme = plotValue[APPLY_COLOR_SCHEME_KEY].asSafely<BooleanNode>()?.asBoolean() != false
                 LetsPlotOutputDataKey(
-                    convertObject(outputSpec),
+                    deserializeJsonMap(convertObject(outputSpec)),
                     executionCount,
                     applyColorScheme,
                 )

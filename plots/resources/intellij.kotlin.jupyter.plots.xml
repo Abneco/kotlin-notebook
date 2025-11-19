@@ -41,10 +41,15 @@
                 class="com.intellij.kotlin.jupyter.plots.export.CopyPlotAction"
                 icon="AllIcons.Actions.Copy"/>
 
+        <action id="TogglePlotToolbar"
+                class="com.intellij.kotlin.jupyter.plots.TogglePlotToolbarAction"
+                icon="AllIcons.Actions.GroupByModuleGroup"/>
+
         <group id="LetsPlotActions">
             <reference ref="SaveLetsPlot"/>
             <reference ref="SaveAllLetsPlots"/>
             <reference ref="CopyLetsPlot"/>
+            <reference ref="TogglePlotToolbar"/>
         </group>
     </actions>
 </idea-plugin>
