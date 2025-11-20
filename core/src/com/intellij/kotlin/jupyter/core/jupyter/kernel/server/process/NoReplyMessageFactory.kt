@@ -16,7 +16,7 @@ class NoReplyMessageFactory(
 ): MessageFactory {
     override val sessionId: String = sessionId.id
     override val contextMessage: RawMessage? get() = null
-    override val messageId: List<ByteArray> = listOf(byteArrayOf(1))
+    override val zmqIdentities: List<ByteArray> = listOf(byteArrayOf(1))
 
     override fun updateContextMessage(contextMessage: RawMessage?) {}
     override fun updateSessionInfo(message: RawMessage) {}
@@ -27,7 +27,8 @@ class NoReplyMessageFactory(
         header: MessageHeader?,
         parentHeader: MessageHeader?,
         metadata: JsonElement?,
-        content: MessageContent?
+        content: MessageContent?,
+        buffers: List<ByteArray>?,
     ): Message? {
         return null
     }
