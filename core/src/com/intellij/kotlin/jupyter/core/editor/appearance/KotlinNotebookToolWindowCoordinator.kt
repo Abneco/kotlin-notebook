@@ -11,7 +11,7 @@ import com.intellij.kotlin.jupyter.core.util.toAbsolutePath
 import com.intellij.openapi.project.Project
 import com.intellij.ui.content.Content
 
-internal class KotlinNotebookToolWindowCoordinator(
+class KotlinNotebookToolWindowCoordinator(
     project: Project,
     vfile: BackedNotebookVirtualFile
 ): KernelProcessToolWindowCoordinator(project, vfile) {

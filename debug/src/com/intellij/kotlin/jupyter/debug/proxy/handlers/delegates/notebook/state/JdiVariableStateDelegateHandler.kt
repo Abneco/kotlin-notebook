@@ -1,8 +1,6 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.debug.proxy.handlers.delegates.notebook.state
 
-import com.intellij.debugger.collections.visualizer.core.backend.XCollectionAccessor
-import com.intellij.debugger.collections.visualizer.core.backend.XCollectionAccessorProvider
 import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.debugger.engine.JavaValue
 import com.intellij.debugger.ui.tree.ValueDescriptor
@@ -25,7 +23,7 @@ internal class JdiVariableStateDelegateHandler(
     override val objectReference: ObjectReference = valueContext.objectReference
 
     @Volatile
-    private var javaValue: JavaValue? = null
+    override var javaValue: JavaValue? = null
 
     override val renderedText: String?
         get() = javaValue?.descriptor?.valueText
@@ -43,11 +41,6 @@ internal class JdiVariableStateDelegateHandler(
 
         // Find field by name in scriptInstance's reference type
         return scriptInstance.findFieldByName(name)
-    }
-
-    override suspend fun findAccessor(): XCollectionAccessor? {
-        val xValue = javaValue ?: return null
-        return XCollectionAccessorProvider.findAccessor(xValue)
     }
 
     private fun findVariableValueObjectReference(): ObjectReference? {

@@ -81,6 +81,7 @@
         <module name="intellij.kotlin.jupyter.k1"/>
         <module name="intellij.kotlin.jupyter.k2"/>
         <module name="intellij.kotlin.jupyter.debug"/>
+        <module name="intellij.kotlin.jupyter.debug.renders"/>
     </content>
 
     <dependencies>

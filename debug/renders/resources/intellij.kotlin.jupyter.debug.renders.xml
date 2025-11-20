@@ -1,0 +1,10 @@
+<idea-plugin visibility="internal">
+    <dependencies>
+        <plugin id="com.intellij.java"/>
+
+        <module name="intellij.kotlin.jupyter.debug"/>
+        <module name="intellij.debugger.collections.visualizer.core.backend"/>
+        <module name="intellij.debugger.collections.visualizer.jvm"/>
+    </dependencies>
+
+</idea-plugin>

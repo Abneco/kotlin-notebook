@@ -4,8 +4,9 @@
 
         <module name="intellij.jupyter.core"/>
         <module name="intellij.kotlin.jupyter.core"/>
-        <module name="intellij.debugger.collections.visualizer.core.backend"/>
-        <module name="intellij.debugger.collections.visualizer.jvm"/>
+        <module name="intellij.notebooks.visualization"/>
+        <module name="intellij.jupyter.psi"/>
+        <module name="intellij.notebooks.jupyter.core"/>
     </dependencies>
 
     <extensionPoints>
