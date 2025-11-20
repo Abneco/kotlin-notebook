@@ -15,7 +15,7 @@ import org.jetbrains.kotlinx.jupyter.api.Notebook
 interface NotebookJdiProxy : Notebook, JdiNotebookExtension {
 
     @get:JdiFieldAccessPath("sharedReplContext.evaluator.variablesHolder")
-    val variablesHolderReference: ObjectReference
+    val variablesHolderReference: ObjectReference?
 
     @get:JdiFieldAccessPath("sharedReplContext")
     val sharedReplContext: SharedReplContextJdiProxy?

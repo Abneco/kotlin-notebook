@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.debug.proxy.handlers.delegates.notebook
 
 import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.jupyter.execution.logging.notebookLogger
 import com.intellij.kotlin.jupyter.debug.proxy.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.JdiObjectReferenceProxy
 import com.intellij.kotlin.jupyter.debug.proxy.createJdiObjectProxy
@@ -18,6 +19,10 @@ import com.sun.jdi.ObjectReference
 class JdiNotebookDelegateHandler(
     valueContext: DebugValueContext,
 ) : JdiNotebookExtension {
+    companion object {
+        private val LOG = notebookLogger()
+    }
+
     private val notebookProxy by lazy {
         createJdiObjectProxy<NotebookJdiProxy>(valueContext)
     }
@@ -36,6 +41,10 @@ class JdiNotebookDelegateHandler(
      */
     private fun getVariablesHolderProxyMap(): Map<String, VariableStateJdiProxy> {
         val variablesHolderRef = notebookProxy.variablesHolderReference
+        if (variablesHolderRef == null) {
+            LOG.warn("Variables holder reference is null, cannot get variables")
+            return emptyMap()
+        }
 
         if (!variablesHolderRef.isLinkedHashMap()) {
             throw IllegalStateException("Expected variablesHolder to be a LinkedHashMap, got ${variablesHolderRef.referenceType().name()}")

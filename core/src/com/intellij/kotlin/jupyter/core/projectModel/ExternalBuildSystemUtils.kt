@@ -17,11 +17,11 @@ import com.intellij.openapi.projectRoots.Sdk
 import kotlin.io.path.invariantSeparatorsPathString
 
 /**
- * Traverses all registered [ExternalSystemManager] and returns a sequence of [com.intellij.kotlin.jupyter.core.projectModel.extensions.ExternalBuildSystemSetting] matching current project.
+ * Traverses all registered [ExternalSystemManager] and returns a sequence of [ExternalBuildSystemSetting] matching current project.
  * The main purpose is to retrieve gradle JDK and module names to suggest a proper JDK for the kernel startup.
  * Right now, only Gradle settings are supported.
  *
- * @see com.intellij.kotlin.jupyter.core.projectModel.extensions.NotebookExternalBuildSystemConfigurationExtractor
+ * @see NotebookExternalBuildSystemConfigurationExtractor
  */
 internal fun Project.getExternalBuildSystemModulesInfo(): Sequence<ExternalBuildSystemSetting> {
     val project = this
