@@ -145,7 +145,7 @@ suspend inline fun onAnyOf(vararg actions: suspend () -> Boolean, onSuccess: sus
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun <R> runSafely(action: () -> R, onFailure: (Throwable) -> Unit): R? {
+inline fun <R> runSafely(action: () -> R, onFailure: (Throwable) -> Unit, finally: () -> Unit = {}): R? {
     contract {
         callsInPlace(action, InvocationKind.EXACTLY_ONCE)
         callsInPlace(onFailure, InvocationKind.AT_MOST_ONCE)
@@ -158,6 +158,8 @@ inline fun <R> runSafely(action: () -> R, onFailure: (Throwable) -> Unit): R? {
         }
         onFailure(e)
         null
+    } finally {
+        finally()
     }
 }
 

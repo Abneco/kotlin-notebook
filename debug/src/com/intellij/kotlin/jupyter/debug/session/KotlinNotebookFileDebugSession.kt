@@ -18,6 +18,7 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.Companion.isIncomplete
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
+import com.intellij.kotlin.jupyter.core.util.runSafely
 import com.intellij.kotlin.jupyter.debug.breakpoint.KernelSyntheticMethodBreakpoint
 import com.intellij.kotlin.jupyter.debug.events.NotebookDebugEventsHandler
 import com.intellij.kotlin.jupyter.debug.i18n.KotlinNotebookDebugBundle
@@ -39,7 +40,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicReference
 
 class KotlinNotebookFileDebugSession(
@@ -52,8 +52,7 @@ class KotlinNotebookFileDebugSession(
         private val LOG = notebookLogger()
     }
 
-    @Volatile
-    private var currentConfig: DebugSessionConfig? = null
+    private val currentConfigRef: AtomicReference<DebugSessionConfig?> = AtomicReference(null)
 
     private val eventsHandler = NotebookDebugEventsHandler(project, virtualFile)
 
@@ -62,7 +61,7 @@ class KotlinNotebookFileDebugSession(
 
         val port = portProvider()
         if (port != null) {
-            currentConfig = DebugSessionConfig(port)
+            currentConfigRef.set(DebugSessionConfig(port))
         }
     }
 
@@ -75,7 +74,7 @@ class KotlinNotebookFileDebugSession(
                     file: BackedNotebookVirtualFile,
                     updateState: NotebookScriptsStateListener.UpdateState
                 ) {
-                    if (debuggerSession?.isConnecting == true || updateState.isIncomplete) return
+                    if (file != virtualFile || debuggerSession?.isConnecting == true || updateState.isIncomplete) return
 
                     messageBus.syncPublisher(JupyterEnvironmentUpdateListener.TOPIC)
                         .onRuntimeEnvironmentUpdate(virtualFile, null)
@@ -88,12 +87,12 @@ class KotlinNotebookFileDebugSession(
                 if (project.isDisposed) return
                 if (session.virtualFile != virtualFile) return
 
-                val port = targetDebugPort ?: return
-                val session = getOrCreateDebuggerSession(
+                val port = targetDebugPort ?: provideFreshDebugPort() ?: return
+                val debuggerSession = getOrCreateVmDebuggerSession(
                     DebugSessionConfig(port),
                     forceRestart = true
                 )
-                LOG.info("Debugger session after start: $session")
+                LOG.info("Debugger session after start: $debuggerSession")
             }
         })
     }
@@ -106,25 +105,28 @@ class KotlinNotebookFileDebugSession(
     ) { command, event ->
         val suspendContext = command.suspendContext
         if (suspendContext != null) {
-            evaluationContext = EvaluationContextImpl(suspendContext, suspendContext.frameProxy)
+            evaluationContextRef.set(
+                EvaluationContextImpl(suspendContext, suspendContext.frameProxy)
+            )
         }
         eventsHandler.handleInternalDebugMethodEntryEvent(suspendContext, event)
     }
 
-    private val myDebugSession: AtomicReference<DebuggerSession?> = AtomicReference(null)
+    private val debuggerSessionRef = AtomicReference<DebuggerSession?>(null)
     private val sessionMutex = Mutex()
+    private val evaluationContextRef = AtomicReference<EvaluationContextImpl?>(null)
 
     val currentStackFrameProxy: StackFrameProxyImpl?
         get() = debuggerSession?.process?.debuggerContext?.frameProxy
 
-    @Volatile
-    var evaluationContext: EvaluationContextImpl? = null
+    val evaluationContext: EvaluationContextImpl?
+        get() = evaluationContextRef.get()
 
-    val targetDebugPort: Int? get() = currentConfig?.port
+    val targetDebugPort: Int? get() = currentConfigRef.get()?.port
 
     fun provideFreshDebugPort(): Int? {
         val port = portProvider() ?: return null
-        currentConfig = DebugSessionConfig(port)
+        currentConfigRef.set(DebugSessionConfig(port))
         return port
     }
 
@@ -135,18 +137,16 @@ class KotlinNotebookFileDebugSession(
     }
 
     val currentXSession: XDebugSession?
-        get() = myDebugSession.get()?.xDebugSession
+        get() = debuggerSessionRef.get()?.xDebugSession
 
     val debuggerSession: DebuggerSession?
-        get() = myDebugSession.get()
-
-    private var processListener: NotebookDebugProcessListener? = null
+        get() = debuggerSessionRef.get()
 
     val isLiveSession: Boolean
         get() = currentXSession != null
 
     private fun DebuggerSession.configureSessionAfterAttach(config: DebugSessionConfig) {
-        addProcessListener(process)
+        addProcessListener(process, config.silent)
 
         if (!config.silent) {
             XDebuggerManagerImpl.getNotificationGroup().createNotification(
@@ -156,24 +156,43 @@ class KotlinNotebookFileDebugSession(
     }
 
     // see JavaAttachDebuggerProvider
-    internal suspend fun getOrCreateDebuggerSession(
+    internal suspend fun getOrCreateVmDebuggerSession(
         config: DebugSessionConfig,
         forceRestart: Boolean = false
     ): DebuggerSession? {
-        if (checkSessionCouldBeReused(forceRestart)) {
+        if (checkSessionCanBeReused(forceRestart)) {
             return debuggerSession
         }
 
         sessionMutex.withLock {
-            if (checkSessionCouldBeReused(forceRestart)) {
+            if (project.isDisposed) return null
+            if (checkSessionCanBeReused(forceRestart)) {
                 return debuggerSession
             }
             disposeCurrentSession()
 
-            DebuggerSettings.getInstance().transport = config.transport
-            currentConfig = config
+            return createNewDebuggerSession(config).also { newSession ->
+                if (newSession == null) {
+                    clearDebugSessionData()
+                    return null
+                }
+                currentConfigRef.set(config)
+                debuggerSessionRef.set(newSession)
+            }
+        }
+    }
 
-            val environmentData = DebugConnectionUtility.buildDebugEnvironment(project, config) ?: return null
+    private fun checkSessionCanBeReused(forceRestart: Boolean): Boolean {
+        if (!isLiveSession) return false
+
+        return !forceRestart && debuggerSession?.isAttached == true
+    }
+
+    private suspend fun createNewDebuggerSession(config: DebugSessionConfig): DebuggerSession? {
+        return try {
+            DebuggerSettings.getInstance().transport = config.transport
+            val environmentData = DebugConnectionUtility.buildDebugEnvironment(project, config)
+                ?: return null
 
             val newSession = withContext(Dispatchers.EDT) {
                 tryAttachToTargetVM(
@@ -183,26 +202,29 @@ class KotlinNotebookFileDebugSession(
                 )
             }
             if (newSession == null) {
-                clearDebugSessionData()
                 return null
             }
-            myDebugSession.set(newSession)
 
-            newSession.configureSessionAfterAttach(config)
+            // Might throw, but PCE is not expected from this logic
+            runSafely({
+                newSession.configureSessionAfterAttach(config)
+            }, onFailure = {
+                LOG.warn("Failed to configure debugger session", it)
+                newSession.dispose()
+                throw it
+            })
 
-            return newSession
+            newSession
+        } catch (ex: Exception) {
+            LOG.error("Failed to attach debugger session", ex)
+            null
         }
     }
 
-    private fun checkSessionCouldBeReused(forceRestart: Boolean): Boolean {
-        if (!isLiveSession) return false
-
-        return !forceRestart && debuggerSession?.isAttached == true
-    }
-
     private fun clearDebugSessionData() {
-        myDebugSession.set(null)
-        currentConfig = null
+        debuggerSessionRef.set(null)
+        currentConfigRef.set(null)
+        evaluationContextRef.set(null)
     }
 
     @RequiresEdt
@@ -211,57 +233,54 @@ class KotlinNotebookFileDebugSession(
         executionEnvironment: ExecutionEnvironment,
         isSilent: Boolean
     ): DebuggerSession? {
-        return try {
-            if (project.isDisposed) {
-                return null
-            }
-
-            val session = executionEnvironment
-                .attachDebuggerCreateSession(virtualFile.file.name, project, debugEnvironment, headless = isSilent)
-
-            if (project.isDisposed) {
-                return null
-            }
-            val handler = session.process.processHandler
-            if (isSilent) {
-                // important
-                handler?.startNotify()
-            }
-
-            DebuggerManagerEx.getInstanceEx(project).getDebugProcess(
-                handler
-            )!!
-
-            session
-        } catch (ex: ExecutionException) {
-            LOG.error("Unsuccessful attach to targetVM: $ex")
-            null
+        if (project.isDisposed) {
+            return null
         }
+
+        val session = executionEnvironment
+            .attachDebuggerCreateSession(virtualFile.file.name, project, debugEnvironment, headless = isSilent)
+
+        val handler = session.process.processHandler
+        if (isSilent) {
+            // important
+            handler?.startNotify()
+        }
+
+        val registeredProcess = DebuggerManagerEx.getInstanceEx(project).getDebugProcess(handler)
+        if (registeredProcess == null) {
+            LOG.warn("DebugProcess is not registered for the handler right after session start")
+        }
+        return session
     }
 
-    private fun addProcessListener(debugProcess: DebugProcessImpl?) {
-        processListener = NotebookDebugProcessListener(
-            project, JupyterDebugSessionPath(virtualFile),
+    private fun addProcessListener(debugProcess: DebugProcessImpl?, silent: Boolean) {
+        if (debugProcess == null) return
+        val listener = NotebookDebugProcessListener(
+            project,
+            JupyterDebugSessionPath(virtualFile),
             virtualFile,
-            currentConfig?.silent ?: true
+            silent
         )
 
-        debugProcess?.addDebugProcessListener(
-            processListener, this
+        debugProcess.addDebugProcessListener(
+            listener, this
         )
     }
 
-    fun disposeCurrentSession() {
-        currentXSession?.let {
-            it.stop()
+    private fun disposeCurrentSession() {
+        val session = currentXSession ?: return
+        runSafely({
+            session.stop()
+        }, onFailure = {
+            LOG.error("Failed to dispose current session", it)
+        }, finally = {
             clearDebugSessionData()
-        }
+        })
     }
 
     override fun dispose() {
+        // Disposal happens only with parent disposal
         disposeCurrentSession()
-        clearDebugSessionData()
-        processListener = null
     }
 
 }

@@ -3,4 +3,8 @@ package com.intellij.kotlin.jupyter.debug.proxy.handlers.collections
 
 import com.intellij.kotlin.jupyter.debug.proxy.JdiProxyApiDelegate
 
+/**
+ * Marker interface for allowing type-safe access for [Map] interface
+ * on some [JdiProxyApiDelegate]
+ */
 interface JdiMapDelegateHandler : JdiProxyApiDelegate, Map<Any?, Any?>
