@@ -75,19 +75,17 @@ internal object DebugConnectionUtility {
     }
 
     fun ExecutionEnvironment.attachDebuggerCreateSession(@Nls sessionName: String, project: Project, debugEnvironment: DebugEnvironment, headless: Boolean = false): DebuggerSession {
-        fun XDebuggerManager.createSession(debugStarter: XDebugProcessStarter): XDebugSession {
-            return when (headless) {
-                true -> startSession(this@attachDebuggerCreateSession, debugStarter)
-                else -> startSessionAndShowTab(sessionName, null, debugStarter)
-            }
-        }
-
         val debugSession = DebuggerManagerEx.getInstanceEx(project).attachVirtualMachine(debugEnvironment)!!
-        XDebuggerManager.getInstance(project).createSession(object : XDebugProcessStarter() {
+        val starter = object : XDebugProcessStarter() {
             override fun start(session: XDebugSession): XDebugProcess {
                 return JavaDebugProcess.create(session, debugSession)
             }
-        })
+        }
+        XDebuggerManager.getInstance(project).newSessionBuilder(starter)
+            .sessionName(sessionName)
+            .environment(this)
+            .showTab(!headless)
+            .startSession()
 
         //debugSession.isModifiedClassesScanRequired = true // for hot-swap
         return debugSession
