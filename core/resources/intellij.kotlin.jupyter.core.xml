@@ -361,14 +361,8 @@
                 icon="AllIcons.Actions.Copy">
         </action>
 
-        <group id="KotlinNotebookChangeSessionModeActions">
-            <action id="KotlinNotebookEnableSeparateProcessMode"
-                    class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookEnableSeparateProcessMode"/>
-            <action id="KotlinNotebookEnableIdeProcessMode"
-                    class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookEnableIdeProcessMode"/>
-            <action id="KotlinNotebookEnableAttachedProcessMode"
-                    class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookEnableAttachedProcessMode"/>
-        </group>
+        <group id="KotlinNotebookChangeSessionModeActions"
+               class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookChangeSessionModeActions"/>
 
         <action id="RestartKotlinNotebookHighlighting"
                 class="com.intellij.kotlin.jupyter.core.scriptingSupport.RestartKotlinNotebookHighlightingAction"/>

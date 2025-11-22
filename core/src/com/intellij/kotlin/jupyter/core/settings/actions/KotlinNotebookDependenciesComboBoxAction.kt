@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.settings.actions
 
 import com.intellij.icons.AllIcons
+import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
 import com.intellij.jupyter.core.jupyter.helper.editor
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
@@ -34,7 +35,7 @@ import java.awt.Component
 import javax.swing.JComponent
 import javax.swing.SwingConstants
 
-class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomComponentAction {
+class KotlinNotebookDependenciesComboBoxAction : NotebookEditorActionBase(), CustomComponentAction {
     override fun createCustomComponent(presentation: Presentation, place: String): JComponent {
         return createCustomComponentForResultViewToolbar(this, presentation, place)
     }
@@ -87,26 +88,25 @@ class KotlinNotebookDependenciesComboBoxAction : DumbAwareAction(), CustomCompon
         return button
     }
 
-    override fun update(e: AnActionEvent) {
-        super.update(e)
-        val currentDependencies = e.getCurrentDependencies() ?: return
-        val (icon, text: @NlsActions.ActionText String) = when (currentDependencies) {
-            KotlinNotebookDependencies.AllLibraries -> {
-                null to KotlinNotebookBundle.message("action.KotlinNotebookDependenciesComboBoxAction.AllProjectLibrariesAction.text")
+    override fun update(event: AnActionEvent) {
+        actionUpdater.update(this, event) { e ->
+            val currentDependencies = e.getCurrentDependencies() ?: return@update
+            val (icon, text: @NlsActions.ActionText String) = when (currentDependencies) {
+                KotlinNotebookDependencies.AllLibraries -> {
+                    null to KotlinNotebookBundle.message("action.KotlinNotebookDependenciesComboBoxAction.AllProjectLibrariesAction.text")
+                }
+                KotlinNotebookDependencies.None -> {
+                    null to KotlinNotebookBundle.message("action.KotlinNotebookDependenciesComboBoxAction.NoDependenciesAction.text")
+                }
+                is KotlinNotebookDependencies.SingleModule -> {
+                    val module = e.project?.let { currentDependencies.findModule(it) }
+                    module?.let { ModuleType.get(it).icon } to currentDependencies.moduleName
+                }
             }
-            KotlinNotebookDependencies.None -> {
-                null to KotlinNotebookBundle.message("action.KotlinNotebookDependenciesComboBoxAction.NoDependenciesAction.text")
-            }
-            is KotlinNotebookDependencies.SingleModule -> {
-                val module = e.project?.let { currentDependencies.findModule(it) }
-                module?.let { ModuleType.get(it).icon } to currentDependencies.moduleName
-            }
+            e.presentation.icon = icon
+            e.presentation.text = text
         }
-        e.presentation.icon = icon
-        e.presentation.text = text
     }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     private sealed class SelectDependenciesAction(
         @NlsActions.ActionText placeholder: String,

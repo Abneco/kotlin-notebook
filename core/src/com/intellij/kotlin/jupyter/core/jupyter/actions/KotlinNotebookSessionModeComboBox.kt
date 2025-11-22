@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.actions
 
+import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.isKernelRunModeSelectionEnabled
@@ -9,14 +10,12 @@ import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionToolbar
-import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.ex.CustomComponentAction
 import com.intellij.openapi.actionSystem.impl.ActionButtonWithText
-import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.util.ui.JBFont
@@ -24,20 +23,22 @@ import java.awt.Component
 import javax.swing.JComponent
 import javax.swing.SwingConstants
 
-class KotlinNotebookSessionModeComboBox : DumbAwareAction(), CustomComponentAction {
-    override fun update(e: AnActionEvent) {
-        if (!isKernelRunModeSelectionEnabled) {
-            e.presentation.isEnabledAndVisible = false
-            return
-        }
+class KotlinNotebookSessionModeComboBox : NotebookEditorActionBase(), CustomComponentAction {
+    override fun update(event: AnActionEvent) {
+        actionUpdater.update(this, event) { event ->
+            val presentation = event.presentation
+            if (!isKernelRunModeSelectionEnabled) {
+                presentation.isEnabledAndVisible = false
+                return@update
+            }
 
-        val runMode = e.dataContext.getRunMode()
-        if (runMode == null) {
-            e.presentation.isEnabledAndVisible = false
-            return
+            val runMode = event.dataContext.getRunMode()
+            if (runMode == null) {
+                presentation.isEnabledAndVisible = false
+                return@update
+            }
+            presentation.text = runMode.title
         }
-
-        e.presentation.text = runMode.title
     }
 
     private fun DataContext.getRunMode(): KotlinNotebookSessionRunMode? {
@@ -50,17 +51,15 @@ class KotlinNotebookSessionModeComboBox : DumbAwareAction(), CustomComponentActi
     override fun actionPerformed(e: AnActionEvent) {
         val component: Component = e.presentation.getClientProperty(CustomComponentAction.COMPONENT_KEY) ?: return
         val popup: JBPopup = JBPopupFactory.getInstance().createActionGroupPopup(
-          /* title = */ null,
-          /* actionGroup = */ ActionManager.getInstance().getAction("KotlinNotebookChangeSessionModeActions") as ActionGroup,
-          /* dataContext = */ e.dataContext,
-          /* selectionAidMethod = */ null,
-          /* showDisabledActions = */ true,
-          /* actionPlace = */ null
+            /* title = */ null,
+            /* actionGroup = */ ActionManager.getInstance().getAction(KotlinNotebookChangeSessionModeActions.ID) as ActionGroup,
+            /* dataContext = */ e.dataContext,
+            /* selectionAidMethod = */ null,
+            /* showDisabledActions = */ true,
+            /* actionPlace = */ null
         )
         popup.showUnderneathOf(component)
     }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun createCustomComponent(presentation: Presentation, place: String): JComponent {
         return createCustomComponentForResultViewToolbar(this, presentation, place)

@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.actions
 
 import com.intellij.icons.AllIcons
+import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
 import com.intellij.jupyter.core.jupyter.helper.notebook
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
@@ -10,22 +11,28 @@ import com.intellij.kotlin.jupyter.core.settings.actions.promptSessionShutdownIf
 import com.intellij.kotlin.jupyter.core.settings.isAvailable
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
-import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.application.WriteAction
-import com.intellij.openapi.project.DumbAwareAction
 
-sealed class KotlinNotebookChangeSessionModeAction(
+class KotlinNotebookChangeSessionModeAction(
   private val mode: KotlinNotebookSessionRunMode,
-) : DumbAwareAction() {
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+) : NotebookEditorActionBase() {
+    override fun createTemplatePresentation(): Presentation {
+        return super.createTemplatePresentation().apply {
+            text = mode.title
+        }
+    }
 
     override fun update(event: AnActionEvent) {
-        val notebook = event.getKotlinNotebook()
-        val isAvailable = mode.isAvailable && notebook != null
-        event.presentation.isEnabledAndVisible = isAvailable
-        if (isAvailable && notebook.sessionRunMode == mode) {
-            event.presentation.icon = AllIcons.Actions.Checked
+        actionUpdater.update(this, event) { event ->
+            val presentation = event.presentation
+            val notebook = event.getKotlinNotebook()
+            val isAvailable = mode.isAvailable && notebook != null
+            presentation.isEnabledAndVisible = isAvailable
+            if (isAvailable && notebook.sessionRunMode == mode) {
+                presentation.icon = AllIcons.Actions.Checked
+            }
         }
     }
 
@@ -48,9 +55,3 @@ sealed class KotlinNotebookChangeSessionModeAction(
         }
     }
 }
-
-class KotlinNotebookEnableSeparateProcessMode : KotlinNotebookChangeSessionModeAction(KotlinNotebookSessionRunMode.SEPARATE_PROCESS)
-
-class KotlinNotebookEnableIdeProcessMode : KotlinNotebookChangeSessionModeAction(KotlinNotebookSessionRunMode.IDE_PROCESS)
-
-class KotlinNotebookEnableAttachedProcessMode : KotlinNotebookChangeSessionModeAction(KotlinNotebookSessionRunMode.ATTACHED_PROCESS)

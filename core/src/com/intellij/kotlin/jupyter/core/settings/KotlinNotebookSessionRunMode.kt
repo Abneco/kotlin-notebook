@@ -14,9 +14,9 @@ val isKernelRunModeSelectionEnabled: Boolean get() {
 }
 
 enum class KotlinNotebookSessionRunMode(@ActionText val title: String) {
-    SEPARATE_PROCESS(KotlinNotebookBundle.message("action.KotlinNotebookEnableSeparateProcessMode.text")),
-    IDE_PROCESS(KotlinNotebookBundle.message("action.KotlinNotebookEnableIdeProcessMode.text")),
-    ATTACHED_PROCESS(KotlinNotebookBundle.message("action.KotlinNotebookEnableAttachedProcessMode.text"));
+    SEPARATE_PROCESS(KotlinNotebookBundle.message("KotlinNotebookEnableSeparateProcessMode.text")),
+    IDE_PROCESS(KotlinNotebookBundle.message("KotlinNotebookEnableIdeProcessMode.text")),
+    ATTACHED_PROCESS(KotlinNotebookBundle.message("KotlinNotebookEnableAttachedProcessMode.text"));
 
     companion object
 }
