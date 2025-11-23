@@ -147,7 +147,7 @@ suspend inline fun onAnyOf(vararg actions: suspend () -> Boolean, onSuccess: sus
 @OptIn(ExperimentalContracts::class)
 inline fun <R> runSafely(action: () -> R, onFailure: (Throwable) -> Unit, finally: () -> Unit = {}): R? {
     contract {
-        callsInPlace(action, InvocationKind.EXACTLY_ONCE)
+        callsInPlace(action, InvocationKind.AT_MOST_ONCE)
         callsInPlace(onFailure, InvocationKind.AT_MOST_ONCE)
     }
     return try {
@@ -160,16 +160,5 @@ inline fun <R> runSafely(action: () -> R, onFailure: (Throwable) -> Unit, finall
         null
     } finally {
         finally()
-    }
-}
-
-suspend inline fun <R> runSafelyTyped(crossinline action: suspend () -> R, crossinline onFailure: (Throwable) -> R): R {
-    return try {
-        action()
-    } catch (e: Throwable) {
-        if (e is ProcessCanceledException) {
-            throw e
-        }
-        onFailure(e)
     }
 }

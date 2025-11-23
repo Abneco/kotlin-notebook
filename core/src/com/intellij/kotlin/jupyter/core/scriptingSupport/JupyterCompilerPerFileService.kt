@@ -28,7 +28,7 @@ import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.onAnyOf
-import com.intellij.kotlin.jupyter.core.util.runSafelyTyped
+import com.intellij.kotlin.jupyter.core.util.runSafely
 import com.intellij.kotlin.jupyter.core.util.sourceRootsForDependencies
 import com.intellij.kotlin.jupyter.core.util.withReadAccess
 import com.intellij.openapi.application.ApplicationManager
@@ -503,7 +503,7 @@ class JupyterCompilerPerFileService(
             return false
         }
 
-        return runSafelyTyped(
+        return runSafely(
             action = {
                 accessData {
                     val loader = createNextClassLoader(classesDirPath)
@@ -526,15 +526,14 @@ class JupyterCompilerPerFileService(
                         LOG.warn(e)
                         val msg = e.message?.substringAfter("has been compiled by a more recent version of the Java Runtime") ?: ""
                         project.notebookNotifications.showKernelJDKInconsistentError(msg)
-                        true
+                        return true
                     }
                     else -> {
                         LOG.error(e)
-                        false
                     }
                 }
             }
-        )
+        ) == true
     }
 
     override fun dispose() {
