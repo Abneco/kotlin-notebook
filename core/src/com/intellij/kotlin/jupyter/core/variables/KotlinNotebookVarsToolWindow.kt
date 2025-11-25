@@ -30,7 +30,7 @@ import com.intellij.ui.content.Content
 import com.intellij.xdebugger.frame.XValueChildrenList
 import com.intellij.xdebugger.impl.frame.XDebugSessionProxy
 import com.intellij.xdebugger.impl.frame.XStandaloneVariablesView
-import com.intellij.xdebugger.impl.frame.asProxy
+import com.intellij.xdebugger.impl.proxy.asProxy
 import java.awt.BorderLayout
 import java.awt.event.MouseEvent
 
