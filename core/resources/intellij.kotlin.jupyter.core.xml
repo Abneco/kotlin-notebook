@@ -16,6 +16,8 @@
         <plugin id="com.intellij.java"/>
         <module name="intellij.debugger.collections.visualizer.core.backend"/>
         <module name="intellij.debugger.collections.visualizer.jvm"/>
+        <module name="intellij.platform.debugger"/>
+        <module name="intellij.platform.debugger.impl"/>
     </dependencies>
 
     <applicationListeners>
