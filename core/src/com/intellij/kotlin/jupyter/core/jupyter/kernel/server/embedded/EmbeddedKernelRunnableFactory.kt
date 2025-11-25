@@ -5,6 +5,8 @@ import com.intellij.jupyter.core.jupyter.connections.client.JupyterClientManager
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServer
 import com.intellij.jupyter.core.jupyter.connections.session.KernelStartupOptions
 import com.intellij.jupyter.execution.kernel.KernelRunnableHandler
+import com.intellij.jupyter.execution.listeners.KernelListener
+import com.intellij.jupyter.execution.listeners.events.NotebookKernelEvent
 import com.intellij.jupyter.execution.toolwindow.KernelProcessToolWindowCoordinatorService
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.ModeAwareKernelRunnableFactory
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.process.KernelProcessFactory
@@ -27,6 +29,19 @@ class EmbeddedKernelRunnableFactory : ModeAwareKernelRunnableFactory(
         KernelProcessToolWindowCoordinatorService.getInstance(startupOptions.project)
             .getOrCreate(startupOptions.notebookVirtualFile)?.onStarted(runnableHandler)
 
-        return runnableHandler
+        return runnableHandler.also(
+            ::addKernelListener
+        )
+    }
+
+    private fun addKernelListener(handler: KernelRunnableHandler) {
+        handler.addBaseKernelListener(object : KernelListener {
+            override fun kernelWillTerminate(event: NotebookKernelEvent) {
+                val notebookVirtualFile = event.kernelsProcessHandler.notebookVirtualFile
+
+                KernelProcessToolWindowCoordinatorService.getInstance(handler.project)
+                    .get(notebookVirtualFile)?.onWillTerminate(event)
+            }
+        })
     }
 }

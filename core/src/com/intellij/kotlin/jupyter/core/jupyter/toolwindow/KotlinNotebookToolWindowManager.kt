@@ -1,7 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.toolwindow
 
-import com.intellij.concurrency.ConcurrentCollectionFactory
 import com.intellij.kotlin.jupyter.core.jupyter.toolwindow.KotlinNotebookToolWindowManager.Companion.KOTLIN_NOTEBOOK_RUNNER_ID
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
@@ -11,9 +10,6 @@ import com.intellij.openapi.wm.RegisterToolWindowTask
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.ui.content.Content
-import com.intellij.ui.content.ContentManagerEvent
-import com.intellij.ui.content.ContentManagerListener
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import icons.KotlinJupyterIcons
 import kotlinx.coroutines.CoroutineScope
@@ -29,7 +25,6 @@ class KotlinNotebookToolWindowManager(
     private val project: Project,
     private val coroutineScope: CoroutineScope
 ) : Disposable {
-    private val stoppedSessions: MutableMap<Path, Content> = ConcurrentCollectionFactory.createConcurrentMap()
 
     @RequiresEdt
     internal fun getOrCreateKotlinNotebookToolWindow(): ToolWindow {
@@ -50,18 +45,10 @@ class KotlinNotebookToolWindowManager(
             .apply {
                 setIcon(KotlinJupyterIcons.ToolWindowIcon)
                 isAutoHide = false
-
-                contentManager.addContentManagerListener(object : ContentManagerListener {
-                    override fun contentRemoved(event: ContentManagerEvent) {
-                        val content = event.content
-                        stoppedSessions.entries.removeIf { it.value == content }
-                    }
-                })
             }
     }
 
     override fun dispose() {
-        stoppedSessions.clear()
         coroutineScope.cancel()
     }
 
