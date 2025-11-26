@@ -139,6 +139,7 @@ jvm_library(
     "//plugins/debugger/debugger-collections-visualizer/core",
     "//plugins/debugger/debugger-collections-visualizer/jvm",
     "@community//platform/util/jdom",
+    "@community//platform/xdebugger-impl/shared",
     ":community_libraries_kotlin_reflect_provided",
     ":community_plugins_kotlin_scripting_provided",
     ":community_java_psi_provided",

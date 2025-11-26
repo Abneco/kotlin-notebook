@@ -23,12 +23,12 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.getPreferredFocusedComponent
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsContexts
+import com.intellij.platform.debugger.impl.shared.proxy.XDebugSessionProxy
 import com.intellij.ui.ClickListener
 import com.intellij.ui.ListenerUtil
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.content.Content
 import com.intellij.xdebugger.frame.XValueChildrenList
-import com.intellij.xdebugger.impl.frame.XDebugSessionProxy
 import com.intellij.xdebugger.impl.frame.XStandaloneVariablesView
 import com.intellij.xdebugger.impl.proxy.asProxy
 import java.awt.BorderLayout
