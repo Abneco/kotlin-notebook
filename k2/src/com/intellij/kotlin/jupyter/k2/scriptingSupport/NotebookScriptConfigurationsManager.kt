@@ -1,7 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
-import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.getSelectedSdkOrAnyAcceptable
@@ -13,18 +12,23 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.backend.workspace.WorkspaceModel
+import com.intellij.platform.backend.workspace.virtualFile
 import com.intellij.platform.backend.workspace.workspaceModel
 import com.intellij.platform.workspace.storage.EntitySource
 import com.intellij.platform.workspace.storage.MutableEntityStorage
+import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.projectStructure.analysisContextModule
 import org.jetbrains.kotlin.idea.core.script.k2.asEntity
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.sdkId
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntityProvider
+import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntity
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
+import org.jetbrains.kotlin.utils.mapToSetOrEmpty
 import java.io.File
 import kotlin.script.experimental.api.asSuccess
 import kotlin.script.experimental.api.valueOrNull
@@ -49,6 +53,9 @@ object KotlinNotebookScriptEntitySource : EntitySource
  */
 @Service(Service.Level.PROJECT)
 class NotebookScriptConfigurationsManager(override val project: Project) : KotlinScriptEntityProvider(project) {
+    private val workspaceModel: WorkspaceModel
+        get() = project.workspaceModel
+
     override fun getKotlinScriptEntity(virtualFile: VirtualFile): KotlinScriptEntity? = virtualFile.topLevelFile?.let {
         super.getKotlinScriptEntity(it)
     }
@@ -78,18 +85,21 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
             notebookLogger().warn("No JDK SDK is set for the project")
         }
 
-        val configurations = scripts.associate { ktScript ->
-            val virtualFile = ktScript.virtualFile
-            virtualFile.analysisContextModule = null
+        val configurations = buildMap<VirtualFile, ScriptCompilationConfigurationResult> {
+            for (ktScript in scripts) {
+                val virtualFile = ktScript.virtualFile
+                virtualFile.analysisContextModule = null
 
-            val configurationWrapper = ktScript.refinedConfiguration.with {
-                if (sdkHomePath != null) {
-                    jvm.jdkHome(File(sdkHomePath))
-                }
-            }.asSuccess()
+                val topLevelFile = virtualFile.topLevelFile ?: continue
 
-            val topLevelFile = (virtualFile as VirtualFileWindow).delegate
-            topLevelFile to configurationWrapper
+                val configurationWrapper = ktScript.refinedConfiguration.with {
+                    if (sdkHomePath != null) {
+                        jvm.jdkHome(File(sdkHomePath))
+                    }
+                }.asSuccess()
+
+                put(topLevelFile, configurationWrapper)
+            }
         }
 
         updateWorkspaceModel(configurations)
@@ -97,6 +107,9 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
 
     suspend fun updateWorkspaceModel(resultPerFile: Map<VirtualFile, ScriptCompilationConfigurationResult>) {
         val tmp = MutableEntityStorage.create()
+        val updatedFilesUrls = resultPerFile.keys.mapToSetOrEmpty {
+            it.virtualFileUrl
+        }
 
         for ((file, result) in resultPerFile) {
             tmp.addNotebookConfiguration(
@@ -107,7 +120,8 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
             )
         }
 
-        project.updateKotlinScriptEntities(KotlinNotebookScriptEntitySource) { model -> // add new data, target only the base K2 script source
+        project.updateKotlinScriptEntities(KotlinNotebookScriptEntitySource) { model ->
+            tmp.addUnchangedNotebookEntities(model, updatedFilesUrls)
             model.replaceBySource({ it is KotlinNotebookScriptEntitySource }, tmp)
         }
     }
@@ -115,7 +129,7 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
     suspend fun clearNotebookLibraryDependencies(notebookFile: BackedNotebookVirtualFile) {
         val tmpSnapshot = MutableEntityStorage.from(currentSnapshot)
 
-        val dependencies = notebookFile.findK2WorkspaceScriptEntities(project.workspaceModel).flatMap { it.dependencies }
+        val dependencies = notebookFile.findK2WorkspaceScriptEntities(workspaceModel).flatMap { it.dependencies }
 
         dependencies.forEach {
             it.resolve(tmpSnapshot)?.let { libraryEntity ->
@@ -125,8 +139,54 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
 
         // Could be clean with replaceBySource ({ it is NotebookEntitySource }, tmp)
         // where tmp contains only 1 script entity with default dependencies
-        project.workspaceModel.update("Clearing Kotlin Notebook scripting modules for ${notebookFile.file.name}") { model ->
+        workspaceModel.update("Clearing Kotlin Notebook scripting modules for ${notebookFile.file.name}") { model ->
             model.applyChangesFrom(tmpSnapshot)
+        }
+    }
+
+    /**
+     * Puts in tmp snapshot all the present notebooks models,
+     * except for ones being updates.
+     * So that replaceBySource won't remove a part which is updated already.
+     */
+    private fun MutableEntityStorage.addUnchangedNotebookEntities(
+        currentSnapshot: MutableEntityStorage,
+        filesToUpdate: Set<VirtualFileUrl>
+    ) {
+        fun copyDependencies(from: KotlinScriptEntity) {
+            val deps = from.dependencies.mapNotNull { it.resolve(currentSnapshot) }
+            for (lib in deps) {
+                val libId = KotlinScriptLibraryEntityId(lib.classes, lib.sources)
+                if (!this.contains(libId)) {
+                    this addEntity KotlinScriptLibraryEntity(lib.classes, lib.sources, KotlinNotebookScriptEntitySource)
+                }
+            }
+        }
+
+        val existingNotebooksEntities = currentSnapshot.entitiesBySource { it is KotlinNotebookScriptEntitySource }
+            .filterIsInstance<KotlinScriptEntity>()
+            .filter {
+                !filesToUpdate.contains(it.virtualFileUrl)
+            }
+
+        notebookLogger().debugInTests {
+            val fileNamesBeingUpdated = filesToUpdate.joinToString { it.fileName }
+            val existingEntitiesNames = existingNotebooksEntities.joinToString { it.virtualFileUrl.virtualFile?.name ?: "" }
+            "Adding additional ${existingNotebooksEntities.count()} entities from: $existingEntitiesNames for update besides $fileNamesBeingUpdated"
+        }
+
+        for (model in existingNotebooksEntities) {
+            // replaceBySource removes entities not present in target, so we must ensure referenced libraries exist
+            copyDependencies(model)
+
+            this addEntity KotlinScriptEntity(
+                model.virtualFileUrl,
+                model.dependencies,
+                KotlinNotebookScriptEntitySource
+            ) {
+                configuration = model.configuration
+                sdkId = model.sdkId
+            }
         }
     }
 
