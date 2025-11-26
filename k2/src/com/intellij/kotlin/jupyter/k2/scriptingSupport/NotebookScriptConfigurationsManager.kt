@@ -13,20 +13,16 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.backend.workspace.WorkspaceModel
-import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.workspaceModel
 import com.intellij.platform.workspace.storage.EntitySource
 import com.intellij.platform.workspace.storage.MutableEntityStorage
-import com.intellij.platform.workspace.storage.url.VirtualFileUrlManager
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.projectStructure.analysisContextModule
 import org.jetbrains.kotlin.idea.core.script.k2.asEntity
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.sdkId
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
+import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntityProvider
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
-import org.jetbrains.kotlin.idea.core.script.k2.modules.ScriptConfigurationProviderExtension
-import org.jetbrains.kotlin.idea.core.script.k2.modules.updateKotlinScriptEntities
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import java.io.File
@@ -52,24 +48,18 @@ object KotlinNotebookScriptEntitySource : EntitySource
  *  Note that now for each [BackedNotebookVirtualFile] a separate module is created, and for module there are its own dependencies.
  */
 @Service(Service.Level.PROJECT)
-class NotebookScriptConfigurationsManager(override val project: Project) : ScriptConfigurationProviderExtension {
-    val workspaceModel: WorkspaceModel
-        get() = project.workspaceModel
-
-    val virtualFileUrlManager: VirtualFileUrlManager
-        get() = project.workspaceModel.getVirtualFileUrlManager()
+class NotebookScriptConfigurationsManager(override val project: Project) : KotlinScriptEntityProvider(project) {
+    override fun getKotlinScriptEntity(virtualFile: VirtualFile): KotlinScriptEntity? = virtualFile.topLevelFile?.let {
+        super.getKotlinScriptEntity(it)
+    }
 
     /**
-     * For now, we do not create it here as we have our own cycle of updates.
-     * Notebook scheduler should control workspace model updates
+     * For now, we do not update wsm here, as we have our own cycle of updates provided by notebook scheduler
      */
-    override suspend fun createConfiguration(
-        virtualFile: VirtualFile, definition: ScriptDefinition
-    ): ScriptCompilationConfigurationResult? = null
-
-    override fun getConfiguration(virtualFile: VirtualFile): ScriptCompilationConfigurationResult? = virtualFile.topLevelFile?.let {
-        super.getConfiguration(it)
-    }
+    override suspend fun updateWorkspaceModel(
+        virtualFile: VirtualFile,
+        definition: ScriptDefinition
+    ): Unit = Unit
 
     private val VirtualFile.topLevelFile: VirtualFile?
         get() {
@@ -123,20 +113,19 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Scrip
     }
 
     suspend fun clearNotebookLibraryDependencies(notebookFile: BackedNotebookVirtualFile) {
-        val workspaceSnapshot = workspaceModel.currentSnapshot
-        val tmpSnapshot = MutableEntityStorage.from(workspaceSnapshot)
+        val tmpSnapshot = MutableEntityStorage.from(currentSnapshot)
 
-        val dependencies = notebookFile.findK2WorkspaceScriptEntities(workspaceModel).flatMap { it.dependencies }
+        val dependencies = notebookFile.findK2WorkspaceScriptEntities(project.workspaceModel).flatMap { it.dependencies }
 
         dependencies.forEach {
-            it.resolve(workspaceSnapshot)?.let { libraryEntity ->
+            it.resolve(tmpSnapshot)?.let { libraryEntity ->
                 tmpSnapshot.removeEntity(libraryEntity)
             }
         }
 
         // Could be clean with replaceBySource ({ it is NotebookEntitySource }, tmp)
         // where tmp contains only 1 script entity with default dependencies
-        workspaceModel.update("Clearing Kotlin Notebook scripting modules for ${notebookFile.file.name}") { model ->
+        project.workspaceModel.update("Clearing Kotlin Notebook scripting modules for ${notebookFile.file.name}") { model ->
             model.applyChangesFrom(tmpSnapshot)
         }
     }
@@ -159,7 +148,7 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Scrip
         }
 
         this addEntity KotlinScriptEntity(
-            virtualFile.toVirtualFileUrl(virtualFileUrlManager), libraryIds,
+            virtualFile.virtualFileUrl, libraryIds,
             KotlinNotebookScriptEntitySource
         ) {
             configuration = notebookModuleConfiguration.refinedConfiguration.configuration?.asEntity()

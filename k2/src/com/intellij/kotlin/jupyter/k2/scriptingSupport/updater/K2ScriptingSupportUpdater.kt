@@ -28,6 +28,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionProviderImpl
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionsModificationTracker
+import org.jetbrains.kotlin.idea.core.script.k2.toConfigurationResult
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
 import java.util.concurrent.CancellationException
@@ -154,7 +155,8 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                     "Stable implicit receivers for notebook '${notebook.file.name}': ${stableClasses?.map { it.typeName }}"
                 }
 
-                val storedConfiguration = NotebookScriptConfigurationsManager.getInstance(project).getConfiguration(notebook.file)
+                val storedConfiguration = NotebookScriptConfigurationsManager.getInstance(project).getKotlinScriptEntity(notebook.file)
+                    ?.toConfigurationResult()
                     ?.valueOrNull()?.configuration
 
                 // skip if exists

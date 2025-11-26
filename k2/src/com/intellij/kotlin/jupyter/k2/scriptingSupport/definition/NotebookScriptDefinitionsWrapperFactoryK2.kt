@@ -6,7 +6,7 @@ import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurati
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.fir.refineNotebookWithSelectedBundledCompilerPlugins
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.idea.core.script.k2.configurations.configurationProviderExtension
+import org.jetbrains.kotlin.idea.core.script.k2.configurations.scriptEntityProvider
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionsModificationTracker
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import kotlin.script.experimental.api.SourceCode
@@ -28,7 +28,7 @@ internal class K2NotebookScriptDefinitionsWrapper(
     override val compilationScriptDefinition by lazy {
         var compilationConfiguration = scriptDefinition.compilationConfiguration.with {
             ide {
-                configurationProviderExtension {
+                scriptEntityProvider {
                     project.service<NotebookScriptConfigurationsManager>()
                 }
             }

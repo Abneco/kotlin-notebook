@@ -34,7 +34,7 @@ internal class NotebookTrafficLightContributor : TrafficLightRendererContributor
         override fun getDaemonCodeAnalyzerStatus(severityRegistrar: SeverityRegistrar): DaemonCodeAnalyzerStatus {
             val status = super.getDaemonCodeAnalyzerStatus(severityRegistrar)
 
-            if (NotebookScriptConfigurationsManager.getInstance(project).getConfiguration(notebookFile.file) == null) {
+            if (NotebookScriptConfigurationsManager.getInstance(project).getKotlinScriptEntity(notebookFile.file) == null) {
                 status.reasonWhySuspended = KotlinNotebookBundle.message("kotlin.jupyter.highlighting.traffic.configuration.empty")
                 status.heavyProcessType = HeavyProcessLatch.Type.Processing
             } else if (JupyterCompilerService.getForFile(project, notebookFile).needsConfigurationUpdate) {

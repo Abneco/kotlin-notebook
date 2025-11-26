@@ -15,6 +15,7 @@ import com.intellij.platform.workspace.storage.url.VirtualFileUrlManager
 import com.intellij.psi.search.GlobalSearchScopesCore
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.toVirtualFileUrl
+import org.jetbrains.kotlin.idea.core.script.k2.toConfigurationResult
 import org.jetbrains.kotlin.idea.stubindex.KotlinFullClassNameIndex
 import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
@@ -47,9 +48,8 @@ private class ScriptingEntitiesConsistencyVerifierK2(
             }
     }
 
-    private fun checkSourceIsNotEmpty(notebookFile: BackedNotebookVirtualFile): Boolean {
-        return NotebookScriptConfigurationsManager.getInstance(project).getConfiguration(notebookFile.file) != null
-    }
+    private fun checkSourceIsNotEmpty(notebookFile: BackedNotebookVirtualFile): Boolean =
+        NotebookScriptConfigurationsManager.getInstance(project).getKotlinScriptEntity(notebookFile.file) != null
 
     /**
      * Only COMPILED roots influence analysis, so we're checking that the necessary artifacts are already present in the model
@@ -99,7 +99,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
         virtualFile: BackedNotebookVirtualFile, compilationConfiguration: ScriptCompilationConfiguration
     ): Boolean {
         val configurationForNotebook =
-            NotebookScriptConfigurationsManager.getInstance(project).getConfiguration(virtualFile.file)?.valueOrNull()
+            NotebookScriptConfigurationsManager.getInstance(project).getKotlinScriptEntity(virtualFile.file)?.toConfigurationResult()?.valueOrNull()
                 ?: return false
 
         /**
