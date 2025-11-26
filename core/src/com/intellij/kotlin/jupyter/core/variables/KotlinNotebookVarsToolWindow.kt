@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.variables
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.jupyter.helper.JupyterHelper
 import com.intellij.jupyter.core.jupyter.variables.common.JupyterEnvironmentUpdateListener
 import com.intellij.jupyter.core.jupyter.variables.common.JupyterVarsToolWindowUtils
 import com.intellij.kotlin.jupyter.core.debug.KotlinNotebookDebugEditorsProvider
@@ -184,6 +185,7 @@ class KotlinNotebookVarsToolWindow(
 
     override fun uiDataSnapshot(sink: DataSink) {
         super.uiDataSnapshot(sink)
+        sink[JupyterHelper.FORCED_NOTEBOOK] = notebookFile
         val session = KotlinNotebookDebugSessionManager.getForFile(project, notebookFile).currentXSession ?: return
         sink[XDebugSessionProxy.DEBUG_SESSION_PROXY_KEY] = session.asProxy()
     }
