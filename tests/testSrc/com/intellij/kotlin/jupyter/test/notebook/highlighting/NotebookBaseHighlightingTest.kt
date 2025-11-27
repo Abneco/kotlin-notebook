@@ -22,6 +22,17 @@ class NotebookBaseHighlightingTest: KotlinNotebookTestCase() {
     }
 
     @Test
+    fun extraJavaLanguage() = runNotebookTest {
+        // Java injections are not supported yet
+        runHighlighting().assertHighlightResult(HighlightCheckStrategy.WithErrors)
+    }
+
+    @Test
+    fun extraJsTsLanguages() = runNotebookTest {
+        runHighlighting().assertHighlightResult(HighlightCheckStrategy.OnlyValidSyntax)
+    }
+
+    @Test
     fun correctHighlightingWithMarkdown() = runNotebookTest {
         runHighlighting().assertHighlightResult(HighlightCheckStrategy.OnlyValidSyntax)
     }

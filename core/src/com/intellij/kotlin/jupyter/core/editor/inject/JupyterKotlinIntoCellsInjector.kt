@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
 private val ELEMENTS_TO_INJECT = mutableListOf(JupyterPsiCellImpl::class.java)
 private val NON_CODE_CELL_REGEX get() = Regex("""${CELL_MARKER}(${nonCodeCellSuffixes.joinToString("|")})\n?""")
 
-val NotebookPsiCell.isNonCode get() = cellMarker.text.matches(NON_CODE_CELL_REGEX)
+val NotebookPsiCell.isNonCode: Boolean get() = cellMarker.text.matches(NON_CODE_CELL_REGEX)
 
 class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector, DumbAware {
     private val injectedCounter = AtomicInteger()
@@ -49,7 +49,7 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector, Dumb
         if (!virtualFile.file.isKotlinNotebook) return
         if (element.isNonCode) return
 
-        val (ranges, isCommand) = KotlinCodeRangesProcessor.codeRanges(element)
+        val ranges = KotlinCodeRangesProcessor.codeRanges(element)
 
         fun List<TextRange>.inject(language: Language, extension: String, skipEmpty: Boolean) {
             val rangesToInject = if (skipEmpty) filterNot { it.isEmpty } else this
@@ -66,9 +66,19 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector, Dumb
         }
 
         try {
-            ranges.codeRanges.inject(kotlinLanguage, projectCompilerService.fileExtension, skipEmpty = false)
-            if (ranges.magicRanges.size > 1 || isCommand) {
-                ranges.magicRanges.inject(metaLanguage, JKTMetaFileType.EXTENSION, skipEmpty = true)
+            ranges.magicRanges.inject(metaLanguage, JKTMetaFileType.EXTENSION, skipEmpty = true)
+
+            for ((languageInfo, textRanges) in ranges.codeRanges) {
+                val language: Language
+                val extension: String
+                if (languageInfo != null) {
+                    language = Language.findLanguageByID(languageInfo.id) ?: continue
+                    extension = languageInfo.extension
+                } else {
+                    language = kotlinLanguage
+                    extension = projectCompilerService.fileExtension
+                }
+                textRanges.inject(language, extension, skipEmpty = false)
             }
         } catch (e: RuntimeException) {
             // ignore concurrent change in NotebookVirtualFileSystem

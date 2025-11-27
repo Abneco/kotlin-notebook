@@ -3,13 +3,13 @@ package com.intellij.kotlin.jupyter.test
 
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.openapi.application.runReadAction
 import com.intellij.psi.PsiFile
 import com.intellij.testFramework.ExpectedHighlightingData
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import org.jetbrains.plugins.notebooks.psi.jupyter.lexer.JupyterNotebookCellHeader
-import org.junit.Assert.assertTrue
 
 /**
  * Type-safe wrapper for highlighting results when calling [NotebookTestBuilder.runHighlighting].
@@ -19,11 +19,6 @@ class HighlightingResult(
   private val testFixture: CodeInsightTestFixture,
   val result: List<HighlightInfo>
 ) {
-    val errors: List<HighlightInfo>
-        get() = result.filter { it.severity == HighlightSeverity.ERROR }
-
-    val warnings: List<HighlightInfo>
-        get() = result.filter { it.severity == HighlightSeverity.WARNING }
 
     /**
      * Check that the highlighting result matches the provided [HighlightCheckStrategy].
@@ -36,22 +31,22 @@ class HighlightingResult(
             checkWeakWarnings = false,
             checkInfos = true
         )
-        assertTrue(result.none { it.description != null && it.description == scriptingMissingClassError })
-        assertTrue(result.none { it.text.contains(JupyterNotebookCellHeader.CELL_MARKER) || it.text.contains(
-            "${JupyterNotebookCellHeader.CELL_MARKER} ${JupyterNotebookCellHeader.MARKDOWN_CELL_SUFFIX}") })
+        result.filter {
+            it.description == MISSING_SCRIPT_RECEIVER_CLASS_CODE
+        }.shouldBeEmpty()
+
+        result.filter { info ->
+            JupyterNotebookCellHeader.CELL_MARKER in info.text
+        }.shouldBeEmpty()
 
         val errors = result.filter { it.severity == HighlightSeverity.ERROR }
 
         when (strategy) {
-            HighlightCheckStrategy.OnlyValidSyntax -> {
+            HighlightCheckStrategy.OnlyValidSyntax, HighlightCheckStrategy.ShadowedErrors -> {
                 errors.shouldBeEmpty()
-                val actualData = result.filter { filter(it) }
-                expectedData.checkResult(notebookFile, actualData, testFixture.editor.document.text)
-            }
-            HighlightCheckStrategy.ShadowedErrors -> {
-                errors.shouldBeEmpty()
-                val actualData = result.filter { filter(it) }
-                expectedData.checkResult(notebookFile, actualData, testFixture.editor.document.text)
+                val actualData = result.filter(filter)
+                val documentText = runReadAction { testFixture.editor.document.text }
+                expectedData.checkResult(notebookFile, actualData, documentText)
             }
             HighlightCheckStrategy.WithErrors -> {
                 errors.shouldNotBeEmpty()
@@ -78,10 +73,12 @@ class HighlightingResult(
         checkWeakWarnings: Boolean,
         checkInfos: Boolean
     ): ExpectedHighlightingData {
-        return ExpectedHighlightingData(testFixture.editor.document, checkWarnings, checkWeakWarnings, checkInfos)
+        return runReadAction {
+            ExpectedHighlightingData(testFixture.editor.document, checkWarnings, checkWeakWarnings, checkInfos)
+        }
     }
 
     private companion object {
-        const val scriptingMissingClassError = "MISSING_SCRIPT_RECEIVER_CLASS"
+        const val MISSING_SCRIPT_RECEIVER_CLASS_CODE = "MISSING_SCRIPT_RECEIVER_CLASS"
     }
 }

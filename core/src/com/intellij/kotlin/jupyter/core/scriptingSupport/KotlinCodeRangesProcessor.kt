@@ -6,8 +6,10 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.kotlinx.jupyter.common.looksLikeReplCommand
 import org.jetbrains.kotlinx.jupyter.compiler.util.CodeInterval
+import org.jetbrains.kotlinx.jupyter.magics.AbstractMagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
+import org.jetbrains.plugins.notebooks.psi.jupyter.lexer.JupyterNotebookCellHeader.CELL_MARKER
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterSource
 
@@ -23,58 +25,72 @@ object KotlinCodeRangesProcessor {
         return source.trimStart()
     }
 
-    fun codeRanges(cell: JupyterPsiCell): CodeRangesResult {
+    fun codeRanges(cell: JupyterPsiCell): CellRanges {
         val code = getCellCode(cell)
-        if (looksLikeReplCommand(code)) return CodeRangesResult(
-            CellRanges(
-                emptyList(),
-                listOf(
-                    TextRange(
-                        0,
-                        cell.textLength
-                    )
-                )
-            ), true)
+        if (looksLikeReplCommand(code)) return CellRanges(
+            codeRanges = emptyMap(),
+            magicRanges = listOf(TextRange(0, cell.textLength)),
+        )
 
         val text = cell.text
         val magicIntervals = magicsProcessor.magicsIntervals(text)
 
-        fun Sequence<CodeInterval>.toRanges() = mapTo(mutableListOf()) {
-            TextRange(it.from, it.to)
-        }
+        val codeRanges = getCodeRangesByLanguage(text, magicIntervals)
+            .groupBy(
+                { it.languageInfo },
+                { value -> value.interval }
+            )
+        val magicRanges = magicIntervals
+            .mapTo(mutableListOf()) { TextRange(it.from, it.to) }
+            .filterNot { it.substring(text).startsWith(CELL_MARKER) }
 
-        val codeRanges = magicsProcessor.codeIntervals(text, magicIntervals).toRanges()
-        val magicRanges = magicIntervals.toRanges()
-
-        insertEmptyCodeRange(codeRanges, magicRanges)
-
-        return CodeRangesResult(CellRanges(codeRanges, magicRanges), false)
+        return CellRanges(codeRanges, magicRanges)
     }
 
-    private fun insertEmptyCodeRange(
-        codeRanges: MutableList<TextRange>,
-        magicRanges: List<TextRange>
-    ) {
-        val lastCodeRange = codeRanges.lastOrNull()
-        val lastMagicRange = magicRanges.lastOrNull()
+    private fun getCodeRangesByLanguage(
+        code: String,
+        magicsIntervals: Sequence<CodeInterval>,
+    ): Sequence<IntervalWithLanguage> = sequence {
+        var codeStart = 0
+        var languageInfo: NotebookExtraLanguage? = null
+        var codeInserted = false
 
-        var startOffset = -1
-
-        if (lastCodeRange == null) {
-            startOffset = lastMagicRange?.endOffset ?: 0
-        } else if (lastMagicRange != null && lastCodeRange.startOffset < lastMagicRange.startOffset) {
-            startOffset = lastMagicRange.endOffset
+        suspend fun SequenceScope<IntervalWithLanguage>.yieldCode(from: Int, to: Int) {
+            yield(
+                IntervalWithLanguage(
+                    TextRange(from, to),
+                    languageInfo,
+                )
+            )
+            codeInserted = true
         }
 
-        if (startOffset != -1) {
-            codeRanges.add(TextRange(startOffset, startOffset))
+        for (interval in magicsIntervals) {
+            if (codeStart != interval.from) {
+                yieldCode(codeStart, interval.from)
+            }
+            codeStart = interval.to
+
+            // If current magic corresponds to a language, it should be used to highlight the next code fragment
+            val trimmedMagic = code.substring(interval.from, interval.to).trim()
+            languageInfo = NotebookExtraLanguage.entries.firstOrNull { info ->
+                info.magics.any { AbstractMagicsProcessor.MAGICS_SIGN + it == trimmedMagic }
+            }
+        }
+
+        // We should always have at least one code range
+        if (!codeInserted || codeStart != code.length) {
+            yieldCode(codeStart, code.length)
         }
     }
 
-    data class CodeRangesResult(
-        val ranges: CellRanges,
-        val isCommand: Boolean,
+    data class CellRanges(
+        val codeRanges: Map<NotebookExtraLanguage?, List<TextRange>>,
+        val magicRanges: List<TextRange>,
     )
 
-    data class CellRanges(val codeRanges: List<TextRange>, val magicRanges: List<TextRange>)
+    private data class IntervalWithLanguage(
+        val interval: TextRange,
+        val languageInfo: NotebookExtraLanguage?,
+    )
 }

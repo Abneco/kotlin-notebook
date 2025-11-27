@@ -20,6 +20,7 @@ import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecuti
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesBuilder
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTester
+import com.intellij.lang.javascript.psi.JSFile
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
 import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory
@@ -222,7 +223,8 @@ fun PsiFile.getKtFiles(): List<KtFile>? = when (val psiFile = this) {
     is JupyterFile -> {
         runReadAction { psiFile.getInjectedKtFiles() }
     }
-    is JKTMetaPSIFile -> {
+    is JKTMetaPSIFile, is JSFile -> {
+        // Additional known files that can also be injected
         null
     }
     else -> {

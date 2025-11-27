@@ -1,0 +1,11 @@
+#%%
+val k = 7
+class K { val z = 1 }
+#%%
+%java
+class J {
+  int v = 1;
+  int foo(int a) { return a + v; }
+}
+<caret>
+new J().foo(2);
