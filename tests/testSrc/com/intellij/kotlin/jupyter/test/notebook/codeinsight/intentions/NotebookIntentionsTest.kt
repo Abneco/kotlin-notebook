@@ -1,6 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.codeinsight.intentions
 
+import com.intellij.codeInsight.template.impl.TemplateManagerImpl
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.kotlin.jupyter.test.runners.RunModeAwareTest
@@ -14,10 +15,16 @@ import org.junit.Test
 @TestDataPath($$"$CONTENT_ROOT/testData/notebooks/codeinsight")
 class NotebookIntentionsTest : KotlinNotebookTestCase() {
     @Test
-    fun specifyTypeForFunction() = runFileIntentionsTest()
+    fun specifyTypeForFunction() {
+        TemplateManagerImpl.setTemplateTesting(testRootDisposable)
+        runFileIntentionsTest()
+    }
 
     @Test
-    fun specifyTypeForProperty() = runFileIntentionsTest()
+    fun specifyTypeForProperty() {
+        TemplateManagerImpl.setTemplateTesting(testRootDisposable)
+        runFileIntentionsTest()
+    }
 
     @Test
     fun convertToBody() = runFileIntentionsTest()
