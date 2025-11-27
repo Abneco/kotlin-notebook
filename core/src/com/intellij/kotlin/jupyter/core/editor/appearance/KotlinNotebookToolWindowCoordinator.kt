@@ -6,13 +6,13 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.execution.kernel.KernelProcessAttachable
 import com.intellij.jupyter.execution.toolwindow.KernelProcessToolWindowCoordinator
 import com.intellij.kotlin.jupyter.core.debug.variables.KotlinNotebookSessionVariablesService
-import com.intellij.openapi.project.Project
-import com.intellij.ui.content.Content
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.util.toAbsolutePath
 import com.intellij.kotlin.jupyter.core.variables.NotebookVariablesToolWindowSetup
+import com.intellij.openapi.project.Project
+import com.intellij.ui.content.Content
 
-class KotlinNotebookToolWindowCoordinator(
+internal class KotlinNotebookToolWindowCoordinator(
     project: Project,
     vfile: BackedNotebookVirtualFile
 ): KernelProcessToolWindowCoordinator(project, vfile) {
