@@ -38,9 +38,10 @@ ANY=[^\n\r]+
 %%
 <YYINITIAL> {
     {CODE_MARKER} { yybegin(CODE_MARKER_STATE); return CODE_MARKER; }
-    {SPACE} { yybegin(EXPECT_DIRECTIVE); return WHITE_SPACE; }
-    {NEWLINE} { yybegin(EXPECT_DIRECTIVE); return NEWLINE; }
-    [^] { return BAD_CHARACTER; }
+    [^] {
+          yypushback(1);
+          yybegin(EXPECT_DIRECTIVE);
+      }
 }
 
 <CODE_MARKER_STATE> {
