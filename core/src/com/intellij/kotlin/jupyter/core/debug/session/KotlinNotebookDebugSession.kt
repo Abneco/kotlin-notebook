@@ -104,6 +104,7 @@ internal class KotlinNotebookDebugSession(
         JupyterExecutionListener.register(parentDisposable, object : JupyterExecutionListener {
             override suspend fun sessionCreated(session: JupyterNotebookSession) {
                 if (project.isDisposed) return
+                if (session.virtualFile != virtualFile) return
 
                 val port = targetDebugPort ?: return
                 val session = getOrCreateDebuggerSession(project,
