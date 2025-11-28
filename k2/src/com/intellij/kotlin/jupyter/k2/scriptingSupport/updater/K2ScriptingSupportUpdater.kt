@@ -166,7 +166,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
                 KotlinNotebookScriptModel(
                     scriptToRefine.virtualFile,
-                    ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
+                    ScriptCompilationConfigurationWrapper(
                         scriptToRefine,
                         refinedConfiguration
                     )
