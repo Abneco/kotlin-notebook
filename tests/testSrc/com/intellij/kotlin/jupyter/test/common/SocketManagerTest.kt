@@ -10,7 +10,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import org.jetbrains.kotlinx.jupyter.api.DEFAULT
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
-import org.jetbrains.kotlinx.jupyter.protocol.JupyterSocketSide
 import org.jetbrains.kotlinx.jupyter.startup.createClientKotlinKernelConfig
 import org.jetbrains.kotlinx.jupyter.util.closeWithTimeout
 import org.jetbrains.kotlinx.jupyter.zmq.protocol.JupyterZmqClientSocketManager
@@ -74,7 +73,7 @@ class SocketManagerTest : KotlinNotebookUnitTestCase() {
             extraCompilerArgs = emptyList(),
         )
 
-        return JupyterZmqClientSocketManager(DefaultKernelLoggerFactory, side = JupyterSocketSide.IDE_CLIENT)
+        return JupyterZmqClientSocketManager(DefaultKernelLoggerFactory)
             .open(kernelConfig.jupyterParams)
     }
 
