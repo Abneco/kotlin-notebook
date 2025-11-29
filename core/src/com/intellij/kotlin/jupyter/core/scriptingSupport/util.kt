@@ -42,5 +42,5 @@ fun getSelectedSdkOrAnyAcceptable(project: Project): Sdk? {
 }
 
 fun ScriptCompilationConfigurationWrapper.with(body: ScriptCompilationConfiguration.Builder.() -> Unit): ScriptCompilationConfigurationWrapper {
-    return ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(this.script, configuration.with(body))
+    return ScriptCompilationConfigurationWrapper(this.script, configuration.with(body))
 }

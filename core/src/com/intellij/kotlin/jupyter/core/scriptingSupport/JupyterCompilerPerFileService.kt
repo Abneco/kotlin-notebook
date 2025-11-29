@@ -467,7 +467,7 @@ class JupyterCompilerPerFileService(
     }
 
     fun provideDefaultConfiguration(sourceCode: SourceCode): ScriptCompilationConfigurationResult {
-        return ScriptCompilationConfigurationWrapper.FromCompilationConfiguration(
+        return ScriptCompilationConfigurationWrapper(
             sourceCode,
             lastStableConfiguration.get()
         ).with {
