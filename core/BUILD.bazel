@@ -69,7 +69,7 @@ jvm_library(
     "@ultimate_lib//:kotlin-jupyter-core-jetbrains-kotlinx-kotlin-jupyter-ws-server",
     "@ultimate_lib//:kotlinx-serialization-core-provided",
     "@community//libraries/kotlinx/serialization/json",
-    "@lib//:kotlinx-coroutines-core",
+    "@community//libraries/kotlinx/coroutines/core",
     "@community//libraries/jackson/jackson",
     "@community//libraries/jackson/databind",
     "@ultimate_lib//:kotlinc-analysis-api-provided",
