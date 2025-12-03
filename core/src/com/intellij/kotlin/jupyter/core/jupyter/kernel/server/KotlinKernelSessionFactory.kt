@@ -4,16 +4,26 @@ package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.JupyterConnectionParameters
 import com.intellij.jupyter.core.jupyter.connections.auth.token.JupyterTokenAuthParams
+import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.runtime.JupyterHttpParams
 import com.intellij.jupyter.execution.kernel.JupyterNotebookKernelSessionFactory
 import com.intellij.jupyter.execution.process.SeparateJupyterKernelClient
+import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.messages.updateNotebookMetadata
 import com.intellij.kotlin.jupyter.core.util.DEFAULT_KOTLIN_KERNEL_NAME
 import com.intellij.kotlin.jupyter.core.util.isKotlinKernelName
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import java.net.URI
 
 class KotlinKernelSessionFactory : JupyterNotebookKernelSessionFactory() {
+
+    override suspend fun afterSessionCreation(session: JupyterNotebookSession) {
+        if (!session.updateNotebookMetadata()) {
+            thisLogger().warn("Failed to update Kotlin Notebook with IntelliJ metadata")
+        }
+    }
+
     override suspend fun checkIsSupported(
         file: BackedNotebookVirtualFile,
         project: Project
