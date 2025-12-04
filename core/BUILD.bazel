@@ -83,6 +83,7 @@ jvm_library(
     "@community//platform/code-style-impl:codeStyle-impl",
     "@community//platform/xdebugger-api:debugger",
     "@community//platform/xdebugger-impl:debugger-impl",
+    "@community//platform/xdebugger-impl/ui",
     "@community//platform/platform-api:ide",
     "@community//platform/platform-impl:ide-impl",
     "@community//platform/platform-util-io:ide-util-io",
