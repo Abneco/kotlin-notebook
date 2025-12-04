@@ -1,7 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.notebook.refactorings
 
-import com.intellij.jupyter.core.jupyter.editor.JupyterDSFileEditorProvider
+import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditorProvider
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
 import com.intellij.notebooks.ui.editor.actions.command.mode.NotebookEditorMode
@@ -26,7 +26,7 @@ abstract class RefactoringTestBase(private val refactoringActionId: String) : Ko
     protected fun doTest(caretInitializer: (CaretModel) -> Unit) {
         myFixture.setCaresAboutInjection(true)
         setUpProjectSdkIfNeeded()
-        val editorProvider = FileEditorProvider.EP_FILE_EDITOR_PROVIDER.findExtension(JupyterDSFileEditorProvider::class.java)!!
+        val editorProvider = FileEditorProvider.EP_FILE_EDITOR_PROVIDER.findExtension(JupyterFileEditorProvider::class.java)!!
         val notebookFile = configureByJupyterFile(fileEditorProvider = editorProvider)
         originalVirtualFile = notebookFile.file
 
