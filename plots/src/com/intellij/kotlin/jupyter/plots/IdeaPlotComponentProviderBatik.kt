@@ -3,24 +3,34 @@ package com.intellij.kotlin.jupyter.plots
 
 import com.intellij.ui.components.JBScrollPane
 import org.jetbrains.letsPlot.batik.plot.component.DefaultPlotComponentProviderBatik
+import org.jetbrains.letsPlot.core.util.sizing.SizingPolicy
+import java.awt.Dimension
 import javax.swing.JComponent
 import javax.swing.JScrollPane
 
 class IdeaPlotComponentProviderBatik(
     processedSpec: MutableMap<String, Any>,
     executor: (() -> Unit) -> Unit,
-    computationMessagesHandler: (List<String>) -> Unit
+    computationMessagesHandler: (List<String>) -> Unit,
+    private val componentCustomizer: (JComponent) -> Unit = {},
 ) : DefaultPlotComponentProviderBatik(
     processedSpec = processedSpec,
     executor = executor,
     computationMessagesHandler = computationMessagesHandler
 ) {
-
     override fun createScrollPane(plotComponent: JComponent): JScrollPane {
         return JBScrollPane(
             plotComponent,
             JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
             JBScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
         )
+    }
+
+    override fun createComponent(
+        containerSize: Dimension?,
+        sizingPolicy: SizingPolicy,
+        specOverrideList: List<Map<String, Any>>,
+    ): JComponent {
+        return super.createComponent(containerSize, sizingPolicy, specOverrideList).also(componentCustomizer)
     }
 }

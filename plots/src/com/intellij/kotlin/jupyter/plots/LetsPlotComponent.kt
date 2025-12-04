@@ -1,10 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.plots
 
-import com.intellij.kotlin.jupyter.core.util.MouseEventDeepReDispatcher
-import com.intellij.kotlin.jupyter.core.util.RetargetingCursorProvider
-import com.intellij.kotlin.jupyter.core.util.addCursorProvider
-import com.intellij.kotlin.jupyter.core.util.addDispatchingMouseListener
 import com.intellij.kotlin.jupyter.plots.export.buildHtmlFromRawPlotSpec
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.diagnostic.thisLogger
@@ -21,18 +17,13 @@ import org.jetbrains.letsPlot.core.spec.front.PlotConfigFrontend
 import org.jetbrains.letsPlot.core.util.MonolithicCommon
 import org.jetbrains.letsPlot.core.util.PlotSizeHelper
 import org.jetbrains.letsPlot.core.util.sizing.SizingPolicy
-import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Rectangle
 import java.awt.event.ComponentEvent
-import java.awt.event.MouseEvent
-import javax.swing.JButton
-import javax.swing.JPanel
 import kotlin.math.roundToInt
 
 class LetsPlotComponent : JBLayeredPane() {
     private var plotPanel: PlotPanel? = null
-    private var transparentPanel: JPanel? = null
 
     private var _dataKey: LetsPlotOutputDataKey? = null
     val dataKey: LetsPlotOutputDataKey? get() = _dataKey
@@ -40,11 +31,12 @@ class LetsPlotComponent : JBLayeredPane() {
     private var _showToolbar: Boolean = false
     val showToolbar: Boolean get() = _showToolbar
 
-    private val currentState get() = LetsPlotComponentState(
-        dataKey,
-        getCurrentLetsPlotFlavor(),
-        showToolbar,
-    )
+    private val currentState
+        get() = LetsPlotComponentState(
+            dataKey,
+            getCurrentLetsPlotFlavor(),
+            showToolbar,
+        )
     private var previousState: LetsPlotComponentState? = null
 
     fun initialize(dataKey: LetsPlotOutputDataKey) {
@@ -77,9 +69,6 @@ class LetsPlotComponent : JBLayeredPane() {
         myComponent.bounds = Rectangle(plotSize)
         // This is a workaround: a plot panel may skip first resize event, but we need it to rebuild the plot
         myComponent.dispatchEvent(ComponentEvent(myComponent, ComponentEvent.COMPONENT_RESIZED))
-
-        val transparentPanel = this.transparentPanel ?: return
-        transparentPanel.size = mySize
     }
 
     override fun getPreferredSize(): Dimension {
@@ -106,7 +95,6 @@ class LetsPlotComponent : JBLayeredPane() {
         @Suppress("SSBasedInspection")
         plotPanel?.dispose()
         plotPanel = null
-        transparentPanel = null
     }
 
     private fun initForSpec(processedSpec: MutableLetsPlotSpec) {
@@ -117,6 +105,9 @@ class LetsPlotComponent : JBLayeredPane() {
                 for (message in messages) {
                     LOG.debug("[Demo Plot Viewer] $message")
                 }
+            },
+            componentCustomizer = { component ->
+                PopupHandler.installPopupMenu(component, "LetsPlotActions", ActionPlaces.JUPYTER_NOTEBOOK_CELL_OUTPUT_POPUP)
             }
         )
 
@@ -128,7 +119,7 @@ class LetsPlotComponent : JBLayeredPane() {
             applicationContext = IdeaSwingContextBatik,
             sizingPolicy = SizingPolicy.fitContainerSize(preserveAspectRatio = !showToolbar),
             showToolbar = showToolbar,
-        ){}
+        ) {}
 
         plotPanel.isOpaque = true
         plotPanel.background = EditorColorsManager.getInstance().getGlobalScheme().defaultBackground
@@ -136,48 +127,9 @@ class LetsPlotComponent : JBLayeredPane() {
         alignmentX = CENTER_ALIGNMENT
         alignmentY = CENTER_ALIGNMENT
 
-        val transparentPanel = JPanel().apply {
-            isOpaque = false
-            PopupHandler.installPopupMenu(this, "LetsPlotActions", ActionPlaces.JUPYTER_NOTEBOOK_CELL_OUTPUT_POPUP)
-
-            addDispatchingMouseListener(
-                MouseEventDeepReDispatcher(plotPanel) { e: MouseEvent ->
-                    when (e.id) {
-                        MouseEvent.MOUSE_CLICKED,
-                        MouseEvent.MOUSE_PRESSED,
-                        MouseEvent.MOUSE_RELEASED -> {
-                            // Popup trigger events shouldn't be redispatched to children as long as they trigger
-                            // a popup menu with Copy and Save actions on the plot panel
-                            // Otherwise we should redispatch these events: they trigger toolbar button actions
-                            !e.isPopupTrigger
-                        }
-                        else -> true
-                    }
-                }
-            )
-
-            addCursorProvider(
-                RetargetingCursorProvider.Factory(
-                    boundsSource = plotPanel,
-                    customCursorGetter = { component ->
-                        when {
-                            /** Toolbar buttons */
-                            component is JButton -> Cursor.getDefaultCursor()
-
-                            /** The rest of the toolbar */
-                            component.javaClass.name.contains("PlotPanelToolbar") -> Cursor.getDefaultCursor()
-                            else -> null
-                        }
-                    }
-                )
-            )
-        }
-
-        add(transparentPanel, POPUP_LAYER, -1)
         add(plotPanel, DEFAULT_LAYER, -1)
 
         this.plotPanel = plotPanel
-        this.transparentPanel = transparentPanel
     }
 
     private fun getSpec() = getSpec(currentState)
