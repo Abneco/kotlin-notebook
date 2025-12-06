@@ -5,6 +5,7 @@ import com.intellij.codeInsight.folding.impl.FoldingUpdate
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.data.input.JupyterDataInputSettings
 import com.intellij.jupyter.core.jupyter.editor.JupyterEditorCustomizer
+import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
 import com.intellij.jupyter.core.jupyter.helper.isJupyter
 import com.intellij.kotlin.jupyter.core.editor.highlighting.NotebookHighlightingService
 import com.intellij.kotlin.jupyter.core.editor.highlighting.editor.NotebookEditorCreatedListener
@@ -18,20 +19,19 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.colors.EditorColorsListener
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.impl.EditorImpl
-import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.async
 
 private val inputDataCellsEnabledInKotlinNotebook by registryFlag("kotlin.notebook.data.input.cells.enabled", false)
 
 class KotlinJupyterEditorCustomizer : JupyterEditorCustomizer {
-    override fun onEditorCreated(project: Project, textEditor: TextEditor, virtualFile: BackedNotebookVirtualFile) {
+    override fun onEditorCreated(project: Project, jupyterFileEditor: JupyterFileEditor, virtualFile: BackedNotebookVirtualFile) {
         if (!virtualFile.file.isKotlinNotebook) return
 
         val options = KotlinNotebookApplicationOptions.get()
-        textEditor.putUserData(FoldingUpdate.INJECTED_CODE_FOLDING_ENABLED, options.shouldShowFoldings)
+        jupyterFileEditor.putUserData(FoldingUpdate.INJECTED_CODE_FOLDING_ENABLED, options.shouldShowFoldings)
 
-        val editor = textEditor.editor
+        val editor = jupyterFileEditor.editor
 
         if (editor.isJupyter) {
             if (!inputDataCellsEnabledInKotlinNotebook) {
