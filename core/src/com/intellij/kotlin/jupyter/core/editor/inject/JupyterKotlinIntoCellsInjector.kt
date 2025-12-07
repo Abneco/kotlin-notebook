@@ -49,7 +49,7 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector, Dumb
         if (!virtualFile.file.isKotlinNotebook) return
         if (element.isNonCode) return
 
-        val ranges = KotlinCodeRangesProcessor.codeRanges(element)
+        val ranges = KotlinCodeRangesProcessor.getCellRanges(element)
 
         fun List<TextRange>.inject(language: Language, extension: String, skipEmpty: Boolean) {
             val rangesToInject = if (skipEmpty) filterNot { it.isEmpty } else this

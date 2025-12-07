@@ -19,13 +19,7 @@ object KotlinCodeRangesProcessor {
         parseOutCellMarker = true
     )
 
-    private fun getCellCode(cell: PsiElement): String {
-        val sourceElement = PsiTreeUtil.getChildOfType(cell, JupyterSource::class.java)
-        val source = sourceElement?.text.orEmpty()
-        return source.trimStart()
-    }
-
-    fun codeRanges(cell: JupyterPsiCell): CellRanges {
+    fun getCellRanges(cell: JupyterPsiCell): CellRanges {
         val code = getCellCode(cell)
         if (looksLikeReplCommand(code)) return CellRanges(
             codeRanges = emptyMap(),
@@ -38,13 +32,20 @@ object KotlinCodeRangesProcessor {
         val codeRanges = getCodeRangesByLanguage(text, magicIntervals)
             .groupBy(
                 { it.languageInfo },
-                { value -> value.interval }
+                { it.interval }
             )
         val magicRanges = magicIntervals
-            .mapTo(mutableListOf()) { TextRange(it.from, it.to) }
-            .filterNot { it.substring(text).startsWith(CELL_MARKER) }
+            .filterNot { text.substring(it.from, it.to).startsWith(CELL_MARKER) }
+            .map { TextRange(it.from, it.to) }
+            .toList()
 
         return CellRanges(codeRanges, magicRanges)
+    }
+
+    private fun getCellCode(cell: PsiElement): String {
+        val sourceElement = PsiTreeUtil.getChildOfType(cell, JupyterSource::class.java)
+        val source = sourceElement?.text.orEmpty()
+        return source.trimStart()
     }
 
     private fun getCodeRangesByLanguage(
@@ -84,13 +85,25 @@ object KotlinCodeRangesProcessor {
         }
     }
 
+    /**
+     * Ranges of code fragments and magics of the cell
+     * Code ranges are grouped by language
+     * It's guaranteed that:
+     * - There are no overlapping ranges
+     * - Each position within the cell is covered by exactly one range
+     * - In each of the lists ranges are sorted in ascending order
+     * - There is at least one code range (maybe empty)
+     */
     data class CellRanges(
+        // Null key means default language (Kotlin)
         val codeRanges: Map<NotebookExtraLanguage?, List<TextRange>>,
         val magicRanges: List<TextRange>,
     )
 
     private data class IntervalWithLanguage(
         val interval: TextRange,
+
+        // Null means default language (Kotlin)
         val languageInfo: NotebookExtraLanguage?,
     )
 }
