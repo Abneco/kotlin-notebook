@@ -13,7 +13,6 @@ import com.intellij.kotlin.jupyter.test.runners.ListenableTest
 import com.intellij.kotlin.jupyter.test.runners.ListenableTestImpl
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.projectRoots.impl.JavaAwareProjectJdkTableImpl
@@ -65,8 +64,6 @@ class KotlinNotebookModuleDependenciesTest :
             } else {
                 KotlinNotebookDependencies.None
             }
-
-            FileEditorManager.getInstance(project).openFile(notebookVirtualFile.file)
         }
 
         val classpath = runBlocking {

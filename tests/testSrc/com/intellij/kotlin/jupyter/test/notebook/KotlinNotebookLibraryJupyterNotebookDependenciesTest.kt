@@ -14,7 +14,6 @@ import com.intellij.kotlin.jupyter.test.runners.ListenableTestImpl
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.application.runWriteActionAndWait
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.impl.libraries.LibraryEx
 import com.intellij.openapi.roots.libraries.Library
@@ -64,7 +63,6 @@ class KotlinNotebookLibraryDependenciesTest :
             KotlinNotebookDependencies.AllLibraries
         }
 
-        FileEditorManager.getInstance(project).openFile(notebookVirtualFile.file)
 
         val classpath = runWithModalProgressBlocking(project, "building dependencies for ${notebookVirtualFile.file.name}") {
             JupyterKotlinProjectArtifactsService.getInstance(project).buildProjectAndGetLibraries(notebookVirtualFile)

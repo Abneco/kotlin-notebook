@@ -30,9 +30,6 @@ import com.intellij.openapi.application.impl.NonBlockingReadActionImpl.waitForAs
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.editor.impl.EditorImpl
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -197,10 +194,6 @@ fun Project.createEmptyNotebook(name: String, testRootDisposable: Disposable): B
         directory = directoryPsiFile,
     )
     val virtualFile = psiFile!!.virtualFile
-    val createdEditors = FileEditorManager.getInstance(psiFile.project).allEditors.filter { it.file == virtualFile }
-    createdEditors.forEach {
-        Disposer.register(testRootDisposable, ((it as TextEditor).editor as EditorImpl).disposable)
-    }
     return BackedNotebookVirtualFile.getOrLoadForDisposable(virtualFile, disposable = testRootDisposable)!!
 }
 
