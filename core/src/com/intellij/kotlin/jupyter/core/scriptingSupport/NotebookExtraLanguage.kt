@@ -6,6 +6,9 @@ enum class NotebookExtraLanguage(
     val id: String,
     val extension: String,
 ) {
-    JAVASCRIPT(listOf("js"), "JavaScript", "js"),
-    TYPESCRIPT(listOf("ts"), "TypeScript", "ts"),
+    // These language magics are defined in https://github.com/yidafu/kotlin-jupyter-js
+    // They can be turned on by `%use jupyter-js` magic
+    JAVASCRIPT(listOf("js", "javascript"), "JavaScript", "js"),
+    TYPESCRIPT(listOf("ts", "typescript"), "TypeScript", "ts"),
+    TYPESCRIPT_JSX(listOf("tsx", "jsx"), "TypeScript JSX", "tsx"),
 }
