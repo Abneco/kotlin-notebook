@@ -26,13 +26,13 @@ import com.intellij.openapi.ui.getPreferredFocusedComponent
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsContexts
 import com.intellij.platform.debugger.impl.shared.proxy.XDebugSessionProxy
+import com.intellij.platform.debugger.impl.ui.XDebuggerEntityConverter
 import com.intellij.ui.ClickListener
 import com.intellij.ui.ListenerUtil
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.content.Content
 import com.intellij.xdebugger.frame.XValueChildrenList
 import com.intellij.xdebugger.impl.frame.XStandaloneVariablesView
-import com.intellij.xdebugger.impl.proxy.asProxy
 import java.awt.BorderLayout
 import java.awt.event.MouseEvent
 
@@ -177,7 +177,7 @@ class KotlinNotebookVarsToolWindow(
         super.uiDataSnapshot(sink)
         sink[JupyterHelper.FORCED_NOTEBOOK] = notebookFile
         val session = KotlinNotebookDebugSessionManager.getForFile(project, notebookFile).currentXSession ?: return
-        sink[XDebugSessionProxy.DEBUG_SESSION_PROXY_KEY] = session.asProxy()
+        sink[XDebugSessionProxy.DEBUG_SESSION_PROXY_KEY] = XDebuggerEntityConverter.asProxy(session)
     }
 
     fun createContent(): Content {
