@@ -287,11 +287,11 @@ class JupyterKotlinProjectArtifactsService(val project: Project, private val cor
         buildResultDeferred.cancelOnDispose(this)
 
         val allModules = getDependencies(module)
+        val buildResult = buildResultDeferred.await()
         val projectClasspath = allModules.flatMap {
             ModuleRootManager.getInstance(it).orderEntries().withoutSdk().classes().pathsList.pathList
         }.distinct()
 
-        val buildResult = buildResultDeferred.await()
         val state = if (!buildResult.hasErrors()) DependenciesState.PROVIDED
         else if (projectClasspath.any { Path.of(it).isNotEmptyDirectory }) DependenciesState.OUTDATED
         else DependenciesState.ABSENT
