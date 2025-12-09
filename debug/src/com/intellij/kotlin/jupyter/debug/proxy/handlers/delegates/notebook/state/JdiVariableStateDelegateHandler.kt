@@ -31,7 +31,7 @@ internal class JdiVariableStateDelegateHandler(
 
     override fun <T : Any> createProxyForValue(proxyType: Class<T>): T? {
         require(proxyType.isInterface) {
-            "Type parameter T must be an interface, got ${proxyType.name}"
+            "Type parameter T must be an interface, got ${proxyType}"
         }
         val underlyingValue = variableValueObjectReference ?: return null
         val context = DebugValueContext(

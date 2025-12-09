@@ -79,7 +79,9 @@ internal fun Value?.convertFromJdiValue(
                     ),
                     returnType,
                 )
-            } else value
+            } else {
+                value
+            }
         }
         else -> null
     }

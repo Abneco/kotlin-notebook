@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.debug.proxy.context
 import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
 import com.sun.jdi.ObjectReference
+import java.lang.reflect.Type
 
 /**
  * Represents current operational context of [objectReference] inside
@@ -16,5 +17,5 @@ data class DebugValueContext(
     val debugProcess: DebugProcessImpl,
     val objectReference: ObjectReference,
     val evaluationContext: EvaluationContextImpl? = null,
-    val genericType: Class<*>? = null,
+    val genericType: Type? = null,
 )
