@@ -19,11 +19,12 @@ interface KotlinNotebookModuleDependencyBehaviorRefiner {
     fun refineBuildTaskContext(project: Project, taskContext: ProjectTaskContext): ProjectTaskContext
 
     /**
-     * Determines whether the notification popup should not be shown.
+     * Determines whether the notification popup should be shown.
+     * If at least one extension returns `false`, the popup will not be shown.
      * This might happen if a change has happened under a debugger session or on a remote machine,
      * so that rebuilding now is not needed.
      */
-    fun shouldShowOutdatedDependenciesPopup(project: Project, affectedModules: Collection<Module>): Boolean = false
+    fun shouldShowOutdatedDependenciesPopup(project: Project, affectedModules: Collection<Module>): Boolean = true
 
     companion object {
         private val EP = ExtensionPointName.create<KotlinNotebookModuleDependencyBehaviorRefiner>("com.intellij.kotlin.jupyter.core.moduleDependencyBehaviorRefiner")
@@ -35,7 +36,7 @@ interface KotlinNotebookModuleDependencyBehaviorRefiner {
         }
 
         fun shouldShowOutdatedDependenciesPopup(project: Project, affectedModules: Collection<Module>): Boolean {
-            return EP.extensionList.any { it.shouldShowOutdatedDependenciesPopup(project, affectedModules) }
+            return EP.extensionList.all { it.shouldShowOutdatedDependenciesPopup(project, affectedModules) }
         }
     }
 }
