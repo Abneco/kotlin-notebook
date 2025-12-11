@@ -144,7 +144,7 @@ class NotebookVariablesPerFileStateService(
 
         val list = XValueChildrenList()
         if (virtualMachineProxy !is VirtualMachineProxyImpl) return list
-        if (!virtualMachineProxy.canBeModified()) return list
+        if (!virtualMachineProxy.canBeModified() || !virtualMachineProxy.debugProcess.isAttached) return list
 
         val variablesHolderProxy = notebookSessionValuesProvider.variablesStateProvider(virtualMachineProxy) ?: return list
         val processImpl = virtualMachineProxy.debugProcess ?: return list

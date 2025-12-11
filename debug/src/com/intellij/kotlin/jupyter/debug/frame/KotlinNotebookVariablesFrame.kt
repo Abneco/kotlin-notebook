@@ -40,7 +40,7 @@ internal class KotlinNotebookVariablesFrame(
 
     private fun XCompositeNode.isReadyForComputations(debugProcess: DebugProcessImpl?): Boolean {
         return when {
-            isObsolete || debugProcess == null -> {
+            isObsolete || debugProcess == null || project.isDisposed -> {
                 setErrorMessage(
                     KotlinNotebookDebugBundle.message("kotlin.jupyter.debug.node.empty.no.connection.message")
                 )
@@ -112,6 +112,10 @@ internal class KotlinNotebookVariablesFrame(
 
         context.suspendContext.managerThread.invoke(PrioritizedTask.Priority.HIGH) {
             try {
+                if (project.isDisposed) {
+                    return@invoke
+                }
+
                 val virtualMachine = context.suspendContext.virtualMachineProxy
 
                 val variablesState = variablesService.buildXValueListForVariablesState(virtualMachine, context)
