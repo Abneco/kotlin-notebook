@@ -33,7 +33,7 @@ class KotlinNotebookDebugProjectOptionsProvider
         internal set
 
     class State : BaseState() {
-        var shouldShowNotebookVariables: Boolean by property(false)
+        var shouldShowNotebookVariables: Boolean by property(true)
         var shouldFocusOnNotebookVariables: Boolean by property(false)
     }
 
