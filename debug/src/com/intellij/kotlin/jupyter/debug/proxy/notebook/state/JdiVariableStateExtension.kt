@@ -4,15 +4,17 @@ package com.intellij.kotlin.jupyter.debug.proxy.notebook.state
 import com.intellij.kotlin.jupyter.debug.proxy.JdiDescriptorAwareProxy
 import com.sun.jdi.Field
 import com.sun.jdi.ObjectReference
+import com.sun.jdi.Value
 
 /**
  * Extension for [org.jetbrains.kotlinx.jupyter.api.VariableState] remote object proxy.
  */
 interface JdiVariableStateExtension : JdiDescriptorAwareProxy {
     /**
-     * ObjectReference for the variable's value from the script instance.
+     * Actual variable's value from the script instance.
+     * It might not be of [ObjectReference] type, e.g., some primitive type
      */
-    val variableValueObjectReference: ObjectReference?
+    val variableValue: Value?
 
     fun findVariableField(name: String): Field?
 

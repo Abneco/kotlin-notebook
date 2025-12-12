@@ -41,7 +41,7 @@ open class JdiProxyDescriptorAwareBaseHandler(
     /**
      * Binds an externally created [JavaValue] to this proxy without recreating it.
      */
-    final override fun bindValueFromRuntime(value: JavaValue?) {
+    override fun bindValueFromRuntime(value: JavaValue?) {
         _javaValue = value
     }
 
