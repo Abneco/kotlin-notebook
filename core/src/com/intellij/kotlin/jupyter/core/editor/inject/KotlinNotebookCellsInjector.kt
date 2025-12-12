@@ -6,7 +6,6 @@ import com.intellij.jupyter.core.jupyter.nbformat.nonCodeCellSuffixes
 import com.intellij.kotlin.jupyter.core.language.meta.JKTMetaFileType
 import com.intellij.kotlin.jupyter.core.language.meta.JupyterKtMetaLanguage
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
-import com.intellij.kotlin.jupyter.core.scriptingSupport.KotlinCodeRangesProcessor
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.lang.Language
 import com.intellij.lang.injection.MultiHostInjector
@@ -26,7 +25,7 @@ private val NON_CODE_CELL_REGEX get() = Regex("""${CELL_MARKER}(${nonCodeCellSuf
 
 val NotebookPsiCell.isNonCode: Boolean get() = cellMarker.text.matches(NON_CODE_CELL_REGEX)
 
-class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector, DumbAware {
+class KotlinNotebookCellsInjector(project: Project) : MultiHostInjector, DumbAware {
     private val injectedCounter = AtomicInteger()
     private val projectCompilerService = JupyterCompilerService.getInstance(project)
 
@@ -49,7 +48,7 @@ class JupyterKotlinIntoCellsInjector(project: Project) : MultiHostInjector, Dumb
         if (!virtualFile.file.isKotlinNotebook) return
         if (element.isNonCode) return
 
-        val ranges = KotlinCodeRangesProcessor.getCellRanges(element)
+        val ranges = getCellRanges(element)
 
         fun List<TextRange>.inject(language: Language, extension: String, skipEmpty: Boolean) {
             val rangesToInject = if (skipEmpty) filterNot { it.isEmpty } else this

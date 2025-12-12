@@ -129,7 +129,7 @@
 
         <postStartupActivity implementation="com.intellij.kotlin.jupyter.core.notifications.KotlinNotebookPostStartupActivity"/>
 
-        <multiHostInjector implementation="com.intellij.kotlin.jupyter.core.editor.inject.JupyterKotlinIntoCellsInjector"/>
+        <multiHostInjector implementation="com.intellij.kotlin.jupyter.core.editor.inject.KotlinNotebookCellsInjector"/>
         <fileIconProvider implementation="com.intellij.kotlin.jupyter.core.ide.KotlinNotebookFileIconProvider"/>
         <formatting.injectedOptions
                 implementation="com.intellij.kotlin.jupyter.core.editor.formatting.KotlinInjectedFormattingOptionsProvider"/>
