@@ -16,6 +16,7 @@ import com.intellij.kotlin.jupyter.core.util.createDisposableChild
 import com.intellij.kotlin.jupyter.debug.proxy.notebook.NotebookJdiProxy
 import com.intellij.kotlin.jupyter.debug.proxy.notebook.state.VariableStateJdiProxy
 import com.intellij.kotlin.jupyter.debug.session.KotlinNotebookDebugSessionManager
+import com.intellij.kotlin.jupyter.debug.util.connection.isConnectionAlive
 import com.intellij.kotlin.jupyter.debug.variables.context.NotebookAbstractSessionRuntimeEnvironmentExplorer
 import com.intellij.kotlin.jupyter.debug.variables.context.NotebookSessionNoSuspensionValuesProxyFinder
 import com.intellij.kotlin.jupyter.debug.variables.presentation.KotlinNotebookToolVariablesWindowHandler
@@ -76,16 +77,6 @@ class NotebookVariablesPerFileStateService(
         }
     }
 
-    fun getXValueChildrenList(): XValueChildrenList? {
-        val debugSession = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
-        val vmProxy = debugSession.currentStackFrameProxy?.virtualMachine
-        val evalContext = debugSession.evaluationContext
-        if (vmProxy == null || evalContext == null) {
-            return null
-        }
-        return buildXValueListForVariablesState(vmProxy, evalContext)
-    }
-
     override fun getNotebookReferenceProxy(): NotebookJdiProxy? {
         val virtualMachineProxy = currentFrameProxy?.virtualMachine ?: return null
         return notebookSessionValuesProvider.notebookProxyProvider(virtualMachineProxy)
@@ -93,6 +84,8 @@ class NotebookVariablesPerFileStateService(
 
     override fun getVariablesStateReferenceProxy(): Map<String, VariableStateJdiProxy>? {
         val virtualMachineProxy = currentFrameProxy?.virtualMachine ?: return null
+        if (!virtualMachineProxy.debugProcess.isConnectionAlive) return null
+
         return notebookSessionValuesProvider.variablesStateProvider(virtualMachineProxy)?.apply {
             val variablesNames = keys
             for (variableName in variablesNames) {
@@ -144,13 +137,16 @@ class NotebookVariablesPerFileStateService(
 
         val list = XValueChildrenList()
         if (virtualMachineProxy !is VirtualMachineProxyImpl) return list
-        if (!virtualMachineProxy.canBeModified() || !virtualMachineProxy.debugProcess.isAttached) return list
+        if (!virtualMachineProxy.canBeModified() || !virtualMachineProxy.debugProcess.isConnectionAlive) return list
 
         val variablesHolderProxy = notebookSessionValuesProvider.variablesStateProvider(virtualMachineProxy) ?: return list
         val processImpl = virtualMachineProxy.debugProcess ?: return list
 
         return list.apply {
             processImpl.invokeInManagerThread {
+                if (!virtualMachineProxy.debugProcess.isConnectionAlive || project.isDisposed) {
+                    return@invokeInManagerThread
+                }
                 populateFrameWithVariables(
                     variablesHolderProxy,
                     processImpl.debuggerContext

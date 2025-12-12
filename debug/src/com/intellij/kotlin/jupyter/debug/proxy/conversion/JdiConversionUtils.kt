@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.debug.proxy.conversion
 
 import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
+import com.intellij.debugger.impl.DebuggerUtilsEx
 import com.intellij.kotlin.jupyter.debug.proxy.JdiObjectReferenceProxy
 import com.intellij.kotlin.jupyter.debug.proxy.context.DebugValueContext
 import com.intellij.kotlin.jupyter.debug.proxy.context.ReturnTypeInfo
@@ -27,7 +28,7 @@ import kotlin.reflect.KProperty
 /**
  * Converts Java object to JDI [Value].
  */
-internal fun Any.convertToJdiValue(vm: VirtualMachine): Value {
+internal fun Any.convertToJdiValue(vm: VirtualMachine, evaluationContext: EvaluationContextImpl?): Value {
     val value = this
 
     return when (value) {
@@ -39,7 +40,14 @@ internal fun Any.convertToJdiValue(vm: VirtualMachine): Value {
         is Char -> vm.mirrorOf(value)
         is Float -> vm.mirrorOf(value)
         is Double -> vm.mirrorOf(value)
-        is String -> vm.mirrorOf(value)
+        is String -> {
+            // Prefer the caching version adapted for string pool, if possible
+            if (evaluationContext != null) {
+                DebuggerUtilsEx.mirrorOfString(value, evaluationContext)
+            } else {
+                vm.mirrorOf(value)
+            }
+        }
         is ObjectReference -> value
         is JdiObjectReferenceProxy -> value.objectReference
         else -> throw IllegalArgumentException("Unsupported argument type: ${value::class.java}")

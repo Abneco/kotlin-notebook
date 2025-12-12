@@ -115,7 +115,7 @@ internal class JdiMapDelegateExtensionHandler(
 
     private fun convertToJdiValue(value: Any): Value {
         val vm = objectReference.virtualMachine()
-        return value.convertToJdiValue(vm)
+        return value.convertToJdiValue(vm, evaluationContext)
     }
 
     private fun areEqual(jdiValue1: Value?, jdiValue2: Value?): Boolean {

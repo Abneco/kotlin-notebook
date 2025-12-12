@@ -53,6 +53,10 @@ class KotlinNotebookFileDebugSession(
     }
 
     private val currentConfigRef: AtomicReference<DebugSessionConfig?> = AtomicReference(null)
+    private val debuggerSessionRef = AtomicReference<DebuggerSession?>(null)
+    private val sessionMutex = Mutex()
+
+    private val evaluationContextRef = AtomicReference<EvaluationContextImpl?>(null)
 
     private val eventsHandler = NotebookDebugEventsHandler(project, virtualFile)
 
@@ -74,7 +78,8 @@ class KotlinNotebookFileDebugSession(
                     file: BackedNotebookVirtualFile,
                     updateState: NotebookScriptsStateListener.UpdateState
                 ) {
-                    if (file != virtualFile || debuggerSession?.isConnecting == true || updateState.isIncomplete) return
+                    if (project.isDisposed) return
+                    if (file != virtualFile || updateState.isIncomplete || debuggerSession?.isConnecting == true) return
 
                     messageBus.syncPublisher(JupyterEnvironmentUpdateListener.TOPIC)
                         .onRuntimeEnvironmentUpdate(virtualFile, null)
@@ -111,10 +116,6 @@ class KotlinNotebookFileDebugSession(
         }
         eventsHandler.handleInternalDebugMethodEntryEvent(suspendContext, event)
     }
-
-    private val debuggerSessionRef = AtomicReference<DebuggerSession?>(null)
-    private val sessionMutex = Mutex()
-    private val evaluationContextRef = AtomicReference<EvaluationContextImpl?>(null)
 
     val currentStackFrameProxy: StackFrameProxyImpl?
         get() = debuggerSession?.process?.debuggerContext?.frameProxy

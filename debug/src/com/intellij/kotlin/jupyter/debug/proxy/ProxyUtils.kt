@@ -27,8 +27,10 @@ internal fun Any.updateDescriptorWithArbitraryValueIfPossible(
     name: String,
     evaluationContext: EvaluationContextImpl?,
     valueOrigin: JdiDescriptorValueOrigin,
-): Any {
-    if (this !is JdiDescriptorAwareProxy) return this
+) {
+    if (this !is JdiDescriptorAwareProxy) {
+        return
+    }
 
     debugProcess.invokeInManagerThread {
          val descriptor = when (valueOrigin) {
@@ -56,7 +58,6 @@ internal fun Any.updateDescriptorWithArbitraryValueIfPossible(
         bindDescriptor(descriptor)
     }
 
-    return this
 }
 
 /**

@@ -9,6 +9,7 @@ import com.intellij.kotlin.jupyter.debug.proxy.createJdiObjectProxy
 import com.intellij.kotlin.jupyter.debug.proxy.notebook.NotebookJdiProxy
 import com.intellij.kotlin.jupyter.debug.proxy.notebook.state.VariableStateJdiProxy
 import com.intellij.kotlin.jupyter.debug.session.KotlinNotebookFileDebugSession
+import com.intellij.kotlin.jupyter.debug.util.connection.isConnectionAlive
 import org.jetbrains.kotlinx.jupyter.repl.notebook.impl.NotebookImpl
 
 /**
@@ -30,6 +31,7 @@ internal class NotebookSessionNoSuspensionValuesProxyFinder(
 
     private fun retrieveNotebookProxy(virtualMachine: VirtualMachineProxy): NotebookJdiProxy? {
         if (virtualMachine !is VirtualMachineProxyImpl) return null
+        if (!virtualMachine.debugProcess.isConnectionAlive) return null
 
         val notebookClass = virtualMachine.classesByNameProvider
             .get("${NotebookImpl::class.java.name}")
