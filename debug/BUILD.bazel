@@ -24,8 +24,8 @@ jvm_library(
   ],
   deps = [
     "@ultimate_lib//:kotlin-stdlib-provided",
-    "@lib//:kotlinc-kotlin-compiler-common-provided",
-    "@lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
+    "@ultimate_lib//:kotlinc-kotlin-compiler-common-provided",
+    "@ultimate_lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
     "@community//libraries/jackson/jackson",
     "@community//libraries/jackson/databind",
     "//plugins/kotlin/jupyter/core",
