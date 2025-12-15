@@ -42,7 +42,7 @@ jvm_library(
     "@community//platform/platform-impl:ide-impl",
     "@community//platform/projectModel-api:projectModel",
     "//python/scientific-tables",
-    "@ultimate_lib//:kotlinc-kotlin-compiler-common-provided",
+    "@lib//:kotlinc-kotlin-compiler-common-provided",
     "//plugins/jupyter/tables",
     "@community//platform/code-style-api:codeStyle",
     "@community//grid/core-impl",
