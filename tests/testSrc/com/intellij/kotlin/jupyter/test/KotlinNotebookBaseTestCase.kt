@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
@@ -20,7 +20,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.TestDataPath
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
-import io.kotest.common.runBlocking
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider

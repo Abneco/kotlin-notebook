@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test.outputs
 
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -12,7 +12,7 @@ import com.intellij.kotlin.jupyter.test.KotlinNotebookUnitTestCase
 import com.intellij.kotlin.jupyter.test.baseTestDataPathWithHome
 import com.intellij.scientific.tables.api.DataId
 import com.intellij.util.asSafely
-import io.kotest.common.runBlocking
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 import kotlin.io.path.Path

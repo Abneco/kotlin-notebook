@@ -5,8 +5,8 @@ import com.intellij.jupyter.execution.kernel.closeSafely
 import com.intellij.jupyter.execution.kernel.getPollersFromContext
 import com.intellij.kotlin.jupyter.test.KotlinNotebookUnitTestCase
 import com.intellij.testFramework.common.waitUntil
-import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldHaveSize
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.kotlinx.jupyter.api.DEFAULT
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import org.jetbrains.kotlinx.jupyter.config.DefaultKernelLoggerFactory
