@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.debug.proxy.handlers
 
 import com.intellij.debugger.engine.evaluation.EvaluationContextImpl
+import com.intellij.debugger.impl.DebuggerUtilsEx
 import com.intellij.kotlin.jupyter.debug.proxy.JdiDescriptorValueOrigin
 import com.intellij.kotlin.jupyter.debug.proxy.JdiMethodInvocationSignature
 import com.intellij.kotlin.jupyter.debug.proxy.context.DebugValueContext
@@ -31,9 +32,12 @@ class JdiMethodEvaluationInvocationHandler(
 
     private fun findJdiMethod(refType: ReferenceType, methodName: String, paramTypes: Array<Class<Any>>): com.sun.jdi.Method? {
         val methods = refType.allMethods()
+        val paramSignature = paramTypes.joinToString("") {
+            DebuggerUtilsEx.typeNameToSignature(it.name)
+        }
 
         return methods.firstOrNull { jdiMethod ->
-            jdiMethod.name() == methodName && jdiMethod.argumentTypes().size == paramTypes.size
+            jdiMethod.name() == methodName && jdiMethod.signature().startsWith("($paramSignature)")
         }
     }
 
@@ -62,8 +66,14 @@ class JdiMethodEvaluationInvocationHandler(
     }
 
     private fun getMethodName(method: Method): String {
-        val isAnnotated = method.getAnnotation(JdiMethodInvocationSignature::class.java)?.name
-        return isAnnotated ?: method.name
+        val annotatedName = method.getAnnotation(JdiMethodInvocationSignature::class.java)?.name
+        if (!annotatedName.isNullOrBlank()) {
+            return annotatedName
+        }
+
+        // Using the method name yields the Java-style name
+        // (e.g., getValue/isEnabled/setValue)
+        return method.name
     }
 
     /**

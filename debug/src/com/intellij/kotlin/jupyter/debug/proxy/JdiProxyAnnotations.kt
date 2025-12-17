@@ -16,6 +16,9 @@ annotation class JdiFieldAccessPath(val path: String)
 /**
  * Annotation for overriding the default JDI method invocation signature.
  * This annotation is used by [JdiMethodEvaluationInvocationHandler].
+ *
+ * If `name` is not provided or is blank, the method name
+ * is taken from the underlying [java.lang.reflect.Method].
  */
-@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER)
-annotation class JdiMethodInvocationSignature(val name: String)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER)
+annotation class JdiMethodInvocationSignature(val name: String = "")

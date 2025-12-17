@@ -21,7 +21,6 @@ interface DataFrameJdiProxy : JdiProxyApiDelegate {
     @get:JdiMethodInvocationSignature("columnNames")
     val columnNames: List<String>
 
-    @JdiMethodInvocationSignature("get")
     fun get(name: String): DataFrameJdiColumnProxy?
 
     @get:JdiFieldAccessPath("columns")
@@ -41,19 +40,15 @@ interface DataFrameJdiColumnProxy : JdiDescriptorAwareProxy {
     @get:JdiFieldAccessPath("type")
     val type: KType
 
-    @get:JdiMethodInvocationSignature("hasNulls")
-    val hasNulls: Boolean
+    fun hasNulls(): Boolean
 
     // Access it plainly, all the work is done by XCollectionAccessor
-    @get:JdiMethodInvocationSignature("getValues")
+    @get:JdiMethodInvocationSignature
     val values: JdiDescriptorAwareProxy
 
-    @JdiMethodInvocationSignature("get")
     fun get(index: Int): Any
 
-    @JdiMethodInvocationSignature("get")
     fun get(range: IntRange): DataFrameJdiColumnProxy
 
-    @JdiMethodInvocationSignature("toList")
     fun toList(): List<*>
 }
