@@ -2,13 +2,14 @@
 package com.intellij.kotlin.jupyter.core.editor.dnd
 
 import com.intellij.jupyter.core.editor.handlers.DataframeVariableNameSuggester
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.lang.LanguageNamesValidation
 import com.intellij.lang.refactoring.NamesValidator
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.idea.KotlinLanguage
 
 object KotlinDataframeVariableNameSuggester : DataframeVariableNameSuggester {
-    override fun suggestVariableName(fileNameWithoutExtension: String): String {
+    override fun suggestVariableName(fileNameWithoutExtension: String, notebook: JupyterNotebook?): String {
         return fileNameWithoutExtension.toCamelCase()
     }
 
