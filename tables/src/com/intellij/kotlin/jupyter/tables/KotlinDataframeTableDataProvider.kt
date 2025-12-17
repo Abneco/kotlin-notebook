@@ -12,6 +12,8 @@ import com.intellij.database.datagrid.HierarchicalColumnsDataGridModel.Hierarchi
 import com.intellij.database.datagrid.NestedTablesDataGridModel.NestedTableCellCoordinate
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.tables.i18n.KotlinNotebookTablesBundle
+import com.intellij.notebooks.dataframe.KotlinDataframeInfo
+import com.intellij.notebooks.dataframe.KotlinDataframeParser
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.components.serviceAsync

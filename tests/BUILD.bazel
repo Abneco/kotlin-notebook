@@ -95,6 +95,7 @@ jvm_library(
     "@community//plugins/kotlin/base/util:util_test_lib",
     "@community//jupyter:notebooks-jupyter-core",
     "//plugins/JavaScriptLanguage/javascript-psi-impl",
+    "//notebooks/dataframe",
     ":community_plugins_kotlin_core_provided",
     ":community_platform_lang-impl_provided",
   ],

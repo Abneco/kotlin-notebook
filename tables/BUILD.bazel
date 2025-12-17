@@ -48,6 +48,7 @@ jvm_library(
     "@community//grid/core-impl",
     "@community//grid/impl",
     "@community//platform/searchEverywhere/shared:searchEverywhere",
+    "//notebooks/dataframe",
     ":community_libraries_jackson_databind_provided",
     ":community_libraries_jackson_jackson_provided",
   ]
