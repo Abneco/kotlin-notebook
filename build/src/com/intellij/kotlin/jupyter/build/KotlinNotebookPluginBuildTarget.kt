@@ -11,7 +11,7 @@ internal object KotlinNotebookPluginBuildTarget {
     "intellij.kotlin.jupyter.plugin",
   ) {
     skipProprietaryBuildTools()
-    options { enableEmbeddedFrontend = false }
+    options { disableEmbeddedFrontend() }
     notifyArtifactBuilt()
   }
 }
