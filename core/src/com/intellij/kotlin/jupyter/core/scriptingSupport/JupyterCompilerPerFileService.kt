@@ -393,7 +393,11 @@ class JupyterCompilerPerFileService(
     ) {
         coroutineScope.async {
             try {
-                val executedCellData = ExecutedCellData(cellIndex, psiCell, virtualFile.notebook.getCellOrNull(cellIndex))
+                val executedCellData = ExecutedCellData(
+                    cellIndex = cellIndex,
+                    psiCell = psiCell,
+                    notebookCell = virtualFile.notebookOrNull?.getCellOrNull(cellIndex),
+                )
                 accessData {
                     addNewDependencies(snippetMetadata, executedCellData)
                 }
