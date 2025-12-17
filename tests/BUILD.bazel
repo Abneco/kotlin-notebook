@@ -4,7 +4,20 @@ load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_provided_library")
 jvm_library(
   name = "tests",
   visibility = ["//visibility:public"],
-  srcs = glob([], allow_empty = True)
+  srcs = glob([], allow_empty = True),
+  runtime_deps = [
+    "@community//plugins/kotlin/scripting",
+    "//:idea-ultimate-main",
+    "//plugins/jupyter/testFramework",
+    "@community//libraries/jackson/databind",
+    "@community//libraries/jackson/jackson",
+    "@community//platform/lang-api:lang",
+    "@community//notebooks/notebook-ui:ui",
+    "@community//plugins/kotlin/test-framework",
+    "@lib//:kotlin-test-assertions-core-jvm",
+    "//python/scientific-tables",
+    "//plugins/jupyter/execution",
+  ]
 )
 
 jvm_provided_library(
@@ -85,7 +98,7 @@ jvm_library(
     ":community_plugins_kotlin_core_provided",
     ":community_platform_lang-impl_provided",
   ],
-  runtime_deps = ["//:idea-ultimate-main"]
+  runtime_deps = [":tests"]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.tests` end
 
