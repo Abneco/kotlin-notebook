@@ -32,7 +32,7 @@ fun Severity.toKaSeverity(): KaSeverity {
     return when (this) {
         Severity.INFO -> KaSeverity.INFO
         Severity.ERROR -> KaSeverity.ERROR
-        Severity.WARNING, Severity.FIXED_WARNING -> KaSeverity.WARNING
+        Severity.WARNING, Severity.FIXED_WARNING, Severity.STRONG_WARNING -> KaSeverity.WARNING
     }
 }
 
