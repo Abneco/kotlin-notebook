@@ -84,7 +84,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="intellij.libraries.kotlin.reflect" scope="PROVIDED" />
-    <orderEntry type="library" scope="PROVIDED" name="kotlinx-serialization-core" level="project" />
+    <orderEntry type="module" module-name="intellij.libraries.kotlinx.serialization.core" scope="PROVIDED" />
     <orderEntry type="module" module-name="intellij.libraries.kotlinx.serialization.json" />
     <orderEntry type="module" module-name="intellij.libraries.kotlinx.coroutines.core" />
     <orderEntry type="module" module-name="intellij.libraries.jackson" />

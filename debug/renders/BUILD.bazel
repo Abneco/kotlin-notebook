@@ -1,10 +1,15 @@
 ### auto-generated section `build intellij.kotlin.jupyter.debug.renders` start
-load("@rules_jvm//:jvm.bzl", "jvm_library", "resourcegroup")
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_provided_library", "resourcegroup")
 
 resourcegroup(
   name = "renders_resources",
   srcs = glob(["resources/**/*"]),
   strip_prefix = "resources"
+)
+
+jvm_provided_library(
+  name = "community_libraries_kotlinx_coroutines_core_provided",
+  lib = "@community//libraries/kotlinx/coroutines/core"
 )
 
 jvm_library(
@@ -16,7 +21,6 @@ jvm_library(
   deps = [
     "@ultimate_lib//:kotlin-stdlib-provided",
     "@ultimate_lib//:kotlinc-kotlin-compiler-common-provided",
-    "@ultimate_lib//:kotlinx-coroutines-core-provided",
     "//plugins/kotlin/jupyter/debug",
     "@community//java/debugger/impl",
     "@community//platform/xdebugger-api:debugger",
@@ -25,6 +29,7 @@ jvm_library(
     "//plugins/debugger/debugger-collections-visualizer/core/backend",
     "//plugins/debugger/debugger-collections-visualizer/core",
     "//plugins/debugger/debugger-collections-visualizer/jvm",
+    ":community_libraries_kotlinx_coroutines_core_provided",
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.debug.renders` end
