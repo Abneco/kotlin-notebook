@@ -11,11 +11,11 @@ import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionS
 import com.intellij.jupyter.core.jupyter.connections.execution.executionCount
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.status
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterErrorOutput
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutput
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterStreamOutput
+import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterOutput
 import com.intellij.jupyter.core.jupyter.nbformat.MimeType
+import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterDisplayDataOutput
+import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterErrorOutput
+import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterStreamOutput
 import com.intellij.kotlin.jupyter.core.jupyter.actions.NotebookMode
 import com.intellij.kotlin.jupyter.core.jupyter.actions.mode
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies

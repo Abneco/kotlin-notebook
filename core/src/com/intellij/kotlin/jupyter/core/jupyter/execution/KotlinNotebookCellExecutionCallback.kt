@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.execution
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputsBase
+import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterOutputsBase
 import com.intellij.jupyter.execution.util.deserialize
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService

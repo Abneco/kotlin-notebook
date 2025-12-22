@@ -5,8 +5,8 @@ import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
 import com.intellij.jupyter.core.jupyter.nbformat.MimeType
+import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterDisplayDataOutput
 import com.intellij.jupyter.core.jupyter.ui.traverseChildrenBreadthFirst
 import com.intellij.kotlin.jupyter.core.util.filterIsInstanceAnd
 import com.intellij.kotlin.jupyter.core.util.firstAncestorOfType

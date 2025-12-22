@@ -8,9 +8,9 @@ import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterOutputDataKeyExtr
 import com.intellij.jupyter.core.jupyter.editor.outputs.getOutputsForIndex
 import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.JupyterWebOutputInfo
 import com.intellij.jupyter.core.jupyter.helper.isJupyter
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterExecuteResultOutput
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterOutputType
+import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterOutputType
 import com.intellij.jupyter.core.jupyter.nbformat.MimeType
+import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterExecuteResultOutput
 import com.intellij.jupyter.tables.JupyterTableOutputDataKey
 import com.intellij.jupyter.tables.createTableOutputDataKey
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions

@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.outputs.swing.export
 import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
 import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterDisplayDataOutput
+import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterDisplayDataOutput
 import com.intellij.kotlin.jupyter.core.jupyter.outputs.export.createImageDataTransferable
 import com.intellij.kotlin.jupyter.core.jupyter.outputs.swing.SwingComponent
 import com.intellij.kotlin.jupyter.core.jupyter.outputs.swing.SwingOutputDataKey
