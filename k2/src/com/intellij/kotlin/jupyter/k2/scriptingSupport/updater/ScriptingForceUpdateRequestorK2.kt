@@ -6,7 +6,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookScriptingForceUpdateRequestor
 import com.intellij.openapi.project.Project
 
-private class ScriptingForceUpdaterK2Factory : NotebookScriptingForceUpdateRequestor.Factory {
+internal class ScriptingForceUpdaterK2Factory : NotebookScriptingForceUpdateRequestor.Factory {
     override fun create(project: Project): NotebookScriptingForceUpdateRequestor {
         return ScriptingForceUpdateRequestorK2(project)
     }

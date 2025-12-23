@@ -24,7 +24,7 @@ import kotlin.script.experimental.api.dependencies
 import kotlin.script.experimental.api.implicitReceivers
 import kotlin.script.experimental.api.valueOrNull
 
-private class ScriptingEntitiesConsistencyVerifierFactoryK2 : ScriptingEntitiesConsistencyVerifier.Factory {
+internal class ScriptingEntitiesConsistencyVerifierFactoryK2 : ScriptingEntitiesConsistencyVerifier.Factory {
     override fun create(project: Project): ScriptingEntitiesConsistencyVerifier {
         return ScriptingEntitiesConsistencyVerifierK2(project)
     }

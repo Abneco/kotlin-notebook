@@ -17,7 +17,7 @@ import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 
 
-private class ScriptingEntitiesConsistencyVerifierFactoryK1(
+internal class ScriptingEntitiesConsistencyVerifierFactoryK1(
 ): ScriptingEntitiesConsistencyVerifier.Factory {
     override fun create(project: Project): ScriptingEntitiesConsistencyVerifier {
         return ScriptingEntitiesConsistencyVerifierK1(project)

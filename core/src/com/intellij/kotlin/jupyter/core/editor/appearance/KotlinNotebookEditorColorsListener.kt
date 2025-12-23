@@ -18,7 +18,7 @@ import com.intellij.openapi.util.Disposer
 import org.jetbrains.kotlinx.jupyter.api.libraries.ColorScheme
 import java.util.concurrent.atomic.AtomicReference
 
-private class KotlinNotebookEditorColorsListener : ThemeChangedListener {
+internal class KotlinNotebookEditorColorsListener : ThemeChangedListener {
     private val sessionToTheme = ConcurrentCollectionFactory.createConcurrentMap<
             JupyterNotebookSessionId, AtomicReference<ColorScheme>
             >()

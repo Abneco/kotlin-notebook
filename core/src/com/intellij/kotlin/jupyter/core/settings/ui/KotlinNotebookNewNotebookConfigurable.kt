@@ -10,7 +10,7 @@ import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 
-private class KotlinNotebookNewNotebookConfigurable(private val project: Project) :
+internal class KotlinNotebookNewNotebookConfigurable(private val project: Project) :
     BoundConfigurable(KotlinNotebookBundle.message("kotlin.jupyter.settings.new.notebook.title")),
     SearchableConfigurable {
 

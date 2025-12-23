@@ -26,7 +26,7 @@ import javax.swing.JComponent
 
 internal val kotlinNotebookWelcomeFeaturesEnabled: Boolean by registryFlag("kotlin.notebook.welcome.features", true)
 
-private class KotlinNotebookWelcomeTabFactory: WelcomeTabFactory {
+internal class KotlinNotebookWelcomeTabFactory: WelcomeTabFactory {
     override fun createWelcomeTabs(ws: WelcomeScreen, parentDisposable: Disposable): List<WelcomeScreenTab?> {
         return listOf(KotlinNotebookWelcomeScreenTab(parentDisposable))
     }

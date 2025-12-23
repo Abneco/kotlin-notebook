@@ -40,7 +40,7 @@ import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.impl.JupyterPsiCellImpl
 
-private class NotebookLambdaTypeHintsProvider: KotlinNotebookAbstractInlayTypeHintsProvider<KotlinLambdasHintsProvider.Settings>() {
+internal class NotebookLambdaTypeHintsProvider: KotlinNotebookAbstractInlayTypeHintsProvider<KotlinLambdasHintsProvider.Settings>() {
     private val backingKtLambdaProvider = KotlinLambdasHintsProvider()
 
     override val key: SettingsKey<KotlinLambdasHintsProvider.Settings> = backingKtLambdaProvider.key

@@ -7,7 +7,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookScriptingForceU
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.project.Project
 
-private class ScriptingForceUpdaterK1Factory : NotebookScriptingForceUpdateRequestor.Factory {
+internal class ScriptingForceUpdaterK1Factory : NotebookScriptingForceUpdateRequestor.Factory {
     override fun create(project: Project): NotebookScriptingForceUpdateRequestor {
         return ScriptingForceUpdateRequestorK1(project)
     }

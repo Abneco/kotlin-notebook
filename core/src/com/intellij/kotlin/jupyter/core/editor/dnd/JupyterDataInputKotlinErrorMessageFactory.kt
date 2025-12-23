@@ -5,7 +5,7 @@ import com.intellij.jupyter.core.jupyter.data.input.run.JupyterDataInputErrorMes
 import com.intellij.lang.Language
 import org.jetbrains.kotlin.idea.KotlinLanguage
 
-private class JupyterDataInputKotlinErrorMessageFactory : JupyterDataInputErrorMessageFactory {
+internal class JupyterDataInputKotlinErrorMessageFactory : JupyterDataInputErrorMessageFactory {
     override fun makeErrorMessage(text: String, language: Language): String? {
         if (language != KotlinLanguage.INSTANCE) return null
 
