@@ -15,9 +15,10 @@ import org.jetbrains.kotlinx.jupyter.messaging.JupyterCommunicationFacilityImpl
 import org.jetbrains.kotlinx.jupyter.messaging.MessageFactoryProvider
 import org.jetbrains.kotlinx.jupyter.messaging.MessageFactoryProviderImpl
 import org.jetbrains.kotlinx.jupyter.messaging.MessageHandler
-import org.jetbrains.kotlinx.jupyter.messaging.comms.CommManagerImpl
-import org.jetbrains.kotlinx.jupyter.messaging.comms.CommManagerInternal
+import org.jetbrains.kotlinx.jupyter.messaging.comms.server.ServerCommCommunicationFacility
 import org.jetbrains.kotlinx.jupyter.protocol.JupyterServerSockets
+import org.jetbrains.kotlinx.jupyter.protocol.comms.CommManagerImpl
+import org.jetbrains.kotlinx.jupyter.protocol.comms.CommManagerInternal
 import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
 import org.jetbrains.kotlinx.jupyter.repl.creating.ReplComponentsProvider
 import org.jetbrains.kotlinx.jupyter.repl.creating.ReplFactory
@@ -35,7 +36,8 @@ fun createEmbeddedMessageHandler(
     val messageFactoryProvider: MessageFactoryProvider = MessageFactoryProviderImpl()
     val communicationFacility: JupyterCommunicationFacility = JupyterCommunicationFacilityImpl(socketManager, messageFactoryProvider)
     val executor: JupyterExecutor = JupyterExecutorImpl(loggerFactory)
-    val commManager: CommManagerInternal = CommManagerImpl(communicationFacility)
+    val commCommunicationFacility = ServerCommCommunicationFacility(communicationFacility)
+    val commManager: CommManagerInternal = CommManagerImpl(commCommunicationFacility)
     val replComponentsProvider = IdeReplComponentsProvider(replSettings, communicationFacility, commManager, inMemoryHolder, loggerFactory)
     val replFactory = getReplFactory(project, kernelVersion, replComponentsProvider)
     val repl = replFactory.createRepl()
