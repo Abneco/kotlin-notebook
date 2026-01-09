@@ -6,6 +6,7 @@ import com.intellij.kotlin.jupyter.core.util.isInsideKotlinNotebook
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.backend.workspace.toVirtualFileUrl
+import com.intellij.platform.backend.workspace.workspaceModel
 import com.intellij.psi.PsiFile
 import com.intellij.util.containers.addIfNotNull
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaLibraryModule
@@ -41,18 +42,17 @@ internal class FirKaNotebookModuleFactory : FirKaModuleFactory {
 private class KaNotebookScriptModuleImpl(
     project: Project,
     override val file: KtFile,
-    override val virtualFile: VirtualFile
+    override val virtualFile: VirtualFile,
 ) : KaScriptModuleBase(project, file.virtualFile) {
     constructor(file: KtFile) : this(file.project, file, file.virtualFile)
 
     override val directRegularDependencies: List<KaModule> by lazy(LazyThreadSafetyMode.PUBLICATION) {
         val notebookFileUrl = file.virtualFile.getTopLevelFileOrSelf().toVirtualFileUrl(virtualFileUrlManager)
-        val current = currentSnapshot
-        val entity = current.getVirtualFileUrlIndex().findEntitiesByUrl(notebookFileUrl)
+        val entity = snapshot.getVirtualFileUrlIndex().findEntitiesByUrl(notebookFileUrl)
             .filterIsInstance<KotlinScriptEntity>().firstOrNull() ?: return@lazy emptyList()
 
         buildList {
-            val dependencies = entity.dependencies.mapNotNull { current.resolve(it) }.flatMap {
+            val dependencies = entity.dependencies.mapNotNull { snapshot.resolve(it) }.flatMap {
                 project.ideProjectStructureProvider.getKaScriptLibraryModules(it)
             }
 
