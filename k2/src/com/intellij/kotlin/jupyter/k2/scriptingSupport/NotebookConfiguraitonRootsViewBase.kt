@@ -53,9 +53,11 @@ class CompiledSnippets(
         val (classes, sources) = getAllLibraryRoots(project)
         if (classes.isEmpty()) return emptyList()
 
-        val libraryId = KotlinScriptLibraryEntityId(classes, sources)
+        val libraryId = KotlinScriptLibraryEntityId(classes)
         if (!entityStorage.contains(libraryId)) {
-            entityStorage addEntity KotlinScriptLibraryEntity(classes, sources, KotlinNotebookScriptEntitySource)
+            entityStorage addEntity KotlinScriptLibraryEntity(classes, setOf(), KotlinNotebookScriptEntitySource) {
+                this.sources += sources
+            }
         }
 
         return setOf(libraryId)
@@ -92,9 +94,11 @@ class Jars(
                     it.presentableUrl.contains(presentableName)
                 }
 
-                val id = KotlinScriptLibraryEntityId(listOf(virtualFileUrl), listOfNotNull(sourceRoot))
+                val id = KotlinScriptLibraryEntityId(listOf(virtualFileUrl))
                 if (!entityStorage.contains(id)) {
-                    entityStorage addEntity KotlinScriptLibraryEntity(id.classes, id.sources, KotlinNotebookScriptEntitySource)
+                    entityStorage addEntity KotlinScriptLibraryEntity(id.classes, setOf(), KotlinNotebookScriptEntitySource) {
+                        this.sources += listOfNotNull(sourceRoot)
+                    }
                 }
 
                 add(id)
