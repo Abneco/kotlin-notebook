@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.debug.proxy.handlers
 
 import com.intellij.kotlin.jupyter.debug.proxy.JdiProxyInvocationHandlerProvider
 import com.intellij.kotlin.jupyter.debug.proxy.context.DebugValueContext
+import com.intellij.kotlin.jupyter.debug.util.connection.isVMDisconnectedException
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 
@@ -20,6 +21,14 @@ class JdiProxyCompoundInvocationHandler(
 
     override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? {
         val handlerDelegate = invocationHandlers.firstOrNull { it.isApplicable(proxy, method) }
-        return handlerDelegate?.invoke(proxy, method, args)
+        return try {
+            handlerDelegate?.invoke(proxy, method, args)
+        } catch (e: Throwable) {
+            if (e.isVMDisconnectedException) {
+                null
+            } else {
+                throw e
+            }
+        }
     }
 }
