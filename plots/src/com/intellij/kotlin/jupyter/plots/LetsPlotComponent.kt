@@ -1,9 +1,9 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.plots
 
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.plots.export.buildHtmlFromRawPlotSpec
 import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.components.JBLayeredPane
@@ -52,7 +52,10 @@ class LetsPlotComponent : JBLayeredPane() {
 
     override fun updateUI() {
         val currentState = this.currentState
-        if (currentState == previousState) return
+        val prevState = previousState
+        if (currentState == prevState) return
+
+        logUpdateCall(prevState)
         previousState = currentState
 
         reinitComponent(currentState)
@@ -77,11 +80,22 @@ class LetsPlotComponent : JBLayeredPane() {
         } ?: plotPanel?.preferredSize ?: super.getPreferredSize()
     }
 
+    private fun logUpdateCall(previousState: LetsPlotComponentState?) {
+        val currentState = this.currentState
+
+        val dataKeyChanged = currentState.dataKey != previousState?.dataKey
+        val flavorChanged = currentState.colorFlavor != previousState?.colorFlavor
+        val toolbarChanged = currentState.showToolbar != previousState?.showToolbar
+
+        LOG.info("updateUI: dataKeyChanged=$dataKeyChanged, flavorChanged=$flavorChanged, toolbarChanged=$toolbarChanged")
+    }
+
     private fun reinitComponent() {
         reinitComponent(currentState)
     }
 
     private fun reinitComponent(state: LetsPlotComponentState) {
+        LOG.info("reinitComponent: state=$state")
         reinitComponent(getSpec(state) ?: return)
     }
 
@@ -91,6 +105,8 @@ class LetsPlotComponent : JBLayeredPane() {
     }
 
     private fun clear() {
+        LOG.info("clear: plotPanel=${plotPanel != null}, componentCount=$componentCount",
+                 Throwable("clear() stack trace"))
         removeAll()
         @Suppress("SSBasedInspection")
         plotPanel?.dispose()
@@ -143,7 +159,7 @@ class LetsPlotComponent : JBLayeredPane() {
     } ?: ""
 
     companion object {
-        private val LOG = thisLogger()
+        private val LOG = notebookLogger()
     }
 }
 
