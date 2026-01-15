@@ -11,9 +11,6 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import org.jetbrains.letsPlot.batik.plot.util.ServiceLoaderHelper
 
 class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotComponent, LetsPlotOutputDataKey> {
-    companion object {
-        private val LOG = notebookLogger()
-    }
     override val componentClass: Class<LetsPlotComponent>
         get() = LetsPlotComponent::class.java
     override val outputDataKeyClass: Class<LetsPlotOutputDataKey>
@@ -38,7 +35,7 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotCom
     }
 
     override fun updateComponent(editor: EditorImpl, component: LetsPlotComponent, outputDataKey: LetsPlotOutputDataKey) {
-        LOG.info("Updating existing component inside: ${editor.notebookFileOrNull?.file?.name}")
+        LOG.trace("Updating existing component inside: ${editor.notebookFileOrNull?.file?.name}")
         outputDataKey.updateExecutionCountHolder(component.executionCountHolder)
         component.initialize(outputDataKey)
     }
@@ -49,5 +46,9 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotCom
         } else {
             NotebookOutputComponentFactory.Match.NONE
         }
+    }
+
+    companion object {
+        private val LOG = notebookLogger()
     }
 }

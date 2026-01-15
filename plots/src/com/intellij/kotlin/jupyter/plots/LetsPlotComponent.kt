@@ -87,7 +87,7 @@ class LetsPlotComponent : JBLayeredPane() {
         val flavorChanged = currentState.colorFlavor != previousState?.colorFlavor
         val toolbarChanged = currentState.showToolbar != previousState?.showToolbar
 
-        LOG.info("updateUI: dataKeyChanged=$dataKeyChanged, flavorChanged=$flavorChanged, toolbarChanged=$toolbarChanged")
+        LOG.trace("updateUI: dataKeyChanged=$dataKeyChanged, flavorChanged=$flavorChanged, toolbarChanged=$toolbarChanged")
     }
 
     private fun reinitComponent() {
@@ -95,7 +95,7 @@ class LetsPlotComponent : JBLayeredPane() {
     }
 
     private fun reinitComponent(state: LetsPlotComponentState) {
-        LOG.info("reinitComponent: state=$state")
+        LOG.trace("reinitComponent: state=$state")
         reinitComponent(getSpec(state) ?: return)
     }
 
@@ -105,8 +105,7 @@ class LetsPlotComponent : JBLayeredPane() {
     }
 
     private fun clear() {
-        LOG.info("clear: plotPanel=${plotPanel != null}, componentCount=$componentCount",
-                 Throwable("clear() stack trace"))
+        LOG.trace(Throwable("clear: plotPanel=${plotPanel != null}, componentCount=$componentCount"))
         removeAll()
         @Suppress("SSBasedInspection")
         plotPanel?.dispose()
