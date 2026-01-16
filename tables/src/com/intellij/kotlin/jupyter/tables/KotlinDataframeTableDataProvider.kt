@@ -170,32 +170,11 @@ class KotlinDataFrameProvider(project: Project, parser: KotlinDataframeParser, c
     }
 }
 
-private object JupyterDataFrameParsingNotifications : DataFrameParsingNotifications {
+private object JupyterDataFrameParsingNotifications : DataFrameParsingNotifications() {
     override val notificationGroupId: String = "Kotlin Notebook output error"
-
-    override val nonComparableSortContentFallback: String =
-        KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.sort_column_not_comparable.error.message")
-
-    override val nonComparableSortException: String =
-        KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.sort_column_not_comparable.error.message")
-
-    override val cannotRenderDataFrame: String =
-        KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.render.dataframe.error")
 
     override val cannotParseDataFrame: String =
         KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.parse.dataframe.error")
-
-    override val cannotParseDataFrameUnknown: String =
-        KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.cannot.parse.dataframe.error.unknown")
-
-    override val tooManyColumnsTitle: String =
-        KotlinNotebookTablesBundle.message("kotlin.jupyter.table.output.too.many.columns.error")
-
-    override fun nonComparableSortTitle(columnName: String): String =
-        KotlinNotebookTablesBundle.message(
-            "kotlin.jupyter.table.output.sort_column_not_comparable.error",
-            columnName
-        )
 
     override fun tooManyColumnsContent(numberOfColumns: Int): String =
         KotlinNotebookTablesBundle.message(
