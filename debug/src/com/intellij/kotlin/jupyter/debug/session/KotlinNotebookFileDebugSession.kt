@@ -239,7 +239,7 @@ class KotlinNotebookFileDebugSession(
         }
 
         val session = executionEnvironment
-            .attachDebuggerCreateSession(virtualFile.file.name, project, debugEnvironment, headless = isSilent)
+            .attachDebuggerCreateSession(virtualFile.file.name, project, debugEnvironment, isHeadlessMode = isSilent)
 
         val handler = session.process.processHandler
         if (isSilent) {

@@ -72,18 +72,32 @@ internal object DebugConnectionUtility {
         }
     }
 
-    fun ExecutionEnvironment.attachDebuggerCreateSession(@Nls sessionName: String, project: Project, debugEnvironment: DebugEnvironment, headless: Boolean = false): DebuggerSession {
+    /**
+     * Creates a debugger session by connecting to a target VM.
+     * [isHeadlessMode] determines if it should be run without any UI.
+     * In that case, breakpoints should be muted not to stop on them visually.
+     */
+    fun ExecutionEnvironment.attachDebuggerCreateSession(
+        @Nls sessionName: String,
+        project: Project,
+        debugEnvironment: DebugEnvironment,
+        isHeadlessMode: Boolean = false
+    ): DebuggerSession {
         val debugSession = DebuggerManagerEx.getInstanceEx(project).attachVirtualMachine(debugEnvironment)!!
         val starter = object : XDebugProcessStarter() {
             override fun start(session: XDebugSession): XDebugProcess {
                 return JavaDebugProcess.create(session, debugSession)
             }
         }
-        XDebuggerManager.getInstance(project).newSessionBuilder(starter)
+        val xDebugSession = XDebuggerManager.getInstance(project).newSessionBuilder(starter)
             .sessionName(sessionName)
             .environment(this)
-            .showTab(!headless)
-            .startSession()
+            .showTab(!isHeadlessMode)
+            .startSession().session
+
+        if (isHeadlessMode) {
+            xDebugSession.setBreakpointMuted(true)
+        }
 
         //debugSession.isModifiedClassesScanRequired = true // for hot-swap
         return debugSession
