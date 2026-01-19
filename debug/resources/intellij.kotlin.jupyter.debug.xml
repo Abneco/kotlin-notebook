@@ -34,7 +34,7 @@
                 implementation="com.intellij.kotlin.jupyter.debug.variables.presentation.NotebookVariablesUiContentProvider"/>
         <settings.settingsPanelBuilder
                 implementation="com.intellij.kotlin.jupyter.debug.settings.ui.NotebookDebugFeaturesOptionsPanelBuilder"/>
-        <moduleDependencyBehaviourRefiner
+        <moduleDependencyBehaviorRefiner
                 implementation="com.intellij.kotlin.jupyter.debug.extensions.dependencies.NotebookDebugAwareDependenciesRefiner"/>
         <kernel.debugOptionsCustomizer
                 implementation="com.intellij.kotlin.jupyter.debug.extensions.NotebookDebugVmOptionCustomizer"/>
