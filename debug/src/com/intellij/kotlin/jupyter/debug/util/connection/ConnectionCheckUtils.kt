@@ -30,3 +30,19 @@ val Throwable.isVMDisconnectedException: Boolean
 
         return cause is VMDisconnectedException
     }
+
+/**
+ * Checks if the exception is a wrapped proxy invocation exception
+ * that typically occurs when VM is disconnecting or in an unstable state.
+ * These exceptions should be handled gracefully by returning null.
+ */
+val Throwable.isProxyInvocationException: Boolean
+    get() {
+        val cause = when (this) {
+            is InvocationTargetException -> this.targetException
+            is UndeclaredThrowableException -> this.undeclaredThrowable
+            else -> this.cause
+        }
+
+        return cause is InvocationTargetException || cause is IllegalStateException
+    }

@@ -12,6 +12,7 @@ import com.intellij.kotlin.jupyter.core.util.warnUnderDebug
 import com.intellij.kotlin.jupyter.debug.i18n.KotlinNotebookDebugBundle
 import com.intellij.kotlin.jupyter.debug.session.KotlinNotebookFileDebugSession
 import com.intellij.kotlin.jupyter.debug.util.connection.isConnectionAlive
+import com.intellij.kotlin.jupyter.debug.util.connection.isProxyInvocationException
 import com.intellij.kotlin.jupyter.debug.util.connection.isVMDisconnectedException
 import com.intellij.kotlin.jupyter.debug.util.createScreeningAttachment
 import com.intellij.kotlin.jupyter.debug.util.shouldShowNotebookVariables
@@ -132,7 +133,7 @@ internal class KotlinNotebookVariablesFrame(
                     true
                 )
             } catch (ex: Exception) {
-                if (ex.isVMDisconnectedException) {
+                if (ex.isVMDisconnectedException || ex.isProxyInvocationException) {
                     node.setErrorMessage(
                         KotlinNotebookDebugBundle.message("kotlin.jupyter.debug.node.empty.not.attached.message")
                     )
