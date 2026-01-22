@@ -5,6 +5,7 @@ import com.intellij.debugger.engine.DebugProcess
 import com.intellij.debugger.engine.DebugProcessImpl
 import com.intellij.debugger.engine.events.SuspendContextCommandImpl
 import com.intellij.debugger.impl.DebuggerUtilsEx
+import com.intellij.debugger.jdi.VirtualMachineProxyImpl
 import com.intellij.debugger.settings.DebuggerSettings
 import com.intellij.debugger.ui.breakpoints.SyntheticLineBreakpoint
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
@@ -34,7 +35,7 @@ class KernelSyntheticMethodBreakpoint(
     }
 
     override fun createRequest(debugProcess: DebugProcessImpl) {
-        val targetClass = debugProcess.virtualMachineProxy.classesByNameProvider.get(className).singleOrNull()
+        val targetClass = VirtualMachineProxyImpl.getCurrent().classesByNameProvider.get(className).singleOrNull()
         if (targetClass == null) {
             LOG.warn("Main class is not yet loaded :$className!")
         }
@@ -44,7 +45,7 @@ class KernelSyntheticMethodBreakpoint(
 
     override fun createOrWaitPrepare(debugProcess: DebugProcessImpl, classToBeLoaded: String) {
         debugProcess.requestsManager.callbackOnPrepareClasses(this, classToBeLoaded)
-        val virtualMachineProxy = debugProcess.getVirtualMachineProxy()
+        val virtualMachineProxy = VirtualMachineProxyImpl.getCurrent()
         if (virtualMachineProxy.canBeModified()) {
             virtualMachineProxy.classesByName(classToBeLoaded).filter { it.isPrepared }.forEach {
                 processClassPrepare(debugProcess, it)
