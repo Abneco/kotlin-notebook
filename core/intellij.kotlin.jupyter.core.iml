@@ -38,21 +38,21 @@
     <orderEntry type="module" module-name="intellij.platform.ide.core.impl" />
     <orderEntry type="module-library" exported="">
       <library name="jetbrains.kotlinx.kotlin.jupyter.ws.server" type="repository">
-        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-ws-server:0.17.2-778">
+        <properties maven-id="org.jetbrains.kotlinx:kotlin-jupyter-ws-server:0.17.2-788">
           <verification>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0.17.2-778/kotlin-jupyter-ws-server-0.17.2-778.jar">
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0.17.2-788/kotlin-jupyter-ws-server-0.17.2-788.jar">
               <sha256sum>1e980415fb1410653578fcf0071acd98ceea85cb93c0eec19f3d5869d63b581a</sha256sum>
             </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.17.2-778/kotlin-jupyter-shared-compiler-0.17.2-778.jar">
-              <sha256sum>049c486fc874ce072e733864571575641c00c8af6d6e9219fd3576bb5aad5b9e</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.17.2-788/kotlin-jupyter-shared-compiler-0.17.2-788.jar">
+              <sha256sum>4a9e487af906e26033535b0a8f63441e178d1df86c2c9efd7bee2474cfd71f09</sha256sum>
             </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.17.2-778/kotlin-jupyter-api-0.17.2-778.jar">
-              <sha256sum>487153432dd33ef1307fd87431565531e215d607116fb52cc4b162058cd0e903</sha256sum>
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.17.2-788/kotlin-jupyter-api-0.17.2-788.jar">
+              <sha256sum>ed38e575ba25484c45f949e8921cb2435e6d78d2a4aeac38470ee831cff3e88c</sha256sum>
             </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.17.2-778/kotlin-jupyter-lib-0.17.2-778.jar">
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.17.2-788/kotlin-jupyter-lib-0.17.2-788.jar">
               <sha256sum>c4d739d6fee2b7628e502b778c605138dc43c2aa5ea67d55f86f37b9a7bb2ac7</sha256sum>
             </artifact>
-            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.17.2-778/kotlin-jupyter-common-dependencies-0.17.2-778.jar">
+            <artifact url="file://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.17.2-788/kotlin-jupyter-common-dependencies-0.17.2-788.jar">
               <sha256sum>4aa2e089eaa088e31c6dfc62818287d9e940a1a989c5b1be73b2a034f5ee8a7f</sha256sum>
             </artifact>
             <artifact url="file://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0.jar">
@@ -65,20 +65,20 @@
           </exclude>
         </properties>
         <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0.17.2-778/kotlin-jupyter-ws-server-0.17.2-778.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.17.2-778/kotlin-jupyter-shared-compiler-0.17.2-778.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.17.2-778/kotlin-jupyter-api-0.17.2-778.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.17.2-778/kotlin-jupyter-lib-0.17.2-778.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.17.2-778/kotlin-jupyter-common-dependencies-0.17.2-778.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0.17.2-788/kotlin-jupyter-ws-server-0.17.2-788.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.17.2-788/kotlin-jupyter-shared-compiler-0.17.2-788.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.17.2-788/kotlin-jupyter-api-0.17.2-788.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.17.2-788/kotlin-jupyter-lib-0.17.2-788.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.17.2-788/kotlin-jupyter-common-dependencies-0.17.2-788.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0.17.2-778/kotlin-jupyter-ws-server-0.17.2-778-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.17.2-778/kotlin-jupyter-shared-compiler-0.17.2-778-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.17.2-778/kotlin-jupyter-api-0.17.2-778-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.17.2-778/kotlin-jupyter-lib-0.17.2-778-sources.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.17.2-778/kotlin-jupyter-common-dependencies-0.17.2-778-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0.17.2-788/kotlin-jupyter-ws-server-0.17.2-788-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0.17.2-788/kotlin-jupyter-shared-compiler-0.17.2-788-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0.17.2-788/kotlin-jupyter-api-0.17.2-788-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0.17.2-788/kotlin-jupyter-lib-0.17.2-788-sources.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0.17.2-788/kotlin-jupyter-common-dependencies-0.17.2-788-sources.jar!/" />
           <root url="jar://$MAVEN_REPOSITORY$/com/github/ajalt/clikt/2.8.0/clikt-2.8.0-sources.jar!/" />
         </SOURCES>
       </library>
