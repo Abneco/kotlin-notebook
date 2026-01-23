@@ -19,6 +19,7 @@ import com.intellij.execution.remote.RemoteConfigurationType
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.debug.util.DebugSessionConfig
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
@@ -54,7 +55,11 @@ internal object DebugConnectionUtility {
         }
     }
 
-    fun buildDebugEnvironment(project: Project, config: DebugSessionConfig): DebugEnvironmentData? {
+    fun buildDebugEnvironment(
+        project: Project,
+        config: DebugSessionConfig,
+        notebookFile: BackedNotebookVirtualFile? = null
+    ): DebugEnvironmentData? {
         val runnerSettings = buildRunnerSettings(
             config.transport,
             config.port.toString(),
@@ -63,10 +68,25 @@ internal object DebugConnectionUtility {
         val executionEnvironment = project.buildExecutionEnvironment(runnerSettings)
         val remoteConnection = RemoteConnection(true, "127.0.0.1", config.port.toString(), false)
         val runProfileState = executionEnvironment.buildRemoteRunProfileState(remoteConnection)
-        val debugEnvironment = DefaultDebugEnvironment(executionEnvironment, runProfileState, remoteConnection, true)
+
+        val debugEnvironment = if (notebookFile != null) {
+            NotebookDebugEnvironment(
+                executionEnvironment,
+                runProfileState,
+                remoteConnection,
+                pollTimeout = LOCAL_START_TIMEOUT,
+                notebookFile,
+                project
+            )
+        }
+        else {
+            DefaultDebugEnvironment(executionEnvironment, runProfileState, remoteConnection, true)
+        }
 
         return DebugEnvironmentData(executionEnvironment, debugEnvironment)
     }
+
+    private const val LOCAL_START_TIMEOUT = 0L
 
 
     fun ExecutionEnvironment.buildRemoteRunProfileState(remoteConnection: RemoteConnection): RunProfileState {

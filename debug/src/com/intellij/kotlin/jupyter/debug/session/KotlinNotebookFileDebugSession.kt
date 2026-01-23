@@ -137,6 +137,22 @@ class KotlinNotebookFileDebugSession(
         kernelThreadBreakpoint.createRequest(debugProcess)
     }
 
+    /**
+     * Executes the given block with synthetic breakpoint policy set to SUSPEND_NONE.
+     * The breakpoint's eventHandler will still be called, but execution won't stop.
+     * Original policy is restored after block completes (or on exception).
+     */
+    suspend fun withNonSuspendingBreakpoint(block: suspend () -> Unit) {
+        val original = kernelThreadBreakpoint.suspendPolicy
+        try {
+            kernelThreadBreakpoint.suspendPolicy = DebuggerSettings.SUSPEND_NONE
+            block()
+        }
+        finally {
+            kernelThreadBreakpoint.suspendPolicy = original
+        }
+    }
+
     val currentXSession: XDebugSession?
         get() = debuggerSessionRef.get()?.xDebugSession
 
@@ -192,7 +208,7 @@ class KotlinNotebookFileDebugSession(
     private suspend fun createNewDebuggerSession(config: DebugSessionConfig): DebuggerSession? {
         return try {
             DebuggerSettings.getInstance().transport = config.transport
-            val environmentData = DebugConnectionUtility.buildDebugEnvironment(project, config)
+            val environmentData = DebugConnectionUtility.buildDebugEnvironment(project, config, virtualFile)
                 ?: return null
 
             val newSession = withContext(Dispatchers.EDT) {

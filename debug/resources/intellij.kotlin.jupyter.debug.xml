@@ -22,6 +22,10 @@
         <debugger.hotSwapSourceFileFilterProvider
                 implementation="com.intellij.kotlin.jupyter.debug.hotswap.NotebookHotSwapSourceFileFilterProvider"/>
 
+        <debugger.positionManagerFactory
+                implementation="com.intellij.kotlin.jupyter.debug.position.KotlinNotebookPositionManagerFactory"
+                order="first"/>
+
         <registryKey key="kotlin.notebook.debug.enabled" defaultValue="true"
                      description="When enabled, establishing debug session with Kernel is possible"/>
     </extensions>
@@ -43,6 +47,15 @@
     </extensions>
 
     <actions resource-bundle="messages/KotlinNotebookDebugBundle">
+        <action id="KotlinNotebookDebugCellAction"
+                class="com.intellij.kotlin.jupyter.debug.actions.KotlinNotebookDebugCellAction"
+                icon="AllIcons.Actions.StartDebugger">
+            <add-to-group group-id="JupyterDebugActions"/>
+            <add-to-group group-id="JupyterEditorLeftToolbarActions" anchor="before"
+                          relative-to-action="JupyterClearOutputsAction"/>/>
+            <add-to-group group-id="Jupyter.AboveCodeCellAdditionalToolbar" anchor="first"/>
+        </action>
+
         <group id="Notebook.XDebugger.StateValueGroup" popup="false">
             <reference ref="XDebugger.Inspect"/>
             <reference ref="XDebugger.CompareValueWithClipboard"/>

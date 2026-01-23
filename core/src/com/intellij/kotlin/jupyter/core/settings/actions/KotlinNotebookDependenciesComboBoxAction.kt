@@ -2,9 +2,7 @@
 package com.intellij.kotlin.jupyter.core.settings.actions
 
 import com.intellij.icons.AllIcons
-import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
 import com.intellij.jupyter.core.jupyter.helper.editor
-import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.kotlin.jupyter.core.projectModel.showKernelAndModuleJdkAreMatchingWarningIfNeeded
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
@@ -13,7 +11,6 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
 import com.intellij.kotlin.jupyter.core.settings.findModule
 import com.intellij.kotlin.jupyter.core.settings.getSuitableModules
 import com.intellij.kotlin.jupyter.core.settings.notebookDependencies
-import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -35,7 +32,7 @@ import java.awt.Component
 import javax.swing.JComponent
 import javax.swing.SwingConstants
 
-class KotlinNotebookDependenciesComboBoxAction : NotebookEditorActionBase(), CustomComponentAction {
+class KotlinNotebookDependenciesComboBoxAction : KotlinNotebookEditorActionBase(), CustomComponentAction {
     override fun createCustomComponent(presentation: Presentation, place: String): JComponent {
         return createCustomComponentForResultViewToolbar(this, presentation, place)
     }
@@ -108,7 +105,7 @@ class KotlinNotebookDependenciesComboBoxAction : NotebookEditorActionBase(), Cus
         }
     }
 
-    private sealed class SelectDependenciesAction(
+    private abstract inner class SelectDependenciesAction(
         @NlsActions.ActionText placeholder: String,
         val dependencies: KotlinNotebookDependencies,
     ) : DumbAwareAction(placeholder) {
@@ -141,17 +138,17 @@ class KotlinNotebookDependenciesComboBoxAction : NotebookEditorActionBase(), Cus
         }
     }
 
-    private class NoDependenciesAction(@NlsActions.ActionText placeholder: String) : SelectDependenciesAction(
+    private inner class NoDependenciesAction(@NlsActions.ActionText placeholder: String) : SelectDependenciesAction(
         placeholder = placeholder,
         dependencies = KotlinNotebookDependencies.None,
     )
 
-    private class AllProjectLibrariesAction(@NlsActions.ActionText placeholder: String) : SelectDependenciesAction(
+    private inner class AllProjectLibrariesAction(@NlsActions.ActionText placeholder: String) : SelectDependenciesAction(
         placeholder = placeholder,
         dependencies = KotlinNotebookDependencies.AllLibraries,
     )
 
-    private class SelectModuleAction(private val module: Module) : SelectDependenciesAction(
+    private inner class SelectModuleAction(private val module: Module) : SelectDependenciesAction(
         placeholder = module.name,
         dependencies = KotlinNotebookDependencies.SingleModule(module.name),
     ) {
@@ -160,14 +157,14 @@ class KotlinNotebookDependenciesComboBoxAction : NotebookEditorActionBase(), Cus
             super.update(e)
         }
     }
-}
 
-private fun AnActionEvent.getCurrentDependencies(): KotlinNotebookDependencies? {
-    val notebookFile = notebookFile
-    if (notebookFile == null || !notebookFile.isKotlinNotebook) {
-        this.presentation.isEnabledAndVisible = false
-        return null
+    private fun AnActionEvent.getCurrentDependencies(): KotlinNotebookDependencies? {
+        val notebookFile = getKotlinNotebook()
+        if (notebookFile == null) {
+            this.presentation.isEnabledAndVisible = false
+            return null
+        }
+
+        return notebookFile.notebookDependencies
     }
-
-    return notebookFile.notebookOrNull?.notebookDependencies
 }

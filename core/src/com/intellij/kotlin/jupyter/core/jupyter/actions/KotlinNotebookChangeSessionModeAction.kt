@@ -2,22 +2,20 @@
 package com.intellij.kotlin.jupyter.core.jupyter.actions
 
 import com.intellij.icons.AllIcons
-import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
 import com.intellij.jupyter.core.jupyter.helper.notebook
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
-import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
+import com.intellij.kotlin.jupyter.core.settings.actions.KotlinNotebookEditorActionBase
 import com.intellij.kotlin.jupyter.core.settings.actions.promptSessionShutdownIfNeeded
 import com.intellij.kotlin.jupyter.core.settings.isAvailable
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
-import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.application.WriteAction
 
 class KotlinNotebookChangeSessionModeAction(
   private val mode: KotlinNotebookSessionRunMode,
-) : NotebookEditorActionBase() {
+) : KotlinNotebookEditorActionBase() {
     override fun createTemplatePresentation(): Presentation {
         return super.createTemplatePresentation().apply {
             text = mode.title
@@ -34,11 +32,6 @@ class KotlinNotebookChangeSessionModeAction(
                 presentation.icon = AllIcons.Actions.Checked
             }
         }
-    }
-
-    private fun AnActionEvent.getKotlinNotebook(): JupyterNotebook? {
-        val notebookFile = notebookFile ?: return null
-        return if (notebookFile.isKotlinNotebook) notebookFile.notebookOrNull else null
     }
 
     override fun actionPerformed(event: AnActionEvent) {

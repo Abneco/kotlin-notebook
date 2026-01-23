@@ -1,18 +1,15 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.actions
 
-import com.intellij.jupyter.core.core.impl.actions.NotebookEditorActionBase
-import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
+import com.intellij.kotlin.jupyter.core.settings.actions.KotlinNotebookEditorActionBase
 import com.intellij.kotlin.jupyter.core.settings.isKernelRunModeSelectionEnabled
 import com.intellij.kotlin.jupyter.core.settings.readSettings
-import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.ex.CustomComponentAction
 import com.intellij.openapi.actionSystem.impl.ActionButtonWithText
@@ -23,7 +20,7 @@ import java.awt.Component
 import javax.swing.JComponent
 import javax.swing.SwingConstants
 
-class KotlinNotebookSessionModeComboBox : NotebookEditorActionBase(), CustomComponentAction {
+class KotlinNotebookSessionModeComboBox : KotlinNotebookEditorActionBase(), CustomComponentAction {
     override fun update(event: AnActionEvent) {
         actionUpdater.update(this, event) { event ->
             val presentation = event.presentation
@@ -32,7 +29,7 @@ class KotlinNotebookSessionModeComboBox : NotebookEditorActionBase(), CustomComp
                 return@update
             }
 
-            val runMode = event.dataContext.getRunMode()
+            val runMode = event.getRunMode()
             if (runMode == null) {
                 presentation.isEnabledAndVisible = false
                 return@update
@@ -41,10 +38,8 @@ class KotlinNotebookSessionModeComboBox : NotebookEditorActionBase(), CustomComp
         }
     }
 
-    private fun DataContext.getRunMode(): KotlinNotebookSessionRunMode? {
-        val notebookFile = notebookFile
-        if (notebookFile?.isKotlinNotebook != true) return null
-        val notebook = notebookFile.notebookOrNull ?: return null
+    private fun AnActionEvent.getRunMode(): KotlinNotebookSessionRunMode? {
+        val notebook = getKotlinNotebook() ?: return null
         return notebook.readSettings().sessionRunMode
     }
 
