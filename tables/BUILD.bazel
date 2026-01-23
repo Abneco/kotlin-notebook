@@ -48,6 +48,7 @@ jvm_library(
     "@community//grid/core-impl",
     "@community//grid/impl",
     "@community//platform/searchEverywhere/shared:searchEverywhere",
+    "@community//jupyter:notebooks-jupyter-core",
     "//notebooks/dataframe",
     ":community_libraries_jackson_databind_provided",
     ":community_libraries_jackson_jackson_provided",
@@ -80,6 +81,7 @@ jvm_library(
     "@community//grid/core-impl:core-impl_test_lib",
     "@community//grid/impl:impl_test_lib",
     "@community//platform/searchEverywhere/shared:searchEverywhere_test_lib",
+    "@community//jupyter:notebooks-jupyter-core_test_lib",
     "//notebooks/dataframe:dataframe_test_lib",
   ]
 )

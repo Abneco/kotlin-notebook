@@ -1,0 +1,24 @@
+<idea-plugin visibility="internal">
+    <dependencies>
+      <module name="intellij.database"/>
+      <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
+      <module name="intellij.dataspell.jupyter.sql.common"/>
+      <module name="intellij.jupyter.core"/>
+      <module name="intellij.jupyter.psi"/>
+      <module name="intellij.kotlin.jupyter.core"/>
+      <module name="intellij.notebooks.visualization"/>
+      <!-- endregion -->
+    </dependencies>
+
+    <extensions defaultExtensionNs="com.intellij.sql">
+        <configuration implementation="com.intellij.kotlin.jupyter.sql.KotlinSqlCellConfigurationImpl"/>
+        <codeGeneration implementation="com.intellij.kotlin.jupyter.sql.KotlinSqlCellCodeGeneratorImpl"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <registryKey key="kotlin.notebook.sqlCells.enabled" defaultValue="false"
+                     description="When enabled, it is possible add and run SQL-Cells in Kotlin Notebooks"/>
+         <jupyter.core.editor.notebookEditorCreatedCallback
+                 implementation="com.intellij.kotlin.jupyter.sql.KotlinSqlNotebookCreatedListener"/>
+    </extensions>
+</idea-plugin>

@@ -47,6 +47,9 @@
       - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-export-shadowed/4/lets-plot-export-shadowed-4.jar
       jetbrains.lets.plot.kotlin.json:
       - name: $MAVEN_REPOSITORY$/org/jetbrains/lets-plot/lets-plot-kotlin-json/4/lets-plot-kotlin-json-4.jar
+- name: lib/modules/intellij.kotlin.jupyter.sql.jar
+  contentModules:
+  - name: intellij.kotlin.jupyter.sql
 - name: lib/modules/intellij.kotlin.jupyter.tables.jar
   contentModules:
   - name: intellij.kotlin.jupyter.tables

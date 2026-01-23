@@ -1,0 +1,63 @@
+### auto-generated section `build intellij.kotlin.jupyter.sql` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "resourcegroup")
+
+resourcegroup(
+  name = "sql_resources",
+  srcs = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_library(
+  name = "sql",
+  module_name = "intellij.kotlin.jupyter.sql",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java", "src/**/*.form"], allow_empty = True),
+  resources = [":sql_resources"],
+  deps = [
+    "@ultimate_lib//:kotlin-stdlib-provided",
+    "//plugins/kotlin/jupyter/core",
+    "@community//notebooks/visualization",
+    "//plugins/jupyter/core",
+    "//dataspell/jupyter/sql/common",
+    "@community//platform/core-api:core",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/analysis-api:analysis",
+    "@community//platform/analysis-impl",
+    "@lib//:kotlinc-kotlin-compiler-common-provided",
+    "//plugins/jupyter/psi",
+    "@community//libraries/jackson/jackson",
+    "@community//libraries/jackson/databind",
+    "//dbe/database",
+  ]
+)
+
+jvm_library(
+  name = "sql_test_lib",
+  module_name = "intellij.kotlin.jupyter.sql",
+  visibility = ["//visibility:public"],
+  srcs = glob([], allow_empty = True),
+  runtime_deps = [
+    ":sql",
+    "@ultimate_lib//:kotlin-stdlib-provided",
+    "//plugins/kotlin/jupyter/core:core_test_lib",
+    "@community//notebooks/visualization:visualization_test_lib",
+    "//plugins/jupyter/core:core_test_lib",
+    "//dataspell/jupyter/sql/common:common_test_lib",
+    "@community//platform/core-api:core_test_lib",
+    "@community//platform/platform-impl:ide-impl_test_lib",
+    "@community//platform/analysis-api:analysis_test_lib",
+    "@community//platform/analysis-impl:analysis-impl_test_lib",
+    "@lib//:kotlinc-kotlin-compiler-common-provided",
+    "//plugins/jupyter/psi:psi_test_lib",
+    "@community//libraries/jackson/jackson:jackson_test_lib",
+    "@community//libraries/jackson/databind:databind_test_lib",
+    "//dbe/database:database_test_lib",
+  ]
+)
+### auto-generated section `build intellij.kotlin.jupyter.sql` end
+
+### auto-generated section `iml intellij.kotlin.jupyter.sql` start
+exports_files([
+  "intellij.kotlin.jupyter.sql.iml",
+], visibility = ["//visibility:public"])
+### auto-generated section `iml intellij.kotlin.jupyter.sql` end

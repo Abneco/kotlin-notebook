@@ -13,6 +13,7 @@ import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterOutputType
 import com.intellij.jupyter.tables.JupyterTableOutputDataKey
 import com.intellij.jupyter.tables.createTableOutputDataKey
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
+import com.intellij.notebooks.jupyter.core.jupyter.CellType
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
@@ -23,7 +24,6 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.scientific.tables.api.DSTableDataType
 import com.intellij.scientific.tables.api.DSTableText
 import com.intellij.util.asSafely
-import org.jetbrains.kotlin.idea.KotlinLanguage
 
 /**
  * Extract [JupyterTableOutputDataKey] from Kotlin Dataframe produced cell output
@@ -35,7 +35,7 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
         val res = when {
             !KotlinNotebookApplicationOptions.get().showDataFrameAsSwing -> null
             !editor.isJupyter -> null
-            interval.language != KotlinLanguage.INSTANCE -> null
+            interval.type != CellType.CODE -> null
             else -> extractImpl(editor as EditorImpl, interval)
         }
 

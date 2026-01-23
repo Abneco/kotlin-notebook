@@ -133,6 +133,7 @@ jvm_library(
     "@community//platform/util/jdom",
     "@community//platform/execution",
     "@community//platform/xdebugger-impl/shared",
+    "@community//platform/xdebugger-impl:debugger-impl",
     ":community_libraries_kotlin_reflect_provided",
     ":community_libraries_kotlinx_serialization_core_provided",
     ":community_plugins_kotlin_scripting_provided",
@@ -230,6 +231,7 @@ jvm_library(
     "@community//platform/util/jdom:jdom_test_lib",
     "@community//platform/execution:execution_test_lib",
     "@community//platform/xdebugger-impl/shared:shared_test_lib",
+    "@community//platform/xdebugger-impl:debugger-impl_test_lib",
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.core` end

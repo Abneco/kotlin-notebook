@@ -93,6 +93,7 @@
     <content namespace="jetbrains">
         <module name="intellij.kotlin.jupyter.core"/>
         <module name="intellij.kotlin.jupyter.tables"/>
+        <module name="intellij.kotlin.jupyter.sql"/>
         <module name="intellij.kotlin.jupyter.plots"/>
         <module name="intellij.kotlin.jupyter.export.pdf"/>
         <module name="intellij.kotlin.jupyter.buildSystems.gradle"/>
@@ -106,11 +107,10 @@
     </content>
 
     <dependencies>
-        <plugin id="org.jetbrains.kotlin"/>
-        <plugin id="com.intellij.notebooks.core"/>
-        <plugin id="intellij.jupyter"/>
-
-        <module name="intellij.java.backend"/>
+      <plugin id="org.jetbrains.kotlin"/>
+      <plugin id="com.intellij.notebooks.core"/>
+      <plugin id="intellij.jupyter"/>
+      <module name="intellij.java.backend"/>
     </dependencies>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">

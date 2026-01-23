@@ -17,7 +17,7 @@ val Project.selectedKernelVersionAsString: String get() {
 val Project.selectedKernelVersion: KotlinKernelVersion?
     get() = KotlinKernelVersion.fromMavenVersion(selectedKernelVersionAsString)
 
-internal class RegistryFlagDelegate(private val name: String, private val defaultValue: Boolean) {
+class RegistryFlagDelegate(private val name: String, private val defaultValue: Boolean) {
     operator fun getValue(thisRef: Any?, property: KProperty<*>): Boolean {
         // it's implemented this way to make it possible to set the registry key programmatically for tests
         return try {
@@ -32,9 +32,9 @@ internal class RegistryFlagDelegate(private val name: String, private val defaul
     }
 }
 
-internal fun registryFlag(
+fun registryFlag(
     name: String,
     defaultValue: Boolean
-) = RegistryFlagDelegate(name, defaultValue)
+): RegistryFlagDelegate = RegistryFlagDelegate(name, defaultValue)
 
 fun LanguageLevel.toCanonicalString(): String = toJavaVersion().toFeatureString()
