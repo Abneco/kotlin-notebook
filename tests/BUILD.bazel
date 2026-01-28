@@ -1,5 +1,14 @@
 ### auto-generated section `build intellij.kotlin.jupyter.tests` start
+load("@community//build:compiler-options.bzl", "create_kotlinc_options")
 load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_provided_library")
+
+create_kotlinc_options(
+  name = "custom_tests",
+  opt_in = [
+    "com.intellij.openapi.util.IntellijInternalApi",
+    "org.jetbrains.kotlin.K1Deprecation",
+  ]
+)
 
 jvm_library(
   name = "tests",
@@ -35,6 +44,7 @@ jvm_library(
   module_name = "intellij.kotlin.jupyter.tests",
   visibility = ["//visibility:public"],
   srcs = glob(["testSrc/**/*.kt", "testSrc/**/*.java", "testSrc/**/*.form"], allow_empty = True),
+  kotlinc_opts = ":custom_tests",
   deps = [
     "@lib//:kotlinc-analysis-api",
     "//plugins/kotlin/jupyter/plugin",
