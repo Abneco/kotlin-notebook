@@ -23,6 +23,6 @@ class NotebookDebugVmOptionCustomizer : KernelDebugOptionsCustomizer {
         val isEnabled = debugService.virtualFile.notebook.sessionRunMode.debugFeaturesSupported
         if (!isEnabled) return null
 
-        return debugService.provideFreshDebugPort()
+        return debugService.provideFreshDebugPortOrNull()
     }
 }

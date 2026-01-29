@@ -22,10 +22,6 @@
         <debugger.hotSwapSourceFileFilterProvider
                 implementation="com.intellij.kotlin.jupyter.debug.hotswap.NotebookHotSwapSourceFileFilterProvider"/>
 
-        <debugger.positionManagerFactory
-                implementation="com.intellij.kotlin.jupyter.debug.position.KotlinNotebookPositionManagerFactory"
-                order="first"/>
-
         <registryKey key="kotlin.notebook.debug.enabled" defaultValue="true"
                      description="When enabled, establishing debug session with Kernel is possible"/>
     </extensions>

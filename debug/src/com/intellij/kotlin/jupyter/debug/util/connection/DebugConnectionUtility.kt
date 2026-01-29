@@ -20,6 +20,7 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.debug.util.DebugSessionConfig
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
@@ -27,6 +28,7 @@ import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.XDebuggerManager
+import com.intellij.xdebugger.impl.XDebugSessionImpl
 import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlinx.jupyter.protocol.startup.PortsGenerator
 import org.jetbrains.kotlinx.jupyter.protocol.startup.create
@@ -119,6 +121,7 @@ internal object DebugConnectionUtility {
         val xDebugSession = XDebuggerManager.getInstance(project).newSessionBuilder(starter)
             .sessionName(sessionName)
             .environment(this)
+            .showToolWindowOnSuspendOnly(true)
             .showTab(!isHeadlessMode)
             .startSession().session
 
@@ -131,12 +134,13 @@ internal object DebugConnectionUtility {
     }
 
     // Random number
-    const val minimumDebugPort: Int = 5000
+    const val MINIMUM_DEBUG_PORT: Int = 5000
 
     // 16-bit maximum value
-    const val maximumDebugPort: Int = 1 shl 16
+    const val MAXIMUM_DEBUG_PORT: Int = 1 shl 16
 
     val debugPortsGenerator: PortsGenerator
-        get() = PortsGenerator.create(minimumDebugPort, maximumDebugPort)
+        get() = PortsGenerator.create(MINIMUM_DEBUG_PORT, MAXIMUM_DEBUG_PORT)
 
+    private val LOG = notebookLogger()
 }

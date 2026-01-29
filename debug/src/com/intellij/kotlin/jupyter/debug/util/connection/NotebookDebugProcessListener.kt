@@ -9,6 +9,7 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionManager
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionPath
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
+import com.intellij.kotlin.jupyter.debug.listeners.NOTEBOOK_DEBUG_SESSION_TOPIC
 import com.intellij.kotlin.jupyter.debug.session.KotlinNotebookDebugSessionManager
 import com.intellij.kotlin.jupyter.debug.variables.KotlinNotebookSessionVariablesService
 import com.intellij.openapi.project.Project
@@ -37,7 +38,11 @@ class NotebookDebugProcessListener(
 
     override fun processDetached(process: DebugProcess, closedByUser: Boolean) {
         JupyterDebugSessionManager.getInstance(project).debugInSessionFinished(virtualFile)
-        LOG.info("Process terminated, closedByUser: ${closedByUser}")
+        LOG.info("Process terminated, closedByUser: $closedByUser")
+
+        // Notify listeners that the process has been detached and the port is released
+        project.messageBus.syncPublisher(NOTEBOOK_DEBUG_SESSION_TOPIC).onProcessDetached(virtualFile)
+        process.removeDebugProcessListener(this)
     }
 
     override fun processAttached(process: DebugProcess) {

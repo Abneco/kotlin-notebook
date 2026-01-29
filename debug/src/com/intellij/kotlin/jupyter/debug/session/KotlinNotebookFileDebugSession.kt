@@ -22,25 +22,42 @@ import com.intellij.kotlin.jupyter.core.util.runSafely
 import com.intellij.kotlin.jupyter.debug.breakpoint.KernelSyntheticMethodBreakpoint
 import com.intellij.kotlin.jupyter.debug.events.NotebookDebugEventsHandler
 import com.intellij.kotlin.jupyter.debug.i18n.KotlinNotebookDebugBundle
+import com.intellij.kotlin.jupyter.debug.listeners.KotlinNotebookDebugSessionListener
+import com.intellij.kotlin.jupyter.debug.listeners.NOTEBOOK_DEBUG_SESSION_TOPIC
+import com.intellij.kotlin.jupyter.debug.session.lifecycle.NotebookDebuggerSessionState
 import com.intellij.kotlin.jupyter.debug.session.names.KotlinNotebookSessionInternalNamesProvider
 import com.intellij.kotlin.jupyter.debug.util.DebugSessionConfig
 import com.intellij.kotlin.jupyter.debug.util.connection.DebugConnectionUtility
 import com.intellij.kotlin.jupyter.debug.util.connection.DebugConnectionUtility.attachDebuggerCreateSession
 import com.intellij.kotlin.jupyter.debug.util.connection.NotebookDebugProcessListener
 import com.intellij.kotlin.jupyter.debug.util.debugFeaturesEnabled
+import com.intellij.kotlin.jupyter.debug.util.runOnManagerThread
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageType
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.impl.XDebuggerManagerImpl
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
+import kotlin.time.Duration.Companion.seconds
 
 class KotlinNotebookFileDebugSession(
     public override val virtualFile: BackedNotebookVirtualFile,
@@ -48,20 +65,32 @@ class KotlinNotebookFileDebugSession(
     coroutineScope: CoroutineScope,
     private val portProvider: () -> Int?
 ): NotebookPerFileChildService(virtualFile, coroutineScope) {
-    companion object {
-        private val LOG = notebookLogger()
-    }
-
     private val currentConfigRef: AtomicReference<DebugSessionConfig?> = AtomicReference(null)
     private val debuggerSessionRef = AtomicReference<DebuggerSession?>(null)
     private val sessionMutex = Mutex()
 
     private val evaluationContextRef = AtomicReference<EvaluationContextImpl?>(null)
 
+    /**
+     * Current state of the debug session.
+     * Used to coordinate session lifecycle (initialization, disposal).
+     */
+    private val sessionState = MutableStateFlow(NotebookDebuggerSessionState.Absent)
     private val eventsHandler = NotebookDebugEventsHandler(project, virtualFile)
 
     init {
         project.initServiceListeners(this)
+
+        // Subscribe to process detached events from NotebookDebugProcessListener
+        project.messageBus.connect(this).subscribe(
+            NOTEBOOK_DEBUG_SESSION_TOPIC,
+            object : KotlinNotebookDebugSessionListener {
+                override fun onProcessDetached(notebookFile: BackedNotebookVirtualFile) {
+                    if (notebookFile != virtualFile) return
+                    sessionState.value = NotebookDebuggerSessionState.Absent
+                }
+            }
+        )
 
         val port = portProvider()
         if (port != null) {
@@ -92,7 +121,7 @@ class KotlinNotebookFileDebugSession(
                 if (project.isDisposed) return
                 if (session.virtualFile != virtualFile) return
 
-                val port = targetDebugPort ?: provideFreshDebugPort() ?: return
+                val port = targetDebugPort ?: provideFreshDebugPortOrNull() ?: return
                 val debuggerSession = getOrCreateVmDebuggerSession(
                     DebugSessionConfig(port),
                     forceRestart = true
@@ -115,6 +144,10 @@ class KotlinNotebookFileDebugSession(
             )
         }
         eventsHandler.handleInternalDebugMethodEntryEvent(suspendContext, event)
+
+        // Update state and notify via message bus
+        sessionState.value = NotebookDebuggerSessionState.Ready
+        project.messageBus.syncPublisher(NOTEBOOK_DEBUG_SESSION_TOPIC).onSessionInitialized(virtualFile)
     }
 
     val currentStackFrameProxy: StackFrameProxyImpl?
@@ -125,7 +158,7 @@ class KotlinNotebookFileDebugSession(
 
     val targetDebugPort: Int? get() = currentConfigRef.get()?.port
 
-    fun provideFreshDebugPort(): Int? {
+    fun provideFreshDebugPortOrNull(): Int? {
         val port = portProvider() ?: return null
         currentConfigRef.set(DebugSessionConfig(port))
         return port
@@ -138,18 +171,45 @@ class KotlinNotebookFileDebugSession(
     }
 
     /**
-     * Executes the given block with synthetic breakpoint policy set to SUSPEND_NONE.
-     * The breakpoint's eventHandler will still be called, but execution won't stop.
-     * Original policy is restored after block completes (or on exception).
+     * Executes the given [action] with a synthetic breakpoint disabled,
+     * restoring the original state afterward.
+     *
+     * If the debug context is not available, [action] is executed without breakpoint manipulation.
+     *
+     * NB: Contains a blocking call to [com.intellij.debugger.engine.DebuggerManagerThreadImpl.invokeAndWait],
+     * should not be called on [EDT]
      */
-    suspend fun withNonSuspendingBreakpoint(block: suspend () -> Unit) {
-        val original = kernelThreadBreakpoint.suspendPolicy
+    @RequiresBackgroundThread
+    @ExperimentalContracts
+    internal suspend inline fun withNonSuspendingBreakpoint(action: suspend () -> Unit) {
+        contract {
+            callsInPlace(action, InvocationKind.EXACTLY_ONCE)
+        }
+        val process = debuggerSession?.process
+        val evaluationContext = evaluationContext
+        val suspendContext = evaluationContext?.suspendContext
+        if (process == null || evaluationContext == null || suspendContext == null) {
+            LOG.warn("Debug context not fully available for ${virtualFile.file.name}, executing block without breakpoint manipulation")
+            action()
+            return
+        }
+
+        val requestManager = process.requestsManager
+        val managerThread = evaluationContext.managerThread
+        val command = process.createResumeCommand(suspendContext)
+
+        evaluationContext.runOnManagerThread {
+            kernelThreadBreakpoint.updateBreakpointEnablement(requestManager, false)
+        }
+        managerThread.invokeAndWait(command)
+
         try {
-            kernelThreadBreakpoint.suspendPolicy = DebuggerSettings.SUSPEND_NONE
-            block()
+            action()
         }
         finally {
-            kernelThreadBreakpoint.suspendPolicy = original
+            evaluationContext.runOnManagerThread {
+                kernelThreadBreakpoint.updateBreakpointEnablement(requestManager, true)
+            }
         }
     }
 
@@ -162,13 +222,15 @@ class KotlinNotebookFileDebugSession(
     val isLiveSession: Boolean
         get() = currentXSession != null
 
+    suspend fun awaitInitialized() {
+        sessionState.first { it == NotebookDebuggerSessionState.Ready }
+    }
+
     private fun DebuggerSession.configureSessionAfterAttach(config: DebugSessionConfig) {
         addProcessListener(process, config.silent)
 
         if (!config.silent) {
-            XDebuggerManagerImpl.getNotificationGroup().createNotification(
-                KotlinNotebookDebugBundle.message("kotlin.jupyter.debug.support.text"), MessageType.INFO
-            ).notify(project)
+            showDebugSupportNotification()
         }
     }
 
@@ -177,71 +239,139 @@ class KotlinNotebookFileDebugSession(
         config: DebugSessionConfig,
         forceRestart: Boolean = false
     ): DebuggerSession? {
-        if (checkSessionCanBeReused(forceRestart)) {
-            return debuggerSession
-        }
-
         sessionMutex.withLock {
             if (project.isDisposed) return null
-            if (checkSessionCanBeReused(forceRestart)) {
-                return debuggerSession
-            }
-            disposeCurrentSession()
 
-            return createNewDebuggerSession(config).also { newSession ->
-                if (newSession == null) {
-                    clearDebugSessionData()
-                    return null
+            return when (val result = tryReuseExistingSession(config, forceRestart)) {
+                is SessionConfigurationResult.ShouldReuse -> {
+                    result.session
                 }
-                currentConfigRef.set(config)
-                debuggerSessionRef.set(newSession)
+                SessionConfigurationResult.NeedsNewSession -> {
+                    disposeCurrentSession().await()
+                    createNewDebuggerSession(config)?.also { newSession ->
+                        currentConfigRef.set(config)
+                        debuggerSessionRef.set(newSession)
+                    }
+                }
             }
         }
     }
 
-    private fun checkSessionCanBeReused(forceRestart: Boolean): Boolean {
-        if (!isLiveSession) return false
+    private suspend fun tryReuseExistingSession(
+        requestedConfig: DebugSessionConfig,
+        forceRestart: Boolean
+    ): SessionConfigurationResult {
+        if (!checkSessionCanBeReused(requestedConfig, forceRestart)) {
+            return SessionConfigurationResult.NeedsNewSession
+        }
 
-        return !forceRestart && debuggerSession?.isAttached == true
+        val existingSession = debuggerSession ?: return SessionConfigurationResult.NeedsNewSession
+
+        currentXSession?.applyVisibilityTransition(requestedConfig)
+        currentConfigRef.set(requestedConfig)
+
+        return SessionConfigurationResult.ShouldReuse(existingSession)
+    }
+
+    /**
+     * Applies breakpoint muting based on the requested configuration.
+     * Note: UI visibility transitions are handled by creating new sessions with forceRestart.
+     * In split debugger mode, there's no way to show/hide debug tabs via RunContentManager.
+     */
+    private suspend fun XDebugSession.applyVisibilityTransition(newConfig: DebugSessionConfig) {
+        val currentConfig = currentConfigRef.get()
+        val wasSilent = currentConfig?.silent == true
+        val wantsVisible = !newConfig.silent
+
+        when {
+            wasSilent && wantsVisible -> {
+                LOG.info("Transitioning from silent to visible mode - use forceRestart for UI")
+                readAction { setBreakpointMuted(false) }
+                showDebugSupportNotification()
+            }
+            !wasSilent -> {
+                readAction { setBreakpointMuted(!wantsVisible) }
+            }
+            // Both silent - no action needed
+        }
+    }
+
+    private fun showDebugSupportNotification() {
+        XDebuggerManagerImpl.getNotificationGroup().createNotification(
+            KotlinNotebookDebugBundle.message("kotlin.jupyter.debug.support.text"),
+            MessageType.INFO
+        ).notify(project)
+    }
+
+    private fun checkSessionCanBeReused(config: DebugSessionConfig, forceRestart: Boolean): Boolean {
+        if (forceRestart) return false
+        if (!isLiveSession || sessionState.value == NotebookDebuggerSessionState.Absent) return false
+
+        val currentConfig = currentConfigRef.get() ?: return false
+        if (currentConfig.port != config.port) return false
+
+        // In Split mode, we can't hide the tab once it's shown.
+        // Can reuse in all cases except visible → silent transition.
+        return currentConfig.silent || !config.silent
+    }
+
+    /**
+     * Note: Should be called before creating debug environments.
+     */
+    private fun configureGlobalDebuggerTransport(transport: Int) {
+        DebuggerSettings.getInstance().transport = transport
     }
 
     private suspend fun createNewDebuggerSession(config: DebugSessionConfig): DebuggerSession? {
-        return try {
-            DebuggerSettings.getInstance().transport = config.transport
-            val environmentData = DebugConnectionUtility.buildDebugEnvironment(project, config, virtualFile)
-                ?: return null
+        return when (val result = createDebuggerSessionInternal(config)) {
+            is SessionCreationResult.Success -> {
+                sessionState.value = NotebookDebuggerSessionState.Initializing
+                result.session
+            }
+            is SessionCreationResult.Failed -> {
+                sessionState.value = NotebookDebuggerSessionState.Absent
+                LOG.warn("Failed to create debugger session: ${result.reason}")
+                null
+            }
+        }
+    }
 
-            val newSession = withContext(Dispatchers.EDT) {
+    private suspend fun createDebuggerSessionInternal(config: DebugSessionConfig): SessionCreationResult {
+        configureGlobalDebuggerTransport(config.transport)
+
+        val environmentData = DebugConnectionUtility.buildDebugEnvironment(project, config, virtualFile)
+            ?: return SessionCreationResult.Failed("Failed to build debug environment")
+
+        val newSession = withContext(Dispatchers.EDT) {
+            try {
                 tryAttachToTargetVM(
                     environmentData.debugEnvironment,
                     environmentData.executionEnvironment,
                     config.silent
                 )
+            } catch (e: Exception) {
+                LOG.warn("Failed to attach to target VM", e)
+                null
             }
-            if (newSession == null) {
-                return null
-            }
+        } ?: return SessionCreationResult.Failed("Failed to attach to target VM")
 
-            // Might throw, but PCE is not expected from this logic
-            runSafely({
+        return runSafely(
+            {
                 newSession.configureSessionAfterAttach(config)
+                SessionCreationResult.Success(newSession)
             }, onFailure = {
                 LOG.warn("Failed to configure debugger session", it)
                 newSession.dispose()
-                throw it
-            })
-
-            newSession
-        } catch (ex: Exception) {
-            LOG.error("Failed to attach debugger session", ex)
-            null
-        }
+                SessionCreationResult.Failed("Session configuration failed: ${it.message}")
+            }
+        ) ?: SessionCreationResult.Failed("Session configuration returned null")
     }
 
     private fun clearDebugSessionData() {
         debuggerSessionRef.set(null)
         currentConfigRef.set(null)
         evaluationContextRef.set(null)
+        // NB: sessionState is set to Idle by onProcessDetached callback
     }
 
     @RequiresEdt
@@ -284,15 +414,52 @@ class KotlinNotebookFileDebugSession(
         )
     }
 
-    private fun disposeCurrentSession() {
-        val session = currentXSession ?: return
+    /**
+     * Returns a [Deferred] that completes when the process has been fully detached.
+     * Uses a timeout to prevent the deferred from hanging indefinitely if onProcessDetached
+     * is never called (e.g., process already detached, crash, or other unexpected conditions).
+     */
+    internal fun disposeCurrentSession(): Deferred<Any> {
+        val session = currentXSession ?: return CompletableDeferred(Unit)
+
+        // Only proceed if we successfully claimed the transition
+        var shouldProceed = false
+        sessionState.update { current ->
+            when (current) {
+                NotebookDebuggerSessionState.Absent,
+                NotebookDebuggerSessionState.Disposing -> current
+                else -> {
+                    shouldProceed = true
+                    NotebookDebuggerSessionState.Disposing
+                }
+            }
+        }
+
+        if (!shouldProceed) {
+            return CompletableDeferred(Unit)
+        }
+
+        // Completes via DebugProcessListener#onProcessDetached
+        val deferred = coroutineScope.async {
+            val awaitResult = withTimeoutOrNull(DISPOSE_TIMEOUT_SC) {
+                sessionState.first { it == NotebookDebuggerSessionState.Absent }
+            }
+            if (awaitResult == null) {
+                LOG.warn("Dispose timeout reached for ${virtualFile.file.name}, forcing state to Absent")
+                sessionState.value = NotebookDebuggerSessionState.Absent
+            }
+        }
+
         runSafely({
             session.stop()
         }, onFailure = {
             LOG.error("Failed to dispose current session", it)
+            sessionState.value = NotebookDebuggerSessionState.Absent
         }, finally = {
             clearDebugSessionData()
         })
+
+        return deferred
     }
 
     override fun dispose() {
@@ -300,4 +467,26 @@ class KotlinNotebookFileDebugSession(
         disposeCurrentSession()
     }
 
+    companion object {
+        private val LOG = notebookLogger()
+
+        /** Timeout for waiting on session disposal to prevent indefinite hangs. */
+        private val DISPOSE_TIMEOUT_SC = 10.seconds
+
+        /**
+         * Result of attempting to reuse an existing debug session.
+         */
+        private sealed class SessionConfigurationResult {
+            data class ShouldReuse(val session: DebuggerSession) : SessionConfigurationResult()
+            data object NeedsNewSession : SessionConfigurationResult()
+        }
+
+        /**
+         * Result of attempting to create a new debug session.
+         */
+        private sealed class SessionCreationResult {
+            data class Success(val session: DebuggerSession) : SessionCreationResult()
+            data class Failed(val reason: String) : SessionCreationResult()
+        }
+    }
 }
