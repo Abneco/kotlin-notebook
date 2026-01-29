@@ -29,7 +29,7 @@ private val kotlinNotebookTitle get() = KotlinNotebookBundle.message("kotlin.jup
 private const val kotlinNotebookSessionNotificationGroup = "Kotlin Notebook session info"
 
 @Service(Service.Level.PROJECT)
-internal class KotlinNotebookNotifications(private val project: Project) {
+class KotlinNotebookNotifications(private val project: Project) {
     private enum class KotlinNotebookNotificationType(
         val notificationType: NotificationType,
     ) {
@@ -43,6 +43,7 @@ internal class KotlinNotebookNotifications(private val project: Project) {
         RERUN_ACTION_NEEDED(NotificationType.INFORMATION),
         BYTECODE_REFACTORING_WARNING(NotificationType.WARNING),
         REFACTORING_EXISTING_USAGES_MESSAGE(NotificationType.INFORMATION),
+        DEBUG_SUPPORT_INFO(NotificationType.INFORMATION),
     }
 
     private val notificationSingletons = ConcurrentHashMap<KotlinNotebookNotificationType, SingletonNotificationManager>()
@@ -114,7 +115,7 @@ internal class KotlinNotebookNotifications(private val project: Project) {
         )
     }
 
-    fun showKernelAndProjectModuleJdkAreNotAlignedWarning(sdkCheckResult: KernelJdkAlignmentCheckResult.MisalignedWithModule) {
+    internal fun showKernelAndProjectModuleJdkAreNotAlignedWarning(sdkCheckResult: KernelJdkAlignmentCheckResult.MisalignedWithModule) {
         val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
         val suggestedSdk = sdkCheckResult.suggestedSdk
         val currentSdkName = options.jdk.getVersion(project) ?: options.jdkName ?: return
@@ -194,6 +195,13 @@ internal class KotlinNotebookNotifications(private val project: Project) {
         )
     }
 
+    fun showDebugSupportInfo(@NlsSafe message: String) {
+        notify(
+            KotlinNotebookNotificationType.DEBUG_SUPPORT_INFO,
+            message
+        )
+    }
+
     /**
      * If you output multiple notifications of the SAME type in a row - only the last one is shown
      * If you output notifications of different types, they are shown independently
@@ -221,4 +229,4 @@ internal class KotlinNotebookNotifications(private val project: Project) {
     }
 }
 
-internal val Project.notebookNotifications get() = KotlinNotebookNotifications.getInstance(this)
+val Project.notebookNotifications: KotlinNotebookNotifications get() = KotlinNotebookNotifications.getInstance(this)

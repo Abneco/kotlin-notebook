@@ -15,6 +15,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNoteb
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionPath
 import com.intellij.jupyter.core.jupyter.variables.common.JupyterEnvironmentUpdateListener
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
+import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.Companion.isIncomplete
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
@@ -36,11 +37,9 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.MessageType
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.xdebugger.XDebugSession
-import com.intellij.xdebugger.impl.XDebuggerManagerImpl
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -297,10 +296,9 @@ class KotlinNotebookFileDebugSession(
     }
 
     private fun showDebugSupportNotification() {
-        XDebuggerManagerImpl.getNotificationGroup().createNotification(
-            KotlinNotebookDebugBundle.message("kotlin.jupyter.debug.support.text"),
-            MessageType.INFO
-        ).notify(project)
+        project.notebookNotifications.showDebugSupportInfo(
+            KotlinNotebookDebugBundle.message("kotlin.jupyter.debug.support.text")
+        )
     }
 
     private fun checkSessionCanBeReused(config: DebugSessionConfig, forceRestart: Boolean): Boolean {
