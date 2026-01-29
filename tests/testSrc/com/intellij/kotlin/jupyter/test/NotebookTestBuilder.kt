@@ -4,10 +4,9 @@ package com.intellij.kotlin.jupyter.test
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.codeHighlighting.Pass
 import com.intellij.codeInsight.completion.CompletionType
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzerSettings
-import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerImpl
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
+import com.intellij.codeInsight.daemon.impl.TestDaemonCodeAnalyzerImpl
 import com.intellij.codeInsight.hints.CollectorWithSettings
 import com.intellij.codeInsight.hints.InlayDumpUtil
 import com.intellij.codeInsight.hints.InlayHintsProvider
@@ -103,14 +102,13 @@ class NotebookTestBuilder(
     // State required to track if highlighting has been started
     private var highlighterDaemonStarted: Boolean = false
     private val highlightSetup = {
-        (DaemonCodeAnalyzer.getInstance(project) as DaemonCodeAnalyzerImpl).prepareForTest()
+        TestDaemonCodeAnalyzerImpl(project).prepareForTest()
         DaemonCodeAnalyzerSettings.getInstance().isImportHintEnabled = false
         highlighterDaemonStarted = true
     }
     private val highlightCleanup = {
         DaemonCodeAnalyzerSettings.getInstance().isImportHintEnabled = true
-        val daemonCodeAnalyzer = DaemonCodeAnalyzer.getInstance(project) as DaemonCodeAnalyzerImpl
-        daemonCodeAnalyzer.cleanupAfterTest()
+        TestDaemonCodeAnalyzerImpl(project).cleanupAfterTest()
     }
 
     // State required for completion tests
@@ -201,7 +199,7 @@ class NotebookTestBuilder(
                     override val expectedCellsCount: Int get() = cellCount
                     override fun assertCellMessages(
                         cellNum: Int,
-                        messages: ReceivedMessages
+                        messages: ReceivedMessages,
                     ) {
                         output = messages.outputs
                             .map { it.messageContent["data"] as? ObjectNode }
@@ -332,7 +330,7 @@ class NotebookTestBuilder(
      */
     suspend fun typeAndGetLookup(
         string: String,
-        waitFor: Duration = 15.seconds
+        waitFor: Duration = 15.seconds,
     ): CompletionResult {
         var result: List<LookupElement>? = emptyList()
         typeAndDoWithLookup(string, { true }, waitFor) {
@@ -350,7 +348,7 @@ class NotebookTestBuilder(
     fun typeAndFinishLookup(
         string: String,
         mode: LookupFinishMode = LookupFinishMode.ENTER,
-        filter: (LookupElement) -> Boolean
+        filter: (LookupElement) -> Boolean,
     ): CompletionResult {
         val result = AtomicReference<CompletionResult?>(null)
         // Unclear why we need this?
@@ -399,7 +397,7 @@ class NotebookTestBuilder(
     fun <T : Any> runInlayProvider(
         provider: InlayHintsProvider<T>,
         cellIndex: Int,
-        setupAction: (T) -> Unit = {}
+        setupAction: (T) -> Unit = {},
     ): InlayHintsResult {
         val cells = notebookFile.getCells()
         val neededCell = cells.getOrNull(cellIndex) ?: error("Invalid cell index provided: $cellIndex")
@@ -527,7 +525,7 @@ class NotebookTestBuilder(
         string: String,
         filter: (LookupElement) -> Boolean,
         waitFor: Duration = 15.seconds,
-        action: (List<LookupElement>?) -> Unit
+        action: (List<LookupElement>?) -> Unit,
     ) {
         ThreadingAssertions.assertBackgroundThread()
         completionTester.typeWithPauses(string)
@@ -571,7 +569,7 @@ class NotebookTestBuilder(
         sourceText: String,
         provider: InlayHintsProvider<T>,
         injectionOffset: Int = 0,
-        settings: T = provider.createSettings()
+        settings: T = provider.createSettings(),
     ): String {
         val file = testFixture.file!!
         val editor = testFixture.editor
