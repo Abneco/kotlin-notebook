@@ -7,33 +7,41 @@ import com.intellij.jupyter.core.executor.submitSilentTask
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterTaskPriority
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
-import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.appBasedApi.colorThemes.JupyterThemeChangedEvent
-import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.appBasedApi.colorThemes.ThemeChangedListener
+import com.intellij.jupyter.core.jupyter.editor.outputs.colorThemes.JupyterThemeChangedListener
 import com.intellij.jupyter.core.jupyter.helper.notebookFileOrNull
 import com.intellij.kotlin.jupyter.core.util.generateColorSchemeChangeCode
 import com.intellij.kotlin.jupyter.core.util.getNotebookTheme
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebookSession
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.colors.EditorColorsScheme
 import com.intellij.openapi.util.Disposer
 import org.jetbrains.kotlinx.jupyter.api.libraries.ColorScheme
 import java.util.concurrent.atomic.AtomicReference
 
-internal class KotlinNotebookEditorColorsListener : ThemeChangedListener {
+internal class KotlinNotebookEditorColorsListener : JupyterThemeChangedListener {
     private val sessionToTheme = ConcurrentCollectionFactory.createConcurrentMap<
             JupyterNotebookSessionId, AtomicReference<ColorScheme>
             >()
 
-    override suspend fun themeChanged(event: JupyterThemeChangedEvent) {
-        val session = event.session ?: return
-        val notebookFile = event.editor.notebookFileOrNull ?: return
-        val editor = event.editor
+    override suspend fun setupTheme(editor: Editor, session: JupyterNotebookSession?) {
+        applyColorSchemeToKernel(editor, session)
+    }
+
+    override suspend fun colorSchemeChanged(editor: Editor, session: JupyterNotebookSession?, newColorScheme: EditorColorsScheme?) {
+        applyColorSchemeToKernel(editor, session)
+    }
+
+    private suspend fun applyColorSchemeToKernel(editor: Editor, session: JupyterNotebookSession?,) {
+        session ?: return
+        val notebookFile = editor.notebookFileOrNull ?: return
         val project = editor.project ?: return
         if (project.isDisposed) return
         if (!session.isKotlinNotebookSession()) return
 
         val theme = getActualTheme(session) ?: return
         val changeCode = generateColorSchemeChangeCode(theme)
-            .takeIf { it.isNotBlank() } ?: return
+                             .takeIf { it.isNotBlank() } ?: return
 
         JupyterExecutionManager.getInstance(project, notebookFile).submitSilentTask(changeCode, JupyterTaskPriority.HIGH)
     }
