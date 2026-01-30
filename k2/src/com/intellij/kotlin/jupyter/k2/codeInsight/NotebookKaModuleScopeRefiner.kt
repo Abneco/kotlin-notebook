@@ -6,6 +6,7 @@ import com.intellij.kotlin.jupyter.core.util.rootBasePath
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptEntitySource
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.ProjectScope
+import org.jetbrains.kotlin.analysis.api.KaPlatformInterface
 import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinContentScopeRefiner
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.jetbrains.kotlin.base.fir.scripting.projectStructure.modules.KaScriptDependencyLibraryModuleImpl
@@ -21,6 +22,7 @@ import kotlin.io.path.isDirectory
  * without explicitly passing project roots to the libraries.
  * This way, go-to declaration would work for the project symbols.
  */
+@OptIn(KaPlatformInterface::class)
 class NotebookKaModuleScopeRefiner : KotlinContentScopeRefiner {
     override fun getEnlargementScopes(module: KaModule): List<GlobalSearchScope> {
         val scriptSourceLibrary = module as? KaLibrarySourceModuleBase ?: return emptyList()
