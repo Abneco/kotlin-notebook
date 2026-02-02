@@ -93,9 +93,9 @@ suspend fun <T: Any> JupyterNotebookSession.sendMessageAndWait(
 
     val replyDeferred = CompletableDeferred<T>()
     val callback = callbackFactory(replyDeferred)
-    sendMessageOnPooledThread(zmqMessage, callback)
 
     notebookLogger().info("Sending $messageType to the session with id ${sessionId}")
+    sendMessage(zmqMessage, callback)
 
     val result = withTimeoutOrNull(timeout) {
         replyDeferred.await()

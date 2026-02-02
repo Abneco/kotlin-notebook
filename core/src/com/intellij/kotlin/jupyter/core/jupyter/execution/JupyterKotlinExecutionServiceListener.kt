@@ -33,6 +33,6 @@ class JupyterKotlinExecutionServiceListener : JupyterExecutionListener {
                 })
         }
 
-        session.execute(initCode, onMessageCreated = {}, callbacks = callbacks, silent = true)
+        session.execute(initCode, callbacks = callbacks, silent = true)
     }
 }
