@@ -3,7 +3,9 @@ package com.intellij.kotlin.jupyter.debug.breakpoint
 
 import com.intellij.debugger.engine.DebugProcess
 import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.debugger.engine.DebuggerManagerThreadImpl
 import com.intellij.debugger.engine.events.SuspendContextCommandImpl
+import com.intellij.debugger.engine.requests.RequestManagerImpl
 import com.intellij.debugger.impl.DebuggerUtilsEx
 import com.intellij.debugger.jdi.VirtualMachineProxyImpl
 import com.intellij.debugger.settings.DebuggerSettings
@@ -14,6 +16,7 @@ import com.sun.jdi.AbsentInformationException
 import com.sun.jdi.Method
 import com.sun.jdi.ReferenceType
 import com.sun.jdi.event.LocatableEvent
+import com.sun.jdi.request.BreakpointRequest
 
 class KernelSyntheticMethodBreakpoint(
     project: Project,
@@ -22,12 +25,24 @@ class KernelSyntheticMethodBreakpoint(
     private val methodLineNumber: Int,
     private val eventHandler: (SuspendContextCommandImpl, LocatableEvent?) -> Unit
 ) : SyntheticLineBreakpoint(project) {
-    companion object {
-        private val LOG = notebookLogger()
-    }
 
     init {
         suspendPolicy = DebuggerSettings.SUSPEND_THREAD
+    }
+
+    /**
+     * Updates enablement of this breakpoint.
+     * Should be invoked only on [DebuggerManagerThreadImpl]
+     */
+    internal fun updateBreakpointEnablement(requestManager: RequestManagerImpl, isEnabled: Boolean) {
+        DebuggerManagerThreadImpl.assertIsManagerThread()
+        val requests = requestManager.findRequests(this)
+        val breakpointRequest = requests.firstOrNull { it is BreakpointRequest }
+        if (breakpointRequest == null) {
+            LOG.warn("No BreakpointRequest found for $className.$methodName")
+            return
+        }
+        breakpointRequest.isEnabled = isEnabled
     }
 
     override fun getLineIndex(): Int {
@@ -81,5 +96,9 @@ class KernelSyntheticMethodBreakpoint(
     override fun processLocatableEvent(action: SuspendContextCommandImpl, event: LocatableEvent?): Boolean {
         eventHandler(action, event)
         return super.processLocatableEvent(action, event)
+    }
+
+    companion object {
+        private val LOG = notebookLogger()
     }
 }
