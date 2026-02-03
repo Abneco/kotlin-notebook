@@ -12,7 +12,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.pom.java.LanguageLevel
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
-import java.util.*
+import java.util.EventListener
 
 @Service(Service.Level.PROJECT)
 @State(

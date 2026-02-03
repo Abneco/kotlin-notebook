@@ -13,7 +13,7 @@ import org.jetbrains.kotlinx.jupyter.protocol.startup.ANY_HOST_NAME
 import org.jetbrains.kotlinx.jupyter.protocol.startup.KernelPorts
 import org.jetbrains.kotlinx.jupyter.startup.DEFAULT_SPRING_APP_WEBSOCKET_PORT
 import org.jetbrains.kotlinx.jupyter.ws.WsKernelPorts
-import java.util.*
+import java.util.EventListener
 
 @Service(Service.Level.PROJECT)
 @State(

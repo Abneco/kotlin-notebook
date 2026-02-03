@@ -13,7 +13,7 @@ import com.intellij.kotlin.jupyter.core.util.withWriteLock
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
-import java.util.*
+import java.util.PriorityQueue
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.write
 

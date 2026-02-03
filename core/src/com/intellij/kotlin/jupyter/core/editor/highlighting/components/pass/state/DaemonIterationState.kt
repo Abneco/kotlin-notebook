@@ -1,7 +1,9 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.highlighting.components.pass.state
 
-import com.intellij.kotlin.jupyter.core.editor.highlighting.components.pass.state.DaemonState.*
+import com.intellij.kotlin.jupyter.core.editor.highlighting.components.pass.state.DaemonState.IDLE
+import com.intellij.kotlin.jupyter.core.editor.highlighting.components.pass.state.DaemonState.IN_PROGRESS
+import com.intellij.kotlin.jupyter.core.editor.highlighting.components.pass.state.DaemonState.SETUP
 import java.util.concurrent.atomic.AtomicReference
 
 /**

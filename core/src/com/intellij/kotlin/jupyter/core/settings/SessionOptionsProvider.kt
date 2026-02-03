@@ -7,7 +7,7 @@ import com.intellij.openapi.components.SettingsCategory
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import org.jetbrains.kotlinx.jupyter.api.SessionOptions
-import java.util.*
+import java.util.EventListener
 import kotlin.reflect.full.declaredMemberProperties
 
 @Service

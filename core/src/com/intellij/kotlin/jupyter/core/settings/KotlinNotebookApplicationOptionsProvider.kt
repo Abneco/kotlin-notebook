@@ -10,7 +10,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.annotations.XCollection
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
-import java.util.*
+import java.util.EventListener
 
 @Service
 @State(

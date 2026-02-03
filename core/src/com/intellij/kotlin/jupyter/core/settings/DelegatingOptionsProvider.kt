@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.core.settings
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.SimplePersistentStateComponent
-import java.util.*
+import java.util.EventListener
 import kotlin.reflect.KMutableProperty1
 
 abstract class DelegatingOptionsProvider<StateT: BaseState, ListenerT: EventListener>(

@@ -22,7 +22,7 @@ import com.intellij.notebooks.dataframe.isColumnGroup
 import com.intellij.notebooks.dataframe.isFrame
 import com.intellij.notebooks.dataframe.isFrameLike
 import java.io.ByteArrayOutputStream
-import java.util.*
+import java.util.Base64
 import java.util.zip.GZIPInputStream
 
 internal const val IS_FORMATTED = "is_formatted"

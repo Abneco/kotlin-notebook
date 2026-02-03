@@ -4,7 +4,8 @@ package com.intellij.kotlin.jupyter.core.util
 import com.intellij.util.ui.StartupUiUtil
 import java.awt.Component
 import java.awt.Container
-import java.util.*
+import java.util.LinkedList
+import java.util.Queue
 
 fun uiFeelsDark(): Boolean {
     return StartupUiUtil.isDarkTheme

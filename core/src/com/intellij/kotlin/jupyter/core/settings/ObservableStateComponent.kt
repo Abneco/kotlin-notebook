@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.settings
 
 import com.intellij.openapi.Disposable
-import java.util.*
+import java.util.EventListener
 import kotlin.reflect.KMutableProperty1
 
 interface ObservableStateComponent<StateT, ListenerT : EventListener> {

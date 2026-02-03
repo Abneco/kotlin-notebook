@@ -5,7 +5,8 @@ import org.jetbrains.kotlinx.jupyter.api.libraries.KOTLIN_JUPYTER_RESOURCES_PATH
 import org.jetbrains.kotlinx.jupyter.util.ModifiableParentsClassLoader
 import java.io.IOException
 import java.net.URL
-import java.util.*
+import java.util.Collections
+import java.util.Enumeration
 
 class IntellijProcessClassLoader : ModifiableParentsClassLoader() {
     private val parents = mutableListOf<ClassLoader>()

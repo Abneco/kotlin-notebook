@@ -15,7 +15,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import org.jetbrains.letsPlot.core.plot.export.PlotImageExport.buildImageFromRawSpecs
-import java.util.*
+import java.util.EventListener
 
 enum class ExportFormat(
     val extension: String,

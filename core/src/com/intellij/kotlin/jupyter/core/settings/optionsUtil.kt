@@ -5,7 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.pom.java.LanguageLevel
 import org.jetbrains.kotlinx.jupyter.api.KotlinKernelVersion
-import java.util.*
+import java.util.MissingResourceException
 import kotlin.reflect.KProperty
 
 const val APP_CONFIG_FILE: String = "kotlinNotebookApp.xml"
