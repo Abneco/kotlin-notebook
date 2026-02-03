@@ -122,7 +122,7 @@ internal object DebugConnectionUtility {
             .sessionName(sessionName)
             .environment(this)
             .showToolWindowOnSuspendOnly(true)
-            .showTab(!isHeadlessMode)
+            .showTab(true)
             .startSession().session
 
         if (isHeadlessMode) {

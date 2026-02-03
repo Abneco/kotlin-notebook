@@ -20,19 +20,16 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScrip
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.Companion.isIncomplete
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.runSafely
-import com.intellij.kotlin.jupyter.debug.breakpoint.KernelSyntheticMethodBreakpoint
+import com.intellij.kotlin.jupyter.debug.breakpoint.KernelBreakpointController
 import com.intellij.kotlin.jupyter.debug.events.NotebookDebugEventsHandler
 import com.intellij.kotlin.jupyter.debug.i18n.KotlinNotebookDebugBundle
 import com.intellij.kotlin.jupyter.debug.listeners.KotlinNotebookDebugSessionListener
 import com.intellij.kotlin.jupyter.debug.listeners.NOTEBOOK_DEBUG_SESSION_TOPIC
 import com.intellij.kotlin.jupyter.debug.session.lifecycle.NotebookDebuggerSessionState
-import com.intellij.kotlin.jupyter.debug.session.names.KotlinNotebookSessionInternalNamesProvider
 import com.intellij.kotlin.jupyter.debug.util.DebugSessionConfig
 import com.intellij.kotlin.jupyter.debug.util.connection.DebugConnectionUtility
 import com.intellij.kotlin.jupyter.debug.util.connection.DebugConnectionUtility.attachDebuggerCreateSession
 import com.intellij.kotlin.jupyter.debug.util.connection.NotebookDebugProcessListener
-import com.intellij.kotlin.jupyter.debug.util.debugFeaturesEnabled
-import com.intellij.kotlin.jupyter.debug.util.runOnManagerThread
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
@@ -54,8 +51,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 import kotlin.time.Duration.Companion.seconds
 
 class KotlinNotebookFileDebugSession(
@@ -68,14 +63,19 @@ class KotlinNotebookFileDebugSession(
     private val debuggerSessionRef = AtomicReference<DebuggerSession?>(null)
     private val sessionMutex = Mutex()
 
-    private val evaluationContextRef = AtomicReference<EvaluationContextImpl?>(null)
-
     /**
      * Current state of the debug session.
      * Used to coordinate session lifecycle (initialization, disposal).
      */
     private val sessionState = MutableStateFlow(NotebookDebuggerSessionState.Absent)
     private val eventsHandler = NotebookDebugEventsHandler(project, virtualFile)
+
+    private val breakpointController = KernelBreakpointController(
+        project, virtualFile, eventsHandler
+    ) {
+        sessionState.value = NotebookDebuggerSessionState.Ready
+        project.messageBus.syncPublisher(NOTEBOOK_DEBUG_SESSION_TOPIC).onSessionInitialized(virtualFile)
+    }
 
     init {
         project.initServiceListeners(this)
@@ -130,30 +130,11 @@ class KotlinNotebookFileDebugSession(
         })
     }
 
-    private val kernelThreadBreakpoint = KernelSyntheticMethodBreakpoint(
-        project,
-        KotlinNotebookSessionInternalNamesProvider.notebookClassName,
-        KotlinNotebookSessionInternalNamesProvider.notebookDebugMethodName,
-        KotlinNotebookSessionInternalNamesProvider.notebookDebugInsideMethodBreakpointLineNumber,
-    ) { command, event ->
-        val suspendContext = command.suspendContext
-        if (suspendContext != null) {
-            evaluationContextRef.set(
-                EvaluationContextImpl(suspendContext, suspendContext.frameProxy)
-            )
-        }
-        eventsHandler.handleInternalDebugMethodEntryEvent(suspendContext, event)
-
-        // Update state and notify via message bus
-        sessionState.value = NotebookDebuggerSessionState.Ready
-        project.messageBus.syncPublisher(NOTEBOOK_DEBUG_SESSION_TOPIC).onSessionInitialized(virtualFile)
-    }
-
     val currentStackFrameProxy: StackFrameProxyImpl?
         get() = debuggerSession?.process?.debuggerContext?.frameProxy
 
     val evaluationContext: EvaluationContextImpl?
-        get() = evaluationContextRef.get()
+        get() = breakpointController.evaluationContext
 
     val targetDebugPort: Int? get() = currentConfigRef.get()?.port
 
@@ -163,54 +144,16 @@ class KotlinNotebookFileDebugSession(
         return port
     }
 
-    fun prepareInternalRequests(debugProcess: DebugProcessImpl) {
-        if (!debugFeaturesEnabled) return
-
-        kernelThreadBreakpoint.createRequest(debugProcess)
-    }
-
     /**
      * Executes the given [action] with a synthetic breakpoint disabled,
      * restoring the original state afterward.
      *
      * If the debug context is not available, [action] is executed without breakpoint manipulation.
-     *
-     * NB: Contains a blocking call to [com.intellij.debugger.engine.DebuggerManagerThreadImpl.invokeAndWait],
-     * should not be called on [EDT]
      */
     @RequiresBackgroundThread
-    @ExperimentalContracts
-    internal suspend inline fun withNonSuspendingBreakpoint(action: suspend () -> Unit) {
-        contract {
-            callsInPlace(action, InvocationKind.EXACTLY_ONCE)
-        }
-        val process = debuggerSession?.process
-        val evaluationContext = evaluationContext
-        val suspendContext = evaluationContext?.suspendContext
-        if (process == null || evaluationContext == null || suspendContext == null) {
-            LOG.warn("Debug context not fully available for ${virtualFile.file.name}, executing block without breakpoint manipulation")
-            action()
-            return
-        }
-
-        val requestManager = process.requestsManager
-        val managerThread = evaluationContext.managerThread
-        val command = process.createResumeCommand(suspendContext)
-
-        evaluationContext.runOnManagerThread {
-            kernelThreadBreakpoint.updateBreakpointEnablement(requestManager, false)
-        }
-        managerThread.invokeAndWait(command)
-
-        try {
-            action()
-        }
-        finally {
-            evaluationContext.runOnManagerThread {
-                kernelThreadBreakpoint.updateBreakpointEnablement(requestManager, true)
-            }
-        }
-    }
+    @OptIn(ExperimentalContracts::class)
+    internal suspend inline fun withNonSuspendingBreakpoint(action: suspend () -> Unit) =
+        breakpointController.withNonSuspendingBreakpoint(debuggerSession, action)
 
     val currentXSession: XDebugSession?
         get() = debuggerSessionRef.get()?.xDebugSession
@@ -368,7 +311,7 @@ class KotlinNotebookFileDebugSession(
     private fun clearDebugSessionData() {
         debuggerSessionRef.set(null)
         currentConfigRef.set(null)
-        evaluationContextRef.set(null)
+        breakpointController.clearContext()
         // NB: sessionState is set to Idle by onProcessDetached callback
     }
 
@@ -404,6 +347,7 @@ class KotlinNotebookFileDebugSession(
             project,
             JupyterDebugSessionPath(virtualFile),
             virtualFile,
+            breakpointController,
             silent
         )
 

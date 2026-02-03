@@ -9,11 +9,14 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import org.jetbrains.kotlin.utils.addToStdlib.UnsafeCastFunction
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 internal fun Project.getJupyterFileEditor(vFile: VirtualFile): JupyterFileEditor?
-        = FileEditorManager.getInstance(this).getSelectedEditor(vFile) as? JupyterFileEditor
+        = FileEditorManager.getInstance(this).getEditors(vFile)
+            .filterIsInstance<JupyterFileEditor>()
+            .firstOrNull()
 
 @OptIn(UnsafeCastFunction::class)
 fun Project.getCurrentEditorOrNull(): Editor? {
@@ -41,6 +44,12 @@ internal fun Project.getOpenedKotlinNotebookEditors(): Collection<TextEditor>? {
     }.mapNotNull {
         editorManager.getSelectedEditor(it.file) as? TextEditor
     }.ifEmpty { return null }
+}
+
+@RequiresEdt
+fun Project.openNotebookEditor(file: BackedNotebookVirtualFile): TextEditor? {
+    val editorManager = FileEditorManager.getInstance(this)
+    return editorManager.openFile(file.file, true).firstOrNull() as? TextEditor
 }
 
 fun Editor.getTopLevelEditor(): Editor =
