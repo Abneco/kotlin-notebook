@@ -36,7 +36,7 @@ class NotebookDebugProcessListener(
     }
 
     override fun processDetached(process: DebugProcess, closedByUser: Boolean) {
-        JupyterDebugSessionManager.getInstance(project).debugInSessionFinished(sessionPath)
+        JupyterDebugSessionManager.getInstance(project).debugInSessionFinished(virtualFile)
         LOG.info("Process terminated, closedByUser: ${closedByUser}")
     }
 
