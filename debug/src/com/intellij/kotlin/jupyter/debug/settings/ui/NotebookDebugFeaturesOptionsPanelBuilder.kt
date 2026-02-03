@@ -35,6 +35,8 @@ internal class NotebookDebugFeaturesOptionsPanelBuilder : KotlinNotebookSettings
                     comment(KotlinNotebookDebugBundle.message("kotlin.jupyter.settings.jvm.debug.features.separate.process.note"))
                 }
                 createVariablesViewSelector(project, debugOptions, componentDisposable)
+
+                createNavigationSelector(debugOptions)
             }
         }
     }
@@ -68,6 +70,18 @@ internal class NotebookDebugFeaturesOptionsPanelBuilder : KotlinNotebookSettings
                         isEnabled = it.isEnabled && it.isSelected
                     }
                 }
+        }
+    }
+
+    private fun Panel.createNavigationSelector(
+        debugOptions: KotlinNotebookDebugProjectOptionsProvider
+    ) {
+        row {
+            checkBox(KotlinNotebookDebugBundle.message("kotlin.jupyter.settings.jvm.debug.navigate.editor.on.stop"))
+                .bindSelected(debugOptions::shouldNavigateToEditorOnSessionStop)
+                .accessibleDescription(
+                    KotlinNotebookDebugBundle.message("kotlin.jupyter.settings.jvm.debug.navigate.editor.on.stop.description")
+                )
         }
     }
 

@@ -13,6 +13,9 @@ import com.intellij.openapi.util.registry.Registry
 internal val debugFeaturesEnabled: Boolean
     get() = Registry.`is`("kotlin.notebook.debug.enabled", false)
 
+internal val debugActionEnabled: Boolean
+    get() = Registry.`is`("kotlin.notebook.debug.cell.action.enabled", false)
+
 /**
  * Based on current DebugSession of [BackedNotebookVirtualFile],
  * retrieves [JavaValue] by [variableName] in Kernel interpreter state or null.

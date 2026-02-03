@@ -133,6 +133,19 @@ internal object DebugConnectionUtility {
         return debugSession
     }
 
+    /**
+     * Shows the debug session tab
+     * for a session that was created with [com.intellij.xdebugger.XDebugSessionBuilder.showToolWindowOnSuspendOnly].
+     */
+    fun showSessionTab(session: XDebugSession) {
+        val sessionImpl = session as? XDebugSessionImpl
+        if (sessionImpl == null) {
+            LOG.warn("Cannot show session tab: session is not XDebugSessionImpl (type: ${session::class.java.name})")
+            return
+        }
+        sessionImpl.showSessionTab()
+    }
+
     // Random number
     const val MINIMUM_DEBUG_PORT: Int = 5000
 

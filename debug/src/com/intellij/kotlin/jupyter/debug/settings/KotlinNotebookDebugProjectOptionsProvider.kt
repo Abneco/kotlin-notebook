@@ -31,10 +31,13 @@ class KotlinNotebookDebugProjectOptionsProvider
         internal set
     var shouldFocusOnVariables: Boolean by prop(State::shouldFocusOnNotebookVariables)
         internal set
+    var shouldNavigateToEditorOnSessionStop: Boolean by prop(State::shouldNavigateToEditorOnSessionStop)
+        internal set
 
     class State : BaseState() {
         var shouldShowNotebookVariables: Boolean by property(true)
         var shouldFocusOnNotebookVariables: Boolean by property(false)
+        var shouldNavigateToEditorOnSessionStop: Boolean by property(true)
     }
 
     class PresentableNameGetter : State.NameGetter() {

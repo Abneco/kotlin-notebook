@@ -12,12 +12,13 @@ import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.openNotebookEditor
 import com.intellij.kotlin.jupyter.debug.session.KotlinNotebookDebugSessionManager
+import com.intellij.kotlin.jupyter.debug.settings.KotlinNotebookDebugProjectOptionsProvider
 import com.intellij.kotlin.jupyter.debug.util.DebugSessionConfig
+import com.intellij.kotlin.jupyter.debug.util.debugActionEnabled
 import com.intellij.kotlin.jupyter.debug.util.debugFeaturesSupported
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.project.Project
-import com.intellij.util.concurrency.annotations.RequiresEdt
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlin.contracts.ExperimentalContracts
@@ -78,9 +79,7 @@ class KotlinNotebookDebugCellAction : KotlinNotebookEditorActionBase() {
             }
             finally {
                 debugSession.disposeCurrentSession()
-                KotlinNotebookPluginScope.invokeOnEDT {
-                    project.navigateToEditor(notebookVirtualFile)
-                }
+                project.navigateToEditorIfNeeded(notebookVirtualFile)
             }
         }
     }
@@ -88,6 +87,11 @@ class KotlinNotebookDebugCellAction : KotlinNotebookEditorActionBase() {
     override fun update(event: AnActionEvent) {
         actionUpdater.update(this, event) { event ->
             val presentation = event.presentation
+            if (!debugActionEnabled) {
+                presentation.isEnabledAndVisible = false
+                return@update
+            }
+
             val project = event.project
             val notebook = event.getKotlinNotebook()
             if (project == null || notebook == null) {
@@ -100,10 +104,16 @@ class KotlinNotebookDebugCellAction : KotlinNotebookEditorActionBase() {
         }
     }
 
-    @RequiresEdt
-    private fun Project.navigateToEditor(notebookFile: BackedNotebookVirtualFile) {
-        val editor = openNotebookEditor(notebookFile)?.editor ?: return
-        editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
+    private fun Project.navigateToEditorIfNeeded(notebookFile: BackedNotebookVirtualFile) {
+        val options = KotlinNotebookDebugProjectOptionsProvider.getInstance(this)
+        if (!options.shouldNavigateToEditorOnSessionStop) {
+             return
+        }
+
+        KotlinNotebookPluginScope.invokeOnEDT {
+            val editor = openNotebookEditor(notebookFile)?.editor
+            editor?.scrollingModel?.scrollToCaret(ScrollType.CENTER)
+        }
     }
 
     companion object {
