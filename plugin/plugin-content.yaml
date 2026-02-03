@@ -49,6 +49,9 @@
 - name: lib/modules/intellij.kotlin.jupyter.liveTemplates.jar
   contentModules:
   - name: intellij.kotlin.jupyter.liveTemplates
+- name: lib/modules/intellij.kotlin.jupyter.notekit.jar
+  contentModules:
+  - name: intellij.kotlin.jupyter.notekit
 - name: lib/modules/intellij.kotlin.jupyter.plots.jar
   contentModules:
   - name: intellij.kotlin.jupyter.plots

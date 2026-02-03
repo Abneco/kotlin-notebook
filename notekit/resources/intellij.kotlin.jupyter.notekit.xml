@@ -1,0 +1,12 @@
+<idea-plugin>
+    <dependencies>
+        <module name="intellij.notebooks.visualization"/>
+        <module name="intellij.notebooks.jupyter.core"/>
+        <module name="intellij.jupyter.psi"/>
+        <module name="intellij.jupyter.core"/>
+    </dependencies>
+
+    <extensions defaultExtensionNs="com.intellij.jupyter.core">
+        <jupyterRuntimeListener implementation="com.intellij.kotlin.jupyter.notekit.NotekitJupyterExecutionListener"/>
+    </extensions>
+</idea-plugin>
