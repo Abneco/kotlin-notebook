@@ -19,7 +19,6 @@ import com.intellij.platform.workspace.storage.EntitySource
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
-import org.jetbrains.kotlin.analysis.api.projectStructure.analysisContextModule
 import org.jetbrains.kotlin.idea.core.script.k2.asEntity
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.sdkId
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
@@ -88,8 +87,6 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
         val configurations = buildMap<VirtualFile, ScriptCompilationConfigurationResult> {
             for (ktScript in scripts) {
                 val virtualFile = ktScript.virtualFile
-                virtualFile.analysisContextModule = null
-
                 val topLevelFile = virtualFile.topLevelFile ?: continue
 
                 val configurationWrapper = ktScript.refinedConfiguration.with {
