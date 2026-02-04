@@ -26,6 +26,7 @@ import com.intellij.kotlin.jupyter.debug.i18n.KotlinNotebookDebugBundle
 import com.intellij.kotlin.jupyter.debug.listeners.KotlinNotebookDebugSessionListener
 import com.intellij.kotlin.jupyter.debug.listeners.NOTEBOOK_DEBUG_SESSION_TOPIC
 import com.intellij.kotlin.jupyter.debug.session.lifecycle.NotebookDebuggerSessionState
+import com.intellij.kotlin.jupyter.debug.session.ui.NotebookDebugTabHandler
 import com.intellij.kotlin.jupyter.debug.util.DebugSessionConfig
 import com.intellij.kotlin.jupyter.debug.util.connection.DebugConnectionUtility
 import com.intellij.kotlin.jupyter.debug.util.connection.DebugConnectionUtility.attachDebuggerCreateSession
@@ -69,6 +70,7 @@ class KotlinNotebookFileDebugSession(
      */
     private val sessionState = MutableStateFlow(NotebookDebuggerSessionState.Absent)
     private val eventsHandler = NotebookDebugEventsHandler(project, virtualFile)
+    private val tabHandler = NotebookDebugTabHandler(project, virtualFile.file.name, LOG)
 
     private val breakpointController = KernelBreakpointController(
         project, virtualFile, eventsHandler
@@ -168,12 +170,8 @@ class KotlinNotebookFileDebugSession(
         sessionState.first { it == NotebookDebuggerSessionState.Ready }
     }
 
-    private fun DebuggerSession.configureSessionAfterAttach(config: DebugSessionConfig) {
-        addProcessListener(process, config.silent)
-
-        if (!config.silent) {
-            showDebugSupportNotification()
-        }
+    fun showSessionTab() {
+        tabHandler.showSessionTab(currentXSession)
     }
 
     // see JavaAttachDebuggerProvider
@@ -196,6 +194,36 @@ class KotlinNotebookFileDebugSession(
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Creates a new silent session using already
+     * existing config to attach to the target VM.
+     */
+    internal suspend fun recreateSilentSession() {
+        val currentConfig = currentConfigRef.get() ?: return
+        if (currentConfig.silent) {
+            LOG.info("Silent session already exists in ${virtualFile.file.name}, skipping recreation")
+            return
+        }
+
+        sessionMutex.withLock {
+            disposeSessionAndTab()
+        }
+
+        val newConfig = DebugSessionConfig(currentConfig.port, silent = true)
+        val newSession = getOrCreateVmDebuggerSession(newConfig)
+        if (newSession == null) {
+            LOG.warn("Failed to recreate silent session for ${virtualFile.file.name}")
+        }
+    }
+
+    private fun DebuggerSession.configureSessionAfterAttach(config: DebugSessionConfig) {
+        addProcessListener(process, config.silent)
+
+        if (!config.silent) {
+            showDebugSupportNotification()
         }
     }
 
@@ -356,12 +384,21 @@ class KotlinNotebookFileDebugSession(
         )
     }
 
+    private suspend fun disposeSessionAndTab() {
+        val contentDescriptor = withContext(Dispatchers.EDT) {
+            tabHandler.findSessionTabDescriptor(currentXSession)
+        }
+
+        disposeCurrentSession().await()
+        tabHandler.closeSessionTab(contentDescriptor)
+    }
+
     /**
      * Returns a [Deferred] that completes when the process has been fully detached.
      * Uses a timeout to prevent the deferred from hanging indefinitely if onProcessDetached
      * is never called (e.g., process already detached, crash, or other unexpected conditions).
      */
-    internal fun disposeCurrentSession(): Deferred<Any> {
+    internal fun disposeCurrentSession(): Deferred<Unit> {
         val session = currentXSession ?: return CompletableDeferred(Unit)
 
         // Only proceed if we successfully claimed the transition

@@ -69,7 +69,7 @@ class KotlinNotebookDebugCellAction : KotlinNotebookEditorActionBase() {
             }
 
             debugSession.awaitInitialized()
-
+            debugSession.showSessionTab()
             try {
                 debugSession.withNonSuspendingBreakpoint {
                     val results = jupyterExecutionManager
@@ -78,7 +78,7 @@ class KotlinNotebookDebugCellAction : KotlinNotebookEditorActionBase() {
                 }
             }
             finally {
-                debugSession.disposeCurrentSession()
+                debugSession.recreateSilentSession()
                 project.navigateToEditorIfNeeded(notebookVirtualFile)
             }
         }

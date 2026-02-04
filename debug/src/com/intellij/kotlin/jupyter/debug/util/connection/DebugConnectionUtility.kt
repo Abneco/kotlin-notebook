@@ -28,7 +28,6 @@ import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.XDebuggerManager
-import com.intellij.xdebugger.impl.XDebugSessionImpl
 import org.jetbrains.annotations.Nls
 import org.jetbrains.kotlinx.jupyter.protocol.startup.PortsGenerator
 import org.jetbrains.kotlinx.jupyter.protocol.startup.create
@@ -122,7 +121,7 @@ internal object DebugConnectionUtility {
             .sessionName(sessionName)
             .environment(this)
             .showToolWindowOnSuspendOnly(true)
-            .showTab(true)
+            .showTab(!isHeadlessMode)
             .startSession().session
 
         if (isHeadlessMode) {
@@ -131,19 +130,6 @@ internal object DebugConnectionUtility {
 
         //debugSession.isModifiedClassesScanRequired = true // for hot-swap
         return debugSession
-    }
-
-    /**
-     * Shows the debug session tab
-     * for a session that was created with [com.intellij.xdebugger.XDebugSessionBuilder.showToolWindowOnSuspendOnly].
-     */
-    fun showSessionTab(session: XDebugSession) {
-        val sessionImpl = session as? XDebugSessionImpl
-        if (sessionImpl == null) {
-            LOG.warn("Cannot show session tab: session is not XDebugSessionImpl (type: ${session::class.java.name})")
-            return
-        }
-        sessionImpl.showSessionTab()
     }
 
     // Random number
