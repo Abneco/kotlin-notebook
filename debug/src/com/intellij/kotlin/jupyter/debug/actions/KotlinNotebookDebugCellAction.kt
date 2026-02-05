@@ -1,112 +1,38 @@
 // Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.debug.actions
 
-import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
-import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.helper.JupyterHelper
 import com.intellij.jupyter.core.jupyter.helper.jupyterEditor
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
-import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.settings.actions.KotlinNotebookEditorActionBase
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
-import com.intellij.kotlin.jupyter.core.util.openNotebookEditor
-import com.intellij.kotlin.jupyter.debug.breakpoint.KotlinNotebookBreakpointsService
-import com.intellij.kotlin.jupyter.debug.session.KotlinNotebookDebugSessionManager
-import com.intellij.kotlin.jupyter.debug.settings.KotlinNotebookDebugProjectOptionsProvider
-import com.intellij.kotlin.jupyter.debug.util.DebugSessionConfig
+import com.intellij.kotlin.jupyter.debug.execution.KotlinNotebookDebugAwareCellExecutorService
 import com.intellij.kotlin.jupyter.debug.util.debugActionEnabled
 import com.intellij.kotlin.jupyter.debug.util.debugFeaturesSupported
-import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.editor.ScrollType
-import com.intellij.openapi.project.Project
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
-import kotlin.contracts.ExperimentalContracts
 
 /**
  * Action to run the current cell with debugging enabled.
  * Unlike normal Run Cell, this creates a non-silent debug session
- * that shows the Debug tool window and respects project breakpoints.
  */
 class KotlinNotebookDebugCellAction : KotlinNotebookEditorActionBase() {
-    @OptIn(ExperimentalContracts::class)
     override fun actionPerformed(event: AnActionEvent) {
         val dataContext = event.dataContext
         val editor = dataContext.jupyterEditor ?: return
-
         val project = editor.project ?: return
         val notebookVirtualFile = dataContext.notebookFile ?: return
-        if (!notebookVirtualFile.file.isKotlinNotebook) {
-            return
-        }
+        if (!notebookVirtualFile.file.isKotlinNotebook) return
 
         val intervalPointers = JupyterHelper.getSelectedIntervalPointers(editor)
         if (intervalPointers.isEmpty()) return
 
-        val breakpointsService = KotlinNotebookBreakpointsService.getForFile(project, notebookVirtualFile)
-        val hasBreakpoints = breakpointsService.hasBreakpointsInDependentModule()
-
-        if (!hasBreakpoints) {
-            LOG.info("No breakpoints in dependent module for ${notebookVirtualFile.file.name}, running cells without debug session")
-            runCellsWithoutDebug(project, notebookVirtualFile, intervalPointers)
-            return
-        }
-
         val projectScope = KotlinNotebookPluginScope.getForProject(project)
-        val debugSession = KotlinNotebookDebugSessionManager.getForFile(project, notebookVirtualFile)
-        val jupyterExecutionManager = JupyterExecutionManager.getInstance(project, notebookVirtualFile)
-        val fileName = notebookVirtualFile.file.name
+        val executor = KotlinNotebookDebugAwareCellExecutorService.getForFile(project, notebookVirtualFile)
 
         projectScope.launch {
-            jupyterExecutionManager.getOrCreateSession()
-            val port = debugSession.targetDebugPort
-            if (port == null) {
-                LOG.warn("Debug port not available for notebook $fileName - kernel may not support debugging")
-                return@launch
-            }
-
-            val config = DebugSessionConfig(
-                port,
-                silent = false  // User wants visible debugging
-            )
-            LOG.info("Starting debug session with non-silent mode for notebook $fileName")
-
-            val session = debugSession.getOrCreateVmDebuggerSession(config, forceRestart = false)
-            if (session == null) {
-                LOG.warn("Failed to create debug session for notebook $fileName")
-                return@launch
-            }
-
-            debugSession.awaitInitialized()
-            debugSession.showSessionTab()
-            try {
-                debugSession.withNonSuspendingBreakpoint {
-                    val results = jupyterExecutionManager
-                        .runCells(intervalPointers)
-                    results.awaitAll()
-                }
-            }
-            finally {
-                debugSession.recreateSilentSession()
-                project.navigateToEditorIfNeeded(notebookVirtualFile)
-            }
-        }
-    }
-
-    private fun runCellsWithoutDebug(
-        project: Project,
-        notebookVirtualFile: BackedNotebookVirtualFile,
-        intervalPointers: List<NotebookIntervalPointer>
-    ) {
-        val projectScope = KotlinNotebookPluginScope.getForProject(project)
-        val jupyterExecutionManager = JupyterExecutionManager.getInstance(project, notebookVirtualFile)
-
-        projectScope.launch {
-            jupyterExecutionManager.getOrCreateSession()
-            val results = jupyterExecutionManager.runCells(intervalPointers)
-            results.awaitAll()
+            executor.executeCellsWithDebug(intervalPointers)
         }
     }
 
@@ -129,20 +55,5 @@ class KotlinNotebookDebugCellAction : KotlinNotebookEditorActionBase() {
             presentation.isEnabled = canDebugNow
         }
     }
-
-    private fun Project.navigateToEditorIfNeeded(notebookFile: BackedNotebookVirtualFile) {
-        val options = KotlinNotebookDebugProjectOptionsProvider.getInstance(this)
-        if (!options.shouldNavigateToEditorOnSessionStop) {
-             return
-        }
-
-        KotlinNotebookPluginScope.invokeOnEDT {
-            val editor = openNotebookEditor(notebookFile)?.editor
-            editor?.scrollingModel?.scrollToCaret(ScrollType.CENTER)
-        }
-    }
-
-    companion object {
-        private val LOG = notebookLogger()
-    }
 }
+
