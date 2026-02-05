@@ -20,7 +20,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScrip
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.Companion.isIncomplete
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.runSafely
-import com.intellij.kotlin.jupyter.debug.breakpoint.KernelBreakpointController
+import com.intellij.kotlin.jupyter.debug.breakpoint.kernel.KernelBreakpointController
 import com.intellij.kotlin.jupyter.debug.events.NotebookDebugEventsHandler
 import com.intellij.kotlin.jupyter.debug.i18n.KotlinNotebookDebugBundle
 import com.intellij.kotlin.jupyter.debug.listeners.KotlinNotebookDebugSessionListener

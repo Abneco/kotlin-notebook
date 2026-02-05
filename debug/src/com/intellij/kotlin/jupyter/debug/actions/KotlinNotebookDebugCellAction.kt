@@ -11,11 +11,13 @@ import com.intellij.kotlin.jupyter.core.settings.actions.KotlinNotebookEditorAct
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.openNotebookEditor
+import com.intellij.kotlin.jupyter.debug.breakpoint.KotlinNotebookBreakpointsService
 import com.intellij.kotlin.jupyter.debug.session.KotlinNotebookDebugSessionManager
 import com.intellij.kotlin.jupyter.debug.settings.KotlinNotebookDebugProjectOptionsProvider
 import com.intellij.kotlin.jupyter.debug.util.DebugSessionConfig
 import com.intellij.kotlin.jupyter.debug.util.debugActionEnabled
 import com.intellij.kotlin.jupyter.debug.util.debugFeaturesSupported
+import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.project.Project
@@ -42,6 +44,15 @@ class KotlinNotebookDebugCellAction : KotlinNotebookEditorActionBase() {
 
         val intervalPointers = JupyterHelper.getSelectedIntervalPointers(editor)
         if (intervalPointers.isEmpty()) return
+
+        val breakpointsService = KotlinNotebookBreakpointsService.getForFile(project, notebookVirtualFile)
+        val hasBreakpoints = breakpointsService.hasBreakpointsInDependentModule()
+
+        if (!hasBreakpoints) {
+            LOG.info("No breakpoints in dependent module for ${notebookVirtualFile.file.name}, running cells without debug session")
+            runCellsWithoutDebug(project, notebookVirtualFile, intervalPointers)
+            return
+        }
 
         val projectScope = KotlinNotebookPluginScope.getForProject(project)
         val debugSession = KotlinNotebookDebugSessionManager.getForFile(project, notebookVirtualFile)
@@ -81,6 +92,21 @@ class KotlinNotebookDebugCellAction : KotlinNotebookEditorActionBase() {
                 debugSession.recreateSilentSession()
                 project.navigateToEditorIfNeeded(notebookVirtualFile)
             }
+        }
+    }
+
+    private fun runCellsWithoutDebug(
+        project: Project,
+        notebookVirtualFile: BackedNotebookVirtualFile,
+        intervalPointers: List<NotebookIntervalPointer>
+    ) {
+        val projectScope = KotlinNotebookPluginScope.getForProject(project)
+        val jupyterExecutionManager = JupyterExecutionManager.getInstance(project, notebookVirtualFile)
+
+        projectScope.launch {
+            jupyterExecutionManager.getOrCreateSession()
+            val results = jupyterExecutionManager.runCells(intervalPointers)
+            results.awaitAll()
         }
     }
 
