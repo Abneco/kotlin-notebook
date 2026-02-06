@@ -1,0 +1,29 @@
+### auto-generated section `build intellij.kotlin.notebook.performance.testing` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "resourcegroup")
+
+resourcegroup(
+  name = "kotlin-notebook-performance-testing_resources",
+  srcs = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_library(
+  name = "kotlin-notebook-performance-testing",
+  module_name = "intellij.kotlin.notebook.performance.testing",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java", "src/**/*.form"], allow_empty = True),
+  resources = [":kotlin-notebook-performance-testing_resources"],
+  deps = [
+    "@community//plugins/performanceTesting/core:performanceTesting",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//plugins/performanceTesting/commands-model:tools-ide-performanceTesting-commands",
+    "@community//platform/core-api:core",
+    "//plugins/kotlin/jupyter/core",
+    "@community//platform/ide-core-impl",
+    "@community//platform/lang-impl",
+    "//plugins/jupyter/core",
+    "@community//notebooks/visualization",
+    "@community//platform/analysis-api:analysis",
+  ]
+)
+### auto-generated section `build intellij.kotlin.notebook.performance.testing` end

@@ -1,0 +1,14 @@
+<idea-plugin>
+  <dependencies>
+    <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
+    <plugin id="com.jetbrains.performancePlugin"/>
+    <module name="intellij.jupyter.core"/>
+    <module name="intellij.kotlin.jupyter.core"/>
+    <module name="intellij.notebooks.visualization"/>
+    <!-- endregion -->
+  </dependencies>
+
+  <extensions defaultExtensionNs="com.jetbrains.performancePlugin">
+    <commandProvider implementation="com.intellij.kotlin.notebook.performance.testing.KotlinNotebookCommandProvider"/>
+  </extensions>
+</idea-plugin>
