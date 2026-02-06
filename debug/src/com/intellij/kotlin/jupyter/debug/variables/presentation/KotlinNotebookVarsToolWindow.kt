@@ -31,7 +31,7 @@ import com.intellij.ui.ClickListener
 import com.intellij.ui.ListenerUtil
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.content.Content
-import com.intellij.xdebugger.frame.XValueChildrenList
+import com.intellij.xdebugger.frame.XValue
 import com.intellij.xdebugger.impl.frame.XStandaloneVariablesView
 import java.awt.BorderLayout
 import java.awt.event.MouseEvent
@@ -58,7 +58,7 @@ class KotlinNotebookVarsToolWindow(
     private inner class VariablesListener : JupyterEnvironmentUpdateListener {
         override fun onRuntimeEnvironmentUpdate(
             backedNotebookVirtualFile: BackedNotebookVirtualFile,
-            values: XValueChildrenList?
+            values: List<XValue>?
         ) {
             if (notebookFile != backedNotebookVirtualFile || !project.shouldShowNotebookVariables) return
 
