@@ -58,11 +58,14 @@
 
     <change-notes>
         <![CDATA[
-            <h1>What's New in Kotlin Notebook 2025.2</h1>
+            <h1>What's New in Kotlin Notebook 2026.1</h1>
 
             <p>In this release, we introduced a number of features</p>
             <ul>
-                <li></li>
+                <li>You can now set breakpoints in project files and start debug sessions directly from notebook cells</li>
+                <li>You can create SQL cells that reuse your project’s database connections</li>
+                <li><code>%use widgets</code> — an integration that brings ipywidgets support to Kotlin Notebooks</li>
+                <li><code>%use notekit</code> — a Kotlin API for interacting with and manipulating the current notebook</li>
             </ul>
 
             <p>This release also addresses several bug fixes, including:</p>
