@@ -49,7 +49,7 @@ jvm_library(
     "@community//plugins/kotlin/base/project-structure",
     "@community//plugins/kotlin/base/scripting/scripting.shared",
     "@community//plugins/kotlin/base/compiler-configuration",
-    "@community//plugins/kotlin/bundled-compiler-plugins-support",
+    "@community//plugins/kotlin/bundled-compiler-plugins-support:compilerPlugins-support-bundled",
     "//plugins/jupyter/psi",
     "@community//plugins/kotlin/base/indices",
     "@community//java/java-frontback-psi-impl:frontback-psi-impl",
