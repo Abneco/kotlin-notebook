@@ -1,8 +1,9 @@
-package com.intellij.kotlin.notebook.performance.testing
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+package com.intellij.kotlin.jupyter.performancePlugin
 
-import com.intellij.kotlin.notebook.performance.testing.commands.NewKotlinNotebookCommand
-import com.intellij.kotlin.notebook.performance.testing.commands.RestartKernelCommand
-import com.intellij.kotlin.notebook.performance.testing.commands.WaitExecutionFinishesCommand
+import com.intellij.kotlin.jupyter.performancePlugin.commands.NewKotlinNotebookCommand
+import com.intellij.kotlin.jupyter.performancePlugin.commands.RestartKernelCommand
+import com.intellij.kotlin.jupyter.performancePlugin.commands.WaitExecutionFinishesCommand
 import com.jetbrains.performancePlugin.CommandProvider
 import com.jetbrains.performancePlugin.CreateCommand
 

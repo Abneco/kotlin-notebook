@@ -1,5 +1,5 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-package com.intellij.kotlin.notebook.performance.testing.commands
+package com.intellij.kotlin.jupyter.performancePlugin.commands
 
 import com.intellij.jupyter.core.jupyter.connections.action.JupyterKernelRestartSupport
 import com.intellij.openapi.ui.playback.PlaybackContext

@@ -52,6 +52,9 @@
 - name: lib/modules/intellij.kotlin.jupyter.notekit.jar
   contentModules:
   - name: intellij.kotlin.jupyter.notekit
+- name: lib/modules/intellij.kotlin.jupyter.performancePlugin.jar
+  contentModules:
+  - name: intellij.kotlin.jupyter.performancePlugin
 - name: lib/modules/intellij.kotlin.jupyter.plots.jar
   contentModules:
   - name: intellij.kotlin.jupyter.plots
@@ -63,9 +66,6 @@
 - name: lib/modules/intellij.kotlin.jupyter.tables.jar
   contentModules:
   - name: intellij.kotlin.jupyter.tables
-- name: lib/modules/intellij.kotlin.notebook.performance.testing.jar
-  contentModules:
-  - name: intellij.kotlin.notebook.performance.testing
 - name: lib/xml-apis-ext.jar
   library: xml-apis-ext
   module: intellij.libraries.batik

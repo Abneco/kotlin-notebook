@@ -15,6 +15,6 @@
     <orderEntry type="module" module-name="intellij.performanceTesting" scope="TEST" />
     <orderEntry type="module" module-name="intellij.platform.util" scope="TEST" />
     <orderEntry type="module" module-name="intellij.platform.ide.impl" scope="TEST" />
-    <orderEntry type="module" module-name="intellij.kotlin.notebook.performance.testing" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.kotlin.jupyter.performancePlugin" scope="TEST" />
   </component>
 </module>

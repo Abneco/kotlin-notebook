@@ -24,7 +24,7 @@ jvm_library(
     "@community//platform/util",
     "@community//platform/platform-impl:ide-impl",
     "@community//platform/platform-impl:ide-impl_test_lib",
-    "//plugins/kotlin/jupyter/performanceTesting:kotlin-notebook-performance-testing",
+    "//plugins/kotlin/jupyter/performancePlugin",
   ],
   runtime_deps = [":perfTests"]
 )

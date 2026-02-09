@@ -9,6 +9,6 @@
   </dependencies>
 
   <extensions defaultExtensionNs="com.jetbrains.performancePlugin">
-    <commandProvider implementation="com.intellij.kotlin.notebook.performance.testing.KotlinNotebookCommandProvider"/>
+    <commandProvider implementation="com.intellij.kotlin.jupyter.performancePlugin.KotlinNotebookCommandProvider"/>
   </extensions>
 </idea-plugin>
