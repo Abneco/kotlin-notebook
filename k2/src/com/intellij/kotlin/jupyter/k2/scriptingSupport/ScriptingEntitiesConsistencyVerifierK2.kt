@@ -14,15 +14,15 @@ import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import com.intellij.platform.workspace.storage.url.VirtualFileUrlManager
 import com.intellij.psi.search.GlobalSearchScopesCore
 import com.intellij.util.concurrency.annotations.RequiresReadLock
+import org.jetbrains.kotlin.idea.core.script.k2.asCompilationConfiguration
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.toVirtualFileUrl
-import org.jetbrains.kotlin.idea.core.script.k2.toConfigurationResult
 import org.jetbrains.kotlin.idea.stubindex.KotlinFullClassNameIndex
 import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.baseClass
 import kotlin.script.experimental.api.dependencies
 import kotlin.script.experimental.api.implicitReceivers
-import kotlin.script.experimental.api.valueOrNull
+import kotlin.script.experimental.jvm.util.toClassPathOrEmpty
 
 internal class ScriptingEntitiesConsistencyVerifierFactoryK2 : ScriptingEntitiesConsistencyVerifier.Factory {
     override fun create(project: Project): ScriptingEntitiesConsistencyVerifier {
@@ -31,7 +31,7 @@ internal class ScriptingEntitiesConsistencyVerifierFactoryK2 : ScriptingEntities
 }
 
 private class ScriptingEntitiesConsistencyVerifierK2(
-    private val project: Project
+    private val project: Project,
 ) : ScriptingEntitiesConsistencyVerifier {
     val fileUrlManager: VirtualFileUrlManager
         get() = project.workspaceModel.getVirtualFileUrlManager()
@@ -39,7 +39,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     private fun getDependencyRootsForNotebook(notebookFile: BackedNotebookVirtualFile): Collection<VirtualFileUrl> {
         val snapshot = project.workspaceModel.currentSnapshot
         val kotlinScriptEntity = notebookFile.findK2WorkspaceScriptEntities(project.workspaceModel)
-            .singleOrNull() ?: return emptyList()
+                                     .singleOrNull() ?: return emptyList()
 
         return kotlinScriptEntity.dependencies
             .mapNotNull { snapshot.resolve(it) }
@@ -79,7 +79,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     @RequiresReadLock
     override suspend fun filterTypesPresentInIndexes(
         virtualFile: BackedNotebookVirtualFile,
-        types: Collection<KotlinType>
+        types: Collection<KotlinType>,
     ): Collection<KotlinType> {
         val dependencies = virtualFile.findK2WorkspaceEntityDependencies(project)
         val scope = GlobalSearchScopesCore.directoriesScope(project, true, *dependencies.toTypedArray())
@@ -96,11 +96,14 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     }
 
     override fun isScriptFileConfigurationConsistentWithModel(
-        virtualFile: BackedNotebookVirtualFile, compilationConfiguration: ScriptCompilationConfiguration
+        virtualFile: BackedNotebookVirtualFile, compilationConfiguration: ScriptCompilationConfiguration,
     ): Boolean {
-        val configurationForNotebook =
-            NotebookScriptConfigurationsManager.getInstance(project).getKotlinScriptEntity(virtualFile.file)?.toConfigurationResult()?.valueOrNull()
-                ?: return false
+        val configuration =
+            NotebookScriptConfigurationsManager.getInstance(project).getKotlinScriptEntity(virtualFile.file)
+                ?.configurationEntity
+                ?.let { project.workspaceModel.currentSnapshot.resolve(it) }
+                ?.bytes
+                ?.asCompilationConfiguration() ?: return false
 
         /**
          * Here we need to perform 2 steps check:
@@ -114,12 +117,12 @@ private class ScriptingEntitiesConsistencyVerifierK2(
          */
 
         // Check the random one since the configuration for any cell will be the same
-        val configuration = configurationForNotebook.configuration ?: return false
         val presentInConfigurationSource = compareConfigurationsData(compilationConfiguration, configuration)
         if (!presentInConfigurationSource) return false
 
         val lastDependencyVFUrl =
-            configurationForNotebook.dependenciesClassPath.lastOrNull()?.path?.toVirtualFileUrl(fileUrlManager) ?: return false
+            configuration[ScriptCompilationConfiguration.dependencies].toClassPathOrEmpty().lastOrNull()?.path?.toVirtualFileUrl(
+                fileUrlManager) ?: return false
         val presentInModuleDependencies = checkArtifactPresentInLibrary(
             virtualFile, lastDependencyVFUrl
         )
@@ -130,7 +133,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     // Check only base things as K2 mode could have extra keys present
     private fun compareConfigurationsData(current: ScriptCompilationConfiguration, cached: ScriptCompilationConfiguration): Boolean {
         return current[ScriptCompilationConfiguration.baseClass] == cached[ScriptCompilationConfiguration.baseClass]
-                && current[ScriptCompilationConfiguration.implicitReceivers] == cached[ScriptCompilationConfiguration.implicitReceivers]
-                && current[ScriptCompilationConfiguration.dependencies] == cached[ScriptCompilationConfiguration.dependencies]
+               && current[ScriptCompilationConfiguration.implicitReceivers] == cached[ScriptCompilationConfiguration.implicitReceivers]
+               && current[ScriptCompilationConfiguration.dependencies] == cached[ScriptCompilationConfiguration.dependencies]
     }
 }
