@@ -9,6 +9,7 @@ import com.intellij.kotlin.jupyter.core.settings.actions.KotlinNotebookEditorAct
 import com.intellij.kotlin.jupyter.core.settings.actions.promptSessionShutdownIfNeeded
 import com.intellij.kotlin.jupyter.core.settings.isAvailable
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
+import com.intellij.kotlin.jupyter.core.util.getKotlinNotebookJupyterFile
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.application.WriteAction
@@ -25,7 +26,7 @@ class KotlinNotebookChangeSessionModeAction(
     override fun update(event: AnActionEvent) {
         actionUpdater.update(this, event) { event ->
             val presentation = event.presentation
-            val notebook = event.getKotlinNotebook()
+            val notebook = event.getKotlinNotebookJupyterFile()
             val isAvailable = mode.isAvailable && notebook != null
             presentation.isEnabledAndVisible = isAvailable
             if (isAvailable && notebook.sessionRunMode == mode) {

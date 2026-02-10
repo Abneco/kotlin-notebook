@@ -4,9 +4,10 @@
 
         <module name="intellij.jupyter.core"/>
         <module name="intellij.kotlin.jupyter.core"/>
-        <module name="intellij.notebooks.visualization"/>
         <module name="intellij.jupyter.psi"/>
         <module name="intellij.notebooks.jupyter.core"/>
+        <module name="intellij.notebooks.ui"/>
+        <module name="intellij.notebooks.visualization"/>
     </dependencies>
 
     <extensionPoints>

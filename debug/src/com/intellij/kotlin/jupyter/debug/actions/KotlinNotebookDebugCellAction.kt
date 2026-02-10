@@ -7,6 +7,7 @@ import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.kotlin.jupyter.core.settings.actions.KotlinNotebookEditorActionBase
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.arePresent
+import com.intellij.kotlin.jupyter.core.util.getKotlinNotebookJupyterFile
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.projectDependencies
 import com.intellij.kotlin.jupyter.debug.execution.KotlinNotebookDebugAwareCellExecutorService
@@ -49,7 +50,7 @@ class KotlinNotebookDebugCellAction : KotlinNotebookEditorActionBase() {
             }
 
             val project = event.project
-            val notebook = event.getKotlinNotebook()
+            val notebook = event.getKotlinNotebookJupyterFile()
             val notebookFile = event.notebookFile
             if (project == null || notebook == null || notebookFile == null) {
                 presentation.isEnabledAndVisible = false

@@ -11,6 +11,7 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookDependencies
 import com.intellij.kotlin.jupyter.core.settings.findModule
 import com.intellij.kotlin.jupyter.core.settings.getSuitableModules
 import com.intellij.kotlin.jupyter.core.settings.notebookDependencies
+import com.intellij.kotlin.jupyter.core.util.getKotlinNotebookJupyterFile
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -159,7 +160,7 @@ class KotlinNotebookDependenciesComboBoxAction : KotlinNotebookEditorActionBase(
     }
 
     private fun AnActionEvent.getCurrentDependencies(): KotlinNotebookDependencies? {
-        val notebookFile = getKotlinNotebook()
+        val notebookFile = getKotlinNotebookJupyterFile()
         if (notebookFile == null) {
             this.presentation.isEnabledAndVisible = false
             return null

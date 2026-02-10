@@ -4,6 +4,8 @@ package com.intellij.kotlin.jupyter.core.util
 import com.intellij.ide.actions.RevealFileAction
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.editor.JupyterFileEditor
+import com.intellij.jupyter.core.jupyter.helper.notebookFile
+import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDownloader
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -25,6 +27,15 @@ fun DataContext.getKotlinNotebookVirtualFile(): BackedNotebookVirtualFile? {
         else -> vFile
     }
     return virtualFile?.toKotlinNotebookBackedFile()
+}
+
+fun AnActionEvent.getKotlinNotebookJupyterFile(): JupyterNotebook? {
+    val notebookFile = notebookFile ?: return null
+    return if (notebookFile.isKotlinNotebook) {
+        notebookFile.notebookOrNull
+    } else {
+        null
+    }
 }
 
 internal fun AnActionEvent.getKotlinNotebookVirtualFile(): BackedNotebookVirtualFile? = dataContext.getKotlinNotebookVirtualFile()

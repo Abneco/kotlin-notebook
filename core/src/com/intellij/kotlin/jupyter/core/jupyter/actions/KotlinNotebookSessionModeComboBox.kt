@@ -5,6 +5,7 @@ import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.actions.KotlinNotebookEditorActionBase
 import com.intellij.kotlin.jupyter.core.settings.isKernelRunModeSelectionEnabled
 import com.intellij.kotlin.jupyter.core.settings.readSettings
+import com.intellij.kotlin.jupyter.core.util.getKotlinNotebookJupyterFile
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionToolbar
@@ -39,7 +40,7 @@ class KotlinNotebookSessionModeComboBox : KotlinNotebookEditorActionBase(), Cust
     }
 
     private fun AnActionEvent.getRunMode(): KotlinNotebookSessionRunMode? {
-        val notebook = getKotlinNotebook() ?: return null
+        val notebook = getKotlinNotebookJupyterFile() ?: return null
         return notebook.readSettings().sessionRunMode
     }
 

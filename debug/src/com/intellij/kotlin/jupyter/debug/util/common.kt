@@ -11,10 +11,10 @@ import com.intellij.openapi.util.registry.Registry
 
 
 internal val debugFeaturesEnabled: Boolean
-    get() = Registry.`is`("kotlin.notebook.debug.enabled", false)
+    get() = Registry.`is`("kotlin.notebook.debug.enabled", true)
 
 internal val debugActionEnabled: Boolean
-    get() = Registry.`is`("kotlin.notebook.debug.cell.action.enabled", false)
+    get() = Registry.`is`("kotlin.notebook.debug.cell.action.enabled", true)
 
 /**
  * Based on current DebugSession of [BackedNotebookVirtualFile],
