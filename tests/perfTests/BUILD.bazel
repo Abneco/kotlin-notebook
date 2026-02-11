@@ -32,6 +32,8 @@ jvm_library(
     "@community//platform/platform-impl:ide-impl",
     "@community//platform/platform-impl:ide-impl_test_lib",
     "//plugins/kotlin/jupyter/performancePlugin",
+    "@community//tools/intellij.tools.ide.metrics.collector:ide-metrics-collector",
+    "@community//tools/intellij.tools.ide.metrics.collector:ide-metrics-collector_test_lib",
   ],
   runtime_deps = [":perfTests"]
 )

@@ -17,5 +17,6 @@
     <orderEntry type="module" module-name="intellij.platform.util" scope="TEST" />
     <orderEntry type="module" module-name="intellij.platform.ide.impl" scope="TEST" />
     <orderEntry type="module" module-name="intellij.kotlin.jupyter.performancePlugin" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.tools.ide.metrics.collector" scope="TEST" />
   </component>
 </module>
