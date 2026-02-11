@@ -1,6 +1,7 @@
 // Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.perf.test
 
+import com.intellij.kotlin.jupyter.performancePlugin.commands.AddCodeCellBelowCommand
 import com.intellij.kotlin.jupyter.performancePlugin.commands.NewKotlinNotebookCommand
 import com.intellij.kotlin.jupyter.performancePlugin.commands.RestartKernelCommand
 import com.intellij.kotlin.jupyter.performancePlugin.commands.WaitExecutionFinishesCommand
@@ -14,7 +15,8 @@ fun <T : CommandChain> T.createKotlinNotebookFile(fileName: String): T = apply {
 }
 
 fun <T : CommandChain> T.addCodeCell(content: String): T = apply {
-    action("NotebookInsertCodeCellAction")
+    addCommand(AddCodeCellBelowCommand.PREFIX)
+    //action("NotebookInsertCodeCellAction")
     delayType(150, content)
 }
 
