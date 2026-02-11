@@ -3,10 +3,10 @@ package com.intellij.kotlin.jupyter.perf.test
 
 import com.intellij.kotlin.jupyter.performancePlugin.commands.AddCodeCellBelowCommand
 import com.intellij.kotlin.jupyter.performancePlugin.commands.NewKotlinNotebookCommand
+import com.intellij.kotlin.jupyter.performancePlugin.commands.NotebookRunAllCellsCommand
 import com.intellij.kotlin.jupyter.performancePlugin.commands.RestartKernelCommand
 import com.intellij.kotlin.jupyter.performancePlugin.commands.WaitExecutionFinishesCommand
 import com.intellij.tools.ide.performanceTesting.commands.CommandChain
-import com.intellij.tools.ide.performanceTesting.commands.action
 import com.intellij.tools.ide.performanceTesting.commands.delayType
 
 
@@ -16,12 +16,11 @@ fun <T : CommandChain> T.createKotlinNotebookFile(fileName: String): T = apply {
 
 fun <T : CommandChain> T.addCodeCell(content: String): T = apply {
     addCommand(AddCodeCellBelowCommand.PREFIX)
-    //action("NotebookInsertCodeCellAction")
     delayType(150, content)
 }
 
 fun <T : CommandChain> T.runAllCells(): T = apply {
-    action("NotebookRunAllAction")
+    addCommand(NotebookRunAllCellsCommand.PREFIX)
 }
 
 fun <T : CommandChain> T.waitExecutionFinishes(timeout: Long = 60_000): T = apply {

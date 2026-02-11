@@ -7,31 +7,35 @@ import com.intellij.jupyter.core.executor.JupyterExecutionState
 import com.intellij.jupyter.core.jupyter.actions.CellExecutionListener
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterExecutionStatus
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
+import com.intellij.notebooks.visualization.ui.ProgressStatus
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.thisLogger
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.ui.playback.PlaybackContext
 import com.intellij.openapi.ui.playback.commands.PlaybackCommandCoroutineAdapter
 import com.intellij.openapi.util.Disposer
-import com.intellij.notebooks.visualization.ui.ProgressStatus
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.ZonedDateTime
 import kotlin.time.measureTime
 
 abstract class AbstractKotlinJupyterCommand(text: String, line: Int) : PlaybackCommandCoroutineAdapter(text, line) {
+    protected suspend fun getEditor(context: PlaybackContext): Editor? = readAction {
+        val selectedEditor = FileEditorManager.getInstance(context.project).selectedEditor
+        val editor = (selectedEditor as? TextEditor)?.editor
+        if (editor == null) {
+            context.error("Text editor is not available for the current file", line)
+        }
+        editor
+    }
+
     protected suspend fun getBackedFile(context: PlaybackContext): BackedNotebookVirtualFile? {
-        val project = context.project
-        val editor = withContext(Dispatchers.EDT) {
-            FileEditorManager.getInstance(project).selectedEditor
-        } ?: return null
-
-        val file = editor.file ?: return null
+        if (getEditor(context) == null) return null
+        val file = readAction { (FileEditorManager.getInstance(context.project).selectedEditor as? TextEditor)?.file } ?: return null
         if (!BackedNotebookVirtualFile.isBacked(file)) return null
-
         return BackedNotebookVirtualFile.takeBackend(file)
     }
 

@@ -5,6 +5,7 @@ import com.intellij.kotlin.jupyter.performancePlugin.commands.AddCodeCellBelowCo
 import com.intellij.kotlin.jupyter.performancePlugin.commands.NewKotlinNotebookCommand
 import com.intellij.kotlin.jupyter.performancePlugin.commands.RestartKernelCommand
 import com.intellij.kotlin.jupyter.performancePlugin.commands.WaitExecutionFinishesCommand
+import com.intellij.kotlin.jupyter.performancePlugin.commands.NotebookRunAllCellsCommand
 import com.jetbrains.performancePlugin.CommandProvider
 import com.jetbrains.performancePlugin.CreateCommand
 
@@ -14,5 +15,6 @@ class KotlinNotebookCommandProvider : CommandProvider {
       WaitExecutionFinishesCommand.PREFIX to CreateCommand(::WaitExecutionFinishesCommand),
       RestartKernelCommand.PREFIX to CreateCommand(::RestartKernelCommand),
       AddCodeCellBelowCommand.PREFIX to CreateCommand(::AddCodeCellBelowCommand),
+      NotebookRunAllCellsCommand.PREFIX to CreateCommand(::NotebookRunAllCellsCommand),
     )
 }
