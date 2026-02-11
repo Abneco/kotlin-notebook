@@ -9,6 +9,7 @@
         <module name="intellij.jupyter.core"/>
         <module name="kotlin.base.scripting.k1"/>
         <module name="intellij.notebooks.jupyter.core"/>
+        <module name="kotlin.base.fe10.project-structure"/>
     </dependencies>
 
     <extensions defaultExtensionNs="com.intellij">

@@ -79,6 +79,7 @@ jvm_library(
     "@community//plugins/kotlin/scripting",
     "@community//plugins/kotlin/base/scripting/scripting.k1",
     "@community//plugins/kotlin/base/scripting/scripting.shared",
+    "@community//plugins/kotlin/base/fe10/project-structure",
     ":community_plugins_kotlin_idea_provided",
     ":plugins_jupyter_psi_provided",
     ":plugins_jupyter_core_provided",
@@ -135,6 +136,7 @@ jvm_library(
     "@community//plugins/kotlin/scripting:scripting_test_lib",
     "@community//plugins/kotlin/base/scripting/scripting.k1:scripting.k1_test_lib",
     "@community//plugins/kotlin/base/scripting/scripting.shared:scripting.shared_test_lib",
+    "@community//plugins/kotlin/base/fe10/project-structure:project-structure_test_lib",
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.k1` end

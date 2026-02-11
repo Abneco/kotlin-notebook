@@ -19,8 +19,8 @@ import com.intellij.openapi.projectRoots.JavaSdkType
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
-import org.jetbrains.kotlin.idea.base.projectStructure.productionSourceInfo
-import org.jetbrains.kotlin.idea.base.projectStructure.testSourceInfo
+import org.jetbrains.kotlin.idea.base.projectStructure.hasProductionSource
+import org.jetbrains.kotlin.idea.base.projectStructure.hasTestSource
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -151,7 +151,7 @@ internal fun getSuitableModules(project: Project): Iterable<Module> {
         if (it.isProbablyBuildSrc()) return@filter false
         val sdk = ModuleRootManager.getInstance(it).sdk ?: return@filter false
         val hasSdk = sdk.sdkType is JavaSdkType // Kotlin MPP JVM source set will have JavaSdkType too
-        val hasSources = it.productionSourceInfo != null || it.testSourceInfo != null
+        val hasSources = it.hasProductionSource || it.hasTestSource
         hasSdk && hasSources
     }.sortedBy { it.name }
 }
