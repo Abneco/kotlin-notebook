@@ -102,7 +102,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
             NotebookScriptConfigurationsManager.getInstance(project).getKotlinScriptEntity(virtualFile.file)
                 ?.configurationEntity
                 ?.let { project.workspaceModel.currentSnapshot.resolve(it) }
-                ?.bytes
+                ?.data
                 ?.asCompilationConfiguration() ?: return false
 
         /**
