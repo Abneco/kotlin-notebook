@@ -19,6 +19,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <debugger.sourcePositionProvider
                 implementation="com.intellij.kotlin.jupyter.debug.variables.context.NotebookFieldSourcePositionProvider" order="first"/>
+        <debugger.hotSwapSourceFileFilterProvider
+                implementation="com.intellij.kotlin.jupyter.debug.hotswap.NotebookHotSwapSourceFileFilterProvider"/>
 
         <registryKey key="kotlin.notebook.debug.enabled" defaultValue="true"
                      description="When enabled, establishing debug session with Kernel is possible"/>

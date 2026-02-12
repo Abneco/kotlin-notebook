@@ -21,6 +21,7 @@ import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.execution.runners.ProgramRunner
 import com.intellij.kotlin.jupyter.debug.util.DebugSessionConfig
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Key
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
@@ -30,6 +31,11 @@ import org.jetbrains.kotlinx.jupyter.protocol.startup.PortsGenerator
 import org.jetbrains.kotlinx.jupyter.protocol.startup.create
 
 internal object DebugConnectionUtility {
+    /**
+     * Marker key needed to distinguish a process during the session initialization phase
+     */
+    internal val NOTEBOOK_PROCESS_MARKER_KEY = Key.create<Boolean>("NotebookProcessKeyMarker")
+
     fun Project.buildExecutionEnvironment(runnerSettings: RunnerSettings): ExecutionEnvironment =
         ExecutionEnvironmentBuilder(
             this, DefaultDebugExecutor.getDebugExecutorInstance()
@@ -84,6 +90,7 @@ internal object DebugConnectionUtility {
         isHeadlessMode: Boolean = false
     ): DebuggerSession {
         val debugSession = DebuggerManagerEx.getInstanceEx(project).attachVirtualMachine(debugEnvironment)!!
+        debugSession.process.putUserData(NOTEBOOK_PROCESS_MARKER_KEY, true)
         val starter = object : XDebugProcessStarter() {
             override fun start(session: XDebugSession): XDebugProcess {
                 return JavaDebugProcess.create(session, debugSession)
