@@ -124,6 +124,7 @@ internal object DebugConnectionUtility {
             .showTab(!isHeadlessMode)
             .startSession().session
 
+        xDebugSession.setPauseActionSupported(true)
         if (isHeadlessMode) {
             xDebugSession.setBreakpointMuted(true)
         }

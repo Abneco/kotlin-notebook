@@ -15,14 +15,12 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNoteb
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionPath
 import com.intellij.jupyter.core.jupyter.variables.common.JupyterEnvironmentUpdateListener
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
-import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.Companion.isIncomplete
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.runSafely
 import com.intellij.kotlin.jupyter.debug.breakpoint.kernel.KernelBreakpointController
 import com.intellij.kotlin.jupyter.debug.events.NotebookDebugEventsHandler
-import com.intellij.kotlin.jupyter.debug.i18n.KotlinNotebookDebugBundle
 import com.intellij.kotlin.jupyter.debug.listeners.KotlinNotebookDebugSessionListener
 import com.intellij.kotlin.jupyter.debug.listeners.NOTEBOOK_DEBUG_SESSION_TOPIC
 import com.intellij.kotlin.jupyter.debug.session.lifecycle.NotebookDebuggerSessionState
@@ -221,10 +219,6 @@ class KotlinNotebookFileDebugSession(
 
     private fun DebuggerSession.configureSessionAfterAttach(config: DebugSessionConfig) {
         addProcessListener(process, config.silent)
-
-        if (!config.silent) {
-            showDebugSupportNotification()
-        }
     }
 
     private suspend fun tryReuseExistingSession(
@@ -257,19 +251,12 @@ class KotlinNotebookFileDebugSession(
             wasSilent && wantsVisible -> {
                 LOG.info("Transitioning from silent to visible mode - use forceRestart for UI")
                 readAction { setBreakpointMuted(false) }
-                showDebugSupportNotification()
             }
             !wasSilent -> {
                 readAction { setBreakpointMuted(!wantsVisible) }
             }
             // Both silent - no action needed
         }
-    }
-
-    private fun showDebugSupportNotification() {
-        project.notebookNotifications.showDebugSupportInfo(
-            KotlinNotebookDebugBundle.message("kotlin.jupyter.debug.support.text")
-        )
     }
 
     private fun checkSessionCanBeReused(config: DebugSessionConfig, forceRestart: Boolean): Boolean {

@@ -7,7 +7,6 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.openNotebookEditor
-import com.intellij.kotlin.jupyter.debug.breakpoint.KotlinNotebookBreakpointsService
 import com.intellij.kotlin.jupyter.debug.session.KotlinNotebookDebugSessionManager
 import com.intellij.kotlin.jupyter.debug.settings.KotlinNotebookDebugProjectOptionsProvider
 import com.intellij.kotlin.jupyter.debug.util.DebugSessionConfig
@@ -31,24 +30,7 @@ internal class NotebookDebugCellExecutorPerFileService(
      * Executes cells under a debugger session or as a regular execution
      * if no breakpoints are present in the dependent module.
      */
-    suspend fun executeCellsWithDebug(intervalPointers: List<NotebookIntervalPointer>) {
-        val breakpointsService = KotlinNotebookBreakpointsService.getForFile(project, virtualFile)
-        val hasBreakpoints = breakpointsService.hasBreakpointsInDependentModule()
-        if (!hasBreakpoints) {
-            LOG.info("No breakpoints in dependent module for ${virtualFile.file.name}, running cells without debug session")
-            executeCellsWithoutDebug(intervalPointers)
-        }
-
-        executeCellsUnderDebugSession(intervalPointers)
-    }
-
-    private suspend fun executeCellsWithoutDebug(intervalPointers: List<NotebookIntervalPointer>) {
-        val jupyterExecutionManager = JupyterExecutionManager.getInstance(project, virtualFile)
-        jupyterExecutionManager.getOrCreateSession()
-        jupyterExecutionManager.runCells(intervalPointers).awaitAll()
-    }
-
-    private suspend fun executeCellsUnderDebugSession(intervalPointers: List<NotebookIntervalPointer>) {
+    suspend fun executeCellsUnderDebugSession(intervalPointers: List<NotebookIntervalPointer>) {
         val debugSession = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
         val jupyterExecutionManager = JupyterExecutionManager.getInstance(project, virtualFile)
         val fileName = virtualFile.file.name

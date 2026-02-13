@@ -11,8 +11,11 @@ import com.intellij.kotlin.jupyter.debug.events.NotebookDebugEventsHandler
 import com.intellij.kotlin.jupyter.debug.session.names.KotlinNotebookSessionInternalNamesProvider
 import com.intellij.kotlin.jupyter.debug.util.debugFeaturesEnabled
 import com.intellij.kotlin.jupyter.debug.util.runOnManagerThread
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -77,8 +80,9 @@ internal class KernelBreakpointController(
         val process = debuggerSession?.process
         val evalContext = evaluationContext
         val suspendContext = evalContext?.suspendContext
+        val xSession = debuggerSession?.xDebugSession
 
-        if (process == null || evalContext == null || suspendContext == null) {
+        if (process == null || evalContext == null || suspendContext == null || xSession == null) {
             LOG.warn("Debug context not fully available for ${virtualFile.file.name}, executing block without breakpoint manipulation")
             action()
             return
@@ -86,6 +90,9 @@ internal class KernelBreakpointController(
 
         val requestManager = process.requestsManager
         evalContext.resumeSuspendedContext(requestManager)
+        withContext(Dispatchers.EDT) {
+            xSession.resume()
+        }
 
         try {
             action()

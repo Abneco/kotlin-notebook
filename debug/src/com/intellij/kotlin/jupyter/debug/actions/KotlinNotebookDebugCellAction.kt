@@ -6,11 +6,15 @@ import com.intellij.jupyter.core.jupyter.helper.jupyterEditor
 import com.intellij.jupyter.core.jupyter.helper.notebookFile
 import com.intellij.kotlin.jupyter.core.settings.actions.KotlinNotebookEditorActionBase
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.util.arePresent
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
+import com.intellij.kotlin.jupyter.core.util.projectDependencies
 import com.intellij.kotlin.jupyter.debug.execution.KotlinNotebookDebugAwareCellExecutorService
+import com.intellij.kotlin.jupyter.debug.i18n.KotlinNotebookDebugBundle
 import com.intellij.kotlin.jupyter.debug.util.debugActionEnabled
 import com.intellij.kotlin.jupyter.debug.util.debugFeaturesSupported
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.Presentation
 import kotlinx.coroutines.launch
 
 /**
@@ -32,7 +36,7 @@ class KotlinNotebookDebugCellAction : KotlinNotebookEditorActionBase() {
         val executor = KotlinNotebookDebugAwareCellExecutorService.getForFile(project, notebookVirtualFile)
 
         projectScope.launch {
-            executor.executeCellsWithDebug(intervalPointers)
+            executor.executeCellsUnderDebugSession(intervalPointers)
         }
     }
 
@@ -46,13 +50,24 @@ class KotlinNotebookDebugCellAction : KotlinNotebookEditorActionBase() {
 
             val project = event.project
             val notebook = event.getKotlinNotebook()
-            if (project == null || notebook == null) {
+            val notebookFile = event.notebookFile
+            if (project == null || notebook == null || notebookFile == null) {
                 presentation.isEnabledAndVisible = false
                 return@update
             }
 
-            val canDebugNow = event.notebookFile?.debugFeaturesSupported(project) == true
-            presentation.isEnabled = canDebugNow
+            val canDebugNow = notebookFile.debugFeaturesSupported(project)
+            val hasDependencies = notebookFile.projectDependencies(project).arePresent()
+            presentation.isEnabled = canDebugNow && hasDependencies
+            presentation.updateTextDescription()
+        }
+    }
+
+    private fun Presentation.updateTextDescription() {
+        if (isEnabledAndVisible) {
+            text = KotlinNotebookDebugBundle.message("action.KotlinNotebookDebugCellAction.text")
+        } else {
+            text = KotlinNotebookDebugBundle.message("action.KotlinNotebookDebugCellAction.disabled.hint")
         }
     }
 }
