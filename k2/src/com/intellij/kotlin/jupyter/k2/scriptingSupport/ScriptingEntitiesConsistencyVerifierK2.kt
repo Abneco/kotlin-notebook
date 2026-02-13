@@ -100,7 +100,7 @@ private class ScriptingEntitiesConsistencyVerifierK2(
     ): Boolean {
         val configuration =
             NotebookScriptConfigurationsManager.getInstance(project).getKotlinScriptEntity(virtualFile.file)
-                ?.configurationEntity
+                ?.configuration
                 ?.let { project.workspaceModel.currentSnapshot.resolve(it) }
                 ?.data
                 ?.asCompilationConfiguration() ?: return false

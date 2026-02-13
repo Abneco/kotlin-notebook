@@ -19,9 +19,8 @@ import com.intellij.platform.workspace.storage.EntitySource
 import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
-import org.jetbrains.kotlin.idea.core.script.k2.asEntity
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.sdkId
-import org.jetbrains.kotlin.idea.core.script.k2.getOrCreateScriptConfigurationEntityId
+import org.jetbrains.kotlin.idea.core.script.k2.getOrCreateScriptConfigurationIdentity
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntityProvider
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntity
@@ -184,7 +183,7 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
                 model.dependencies,
                 KotlinNotebookScriptEntitySource
             ) {
-                configurationEntity = model.configurationEntity
+                configuration = model.configuration
                 sdkId = model.sdkId
             }
         }
@@ -207,13 +206,13 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
             "Updating scripting module for notebook '${virtualFile.nameWithoutExtension}' with libraries: $libraryIds"
         }
 
-        val configurationEntityId = notebookModuleConfiguration.refinedConfiguration.configuration?.let { this.getOrCreateScriptConfigurationEntityId(it, KotlinNotebookScriptEntitySource) }
+        val configurationIdentity = notebookModuleConfiguration.refinedConfiguration.configuration?.let { this.getOrCreateScriptConfigurationIdentity(it, KotlinNotebookScriptEntitySource) }
 
         this addEntity KotlinScriptEntity(
             virtualFile.virtualFileUrl, libraryIds,
             KotlinNotebookScriptEntitySource
         ) {
-            configurationEntity = configurationEntityId
+            configuration = configurationIdentity
             sdkId = notebookModuleConfiguration.refinedConfiguration.configuration?.sdkId
         }
     }
