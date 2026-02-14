@@ -104,5 +104,6 @@
     <orderEntry type="module" module-name="intellij.notebooks.jupyter.core" scope="TEST" />
     <orderEntry type="module" module-name="intellij.javascript.psi.impl" scope="TEST" />
     <orderEntry type="module" module-name="intellij.notebooks.dataframe" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.android.templates.tests" scope="TEST" />
   </component>
 </module>
