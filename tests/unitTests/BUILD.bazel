@@ -108,6 +108,7 @@ jvm_library(
     "//notebooks/dataframe",
     "@community//android/android-templates:templates-tests_test_lib",
     "@community//images:images-tests_test_lib",
+    "@community//RegExpSupport:regexp-tests_test_lib",
     ":community_plugins_kotlin_core_provided",
     ":community_platform_lang-impl_provided",
   ],
