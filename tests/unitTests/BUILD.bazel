@@ -135,6 +135,7 @@ jvm_library(
     "//plugins/llm/core:ml-llm-core-tests_test_lib",
     "//plugins/spring/spring-data/spring-data-common:spring-data-tests_test_lib",
     "//ruby/database:database-tests_test_lib",
+    "//contrib/qodana:qodana-core-tests_test_lib",
     ":community_plugins_kotlin_core_provided",
     ":community_platform_lang-impl_provided",
   ],

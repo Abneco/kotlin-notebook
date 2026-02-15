@@ -134,5 +134,6 @@
     <orderEntry type="module" module-name="intellij.ml.llm.core.tests" scope="TEST" />
     <orderEntry type="module" module-name="intellij.spring.data.tests" scope="TEST" />
     <orderEntry type="module" module-name="intellij.ruby.database.tests" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.qodana.core.tests" scope="TEST" />
   </component>
 </module>
