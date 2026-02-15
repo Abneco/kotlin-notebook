@@ -120,6 +120,7 @@ jvm_library(
     "@community//plugins/kotlin/code-insight/live-templates-k2:kotlin-codeInsight-liveTemplates-tests_test_lib",
     "@community//plugins/kotlin/code-insight/postfix-templates:kotlin-codeInsight-postfixTemplates-tests_test_lib",
     "@community//plugins/kotlin/gradle/gradle-java/k1:kotlin-gradle-gradle-java-k1-tests_test_lib",
+    "@community//plugins/kotlin/gradle/gradle-java/k2:kotlin-gradle-java-tests_test_lib",
     ":community_plugins_kotlin_core_provided",
     ":community_platform_lang-impl_provided",
   ],
