@@ -132,5 +132,6 @@
     <orderEntry type="module" module-name="intellij.platform.ijent.impl.tests" scope="TEST" />
     <orderEntry type="module" module-name="intellij.less.tests" scope="TEST" />
     <orderEntry type="module" module-name="intellij.ml.llm.core.tests" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.spring.data.tests" scope="TEST" />
   </component>
 </module>

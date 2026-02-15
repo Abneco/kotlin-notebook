@@ -133,6 +133,7 @@ jvm_library(
     "//platform/ijent/impl:impl-tests_test_lib",
     "//plugins/less:less-tests_test_lib",
     "//plugins/llm/core:ml-llm-core-tests_test_lib",
+    "//plugins/spring/spring-data/spring-data-common:spring-data-tests_test_lib",
     ":community_plugins_kotlin_core_provided",
     ":community_platform_lang-impl_provided",
   ],
