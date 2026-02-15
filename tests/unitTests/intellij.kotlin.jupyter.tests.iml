@@ -133,5 +133,6 @@
     <orderEntry type="module" module-name="intellij.less.tests" scope="TEST" />
     <orderEntry type="module" module-name="intellij.ml.llm.core.tests" scope="TEST" />
     <orderEntry type="module" module-name="intellij.spring.data.tests" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.ruby.database.tests" scope="TEST" />
   </component>
 </module>
