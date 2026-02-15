@@ -39,6 +39,7 @@ jvm_library(
     "@community//platform/xdebugger-impl:debugger-impl-tests_test_lib",
     "@community//python/services/system-python:python-community-services-systemPython-tests_test_lib",
     "@community//python/python-markdown:markdown-tests_test_lib",
+    "@community//python/python-pyproject:pyproject-tests_test_lib",
   ],
   runtime_deps = [
     ":perfTests",

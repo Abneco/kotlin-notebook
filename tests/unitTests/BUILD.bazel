@@ -128,6 +128,7 @@ jvm_library(
     "@community//plugins/kotlin/refactorings/rename.k2:kotlin-refactorings-rename-tests_test_lib",
     "@community//python/services/system-python:python-community-services-systemPython-tests_test_lib",
     "@community//python/python-markdown:markdown-tests_test_lib",
+    "@community//python/python-pyproject:pyproject-tests_test_lib",
     ":community_plugins_kotlin_core_provided",
     ":community_platform_lang-impl_provided",
   ],
