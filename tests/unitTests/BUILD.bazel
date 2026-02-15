@@ -118,6 +118,7 @@ jvm_library(
     "@community//plugins/kotlin/code-insight/line-markers:kotlin-codeInsight-lineMarkers-tests_test_lib",
     "@community//plugins/kotlin/code-insight/live-templates-k1:kotlin-code-insight-live-templates-k1-tests_test_lib",
     "@community//plugins/kotlin/code-insight/live-templates-k2:kotlin-codeInsight-liveTemplates-tests_test_lib",
+    "@community//plugins/kotlin/code-insight/postfix-templates:kotlin-codeInsight-postfixTemplates-tests_test_lib",
     ":community_plugins_kotlin_core_provided",
     ":community_platform_lang-impl_provided",
   ],
