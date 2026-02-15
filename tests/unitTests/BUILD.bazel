@@ -129,6 +129,7 @@ jvm_library(
     "@community//python/services/system-python:python-community-services-systemPython-tests_test_lib",
     "@community//python/python-markdown:markdown-tests_test_lib",
     "@community//python/python-pyproject:pyproject-tests_test_lib",
+    "@community//python/services/internal-impl:python-community-services-internal-impl-tests_test_lib",
     ":community_plugins_kotlin_core_provided",
     ":community_platform_lang-impl_provided",
   ],
