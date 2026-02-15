@@ -129,7 +129,10 @@ jvm_library(
     ":community_plugins_kotlin_core_provided",
     ":community_platform_lang-impl_provided",
   ],
-  runtime_deps = [":kotlin-jupyter-tests"]
+  runtime_deps = [
+    ":kotlin-jupyter-tests",
+    "@community//python/python-venv:venv-tests_test_lib",
+  ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.tests` end
 

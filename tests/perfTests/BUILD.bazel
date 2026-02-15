@@ -38,7 +38,10 @@ jvm_library(
     "@community//RegExpSupport:regexp-tests_test_lib",
     "@community//platform/xdebugger-impl:debugger-impl-tests_test_lib",
   ],
-  runtime_deps = [":perfTests"]
+  runtime_deps = [
+    ":perfTests",
+    "@community//python/python-venv:venv-tests_test_lib",
+  ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.perfTests` end
 
