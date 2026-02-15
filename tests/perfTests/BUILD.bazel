@@ -41,6 +41,7 @@ jvm_library(
     "@community//python/python-markdown:markdown-tests_test_lib",
     "@community//python/python-pyproject:pyproject-tests_test_lib",
     "@community//python/services/internal-impl:python-community-services-internal-impl-tests_test_lib",
+    "//platform/ijent/impl:impl-tests_test_lib",
   ],
   runtime_deps = [
     ":perfTests",
