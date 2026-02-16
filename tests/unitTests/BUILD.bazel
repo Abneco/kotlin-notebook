@@ -113,7 +113,7 @@ jvm_library(
     "//plugins/jupyter/github:github_test_lib",
     "@community//plugins/kotlin/j2k/shared",
     "@community//plugins/kotlin/j2k/shared:shared_test_lib",
-    "@lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
+    "@ultimate_lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
     "//plugins/kotlin/jupyter/k1",
     "//plugins/kotlin/jupyter/k1:k1_test_lib",
     "//plugins/kotlin/jupyter/k2",

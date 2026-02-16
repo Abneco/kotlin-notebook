@@ -20,7 +20,7 @@ jvm_library(
   resources = [":renders_resources"],
   deps = [
     "@ultimate_lib//:kotlin-stdlib-provided",
-    "@lib//:kotlinc-kotlin-compiler-common-provided",
+    "@ultimate_lib//:kotlinc-kotlin-compiler-common-provided",
     "//plugins/kotlin/jupyter/debug",
     "@community//java/debugger/impl",
     "@community//platform/xdebugger-api:debugger",
