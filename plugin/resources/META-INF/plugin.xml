@@ -60,18 +60,33 @@
         <![CDATA[
             <h1>What's New in Kotlin Notebook 2026.1</h1>
 
-            <p>In this release, we introduced a number of features</p>
             <ul>
-                <li>You can now set breakpoints in project files and start debug sessions directly from notebook cells</li>
-                <li>You can create SQL cells that reuse your project’s database connections</li>
-                <li><code>%use widgets</code> — an integration that brings ipywidgets support to Kotlin Notebooks</li>
-                <li><code>%use notekit</code> — a Kotlin API for interacting with and manipulating the current notebook</li>
+              <li>
+                <b>Debugger support</b> – a new <i>Debug Cell</i> action lets you start a debugging session directly from a notebook cell.
+                You can step through your project code and library dependencies while using the notebook as an executable entry point.
+              </li>
+
+              <li>
+                <b>Kotlin API for Jupyter Widgets</b> (<code>%use widgets</code>) – a Kotlin-first
+                <a href="https://github.com/Kotlin/kotlin-notebook-integrations/tree/master/integrations/widgets">implementation</a>
+                of the Jupyter Widgets protocol for interactive notebook UI. It supports state synchronization over Jupyter Comms,
+                property change listeners, custom messages, layouts, and rich output capture.
+              </li>
+
+              <li>
+                <b>Improved AI</b> – higher quality AI chat responses and more reliable notebook generation.
+                Better context handling and more consistent results in real-world projects.
+              </li>
+
+              <li>
+                <b>Notekit API</b> (<code>%use notekit</code>) –
+                <a href="https://github.com/Kotlin/kotlin-notebook-integrations/tree/master/integrations/notekit">programmatic access</a>
+                to the current notebook from Kotlin kernel code. It allows querying notebook structure, inserting, replacing,
+                and deleting cells, modifying metadata, and executing cells via a synchronous request–response protocol over Jupyter Comms.
+              </li>
             </ul>
 
-            <p>This release also addresses several bug fixes, including:</p>
-            <ul>
-                <li></li>
-            </ul>
+            <p>More details will be available in the upcoming Kotlin Notebook blog post.</p>
         ]]>
     </change-notes>
 
