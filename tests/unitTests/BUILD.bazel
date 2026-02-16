@@ -132,7 +132,6 @@ jvm_library(
     "@community//python/services/internal-impl:python-community-services-internal-impl-tests_test_lib",
     "//platform/ijent/impl:impl-tests_test_lib",
     "//plugins/less:less-tests_test_lib",
-    "//plugins/llm/core:ml-llm-core-tests_test_lib",
     "//plugins/spring/spring-data/spring-data-common:spring-data-tests_test_lib",
     "//ruby/database:database-tests_test_lib",
     "//contrib/qodana:qodana-core-tests_test_lib",
