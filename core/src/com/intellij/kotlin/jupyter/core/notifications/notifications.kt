@@ -1,6 +1,7 @@
 // Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.notifications
 
+import com.intellij.ide.InvalidateCacheService
 import com.intellij.kotlin.jupyter.core.projectModel.KernelJdkAlignmentCheckResult
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
@@ -44,6 +45,7 @@ class KotlinNotebookNotifications(private val project: Project) {
         BYTECODE_REFACTORING_WARNING(NotificationType.WARNING),
         REFACTORING_EXISTING_USAGES_MESSAGE(NotificationType.INFORMATION),
         DEBUG_SUPPORT_INFO(NotificationType.INFORMATION),
+        CACHE_CORRUPTION_WARNING(NotificationType.WARNING),
     }
 
     private val notificationSingletons = ConcurrentHashMap<KotlinNotebookNotificationType, SingletonNotificationManager>()
@@ -200,6 +202,25 @@ class KotlinNotebookNotifications(private val project: Project) {
             KotlinNotebookNotificationType.DEBUG_SUPPORT_INFO,
             message
         )
+    }
+
+    fun showCacheCorruptionWarning() {
+        notify(
+            KotlinNotebookNotificationType.CACHE_CORRUPTION_WARNING,
+            KotlinNotebookBundle.message("kotlin.jupyter.scripting.cache.corruption.warning")
+        ) {
+            addAction(
+                object : NotificationAction(
+                    KotlinNotebookBundle.message("kotlin.jupyter.scripting.cache.drop.action")
+                ) {
+                    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+                        val actionProject = e.project ?: return
+                        InvalidateCacheService.invalidateCachesAndRestart(actionProject)
+                        notification.expire()
+                    }
+                }
+            )
+        }
     }
 
     /**

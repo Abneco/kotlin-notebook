@@ -584,6 +584,10 @@ class JupyterCompilerPerFileService(
             }
         }
 
+        override fun onUpdateException(exception: Throwable) {
+            LOG.warn("Exception during scripting update: ${exception.message}")
+        }
+
         fun clear() {
             implicitReceiversClassPathData.clear()
         }

@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
+import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.scriptingSupport.getSelectedSdkOrAnyAcceptable
 import com.intellij.kotlin.jupyter.core.scriptingSupport.with
 import com.intellij.kotlin.jupyter.core.util.debugInTests
@@ -29,6 +30,8 @@ import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.utils.mapToSetOrEmpty
 import java.io.File
+import java.util.concurrent.CancellationException
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.script.experimental.api.asSuccess
 import kotlin.script.experimental.api.valueOrNull
 import kotlin.script.experimental.jvm.jdkHome
@@ -55,6 +58,8 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
     private val workspaceModel: WorkspaceModel
         get() = project.workspaceModel
 
+    private val consecutiveUpdateFailures = AtomicInteger(0)
+
     override fun getKotlinScriptEntity(virtualFile: VirtualFile): KotlinScriptEntity? = virtualFile.topLevelFile?.let {
         super.getKotlinScriptEntity(it)
     }
@@ -71,7 +76,7 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
         get() {
             val topLevelFile = getTopLevelFileOrNull()
             if (topLevelFile == null) {
-                notebookLogger().info("No top level file found for ${name}")
+                LOG.info("No top level file found for ${name}")
             }
 
             return topLevelFile
@@ -81,7 +86,7 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
     suspend fun updateConfigurations(scripts: Iterable<KotlinNotebookScriptModel>) {
         val sdkHomePath = getSelectedSdkOrAnyAcceptable(project)?.homePath
         if (sdkHomePath == null) {
-            notebookLogger().warn("No JDK SDK is set for the project")
+            LOG.warn("No JDK SDK is set for the project")
         }
 
         val configurations = buildMap<VirtualFile, ScriptCompilationConfigurationResult> {
@@ -103,23 +108,25 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
     }
 
     suspend fun updateWorkspaceModel(resultPerFile: Map<VirtualFile, ScriptCompilationConfigurationResult>) {
-        project.updateKotlinScriptEntities(KotlinNotebookScriptEntitySource) { model ->
-            val tmp = MutableEntityStorage.create()
-            val updatedFilesUrls = resultPerFile.keys.mapToSetOrEmpty {
-                it.virtualFileUrl
-            }
+        withConsecutiveAttempts {
+            project.updateKotlinScriptEntities(KotlinNotebookScriptEntitySource) { model ->
+                val tmp = MutableEntityStorage.create()
+                val updatedFilesUrls = resultPerFile.keys.mapToSetOrEmpty {
+                    it.virtualFileUrl
+                }
 
-            for ((file, result) in resultPerFile) {
-                tmp.addNotebookConfiguration(
-                    KotlinNotebookScriptModel(
-                        file,
-                        result.valueOrNull() ?: continue
+                for ((file, result) in resultPerFile) {
+                    tmp.addNotebookConfiguration(
+                        KotlinNotebookScriptModel(
+                            file,
+                            result.valueOrNull() ?: continue
+                        )
                     )
-                )
-            }
+                }
 
-            tmp.addUnchangedNotebookEntities(model, updatedFilesUrls)
-            model.replaceBySource({ it is KotlinNotebookScriptEntitySource }, tmp)
+                tmp.addUnchangedNotebookEntities(model, updatedFilesUrls)
+                model.replaceBySource({ it is KotlinNotebookScriptEntitySource }, tmp)
+            }
         }
     }
 
@@ -168,7 +175,7 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
                 !filesToUpdate.contains(it.virtualFileUrl)
             }
 
-        notebookLogger().debugInTests {
+        LOG.debugInTests {
             val fileNamesBeingUpdated = filesToUpdate.joinToString { it.fileName }
             val existingEntitiesNames = existingNotebooksEntities.joinToString { it.virtualFileUrl.virtualFile?.name ?: "" }
             "Adding additional ${existingNotebooksEntities.count()} entities from: $existingEntitiesNames for update besides $fileNamesBeingUpdated"
@@ -202,7 +209,7 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
         val virtualFile = notebookModuleConfiguration.virtualFile
         val libraryIds = buildLibraryDependencies().toList()
 
-        notebookLogger().debugInTests {
+        LOG.debugInTests {
             "Updating scripting module for notebook '${virtualFile.nameWithoutExtension}' with libraries: $libraryIds"
         }
 
@@ -217,7 +224,28 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
         }
     }
 
+    private inline fun <T> withConsecutiveAttempts(block: () -> T): T {
+        try {
+            return block().also { consecutiveUpdateFailures.set(0) }
+        }
+        catch (e: CancellationException) {
+            throw e
+        }
+        catch (e: Throwable) {
+            val failureCount = consecutiveUpdateFailures.incrementAndGet()
+            LOG.warn("Workspace model update failed (consecutive failures: $failureCount)", e)
+            if (failureCount == ATTEMPTS_THRESHOLD) {
+                project.notebookNotifications.showCacheCorruptionWarning()
+            }
+            throw e
+        }
+    }
+
     companion object {
+        private val LOG = notebookLogger()
+
+        private const val ATTEMPTS_THRESHOLD = 5
+
         fun getInstance(project: Project): NotebookScriptConfigurationsManager = project.service()
     }
 }
