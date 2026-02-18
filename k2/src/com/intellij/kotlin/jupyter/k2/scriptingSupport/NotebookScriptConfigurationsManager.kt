@@ -6,6 +6,7 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.scriptingSupport.getSelectedSdkOrAnyAcceptable
 import com.intellij.kotlin.jupyter.core.scriptingSupport.with
+import com.intellij.kotlin.jupyter.core.util.ConsecutiveAttemptsGuard
 import com.intellij.kotlin.jupyter.core.util.debugInTests
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
 import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceScriptEntities
@@ -30,8 +31,6 @@ import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.utils.mapToSetOrEmpty
 import java.io.File
-import java.util.concurrent.CancellationException
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.script.experimental.api.asSuccess
 import kotlin.script.experimental.api.valueOrNull
 import kotlin.script.experimental.jvm.jdkHome
@@ -58,7 +57,12 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
     private val workspaceModel: WorkspaceModel
         get() = project.workspaceModel
 
-    private val consecutiveUpdateFailures = AtomicInteger(0)
+    private val updaterAttemptsGuard = ConsecutiveAttemptsGuard(
+        WORKSPACE_MODEL_UPDATE_ATTEMPTS_THRESHOLD,
+        onThresholdReached = { project.notebookNotifications.showScriptingUpdateFailed() },
+    ) { failureCount, e ->
+        LOG.warn("Workspace model update failed (consecutive failures: $failureCount)", e)
+    }
 
     override fun getKotlinScriptEntity(virtualFile: VirtualFile): KotlinScriptEntity? = virtualFile.topLevelFile?.let {
         super.getKotlinScriptEntity(it)
@@ -108,7 +112,7 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
     }
 
     suspend fun updateWorkspaceModel(resultPerFile: Map<VirtualFile, ScriptCompilationConfigurationResult>) {
-        withConsecutiveAttempts {
+        updaterAttemptsGuard.withConsecutiveAttempts {
             project.updateKotlinScriptEntities(KotlinNotebookScriptEntitySource) { model ->
                 val tmp = MutableEntityStorage.create()
                 val updatedFilesUrls = resultPerFile.keys.mapToSetOrEmpty {
@@ -130,10 +134,12 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
         }
     }
 
-    suspend fun clearNotebookLibraryDependencies(notebookFile: BackedNotebookVirtualFile) {
+    suspend fun clearNotebookLibraryDependencies(vararg notebookFiles: BackedNotebookVirtualFile) {
         val tmpSnapshot = MutableEntityStorage.from(currentSnapshot)
 
-        val dependencies = notebookFile.findK2WorkspaceScriptEntities(workspaceModel).flatMap { it.dependencies }
+        val dependencies = notebookFiles.flatMap { notebookFile ->
+            notebookFile.findK2WorkspaceScriptEntities(workspaceModel).flatMap { it.dependencies }
+        }
 
         dependencies.forEach {
             it.resolve(tmpSnapshot)?.let { libraryEntity ->
@@ -141,10 +147,17 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
             }
         }
 
-        // Could be clean with replaceBySource ({ it is NotebookEntitySource }, tmp)
-        // where tmp contains only 1 script entity with default dependencies
-        workspaceModel.update("Clearing Kotlin Notebook scripting modules for ${notebookFile.file.name}") { model ->
+        val fileNames = notebookFiles.joinToString { it.file.name }
+        workspaceModel.update("Clearing Kotlin Notebook scripting modules for $fileNames") { model ->
             model.applyChangesFrom(tmpSnapshot)
+        }
+    }
+
+    suspend fun clearAllNotebookEntities() {
+        updaterAttemptsGuard.resetAttempts()
+        val emptyStorage = MutableEntityStorage.create()
+        project.updateKotlinScriptEntities(KotlinNotebookScriptEntitySource) { model ->
+            model.replaceBySource({ it is KotlinNotebookScriptEntitySource }, emptyStorage)
         }
     }
 
@@ -224,27 +237,10 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
         }
     }
 
-    private inline fun <T> withConsecutiveAttempts(block: () -> T): T {
-        try {
-            return block().also { consecutiveUpdateFailures.set(0) }
-        }
-        catch (e: CancellationException) {
-            throw e
-        }
-        catch (e: Throwable) {
-            val failureCount = consecutiveUpdateFailures.incrementAndGet()
-            LOG.warn("Workspace model update failed (consecutive failures: $failureCount)", e)
-            if (failureCount == ATTEMPTS_THRESHOLD) {
-                project.notebookNotifications.showCacheCorruptionWarning()
-            }
-            throw e
-        }
-    }
-
     companion object {
         private val LOG = notebookLogger()
 
-        private const val ATTEMPTS_THRESHOLD = 5
+        private const val WORKSPACE_MODEL_UPDATE_ATTEMPTS_THRESHOLD = 5
 
         fun getInstance(project: Project): NotebookScriptConfigurationsManager = project.service()
     }

@@ -32,6 +32,8 @@
                         serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.definition.NotebookScriptDefinitionsWrapperFactoryK1"/>
         <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookScriptingForceUpdateRequestor$Factory"
                         serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.ScriptingForceUpdaterK1Factory"/>
+        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.KotlinNotebookCacheCleaner$Factory"
+                        serviceImplementation="com.intellij.kotlin.jupyter.k1.scriptingSupport.NotebookCacheCleanerFactoryK1"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin.scripting.idea">

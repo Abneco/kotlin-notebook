@@ -29,6 +29,8 @@
                         serviceImplementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.definition.NotebookScriptDefinitionsWrapperFactoryK2"/>
         <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookScriptingForceUpdateRequestor$Factory"
                         serviceImplementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.updater.ScriptingForceUpdaterK2Factory"/>
+        <projectService serviceInterface="com.intellij.kotlin.jupyter.core.scriptingSupport.KotlinNotebookCacheCleaner$Factory"
+                        serviceImplementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.updater.NotebookCacheCleanerFactoryK2"/>
 
         <trafficLightRendererContributor implementation="com.intellij.kotlin.jupyter.k2.codeInsight.NotebookTrafficLightContributor"/>
         <!--<resolveScopeEnlarger implementation="com.intellij.kotlin.jupyter.k2.codeInsight.NotebookProjectScopeEnlarger"/>-->

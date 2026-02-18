@@ -36,14 +36,20 @@ internal fun Project.getSelectedKotlinNotebookFileOrNull(): BackedNotebookVirtua
     return editor.virtualFile?.toKotlinNotebookBackedFile()
 }
 
-internal fun Project.getOpenedKotlinNotebookEditors(): Collection<TextEditor>? {
+internal fun Project.getOpenedKotlinNotebookEditors(): Collection<TextEditor> {
     val editorManager = FileEditorManager.getInstance(this)
 
     return editorManager.openFiles.mapNotNull {
         it.toKotlinNotebookBackedFile()
     }.mapNotNull {
         editorManager.getSelectedEditor(it.file) as? TextEditor
-    }.ifEmpty { return null }
+    }
+}
+
+fun Project.getOpenKotlinNotebookFiles(): Collection<BackedNotebookVirtualFile> {
+    return getOpenedKotlinNotebookEditors().mapNotNull {
+        it.file.toKotlinNotebookBackedFile()
+    } ?: emptyList()
 }
 
 @RequiresEdt

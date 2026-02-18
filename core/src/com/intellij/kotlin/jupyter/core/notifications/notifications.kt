@@ -4,9 +4,11 @@ package com.intellij.kotlin.jupyter.core.notifications
 import com.intellij.ide.InvalidateCacheService
 import com.intellij.kotlin.jupyter.core.projectModel.KernelJdkAlignmentCheckResult
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
+import com.intellij.kotlin.jupyter.core.scriptingSupport.KotlinNotebookCacheCleaner
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersion
 import com.intellij.kotlin.jupyter.core.settings.ui.KotlinNotebookConfigurable
+import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
@@ -20,6 +22,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsContexts.NotificationContent
 import com.intellij.openapi.util.NlsContexts.NotificationTitle
 import com.intellij.openapi.util.NlsSafe
+import kotlinx.coroutines.launch
 import org.jetbrains.kotlinx.jupyter.config.currentKernelVersion
 import java.util.concurrent.ConcurrentHashMap
 
@@ -204,18 +207,31 @@ class KotlinNotebookNotifications(private val project: Project) {
         )
     }
 
-    fun showCacheCorruptionWarning() {
+    fun showScriptingUpdateFailed() {
         notify(
             KotlinNotebookNotificationType.CACHE_CORRUPTION_WARNING,
             KotlinNotebookBundle.message("kotlin.jupyter.scripting.cache.corruption.warning")
         ) {
             addAction(
                 object : NotificationAction(
+                    KotlinNotebookBundle.message("kotlin.jupyter.scripting.cache.clear.notebook.action")
+                ) {
+                    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+                        val project = e.project ?: return
+                        KotlinNotebookPluginScope.getForProject(project).launch {
+                            KotlinNotebookCacheCleaner.create(project).clearNotebookCaches()
+                        }
+                        notification.expire()
+                    }
+                }
+            )
+            addAction(
+                object : NotificationAction(
                     KotlinNotebookBundle.message("kotlin.jupyter.scripting.cache.drop.action")
                 ) {
                     override fun actionPerformed(e: AnActionEvent, notification: Notification) {
-                        val actionProject = e.project ?: return
-                        InvalidateCacheService.invalidateCachesAndRestart(actionProject)
+                        val project = e.project ?: return
+                        InvalidateCacheService.invalidateCachesAndRestart(project)
                         notification.expire()
                     }
                 }
