@@ -29,4 +29,26 @@ jvm_library(
     "@community//platform/analysis-api:analysis",
   ]
 )
+
+jvm_library(
+  name = "performancePlugin_test_lib",
+  module_name = "intellij.kotlin.jupyter.performancePlugin",
+  visibility = ["//visibility:public"],
+  srcs = glob([], allow_empty = True),
+  runtime_deps = [
+    ":performancePlugin",
+    "@community//plugins/performanceTesting/core:performanceTesting_test_lib",
+    "@community//platform/platform-impl:ide-impl_test_lib",
+    "@community//plugins/performanceTesting/commands-model:tools-ide-performanceTesting-commands_test_lib",
+    "@community//platform/core-api:core_test_lib",
+    "//plugins/kotlin/jupyter/core:core_test_lib",
+    "@community//platform/ide-core-impl:ide-core-impl_test_lib",
+    "@community//platform/lang-impl:lang-impl_test_lib",
+    "//plugins/jupyter/core:core_test_lib",
+    "@community//notebooks/visualization:visualization_test_lib",
+    "@community//libraries/jackson/jackson:jackson_test_lib",
+    "@community//libraries/jackson/databind:databind_test_lib",
+    "@community//platform/analysis-api:analysis_test_lib",
+  ]
+)
 ### auto-generated section `build intellij.kotlin.jupyter.performancePlugin` end

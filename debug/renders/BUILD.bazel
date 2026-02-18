@@ -32,4 +32,26 @@ jvm_library(
     ":community_libraries_kotlinx_coroutines_core_provided",
   ]
 )
+
+jvm_library(
+  name = "renders_test_lib",
+  module_name = "intellij.kotlin.jupyter.debug.renders",
+  visibility = ["//visibility:public"],
+  srcs = glob([], allow_empty = True),
+  runtime_deps = [
+    ":renders",
+    "@ultimate_lib//:kotlin-stdlib-provided",
+    "@ultimate_lib//:kotlinc-kotlin-compiler-common-provided",
+    "@community//libraries/kotlinx/coroutines/core",
+    "@community//libraries/kotlinx/coroutines/core:core_test_lib",
+    "//plugins/kotlin/jupyter/debug:debug_test_lib",
+    "@community//java/debugger/impl:impl_test_lib",
+    "@community//platform/xdebugger-api:debugger_test_lib",
+    "@community//platform/xdebugger-impl:debugger-impl_test_lib",
+    "@community//plugins/kotlin/jvm-debugger/core:core_test_lib",
+    "//plugins/debugger/debugger-collections-visualizer/core/backend:backend_test_lib",
+    "//plugins/debugger/debugger-collections-visualizer/core:core_test_lib",
+    "//plugins/debugger/debugger-collections-visualizer/jvm:jvm_test_lib",
+  ]
+)
 ### auto-generated section `build intellij.kotlin.jupyter.debug.renders` end

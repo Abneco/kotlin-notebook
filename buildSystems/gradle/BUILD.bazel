@@ -22,4 +22,20 @@ jvm_library(
     "@community//plugins/gradle",
   ]
 )
+
+jvm_library(
+  name = "gradle_test_lib",
+  module_name = "intellij.kotlin.jupyter.buildSystems.gradle",
+  visibility = ["//visibility:public"],
+  srcs = glob([], allow_empty = True),
+  runtime_deps = [
+    ":gradle",
+    "@ultimate_lib//:kotlin-stdlib-provided",
+    "//plugins/kotlin/jupyter/core:core_test_lib",
+    "@community//platform/core-api:core_test_lib",
+    "@community//platform/external-system-api:externalSystem_test_lib",
+    "@community//platform/projectModel-api:projectModel_test_lib",
+    "@community//plugins/gradle:gradle_test_lib",
+  ]
+)
 ### auto-generated section `build intellij.kotlin.jupyter.buildSystems.gradle` end

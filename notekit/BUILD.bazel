@@ -36,4 +36,24 @@ jvm_library(
     "//plugins/jupyter/psi",
   ]
 )
+
+jvm_library(
+  name = "notekit_test_lib",
+  module_name = "intellij.kotlin.jupyter.notekit",
+  visibility = ["//visibility:public"],
+  srcs = glob([], allow_empty = True),
+  runtime_deps = [
+    ":notekit",
+    "//plugins/jupyter/core:core_test_lib",
+    "@community//libraries/fastutil:fastutil_test_lib",
+    "@community//libraries/jackson/jackson:jackson_test_lib",
+    "@community//libraries/jackson/databind:databind_test_lib",
+    "@community//platform/core-api:core_test_lib",
+    "@community//platform/util:util_test_lib",
+    "@community//libraries/kotlinx/coroutines/core:core_test_lib",
+    "@community//notebooks/visualization:visualization_test_lib",
+    "@community//jupyter:notebooks-jupyter-core_test_lib",
+    "//plugins/jupyter/psi:psi_test_lib",
+  ]
+)
 ### auto-generated section `build intellij.kotlin.jupyter.notekit` end

@@ -14,4 +14,18 @@ jvm_library(
     "@community//platform/build-scripts/downloader",
   ]
 )
+
+jvm_library(
+  name = "build_test_lib",
+  module_name = "intellij.kotlin.jupyter.build",
+  visibility = ["//visibility:public"],
+  srcs = glob([], allow_empty = True),
+  runtime_deps = [
+    ":build",
+    "@community//libraries/kotlinx/coroutines/core:core_test_lib",
+    "//build:build_test_lib",
+    "@community//platform/build-scripts:build-scripts_test_lib",
+    "@community//platform/build-scripts/downloader:downloader_test_lib",
+  ]
+)
 ### auto-generated section `build intellij.kotlin.jupyter.build` end
