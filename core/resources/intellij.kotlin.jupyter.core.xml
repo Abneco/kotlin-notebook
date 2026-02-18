@@ -264,6 +264,8 @@
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.outputs.error.KotlinNotebookErrorOutputCustomizer"/>
         <premium.jupyterFeatureAvailabilityCustomizer
                 implementation="com.intellij.kotlin.jupyter.core.jupyter.premium.KotlinJupyterFeaturesAvailabilityCustomizer"/>
+        <notebookLanguageProvider
+                implementation="com.intellij.kotlin.jupyter.core.jupyter.lang.KotlinNotebookLanguageProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.jupyter.core.jupyter">

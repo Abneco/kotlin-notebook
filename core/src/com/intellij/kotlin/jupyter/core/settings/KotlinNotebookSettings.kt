@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.settings
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.util.concurrency.annotations.RequiresEdt
 
@@ -17,28 +18,28 @@ private val sessionRunModeProperty = KotlinNotebookEnumProperty(
     kClass = KotlinNotebookSessionRunMode::class
 )
 
-var JupyterNotebook.isBuildProject by isBuildProjectProperty
-var JupyterNotebook.isAddProjectLibrariesToClasspath by isAddProjectLibrariesToClasspathProperty
-var JupyterNotebook.notebookDependencies by notebookDependenciesProperty
-var JupyterNotebook.sessionRunMode by sessionRunModeProperty
+var JupyterNotebook.isBuildProject: Boolean by isBuildProjectProperty
+var JupyterNotebook.isAddProjectLibrariesToClasspath: Boolean by isAddProjectLibrariesToClasspathProperty
+var JupyterNotebook.notebookDependencies: KotlinNotebookDependencies by notebookDependenciesProperty
+var JupyterNotebook.sessionRunMode: KotlinNotebookSessionRunMode by sessionRunModeProperty
 
 data class KotlinNotebookSettings(
     val notebookDependencies: KotlinNotebookDependencies,
     val sessionRunMode: KotlinNotebookSessionRunMode,
 ) {
     companion object {
-        val DEFAULT = KotlinNotebookSettings(
+        val DEFAULT: KotlinNotebookSettings = KotlinNotebookSettings(
             KotlinNotebookDependenciesProperty.defaultValue,
             sessionRunModeProperty.defaultValue,
         )
     }
 }
 
-fun KotlinNotebookSettings.asJson(): String? {
+fun KotlinNotebookSettings.asJson(): ObjectNode? {
     if (this == KotlinNotebookSettings.DEFAULT) return null
     return JsonNodeFactory.instance.objectNode().also { node ->
         notebookDependenciesProperty.writeValue(node, notebookDependencies)
-    }.toPrettyString()
+    }
 }
 
 @RequiresEdt

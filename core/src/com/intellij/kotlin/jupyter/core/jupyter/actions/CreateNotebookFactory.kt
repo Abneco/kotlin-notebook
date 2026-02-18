@@ -76,26 +76,9 @@ object CreateNotebookFactory {
             put(VAR_NBFORMAT_MAJOR, defaultSchemaVersion.major.toString())
             put(VAR_NBFORMAT_MINOR, defaultSchemaVersion.minor.toString())
             if (notebookSettings != null) {
-                put(VAR_KTNB_METADATA, notebookSettings)
+                put(VAR_KTNB_METADATA, notebookSettings.toPrettyString())
             }
         }
-    }
-
-    @RequiresEdt
-    private fun getNewKotlinNotebookSettings(project: Project, mode: NotebookMode): KotlinNotebookSettings {
-        val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
-
-        // Light Kotlin Notebooks should never include neither modules nor project dependencies as a default, as
-        // they should be able to start as fast as possible.
-        // Standard Notebooks should make the choice based on the default value for the property.
-        fun disabledInLightMode(flag: Boolean) = flag && mode != NotebookMode.LIGHT
-
-        val includeLibraries = disabledInLightMode(options.shouldAddProjectLibrariesToClasspath)
-
-        return KotlinNotebookSettings(
-            notebookDependencies = if (includeLibraries) KotlinNotebookDependencies.AllLibraries else KotlinNotebookDependencies.None,
-            sessionRunMode = KotlinNotebookSessionRunMode.SEPARATE_PROCESS,
-        )
     }
 
     /**
@@ -123,4 +106,21 @@ object CreateNotebookFactory {
             openFile = openFileInIde,
         )
     }
+}
+
+@RequiresEdt
+fun getNewKotlinNotebookSettings(project: Project, mode: NotebookMode): KotlinNotebookSettings {
+    val options = KotlinNotebookProjectOptionsProvider.getInstance(project)
+
+    // Light Kotlin Notebooks should never include neither modules nor project dependencies as a default, as
+    // they should be able to start as fast as possible.
+    // Standard Notebooks should make the choice based on the default value for the property.
+    fun disabledInLightMode(flag: Boolean) = flag && mode != NotebookMode.LIGHT
+
+    val includeLibraries = disabledInLightMode(options.shouldAddProjectLibrariesToClasspath)
+
+    return KotlinNotebookSettings(
+        notebookDependencies = if (includeLibraries) KotlinNotebookDependencies.AllLibraries else KotlinNotebookDependencies.None,
+        sessionRunMode = KotlinNotebookSessionRunMode.SEPARATE_PROCESS,
+    )
 }
