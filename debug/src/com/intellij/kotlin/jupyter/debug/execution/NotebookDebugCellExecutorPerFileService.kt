@@ -35,6 +35,7 @@ internal class NotebookDebugCellExecutorPerFileService(
         val debugSession = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
         val jupyterExecutionManager = JupyterExecutionManager.getInstance(project, virtualFile)
         val jupyterDebugSessionManager = JupyterDebugSessionManager.getInstance(project)
+        val options = KotlinNotebookDebugProjectOptionsProvider.getInstance(project)
         val fileName = virtualFile.file.name
 
         val jupyterSession = jupyterExecutionManager.getOrCreateSession()
@@ -54,6 +55,10 @@ internal class NotebookDebugCellExecutorPerFileService(
             return
         }
 
+        // Suppress notebook variables toolwindow to avoid race with debug window
+        val previousShowVariables = options.shouldShowNotebookVariables
+        options.shouldShowNotebookVariables = false
+
         debugSession.awaitInitialized()
         debugSession.showSessionTab()
 
@@ -69,6 +74,7 @@ internal class NotebookDebugCellExecutorPerFileService(
                 debugSession.recreateSilentSession()
             }
             project.navigateToEditorIfNeeded(virtualFile)
+            options.shouldShowNotebookVariables = previousShowVariables
         }
     }
 
