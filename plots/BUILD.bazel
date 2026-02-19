@@ -24,8 +24,8 @@ jvm_provided_library(
 )
 
 jvm_provided_library(
-  name = "libraries_batik_provided",
-  lib = "//libraries/batik"
+  name = "community_libraries_batik_provided",
+  lib = "@community//libraries/batik"
 )
 
 jvm_library(
@@ -60,7 +60,7 @@ jvm_library(
     "//platform/charts",
     ":community_libraries_jackson_jackson_provided",
     ":community_libraries_jackson_databind_provided",
-    ":libraries_batik_provided",
+    ":community_libraries_batik_provided",
   ]
 )
 
@@ -92,8 +92,8 @@ jvm_library(
     "@community//platform/platform-impl/ui:ui_test_lib",
     "//plugins/jupyter/execution:execution_test_lib",
     "@community//libraries/kotlinx/datetime:datetime_test_lib",
-    "//libraries/batik",
-    "//libraries/batik:batik_test_lib",
+    "@community//libraries/batik",
+    "@community//libraries/batik:batik_test_lib",
     "//platform/charts:charts_test_lib",
   ]
 )
