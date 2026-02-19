@@ -185,7 +185,7 @@ class KotlinNotebookFileDebugSession(
                     result.session
                 }
                 SessionConfigurationResult.NeedsNewSession -> {
-                    disposeCurrentSession().await()
+                    disposeSessionAndTab()
                     createNewDebuggerSession(config)?.also { newSession ->
                         currentConfigRef.set(config)
                         debuggerSessionRef.set(newSession)
@@ -204,10 +204,6 @@ class KotlinNotebookFileDebugSession(
         if (currentConfig.silent) {
             LOG.info("Silent session already exists in ${virtualFile.file.name}, skipping recreation")
             return
-        }
-
-        sessionMutex.withLock {
-            disposeSessionAndTab()
         }
 
         val newConfig = DebugSessionConfig(currentConfig.port, silent = true)

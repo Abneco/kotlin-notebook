@@ -35,7 +35,7 @@ internal class NotebookDebugCellExecutorPerFileService(
         val jupyterExecutionManager = JupyterExecutionManager.getInstance(project, virtualFile)
         val fileName = virtualFile.file.name
 
-        jupyterExecutionManager.getOrCreateSession()
+        val jupyterSession = jupyterExecutionManager.getOrCreateSession()
 
         val port = debugSession.targetDebugPort
         if (port == null) {
@@ -60,7 +60,10 @@ internal class NotebookDebugCellExecutorPerFileService(
                 jupyterExecutionManager.runCells(intervalPointers).awaitAll()
             }
         } finally {
-            debugSession.recreateSilentSession()
+            // auto recreation if a kernel is restarted
+            if (!jupyterSession.isDisposed) {
+                debugSession.recreateSilentSession()
+            }
             project.navigateToEditorIfNeeded(virtualFile)
         }
     }
