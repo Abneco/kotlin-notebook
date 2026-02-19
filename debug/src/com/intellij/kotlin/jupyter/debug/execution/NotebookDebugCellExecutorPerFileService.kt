@@ -3,6 +3,8 @@ package com.intellij.kotlin.jupyter.debug.execution
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.executor.JupyterExecutionManager
+import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionManager
+import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionPath
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
@@ -33,6 +35,7 @@ internal class NotebookDebugCellExecutorPerFileService(
     suspend fun executeCellsUnderDebugSession(intervalPointers: List<NotebookIntervalPointer>) {
         val debugSession = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
         val jupyterExecutionManager = JupyterExecutionManager.getInstance(project, virtualFile)
+        val jupyterDebugSessionManager = JupyterDebugSessionManager.getInstance(project)
         val fileName = virtualFile.file.name
 
         val jupyterSession = jupyterExecutionManager.getOrCreateSession()
@@ -57,9 +60,12 @@ internal class NotebookDebugCellExecutorPerFileService(
 
         try {
             debugSession.withNonSuspendingBreakpoint {
+                val path = JupyterDebugSessionPath(virtualFile)
+                jupyterDebugSessionManager.debugInSessionStarted(path)
                 jupyterExecutionManager.runCells(intervalPointers).awaitAll()
             }
         } finally {
+            jupyterDebugSessionManager.debugInSessionFinished(virtualFile)
             // auto recreation if a kernel is restarted
             if (!jupyterSession.isDisposed) {
                 debugSession.recreateSilentSession()
