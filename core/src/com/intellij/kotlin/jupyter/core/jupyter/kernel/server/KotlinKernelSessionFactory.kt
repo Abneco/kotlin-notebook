@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server
 
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.executor.kernel.session.SessionVerificationTimings
 import com.intellij.jupyter.core.jupyter.connections.JupyterConnectionParameters
 import com.intellij.jupyter.core.jupyter.connections.auth.token.JupyterTokenAuthParams
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
@@ -15,8 +16,21 @@ import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import java.net.URI
+import kotlin.time.Duration.Companion.seconds
 
 class KotlinKernelSessionFactory : JupyterNotebookKernelSessionFactory() {
+
+    override val sessionTimings: SessionVerificationTimings by lazy {
+        val isUiTestMode = System.getProperty("org.jetbrains.plugins.kotlin.jupyter.uiDriverTests")
+            ?.toBooleanStrictOrNull()
+            ?: false
+        when (isUiTestMode) {
+            false -> SessionVerificationTimings.DEFAULT
+            true -> SessionVerificationTimings(
+                sessionStartTimeout = 30.seconds, // 2x the time on session starts to account for slower CI machines.
+            )
+        }
+    }
 
     override suspend fun afterSessionCreation(session: JupyterNotebookSession) {
         if (!session.updateNotebookMetadata()) {
