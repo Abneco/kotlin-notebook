@@ -12,7 +12,6 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
-import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionPath
 import com.intellij.jupyter.core.jupyter.variables.common.JupyterEnvironmentUpdateListener
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
@@ -356,7 +355,6 @@ class KotlinNotebookFileDebugSession(
         if (debugProcess == null) return
         val listener = NotebookDebugProcessListener(
             project,
-            JupyterDebugSessionPath(virtualFile),
             virtualFile,
             breakpointController,
             silent

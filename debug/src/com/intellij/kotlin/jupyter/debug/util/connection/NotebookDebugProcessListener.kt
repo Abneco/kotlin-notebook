@@ -7,7 +7,6 @@ import com.intellij.debugger.engine.DebugProcessListener
 import com.intellij.debugger.engine.SuspendContext
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionManager
-import com.intellij.jupyter.core.jupyter.debugger.common.JupyterDebugSessionPath
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.debug.breakpoint.kernel.KernelBreakpointController
 import com.intellij.kotlin.jupyter.debug.listeners.NOTEBOOK_DEBUG_SESSION_TOPIC
@@ -17,7 +16,6 @@ import com.intellij.openapi.project.Project
 
 internal class NotebookDebugProcessListener(
     private val project: Project,
-    private val sessionPath: JupyterDebugSessionPath,
     private val virtualFile: BackedNotebookVirtualFile,
     private val breakpointController: KernelBreakpointController,
     private val isSilent: Boolean = false
