@@ -21,15 +21,11 @@ import kotlin.time.Duration.Companion.seconds
 class KotlinKernelSessionFactory : JupyterNotebookKernelSessionFactory() {
 
     override val sessionTimings: SessionVerificationTimings by lazy {
-        val isUiTestMode = System.getProperty("org.jetbrains.plugins.kotlin.jupyter.uiDriverTests")
-            ?.toBooleanStrictOrNull()
-            ?: false
-        when (isUiTestMode) {
-            false -> SessionVerificationTimings.DEFAULT
-            true -> SessionVerificationTimings(
-                sessionStartTimeout = 30.seconds, // 2x the time on session starts to account for slower CI machines.
-            )
-        }
+        // 2x the time on session starts to account for slower CI machines.
+        SessionVerificationTimings(
+            sessionStartTimeout = 30.seconds,
+            sessionVerificationTimeout = 15.seconds,
+        )
     }
 
     override suspend fun afterSessionCreation(session: JupyterNotebookSession) {
