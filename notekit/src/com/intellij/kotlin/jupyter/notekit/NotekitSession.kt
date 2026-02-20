@@ -7,8 +7,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.jupyter.core.core.impl.actions.NotebookCellLinesDocumentUtils.insertCells
 import com.intellij.jupyter.core.core.impl.actions.NotebookCellLinesDocumentUtils.removeCells
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
+import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jackson
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterCell
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.kotlin.jupyter.notekit.i18n.NotekitBundle
@@ -23,6 +24,7 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import org.jetbrains.plugins.notebooks.psi.jupyter.nbformat.JupyterCellType
 
@@ -32,7 +34,6 @@ import org.jetbrains.plugins.notebooks.psi.jupyter.nbformat.JupyterCellType
 class NotekitSession(
     private val project: Project,
     private val notebookFile: BackedNotebookVirtualFile,
-    private val session: JupyterNotebookSession,
 ) {
     private val notebook: JupyterNotebook?
         get() = notebookFile.notebookOrNull
@@ -173,14 +174,20 @@ class NotekitSession(
         validateRange(range, cellCount)?.let { return request.error(it) }
 
         try {
-            for (i in range) {
-                val cell = readAction { nb.getCell(i) }
-                if (cell.cellType == JupyterCellType.CODE) {
-                    withContext(Dispatchers.EDT) {
-                        @Suppress("DEPRECATION")
-                        session.execute(cell.source, silent = false)
-                    }
+            val intervalPointers = readAction {
+                val doc = document ?: return@readAction emptyList()
+                val factory = NotebookIntervalPointerFactory.get(project, doc)
+                val intervals = NotebookCellLines.get(doc).intervals
+                range.mapNotNull { index ->
+                    intervals.getOrNull(index)?.let { factory.create(it) }
                 }
+            }
+
+            if (intervalPointers.isNotEmpty()) {
+                JupyterExecutionManager
+                    .getInstance(project, notebookFile)
+                    .runCells(intervalPointers)
+                    .awaitAll()
             }
         }
         catch (e: Exception) {

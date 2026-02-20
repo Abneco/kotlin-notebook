@@ -44,7 +44,7 @@ class NotekitCommHandler(
         val commId = message.messageContent["comm_id"]?.asText() ?: return false
         LOG.info("Notekit comm opened: $commId")
 
-        val notekitSession = NotekitSession(session.project, notebookFile, session)
+        val notekitSession = NotekitSession(session.project, notebookFile)
         activeComms[commId] = notekitSession
 
         return true
