@@ -1,7 +1,6 @@
 // Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.debug.session.ui
 
-import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.execution.ui.RunContentManager
 import com.intellij.openapi.application.EDT
@@ -10,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.impl.XDebugSessionImpl
+import com.intellij.xdebugger.impl.util.isNotAlive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -57,14 +57,22 @@ internal class NotebookDebugTabHandler(
             log.info("ContentDescriptor is null for session in $fileName, skipping tab closure")
             return
         }
+        val content = tabDescriptor.attachedContent
+        if (content == null) {
+            log.trace("Attached content is null for session in $fileName, skipping tab closure")
+            return
+        }
         if (tabDescriptor.isHiddenContent) {
             log.info("Session tab is hidden for session in $fileName, skipping tab closure")
             return
         }
 
         withContext(Dispatchers.EDT) {
-            val manager = RunContentManager.getInstance(project)
-            manager.removeRunContent(DefaultDebugExecutor.getDebugExecutorInstance(), tabDescriptor)
+            if (tabDescriptor.isNotAlive) {
+                return@withContext
+            }
+            val contentManager = content.manager ?: return@withContext
+            contentManager.removeContent(content, true, false, false)
         }
     }
 }
