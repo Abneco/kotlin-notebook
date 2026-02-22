@@ -8,6 +8,7 @@ import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterCellE
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.helper.JupyterHelper
+import com.intellij.jupyter.core.kernel.executor.JupyterTaskBaseCallback
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.withWriteLock
 import com.intellij.openapi.application.ApplicationManager
@@ -86,7 +87,7 @@ class KotlinNotebookCellExecutionCallbackFactory : JupyterCellExecutionCallbackF
     fun createUnboundCallback(
         project: Project,
         virtualFile: BackedNotebookVirtualFile
-    ): JupyterExecutionCallback {
+    ): JupyterTaskBaseCallback {
         val index = registerNextIndexForCallback(virtualFile)
         return KotlinNotebookCellExecutionCallback(
             project,

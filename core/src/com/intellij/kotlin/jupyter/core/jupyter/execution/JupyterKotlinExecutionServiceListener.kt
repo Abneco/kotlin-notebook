@@ -2,9 +2,11 @@
 package com.intellij.kotlin.jupyter.core.jupyter.execution
 
 import com.intellij.jupyter.core.executor.JupyterExecutionListener
-import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
+import com.intellij.jupyter.core.executor.JupyterExecutionManager
+import com.intellij.jupyter.core.executor.kernel.JupyterKernelTask
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
+import com.intellij.jupyter.core.kernel.executor.JupyterTaskBaseCallback
 import com.intellij.kotlin.jupyter.core.projectModel.JupyterKotlinProjectArtifactsService
 import com.intellij.kotlin.jupyter.core.settings.SessionOptionsProvider
 import com.intellij.kotlin.jupyter.core.settings.generateSnippet
@@ -18,21 +20,29 @@ class JupyterKotlinExecutionServiceListener : JupyterExecutionListener {
 
         JupyterKotlinProjectArtifactsService.getInstance(session.project).registerSession(session)
 
-        val initCode = """
-            ${service<SessionOptionsProvider>().generateSnippet()}
-        """.trimIndent()
+        val project = session.project
+        val virtualFile = session.virtualFile
 
-        val callbacks = session.virtualFile.let { virtualFile ->
-            val project = session.project
-            listOf(
-                kotlinNotebookCellExecutionCallbackFactory.createUnboundCallback(project, virtualFile),
-                object : JupyterExecutionCallback {
-                    override fun onExecuteReply(message: JupyterMessage) {
-                        logger<JupyterKotlinExecutionServiceListener>().debug("Kotlin session has been initialized with response: ${message.json}")
-                    }
-                })
-        }
+        val callbacks = listOf(
+            kotlinNotebookCellExecutionCallbackFactory.createUnboundCallback(project, virtualFile),
+            object : JupyterTaskBaseCallback() {
+                override fun onExecuteReply(message: JupyterMessage) {
+                    logger<JupyterKotlinExecutionServiceListener>()
+                        .debug("Kotlin session has been initialized with response: ${message.json}")
+                }
+            }
+        )
 
-        session.execute(initCode, callbacks = callbacks, silent = true)
+        val task = JupyterKernelTask(
+            source = service<SessionOptionsProvider>().generateSnippet(),
+            options = JupyterKernelTask.Options.silentExecution(),
+            callbacks = callbacks,
+            notebookVirtualFile = virtualFile,
+            project = project
+        )
+        
+        JupyterExecutionManager
+            .getInstance(project, virtualFile)
+            .submitTask(task)
     }
 }
