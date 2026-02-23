@@ -6,11 +6,10 @@ import com.intellij.jupyter.core.jackson
 import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputDataKey
 import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.editor.outputs.getOutputsForIndex
-import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.JupyterWebOutputInfo
 import com.intellij.jupyter.core.jupyter.helper.isJupyter
-import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterOutputType
 import com.intellij.jupyter.core.jupyter.nbformat.MimeType
 import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterExecuteResultOutput
+import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterOutputType
 import com.intellij.jupyter.tables.JupyterTableOutputDataKey
 import com.intellij.jupyter.tables.createTableOutputDataKey
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
@@ -50,7 +49,6 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
     private fun isBrowserTableOutputKey(key: NotebookOutputDataKey): Boolean {
         if (key !is JupyterBrowserOutputDataKey) return false
         val info = key.info
-        if (info !is JupyterWebOutputInfo.Output) return false
 
         val jsonOutput = jackson.readTree(info.output) as ObjectNode
         return jsonOutput[MimeType.KOTLIN_DATAFRAME.mimeType] != null
