@@ -86,8 +86,11 @@ fun BackedNotebookVirtualFile?.getInjectedKtFiles(project: Project): List<KtFile
 fun PsiFile?.getNotebookValidCells(): List<JupyterPsiCell> =
     getNotebookCells().filter { it.isValid }
 
-fun PsiFile?.getNotebookCells(): List<JupyterPsiCell> =
-  (this?.children?.first() as? JupyterNotebook)?.psiCellList.orEmpty()
+fun PsiFile?.getNotebookCells(): List<JupyterPsiCell> {
+    if (this == null) return emptyList()
+    val notebook = (this.children.firstOrNull { it is JupyterNotebook } ?: this.children.firstOrNull()?.children?.firstOrNull { it is JupyterNotebook }) as? JupyterNotebook
+    return notebook?.psiCellList.orEmpty()
+}
 
 fun PsiLanguageInjectionHost.getInjectedKtFiles(injectedLanguageManager: InjectedLanguageManager): List<KtFile> =
     injectedLanguageManager.getInjectedPsiFiles(this)?.map { it.first }?.filterIsInstance<KtFile>().orEmpty()

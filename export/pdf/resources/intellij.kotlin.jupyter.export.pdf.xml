@@ -1,0 +1,25 @@
+<idea-plugin>
+    <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
+    <dependencies>
+      <plugin id="org.jetbrains.kotlin"/>
+      <module name="intellij.jupyter.convert"/>
+      <module name="intellij.jupyter.core"/>
+      <module name="intellij.jupyter.psi"/>
+      <module name="intellij.kotlin.jupyter.core"/>
+    </dependencies>
+    <!-- endregion -->
+
+    <extensions defaultExtensionNs="com.intellij.jupyter.convert">
+        <converterLanguageSupport implementation="com.intellij.kotlin.jupyter.export.pdf.KotlinNotebookConverterLanguageSupport"/>
+    </extensions>
+
+    <actions resource-bundle="messages.KotlinNotebookPdfExportBundle">
+        <group id="KotlinNotebookPdfExports" icon="AllIcons.General.Export" popup="true">
+            <action id="KotlinNotebookFullExportToPdfAction" class="com.intellij.kotlin.jupyter.export.pdf.KotlinNotebookFullExportToPdfAction"/>
+            <action id="KotlinNotebookOutputsExportToPdfAction" class="com.intellij.kotlin.jupyter.export.pdf.KotlinNotebookOutputsExportToPdfAction"/>
+            <action id="KotlinNotebookOutputsAndMarkdownExportToPdfAction" class="com.intellij.kotlin.jupyter.export.pdf.KotlinNotebookOutputsAndMarkdownExportToPdfAction"/>
+            <add-to-group group-id="JupyterEditorRightToolbarActions" relative-to-action="JupyterEditorRightToolbarAdditionalActions"
+                          anchor="before"/>
+        </group>
+    </actions>
+</idea-plugin>

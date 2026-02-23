@@ -1,0 +1,11 @@
+#%%
+fun fibonacci(n: Int): List<Long> {
+    val fib = mutableListOf<Long>(0, 1)
+    for (i in 2 until n) {
+        fib.add(fib[i - 1] + fib[i - 2])
+    }
+    return fib
+}
+
+val fibNumbers = fibonacci(10)
+fibNumbers.forEach { println(it) }

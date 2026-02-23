@@ -32,6 +32,7 @@
     <orderEntry type="module" module-name="intellij.kotlin.jupyter.plugin" scope="TEST" />
     <orderEntry type="module" module-name="intellij.kotlin.jupyter.core" scope="TEST" />
     <orderEntry type="module" module-name="intellij.kotlin.jupyter.tables" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.kotlin.jupyter.export.pdf" />
     <orderEntry type="module" module-name="intellij.platform.analysis" scope="TEST" />
     <orderEntry type="module" module-name="intellij.platform.codeStyle" scope="TEST" />
     <orderEntry type="module" module-name="intellij.platform.core" scope="TEST" />
@@ -45,6 +46,7 @@
     <orderEntry type="module" module-name="intellij.idea.ultimate.main" scope="RUNTIME" />
     <orderEntry type="module" module-name="intellij.jupyter.testFramework" />
     <orderEntry type="module" module-name="intellij.jupyter.core" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.jupyter.convert" scope="TEST" />
     <orderEntry type="module" module-name="intellij.jupyter.psi" scope="TEST" />
     <orderEntry type="module" module-name="intellij.libraries.jackson.databind" />
     <orderEntry type="module" module-name="intellij.libraries.jackson" />
@@ -61,6 +63,7 @@
     <orderEntry type="module" module-name="intellij.markdown" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="kotlinc.kotlin-compiler-common" level="project" />
     <orderEntry type="module" module-name="intellij.kotlin.base.codeInsight.minimal" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.kotlin.highlighting.minimal" scope="TEST" />
     <orderEntry type="module" module-name="intellij.libraries.kotlinx.coroutines.debug" scope="TEST" />
     <orderEntry type="module" module-name="intellij.kotlin.codeInsight.shared" scope="TEST" />
     <orderEntry type="module" module-name="intellij.kotlin.base.plugin" scope="TEST" />

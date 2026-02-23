@@ -1,0 +1,7 @@
+#%%
+class Person(val name: String, val age: Int) {
+    fun greet() = "Hello, my name is $name and I am $age years old."
+}
+
+val person = Person("Alice", 30)
+println(person.greet())
