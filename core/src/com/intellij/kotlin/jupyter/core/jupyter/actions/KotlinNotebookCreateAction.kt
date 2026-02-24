@@ -4,6 +4,7 @@ package com.intellij.kotlin.jupyter.core.jupyter.actions
 import com.intellij.ide.projectView.ProjectViewNode
 import com.intellij.ide.scratch.RootType
 import com.intellij.kotlin.jupyter.core.projectWizard.KotlinNotebookRootTypeInstance
+import com.intellij.kotlin.jupyter.core.util.getVirtualFile
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -18,7 +19,10 @@ import com.intellij.openapi.project.DumbAware
 class KotlinNotebookCreateAction : KotlinNotebookCreateActionBase() {
     override fun update(e: AnActionEvent) {
         super.update(e)
-        e.disableIf { isKotlinNotebookScratchRootSelected(it) }
+        e.disableIf {
+            isCurrentFileDirectoryNonWritable(it) ||
+            isKotlinNotebookScratchRootSelected(it)
+        }
     }
 }
 
@@ -32,7 +36,10 @@ class KotlinNotebookCreateActionPrioritizedGroup : ActionGroup(), DumbAware {
 
     override fun update(e: AnActionEvent) {
         super.update(e)
-        e.disableIf { !isKotlinNotebookScratchRootSelected(it) }
+        e.disableIf {
+            isCurrentFileDirectoryNonWritable(it) ||
+            !isKotlinNotebookScratchRootSelected(it)
+        }
     }
 
     override fun getChildren(event: AnActionEvent?): Array<AnAction> = myChildren
@@ -43,6 +50,12 @@ private fun AnActionEvent.disableIf(condition: (AnActionEvent) -> Boolean) {
     if (condition(this)) {
         presentation.isEnabledAndVisible = false
     }
+}
+
+private fun isCurrentFileDirectoryNonWritable(e: AnActionEvent): Boolean {
+    val virtualFile = e.getVirtualFile() ?: return false
+    val directory = virtualFile.parent ?: return false
+    return !directory.isWritable
 }
 
 /**
