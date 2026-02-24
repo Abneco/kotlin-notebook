@@ -319,8 +319,13 @@
     </extensions>
 
     <actions resource-bundle="messages/KotlinNotebookBundle">
-        <action id="NewKotlinNotebookAction" class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookCreateAction"
-                icon="icons.KotlinJupyterIcons.FileIcon">
+        <!-- Prioritized group for Kotlin Notebooks Scratch root - shows first with separator -->
+        <group id="NewKotlinNotebookActionPrioritizedGroup" class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookCreateActionPrioritizedGroup">
+            <add-to-group group-id="NewGroup" anchor="first"/>
+        </group>
+
+        <!-- Normal action for other directories - shows in standard position -->
+        <action id="NewKotlinNotebookAction" class="com.intellij.kotlin.jupyter.core.jupyter.actions.KotlinNotebookCreateAction">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="Kotlin.NewScript"/>
         </action>
 

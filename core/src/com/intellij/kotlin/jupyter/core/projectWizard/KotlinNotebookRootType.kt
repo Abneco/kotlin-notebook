@@ -8,7 +8,6 @@ import com.intellij.ide.scratch.ScratchFileTypeIcon
 import com.intellij.kotlin.jupyter.core.language.JupyterKotlinFileType
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.isFile
 import java.nio.file.Path
@@ -26,11 +25,6 @@ class KotlinNotebookRootType : RootType("kotlinNotebook", KotlinNotebookBundle.m
 
     val rootPath: Path by lazy {
         Path.of(rootPathString)
-    }
-
-    val rootVirtualFile: VirtualFile by lazy {
-        val path = rootPathString
-        VfsUtil.createDirectories(path)
     }
 
     override fun patchIcon(baseIcon: Icon, file: VirtualFile, flags: Int, project: Project?): Icon {
