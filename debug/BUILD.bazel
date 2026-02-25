@@ -24,8 +24,8 @@ jvm_library(
   ],
   deps = [
     "@ultimate_lib//:kotlin-stdlib-provided",
-    "@lib//:kotlinc-kotlin-compiler-common-provided",
-    "@lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
+    "@ultimate_lib//:kotlinc-kotlin-compiler-common-provided",
+    "@ultimate_lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
     "@community//libraries/jackson/jackson",
     "@community//libraries/jackson/databind",
     "//plugins/kotlin/jupyter/core",
@@ -72,8 +72,8 @@ jvm_library(
   runtime_deps = [
     ":debug",
     "@ultimate_lib//:kotlin-stdlib-provided",
-    "@lib//:kotlinc-kotlin-compiler-common-provided",
-    "@lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
+    "@ultimate_lib//:kotlinc-kotlin-compiler-common-provided",
+    "@ultimate_lib//:kotlinc-kotlin-scripting-compiler-impl-provided",
     "@community//libraries/jackson/jackson:jackson_test_lib",
     "@community//libraries/jackson/databind:databind_test_lib",
     "//plugins/kotlin/jupyter/core:core_test_lib",
