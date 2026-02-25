@@ -32,7 +32,7 @@ class KotlinNotebookCreateActionPrioritizedGroup : ActionGroup(), DumbAware {
         Separator.getInstance(),
     )
 
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
         super.update(e)
