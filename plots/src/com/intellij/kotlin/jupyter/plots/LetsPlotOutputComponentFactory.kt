@@ -36,7 +36,6 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotCom
 
     override fun updateComponent(editor: EditorImpl, component: LetsPlotComponent, outputDataKey: LetsPlotOutputDataKey) {
         LOG.trace("Updating existing component inside: ${editor.notebookFileOrNull?.file?.name}")
-        outputDataKey.updateExecutionCountHolder(component.executionCountHolder)
         component.initialize(outputDataKey)
     }
 
@@ -44,7 +43,7 @@ class LetsPlotOutputComponentFactory: NotebookOutputComponentFactory<LetsPlotCom
         return if (component.dataKey == outputDataKey) {
             NotebookOutputComponentFactory.Match.SAME
         } else {
-            NotebookOutputComponentFactory.Match.NONE
+            NotebookOutputComponentFactory.Match.COMPATIBLE
         }
     }
 
