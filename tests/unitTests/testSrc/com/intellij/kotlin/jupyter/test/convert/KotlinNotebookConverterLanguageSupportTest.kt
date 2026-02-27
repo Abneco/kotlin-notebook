@@ -41,8 +41,7 @@ class KotlinNotebookConverterLanguageSupportTest : KotlinNotebookTestCase() {
     @TestMetadata("helloWorld.ktnb")
     fun `simple notebook should correctly convert to HTML`() = runNotebookTest(setupScriptDependencies = false) {
         val virtualFile = backedNotebookFile.file
-        val htmlResult = convertToHtml(project, JupyterFileUtils.readNotebook(virtualFile), PageSize.Letter, notebookFile = virtualFile)
-        val html = htmlResult.first
+        val (html, _) = convertToHtml(project, JupyterFileUtils.readNotebook(virtualFile), PageSize.Letter, notebookFile = virtualFile)
 
         html.shouldNotBeNull()
         html.shouldNotBeEmpty()
@@ -56,8 +55,7 @@ class KotlinNotebookConverterLanguageSupportTest : KotlinNotebookTestCase() {
     @TestMetadata("fibonacci.ktnb")
     fun `semantic highlighting should apply different styles to functions and variables`() = runNotebookTest(setupScriptDependencies = false) {
         val virtualFile = backedNotebookFile.file
-        val htmlResult = convertToHtml(project, JupyterFileUtils.readNotebook(virtualFile), PageSize.Letter, notebookFile = virtualFile)
-        val html = htmlResult.first
+        val (html, _) = convertToHtml(project, JupyterFileUtils.readNotebook(virtualFile), PageSize.Letter, notebookFile = virtualFile)
 
         html shouldContain "fibonacci"
         html shouldContain "<span style="
@@ -79,8 +77,7 @@ class KotlinNotebookConverterLanguageSupportTest : KotlinNotebookTestCase() {
     @TestMetadata("classes.ktnb")
     fun `semantic highlighting should highlight classes and properties`() = runNotebookTest(setupScriptDependencies = false) {
         val virtualFile = backedNotebookFile.file
-        val htmlResult = convertToHtml(project, JupyterFileUtils.readNotebook(virtualFile), PageSize.Letter, notebookFile = virtualFile)
-        val html = htmlResult.first
+        val (html, _) = convertToHtml(project, JupyterFileUtils.readNotebook(virtualFile), PageSize.Letter, notebookFile = virtualFile)
 
         html shouldContain ">Person<"
         html shouldContain ">person<"
