@@ -59,7 +59,7 @@ class KotlinNotebookInterruptionTest : AbstractSimpleExecutionTest() {
                         delay(1000)
                         val session = sessionDeferred.awaitBlocking(5.seconds)
                         val file = session.virtualFile
-                        JupyterExecutionManager.getInstance(project, file).interruptExecution()
+                        JupyterExecutionManager.getInstanceOrCreate(project, file).interruptExecution()
                     }
                 }
             }

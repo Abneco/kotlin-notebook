@@ -2,6 +2,7 @@
 package com.intellij.kotlin.jupyter.core.ide
 
 import com.intellij.ide.FileIconProvider
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.openapi.project.Project
@@ -23,6 +24,7 @@ class KotlinNotebookFileIconProvider : FileIconProvider {
     private fun isRunningNotebook(file: VirtualFile, project: Project?): Boolean {
         if (project == null)
             return false
-        return JupyterExecutionManager.getInstance(project, file).hasSession()
+        val notebookFile = BackedNotebookVirtualFile.takeIfBacked(file) ?: return false
+        return JupyterExecutionManager.hasSession(project, notebookFile)
     }
 }

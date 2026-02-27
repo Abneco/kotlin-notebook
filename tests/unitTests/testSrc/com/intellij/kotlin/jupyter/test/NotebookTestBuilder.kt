@@ -19,6 +19,7 @@ import com.intellij.injected.editor.EditorWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
+import com.intellij.jupyter.core.jupyter.helper.backedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrSelf
@@ -124,7 +125,8 @@ class NotebookTestBuilder(
     private var jupyterSession: JupyterNotebookSession? = null
     private val jupyterSessionSetup = suspend {
         val project = notebookFile.project
-        jupyterSession = JupyterExecutionManager.getInstance(project, notebookFile.virtualFile).getOrCreateSession()
+        val notebookVirtualFile = notebookFile.virtualFile.backedNotebookVirtualFile!!
+        jupyterSession = JupyterExecutionManager.getInstanceOrCreate(project, notebookVirtualFile).getOrCreateSession()
 
     }
     private val jupyterSessionCleanup = {

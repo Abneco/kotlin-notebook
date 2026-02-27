@@ -43,7 +43,7 @@ internal class KotlinNotebookEditorColorsListener : JupyterThemeChangedListener 
         val changeCode = generateColorSchemeChangeCode(theme)
                              .takeIf { it.isNotBlank() } ?: return
 
-        JupyterExecutionManager.getInstance(project, notebookFile).submitSilentTask(changeCode, JupyterTaskPriority.HIGH)
+        JupyterExecutionManager.getInstanceOrCreate(project, notebookFile).submitSilentTask(changeCode, JupyterTaskPriority.HIGH)
     }
 
     /**

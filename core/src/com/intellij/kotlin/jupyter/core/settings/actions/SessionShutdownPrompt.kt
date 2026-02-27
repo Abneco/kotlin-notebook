@@ -22,11 +22,11 @@ import com.intellij.ui.dsl.builder.panel
 inline fun promptSessionShutdownIfNeeded(
     project: Project,
     notebookFile: BackedNotebookVirtualFile,
-    crossinline action: (hasActiveJupyterSession: Boolean) -> Unit
+    crossinline action: (hasActiveJupyterSession: Boolean) -> Unit,
 ) {
     if (!notebookFile.isKotlinNotebook) return
 
-    if (!JupyterExecutionManager.getInstance(project, notebookFile).hasSession()) {
+    if (!JupyterExecutionManager.hasSession(project, notebookFile)) {
         action(false)
         return
     }
@@ -42,7 +42,7 @@ inline fun promptSessionShutdownIfNeeded(
             action(true)
 
             launchBackground {
-                JupyterExecutionManager.getInstance(project, notebookFile).killExecution()
+                JupyterExecutionManager.killExecution(project, notebookFile)
             }
             null
         }

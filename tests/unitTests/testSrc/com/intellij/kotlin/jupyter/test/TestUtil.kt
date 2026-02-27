@@ -89,7 +89,7 @@ fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     val project = notebookFile.project
     val backedFile = notebookFile.virtualFile.toKotlinNotebookBackedFile()!!
     val session = runBlocking {
-        JupyterExecutionManager.getInstance(project, backedFile).getOrCreateSession()
+        JupyterExecutionManager.getInstanceOrCreate(project, backedFile).getOrCreateSession()
     }
     return try {
         action()
@@ -138,7 +138,7 @@ fun executeCells(tester: ReceivedMessagesTester, notebookFile: PsiFile, executio
         val file = notebookFile.virtualFile
         val notebookFile = BackedNotebookVirtualFile.takeIfBacked(file)!!
 
-        val queue = JupyterExecutionManager.getInstance(project, notebookFile)
+        val queue = JupyterExecutionManager.getInstanceOrCreate(project, notebookFile)
 
         val testCallbacks = listOfNotNull(object : JupyterTaskBaseCallback() {
             override fun onStatus(message: JupyterStatusMessage) {

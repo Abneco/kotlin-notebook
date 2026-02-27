@@ -3,6 +3,7 @@ package com.intellij.kotlin.jupyter.core.projectModel
 
 import com.intellij.codeInsight.hint.HintUtil
 import com.intellij.concurrency.ConcurrentCollectionFactory
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.jupyter.core.executor.JupyterExecutionManager
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSession
@@ -75,7 +76,7 @@ class KotlinNotebookRestartNeededNotificationService(
         status: KotlinNotebookRestartStatus.Needed,
     ) {
         // We can't and don't need to restart the session if it didn't start
-        if (!JupyterExecutionManager.getInstance(project, notebook.virtualFile).hasSession()) {
+        if (!JupyterExecutionManager.hasSession(project, BackedNotebookVirtualFile.takeBackend(notebook.virtualFile))) {
             return
         }
 

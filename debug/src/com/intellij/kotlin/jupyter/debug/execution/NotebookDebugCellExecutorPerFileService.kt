@@ -33,7 +33,7 @@ internal class NotebookDebugCellExecutorPerFileService(
      */
     suspend fun executeCellsUnderDebugSession(intervalPointers: List<NotebookIntervalPointer>) {
         val debugSession = KotlinNotebookDebugSessionManager.getForFile(project, virtualFile)
-        val jupyterExecutionManager = JupyterExecutionManager.getInstance(project, virtualFile)
+        val jupyterExecutionManager = JupyterExecutionManager.getInstanceOrCreate(project, virtualFile)
         val jupyterDebugSessionManager = JupyterDebugSessionManager.getInstance(project)
         val options = KotlinNotebookDebugProjectOptionsProvider.getInstance(project)
         val fileName = virtualFile.file.name
@@ -70,7 +70,8 @@ internal class NotebookDebugCellExecutorPerFileService(
         } finally {
             jupyterDebugSessionManager.debugInSessionFinished(virtualFile)
             // auto recreation if a kernel is restarted
-            if (!jupyterSession.isDisposed) {
+            jupyterSession.disposingDeferred?.await()
+            if (!jupyterSession.isFullyDisposed) {
                 debugSession.recreateSilentSession()
             }
             project.navigateToEditorIfNeeded(virtualFile)

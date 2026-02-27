@@ -42,7 +42,7 @@ class JupyterKotlinExecutionServiceListener : JupyterExecutionListener {
         )
         
         JupyterExecutionManager
-            .getInstance(project, virtualFile)
+            .getInstanceOrCreate(project, virtualFile)
             .submitTask(task)
     }
 }

@@ -185,7 +185,7 @@ class NotekitSession(
 
             if (intervalPointers.isNotEmpty()) {
                 JupyterExecutionManager
-                    .getInstance(project, notebookFile)
+                    .getInstanceOrCreate(project, notebookFile)
                     .runCells(intervalPointers)
                     .awaitAll()
             }

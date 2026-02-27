@@ -42,7 +42,7 @@ abstract class AbstractKotlinJupyterCommand(text: String, line: Int) : PlaybackC
     protected suspend fun waitExecutionFinishes(context: PlaybackContext, timeoutMs: Long) {
         val project = context.project
         val backedFile = getBackedFile(context) ?: return
-        val executionManager = JupyterExecutionManager.getInstance(project, backedFile)
+        val executionManager = JupyterExecutionManager.getInstanceOrCreate(project, backedFile)
         val executionState = JupyterExecutionState.getInstance(project, backedFile)
 
         thisLogger().info("waitExecutionFinishes started for ${backedFile.file.name}")
