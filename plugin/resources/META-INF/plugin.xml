@@ -114,6 +114,6 @@
     </dependencies>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
-        <supportsKotlinPluginMode supportsK2="true"/>
+        <supportsKotlinPluginMode supportsK2="true" supportsK1="true"/>
     </extensions>
 </idea-plugin>
