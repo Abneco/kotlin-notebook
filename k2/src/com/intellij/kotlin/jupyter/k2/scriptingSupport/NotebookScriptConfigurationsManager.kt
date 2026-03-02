@@ -103,21 +103,21 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
     }
 
     suspend fun updateWorkspaceModel(resultPerFile: Map<VirtualFile, ScriptCompilationConfigurationResult>) {
-        val tmp = MutableEntityStorage.create()
-        val updatedFilesUrls = resultPerFile.keys.mapToSetOrEmpty {
-            it.virtualFileUrl
-        }
-
-        for ((file, result) in resultPerFile) {
-            tmp.addNotebookConfiguration(
-                KotlinNotebookScriptModel(
-                    file,
-                    result.valueOrNull() ?: continue
-                )
-            )
-        }
-
         project.updateKotlinScriptEntities(KotlinNotebookScriptEntitySource) { model ->
+            val tmp = MutableEntityStorage.create()
+            val updatedFilesUrls = resultPerFile.keys.mapToSetOrEmpty {
+                it.virtualFileUrl
+            }
+
+            for ((file, result) in resultPerFile) {
+                tmp.addNotebookConfiguration(
+                    KotlinNotebookScriptModel(
+                        file,
+                        result.valueOrNull() ?: continue
+                    )
+                )
+            }
+
             tmp.addUnchangedNotebookEntities(model, updatedFilesUrls)
             model.replaceBySource({ it is KotlinNotebookScriptEntitySource }, tmp)
         }
