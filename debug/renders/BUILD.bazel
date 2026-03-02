@@ -20,7 +20,7 @@ jvm_library(
   resources = [":renders_resources"],
   deps = [
     "@ultimate_lib//:kotlin-stdlib-provided",
-    "@ultimate_lib//:kotlinc-kotlin-compiler-common-provided",
+    "@lib//:kotlinc-kotlin-compiler-common-provided",
     "//plugins/kotlin/jupyter/debug",
     "@community//java/debugger/impl",
     "@community//platform/xdebugger-api:debugger",
@@ -41,7 +41,7 @@ jvm_library(
   runtime_deps = [
     ":renders",
     "@ultimate_lib//:kotlin-stdlib-provided",
-    "@ultimate_lib//:kotlinc-kotlin-compiler-common-provided",
+    "@lib//:kotlinc-kotlin-compiler-common-provided",
     "@community//libraries/kotlinx/coroutines/core",
     "@community//libraries/kotlinx/coroutines/core:core_test_lib",
     "//plugins/kotlin/jupyter/debug:debug_test_lib",
