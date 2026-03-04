@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.test.notebook.conversion
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
-import com.intellij.kotlin.jupyter.test.runners.K1Only
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
 import com.intellij.openapi.ide.CopyPasteManager
@@ -29,7 +28,6 @@ private class TestData(
     val expectedFileMark: String,
 )
 
-@K1Only("Investigate why @Throws is not shortened")
 @TestDataPath($$"$CONTENT_ROOT/testData/notebooks/conversion")
 class J2KConversionTest : KotlinNotebookTestCase() {
 
