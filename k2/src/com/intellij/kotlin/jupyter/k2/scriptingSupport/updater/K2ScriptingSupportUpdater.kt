@@ -54,10 +54,12 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
     }
 
     /**
-     * Special handler for a structured concurrency
+     * Handler for exceptions in a structured concurrency.
+     * NB: [CancellationException] is never delivered to [CoroutineExceptionHandler] by design —
+     * it is filtered out in [kotlinx.coroutines.JobSupport]
      */
     private val exceptionHandler = CoroutineExceptionHandler { _, e ->
-        if (e is CancellationException || project.isDisposed) {
+        if (project.isDisposed) {
             return@CoroutineExceptionHandler
         }
         LOG.warn("Exception during update k2 configuration for notebooks", e)
@@ -71,9 +73,14 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         scope.launch(exceptionHandler) {
             if (project.isDisposed) return@launch
 
-            val updatedNotebooks = updateK2Configurations(editorManager, project)
-            requestDefinitionReloadIfNecessary()
-            project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).afterUpdate(updatedNotebooks)
+            try {
+                val updatedNotebooks = updateK2Configurations(editorManager, project)
+                requestDefinitionReloadIfNecessary()
+                project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).afterUpdate(updatedNotebooks)
+            } catch (e: CancellationException) {
+                project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).onUpdateException(e)
+                throw e
+            }
         }
     }
 
