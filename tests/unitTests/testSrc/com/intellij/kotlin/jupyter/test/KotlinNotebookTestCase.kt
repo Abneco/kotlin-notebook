@@ -6,7 +6,6 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.editor.setHeaderEditingAllowed
 import com.intellij.jupyter.core.jupyter.connections.server.JupyterServers
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
-import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookSessionRunMode
 import com.intellij.kotlin.jupyter.core.settings.sessionRunMode
 import com.intellij.kotlin.jupyter.test.runners.KotlinNotebookTestRunner
 import com.intellij.kotlin.jupyter.test.runners.ListenableTest
@@ -278,12 +277,7 @@ abstract class KotlinNotebookTestCase :
         timeout: Duration? = null,
         test: suspend NotebookTestBuilder.() -> Unit
     ) {
-        Assume.assumeTrue(
-            "IDE process tests are disabled, see ...",
-            testContext.kernelRunMode != KotlinNotebookSessionRunMode.IDE_PROCESS,
-        )
-        
-        // Notebook tests requires a Notebook Template File (.ktnb) to be present.
+        // Notebook tests require a Notebook Template File (.ktnb) to be present.
         var testFile = getTestFile()
         if (testFile.name.endsWith(TEMPLATE_DATA_EXTENSION)) {
             testFile = buildKotlinNotebookFile(
