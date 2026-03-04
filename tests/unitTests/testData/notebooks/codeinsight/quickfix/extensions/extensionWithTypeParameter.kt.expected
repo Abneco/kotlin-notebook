@@ -2,7 +2,7 @@
 class Hohoh<T>(elems: Collection<T>) { private val data = mutableListOf<T>()
  init { data.addAll(elems) } }
 val h = Hohoh(listOf(1, 2, 42))
-fun <T> Hohoh<T>.foo() {
+fun Hohoh<Int>.foo() {
     TODO("Not yet implemented")
 }
 

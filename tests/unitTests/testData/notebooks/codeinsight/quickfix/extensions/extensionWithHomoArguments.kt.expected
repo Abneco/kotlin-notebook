@@ -2,7 +2,7 @@
 class Hohoh() { }
 val str = "42"
 val h = Hohoh()
-fun Hohoh.foo(str: String, s: String, s1: String) {
+fun Hohoh.foo(str: String, string2: String, string3: String) {
     TODO("Not yet implemented")
 }
 

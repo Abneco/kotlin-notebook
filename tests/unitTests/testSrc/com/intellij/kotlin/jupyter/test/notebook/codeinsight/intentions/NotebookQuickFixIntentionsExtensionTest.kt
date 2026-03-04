@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.test.notebook.codeinsight.intentions
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
-import com.intellij.kotlin.jupyter.test.runners.K1Only
+import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.testFramework.TestDataPath
 import io.kotest.matchers.shouldBe
 import org.junit.Rule
@@ -11,7 +11,7 @@ import org.junit.rules.DisableOnDebug
 import org.junit.rules.TestRule
 import org.junit.rules.Timeout
 
-@K1Only("KTNB-839: private modifier is added to an extension function")
+@K2Only
 @TestDataPath($$"$CONTENT_ROOT/testData/notebooks/codeinsight/quickfix/extensions")
 class NotebookQuickFixIntentionsExtensionTest : KotlinNotebookTestCase() {
     @get:Rule
@@ -26,25 +26,25 @@ class NotebookQuickFixIntentionsExtensionTest : KotlinNotebookTestCase() {
     }
 
     @Test
-    fun extensionForProperty() = runNotebookTest{
+    fun extensionForProperty() = runNotebookTest {
         runIntentionInActiveCell()
         currentCellContent shouldBe getExpectedTestFileContent()
     }
 
     @Test
-    fun extensionWithHeteroArguments() = runNotebookTest{
+    fun extensionWithHeteroArguments() = runNotebookTest {
         runIntentionInActiveCell()
         currentCellContent shouldBe getExpectedTestFileContent()
     }
 
     @Test
-    fun extensionWithHomoArguments() = runNotebookTest{
+    fun extensionWithHomoArguments() = runNotebookTest {
         runIntentionInActiveCell()
         currentCellContent shouldBe getExpectedTestFileContent()
     }
 
     @Test
-    fun extensionWithTypeParameter() = runNotebookTest{
+    fun extensionWithTypeParameter() = runNotebookTest {
         runIntentionInActiveCell()
         currentCellContent shouldBe getExpectedTestFileContent()
     }
