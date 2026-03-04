@@ -37,6 +37,7 @@ jvm_library(
   srcs = glob(["testSrc/**/*.kt", "testSrc/**/*.java", "testSrc/**/*.form"], allow_empty = True),
   kotlinc_opts = ":custom_kotlin-jupyter-tests",
   deps = [
+    "@lib//:junit6Launcher",
     "@lib//:kotlinc-analysis-api",
     "//plugins/kotlin/jupyter/plugin",
     "//plugins/kotlin/jupyter/plugin:plugin_test_lib",
