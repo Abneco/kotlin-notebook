@@ -50,6 +50,7 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.delete
 import jupyter.kotlin.ScriptTemplateWithDisplayHelpers
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -398,9 +399,11 @@ class JupyterCompilerPerFileService(
                     psiCell = psiCell,
                     notebookCell = virtualFile.notebookOrNull?.getCellOrNull(cellIndex),
                 )
-                accessData {
+                val receiversDeferred = accessData {
                     addNewDependencies(snippetMetadata, executedCellData)
                 }
+                // Await to ensure receivers are available before the update cycle
+                receiversDeferred?.await()
 
                 requestScriptingUpdate()
             } catch (e: Exception) {
@@ -423,10 +426,16 @@ class JupyterCompilerPerFileService(
         return lastClasspathUpdate.get()
     }
 
+    /**
+     * Adds new dependencies from the executed snippet.
+     *
+     * Returns a [Deferred] that completes when receiver classes are loaded,
+     * or `null` if there are no receiver classes to load.
+     */
     private fun addNewDependencies(
         snippetMetadata: EvaluatedSnippetMetadata,
         executedCellData: ExecutedCellData
-    ) {
+    ): Deferred<Unit>? {
         // TODO: compare text in snippet metadata with cell source and add a source file to directory and to the container
         val nextCounter = directoryCounter.incrementAndGet()
 
@@ -458,7 +467,9 @@ class JupyterCompilerPerFileService(
         val compiledClassifiers = snippetMetadata.compiledData.scripts.filterNot { it.isImplicitReceiver }
         val kClassNames = deserializer.deserializeAndSave(snippetMetadata.compiledData, lineClassesDir, lineSourcesDir)
 
-        coroutineScope.async { // perform in another thread
+        if (kClassNames.isEmpty()) return null
+
+        return coroutineScope.async {
             if (loadReceiverClassesIfAny(lineClassesDir, kClassNames)) {
                 defaultImportsEnhancer.updateDefaultImports(
                     compiledClassifiers, additionalDefaultImports
