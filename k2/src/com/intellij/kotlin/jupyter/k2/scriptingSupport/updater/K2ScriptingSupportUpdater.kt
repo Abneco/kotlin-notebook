@@ -22,6 +22,7 @@ import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.platform.backend.workspace.workspaceModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -32,7 +33,6 @@ import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionProv
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionsModificationTracker
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
-import java.util.concurrent.CancellationException
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.implicitReceivers
 
@@ -63,7 +63,6 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
             return@CoroutineExceptionHandler
         }
         LOG.warn("Exception during update k2 configuration for notebooks", e)
-        project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).onUpdateException(e)
     }
 
     override fun updateScripts() {
@@ -73,14 +72,27 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         scope.launch(exceptionHandler) {
             if (project.isDisposed) return@launch
 
-            try {
+            withUpdateNotification {
                 val updatedNotebooks = updateK2Configurations(editorManager, project)
                 requestDefinitionReloadIfNecessary()
-                project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).afterUpdate(updatedNotebooks)
-            } catch (e: CancellationException) {
-                project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).onUpdateException(e)
-                throw e
+                updatedNotebooks
             }
+        }
+    }
+
+    /**
+     * Executes [block] and notifies the [SCRIPTING_SUPPORT_TOPIC] listeners about the status
+     */
+    private inline fun withUpdateNotification(block: () -> Collection<BackedNotebookVirtualFile>?) {
+        var updateFailure: Throwable? = null
+        var updatedNotebooks: Collection<BackedNotebookVirtualFile>? = null
+        try {
+            updatedNotebooks = block()
+        } catch (t: Throwable) {
+            updateFailure = t
+            throw t
+        } finally {
+            project.messageBus.syncPublisher(SCRIPTING_SUPPORT_TOPIC).afterUpdate(updatedNotebooks, updateFailure)
         }
     }
 

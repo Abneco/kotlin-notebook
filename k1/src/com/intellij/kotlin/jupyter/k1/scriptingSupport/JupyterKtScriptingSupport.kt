@@ -50,7 +50,7 @@ class JupyterKtScriptingSupport(private val project: Project) : ScriptingSupport
     }
 
     override fun onUpdateException(exception: Exception) {
-        scriptingSupportPublisher.onUpdateException(exception)
+        scriptingSupportPublisher.afterUpdate(updateFailure = exception)
     }
 
     override fun onTrivialUpdate() {

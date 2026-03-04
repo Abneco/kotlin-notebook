@@ -17,10 +17,9 @@ interface ScriptingSupportUpdateEventsListener {
     /**
      * Allows specifying a set of notebooks for which the update was performed or null,
      * if this information is unavailable.
+     * [updateFailure] is returned in case the update has failed
      */
-    fun afterUpdate(notebooks: Collection<BackedNotebookVirtualFile>? = null)
-
-    fun onUpdateException(exception: Throwable): Unit = Unit
+    fun afterUpdate(notebooks: Collection<BackedNotebookVirtualFile>? = null, updateFailure: Throwable? = null)
 
     fun onTrivialUpdate(): Unit = Unit
 }

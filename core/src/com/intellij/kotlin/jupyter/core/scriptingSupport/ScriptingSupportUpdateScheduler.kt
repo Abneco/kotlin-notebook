@@ -18,11 +18,7 @@ class ScriptingSupportUpdateScheduler(
         project.messageBus.connect(this).subscribe(
             SCRIPTING_SUPPORT_TOPIC,
             object : ScriptingSupportUpdateEventsListener {
-                override fun afterUpdate(notebooks: Collection<BackedNotebookVirtualFile>?) {
-                    fireActionFinished()
-                }
-
-                override fun onUpdateException(exception: Throwable) {
+                override fun afterUpdate(notebooks: Collection<BackedNotebookVirtualFile>?, updateFailure: Throwable?) {
                     fireActionFinished()
                 }
 

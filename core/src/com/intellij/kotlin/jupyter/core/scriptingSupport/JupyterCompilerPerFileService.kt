@@ -589,14 +589,14 @@ class JupyterCompilerPerFileService(
             implicitReceiversClassPathData.add(snippetData)
         }
 
-        override fun afterUpdate(notebooks: Collection<BackedNotebookVirtualFile>?) {
+        override fun afterUpdate(notebooks: Collection<BackedNotebookVirtualFile>?, updateFailure: Throwable?) {
+            if (updateFailure != null) {
+                LOG.warn("Exception during scripting update: ${updateFailure.message}")
+                return
+            }
             coroutineScope.async {
                 afterUpdateImpl(notebooks)
             }
-        }
-
-        override fun onUpdateException(exception: Throwable) {
-            LOG.warn("Exception during scripting update: ${exception.message}")
         }
 
         fun clear() {
