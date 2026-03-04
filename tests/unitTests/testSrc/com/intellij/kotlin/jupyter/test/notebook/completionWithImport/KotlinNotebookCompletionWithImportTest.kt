@@ -2,22 +2,23 @@
 package com.intellij.kotlin.jupyter.test.notebook.completionWithImport
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
-import com.intellij.kotlin.jupyter.test.runners.K1Only
+import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.testFramework.TestDataPath
 import io.kotest.matchers.shouldBe
+import org.jetbrains.kotlin.psi.KtProperty
 import org.junit.Ignore
 import org.junit.Test
 
-@K1Only("Investigate failures for K2")
+@K2Only
 @TestDataPath($$"$CONTENT_ROOT/testData/notebooks/completionWithImport")
 class KotlinNotebookCompletionWithImportTest : KotlinNotebookTestCase() { // AbstractKotlinNotebookCompletionWithImportTest() {
 
     @Test(timeout = 300_000)
-    @K1Only("KTNB-829: Completion of named arguments does not work in K2")
     fun completionWithImport() = runNotebookTest {
         executeCell(0, waitForDependencies = true)
         typeAndFinishLookup("DASH") {
-            it.lookupString.contains("DASHED")
+            it.lookupString.contains("DASHED") &&
+            it.psiElement is KtProperty
         }
         currentCellContent shouldBe """
             plot {
@@ -34,14 +35,14 @@ class KotlinNotebookCompletionWithImportTest : KotlinNotebookTestCase() { // Abs
         executeCell(0, waitForDependencies = true)
         typeAndFinishLookup("fail") {
             it.lookupString == "fail" &&
-                    "fail  {...}" in it.userDataString &&
+                    "fail  {" in it.userDataString &&
                     "Assertions" !in it.userDataString
         }
         currentCellContent shouldBe """
             import org.junit.jupiter.api.fail
 
             val someVar = 123 + x
-            fail {  }id(x)
+            fail {  } id(x)
         """.trimIndent()
     }
 
@@ -51,7 +52,7 @@ class KotlinNotebookCompletionWithImportTest : KotlinNotebookTestCase() { // Abs
         executeCell(0, waitForDependencies = true)
         executeCell(1)
         typeAndFinishLookup("ai") {
-            it.lookupString == "fail" && it.userDataString.contains("fail  {...}")
+            it.lookupString == "fail" && it.userDataString.contains("fail  {")
         }
         currentCellContent shouldBe """
             import org.junit.jupiter.api.fail
@@ -65,7 +66,7 @@ class KotlinNotebookCompletionWithImportTest : KotlinNotebookTestCase() { // Abs
     fun completionOfRunBlocking() = runNotebookTest {
         executeCell(0, waitForDependencies = true)
         typeAndFinishLookup("n") {
-            it.lookupString == "runBlocking" && it.userDataString.contains("runBlocking  {...}")
+            it.lookupString == "runBlocking" && it.userDataString.contains("runBlocking  {")
         }
         currentCellContent shouldBe """
             runBlocking {  }
@@ -93,7 +94,7 @@ class KotlinNotebookCompletionWithImportTest : KotlinNotebookTestCase() { // Abs
             it.lookupString == "println"
         }
         currentCellContent shouldBe """
-            listOf(1, 2, 42).filter { it % 2 == 0 }.map { println() it.plus() }
+            listOf(1, 2, 42).filter { it % 2 == 0 }.map { println()it.plus() }
         """.trimIndent()
     }
 }
