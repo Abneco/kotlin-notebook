@@ -10,10 +10,12 @@
     libraries:
       jetbrains.kotlinx.kotlin.jupyter.ws.server:
       - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-ws-server/0/kotlin-jupyter-ws-server-0.jar
-      - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-shared-compiler/0/kotlin-jupyter-shared-compiler-0.jar
+      - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-intellij-dependencies-shared/0/kotlin-jupyter-intellij-dependencies-shared-0.jar
       - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-api/0/kotlin-jupyter-api-0.jar
       - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-lib/0/kotlin-jupyter-lib-0.jar
       - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-common-dependencies/0/kotlin-jupyter-common-dependencies-0.jar
+      - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-intellij-compiler-dependencies/0/kotlin-jupyter-intellij-compiler-dependencies-0.jar
+      - name: $MAVEN_REPOSITORY$/org/jetbrains/kotlinx/kotlin-jupyter-kernel-compiler-api/0/kotlin-jupyter-kernel-compiler-api-0.jar
       - name: $MAVEN_REPOSITORY$/com/github/ajalt/clikt/2/clikt-2.jar
 - name: lib/modules/intellij.kotlin.jupyter.debug.jar
   contentModules:

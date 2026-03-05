@@ -16,7 +16,6 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.jupyter.config.defaultRuntimeProperties
 import org.jetbrains.kotlinx.jupyter.libraries.DefaultResolutionInfoProviderFactory
 import org.jetbrains.kotlinx.jupyter.libraries.createLibraryHttpUtil
-import org.jetbrains.kotlinx.jupyter.messaging.MessageHandler
 import org.jetbrains.kotlinx.jupyter.protocol.startup.parameters.KernelConfig
 import org.jetbrains.kotlinx.jupyter.repl.ReplConfig
 import org.jetbrains.kotlinx.jupyter.repl.config.DefaultReplSettings
@@ -44,7 +43,7 @@ class EmbeddedKotlinKernelSession(
         Disposer.dispose(childrenDisposable)
     }
 
-    private fun createMessageHandler(): MessageHandler {
+    private fun createMessageHandler(): EmbeddedMessageHandler {
         val intellijDataProvider = IntellijDataProvider(currentProject = project)
         Disposer.register(childrenDisposable, intellijDataProvider)
 
@@ -81,7 +80,7 @@ class EmbeddedKotlinKernelSession(
             socketsManager,
             inMemoryResultHolder,
             kernelVersion.toMavenVersion(),
-        )
+        ).also { Disposer.register(childrenDisposable, it) }
     }
 
     /**

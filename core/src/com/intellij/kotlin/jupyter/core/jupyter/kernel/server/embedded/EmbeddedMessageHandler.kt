@@ -1,6 +1,7 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 
+import com.intellij.openapi.Disposable
 import org.jetbrains.kotlinx.jupyter.execution.JupyterExecutor
 import org.jetbrains.kotlinx.jupyter.messaging.AbstractMessageHandler
 import org.jetbrains.kotlinx.jupyter.messaging.ExecutionCounter
@@ -11,6 +12,7 @@ import org.jetbrains.kotlinx.jupyter.protocol.api.KernelLoggerFactory
 import org.jetbrains.kotlinx.jupyter.protocol.api.RawMessage
 import org.jetbrains.kotlinx.jupyter.protocol.comms.CommManagerInternal
 import org.jetbrains.kotlinx.jupyter.repl.ReplForJupyter
+import java.io.Closeable
 
 class EmbeddedMessageHandler(
     private val repl: ReplForJupyter,
@@ -19,7 +21,7 @@ class EmbeddedMessageHandler(
     private val messageFactoryProvider: MessageFactoryProvider,
     private val socketManager: JupyterServerSockets,
     private val executor: JupyterExecutor,
-) : AbstractMessageHandler() {
+) : AbstractMessageHandler(), Disposable {
     private val executionCount = ExecutionCounter(1)
 
     override fun createProcessor(message: RawMessage): MessageRequestProcessor {
@@ -33,5 +35,10 @@ class EmbeddedMessageHandler(
             loggerFactory,
             repl,
         )
+    }
+
+    override fun dispose() {
+        (repl as? Closeable)?.close()
+        executor.close()
     }
 }

@@ -21,6 +21,7 @@ class IdeReplComponentsProvider(
     commManager: CommManager,
     inMemoryHolder: InMemoryReplResultsHolder,
     private val _loggerFactory: EmbeddedKotlinKernelLoggerFactory,
+    override val compilerServiceSpiClassloader: ClassLoader,
 ) : DefaultReplComponentsProvider(
     settings,
     communicationFacility,
