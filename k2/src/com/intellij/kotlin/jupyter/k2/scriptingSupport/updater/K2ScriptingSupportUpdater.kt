@@ -156,7 +156,7 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
                 }
 
                 val storedConfiguration = NotebookScriptConfigurationsManager.getInstance(project).getKotlinScriptEntity(notebook.file)
-                    ?.configuration
+                    ?.configurationId
                     ?.let { project.workspaceModel.currentSnapshot.resolve(it) }
                     ?.data
                     ?.asCompilationConfiguration()

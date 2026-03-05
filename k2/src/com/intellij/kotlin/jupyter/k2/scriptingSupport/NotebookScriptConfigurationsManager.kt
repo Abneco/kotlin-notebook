@@ -22,7 +22,7 @@ import com.intellij.platform.workspace.storage.MutableEntityStorage
 import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.sdkId
-import org.jetbrains.kotlin.idea.core.script.k2.getOrCreateScriptConfigurationIdentity
+import org.jetbrains.kotlin.idea.core.script.k2.getOrCreateScriptConfigurationId
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntityProvider
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntity
@@ -120,7 +120,8 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
                 }
 
                 for ((file, result) in resultPerFile) {
-                    tmp.addNotebookConfiguration(
+                    addNotebookConfiguration(
+                        tmp,
                         KotlinNotebookScriptModel(
                             file,
                             result.valueOrNull() ?: continue
@@ -203,19 +204,20 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
                 model.dependencies,
                 KotlinNotebookScriptEntitySource
             ) {
-                configuration = model.configuration
+                configurationId = model.configurationId
                 sdkId = model.sdkId
             }
         }
     }
 
-    private fun MutableEntityStorage.addNotebookConfiguration(
+    private fun addNotebookConfiguration(
+        storage: MutableEntityStorage,
         notebookModuleConfiguration: KotlinNotebookScriptModel
     ) {
         fun buildLibraryDependencies(): Collection<KotlinScriptLibraryEntityId> {
             val dependencyViews = notebookModuleConfiguration.createConfigurationDependencyViews(project)
             return dependencyViews.flatMapTo(mutableSetOf()) {
-                it.getOrUpdateLibraryDependencies(project, this)
+                it.getOrUpdateLibraryDependencies(project, storage)
             }
         }
 
@@ -226,13 +228,13 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
             "Updating scripting module for notebook '${virtualFile.nameWithoutExtension}' with libraries: $libraryIds"
         }
 
-        val configurationIdentity = notebookModuleConfiguration.refinedConfiguration.configuration?.let { this.getOrCreateScriptConfigurationIdentity(it, KotlinNotebookScriptEntitySource) }
-
-        this addEntity KotlinScriptEntity(
+        storage addEntity KotlinScriptEntity(
             virtualFile.virtualFileUrl, libraryIds,
             KotlinNotebookScriptEntitySource
         ) {
-            configuration = configurationIdentity
+            configurationId = notebookModuleConfiguration.refinedConfiguration.configuration?.getOrCreateScriptConfigurationId(
+                storage,
+                KotlinNotebookScriptEntitySource)
             sdkId = notebookModuleConfiguration.refinedConfiguration.configuration?.sdkId
         }
     }
