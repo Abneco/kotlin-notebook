@@ -6,7 +6,6 @@ import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.testFramework.TestDataPath
 import io.kotest.matchers.shouldBe
 import org.jetbrains.kotlin.psi.KtProperty
-import org.junit.Ignore
 import org.junit.Test
 
 @K2Only
@@ -74,11 +73,10 @@ class KotlinNotebookCompletionWithImportTest : KotlinNotebookTestCase() { // Abs
     }
 
     @Test(timeout = 300_000)
-    @Ignore("KTNB-1240")
     fun completionOfRunBlockingWithImport() = runNotebookTest {
         executeCell(0, waitForDependencies = true)
         typeAndFinishLookup("n") {
-            it.lookupString == "runBlocking" && it.userDataString.contains("runBlocking  {...}")
+            it.lookupString == "runBlocking" && it.userDataString.contains("runBlocking  {")
         }
         currentCellContent shouldBe """
             import kotlinx.coroutines.runBlocking
