@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test
 
 import com.intellij.injected.editor.VirtualFileWindow
@@ -30,6 +30,7 @@ import com.intellij.openapi.application.impl.NonBlockingReadActionImpl.waitForAs
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
@@ -94,7 +95,9 @@ fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     return try {
         action()
     } finally {
-        Disposer.dispose(session)
+        runBlockingMaybeCancellable {
+            session.killSession()
+        }
         // make sure to drop previous data
         JupyterCompilerService.getInstance(project).remove(backedFile)
     }

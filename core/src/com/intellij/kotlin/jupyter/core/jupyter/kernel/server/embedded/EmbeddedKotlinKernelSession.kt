@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded
 
 import com.intellij.jupyter.core.jupyter.connections.execution.JupyterKernelCommunicationClient
@@ -11,7 +11,6 @@ import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersion
 import com.intellij.kotlin.jupyter.core.settings.toCanonicalString
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.jupyter.config.defaultRuntimeProperties
@@ -28,8 +27,9 @@ class EmbeddedKotlinKernelSession(
     private val kernelConfig: KernelConfig<KotlinKernelOwnParams>,
     override val sessionId: JupyterNotebookSessionId,
     private val loggerFactory: EmbeddedKotlinKernelLoggerFactory,
-    private val onMessage: (JupyterMessage) -> Unit
+    private val onMessage: (JupyterMessage) -> Unit,
 ) : JupyterKernelConnection, JupyterKernelCommunicationClient {
+    private val childrenDisposable = Disposer.newDisposable("Embedded Kotlin Kernel")
 
     private val messageHandler = createMessageHandler()
 
@@ -39,18 +39,14 @@ class EmbeddedKotlinKernelSession(
         }
     }
 
-    override fun dispose() {
-    }
 
-    override fun close() {
-        Disposer.dispose(this)
+    override suspend fun kill() {
+        Disposer.dispose(childrenDisposable)
     }
 
     private fun createMessageHandler(): MessageHandler {
-        val intellijDataProvider = IntellijDataProvider(
-            currentProject = project,
-        )
-        Disposer.register(this, intellijDataProvider)
+        val intellijDataProvider = IntellijDataProvider(currentProject = project)
+        Disposer.register(childrenDisposable, intellijDataProvider)
 
         val replConfig: ReplConfig = ReplConfig.create(
             DefaultResolutionInfoProviderFactory,
@@ -77,7 +73,7 @@ class EmbeddedKotlinKernelSession(
         )
 
         val inMemoryHolderService = InMemoryReplResultsHolderService.getInstance(project)
-        val inMemoryResultHolder = inMemoryHolderService.getOrCreateHolder(sessionId, this)
+        val inMemoryResultHolder = inMemoryHolderService.getOrCreateHolder(sessionId, childrenDisposable)
         return createEmbeddedMessageHandler(
             project,
             replSettings,
@@ -93,8 +89,7 @@ class EmbeddedKotlinKernelSession(
      * In fact, in embedded mode the message is processed in the same thread synchronously.
      * That's why we should never do this on EDT: it would lead to UI freezes.
      */
-    @RequiresBackgroundThread
-    private fun doSend(content: JupyterMessage) {
+    private suspend fun doSend(content: JupyterMessage) = withContext(Dispatchers.Default) {
         content.asRawMessage { rawMessage, socketType ->
             messageHandler.handleMessage(socketType, rawMessage)
         }

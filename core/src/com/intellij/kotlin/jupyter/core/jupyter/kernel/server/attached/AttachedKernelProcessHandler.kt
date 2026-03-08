@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.kernel.server.attached
 
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterNotebookSessionId
@@ -33,7 +33,7 @@ class AttachedKernelProcessHandler(
         )
     }
 
-    override fun dispose() {
+    override suspend fun kill() {
         val event = AttachedKernelEvent(this)
         notifyTerminatedAndDispose(event)
     }

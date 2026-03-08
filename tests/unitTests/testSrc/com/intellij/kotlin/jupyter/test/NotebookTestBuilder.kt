@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.test
 
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -40,6 +40,7 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
@@ -130,7 +131,9 @@ class NotebookTestBuilder(
 
     }
     private val jupyterSessionCleanup = {
-        jupyterSession?.let { Disposer.dispose(it) }
+        runBlockingMaybeCancellable {
+            jupyterSession?.killSession()
+        }
         // make sure to drop previous data
         JupyterCompilerService.getInstance(project).remove(notebookBackedFile)
     }

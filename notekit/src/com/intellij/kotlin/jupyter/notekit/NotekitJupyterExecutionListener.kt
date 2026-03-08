@@ -15,7 +15,7 @@ import com.intellij.openapi.util.Disposer
 class NotekitJupyterExecutionListener : JupyterExecutionListener {
     override suspend fun sessionCreated(session: JupyterNotebookSession) {
         val handler = NotekitCommHandler(session)
-        Disposer.register(session, handler)
+        Disposer.register(session.childrenDisposable, handler)
 
         // Register the handler with the session client
         session.internalClient.commManager.registerCommHandler(handler)

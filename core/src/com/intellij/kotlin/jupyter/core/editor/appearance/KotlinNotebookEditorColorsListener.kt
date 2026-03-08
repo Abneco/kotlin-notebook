@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.editor.appearance
 
 import com.intellij.concurrency.ConcurrentCollectionFactory
@@ -32,7 +32,7 @@ internal class KotlinNotebookEditorColorsListener : JupyterThemeChangedListener 
         applyColorSchemeToKernel(editor, session)
     }
 
-    private suspend fun applyColorSchemeToKernel(editor: Editor, session: JupyterNotebookSession?,) {
+    private suspend fun applyColorSchemeToKernel(editor: Editor, session: JupyterNotebookSession?) {
         session ?: return
         val notebookFile = editor.notebookFileOrNull ?: return
         val project = editor.project ?: return
@@ -54,7 +54,7 @@ internal class KotlinNotebookEditorColorsListener : JupyterThemeChangedListener 
     ): ColorScheme? {
         val id = session.sessionId
         val theme = sessionToTheme.getOrPut(id) {
-            Disposer.register(session) {
+            Disposer.register(session.childrenDisposable) {
                 sessionToTheme.remove(id)
             }
             AtomicReference(null)
