@@ -94,11 +94,11 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
         }
 
         val configurations = buildMap<VirtualFile, ScriptCompilationConfigurationResult> {
-            for (ktScript in scripts) {
-                val virtualFile = ktScript.virtualFile
+            for (scriptModel in scripts) {
+                val virtualFile = scriptModel.virtualFile
                 val topLevelFile = virtualFile.topLevelFile ?: continue
 
-                val configurationWrapper = ktScript.refinedConfiguration.with {
+                val configurationWrapper = scriptModel.refinedConfiguration.with {
                     if (sdkHomePath != null) {
                         jvm.jdkHome(File(sdkHomePath))
                     }

@@ -14,7 +14,7 @@ import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.with
 import kotlin.script.experimental.util.PropertiesCollection
 
-internal val Project.baseScriptingCompilationConfiguration: ScriptCompilationConfiguration
+val Project.baseScriptingCompilationConfiguration: ScriptCompilationConfiguration
     get() = JupyterCompilerService.getInstance(this).scriptDefinitionsWrapper.scriptDefinitionData.compilationConfiguration
 
 val SerializedCompiledScript.classFQN: String

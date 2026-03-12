@@ -8,6 +8,7 @@ import com.intellij.kotlin.jupyter.core.ide.handlers.UpdaterConstructorData
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerPerFileService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
+import com.intellij.kotlin.jupyter.core.scriptingSupport.baseScriptingCompilationConfiguration
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.notebookScriptDefinitionWrapper
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
@@ -33,6 +34,7 @@ import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionProv
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionsModificationTracker
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper
+import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.implicitReceivers
 
@@ -149,54 +151,38 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         val notebookNames = notebooks.joinToString(", ") { it.file.name }
         LOG.debug("Performing update for notebooks: $notebookNames")
 
-        val scripts = mutableMapOf<KotlinNotebookScriptModel, KtFile>()
+        val scripts = mutableSetOf<KotlinNotebookScriptModel>()
         for (notebook in notebooks) {
-            val notebookService = JupyterCompilerService.getForFile(project, notebook)
-            val perFileScripts = readAction {
-                val scriptToRefine = notebookService.getFilesToRefine().firstOrNull { it.virtualFile.isValid }
-                if (scriptToRefine == null) {
-                    return@readAction null
-                }
+            val refinedConfiguration = notebook.getRefinedConfiguration()
+            val virtualFile = notebook.file
 
-                // refine only once as they are the same per notebook
-                val refinedConfiguration = try {
-                    val anyKtFile = scriptToRefine.ktFile
-                    JupyterCompilerPerFileService.getConfiguration(anyKtFile)?.configuration!!
-                } catch (e: Throwable) {
-                    throw e
-                }
-
-                /**
-                 * Refined configuration contains only checked receivers from [JupyterCompilerPerFileService].
-                 */
-                val stableClasses = refinedConfiguration[ScriptCompilationConfiguration.implicitReceivers]
-                LOG.debug {
-                    "Stable implicit receivers for notebook '${notebook.file.name}': ${stableClasses?.map { it.typeName }}"
-                }
-
-                val storedConfiguration = NotebookScriptConfigurationsManager.getInstance(project).getKotlinScriptEntity(notebook.file)
-                    ?.configurationId
-                    ?.let { project.workspaceModel.currentSnapshot.resolve(it) }
-                    ?.data
-                    ?.asCompilationConfiguration()
-
-                // skip if exists
-                if (storedConfiguration == refinedConfiguration) {
-                    return@readAction null
-                }
-
-                KotlinNotebookScriptModel(
-                    scriptToRefine.virtualFile,
-                    ScriptCompilationConfigurationWrapper(
-                        scriptToRefine,
-                        refinedConfiguration
-                    )
-                ) to scriptToRefine.ktFile
+            /**
+             * Refined configuration contains only checked receivers from [JupyterCompilerPerFileService].
+             */
+            val stableClasses = refinedConfiguration[ScriptCompilationConfiguration.implicitReceivers]
+            LOG.debug {
+                "Stable implicit receivers for notebook '${virtualFile.name}': ${stableClasses?.map { it.typeName }}"
             }
 
-            if (perFileScripts != null) {
-                scripts[perFileScripts.first] = perFileScripts.second
+            val storedConfiguration = NotebookScriptConfigurationsManager.getInstance(project).getKotlinScriptEntity(notebook.file)
+                ?.configurationId
+                ?.let { project.workspaceModel.currentSnapshot.resolve(it) }
+                ?.data
+                ?.asCompilationConfiguration()
+
+            // skip if exists
+            if (storedConfiguration == refinedConfiguration) {
+                continue
             }
+
+            val scriptModel = KotlinNotebookScriptModel(
+                virtualFile,
+                ScriptCompilationConfigurationWrapper(
+                    VirtualFileScriptSource(virtualFile),
+                    refinedConfiguration
+                )
+            )
+            scripts += scriptModel
         }
 
         if (scripts.isEmpty()) {
@@ -204,6 +190,25 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
             return
         }
 
-        project.serviceAsync<NotebookScriptConfigurationsManager>().updateConfigurations(scripts.keys)
+        project.serviceAsync<NotebookScriptConfigurationsManager>().updateConfigurations(scripts)
+    }
+
+    private suspend fun BackedNotebookVirtualFile.getRefinedConfiguration(): ScriptCompilationConfiguration {
+        val compilerService = JupyterCompilerService.getForFile(project, this)
+        val scriptToRefine = readAction {
+            compilerService.getFilesToRefine().firstOrNull { it.virtualFile.isValid }
+        }
+        if (scriptToRefine == null) {
+            return compilerService.handleBeforeCompilingAsync(project.baseScriptingCompilationConfiguration)
+        }
+
+        // refine only once as they are the same per notebook
+        val refinedConfiguration = try {
+            val anyKtFile = scriptToRefine.ktFile
+            JupyterCompilerPerFileService.getConfiguration(anyKtFile)?.configuration!!
+        } catch (e: Throwable) {
+            throw e
+        }
+        return refinedConfiguration
     }
 }
