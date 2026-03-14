@@ -206,6 +206,8 @@ jvm_library(
     "//ruby/database:database-tests_test_lib",
     "//contrib/qodana:qodana-core-tests",
     "//contrib/qodana:qodana-core-tests_test_lib",
+    "@community//notebooks/visualization:visualization-tests",
+    "@community//notebooks/visualization:visualization-tests_test_lib",
   ],
   runtime_deps = [
     ":kotlin-jupyter-tests",
