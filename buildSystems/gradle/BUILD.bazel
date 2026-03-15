@@ -39,3 +39,9 @@ jvm_library(
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.buildSystems.gradle` end
+
+### auto-generated section `iml intellij.kotlin.jupyter.buildSystems.gradle` start
+exports_files([
+  "intellij.kotlin.jupyter.buildSystems.gradle.iml",
+], visibility = ["//visibility:public"])
+### auto-generated section `iml intellij.kotlin.jupyter.buildSystems.gradle` end

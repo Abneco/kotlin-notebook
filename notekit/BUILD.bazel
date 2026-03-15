@@ -57,3 +57,9 @@ jvm_library(
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.notekit` end
+
+### auto-generated section `iml intellij.kotlin.jupyter.notekit` start
+exports_files([
+  "intellij.kotlin.jupyter.notekit.iml",
+], visibility = ["//visibility:public"])
+### auto-generated section `iml intellij.kotlin.jupyter.notekit` end

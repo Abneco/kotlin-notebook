@@ -29,3 +29,9 @@ jvm_library(
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.build` end
+
+### auto-generated section `iml intellij.kotlin.jupyter.build` start
+exports_files([
+  "intellij.kotlin.jupyter.build.iml",
+], visibility = ["//visibility:public"])
+### auto-generated section `iml intellij.kotlin.jupyter.build` end

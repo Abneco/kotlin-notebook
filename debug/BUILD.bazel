@@ -112,3 +112,9 @@ jvm_library(
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.debug` end
+
+### auto-generated section `iml intellij.kotlin.jupyter.debug` start
+exports_files([
+  "intellij.kotlin.jupyter.debug.iml",
+], visibility = ["//visibility:public"])
+### auto-generated section `iml intellij.kotlin.jupyter.debug` end

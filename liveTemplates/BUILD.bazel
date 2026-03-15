@@ -52,3 +52,9 @@ jvm_library(
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.liveTemplates` end
+
+### auto-generated section `iml intellij.kotlin.jupyter.liveTemplates` start
+exports_files([
+  "intellij.kotlin.jupyter.liveTemplates.iml",
+], visibility = ["//visibility:public"])
+### auto-generated section `iml intellij.kotlin.jupyter.liveTemplates` end
