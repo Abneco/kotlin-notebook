@@ -18,7 +18,5 @@
     <extensions defaultExtensionNs="com.intellij">
         <registryKey key="kotlin.notebook.sqlCells.enabled" defaultValue="false"
                      description="When enabled, it is possible add and run SQL-Cells in Kotlin Notebooks"/>
-         <jupyter.core.editor.notebookEditorCreatedCallback
-                 implementation="com.intellij.kotlin.jupyter.sql.KotlinSqlNotebookCreatedListener"/>
     </extensions>
 </idea-plugin>
