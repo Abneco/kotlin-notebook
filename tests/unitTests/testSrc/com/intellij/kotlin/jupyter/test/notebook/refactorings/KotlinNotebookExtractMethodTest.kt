@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.test.notebook.refactorings
 
 import com.intellij.codeInsight.template.impl.TemplateManagerImpl
-import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.openapi.editor.CaretState
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.testFramework.TestDataPath
@@ -13,7 +12,6 @@ import org.junit.Test
 class KotlinNotebookExtractMethodTest : RefactoringTestBase("ExtractFunction") {
 
     @Test
-    @K2Only("KTNB-1391")
     fun testExtractPair() = doTest { caretModel ->
         val selStart = LogicalPosition(2, 4)
         val selEnd = LogicalPosition(3, 21)

@@ -12,28 +12,23 @@ import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputComp
 import com.intellij.jupyter.core.kernel.executor.JupyterTaskBaseCallback
 import com.intellij.kotlin.jupyter.core.jupyter.actions.CreateNotebookFactory
 import com.intellij.kotlin.jupyter.core.language.emptyNotebookTemplate
-import com.intellij.kotlin.jupyter.core.language.meta.psi.JKTMetaPSIFile
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
-import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.kotlin.jupyter.test.notebook.execution.KotlinNotebookExecutionBaseTestCase
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessages
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesBuilder
 import com.intellij.kotlin.jupyter.test.notebook.execution.ReceivedMessagesTester
-import com.intellij.lang.javascript.psi.JSFile
 import com.intellij.notebooks.visualization.NotebookCellLines
 import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
 import com.intellij.notebooks.visualization.outputs.NotebookOutputComponentFactory
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.PathManager
-import com.intellij.openapi.application.impl.NonBlockingReadActionImpl.waitForAsyncTaskCompletion
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.runReadActionBlocking
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
@@ -41,9 +36,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.util.descendantsOfType
 import com.intellij.testFramework.HeavyTestHelper
 import com.intellij.testFramework.IndexingTestUtil
-import com.intellij.testFramework.PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import com.intellij.testFramework.runInEdtAndWait
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
@@ -53,9 +46,6 @@ import kotlinx.serialization.json.encodeToStream
 import org.jetbrains.jupyter.builder.NotebookBuilder
 import org.jetbrains.jupyter.builder.buildNotebook
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
-import org.jetbrains.kotlin.idea.core.script.k1.configuration.DefaultScriptingSupport
-import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterFile
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import org.jetbrains.plugins.notebooks.tests.awaitBlocking
 import java.nio.file.Path
@@ -76,15 +66,7 @@ fun PsiFile.getCells(): List<JupyterPsiCell> = descendantsOfType<JupyterPsiCell>
 
 val defaultTestDuration = 3.minutes
 
-val currentKotlinPluginMode: KotlinPluginMode
-    get() {
-        val vmValue = System.getProperty("idea.kotlin.plugin.use.k1") ?: return KotlinPluginMode.K2
-
-        return when (vmValue) {
-            "true" -> KotlinPluginMode.K1
-            else -> KotlinPluginMode.K2
-        }
-    }
+val currentKotlinPluginMode: KotlinPluginMode = KotlinPluginMode.K2
 
 fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     val project = notebookFile.project
@@ -188,7 +170,7 @@ fun <R> withDisabledJcef(action: () -> R): R {
 
 fun Project.createEmptyNotebook(name: String, testRootDisposable: Disposable): BackedNotebookVirtualFile {
     val projectBaseDir = HeavyTestHelper.getOrCreateProjectBaseDir(this)
-    val directoryPsiFile = runReadAction { PsiManager.getInstance(this).findDirectory(projectBaseDir)!! }
+    val directoryPsiFile = runReadActionBlocking { PsiManager.getInstance(this).findDirectory(projectBaseDir)!! }
 
     val notebookTemplate = directoryPsiFile.project.emptyNotebookTemplate
     val psiFile = CreateNotebookFactory.createFileFromTemplate(
@@ -220,43 +202,6 @@ fun waitForReadyIndexes(fixture: CodeInsightTestFixture) {
     DumbService.getInstance(fixture.project).waitForSmartMode()
 }
 
-fun PsiFile.getKtFiles(): List<KtFile>? = when (val psiFile = this) {
-    is KtFile -> {
-        listOf(psiFile)
-    }
-    is JupyterFile -> {
-        runReadAction { psiFile.getInjectedKtFiles() }
-    }
-    is JKTMetaPSIFile, is JSFile -> {
-        // Additional known files that can also be injected
-        null
-    }
-    else -> {
-        error("Only KtFiles are expected, file passed: ${psiFile}")
-    }
-}
-
-/**
- * In production code, we make sure configurations are warmed up during the highlighting.
- * This is especially important for K1 mode
- */
-fun ensureScriptConfigurations(fixture: CodeInsightTestFixture) {
-    val ktFiles = fixture.file?.getKtFiles() ?: return
-
-    runInEdtAndWait {
-        IndexingTestUtil.waitUntilIndexesAreReady(fixture.project)
-        runReadAction {
-            for (file in ktFiles) {
-                DefaultScriptingSupport.getInstance(fixture.project)
-                    .getOrLoadConfiguration(file.virtualFile, null)
-            }
-        }
-
-        dispatchAllInvocationEventsInIdeEventQueue()
-        waitForAsyncTaskCompletion()
-    }
-}
-
 enum class LookupFinishMode(val completionChar: Char) {
     ENTER('\n'),
     TAB('\t');
@@ -272,4 +217,3 @@ fun buildKotlinNotebookFile(name: String, build: NotebookBuilder.() -> Unit): Pa
     }
     return notebookFile.toPath()
 }
-

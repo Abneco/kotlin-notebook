@@ -5,18 +5,11 @@ import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener.UpdateState
-import com.intellij.kotlin.jupyter.test.ScriptingUpdateMode.FileAgnostic
-import com.intellij.kotlin.jupyter.test.ScriptingUpdateMode.NotebookFileFocused
-import com.intellij.kotlin.jupyter.test.scripting.PostScriptingUpdateKotlinModeAwareHandler
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
-import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.takeWhile
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration
@@ -64,9 +57,9 @@ class TestNotebookScriptsDependenciesUpdater(
     /**
      * Processes events about scripts changes after updates.
      * Each [UpdateState.COMPLETE] update decrement needed [scriptingUpdatesLeft] counter.
-     * If update was [UpdateState.INCOMPLETE], yet new iteration is required.
+     * If update was not [UpdateState.COMPLETE], yet new iteration is required.
      */
-    inner class ScriptingUpdateListener() : NotebookScriptsStateListener {
+    inner class ScriptingUpdateListener : NotebookScriptsStateListener {
         override fun scriptsConfigurationUpdated(
             file: BackedNotebookVirtualFile,
             updateState: UpdateState
@@ -108,7 +101,7 @@ class TestNotebookScriptsDependenciesUpdater(
     /**
      * Performs scripting updates and waits for their completion.
      */
-    suspend fun setUpDependenciesSynchronously(testFixture: CodeInsightTestFixture) {
+    suspend fun setUpDependenciesSynchronously() {
         try {
             scriptingUpdatesLeft.set(cellsToExecute)
 
@@ -119,11 +112,6 @@ class TestNotebookScriptsDependenciesUpdater(
                     .collect {
                         LOG.debug("Dependency update is not completed yet. Waiting for next update")
                     }
-            }
-
-            // Index is up to date, invoke post-handler
-            withContext(Dispatchers.EDT) {
-                PostScriptingUpdateKotlinModeAwareHandler.afterScriptingUpdate(testFixture)
             }
         } catch (ex: Exception) {
             LOG.warn("Exception while updating dependencies", ex)

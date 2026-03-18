@@ -10,7 +10,7 @@ import com.intellij.modcommand.ModCommand
 import com.intellij.modcommand.ModCommandAction
 import com.intellij.modcommand.ModCommandExecutor
 import com.intellij.openapi.application.impl.NonBlockingReadActionImpl
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.runReadActionBlocking
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.util.concurrency.annotations.RequiresEdt
@@ -29,7 +29,7 @@ import org.jetbrains.kotlin.idea.util.application.executeWriteCommand
 import org.jetbrains.kotlin.psi.KtFile
 
 /**
- * Helper class which encapsulates dedicated logic for invoking intentions.
+ * Helper class that encapsulates dedicated logic for invoking intentions.
  */
 class IntentionInvocationHandler(
     private val testFixture: CodeInsightTestFixture
@@ -47,7 +47,7 @@ class IntentionInvocationHandler(
      * Invoke the intention specified by the special directive syntax at the top of the file.
      * If no directive is found, an error is thrown.
      *
-     * Each file only supports one directive, which has be in one of the below formats:
+     * Each file only supports one directive, which has to be in one of the below formats:
      *
      * ```
      * // QUICK_FIX: <fullyQualifiedNameOfIntention>
@@ -63,7 +63,7 @@ class IntentionInvocationHandler(
      * ```
      */
     fun invokeIntentionsInFile(ktFile: KtFile) {
-        val injectionTest = runReadAction { ktFile.text }
+        val injectionTest = runReadActionBlocking { ktFile.text }
 
         val project = testFixture.project
         val editor = testFixture.editor
@@ -83,7 +83,7 @@ class IntentionInvocationHandler(
             @OptIn(KaImplementationDetail::class)
             KaAnalysisPermissionRegistry.getInstance()::isAnalysisAllowedOnEdt
                 .setUntilDisposed(testFixture.testRootDisposable, true)
-            val applicableActions = runReadAction {
+            val applicableActions = runReadActionBlocking {
                 allIntentions.filter { it.isAvailable(project, editor, testFixture.file) }
             }
             applicableActions.size shouldNotBe 0
@@ -107,7 +107,7 @@ class IntentionInvocationHandler(
      */
     @RequiresEdt
     fun invokeIntention(ktFile: KtFile, intention: IntentionAction) {
-        val isAvailable = runReadAction {
+        val isAvailable = runReadActionBlocking {
             intention.isAvailable(testFixture.project, testFixture.editor, ktFile)
         }
         if (!isAvailable) {
@@ -144,7 +144,7 @@ class IntentionInvocationHandler(
 
         return startingComments.mapNotNull {
             val fqn = it.removePrefix(INTENTIONS_DIRECTIVE_PREFIX)
-            // try to create an intention from fqn or fallback to quickFix registrar
+            // try to create an intention from fqn or fall back to quickFix registrar
             createIntention(fqn) ?: availableFromQuickFixes.firstOrNull { intentionAction ->
                 intentionAction.actionFqn() == fqn
             }
@@ -162,7 +162,7 @@ class IntentionInvocationHandler(
                 .removePrefix("\"")
                 .removeSuffix("\"")
 
-            availableIntentions.firstOrNull() { action ->
+            availableIntentions.firstOrNull { action ->
                 action.text.startsWith(intentDescription)
             } ?: error("Intention from description was not found: $intentDescription")
         }
@@ -215,7 +215,7 @@ class IntentionInvocationHandler(
                 val actionContext = ActionContext.from(editor, file)
 
                 val command: ModCommand = project.computeOnBackground {
-                    runReadAction {
+                    runReadActionBlocking {
                         modCommandAction.perform(actionContext)
                     }
                 }
@@ -225,5 +225,4 @@ class IntentionInvocationHandler(
             }
         }
     }
-
 }

@@ -14,7 +14,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.runInEdtAndWait
-import com.intellij.kotlin.jupyter.test.runners.K2Only
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveAtLeastSize
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -87,7 +86,6 @@ class KotlinNotebookConverterLanguageSupportTest : KotlinNotebookTestCase() {
     }
 
     @Test
-    @K2Only("KTNB-883: K1 semantic highlighting returns different results")
     @TestMetadata("directHighlights.ktnb")
     fun `direct semantic highlights collection should correctly identify symbol types`() = runNotebookTest(setupScriptDependencies = true) {
         val code = backedNotebookFile.notebook.getCell(0).source

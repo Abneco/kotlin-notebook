@@ -2,13 +2,11 @@
 package com.intellij.kotlin.jupyter.test.notebook.completionWithImport
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
-import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.testFramework.TestDataPath
 import io.kotest.matchers.shouldBe
 import org.jetbrains.kotlin.psi.KtProperty
 import org.junit.Test
 
-@K2Only
 @TestDataPath($$"$CONTENT_ROOT/testData/notebooks/completionWithImport")
 class KotlinNotebookCompletionWithImportTest : KotlinNotebookTestCase() { // AbstractKotlinNotebookCompletionWithImportTest() {
 

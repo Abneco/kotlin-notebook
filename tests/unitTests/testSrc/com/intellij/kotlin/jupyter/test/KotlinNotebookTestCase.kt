@@ -19,7 +19,7 @@ import com.intellij.notebooks.ui.editor.actions.command.mode.setMode
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.application.invokeAndWaitIfNeeded
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.runReadActionBlocking
 import com.intellij.openapi.diagnostic.LogLevel
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.projectRoots.ProjectJdkTable
@@ -60,7 +60,6 @@ import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
 import org.jetbrains.plugins.notebooks.tests.cleanJupyterUserData
 import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
 import org.jetbrains.plugins.notebooks.tests.withSwingMarkdownRenderMode
-import org.junit.Assume
 import org.junit.Rule
 import org.junit.rules.DisableOnDebug
 import org.junit.rules.TestRule
@@ -111,14 +110,7 @@ abstract class KotlinNotebookTestCase :
     private var notebookRunner: NotebookTestBuilder? = null
     override lateinit var originalVirtualFile: VirtualFile
 
-    override val pluginMode: KotlinPluginMode
-        get() {
-            val vmValue = System.getProperty("idea.kotlin.plugin.use.k1") ?: return KotlinPluginMode.K2
-            return when (vmValue) {
-                "true" -> KotlinPluginMode.K1
-                else -> KotlinPluginMode.K2
-            }
-        }
+    override val pluginMode: KotlinPluginMode = KotlinPluginMode.K2
 
     protected val backedNotebookFile: BackedNotebookVirtualFile
         get() = when (val file = myFixture.kotlinNotebookFile) {
@@ -148,6 +140,7 @@ abstract class KotlinNotebookTestCase :
             } catch (e: Throwable) {
                 addSuppressedException(e)
             } finally {
+                @Suppress("MoveLambdaOutsideParentheses")
                 listOf(
                     { super.tearDown() },
                     // Uncomment for testing project leak. See KTNB-527.
@@ -311,7 +304,7 @@ abstract class KotlinNotebookTestCase :
         } else null
         val updater = TestNotebookScriptsDependenciesUpdater(project, fileOrNull, cellEstimation, testCaseDisposable)
         runBlocking {
-            updater.setUpDependenciesSynchronously(myFixture)
+            updater.setUpDependenciesSynchronously()
         }
         waitForReadyIndexes(myFixture)
         Disposer.dispose(testCaseDisposable)
@@ -322,7 +315,7 @@ abstract class KotlinNotebookTestCase :
     }
 
     protected fun assertTestFileHasCaret() {
-        val rawText = FileUtilRt.loadFile(getTestFile().toFile(), true)
+        val rawText = getTestFile().readText()
         assertTrue("\"<caret>\" is missing in file \"${file.name}\"", rawText.contains("<caret>"))
     }
 
@@ -333,8 +326,9 @@ abstract class KotlinNotebookTestCase :
         test: suspend NotebookTestBuilder.() -> Unit,
     ) {
 
-        // Ideally this should be in setUp(), but moving the code causes
-        // a DocumentListener leak on test teardown. It is unclear why.
+        // Ideally, this should be in `setUp()`, but moving the code causes
+        // a DocumentListener leak on the test teardown.
+        // It is unclear why.
         setUpWithKotlinPlugin { /* Do nothing */ }
         Disposer.register(testRootDisposable, JupyterServers.getInstance())
 
@@ -382,7 +376,7 @@ abstract class KotlinNotebookTestCase :
             FileDocumentManager.getInstance().saveAllDocuments()
         }
 
-        val notebookFile = runReadAction {
+        val notebookFile = runReadActionBlocking {
             FileContextUtil.getFileContext(myFixture.file)?.containingFile ?: myFixture.file
         }
         // since JDK is considered as a module dependency in K2, it should be provided in the project

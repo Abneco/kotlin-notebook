@@ -4,7 +4,6 @@ package com.intellij.kotlin.jupyter.test.notebook.highlighting
 import com.intellij.kotlin.jupyter.core.util.getElementTextRangeInHost
 import com.intellij.kotlin.jupyter.test.HighlightCheckStrategy
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
-import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.application.readAction
 import com.intellij.testFramework.TestDataPath
@@ -37,20 +36,17 @@ class NotebookBaseHighlightingTest: KotlinNotebookTestCase() {
         runHighlighting().assertHighlightResult(HighlightCheckStrategy.OnlyValidSyntax)
     }
 
-    @K2Only("This fails on K1 for unknown reasons")
     @Test
     fun withShadowedUnresolved() = runNotebookTest {
         runHighlighting().assertHighlightResult(HighlightCheckStrategy.ShadowedErrors)
     }
 
     @Test
-    @K2Only("JDK setup is special for K2 mode")
     @Ignore("KTNB-1119")
     fun jdkTest() = runNotebookTest {
         runHighlighting().assertHighlightResult(HighlightCheckStrategy.OnlyValidSyntax)
     }
 
-    @K2Only("This fails on K1 for unknown reasons")
     @Test
     fun resolvedAfterExecution() = runNotebookTest {
         runHighlighting().assertHighlightResult(HighlightCheckStrategy.ShadowedErrors)
@@ -73,7 +69,6 @@ class NotebookBaseHighlightingTest: KotlinNotebookTestCase() {
     /**
      * Note: this test does not check the correctness of visual placement of the fix hint
      */
-    @K2Only("This fails on K1 for unknown reasons")
     @Test
     fun importFixRangeAlignedWithElement() = runNotebookTest {
         val elementTextRangeInHost = readAction {

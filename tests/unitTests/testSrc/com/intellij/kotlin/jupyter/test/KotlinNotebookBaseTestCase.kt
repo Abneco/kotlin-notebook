@@ -123,7 +123,7 @@ abstract class KotlinNotebookBaseTestCase :
         } else null
         val updater = TestNotebookScriptsDependenciesUpdater(project, fileOrNull, cellEstimation, testCaseDisposable)
         runBlocking {
-            updater.setUpDependenciesSynchronously(myFixture)
+            updater.setUpDependenciesSynchronously()
         }
         waitForReadyIndexes(myFixture)
 

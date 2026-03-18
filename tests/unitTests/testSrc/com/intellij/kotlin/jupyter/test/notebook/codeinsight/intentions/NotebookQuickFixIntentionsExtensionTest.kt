@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.test.notebook.codeinsight.intentions
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
-import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.testFramework.TestDataPath
 import io.kotest.matchers.shouldBe
 import org.junit.Rule
@@ -11,7 +10,6 @@ import org.junit.rules.DisableOnDebug
 import org.junit.rules.TestRule
 import org.junit.rules.Timeout
 
-@K2Only
 @TestDataPath($$"$CONTENT_ROOT/testData/notebooks/codeinsight/quickfix/extensions")
 class NotebookQuickFixIntentionsExtensionTest : KotlinNotebookTestCase() {
     @get:Rule

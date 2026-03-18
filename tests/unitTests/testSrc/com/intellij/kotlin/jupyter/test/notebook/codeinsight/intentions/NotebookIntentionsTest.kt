@@ -3,14 +3,12 @@ package com.intellij.kotlin.jupyter.test.notebook.codeinsight.intentions
 
 import com.intellij.codeInsight.template.impl.TemplateManagerImpl
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
-import com.intellij.kotlin.jupyter.test.runners.K2Only
 import com.intellij.kotlin.jupyter.test.runners.RunModeAwareTest
 import com.intellij.testFramework.TestDataPath
 import io.kotest.matchers.string.shouldContain
 import org.junit.Ignore
 import org.junit.Test
 
-@K2Only("Testing only actual mode")
 @RunModeAwareTest
 @TestDataPath($$"$CONTENT_ROOT/testData/notebooks/codeinsight")
 class NotebookIntentionsTest : KotlinNotebookTestCase() {
