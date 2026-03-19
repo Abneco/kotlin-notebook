@@ -9,6 +9,7 @@ resourcegroup(
 
 jvm_library(
   name = "perfTests",
+  module_name = "intellij.kotlin.jupyter.perfTests",
   visibility = ["//visibility:public"],
   srcs = glob([], allow_empty = True)
 )
