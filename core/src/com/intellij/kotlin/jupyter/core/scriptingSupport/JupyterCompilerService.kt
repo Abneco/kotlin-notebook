@@ -4,8 +4,6 @@ package com.intellij.kotlin.jupyter.core.scriptingSupport
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
-import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
-import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider
@@ -16,9 +14,7 @@ import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.lang.Language
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.components.serviceOrNull
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -201,18 +197,8 @@ class JupyterCompilerService(
         this
     )
 
-    private fun removeRuntimeDependenciesFromIndex() {
-        if (project.isDisposed) return
-        val indexService = project.serviceOrNull<KotlinNotebookPermanentIndexService>() ?: return
-        val paths = KotlinNotebookMavenArtifacts.all().mapTo(HashSet()) {
-            it.artifact
-        }
-        indexService.removeFromPermanentIndex(paths)
-    }
-
     override fun dispose() {
         super.dispose()
-        removeRuntimeDependenciesFromIndex()
     }
 
     companion object {

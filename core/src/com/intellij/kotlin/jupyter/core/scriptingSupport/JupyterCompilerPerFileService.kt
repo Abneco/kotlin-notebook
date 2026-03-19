@@ -9,7 +9,6 @@ import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.notifications.notebookNotifications
 import com.intellij.kotlin.jupyter.core.projectModel.JupyterKotlinProjectArtifactsService
 import com.intellij.kotlin.jupyter.core.projectModel.JupyterKotlinProjectArtifactsService.Companion.buildProjectAndGetLibraries
-import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
 import com.intellij.kotlin.jupyter.core.projectModel.showKernelAndModuleJdkAreMatchingWarningIfNeeded
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifacts
 import com.intellij.kotlin.jupyter.core.resources.KotlinNotebookMavenArtifactsDownloader
@@ -311,8 +310,6 @@ class JupyterCompilerPerFileService(
         }
 
         val kernelArtifactPaths = jars.map { it.absolutePathString() }
-        KotlinNotebookPermanentIndexService.getInstance(project)
-            .addToPermanentIndex(kernelArtifactPaths, sourcesJars.map { it.absolutePathString() })
         kernelArtifactPaths.updateLastClasspathArtifact()
 
         return jars.isNotEmpty() || sourcesJars.isNotEmpty()
@@ -444,7 +441,6 @@ class JupyterCompilerPerFileService(
 
         val lineSourcesDir = classesDir.resolve("sources_$nextCounter")
 
-        KotlinNotebookPermanentIndexService.getInstance(project).addToPermanentIndex(snippetMetadata.newClasspath, snippetMetadata.newSources)
         _currentClasspath.addSnippetFromData(snippetMetadata.newClasspath.map { Path.of(it) }, lineClassesDir)
         _sourceRoots.addSnippetFromData(snippetMetadata.newSources.map { Path.of(it) }, lineSourcesDir)
         additionalDefaultImports.addSnippet(snippetMetadata.newImports)

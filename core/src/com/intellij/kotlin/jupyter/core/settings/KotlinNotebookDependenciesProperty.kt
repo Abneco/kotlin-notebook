@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.TextNode
 import com.intellij.jupyter.core.jupyter.nbformat.JupyterNotebook
 import com.intellij.jupyter.core.jupyter.nbformat.notifyNotebookChanged
-import com.intellij.kotlin.jupyter.core.projectModel.KotlinNotebookPermanentIndexService
 import com.intellij.kotlin.jupyter.core.projectModel.extensions.KotlinNotebookSessionLibrariesFilter
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.module.Module
@@ -158,7 +157,7 @@ internal fun getSuitableModules(project: Project): Iterable<Module> {
 
 /**
  * Returns a list of libraries from the given project that are suitable for use in a Kotlin Notebook.
- * This list excludes "Permanent Script Dependencies", special libraries with backend artifacts and unnamed libraries
+ * This list excludes special libraries with backend artifacts and unnamed libraries
  * (technically, a module-level library can have an empty name).
  *
  * @param project the project to get the libraries for.
@@ -169,7 +168,7 @@ internal fun getSuitableLibraries(project: Project): List<Library> {
         .getLibraryTable(project).libraries
 
     val librariesCandidates = projectLibraries.filter {
-        it.name != KotlinNotebookPermanentIndexService.SCRIPT_DEPENDENCIES_LIBRARY_NAME && it.name != null
+        it.name != null
     }
     return KotlinNotebookSessionLibrariesFilter.filterSessionLibraries(project, librariesCandidates)
 }
