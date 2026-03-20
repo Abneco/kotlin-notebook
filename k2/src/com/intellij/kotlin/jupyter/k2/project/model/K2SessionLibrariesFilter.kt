@@ -36,7 +36,7 @@ class K2SessionLibrariesFilter : KotlinNotebookSessionLibrariesFilter {
         return snapshot.entities(KotlinScriptLibraryEntity::class.java)
             .filter { it.entitySource is KotlinNotebookScriptEntitySource }
             .flatMap { it.classes }
-            .mapTo(mutableSetOf()) { it.presentableUrl }
+            .mapTo(mutableSetOf()) { it.fileName }
     }
 
     private fun Library.isProjectRelated(notebookDependenciesRoots: Collection<String>): Boolean {

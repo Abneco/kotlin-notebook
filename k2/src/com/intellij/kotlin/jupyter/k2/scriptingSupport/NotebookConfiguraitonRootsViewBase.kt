@@ -3,10 +3,13 @@ package com.intellij.kotlin.jupyter.k2.scriptingSupport
 
 import com.intellij.kotlin.jupyter.core.util.sourceRootsForProjectModuleDependencies
 import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
+import com.intellij.kotlin.jupyter.k2.project.model.addOrUpdateLibraryEntity
 import com.intellij.openapi.project.Project
+import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.virtualFile
+import com.intellij.platform.backend.workspace.workspaceModel
 import com.intellij.platform.workspace.storage.MutableEntityStorage
-import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntity
+import com.intellij.platform.workspace.storage.url.VirtualFileUrl
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
 import java.nio.file.Path
 import kotlin.io.path.extension
@@ -24,6 +27,11 @@ abstract class NotebookConfigurationRootsViewBase(
         filterTargetDependencies(project, configurationInfo.refinedConfiguration.dependenciesClassPath.map { it.toPath() })
     override val dependenciesSources: List<Path> get() =
         filterTargetDependencies(project, configurationInfo.refinedConfiguration.dependenciesSources.map { it.toPath() })
+
+    protected val topLevelFileUrl: VirtualFileUrl
+        get() = configurationInfo.virtualFile.toVirtualFileUrl(
+            project.workspaceModel.getVirtualFileUrlManager()
+        )
 
     protected abstract fun filterTargetDependencies(project: Project, candidates: List<Path>): List<Path>
 }
@@ -54,11 +62,10 @@ class CompiledSnippets(
         if (classes.isEmpty()) return emptyList()
 
         val libraryId = KotlinScriptLibraryEntityId(classes)
-        if (!entityStorage.contains(libraryId)) {
-            entityStorage addEntity KotlinScriptLibraryEntity(classes, setOf(), KotlinNotebookScriptEntitySource) {
-                this.sources += sources
-            }
-        }
+        entityStorage.addOrUpdateLibraryEntity(
+            libraryId, sources,
+            usedInScripts = setOf(topLevelFileUrl)
+        )
 
         return setOf(libraryId)
     }
@@ -94,14 +101,13 @@ class Jars(
                     it.presentableUrl.contains(presentableName)
                 }
 
-                val id = KotlinScriptLibraryEntityId(listOf(virtualFileUrl))
-                if (!entityStorage.contains(id)) {
-                    entityStorage addEntity KotlinScriptLibraryEntity(id.classes, setOf(), KotlinNotebookScriptEntitySource) {
-                        this.sources += listOfNotNull(sourceRoot)
-                    }
-                }
+                val libraryId = KotlinScriptLibraryEntityId(listOf(virtualFileUrl))
+                entityStorage.addOrUpdateLibraryEntity(
+                    libraryId, listOfNotNull(sourceRoot),
+                    usedInScripts = setOf(topLevelFileUrl)
+                )
 
-                add(id)
+                add(libraryId)
             }
         }
     }

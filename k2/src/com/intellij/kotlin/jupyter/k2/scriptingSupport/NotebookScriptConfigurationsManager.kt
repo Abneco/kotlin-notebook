@@ -9,12 +9,14 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.with
 import com.intellij.kotlin.jupyter.core.util.ConsecutiveAttemptsGuard
 import com.intellij.kotlin.jupyter.core.util.debugInTests
 import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
+import com.intellij.kotlin.jupyter.k2.project.model.addOrUpdateLibraryEntity
 import com.intellij.kotlin.jupyter.k2.project.model.findK2WorkspaceScriptEntities
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
+import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.backend.workspace.virtualFile
 import com.intellij.platform.backend.workspace.workspaceModel
 import com.intellij.platform.workspace.storage.EntitySource
@@ -25,8 +27,8 @@ import org.jetbrains.kotlin.idea.core.script.k2.configurations.sdkId
 import org.jetbrains.kotlin.idea.core.script.k2.getOrCreateScriptConfigurationId
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntityProvider
-import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntity
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
+import org.jetbrains.kotlin.idea.core.script.k2.modules.modifyKotlinScriptLibraryEntity
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.utils.mapToSetOrEmpty
@@ -136,21 +138,28 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
     }
 
     suspend fun clearNotebookLibraryDependencies(vararg notebookFiles: BackedNotebookVirtualFile) {
-        val tmpSnapshot = MutableEntityStorage.from(currentSnapshot)
+        val fileUrlManager = workspaceModel.getVirtualFileUrlManager()
+        val notebookUrls = notebookFiles.mapTo(mutableSetOf()) {
+            it.file.toVirtualFileUrl(fileUrlManager)
+        }
 
         val dependencies = notebookFiles.flatMap { notebookFile ->
             notebookFile.findK2WorkspaceScriptEntities(workspaceModel).flatMap { it.dependencies }
         }
 
-        dependencies.forEach {
-            it.resolve(tmpSnapshot)?.let { libraryEntity ->
-                tmpSnapshot.removeEntity(libraryEntity)
-            }
-        }
-
         val fileNames = notebookFiles.joinToString { it.file.name }
         workspaceModel.update("Clearing Kotlin Notebook scripting modules for $fileNames") { model ->
-            model.applyChangesFrom(tmpSnapshot)
+            for (depId in dependencies) {
+                val libraryEntity = depId.resolve(model) ?: continue
+                val remainingScripts = libraryEntity.usedInScripts - notebookUrls
+                if (remainingScripts.isEmpty()) {
+                    model.removeEntity(libraryEntity)
+                } else {
+                    model.modifyKotlinScriptLibraryEntity(libraryEntity) {
+                        this.usedInScripts = remainingScripts.toMutableSet()
+                    }
+                }
+            }
         }
     }
 
@@ -175,11 +184,9 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
             val deps = from.dependencies.mapNotNull { it.resolve(currentSnapshot) }
             for (lib in deps) {
                 val libId = KotlinScriptLibraryEntityId(lib.classes)
-                if (!this.contains(libId)) {
-                    this addEntity KotlinScriptLibraryEntity(lib.classes, setOf(), KotlinNotebookScriptEntitySource) {
-                        this.sources += lib.sources
-                    }
-                }
+                addOrUpdateLibraryEntity(
+                    libId, lib.sources, usedInScripts = lib.usedInScripts
+                )
             }
         }
 
