@@ -2,7 +2,7 @@
 package com.intellij.kotlin.jupyter.core.editor.codeInsight
 
 import com.intellij.find.FindManager
-import com.intellij.find.impl.FindManagerImpl
+import com.intellij.find.impl.FindManagerBase
 import com.intellij.openapi.application.runReadAction
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiRecursiveElementVisitor
@@ -76,7 +76,7 @@ internal inline fun <reified T: KtDeclaration> KtFile.findAllDeclarationsOfType(
  */
 internal fun KtNamedDeclaration.getReferencesFromProvider(): Collection<PsiElement> {
     val references = mutableListOf<PsiElement>()
-    val handler = (FindManager.getInstance(project) as FindManagerImpl).findUsagesManager.getFindUsagesHandler(this, true)
+    val handler = (FindManager.getInstance(project) as FindManagerBase).findUsagesManager.getFindUsagesHandler(this, true)
     if (handler == null) return references
 
     val options = handler.findUsagesOptions.clone()
