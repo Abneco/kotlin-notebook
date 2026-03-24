@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.perf.test
 import com.intellij.ide.starter.extended.CachedProjectConfiguration
 import com.intellij.ide.starter.extended.TestContextCache
 import com.intellij.ide.starter.extended.allure.Subsystems
-import com.intellij.ide.starter.extended.data.cases.IdeaUltimateCases
+import com.intellij.ide.starter.extended.idea.ultimate.IdeaUltimateCases
 import com.intellij.ide.starter.extended.metrics.publishing.evaluateMetric
 import com.intellij.ide.starter.extended.metrics.shared.publishCompletionMetricsToTeamCity
 import com.intellij.ide.starter.extended.metrics.shared.publishIndexingLookUpsMetricsToTeamCity
