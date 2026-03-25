@@ -54,6 +54,8 @@ jvm_library(
     "@community//platform/code-style-api:codeStyle_test_lib",
     "@community//platform/core-api:core",
     "@community//platform/core-api:core_test_lib",
+    "@community//platform/core-impl",
+    "@community//platform/core-impl:core-impl_test_lib",
     "@community//platform/editor-ui-api:editor-ui",
     "@community//platform/editor-ui-api:editor-ui_test_lib",
     "@community//jps/model-api:model",
@@ -66,6 +68,10 @@ jvm_library(
     "@community//platform/testFramework:testFramework_test_lib",
     "@community//java/testFramework",
     "@community//java/testFramework:testFramework_test_lib",
+    "@community//java/java-syntax:syntax",
+    "@community//java/java-syntax:syntax_test_lib",
+    "@community//java/java-psi-api:psi",
+    "@community//java/java-psi-api:psi_test_lib",
     "//plugins/jupyter/testFramework",
     "//plugins/jupyter/testFramework:testFramework_test_lib",
     "//plugins/jupyter/core",
@@ -157,6 +163,10 @@ jvm_library(
     "@community//python/services/internal-impl:python-community-services-internal-impl-tests_test_lib",
     "//platform/ijent/impl:impl-tests",
     "//platform/ijent/impl:impl-tests_test_lib",
+    "@community//platform/ide-core",
+    "@community//platform/progress/shared:ide-progress",
+    "@community//platform/util:util-ui",
+    "@community//platform/util:util-ui_test_lib",
     "//plugins/less:less-tests",
     "//plugins/less:less-tests_test_lib",
     "//plugins/spring/spring-data/spring-data-common:spring-data-tests",
@@ -171,6 +181,8 @@ jvm_library(
   runtime_deps = [
     ":kotlin-jupyter-tests",
     "//:idea-ultimate-main_test_lib",
+    "@community//platform/ide-core:ide-core_test_lib",
+    "@community//platform/progress/shared:ide-progress_test_lib",
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.tests` end

@@ -50,10 +50,12 @@ jvm_library(
     "@community//platform/util",
     "@community//platform/util/concurrency",
     "@community//platform/util/jdom",
+    "@community//platform/util:util-ui",
     "@community//platform/projectModel-api:projectModel",
     "@community//java/execution/openapi:java-execution",
     "@community//java/execution/impl",
     "@community//platform/platform-impl:ide-impl",
+    "@community//platform/ide-core",
     "@community//platform/analysis-api:analysis",
     "@community//platform/code-style-api:codeStyle",
     "@community//platform/core-impl",
@@ -61,6 +63,7 @@ jvm_library(
     "@community//platform/lang-api:lang",
     "@community//java/java-psi-api:psi",
     "@community//plugins/kotlin/base/analysis",
+    "@community//platform/editor-ui-api:editor-ui",
   ]
 )
 
@@ -98,10 +101,12 @@ jvm_library(
     "@community//platform/util:util_test_lib",
     "@community//platform/util/concurrency:concurrency_test_lib",
     "@community//platform/util/jdom:jdom_test_lib",
+    "@community//platform/util:util-ui_test_lib",
     "@community//platform/projectModel-api:projectModel_test_lib",
     "@community//java/execution/openapi:java-execution_test_lib",
     "@community//java/execution/impl:impl_test_lib",
     "@community//platform/platform-impl:ide-impl_test_lib",
+    "@community//platform/ide-core:ide-core_test_lib",
     "@community//platform/analysis-api:analysis_test_lib",
     "@community//platform/code-style-api:codeStyle_test_lib",
     "@community//platform/core-impl:core-impl_test_lib",
@@ -109,6 +114,7 @@ jvm_library(
     "@community//platform/lang-api:lang_test_lib",
     "@community//java/java-psi-api:psi_test_lib",
     "@community//plugins/kotlin/base/analysis:analysis_test_lib",
+    "@community//platform/editor-ui-api:editor-ui_test_lib",
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.debug` end

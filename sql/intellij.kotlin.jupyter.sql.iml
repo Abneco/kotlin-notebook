@@ -22,5 +22,6 @@
     <orderEntry type="module" module-name="intellij.libraries.jackson" />
     <orderEntry type="module" module-name="intellij.libraries.jackson.databind" />
     <orderEntry type="module" module-name="intellij.database" />
+    <orderEntry type="module" module-name="intellij.platform.editor.ui" />
   </component>
 </module>

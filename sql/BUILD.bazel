@@ -28,6 +28,7 @@ jvm_library(
     "@community//libraries/jackson/jackson",
     "@community//libraries/jackson/databind",
     "//dbe/database",
+    "@community//platform/editor-ui-api:editor-ui",
   ]
 )
 
@@ -52,6 +53,7 @@ jvm_library(
     "@community//libraries/jackson/jackson:jackson_test_lib",
     "@community//libraries/jackson/databind:databind_test_lib",
     "//dbe/database:database_test_lib",
+    "@community//platform/editor-ui-api:editor-ui_test_lib",
   ]
 )
 ### auto-generated section `build intellij.kotlin.jupyter.sql` end
