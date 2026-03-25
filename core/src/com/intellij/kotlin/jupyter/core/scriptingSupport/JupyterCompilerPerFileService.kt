@@ -21,6 +21,7 @@ import com.intellij.kotlin.jupyter.core.settings.selectedKernelVersionAsString
 import com.intellij.kotlin.jupyter.core.util.ComputableWithName
 import com.intellij.kotlin.jupyter.core.util.ExecutedOnceBackgroundTask
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
+import com.intellij.kotlin.jupyter.core.util.VersionedPublicationTracker
 import com.intellij.kotlin.jupyter.core.util.debugWithAttachments
 import com.intellij.kotlin.jupyter.core.util.findPsiFile
 import com.intellij.kotlin.jupyter.core.util.getInjectedKtFiles
@@ -39,10 +40,7 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.progress.runBlockingMaybeCancellable
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.io.toNioPathOrNull
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.backend.workspace.workspaceModel
-import com.intellij.platform.workspace.storage.impl.url.toVirtualFileUrl
 import com.intellij.util.concurrency.ThreadingAssertions
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.delete
@@ -69,10 +67,8 @@ import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.io.path.absolutePathString
 import kotlin.script.experimental.api.KotlinType
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
@@ -134,7 +130,7 @@ class JupyterCompilerPerFileService(
     }
 
     private val directoryCounter = AtomicInteger(0)
-    private val lastClasspathUpdate = AtomicReference<Path>()
+    private val publicationTracker = VersionedPublicationTracker()
 
     private val classesDir: Path by lazy {
         Files.createTempDirectory("kotlin-scripting-jvm-jupyter-kernel")
@@ -173,6 +169,7 @@ class JupyterCompilerPerFileService(
 
     private val lastStableConfiguration = AtomicReference(project.baseScriptingCompilationConfiguration)
 
+    private val implicitReceiversTracker = ImplicitReceiversTracker()
     private val scriptingSupportUpdatesProcessor = ScriptingSupportEventsProcessor()
 
     val executedCellsCount: Int get() = directoryCounter.get()
@@ -184,17 +181,28 @@ class JupyterCompilerPerFileService(
     val needsConfigurationUpdate: Boolean get() {
         return when (_updateState.value) {
             UpdateState.NEEDS_UPDATE, UpdateState.PENDING -> true
-            UpdateState.SKIPPED, UpdateState.COMPLETE -> {
-                val hasNewReceivers = scriptingSupportUpdatesProcessor.lastLoadedTypeOrNull != null
-
-                when {
-                    hasNewReceivers -> true
-                    // means service is restarted; the base class is absent
-                    lastStableConfiguration.get() == project.baseScriptingCompilationConfiguration -> true
-                    else -> false
-                }
-            }
+            UpdateState.SKIPPED, UpdateState.COMPLETE -> publicationTracker.needsPublishing
         }
+    }
+
+    /**
+     * Returns the refined configuration and captures the current state version for deferred publication.
+     */
+    suspend fun getRefinedConfigurationForPublishing(): ScriptCompilationConfiguration {
+        publicationTracker.preparePublication()
+
+        val scriptToRefine = readAction {
+            getFilesToRefine().firstOrNull { it.virtualFile.isValid }
+        }
+
+        if (scriptToRefine != null) {
+            return getConfiguration(scriptToRefine.ktFile)?.configuration!!
+        }
+
+        LOG.debug {
+            "No scripts to refine available in ${virtualFile.file}, falling back to direct configuration refinement"
+        }
+        return handleBeforeCompilingAsync(project.baseScriptingCompilationConfiguration)
     }
 
     /**
@@ -284,14 +292,6 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private fun Collection<String>.updateLastClasspathArtifact() {
-        val lastClasspathUpdateValue = lastOrNull()
-        val asPath = lastClasspathUpdateValue?.toNioPathOrNull()
-        if (asPath != null) {
-            lastClasspathUpdate.set(asPath)
-        }
-    }
-
     private suspend fun updateClasspathWithKernelJars(
         version: String = project.selectedKernelVersionAsString
     ): Boolean {
@@ -300,6 +300,7 @@ class JupyterCompilerPerFileService(
             KotlinNotebookMavenArtifacts.IDE_CLASSPATH_SHADOWED,
             version = version
         )
+        LOG.info("Downloaded jars for the kernel version: $version in ${virtualFile.file.name}")
         val sourcesJars = mavenArtifactsDownloader.downloadArtifactAsync(
             KotlinNotebookMavenArtifacts.IDE_CLASSPATH_SHADOWED_SOURCES,
             version = version
@@ -312,10 +313,8 @@ class JupyterCompilerPerFileService(
         accessData {
             _currentClasspath.addInitial(jars)
             _sourceRoots.addInitial(sourcesJars)
+            publicationTracker.incrementVersion()
         }
-
-        val kernelArtifactPaths = jars.map { it.absolutePathString() }
-        kernelArtifactPaths.updateLastClasspathArtifact()
 
         return jars.isNotEmpty() || sourcesJars.isNotEmpty()
     }
@@ -327,7 +326,11 @@ class JupyterCompilerPerFileService(
             val oldSize = _currentClasspath.size
             _currentClasspath.addSnippet(artifacts.map { Path.of(it) })
             val newSize = _currentClasspath.size
-            oldSize != newSize
+            val changed = oldSize != newSize
+            if (changed) {
+                publicationTracker.incrementVersion()
+            }
+            changed
         }
     }
 
@@ -424,10 +427,6 @@ class JupyterCompilerPerFileService(
 
     private fun getLineFolderName(lineNumber: Int) = "line_$lineNumber"
 
-    private fun getLastScriptArtifactPath(): Path? {
-        return lastClasspathUpdate.get()
-    }
-
     /**
      * Adds new dependencies from the executed snippet.
      *
@@ -449,11 +448,7 @@ class JupyterCompilerPerFileService(
         _currentClasspath.addSnippetFromData(snippetMetadata.newClasspath.map { Path.of(it) }, lineClassesDir)
         _sourceRoots.addSnippetFromData(snippetMetadata.newSources.map { Path.of(it) }, lineSourcesDir)
         additionalDefaultImports.addSnippet(snippetMetadata.newImports)
-        if (snippetMetadata.newClasspath.isEmpty()) {
-            lastClasspathUpdate.set(lineClassesDir)
-        } else {
-            snippetMetadata.newClasspath.updateLastClasspathArtifact()
-        }
+        publicationTracker.incrementVersion()
 
         val psiCell = executedCellData.psiCell
         coroutineScope.async {
@@ -505,7 +500,7 @@ class JupyterCompilerPerFileService(
     }
 
     private fun createNextClassLoader(classesDirPath: Path): ClassLoader {
-        val lastSaved = scriptingSupportUpdatesProcessor.lastLoadedTypeOrNull?.fromClass
+        val lastSaved = implicitReceiversTracker.lastLoadedTypeOrNull?.fromClass
         val lastLoadedClass = lastSaved ?: implicitsList.lastOrNull()?.fromClass
         return URLClassLoader(
             arrayOf(classesDirPath.toUri().toURL()),
@@ -527,7 +522,7 @@ class JupyterCompilerPerFileService(
                         LOG.debug("Adding class: $className")
                         loader.loadClass(className).kotlin
                     }
-                    scriptingSupportUpdatesProcessor.addLoadedSnippet(
+                    implicitReceiversTracker.addLoadedSnippet(
                         ClassPathSnippetsLoadedData(
                             classesDirPath,
                             loadedSnippets.map { KotlinType(it) },
@@ -558,7 +553,7 @@ class JupyterCompilerPerFileService(
                 _currentClasspath.clear()
                 additionalDefaultImports.clear()
                 implicitsList.clear()
-                scriptingSupportUpdatesProcessor.clear()
+                implicitReceiversTracker.clear()
                 lastStableConfiguration.set(project.baseScriptingCompilationConfiguration)
                 defaultImportsEnhancer.clear()
                 if (!project.isDisposed) {
@@ -570,26 +565,32 @@ class JupyterCompilerPerFileService(
         }
     }
 
-    private inner class ScriptingSupportEventsProcessor : ScriptingSupportUpdateEventsListener, ImplicitListsConfigurationUpdater {
-        private val implicitReceiversClassPathData = ConcurrentLinkedQueue<ClassPathSnippetsLoadedData>()
-        private val implicitListsUpdateMutex = Mutex()
+    /**
+     * Processes pending implicit receiver snippets that have been loaded but not yet added to the configuration.
+     * Called by K2 updater after workspace model update to handle receivers without re-entering the scheduler.
+     */
+    suspend fun processPostUpdateReceivers() {
+        if (!implicitReceiversTracker.hasPendingSnippets) return
 
-        val lastLoadedTypeOrNull: KotlinType? get() {
-            val loadedSnippets = implicitReceiversClassPathData.lastOrNull()?.snippetTypes
-            return loadedSnippets?.lastOrNull()
+        val newStableReceivers = implicitReceiversTracker.consumeReadySnippets { types ->
+            scriptConsistencyVerifier.filterTypesPresentInIndexes(virtualFile, types)
         }
 
-        override suspend fun getSnippetsReadyForConfigurationUpdate(): List<ClassPathSnippetsLoadedData> {
-            return implicitReceiversClassPathData.toList().filter {
-                val presentTypes = scriptConsistencyVerifier.filterTypesPresentInIndexes(virtualFile, it.snippetTypes)
-                presentTypes == it.snippetTypes
+        if (newStableReceivers.isEmpty()) return
+
+        accessData {
+            newStableReceivers.flatMap { it.snippetTypes }.forEach {
+                implicitsList.addClass(it.fromClass!!)
             }
+            publicationTracker.incrementVersion()
         }
 
-        override fun addLoadedSnippet(snippetData: ClassPathSnippetsLoadedData) {
-            implicitReceiversClassPathData.add(snippetData)
+        LOG.debug {
+            "Added classes in ${virtualFile.file.name} to implicitList: ${newStableReceivers.flatMap { it.snippetTypes.map { type -> type.typeName } }}"
         }
+    }
 
+    private inner class ScriptingSupportEventsProcessor : ScriptingSupportUpdateEventsListener {
         override fun afterUpdate(notebooks: Collection<BackedNotebookVirtualFile>?, updateFailure: Throwable?) {
             if (updateFailure != null) {
                 LOG.warn("Exception during scripting update: ${updateFailure.message}")
@@ -600,8 +601,21 @@ class JupyterCompilerPerFileService(
             }
         }
 
-        fun clear() {
-            implicitReceiversClassPathData.clear()
+        private suspend fun processUpdate(notebooks: Collection<BackedNotebookVirtualFile>?): UpdateState {
+            if (notebooks != null && virtualFile !in notebooks) {
+                return UpdateState.SKIPPED
+            }
+
+            publicationTracker.commitPublication()
+            updateLastStableConfiguration()
+
+            // If receivers were added after publication, request another update cycle
+            if (publicationTracker.needsPublishing) {
+                requestScriptingUpdate()
+                return UpdateState.PENDING
+            }
+
+            return UpdateState.COMPLETE
         }
 
         private suspend fun afterUpdateImpl(notebooks: Collection<BackedNotebookVirtualFile>?) {
@@ -610,51 +624,6 @@ class JupyterCompilerPerFileService(
 
             readAction {
                 scriptsChangePublisher?.scriptsConfigurationUpdated(virtualFile, updateState)
-            }
-        }
-
-        private suspend fun processUpdate(notebooks: Collection<BackedNotebookVirtualFile>?): UpdateState {
-            val lastScriptPath = getLastScriptArtifactPath()
-            if (!shouldProcessUpdate(lastScriptPath, notebooks)) {
-                return UpdateState.SKIPPED
-            }
-
-            val mightBeComplete = checkIfUpdatePotentiallyCompleted(lastScriptPath!!)
-            if (!mightBeComplete) {
-                return UpdateState.NEEDS_UPDATE
-            }
-
-            updateLastStableConfiguration()
-
-            return implicitListsUpdateMutex.withLock {
-                updateImplicitLists()
-            }
-        }
-
-        private fun checkIfUpdatePotentiallyCompleted(lastScriptPath: Path): Boolean {
-            val vFileUrl = lastScriptPath.toVirtualFileUrl(project.workspaceModel.getVirtualFileUrlManager())
-
-            return when {
-                !scriptConsistencyVerifier.isScriptPathConsistentWithModel(virtualFile, vFileUrl) -> {
-                    LOG.info("Configuration is not consistent for ${virtualFile.file.name}, absent $lastScriptPath, fileUrl: ${vFileUrl.url}")
-                    false
-                }
-                // might be potentially complete, further checks needed
-                else -> true
-            }
-        }
-
-        private fun shouldProcessUpdate(lastScriptPath: Path?, notebooks: Collection<BackedNotebookVirtualFile>?): Boolean {
-            return when {
-                lastScriptPath == null -> {
-                    LOG.debug("Configuration for ${virtualFile.file.name} is not updated, no last script path")
-                    false
-                }
-                notebooks != null && virtualFile !in notebooks -> {
-                    LOG.debug("Configuration for ${virtualFile.file.name} is not updated, it's not in the list of updated notebooks ($notebooks)")
-                    false
-                }
-                else -> true
             }
         }
 
@@ -668,50 +637,6 @@ class JupyterCompilerPerFileService(
                     break
                 }
             }
-        }
-
-        /**
-         * It might be the case that added new classes are not yet present in stored configurations.
-         * For them to appear in the stable configuration cache, we need to invoke update once again.
-         */
-        private suspend fun updateImplicitLists(): UpdateState {
-            if (implicitReceiversClassPathData.isEmpty()) {
-                // nothing to update, one needs to check the state
-                return if (checkConfigurationNeedsUpdate()) {
-                    UpdateState.NEEDS_UPDATE
-                } else {
-                    UpdateState.COMPLETE
-                }
-            }
-
-            val newStableReceivers = getSnippetsReadyForConfigurationUpdate()
-
-            accessData {
-                newStableReceivers.flatMap { it.snippetTypes }.forEach {
-                    implicitsList.addClass(it.fromClass!!)
-                }
-            }
-
-            LOG.debug {
-                "Added classes in ${virtualFile.file.name} to implicitList: ${newStableReceivers.flatMap { it.snippetTypes.map { type -> type.typeName } }}"
-            }
-
-            // someone already made everything
-            if (implicitReceiversClassPathData.isEmpty()) {
-                return UpdateState.COMPLETE
-            }
-
-            implicitReceiversClassPathData.removeAll(newStableReceivers.toSet())
-
-            requestScriptingUpdate()
-            return UpdateState.PENDING
-        }
-
-        private suspend fun checkConfigurationNeedsUpdate(): Boolean {
-            return !scriptConsistencyVerifier.isScriptFileConfigurationConsistentWithModel(
-                virtualFile,
-                handleBeforeCompilingAsync(project.baseScriptingCompilationConfiguration)
-            )
         }
     }
 

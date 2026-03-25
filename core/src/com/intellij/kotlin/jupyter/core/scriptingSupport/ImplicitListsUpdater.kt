@@ -17,7 +17,7 @@ internal data class ClassPathSnippetsLoadedData(
  * In the general case scenario, these moments might be separated in time.
  */
 internal interface ImplicitListsConfigurationUpdater {
-    fun addLoadedSnippet(snippetData: ClassPathSnippetsLoadedData)
+    val hasPendingSnippets: Boolean
 
-    suspend fun getSnippetsReadyForConfigurationUpdate(): List<ClassPathSnippetsLoadedData>
+    fun addLoadedSnippet(snippetData: ClassPathSnippetsLoadedData)
 }

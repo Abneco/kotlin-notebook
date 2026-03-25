@@ -6,9 +6,7 @@ import com.intellij.jupyter.core.executor.JupyterExecutionListener
 import com.intellij.kotlin.jupyter.core.ide.handlers.ScriptingSupportUpdater
 import com.intellij.kotlin.jupyter.core.ide.handlers.UpdaterConstructorData
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
-import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerPerFileService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
-import com.intellij.kotlin.jupyter.core.scriptingSupport.baseScriptingCompilationConfiguration
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.notebookScriptDefinitionWrapper
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
@@ -16,16 +14,17 @@ import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptModel
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsManager
 import com.intellij.notebooks.jupyter.core.jupyter.JupyterFileType
-import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.serviceAsync
 import com.intellij.openapi.components.serviceIfCreated
 import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.waitForSmartMode
 import com.intellij.platform.backend.workspace.workspaceModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -126,6 +125,11 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         }
     }
 
+    /**
+     * Stream-lined update of a workspace model performed in phases in one update cycle:
+     * - Phase 1: Update a workspace model with new configurations for all notebooks
+     * - Phase 2: After smart mode is enabled (~ indexing is not running), refine directly
+     */
     private suspend fun updateK2Configurations(editorManager: FileEditorManager, project: Project): Collection<BackedNotebookVirtualFile>? {
         if (project.isDisposed) return null
 
@@ -141,9 +145,24 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
         if (notebooksToUpdate.isEmpty()) {
             LOG.debug("No notebooks to update")
-        } else {
-            updateK2Impl(project, notebooksToUpdate)
+            return notebooks
         }
+
+        // Phase 1: main workspace model update
+        updateK2Impl(project, notebooksToUpdate)
+
+        // Let indexing proceed
+        project.waitForSmartMode()
+
+        // Phase 2: process pending implicit receivers
+        coroutineScope {
+            for (notebook in notebooksToUpdate) {
+                launch {
+                    JupyterCompilerService.getForFile(project, notebook).processPostUpdateReceivers()
+                }
+            }
+        }
+
         return notebooks
     }
 
@@ -195,20 +214,6 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
 
     private suspend fun BackedNotebookVirtualFile.getRefinedConfiguration(): ScriptCompilationConfiguration {
         val compilerService = JupyterCompilerService.getForFile(project, this)
-        val scriptToRefine = readAction {
-            compilerService.getFilesToRefine().firstOrNull { it.virtualFile.isValid }
-        }
-        if (scriptToRefine == null) {
-            return compilerService.handleBeforeCompilingAsync(project.baseScriptingCompilationConfiguration)
-        }
-
-        // refine only once as they are the same per notebook
-        val refinedConfiguration = try {
-            val anyKtFile = scriptToRefine.ktFile
-            JupyterCompilerPerFileService.getConfiguration(anyKtFile)?.configuration!!
-        } catch (e: Throwable) {
-            throw e
-        }
-        return refinedConfiguration
+        return compilerService.getRefinedConfigurationForPublishing()
     }
 }
