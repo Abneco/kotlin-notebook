@@ -10,6 +10,7 @@ import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.notebookScriptDefinitionWrapper
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.SCRIPTING_SUPPORT_TOPIC
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
+import com.intellij.kotlin.jupyter.core.util.parallelMap
 import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptModel
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsManager
@@ -170,39 +171,11 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         val notebookNames = notebooks.joinToString(", ") { it.file.name }
         LOG.debug("Performing update for notebooks: $notebookNames")
 
-        val scripts = mutableSetOf<KotlinNotebookScriptModel>()
-        for (notebook in notebooks) {
-            val refinedConfiguration = notebook.getRefinedConfiguration()
-            val virtualFile = notebook.file
+        val configurationsManager = NotebookScriptConfigurationsManager.getInstance(project)
 
-            /**
-             * Refined configuration contains only checked receivers from [JupyterCompilerPerFileService].
-             */
-            val stableClasses = refinedConfiguration[ScriptCompilationConfiguration.implicitReceivers]
-            LOG.debug {
-                "Stable implicit receivers for notebook '${virtualFile.name}': ${stableClasses?.map { it.typeName }}"
-            }
-
-            val storedConfiguration = NotebookScriptConfigurationsManager.getInstance(project).getKotlinScriptEntity(notebook.file)
-                ?.configurationId
-                ?.let { project.workspaceModel.currentSnapshot.resolve(it) }
-                ?.data
-                ?.asCompilationConfiguration()
-
-            // skip if exists
-            if (storedConfiguration == refinedConfiguration) {
-                continue
-            }
-
-            val scriptModel = KotlinNotebookScriptModel(
-                virtualFile,
-                ScriptCompilationConfigurationWrapper(
-                    VirtualFileScriptSource(virtualFile),
-                    refinedConfiguration
-                )
-            )
-            scripts += scriptModel
-        }
+        val scripts = notebooks.parallelMap { notebook ->
+            notebook.buildScriptModelIfChanged(configurationsManager)
+        }.filterNotNull()
 
         if (scripts.isEmpty()) {
             LOG.info("No scripts to refine found, skipping update. Notebooks: $notebookNames")
@@ -210,6 +183,40 @@ internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstruc
         }
 
         project.serviceAsync<NotebookScriptConfigurationsManager>().updateConfigurations(scripts)
+    }
+
+    private suspend fun BackedNotebookVirtualFile.buildScriptModelIfChanged(
+        configurationsManager: NotebookScriptConfigurationsManager
+    ): KotlinNotebookScriptModel? {
+        /**
+         * Refined configuration contains only checked receivers from [JupyterCompilerPerFileService].
+         */
+        val refinedConfiguration = getRefinedConfiguration()
+        val virtualFile = file
+
+        val stableClasses = refinedConfiguration[ScriptCompilationConfiguration.implicitReceivers]
+        LOG.debug {
+            "Stable implicit receivers for notebook '${virtualFile.name}': ${stableClasses?.map { it.typeName }}"
+        }
+
+        val storedConfiguration = configurationsManager.getKotlinScriptEntity(virtualFile)
+            ?.configurationId
+            ?.let { project.workspaceModel.currentSnapshot.resolve(it) }
+            ?.data
+            ?.asCompilationConfiguration()
+
+        // skip if exists
+        if (storedConfiguration == refinedConfiguration) {
+            return null
+        }
+
+        return KotlinNotebookScriptModel(
+            virtualFile,
+            ScriptCompilationConfigurationWrapper(
+                VirtualFileScriptSource(virtualFile),
+                refinedConfiguration
+            )
+        )
     }
 
     private suspend fun BackedNotebookVirtualFile.getRefinedConfiguration(): ScriptCompilationConfiguration {
