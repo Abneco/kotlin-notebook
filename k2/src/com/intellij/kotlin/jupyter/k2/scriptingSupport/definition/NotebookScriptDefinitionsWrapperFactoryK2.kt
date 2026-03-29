@@ -2,15 +2,11 @@
 package com.intellij.kotlin.jupyter.k2.scriptingSupport.definition
 
 import com.intellij.kotlin.jupyter.core.scriptingSupport.definitions.KotlinNotebookScriptDefinitionsWrapper
-import com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookScriptConfigurationsManager
 import com.intellij.kotlin.jupyter.k2.scriptingSupport.fir.refineNotebookWithSelectedBundledCompilerPlugins
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.idea.core.script.k2.configurations.scriptEntityProvider
 import org.jetbrains.kotlin.idea.core.script.k2.definitions.ScriptDefinitionsModificationTracker
 import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import kotlin.script.experimental.api.SourceCode
-import kotlin.script.experimental.api.ide
 import kotlin.script.experimental.api.with
 import kotlin.script.experimental.host.ScriptDefinition
 import kotlin.script.experimental.jvm.defaultJvmScriptingHostConfiguration
@@ -27,11 +23,6 @@ internal class K2NotebookScriptDefinitionsWrapper(
 ) : KotlinNotebookScriptDefinitionsWrapper(scriptDefinition) {
     override val compilationScriptDefinition by lazy {
         var compilationConfiguration = scriptDefinition.compilationConfiguration.with {
-            ide {
-                scriptEntityProvider {
-                    project.service<NotebookScriptConfigurationsManager>()
-                }
-            }
             refineNotebookWithSelectedBundledCompilerPlugins(project)
         }
         // notify definition update, as lazy value computed

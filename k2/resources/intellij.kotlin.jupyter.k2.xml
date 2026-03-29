@@ -12,6 +12,7 @@
     </dependencies>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <scriptEntityProvider implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.NotebookKotlinScriptEntityProvider"/>
         <k2KaModuleFactory implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.fir.FirKaNotebookModuleFactory"/>
         <scriptDefinitionsSource implementation="com.intellij.kotlin.jupyter.k2.scriptingSupport.KotlinNotebookScriptDefinitionsSource"/>
         <kotlinContentScopeRefiner implementation="com.intellij.kotlin.jupyter.k2.codeInsight.NotebookKaModuleScopeRefiner"/>

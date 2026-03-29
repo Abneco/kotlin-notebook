@@ -26,10 +26,8 @@ import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.idea.core.script.k2.configurations.sdkId
 import org.jetbrains.kotlin.idea.core.script.k2.getOrCreateScriptConfigurationId
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntity
-import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptEntityProvider
 import org.jetbrains.kotlin.idea.core.script.k2.modules.KotlinScriptLibraryEntityId
 import org.jetbrains.kotlin.idea.core.script.k2.modules.modifyKotlinScriptLibraryEntity
-import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationResult
 import org.jetbrains.kotlin.utils.mapToSetOrEmpty
 import java.io.File
@@ -55,9 +53,16 @@ object KotlinNotebookScriptEntitySource : EntitySource
  *  Note that now for each [BackedNotebookVirtualFile] a separate module is created, and for module there are its own dependencies.
  */
 @Service(Service.Level.PROJECT)
-class NotebookScriptConfigurationsManager(override val project: Project) : KotlinScriptEntityProvider(project) {
+class NotebookScriptConfigurationsManager(val project: Project) {
     private val workspaceModel: WorkspaceModel
         get() = project.workspaceModel
+
+    private val VirtualFile.virtualFileUrl: VirtualFileUrl
+        get() = toVirtualFileUrl(workspaceModel.getVirtualFileUrlManager())
+
+    private suspend fun Project.updateKotlinScriptEntities(entitySource: EntitySource, updater: (MutableEntityStorage) -> Unit) {
+        workspaceModel.update("updating kotlin script entities [$entitySource]") { updater(it) }
+    }
 
     private val updaterAttemptsGuard = ConsecutiveAttemptsGuard(
         WORKSPACE_MODEL_UPDATE_ATTEMPTS_THRESHOLD,
@@ -66,17 +71,11 @@ class NotebookScriptConfigurationsManager(override val project: Project) : Kotli
         LOG.warn("Workspace model update failed (consecutive failures: $failureCount)", e)
     }
 
-    override fun getKotlinScriptEntity(virtualFile: VirtualFile): KotlinScriptEntity? = virtualFile.topLevelFile?.let {
-        super.getKotlinScriptEntity(it)
+    fun getKotlinScriptEntity(virtualFile: VirtualFile): KotlinScriptEntity? = virtualFile.topLevelFile?.let {
+        workspaceModel.currentSnapshot.getVirtualFileUrlIndex()
+            .findEntitiesByUrl(it.virtualFileUrl)
+            .filterIsInstance<KotlinScriptEntity>().singleOrNull()
     }
-
-    /**
-     * For now, we do not update wsm here, as we have our own cycle of updates provided by notebook scheduler
-     */
-    override suspend fun updateWorkspaceModel(
-        virtualFile: VirtualFile,
-        definition: ScriptDefinition
-    ): Unit = Unit
 
     private val VirtualFile.topLevelFile: VirtualFile?
         get() {
