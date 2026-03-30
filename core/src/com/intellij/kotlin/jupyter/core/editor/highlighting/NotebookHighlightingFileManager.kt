@@ -14,10 +14,8 @@ import com.intellij.kotlin.jupyter.core.editor.highlighting.components.queue.Hig
 import com.intellij.kotlin.jupyter.core.editor.highlighting.components.queue.HighlightingEventsQueueImpl
 import com.intellij.kotlin.jupyter.core.editor.highlighting.editor.NotebookEditorCreatedListener
 import com.intellij.kotlin.jupyter.core.editor.highlighting.restarter.NotebookHighlightingRestarter
-import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.kotlin.jupyter.core.scriptingSupport.NotebookAfterScriptsUpdatePluginAwareHandler
 import com.intellij.kotlin.jupyter.core.scriptingSupport.listeners.NotebookScriptsStateListener
 import com.intellij.kotlin.jupyter.core.util.NotebookPerFileChildService
 import com.intellij.kotlin.jupyter.core.util.createDisposableChild
@@ -192,10 +190,7 @@ class NotebookHighlightingFileManager(
     private fun addNotebookScriptsStateListener() {
         project.messageBus.connect(this).subscribe(
             NotebookScriptsStateListener.TOPIC,
-            createPluginModeAwareInstance(
-                ::createK1Instance,
-                ::createK2Instance
-            )
+            createAfterUpdateHandler()
         )
     }
 
@@ -216,21 +211,10 @@ class NotebookHighlightingFileManager(
         )
     }
 
-    private fun createK1Instance(): NotebookAfterScriptsUpdatePluginAwareHandler {
-        return NotebookAfterScriptsUpdatePluginAwareHandler { file, updateState ->
-            if (file != virtualFile) return@NotebookAfterScriptsUpdatePluginAwareHandler
-            if (updateState != NotebookScriptsStateListener.UpdateState.COMPLETE) return@NotebookAfterScriptsUpdatePluginAwareHandler
-
-            if (virtualFile.isCurrentlySelectedInEditor(project)) {
-                restartAnalysing()
-            }
-        }
-    }
-
-    private fun createK2Instance(): NotebookAfterScriptsUpdatePluginAwareHandler {
-        return NotebookAfterScriptsUpdatePluginAwareHandler { file, updateState ->
-            if (file != virtualFile) return@NotebookAfterScriptsUpdatePluginAwareHandler
-            if (updateState != NotebookScriptsStateListener.UpdateState.COMPLETE) return@NotebookAfterScriptsUpdatePluginAwareHandler
+    private fun createAfterUpdateHandler(): NotebookScriptsStateListener {
+        return NotebookScriptsStateListener { file, updateState ->
+            if (file != virtualFile) return@NotebookScriptsStateListener
+            if (updateState != NotebookScriptsStateListener.UpdateState.COMPLETE) return@NotebookScriptsStateListener
 
             val isCurrentFileOpened = virtualFile.isCurrentlySelectedInEditor(project)
             if (isCurrentFileOpened) {
