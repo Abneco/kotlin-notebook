@@ -1,7 +1,6 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.scriptingSupport
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.kotlin.jupyter.core.jupyter.cells.ExecutedCellData
 import com.intellij.kotlin.jupyter.core.logging.KotlinNotebookLoggerFactory
@@ -197,6 +196,12 @@ class JupyterCompilerPerFileService(
             }
         }
     }
+
+    /**
+     * Whether the service has loaded initial kernel dependencies (JARs)
+     */
+    val readyForAnalysis: Boolean
+        get() = _currentClasspath.hasInitialPart
 
     init {
         notebookLogger().assertTrue(virtualFile.file.isKotlinNotebook) { "$virtualFile is not a Kotlin Jupyter notebook" }
@@ -605,11 +610,6 @@ class JupyterCompilerPerFileService(
 
             readAction {
                 scriptsChangePublisher?.scriptsConfigurationUpdated(virtualFile, updateState)
-                if (updateState == UpdateState.COMPLETE) {
-                    virtualFile.file.findPsiFile(project)?.let { psiFile ->
-                        DaemonCodeAnalyzer.getInstance(project).restart(psiFile, this)
-                    }
-                }
             }
         }
 

@@ -6,6 +6,9 @@ import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder
 import com.intellij.kotlin.jupyter.core.editor.highlighting.utils.convertToShadowedDeclaration
 import com.intellij.kotlin.jupyter.core.ide.handlers.KotlinPluginModeAwareHandler
 import com.intellij.kotlin.jupyter.core.logging.notebookLogger
+import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
+import com.intellij.kotlin.jupyter.core.util.getTopLevelFileOrNull
+import com.intellij.kotlin.jupyter.core.util.toKotlinNotebookBackedFile
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.psi.PsiElement
@@ -101,6 +104,11 @@ abstract class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareH
             return true
         }
 
+        if (!isCompilationConfigurationReady(file)) {
+            afterAnalysis()
+            return true
+        }
+
         try {
             analyze(file) {
                 val diagnostics = collectErrorDiagnostics(file).filter {
@@ -124,6 +132,18 @@ abstract class KotlinPluginModeShadowingAnalyzerHandler : KotlinPluginModeAwareH
         }
 
         return true
+    }
+
+    /**
+     * Checks if current analysis is meaningful, e.g., configuration is present
+     */
+    private fun isCompilationConfigurationReady(file: KtFile): Boolean {
+        val project = file.project
+        val topLevelVFile = file.virtualFile.getTopLevelFileOrNull()
+        val backedFile = topLevelVFile.toKotlinNotebookBackedFile() ?: return false
+        return JupyterCompilerService
+            .getForFile(project, backedFile)
+            .readyForAnalysis
     }
 
     companion object {

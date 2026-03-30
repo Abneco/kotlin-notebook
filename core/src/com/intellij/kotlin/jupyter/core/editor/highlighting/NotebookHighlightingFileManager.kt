@@ -216,18 +216,21 @@ class NotebookHighlightingFileManager(
         )
     }
 
-    private fun createK1Instance() : NotebookAfterScriptsUpdatePluginAwareHandler {
-        return NotebookAfterScriptsUpdatePluginAwareHandler { file, _ ->
+    private fun createK1Instance(): NotebookAfterScriptsUpdatePluginAwareHandler {
+        return NotebookAfterScriptsUpdatePluginAwareHandler { file, updateState ->
             if (file != virtualFile) return@NotebookAfterScriptsUpdatePluginAwareHandler
+            if (updateState != NotebookScriptsStateListener.UpdateState.COMPLETE) return@NotebookAfterScriptsUpdatePluginAwareHandler
+
+            if (virtualFile.isCurrentlySelectedInEditor(project)) {
+                restartAnalysing()
+            }
         }
     }
 
-    /**
-     * Since shadowing does not work, just perform complete restart after the main execution effect took place
-     */
-    private fun createK2Instance() : NotebookAfterScriptsUpdatePluginAwareHandler {
-        return NotebookAfterScriptsUpdatePluginAwareHandler { file, _ ->
+    private fun createK2Instance(): NotebookAfterScriptsUpdatePluginAwareHandler {
+        return NotebookAfterScriptsUpdatePluginAwareHandler { file, updateState ->
             if (file != virtualFile) return@NotebookAfterScriptsUpdatePluginAwareHandler
+            if (updateState != NotebookScriptsStateListener.UpdateState.COMPLETE) return@NotebookAfterScriptsUpdatePluginAwareHandler
 
             val isCurrentFileOpened = virtualFile.isCurrentlySelectedInEditor(project)
             if (isCurrentFileOpened) {
