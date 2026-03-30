@@ -1,13 +1,16 @@
 <idea-plugin visibility="internal">
     <dependencies>
-        <module name="intellij.java.backend"/>
-
-        <module name="intellij.jupyter.core"/>
-        <module name="intellij.kotlin.jupyter.core"/>
-        <module name="intellij.jupyter.psi"/>
-        <module name="intellij.notebooks.jupyter.core"/>
-        <module name="intellij.notebooks.ui"/>
-        <module name="intellij.notebooks.visualization"/>
+      <module name="intellij.java.backend"/>
+      <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
+      <module name="intellij.java.debugger.impl.shared"/>
+      <module name="intellij.java.psi"/>
+      <module name="intellij.jupyter.core"/>
+      <module name="intellij.jupyter.psi"/>
+      <module name="intellij.kotlin.jupyter.core"/>
+      <module name="intellij.notebooks.jupyter.core"/>
+      <module name="intellij.notebooks.ui"/>
+      <module name="intellij.notebooks.visualization"/>
+      <!-- endregion -->
     </dependencies>
 
     <extensionPoints>

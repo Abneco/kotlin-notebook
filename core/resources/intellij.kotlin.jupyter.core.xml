@@ -1,21 +1,21 @@
 <idea-plugin visibility="internal">
+    <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
     <dependencies>
       <plugin id="org.jetbrains.kotlin"/>
       <plugin id="com.intellij.notebooks.core"/>
-      <module name="intellij.notebooks.ui"/>
-      <module name="intellij.notebooks.visualization"/>
-      <module name="intellij.notebooks.jupyter.core"/>
       <plugin id="intellij.jupyter"/>
       <module name="intellij.jupyter.psi"/>
       <module name="intellij.jupyter.core"/>
+      <module name="intellij.java.backend"/>
+      <module name="intellij.java.aetherDependencyResolver"/>
+      <module name="intellij.java.syntax"/>
       <module name="intellij.jupyter.execution"/>
       <module name="intellij.kotlin.base.scripting.shared"/>
-
-      <module name="intellij.java.backend"/>
-      <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
-      <module name="intellij.java.aetherDependencyResolver"/>
-      <!-- endregion -->
+      <module name="intellij.notebooks.jupyter.core"/>
+      <module name="intellij.notebooks.ui"/>
+      <module name="intellij.notebooks.visualization"/>
     </dependencies>
+    <!-- endregion -->
 
     <applicationListeners>
         <listener class="com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFusActionListener"

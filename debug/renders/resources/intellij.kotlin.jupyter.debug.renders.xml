@@ -1,10 +1,12 @@
 <idea-plugin visibility="internal">
     <dependencies>
-        <module name="intellij.java.backend"/>
-
-        <module name="intellij.kotlin.jupyter.debug"/>
-        <module name="intellij.debugger.collections.visualizer.core.backend"/>
-        <module name="intellij.debugger.collections.visualizer.jvm"/>
+      <module name="intellij.java.backend"/>
+      <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
+      <module name="intellij.debugger.collections.visualizer.core"/>
+      <module name="intellij.debugger.collections.visualizer.core.backend"/>
+      <module name="intellij.debugger.collections.visualizer.jvm"/>
+      <module name="intellij.kotlin.jupyter.debug"/>
+      <!-- endregion -->
     </dependencies>
 
 </idea-plugin>
