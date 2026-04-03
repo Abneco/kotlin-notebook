@@ -231,6 +231,11 @@
                 order="after ProjectsWelcomeTab, after GatewayWelcomeTab, before CustomizeWelcomeTab"/>
 
         <webHelpProvider implementation="com.intellij.kotlin.jupyter.core.ide.KotlinNotebookWebHelpProvider"/>
+        <applicationSettings service="com.intellij.kotlin.jupyter.core.projectWizard.settings.NewNotebookOptionsState"/>
+        <applicationSettings service="com.intellij.kotlin.jupyter.core.settings.SessionOptionsProvider"/>
+        <applicationSettings service="com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptionsProvider"/>
+        <projectSettings service="com.intellij.kotlin.jupyter.core.settings.KotlinNotebookAttachedModeOptions"/>
+        <projectSettings service="com.intellij.kotlin.jupyter.core.settings.KotlinNotebookProjectOptionsProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.plugins.notebooks">

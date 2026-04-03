@@ -18,6 +18,7 @@
                 bundle="messages.KotlinNotebookPlotsBundle"
                 key="kotlin.notebook.outputs.kandy.export.notification.group"
         />
+        <projectSettings service="com.intellij.kotlin.jupyter.plots.export.PlotExportOptions"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.jupyter.core.editor.outputs">

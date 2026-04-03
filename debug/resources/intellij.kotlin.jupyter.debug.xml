@@ -31,6 +31,7 @@
                      description="When enabled, establishing debug session with Kernel is possible"/>
         <registryKey key="kotlin.notebook.debug.cell.action.enabled" defaultValue="true"
                      description="When enabled, the 'Debug Cell' action is available in Kotlin Notebooks"/>
+        <projectSettings service="com.intellij.kotlin.jupyter.debug.settings.KotlinNotebookDebugProjectOptionsProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.debug">

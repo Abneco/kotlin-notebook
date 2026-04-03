@@ -41,6 +41,7 @@
         <!--<resolveScopeEnlarger implementation="com.intellij.kotlin.jupyter.k2.codeInsight.NotebookProjectScopeEnlarger"/>-->
 
         <postStartupActivity implementation="com.intellij.kotlin.jupyter.k2.project.NotebookK2PostStartupActivity"/>
+        <projectSettings service="com.intellij.kotlin.jupyter.k2.settings.KotlinNotebookK2ProjectOptionsProvider"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij.kotlin.jupyter.core">
