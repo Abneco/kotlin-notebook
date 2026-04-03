@@ -181,7 +181,7 @@ class JupyterCompilerPerFileService(
     val needsConfigurationUpdate: Boolean get() {
         return when (_updateState.value) {
             UpdateState.NEEDS_UPDATE, UpdateState.PENDING -> true
-            UpdateState.SKIPPED, UpdateState.COMPLETE -> publicationTracker.needsPublishing
+            UpdateState.SKIPPED, UpdateState.COMPLETE -> publicationTracker.needsPublishing || implicitReceiversTracker.hasPendingSnippets
         }
     }
 
