@@ -5,6 +5,7 @@
       <module name="intellij.java.debugger.impl.shared"/>
       <module name="intellij.java.psi"/>
       <module name="intellij.jupyter.core"/>
+        <module name="intellij.jupyter.execution"/>
       <module name="intellij.jupyter.psi"/>
       <module name="intellij.kotlin.jupyter.core"/>
       <module name="intellij.notebooks.jupyter.core"/>
