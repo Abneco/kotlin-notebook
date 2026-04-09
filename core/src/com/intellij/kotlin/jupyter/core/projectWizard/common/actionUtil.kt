@@ -2,7 +2,6 @@
 package com.intellij.kotlin.jupyter.core.projectWizard.common
 
 import com.intellij.kotlin.jupyter.core.projectWizard.DefaultKotlinNotebookProject
-import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
 import com.intellij.kotlin.jupyter.core.settings.recents.addRecentNotebook
 import com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector
@@ -17,7 +16,7 @@ fun openNotebook(notebook: RecentNotebook) {
     )
     val projectPath = notebook.projectPath.toNioPath()
     val project = DefaultKotlinNotebookProject.getProjectWithModalProgress(projectPath)
-    KotlinNotebookApplicationOptions.addRecentNotebook(notebook)
+    addRecentNotebook(notebook)
 
     application.invokeLater({
         FileEditorManager.getInstance(project)

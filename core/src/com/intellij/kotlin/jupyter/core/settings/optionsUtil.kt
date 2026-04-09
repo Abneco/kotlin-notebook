@@ -9,6 +9,7 @@ import java.util.MissingResourceException
 import kotlin.reflect.KProperty
 
 const val APP_CONFIG_FILE: String = "kotlinNotebookApp.xml"
+const val APP_LOCAL_CONFIG_FILE: String = "kotlinNotebookAppLocal.xml"
 
 val Project.selectedKernelVersionAsString: String get() {
     return KotlinNotebookProjectOptionsProvider.getInstance(this).kernelVersion

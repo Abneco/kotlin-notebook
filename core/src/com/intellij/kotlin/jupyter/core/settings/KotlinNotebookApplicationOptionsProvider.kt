@@ -1,14 +1,12 @@
 // Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.settings
 
-import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebookState
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.BaseState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.SettingsCategory
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.intellij.util.xmlb.annotations.XCollection
 import org.jetbrains.kotlinx.jupyter.api.ReplCompilerMode
 import java.util.EventListener
 
@@ -36,8 +34,6 @@ class KotlinNotebookApplicationOptionsProvider :
         State::replCompilerMode
     ).onChange(Listener::onReplCompilerModeChanged)
 
-    var recentNotebooks: MutableList<RecentNotebookState> by prop(State::recentNotebooks)
-
     class State : BaseState() {
         var shouldShowExecutionCount: Boolean by property(true)
         var shouldStopExecutionOnFailure: Boolean by property(true)
@@ -47,10 +43,6 @@ class KotlinNotebookApplicationOptionsProvider :
         var showLetsPlotAsSwing: Boolean by property(letsPlotSwingOutputsEnabled)
         var showDataFrameAsSwing: Boolean by property(isSwingUiEnabledForKotlinDataframe)
         var replCompilerMode: ReplCompilerMode by enum(ReplCompilerMode.K1)
-
-        @get:XCollection
-        @set:XCollection
-        var recentNotebooks: MutableList<RecentNotebookState> by list()
     }
 
     interface Listener : EventListener {

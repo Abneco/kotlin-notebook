@@ -9,7 +9,6 @@ import com.intellij.kotlin.jupyter.core.language.JupyterKotlinFileType
 import com.intellij.kotlin.jupyter.core.language.NotebookTemplate
 import com.intellij.kotlin.jupyter.core.language.getFileTemplate
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
 import com.intellij.kotlin.jupyter.core.settings.recents.addRecentNotebook
 import com.intellij.kotlin.jupyter.core.settings.recents.rootPath
@@ -36,10 +35,10 @@ import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
-import kotlinx.coroutines.launch
 
 const val KOTLIN_NOTEBOOK_SCRATCH_PREFIX: String = "notebook"
 
@@ -85,7 +84,7 @@ fun createKotlinNotebookInProjectWhenProjectIsInitialized(
         if (newPsiFile != null) {
             val projectPath = project.rootPath
             if (projectPath != null) {
-                KotlinNotebookApplicationOptions.addRecentNotebook(
+                addRecentNotebook(
                     RecentNotebook(
                         newPsiFile.virtualFile,
                         projectPath,
@@ -131,7 +130,7 @@ object DefaultKotlinNotebookProject {
         return runWithModalProgressBlocking(
             ModalTaskOwner.guess(),
             KotlinNotebookBundle.message("progress.title.opening.kotlin.notebook.project"),
-            TaskCancellation.Companion.cancellable()
+            TaskCancellation.cancellable()
         ) {
             val project = getProject(projectPath)
 

@@ -4,12 +4,13 @@ package com.intellij.kotlin.jupyter.core.projectWizard
 import com.intellij.kotlin.jupyter.core.projectWizard.common.NOTEBOOK_TREE_HOLDER_KEY
 import com.intellij.kotlin.jupyter.core.projectWizard.common.RECENT_NOTEBOOK_KEY
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
+import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationLocalOptionsProvider
 import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.ui.Messages
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +37,7 @@ class RemoveNotebookFromListAction : AnAction(), DumbAware {
         )
 
         if (exitCode == Messages.OK) {
-            val options = KotlinNotebookApplicationOptions.get()
+            val options = service<KotlinNotebookApplicationLocalOptionsProvider>()
             val recentNotebooks = options.recentNotebooks
 
             // Find the notebook in the list by its path and remove it

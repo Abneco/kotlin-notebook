@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.core.projectWizard
 
 import com.intellij.ide.actions.OpenFileAction
 import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
-import com.intellij.kotlin.jupyter.core.settings.KotlinNotebookApplicationOptions
 import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebook
 import com.intellij.kotlin.jupyter.core.settings.recents.addRecentNotebook
 import com.intellij.kotlin.jupyter.core.statistics.fus.KotlinNotebookFeatureUsagesCollector
@@ -46,7 +45,7 @@ internal class OpenKotlinNotebookAction : OpenFileAction() {
         }
 
         val openedProject = DefaultKotlinNotebookProject.getProject(projectPath.toAbsolutePath())
-        KotlinNotebookApplicationOptions.addRecentNotebook(
+        addRecentNotebook(
             RecentNotebook(
                 virtualFile,
                 projectPath
