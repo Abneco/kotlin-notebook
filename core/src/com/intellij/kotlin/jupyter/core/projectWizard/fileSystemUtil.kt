@@ -34,6 +34,7 @@ import com.intellij.platform.ide.progress.runWithModalProgressBlocking
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.intellij.util.io.createDirectories
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -100,7 +101,7 @@ object DefaultKotlinNotebookProject {
 
     @RequiresEdt
     suspend fun getProject(projectPath: Path): Project {
-        projectPath.toFile().mkdirs()
+        projectPath.createDirectories()
         TrustedProjects.setProjectTrusted(projectPath, true)
         val project = ProjectManagerEx.getInstanceEx().openProjectAsync(projectPath, OpenProjectTask {
             runConfigurators = true
