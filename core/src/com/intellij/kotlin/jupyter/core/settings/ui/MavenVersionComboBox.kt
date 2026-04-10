@@ -14,9 +14,8 @@ import com.intellij.openapi.util.NlsSafe
 import com.intellij.ui.CollectionComboBoxModel
 import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.Row
+import com.intellij.ui.dsl.listCellRenderer.listCellRenderer
 import javax.swing.ComboBoxModel
-import javax.swing.JLabel
-import javax.swing.ListCellRenderer
 import kotlin.reflect.KMutableProperty0
 
 private fun interface MavenVersionModelProvider {
@@ -33,7 +32,6 @@ private class MavenVersionComboBoxImpl(
     private val artifactDescription: ArtifactDescription,
     private val remoteRepositories: List<RemoteRepositoryDescription>,
     private val modelProvider: MavenVersionModelProvider,
-    private val listCellRendererProvider: (defaultRenderer: ListCellRenderer<in String>) -> ListCellRenderer<in String> = { it },
 ) : MavenVersionComboBox() {
     private var state = State.NOT_LOADED
 
@@ -68,7 +66,6 @@ private class MavenVersionComboBoxImpl(
     private fun initializeComboBox(versions: Collection<String>) {
         runInEdt(ModalityState.stateForComponent(this)) {
             setModel(modelProvider.provideModel(versions))
-            setRenderer(listCellRendererProvider(renderer))
             updateUI()
 
             state = State.LOADED
@@ -112,21 +109,17 @@ fun Row.mavenVersionComboBox(
         project,
         artifactDescription,
         remoteArtifactsRepositories,
-        MavenVersionModelProviderImpl(initialVersion, versionComparator),
-        listCellRendererProvider = { defaultRenderer ->
-            ListCellRenderer<String> { list, value, index, isSelected, cellHasFocus ->
-
-                @Suppress("HardCodedStringLiteral")
-                defaultRenderer
-                    .getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
-                    .also { itemComponent ->
-                        if (value == defaultVersion && itemComponent is JLabel) {
-                            itemComponent.text = KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.version.default", value)
-                        }
-                    }
+        MavenVersionModelProviderImpl(initialVersion, versionComparator)
+    )
+    comboBox.renderer = listCellRenderer("") {
+        text(value)
+        if (value == defaultVersion) {
+            text(KotlinNotebookBundle.message("kotlin.jupyter.settings.kernel.version.default")) {
+                foreground = greyForeground
             }
         }
-    )
+    }
+
     return cell(comboBox)
         .onReset {
             comboBox.version = versionProperty.get()
