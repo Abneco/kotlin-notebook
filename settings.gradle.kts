@@ -11,9 +11,7 @@ pluginManagement {
 }
 
 plugins {
-    // Version is catalogued in gradle/libs.versions.toml [foojayResolver].
-    // alias() is unavailable in settings plugin blocks due to a Kotlin DSL scope limitation.
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
 include(
