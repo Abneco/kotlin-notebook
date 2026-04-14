@@ -5,5 +5,5 @@ import org.jetbrains.annotations.Nls
 
 sealed class KotlinNotebookRestartStatus {
     object NotNeeded : KotlinNotebookRestartStatus()
-    class Needed(val message: @Nls String) : KotlinNotebookRestartStatus()
+    class Needed(@Nls val message: String) : KotlinNotebookRestartStatus()
 }

@@ -1,6 +1,12 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.intellijPlatformModule)
+}
+
+sourceSets {
+    main {
+        kotlin.srcDir("src")
+        resources.srcDir("resources")
+    }
 }
 
 kotlin {
@@ -15,12 +21,6 @@ kotlin {
     }
 }
 
-repositories {
-    intellijPlatform {
-        defaultRepositories()
-    }
-}
-
 dependencies {
     intellijPlatform {
         // Provides K1 frontend APIs, scripting, analysis API
@@ -30,5 +30,5 @@ dependencies {
         bundledModule("intellij.java.backend")
     }
 
-    implementation(project(":core"))
+    implementation(projects.core)
 }

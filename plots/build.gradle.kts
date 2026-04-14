@@ -1,17 +1,17 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.intellijPlatformModule)
     alias(libs.plugins.kotlin.serialization)
+}
+
+sourceSets {
+    main {
+        kotlin.srcDir("src")
+        resources.srcDirs("resources", "resources-en")
+    }
 }
 
 kotlin {
     jvmToolchain(libs.versions.jvmTarget.get().toInt())
-}
-
-repositories {
-    intellijPlatform {
-        defaultRepositories()
-    }
 }
 
 dependencies {
@@ -22,7 +22,7 @@ dependencies {
         bundledModule("intellij.charts")
     }
 
-    implementation(project(":core"))
+    implementation(projects.core)
 
     // Bundled third-party libs (shipped with the plugin)
     implementation(libs.lets.plot.export.shadowed)

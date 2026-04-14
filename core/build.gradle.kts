@@ -1,7 +1,13 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.intellijPlatformModule)
     alias(libs.plugins.kotlin.serialization)
+}
+
+sourceSets {
+    main {
+        kotlin.srcDirs("src", "generated")
+        resources.srcDirs("resources", "resources-en")
+    }
 }
 
 kotlin {
@@ -13,12 +19,6 @@ kotlin {
             "-opt-in=org.jetbrains.kotlin.idea.base.util.K1ModeProjectStructureApi",
             "-Xcontext-parameters",
         )
-    }
-}
-
-repositories {
-    intellijPlatform {
-        defaultRepositories()
     }
 }
 
@@ -42,9 +42,11 @@ dependencies {
     api(libs.kotlin.jupyter.api)
     api(libs.kotlin.jupyter.lib)
     api(libs.kotlin.jupyter.common.dependencies)
-    implementation(libs.clikt)
 
     // Provided by the IntelliJ platform / kotlin plugin at runtime
+    // Provided transitively via kotlin-jupyter-shared-compiler at runtime; needed at compile time
+    compileOnly(libs.clikt)
+
     compileOnly(libs.kotlinx.serialization.core)
     compileOnly(libs.kotlinx.serialization.json)
     compileOnly(libs.kotlinx.coroutines.core)

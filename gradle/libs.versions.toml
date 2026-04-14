@@ -1,15 +1,18 @@
 [versions]
-intellijPlatform = "262-EAP-SNAPSHOT"
-intellijPlatformPlugin = "2.6.0"
-kotlin = "2.1.21"
-kotlinxSerializationCore = "1.7.3"
-kotlinxCoroutines = "1.8.1"
+intellijPlatformPlugin = "2.14.0"
+kotlin = "2.3.20"
+kotlinxSerializationCore = "1.11.0"
+kotlinxCoroutines = "1.10.2"
 kotlinJupyter = "0.18.1-907"
-letsPlot = "4.9.3"
-jackson = "2.17.1"
-clikt = "2.8.0"
-slf4j = "2.0.13"
+letsPlotExportShadowed = "4.7.3-32"
+letsPlotKotlinJson = "4.13.0"
+jackson = "2.21.2"
+slf4j = "2.0.17"
+kotest = "5.9.1"
+junit4 = "4.13.2"
 jvmTarget = "21"
+foojayResolver = "0.9.0"
+clikt = "2.8.0"
 
 [libraries]
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerializationCore" }
@@ -22,16 +25,21 @@ kotlin-jupyter-ws-server = { module = "org.jetbrains.kotlinx:kotlin-jupyter-ws-s
 kotlin-jupyter-shared-compiler = { module = "org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler", version.ref = "kotlinJupyter" }
 kotlin-jupyter-common-dependencies = { module = "org.jetbrains.kotlinx:kotlin-jupyter-common-dependencies", version.ref = "kotlinJupyter" }
 
-lets-plot-export-shadowed = { module = "org.jetbrains.lets-plot:lets-plot-export-shadowed", version.ref = "letsPlot" }
-lets-plot-kotlin-json = { module = "org.jetbrains.lets-plot:lets-plot-kotlin-json", version.ref = "letsPlot" }
+lets-plot-export-shadowed = { module = "org.jetbrains.lets-plot:lets-plot-export-shadowed", version.ref = "letsPlotExportShadowed" }
+lets-plot-kotlin-json = { module = "org.jetbrains.lets-plot:lets-plot-kotlin-json", version.ref = "letsPlotKotlinJson" }
 
-clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+
+clikt = { module = "com.github.ajalt:clikt", version.ref = "clikt" }
+
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+junit4 = { module = "junit:junit", version.ref = "junit4" }
 
 [plugins]
 intellijPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "intellijPlatformPlugin" }
 intellijPlatformModule = { id = "org.jetbrains.intellij.platform.module", version.ref = "intellijPlatformPlugin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+foojay-resolver = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref = "foojayResolver" }

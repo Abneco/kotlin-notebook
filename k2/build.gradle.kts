@@ -1,16 +1,16 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.intellijPlatformModule)
+}
+
+sourceSets {
+    main {
+        kotlin.srcDirs("src", "gen")
+        resources.srcDir("resources")
+    }
 }
 
 kotlin {
     jvmToolchain(libs.versions.jvmTarget.get().toInt())
-}
-
-repositories {
-    intellijPlatform {
-        defaultRepositories()
-    }
 }
 
 dependencies {
@@ -22,5 +22,5 @@ dependencies {
         bundledModule("intellij.java.backend")
     }
 
-    implementation(project(":core"))
+    implementation(projects.core)
 }

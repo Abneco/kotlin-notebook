@@ -89,7 +89,7 @@ class KotlinNotebookDependenciesComboBoxAction : KotlinNotebookEditorActionBase(
     override fun update(event: AnActionEvent) {
         actionUpdater.update(this, event) { e ->
             val currentDependencies = e.getCurrentDependencies() ?: return@update
-            val (icon, text: @NlsActions.ActionText String) = when (currentDependencies) {
+            val (icon, text) = when (currentDependencies) {
                 KotlinNotebookDependencies.AllLibraries -> {
                     null to KotlinNotebookBundle.message("action.KotlinNotebookDependenciesComboBoxAction.AllProjectLibrariesAction.text")
                 }

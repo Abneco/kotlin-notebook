@@ -309,8 +309,8 @@ class KotlinNotebookSettingsPanelBuilder(
     }
 
     private fun Panel.createParametersListField(
-        message: @Nls String,
-        commentMessage: @NlsContexts.DetailedDescription String?,
+        @Nls message: String,
+        @NlsContexts.DetailedDescription commentMessage: String?,
         property: KMutableProperty0<MutableList<String>>,
     ): Row {
         return row(message) {

@@ -55,7 +55,7 @@ internal abstract class KotlinNotebookProperty<T>(val name: String, val defaultV
     }
 }
 
-internal class KotlinNotebookBooleanProperty(name: @Nls String, defaultValue: Boolean) : KotlinNotebookProperty<Boolean>(name, defaultValue) {
+internal class KotlinNotebookBooleanProperty(@Nls name: String, defaultValue: Boolean) : KotlinNotebookProperty<Boolean>(name, defaultValue) {
     override fun JsonNode.toValue(): Boolean {
         return this == BooleanNode.TRUE
     }
@@ -66,7 +66,7 @@ internal class KotlinNotebookBooleanProperty(name: @Nls String, defaultValue: Bo
 }
 
 internal class KotlinNotebookEnumProperty<T : Enum<T>>(
-    name: @Nls String,
+    @Nls name: String,
     defaultValue: T,
     private val kClass: KClass<T>,
 ) : KotlinNotebookProperty<T>(name, defaultValue) {

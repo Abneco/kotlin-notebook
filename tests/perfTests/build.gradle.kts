@@ -1,6 +1,7 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.intellijPlatformModule)
 }
 
 kotlin {
@@ -14,22 +15,16 @@ sourceSets {
     }
 }
 
-repositories {
-    intellijPlatform {
-        defaultRepositories()
-    }
-}
-
 dependencies {
     intellijPlatform {
         bundledPlugin("org.jetbrains.kotlin")
         bundledPlugin("intellij.jupyter")
-        bundledPlugin("com.intellij.performanceTesting")
+        bundledPlugin("com.jetbrains.performancePlugin")
 
         testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.JUnit5)
     }
 
-    testImplementation(project(":core"))
-    testImplementation(project(":performancePlugin"))
+    testImplementation(projects.core)
+    testImplementation(projects.performancePlugin)
 }

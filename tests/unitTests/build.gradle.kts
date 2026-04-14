@@ -1,6 +1,7 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.intellijPlatformModule)
 }
 
 kotlin {
@@ -20,12 +21,6 @@ sourceSets {
     }
 }
 
-repositories {
-    intellijPlatform {
-        defaultRepositories()
-    }
-}
-
 dependencies {
     intellijPlatform {
         bundledPlugin("org.jetbrains.kotlin")
@@ -38,17 +33,19 @@ dependencies {
         testFramework(TestFrameworkType.JUnit5)
     }
 
-    testImplementation(project(":core"))
-    testImplementation(project(":tables"))
-    testImplementation(project(":export:pdf"))
-    testImplementation(project(":k1"))
-    testImplementation(project(":k2"))
-    testImplementation(project(":debug"))
-    testImplementation(project(":plots"))
-    testImplementation(project(":sql"))
+    testImplementation(projects.core)
+    testImplementation(projects.tables)
+    testImplementation(projects.export.pdf)
+    testImplementation(projects.k1)
+    testImplementation(projects.k2)
+    testImplementation(projects.debug)
+    testImplementation(projects.plots)
+    testImplementation(projects.sql)
 
     testImplementation(libs.kotlinx.serialization.core)
     testImplementation(libs.kotlinx.serialization.json)
     testImplementation(libs.jackson.core)
     testImplementation(libs.jackson.databind)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.junit4)
 }

@@ -1,20 +1,22 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.intellijPlatformModule)
+}
+
+sourceSets {
+    main {
+        kotlin.srcDir("src")
+        resources.srcDir("resources")
+    }
 }
 
 kotlin {
     jvmToolchain(libs.versions.jvmTarget.get().toInt())
 }
 
-repositories {
-    intellijPlatform {
-        defaultRepositories()
-    }
-}
-
 dependencies {
     intellijPlatform {
+        // Kotlin plugin: KotlinLanguage
+        bundledPlugin("org.jetbrains.kotlin")
         // jupyter/core, jupyter/psi, dataspell/jupyter/sql/common
         bundledPlugin("intellij.jupyter")
         // dbe/database
@@ -22,7 +24,7 @@ dependencies {
         bundledModule("intellij.java.backend")
     }
 
-    implementation(project(":core"))
+    implementation(projects.core)
 
     compileOnly(libs.jackson.core)
     compileOnly(libs.jackson.databind)

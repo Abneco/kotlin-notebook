@@ -8,7 +8,8 @@ import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import org.jetbrains.annotations.Nls
 
 class KotlinNotebookErrorOutputCustomizer : JupyterErrorOutputCustomizer {
-    override fun getFoldedTextPlaceholder(notebook: JupyterNotebook?): @Nls String? {
+    @Nls
+    override fun getFoldedTextPlaceholder(notebook: JupyterNotebook?): String? {
         if (notebook?.isKotlinNotebook == true) {
             return KotlinNotebookBundle.message("notebook.error.output.traceback.kotlin.ellipsis")
         }

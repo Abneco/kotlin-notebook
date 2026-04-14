@@ -1,23 +1,23 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.intellijPlatformModule)
+}
+
+sourceSets {
+    main {
+        kotlin.srcDir("src")
+        resources.srcDir("resources")
+    }
 }
 
 kotlin {
     jvmToolchain(libs.versions.jvmTarget.get().toInt())
 }
 
-repositories {
-    intellijPlatform {
-        defaultRepositories()
-    }
-}
-
 dependencies {
     intellijPlatform {
-        // Gradle bundled plugin
-        bundledPlugin("org.jetbrains.plugins.gradle")
+        // Gradle integration plugin
+        bundledPlugin("com.intellij.gradle")
     }
 
-    implementation(project(":core"))
+    implementation(projects.core)
 }

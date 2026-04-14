@@ -1,26 +1,26 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.intellijPlatformModule)
+}
+
+sourceSets {
+    main {
+        kotlin.srcDir("src")
+        resources.srcDir("resources")
+    }
 }
 
 kotlin {
     jvmToolchain(libs.versions.jvmTarget.get().toInt())
 }
 
-repositories {
-    intellijPlatform {
-        defaultRepositories()
-    }
-}
-
 dependencies {
     intellijPlatform {
         // jupyter/core
         bundledPlugin("intellij.jupyter")
-        bundledPlugin("com.intellij.performanceTesting")
+        bundledPlugin("com.jetbrains.performancePlugin")
     }
 
-    implementation(project(":core"))
+    implementation(projects.core)
 
     compileOnly(libs.jackson.core)
     compileOnly(libs.jackson.databind)

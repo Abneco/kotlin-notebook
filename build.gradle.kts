@@ -1,3 +1,6 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformExtension
+
 plugins {
     alias(libs.plugins.intellijPlatform)
     alias(libs.plugins.kotlin.jvm) apply false
@@ -16,21 +19,38 @@ sourceSets {
     }
 }
 
-// Provide Maven Central and the kotlin-jupyter Maven repo to all subprojects
-allprojects {
-    repositories {
-        mavenCentral()
-        maven("https://packages.jetbrains.team/maven/p/kds/kotlin-ds-maven")
+// Apply the module plugin to every subproject so they can declare intellijPlatform dependencies.
+// Disable Java bytecode instrumentation globally — this is a Kotlin-only plugin; the
+// java-compiler-ant-tasks are not published for nightly builds.
+subprojects {
+    apply(plugin = "org.jetbrains.intellij.platform.module")
+    extensions.configure<IntelliJPlatformExtension> {
+        instrumentCode = false
     }
 }
 
-repositories {
-    intellijPlatform {
-        defaultRepositories()
-        // EAP / nightly snapshots for branch 262
-        maven("https://cache-redirector.jetbrains.com/intellij.jetbrains.com/intellij-repository/nightly")
-        maven("https://cache-redirector.jetbrains.com/intellij.jetbrains.com/intellij-repository/snapshots")
-        maven("https://cache-redirector.jetbrains.com/packages.jetbrains.team/maven/p/ij/intellij-dependencies")
+// Shared repository and resolution configuration for all projects
+allprojects {
+    val intellijPlatformVersion = providers.gradleProperty("intellijPlatformVersion")
+    configurations.all {
+        resolutionStrategy {
+            // Nightly builds only publish 262-SNAPSHOT, not exact build numbers like 262.3925.
+            // Force these to resolve from the nightly repo using the snapshot coordinates.
+            force(
+                "com.jetbrains.intellij.platform:test-framework:${intellijPlatformVersion.get()}",
+                "com.jetbrains.intellij.platform:test-framework-junit5:${intellijPlatformVersion.get()}",
+            )
+        }
+    }
+    repositories {
+        mavenCentral()
+        maven("https://packages.jetbrains.team/maven/p/kds/kotlin-ds-maven")
+        intellijPlatform {
+            defaultRepositories()
+            // Nightly snapshots for branch 262
+            maven("https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/nightly")
+            maven("https://cache-redirector.jetbrains.com/packages.jetbrains.team/maven/p/ij/intellij-dependencies")
+        }
     }
 }
 
@@ -46,32 +66,34 @@ dependencies {
         bundledPlugin("com.intellij.notebooks.core")
         bundledPlugin("com.intellij.database")
         bundledPlugin("com.intellij.debugger.collections.visualizer")
-        bundledPlugin("com.intellij.performanceTesting")
+        bundledPlugin("com.jetbrains.performancePlugin")
 
         // Platform module dependency
         bundledModule("intellij.java.backend")
 
         pluginVerifier()
         zipSigner()
-    }
 
-    // Content modules
-    pluginModule(implementation(project(":core")))
-    pluginModule(implementation(project(":tables")))
-    pluginModule(implementation(project(":sql")))
-    pluginModule(implementation(project(":plots")))
-    pluginModule(implementation(project(":export:pdf")))
-    pluginModule(implementation(project(":buildSystems:gradle")))
-    pluginModule(implementation(project(":liveTemplates")))
-    pluginModule(implementation(project(":k1")))
-    pluginModule(implementation(project(":k2")))
-    pluginModule(implementation(project(":debug")))
-    pluginModule(implementation(project(":debug:renders")))
-    pluginModule(implementation(project(":notekit")))
-    pluginModule(implementation(project(":performancePlugin")))
+        // Content modules
+        pluginModule(implementation(projects.core))
+        pluginModule(implementation(projects.tables))
+        pluginModule(implementation(projects.sql))
+        pluginModule(implementation(projects.plots))
+        pluginModule(implementation(projects.export.pdf))
+        pluginModule(implementation(projects.buildSystems.gradle))
+        pluginModule(implementation(projects.liveTemplates))
+        pluginModule(implementation(projects.k1))
+        pluginModule(implementation(projects.k2))
+        pluginModule(implementation(projects.debug))
+        pluginModule(implementation(projects.debug.renders))
+        pluginModule(implementation(projects.notekit))
+        pluginModule(implementation(projects.performancePlugin))
+    }
 }
 
 intellijPlatform {
+    instrumentCode = false
+
     pluginConfiguration {
         version = providers.gradleProperty("pluginVersion")
     }

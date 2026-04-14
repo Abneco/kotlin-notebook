@@ -40,7 +40,7 @@ fun showFileAlreadyExistsDialog(
     }
 
     fun createChangeStrategyAction(
-        name: @NlsActions.ActionText String,
+        @NlsActions.ActionText name: String,
         strategy: FileAlreadyExistsStrategy,
     ) = object : AbstractAction(name) {
         override fun actionPerformed(e: ActionEvent?) {

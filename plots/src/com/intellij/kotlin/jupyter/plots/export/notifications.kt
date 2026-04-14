@@ -110,7 +110,8 @@ private fun Notification.addPlotOpenAction(files: Collection<Path>) {
     addAction(action)
 }
 
-private fun Throwable.asDescription(): @NlsSafe String {
+@NlsSafe
+private fun Throwable.asDescription(): String {
     return when(this) {
         is FileAlreadyExistsException -> {
             KotlinNotebookPlotsBundle.message("kotlin.notebook.outputs.kandy.export.failed.already.exists.message", file)

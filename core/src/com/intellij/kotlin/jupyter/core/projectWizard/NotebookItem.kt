@@ -5,7 +5,7 @@ import com.intellij.kotlin.jupyter.core.settings.recents.RecentNotebookWithIcon
 import org.jetbrains.annotations.Nls
 
 sealed interface NotebookItem {
-    fun displayName(): @Nls String
+    @Nls fun displayName(): String
     fun searchName(): String
     fun children(): List<NotebookItem> = emptyList()
 }
