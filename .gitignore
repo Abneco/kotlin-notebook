@@ -1,0 +1,17 @@
+# Build outputs
+build/
+.gradle/
+out/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Gradle wrapper (keep gradle-wrapper.jar committed)
+!gradle/wrapper/gradle-wrapper.jar
