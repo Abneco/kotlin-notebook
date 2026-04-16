@@ -56,10 +56,10 @@ import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
 import org.jetbrains.kotlin.idea.test.setUpWithKotlinPlugin
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.test.TestMetadata
-import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
-import org.jetbrains.plugins.notebooks.tests.cleanJupyterUserData
-import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
-import org.jetbrains.plugins.notebooks.tests.withSwingMarkdownRenderMode
+import com.intellij.jupyter.testFramework.JupyterBaseTestCase
+import com.intellij.jupyter.testFramework.cleanJupyterUserData
+import com.intellij.jupyter.testFramework.configureByJupyterFile
+import com.intellij.jupyter.testFramework.withSwingMarkdownRenderMode
 import org.junit.Rule
 import org.junit.rules.DisableOnDebug
 import org.junit.rules.TestRule

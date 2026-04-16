@@ -47,7 +47,7 @@ import org.jetbrains.jupyter.builder.NotebookBuilder
 import org.jetbrains.jupyter.builder.buildNotebook
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
-import org.jetbrains.plugins.notebooks.tests.awaitBlocking
+import com.intellij.jupyter.testFramework.awaitBlocking
 import java.nio.file.Path
 import kotlin.time.Duration.Companion.minutes
 

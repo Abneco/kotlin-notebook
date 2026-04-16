@@ -26,9 +26,9 @@ import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
 import org.jetbrains.kotlin.idea.test.setUpWithKotlinPlugin
 import org.jetbrains.kotlin.test.TestMetadata
-import org.jetbrains.plugins.notebooks.tests.JupyterBaseTestCase
-import org.jetbrains.plugins.notebooks.tests.JupyterCommonRule
-import org.jetbrains.plugins.notebooks.tests.configureByJupyterFile
+import com.intellij.jupyter.testFramework.JupyterBaseTestCase
+import com.intellij.jupyter.testFramework.JupyterCommonRule
+import com.intellij.jupyter.testFramework.configureByJupyterFile
 import org.junit.Rule
 import org.junit.runner.RunWith
 import java.nio.file.FileSystems

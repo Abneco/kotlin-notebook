@@ -18,7 +18,7 @@ import junit.framework.TestCase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.delay
-import org.jetbrains.plugins.notebooks.tests.awaitBlocking
+import com.intellij.jupyter.testFramework.awaitBlocking
 import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.atomic.AtomicBoolean

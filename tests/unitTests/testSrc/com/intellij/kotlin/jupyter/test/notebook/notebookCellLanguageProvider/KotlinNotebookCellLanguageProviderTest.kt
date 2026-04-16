@@ -3,13 +3,13 @@ package com.intellij.kotlin.jupyter.test.notebook.notebookCellLanguageProvider
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookBaseTestCase
 import com.intellij.notebooks.jupyter.core.jupyter.CellType
-import com.intellij.notebooks.visualization.CodeCellLinesChecker
+import com.intellij.notebooks.visualization.testFramework.CodeCellLinesChecker
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.fileTypes.PlainTextLanguage
 import com.intellij.testFramework.TestDataPath
 import org.intellij.plugins.markdown.lang.MarkdownLanguage
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.plugins.notebooks.tests.MarkdownRenderModeTestHelper
+import com.intellij.jupyter.testFramework.MarkdownRenderModeTestHelper
 import org.junit.Test
 
 @TestDataPath($$"$CONTENT_ROOT/testData/notebooks/cellLanguageProvider")
