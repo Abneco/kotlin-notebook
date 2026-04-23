@@ -8,7 +8,7 @@ import com.intellij.driver.sdk.waitFor
 import com.intellij.driver.tests.kotlin.notebooks.utils.getProjectPath
 import com.intellij.ide.starter.ide.IDETestContext
 import com.intellij.ide.starter.models.IdeInfo
-import com.intellij.tools.ide.starter.build.server.idea.ultimate.IdeaUltimate
+import com.intellij.tools.ide.starter.product.idea.ultimate.IdeaUltimate
 import com.intellij.ide.starter.junit5.newContext
 import com.intellij.ide.starter.project.NoProject
 import com.intellij.ide.starter.project.ProjectInfoSpec
