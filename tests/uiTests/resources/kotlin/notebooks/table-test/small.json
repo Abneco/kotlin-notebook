@@ -1,0 +1,58 @@
+[ {
+  "id" : 0,
+  "name" : "Daniel",
+  "city" : "San Diego",
+  "age" : 48,
+  "friends" : [ {
+    "name" : "Charlotte",
+    "hobbies" : [ "Quilting", "Writing", "Music" ]
+  }, {
+    "name" : "Levi",
+    "hobbies" : [ "Gardening", "Music" ]
+  }, {
+    "name" : "Elijah",
+    "hobbies" : [ "Video Games", "Writing" ]
+  }, {
+    "name" : "Isabella",
+    "hobbies" : [ "Writing", "Gardening", "Video Games" ]
+  } ]
+}, {
+  "id" : 1,
+  "name" : "Sarah",
+  "city" : "Lahaina",
+  "age" : 39,
+  "friends" : [ {
+    "name" : "Mia",
+    "hobbies" : [ "Church Activities", "Writing", "Collecting" ]
+  }, {
+    "name" : "Levi",
+    "hobbies" : [ "Television", "Team Sports", "Tennis" ]
+  }, {
+    "name" : "Kevin",
+    "hobbies" : [ "Fishing", "Martial Arts" ]
+  }, {
+    "name" : "Victoria",
+    "hobbies" : [ "Watching Sports", "Video Games", "Calligraphy" ]
+  } ]
+}, {
+  "id" : 2,
+  "name" : "Charlotte",
+  "city" : "Honolulu",
+  "age" : 49,
+  "friends" : [ {
+    "name" : "Chris",
+    "hobbies" : [ "Socializing", "Writing" ]
+  }, {
+    "name" : "Victoria",
+    "hobbies" : [ "Yoga", "Jewelry Making", "Woodworking" ]
+  }, {
+    "name" : "Liam",
+    "hobbies" : [ "Eating Out", "Martial Arts", "Video Games" ]
+  }, {
+    "name" : "Ava",
+    "hobbies" : [ "Board Games", "Team Sports" ]
+  }, {
+    "name" : "Robert",
+    "hobbies" : [ "Dancing", "Housework", "Writing" ]
+  } ]
+} ]
