@@ -1,8 +1,6 @@
 // Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.sql
 
-import com.intellij.database.extractors.DataExtractor
-import com.intellij.database.psi.DbDataSource
 import com.intellij.dataspell.jupyter.sql.common.SqlCellConfiguration
 import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jupyter.connections.execution.core.JupyterExecutionCallback
@@ -45,7 +43,5 @@ class KotlinSqlCellConfigurationImpl : SqlCellConfiguration {
     }
 
     override fun getVariablePrefix(): String = "dfSql"
-
-    override fun getDataExtractor(dataSource: DbDataSource, project: Project): DataExtractor = DuckDBExtractor()
 
 }

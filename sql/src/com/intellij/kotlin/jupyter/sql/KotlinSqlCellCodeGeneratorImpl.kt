@@ -34,10 +34,10 @@ class KotlinSqlCellCodeGeneratorImpl : SqlCellsCodeGenerator {
         return Code(JupyterKotlinCodeWrapper.raiseException(message))
     }
 
-    private fun shouldCreateUseStatement(packagePrefix: String, project: Project, notebookFile: BackedNotebookVirtualFile): Boolean {
+    private fun shouldCreateUseStatement(project: Project, notebookFile: BackedNotebookVirtualFile): Boolean {
         val compilerService = JupyterCompilerService.getForFile(project, notebookFile)
         return !compilerService.currentClasspath.any { file ->
-            file.name.startsWith(packagePrefix)
+            file.name.startsWith("dataframe-core")
         }
     }
 
@@ -47,26 +47,11 @@ class KotlinSqlCellCodeGeneratorImpl : SqlCellsCodeGenerator {
         isTableCreated: Boolean,
         project: Project,
         notebookFile: BackedNotebookVirtualFile,
-    ): List<Code> {
-        val duckDbDependency = """
-            USE {
-              dependencies("org.duckdb:duckdb_jdbc:$DUCKDB_JDBC_DRIVER_VERSION")
-            }
-        """.trimIndent()
-
-        val dataframeUseStatement = "%use dataframe"
-        val dataFrameCode = JupyterKotlinCodeWrapper.addOrCreateTableDataFrame(variableName, data, isTableCreated)
-        val dataframeParts = listOfNotNull(
-            dataframeUseStatement.takeIf { shouldCreateUseStatement("dataframe-core", project, notebookFile) },
-            dataFrameCode
-        )
-
-        return buildList {
-            if (shouldCreateUseStatement("duckdb_jdbc", project, notebookFile))
-                add(duckDbDependency)
-
-            add(dataframeParts.joinToString(System.lineSeparator()))
-        }.map(::Code)
+    ): Code {
+        return Code(listOfNotNull(
+            "%use dataframe".takeIf { shouldCreateUseStatement(project, notebookFile) },
+            JupyterKotlinCodeWrapper.addOrCreateTableDataFrame(variableName, data, isTableCreated)
+        ).joinToString(System.lineSeparator()))
     }
 
     object JupyterKotlinCodeWrapper {
@@ -83,6 +68,18 @@ class KotlinSqlCellCodeGeneratorImpl : SqlCellsCodeGenerator {
             return """String(java.util.Base64.getDecoder().decode("$encodedString"), kotlin.text.Charsets.UTF_8)"""
         }
 
+        /**
+         * Wraps a UTF-8 encoded byte array into Kotlin code that reconstructs it from Base64-encoded bytes.
+         * This approach avoids issues with escape characters and special characters in generated code.
+         *
+         * @param utf8encoded the UTF-8 encoded byte array to encode and wrap
+         * @return Kotlin code that decodes the Base64-encoded string at runtime
+         */
+        fun wrapString(utf8encoded: ByteArray): String {
+            val encodedString = Base64.getEncoder().encodeToString(utf8encoded)
+            return """String(java.util.Base64.getDecoder().decode("$encodedString"), kotlin.text.Charsets.UTF_8)"""
+        }
+
         // All exceptions that are in the package 'org.jetbrains.kotlinx.jupyter' will have no stacktrace.
         //  See: com.intellij.kotlin.jupyter.core.jupyter.outputs.error.KotlinErrorOutputContentProvider
         fun raiseSqlTraceOmittingException(message: String): String =
@@ -91,37 +88,14 @@ class KotlinSqlCellCodeGeneratorImpl : SqlCellsCodeGenerator {
         fun raiseException(errorMessage: String): String =
             """throw Exception(${wrapString(errorMessage)})"""
 
-        fun generateCodeForDataFrame(data: ByteArray): String {
-            val string = String(data, Charsets.UTF_8)
-            return """
-                import kotlin.io.path.deleteIfExists
-                
-                var df: org.jetbrains.kotlinx.dataframe.DataFrame<*>
-                try {
-                    val connection = java.sql.DriverManager.getConnection("jdbc:duckdb:$string")
-                    df = org.jetbrains.kotlinx.dataframe.DataFrame.readAllSqlTables(connection).values.single()
-                } finally {
-                    try {
-                        // deleting the file to clean up space immediately, avoiding disk usage increase in longer session.
-                        kotlin.io.path.Path("$string").deleteIfExists()
-                    } catch (_: Exception) {
-                        // ignored
-                    }
-                }
-                """.trimIndent()
-        }
+        fun generateCodeForDataFrame(data: ByteArray): String =
+            """org.jetbrains.kotlinx.dataframe.DataFrame.readCsv(${wrapString(data)}.byteInputStream(), delimiter = ',')"""
 
         private fun generateCodeSetDataFrameToVariable(variableName: String, data: ByteArray): String =
-            """
-                ${generateCodeForDataFrame(data)}
-                val ${variableName}: org.jetbrains.kotlinx.dataframe.DataFrame<*> = df
-            """.trimIndent()
+            """val ${variableName}: DataFrame<*> = ${generateCodeForDataFrame(data)}"""
 
         private fun generateCodeConcatWithDataFrame(variableName: String, data: ByteArray): String =
-            """
-                ${generateCodeForDataFrame(data)}
-                val ${variableName} = ${variableName}.concat(df)
-            """.trimIndent()
+            """val ${variableName}=${variableName}.concat(${generateCodeForDataFrame(data)})"""
 
         fun addOrCreateTableDataFrame(variableName: String, data: ByteArray, isTableCreated: Boolean): String {
             return if (isTableCreated)
