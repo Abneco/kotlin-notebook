@@ -1,5 +1,5 @@
 [versions]
-intellijPlatformPlugin = "2.14.0"
+intellijPlatformPlugin = "2.14.1-SNAPSHOT"
 kotlin = "2.3.20"
 kotlinxSerializationCore = "1.11.0"
 kotlinxCoroutines = "1.10.2"
@@ -10,7 +10,8 @@ jackson = "2.21.2"
 slf4j = "2.0.17"
 kotest = "5.9.1"
 junit4 = "4.13.2"
-jvmTarget = "21"
+jvmTarget = "25"
+jupyterParser = "0.3.0-100"
 clikt = "2.8.0"
 
 [libraries]
@@ -23,6 +24,8 @@ kotlin-jupyter-lib = { module = "org.jetbrains.kotlinx:kotlin-jupyter-lib", vers
 kotlin-jupyter-ws-server = { module = "org.jetbrains.kotlinx:kotlin-jupyter-ws-server", version.ref = "kotlinJupyter" }
 kotlin-jupyter-shared-compiler = { module = "org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler", version.ref = "kotlinJupyter" }
 kotlin-jupyter-common-dependencies = { module = "org.jetbrains.kotlinx:kotlin-jupyter-common-dependencies", version.ref = "kotlinJupyter" }
+
+jupyter-notebook-parser = { module = "org.jetbrains.kotlinx:jupyter-notebooks-parser", version.ref = "jupyterParser" }
 
 lets-plot-export-shadowed = { module = "org.jetbrains.lets-plot:lets-plot-export-shadowed", version.ref = "letsPlotExportShadowed" }
 lets-plot-kotlin-json = { module = "org.jetbrains.lets-plot:lets-plot-kotlin-json", version.ref = "letsPlotKotlinJson" }

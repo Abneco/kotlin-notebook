@@ -5,6 +5,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 pluginManagement {
     repositories {
         maven("https://cache-redirector.jetbrains.com/plugins.gradle.org/m2")
+        maven("https://central.sonatype.com/repository/maven-snapshots/")
         gradlePluginPortal()
         mavenCentral()
     }
@@ -22,7 +23,7 @@ include(
     ":export:pdf",
     ":buildSystems:gradle",
     ":liveTemplates",
-    ":k1",
+    // ":k1",
     ":k2",
     ":debug",
     ":debug:renders",

@@ -1,9 +1,8 @@
-import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.extensions.IntelliJPlatformExtension
 
 plugins {
     alias(libs.plugins.intellijPlatform)
-    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization) apply false
 }
 
@@ -17,6 +16,10 @@ sourceSets {
             srcDirs("plugin/resources")
         }
     }
+}
+
+kotlin {
+    jvmToolchain(libs.versions.jvmTarget.get().toInt())
 }
 
 // Apply the module plugin to every subproject so they can declare intellijPlatform dependencies.
@@ -48,7 +51,7 @@ allprojects {
         intellijPlatform {
             defaultRepositories()
             // Nightly snapshots for branch 262
-            maven("https://cache-redirector.jetbrains.com/www.jetbrains.com/intellij-repository/nightly")
+            nightly()
             maven("https://cache-redirector.jetbrains.com/packages.jetbrains.team/maven/p/ij/intellij-dependencies")
         }
     }
@@ -67,6 +70,7 @@ dependencies {
         bundledPlugin("com.intellij.database")
         bundledPlugin("com.intellij.debugger.collections.visualizer")
         bundledPlugin("com.jetbrains.performancePlugin")
+        bundledPlugin("org.jetbrains.plugins.github")
 
         // Platform module dependency
         bundledModule("intellij.java.backend")
@@ -82,7 +86,6 @@ dependencies {
         pluginModule(implementation(projects.export.pdf))
         pluginModule(implementation(projects.buildSystems.gradle))
         pluginModule(implementation(projects.liveTemplates))
-        pluginModule(implementation(projects.k1))
         pluginModule(implementation(projects.k2))
         pluginModule(implementation(projects.debug))
         pluginModule(implementation(projects.debug.renders))

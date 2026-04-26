@@ -23,6 +23,7 @@ dependencies {
 
         testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.JUnit5)
+        testFramework(TestFrameworkType.Starter, version = "261.22158.277")
     }
 
     testImplementation(projects.core)

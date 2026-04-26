@@ -29,7 +29,7 @@ dependencies {
         // intellij.jupyter plugin: jupyter/core, jupyter/psi, jupyter/execution
         bundledPlugin("intellij.jupyter")
         // Java APIs
-        bundledModule("intellij.java.backend")
+        bundledModule("com.intellij.java")
     }
 
     // Bundled third-party libs (shipped with the plugin)
