@@ -17,29 +17,31 @@ for hash in "$@"; do
     full_hash=$(git -C "$ULTIMATE_DIR" rev-parse "$hash")
 
     # Collect files in plugins/kotlin/jupyter/, excluding .iml and .bazel files
-    files_raw=$(
-        git -C "$ULTIMATE_DIR" show --name-only "$full_hash" -- "$PREFIX/" \
+    files_raw=()
+    while IFS= read -r line; do
+        files_raw+=("$line")
+    done < <(
+        git -C "$ULTIMATE_DIR" show --name-only --format= "$full_hash" -- "$PREFIX/" \
             | grep "^$PREFIX/" \
             | grep -v '\.iml$' \
             | grep -v '\.bazel$' \
             || true
     )
 
-    if [ -z "$files_raw" ]; then
+    if [ ${#files_raw[@]} -eq 0 ]; then
         echo "  No relevant files in $PREFIX/ — skipping."
         continue
     fi
 
     # Generate filtered patch, strip the plugins/kotlin/jupyter/ prefix, and apply
-    # shellcheck disable=SC2086
-    git -C "$ULTIMATE_DIR" show "$full_hash" -- $files_raw \
+    git -C "$ULTIMATE_DIR" show "$full_hash" -- "${files_raw[@]}" \
         | sed "s|a/$PREFIX/|a/|g; s|b/$PREFIX/|b/|g" \
         | git -C "$KTNB_DIR" apply
 
     # Stage the files (prefix stripped)
-    while IFS= read -r f; do
+    for f in "${files_raw[@]}"; do
         git -C "$KTNB_DIR" add "${f#"$PREFIX/"}"
-    done <<< "$files_raw"
+    done
 
     # Commit with original author info
     author_name=$(git -C "$ULTIMATE_DIR" log -1 --format="%an" "$full_hash")
@@ -50,7 +52,7 @@ for hash in "$@"; do
     GIT_AUTHOR_NAME="$author_name" \
     GIT_AUTHOR_EMAIL="$author_email" \
     GIT_AUTHOR_DATE="$author_date" \
-    git -C "$KTNB_DIR" commit -m "${commit_msg}Cherry-picked from ultimate@${full_hash:0:8}"
+    git -C "$KTNB_DIR" commit -m "$commit_msg" -m "Cherry-picked from ultimate@${full_hash:0:8}"
 
     echo "  Done."
 done
