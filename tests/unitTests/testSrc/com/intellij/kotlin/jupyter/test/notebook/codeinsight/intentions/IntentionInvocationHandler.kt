@@ -20,10 +20,10 @@ import io.kotest.matchers.shouldNotBe
 import junit.framework.TestCase
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.permissions.KaAnalysisPermissionRegistry
-import org.jetbrains.kotlin.formatter.FormatSettingsUtil
 import org.jetbrains.kotlin.idea.base.test.InTextDirectivesUtils
-import org.jetbrains.kotlin.idea.intentions.computeOnBackground
-import org.jetbrains.kotlin.idea.test.configureCodeStyleAndRun
+import org.jetbrains.kotlin.idea.base.test.configureCodeStyleAndRun
+import org.jetbrains.kotlin.idea.base.test.formatter.FormatSettingsUtil
+import org.jetbrains.kotlin.idea.base.test.intentions.computeOnBackground
 import org.jetbrains.kotlin.idea.util.application.executeCommand
 import org.jetbrains.kotlin.idea.util.application.executeWriteCommand
 import org.jetbrains.kotlin.psi.KtFile
