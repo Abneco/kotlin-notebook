@@ -6,7 +6,7 @@ Thank you for your interest in contributing to the Kotlin Notebook plugin!
 
 ### Prerequisites
 
-- JDK 21
+- JDK 25
 - Git
 
 ### Getting the source code
