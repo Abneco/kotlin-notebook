@@ -38,11 +38,9 @@ import org.jetbrains.kotlin.scripting.resolve.VirtualFileScriptSource
 import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.implicitReceivers
 
-internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) : ScriptingSupportUpdater {
-    companion object {
-        private val LOG = KotlinNotebookLoggerFactory.getInstance(K2ScriptingSupportUpdater::class)
-    }
+private val LOG = KotlinNotebookLoggerFactory.getInstance(K2ScriptingSupportUpdater::class)
 
+internal class K2ScriptingSupportUpdater(updaterConstructorData: UpdaterConstructorData) : ScriptingSupportUpdater {
     private val project = updaterConstructorData.project
     private val disposalMutex = Mutex()
 
