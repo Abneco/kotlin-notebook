@@ -25,11 +25,8 @@ private val NON_CODE_CELL_REGEX get() = Regex("""${CELL_MARKER}(${nonCodeCellSuf
 
 val NotebookPsiCell.isNonCode: Boolean get() = cellMarker.text.matches(NON_CODE_CELL_REGEX)
 
-class KotlinNotebookCellsInjector(project: Project) : MultiHostInjector, DumbAware {
+internal class KotlinNotebookCellsInjector(val project: Project) : MultiHostInjector, DumbAware {
     private val injectedCounter = AtomicInteger()
-    private val projectCompilerService = JupyterCompilerService.getInstance(project)
-
-    private val kotlinLanguage = projectCompilerService.language
     private val metaLanguage = JupyterKtMetaLanguage
 
     private val idsCache = mutableMapOf<PsiElement, Int>()
@@ -63,6 +60,9 @@ class KotlinNotebookCellsInjector(project: Project) : MultiHostInjector, DumbAwa
             }
             registrar.doneInjecting()
         }
+
+        val projectCompilerService = JupyterCompilerService.getInstance(project)
+        val kotlinLanguage = projectCompilerService.language
 
         try {
             ranges.magicRanges.inject(metaLanguage, JKTMetaFileType.EXTENSION, skipEmpty = true)
