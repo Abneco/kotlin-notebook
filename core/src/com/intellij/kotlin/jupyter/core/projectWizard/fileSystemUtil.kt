@@ -16,6 +16,7 @@ import com.intellij.kotlin.jupyter.core.util.KotlinNotebookPluginScope
 import com.intellij.kotlin.jupyter.core.util.toAbsolutePath
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.WriteAction
+import com.intellij.openapi.application.edtWriteAction
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.module.JavaModuleType
 import com.intellij.openapi.module.ModuleManager
@@ -72,7 +73,7 @@ fun createKotlinNotebookInProjectWhenProjectIsInitialized(
         }
 
         val fileTemplate = template.getFileTemplate(project)
-        val newPsiFile = withContext(Dispatchers.EDT) {
+        val newPsiFile = edtWriteAction {
             CreateNotebookFactory.createFileFromTemplate(
                 fileName = freeFileName,
                 template = fileTemplate,
