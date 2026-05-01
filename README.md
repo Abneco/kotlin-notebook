@@ -13,6 +13,14 @@ The **Kotlin Notebook** plugin is an IntelliJ IDEA plugin that enables you to cr
 [Kotlin notebooks](https://www.jetbrains.com/help/idea/kotlin-notebook.html) directly within the IDE.
 It acts as a client for the [Kotlin Jupyter kernel](https://github.com/Kotlin/kotlin-jupyter).
 
+## Repository status
+
+The source in this repository reflects the latest state of the plugin. However, for technical
+reasons, the repository is not fully self-contained right now: building the plugin and running
+the tests may not work out of the box after cloning. We're working on making this a fully
+buildable, runnable project. It will take some time, and this README will be updated once
+that's done.
+
 ## Features
 
 - Syntax highlighting, inlay hints, inspections, find usages, and refactorings in notebook cells
