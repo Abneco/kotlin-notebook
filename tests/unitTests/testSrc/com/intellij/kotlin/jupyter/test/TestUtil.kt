@@ -8,8 +8,9 @@ import com.intellij.jupyter.core.executor.kernel.JupyterKernelCellTask
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterKernelState
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterMessage
 import com.intellij.jupyter.core.jupyter.connections.execution.message.JupyterStatusMessage
-import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputComponentFactory
+import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.JupyterBrowserOutputComponentFactory
 import com.intellij.jupyter.core.kernel.executor.JupyterTaskBaseCallback
+import com.intellij.jupyter.testFramework.awaitBlocking
 import com.intellij.kotlin.jupyter.core.jupyter.actions.CreateNotebookFactory
 import com.intellij.kotlin.jupyter.core.language.emptyNotebookTemplate
 import com.intellij.kotlin.jupyter.core.scriptingSupport.JupyterCompilerService
@@ -47,7 +48,6 @@ import org.jetbrains.jupyter.builder.NotebookBuilder
 import org.jetbrains.jupyter.builder.buildNotebook
 import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
-import com.intellij.jupyter.testFramework.awaitBlocking
 import java.nio.file.Path
 import kotlin.time.Duration.Companion.minutes
 

@@ -1,11 +1,11 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.tables
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.intellij.jupyter.core.jackson
-import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterBrowserOutputDataKey
 import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.editor.outputs.getOutputsForIndex
+import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.JupyterBrowserOutputDataKey
 import com.intellij.jupyter.core.jupyter.helper.isJupyter
 import com.intellij.jupyter.core.jupyter.nbformat.MimeType
 import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterExecuteResultOutput
