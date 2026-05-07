@@ -1,4 +1,3 @@
-// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.driver.tests.kotlin.notebooks
 
 import com.intellij.driver.sdk.dumpThreads
@@ -70,7 +69,6 @@ class KotlinNotebooksSmokeTest : KotlinNotebooksBaseTest("kotlin/notebooks/hello
   }
 
   @Test
-  @Disabled("Migrate to new CEF")
   fun `check markdown cell creation`() = withDriver {
     withNotebookEditor { checkMarkdownCellRendering() }
   }
