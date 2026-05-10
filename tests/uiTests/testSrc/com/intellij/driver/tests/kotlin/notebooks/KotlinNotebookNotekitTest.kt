@@ -7,10 +7,6 @@ import com.intellij.driver.sdk.ui.components.notebooks.withNotebookEditor
 import com.intellij.driver.sdk.waitFor
 import com.intellij.driver.tests.kotlin.notebooks.utils.addKotlinCell
 import com.intellij.driver.tests.kotlin.notebooks.utils.pasteKotlinToCurrentCell
-import com.intellij.jupyter.ui.test.util.kernel.runAllCellsAndWaitExecuted
-import com.intellij.jupyter.ui.test.util.kernel.runCellAndWaitExecuted
-import com.intellij.jupyter.ui.test.util.kernel.waitCellsAreExecuted
-import com.intellij.jupyter.ui.test.util.utils.waitNotEmpty
 import com.intellij.ide.starter.utils.withIndent
 import com.intellij.jupyter.ui.test.util.kernel.runAllCellsAndWaitExecuted
 import com.intellij.jupyter.ui.test.util.kernel.runCellAndWaitExecuted

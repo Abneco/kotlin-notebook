@@ -6,9 +6,8 @@ import com.intellij.driver.sdk.ui.components.notebooks.KotlinNotebookSessionRunM
 import com.intellij.driver.sdk.ui.components.notebooks.NotebookEditorUiComponent
 import com.intellij.driver.sdk.ui.components.notebooks.withNotebookEditor
 import com.intellij.driver.sdk.waitFor
-import com.intellij.driver.tests.kotlin.notebooks.utils.addKotlinCell
-import com.intellij.jupyter.ui.test.util.kernel.runCellAndWaitExecuted
 import com.intellij.driver.tests.kotlin.notebooks.plugins.IdePluginIds
+import com.intellij.driver.tests.kotlin.notebooks.utils.addKotlinCell
 import com.intellij.ide.starter.junit5.hyphenateName
 import com.intellij.ide.starter.project.LocalProjectInfo
 import com.intellij.ide.starter.project.projectDir

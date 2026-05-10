@@ -8,10 +8,9 @@ import com.intellij.driver.sdk.ui.components.notebooks.openAiAssistantChat
 import com.intellij.driver.sdk.ui.components.notebooks.withNotebookEditor
 import com.intellij.driver.sdk.waitFor
 import com.intellij.driver.tests.kotlin.notebooks.context.toVariableBlocks
+import com.intellij.driver.tests.kotlin.notebooks.plugins.IdePluginIds
 import com.intellij.driver.tests.kotlin.notebooks.utils.addKotlinCell
 import com.intellij.driver.tests.kotlin.notebooks.utils.setNotebookDebugFeatures
-import com.intellij.jupyter.ui.test.util.kernel.runCellAndWaitExecuted
-import com.intellij.driver.tests.kotlin.notebooks.plugins.IdePluginIds
 import com.intellij.ide.starter.driver.execute
 import com.intellij.ide.starter.models.VMOptions
 import com.intellij.ide.starter.runner.AdditionalModulesForDevBuildServer

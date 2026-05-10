@@ -1,5 +1,6 @@
 package com.intellij.driver.tests.kotlin.notebooks
 
+import com.intellij.debugger.ui.test.util.debugger
 import com.intellij.driver.sdk.invokeAction
 import com.intellij.driver.sdk.step
 import com.intellij.driver.sdk.ui.components.UiComponent.Companion.waitFound
@@ -15,13 +16,6 @@ import com.intellij.driver.sdk.ui.components.notebooks.withNotebookEditor
 import com.intellij.driver.tests.kotlin.notebooks.utils.addKotlinCell
 import com.intellij.driver.tests.kotlin.notebooks.utils.setNotebookDebugFeatures
 import com.intellij.driver.tests.kotlin.notebooks.utils.waitForKernelRestartNotification
-import com.intellij.jupyter.ui.test.util.kernel.runCellAndWaitExecuted
-import com.intellij.jupyter.ui.test.util.kernel.waitCellsAreExecuted
-import com.intellij.jupyter.ui.test.util.utils.debugToolWindow
-import com.intellij.jupyter.ui.test.util.utils.placeBreakpointInFile
-import com.intellij.jupyter.ui.test.util.utils.removeAllBreakpoints
-import com.intellij.jupyter.ui.test.util.utils.resumeProgram
-import com.intellij.debugger.ui.test.util.debugger
 import com.intellij.jupyter.ui.test.util.kernel.runCellAndWaitExecuted
 import com.intellij.jupyter.ui.test.util.kernel.waitCellsAreExecuted
 import com.intellij.jupyter.ui.test.util.utils.debugToolWindow

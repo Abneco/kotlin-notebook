@@ -6,7 +6,6 @@ import com.intellij.driver.sdk.ui.components.common.ideFrame
 import com.intellij.driver.sdk.ui.components.common.welcomeScreen
 import com.intellij.driver.sdk.ui.components.notebooks.notebookEditor
 import com.intellij.jupyter.ui.test.util.kernel.runAllCellsAndWaitExecuted
-import com.intellij.jupyter.ui.test.util.project.NewNotebookDialog
 import com.intellij.jupyter.ui.test.util.project.withNewNotebookDialog
 import io.kotest.matchers.collections.shouldBeSingleton
 import io.kotest.matchers.shouldBe

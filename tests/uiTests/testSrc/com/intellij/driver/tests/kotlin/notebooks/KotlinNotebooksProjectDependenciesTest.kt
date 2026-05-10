@@ -17,8 +17,6 @@ import com.intellij.driver.sdk.ui.ui
 import com.intellij.driver.sdk.wait
 import com.intellij.driver.sdk.waitFor
 import com.intellij.driver.tests.kotlin.notebooks.utils.setNotebookDebugFeatures
-import com.intellij.jupyter.ui.test.util.completion.checkCompletionVariantsWithReport
-import com.intellij.jupyter.ui.test.util.kernel.runAllCellsAndWaitExecuted
 import com.intellij.ide.starter.sdk.JdkDownloaderFacade
 import com.intellij.jupyter.ui.test.util.completion.checkCompletionVariantsWithReport
 import com.intellij.jupyter.ui.test.util.kernel.runAllCellsAndWaitExecuted
