@@ -10,7 +10,6 @@ import com.intellij.driver.sdk.ui.components.common.editor.completionList
 import com.intellij.driver.sdk.ui.components.common.ideFrame
 import com.intellij.driver.sdk.ui.components.notebooks.FirstCell
 import com.intellij.driver.sdk.ui.components.notebooks.LastCell
-import com.intellij.driver.sdk.ui.components.notebooks.NotebookType
 import com.intellij.driver.sdk.ui.components.notebooks.notebookEditor
 import com.intellij.driver.sdk.ui.components.notebooks.waitForHighlighting
 import com.intellij.driver.sdk.ui.components.notebooks.withNotebookEditor
@@ -21,6 +20,7 @@ import com.intellij.driver.sdk.wait
 import com.intellij.driver.sdk.waitFor
 import com.intellij.driver.tests.kotlin.notebooks.utils.addKotlinCell
 import com.intellij.driver.tests.kotlin.notebooks.utils.assertNoKernelRestartNotification
+import com.intellij.driver.tests.kotlin.notebooks.utils.checkCreateNewNotebook
 import com.intellij.driver.tests.kotlin.notebooks.utils.firstNotebookPlotSpec
 import com.intellij.driver.tests.kotlin.notebooks.utils.waitForAndCloseKernelRestartNotification
 import com.intellij.driver.tests.kotlin.notebooks.utils.waitForKernelRestartNotification
@@ -36,7 +36,6 @@ import com.intellij.jupyter.ui.test.util.kernel.runCellAndWaitExecuted
 import com.intellij.jupyter.ui.test.util.kernel.testRunCell
 import com.intellij.jupyter.ui.test.util.tables.checkTableScenario
 import com.intellij.jupyter.ui.test.util.utils.PostExecutionAwaitStrategy
-import com.intellij.jupyter.ui.test.util.utils.checkCreateNewNotebook
 import com.intellij.jupyter.ui.test.util.utils.checkMarkdownCellRendering
 import com.intellij.jupyter.ui.test.util.utils.checkRunCellsAndCleanUpOutputs
 import com.intellij.jupyter.ui.test.util.utils.runAllCellsRepeatedly
@@ -59,7 +58,7 @@ class KotlinNotebooksSmokeTest : KotlinNotebooksBaseTest("kotlin/notebooks/hello
 ) {
   @Test
   fun `create new notebook`() = withDriver {
-    withNotebookEditor { checkCreateNewNotebook(NotebookType.KOTLIN) }
+    withNotebookEditor { checkCreateNewNotebook() }
   }
 
   @Test
@@ -367,7 +366,7 @@ class KotlinNotebooksSmokeTest : KotlinNotebooksBaseTest("kotlin/notebooks/hello
       }
 
       // Create a new one
-      withNotebookEditor { checkCreateNewNotebook(NotebookType.KOTLIN, name = "test NB_2") }
+      withNotebookEditor { checkCreateNewNotebook("test NB_2") }
 
       withNotebookEditor {
         step("Notebook_2: add %use kandy and run to trigger update") {

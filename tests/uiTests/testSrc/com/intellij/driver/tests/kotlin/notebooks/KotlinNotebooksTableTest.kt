@@ -7,13 +7,12 @@ import com.intellij.driver.sdk.ui.components.common.editorTabs
 import com.intellij.driver.sdk.ui.components.common.ideFrame
 import com.intellij.driver.sdk.ui.components.elements.NotebookTableOutputUi
 import com.intellij.driver.sdk.ui.components.notebooks.NotebookEditorUiComponent
-import com.intellij.driver.sdk.ui.components.notebooks.NotebookType
-import com.intellij.driver.sdk.ui.components.notebooks.createNewNotebook
 import com.intellij.driver.sdk.ui.components.notebooks.notebookEditor
 import com.intellij.driver.sdk.ui.components.notebooks.withNotebookEditor
 import com.intellij.driver.sdk.ui.should
 import com.intellij.driver.sdk.waitFor
 import com.intellij.driver.tests.kotlin.notebooks.utils.addKotlinCell
+import com.intellij.driver.tests.kotlin.notebooks.utils.createNewNotebook
 import com.intellij.driver.tests.kotlin.notebooks.utils.getProjectPath
 import com.intellij.jupyter.ui.test.util.kernel.runAllCellsAndWaitExecuted
 import com.intellij.jupyter.ui.test.util.tables.checkTableCellContextMenuActions
@@ -90,7 +89,7 @@ class KotlinNotebooksTableTest : KotlinNotebooksBaseTest(
   fun `verify table grouping`() = withDriver {
     withNotebookEditor {
       step("Prepare: add a new grouped table") {
-        createNewNotebook("table grouping", NotebookType.KOTLIN)
+        createNewNotebook("table grouping")
         addKotlinCell("""
           %use dataframe
           val small = DataFrame.readJson("small.json")
@@ -160,7 +159,7 @@ class KotlinNotebooksTableTest : KotlinNotebooksBaseTest(
       }
 
       step("Import the table from the file") {
-        createNewNotebook("imported table", NotebookType.KOTLIN)
+        createNewNotebook("imported table")
         addKotlinCell("%use dataframe")
         addKotlinCell(
           """

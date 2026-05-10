@@ -5,8 +5,7 @@ import com.intellij.driver.sdk.invokeActionWithRetries
 import com.intellij.driver.sdk.ui.components.UiComponent.Companion.waitFound
 import com.intellij.driver.sdk.ui.components.common.editorTabs
 import com.intellij.driver.sdk.ui.components.common.ideFrame
-import com.intellij.driver.sdk.ui.components.notebooks.NotebookType
-import com.intellij.driver.sdk.ui.components.notebooks.createNewNotebook
+import com.intellij.driver.tests.kotlin.notebooks.utils.createNewNotebook
 import com.intellij.driver.sdk.ui.components.notebooks.kotlinNotebookToolWindowButton
 import com.intellij.driver.sdk.ui.components.notebooks.waitForHighlighting
 import com.intellij.driver.sdk.ui.components.notebooks.withKotlinNotebookToolWindow
@@ -81,7 +80,7 @@ abstract class KotlinNotebooksBaseTest(
     testInfo: TestInfo,
     shouldWaitForHighlighting: Boolean = true
   ) = withDriver {
-    createNewNotebook(testInfo.displayName, NotebookType.KOTLIN)
+    createNewNotebook(testInfo.displayName)
     hideAllToolWindows()
 
     if (shouldWaitForHighlighting) {
