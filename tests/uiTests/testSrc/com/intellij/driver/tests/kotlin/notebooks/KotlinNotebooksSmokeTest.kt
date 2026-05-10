@@ -1,5 +1,7 @@
 package com.intellij.driver.tests.kotlin.notebooks
 
+import com.intellij.driver.sdk.IdeTheme
+import com.intellij.driver.sdk.changeTheme
 import com.intellij.driver.sdk.dumpThreads
 import com.intellij.driver.sdk.getHighlights
 import com.intellij.driver.sdk.step
@@ -23,6 +25,7 @@ import com.intellij.driver.tests.kotlin.notebooks.utils.firstNotebookPlotSpec
 import com.intellij.driver.tests.kotlin.notebooks.utils.waitForAndCloseKernelRestartNotification
 import com.intellij.driver.tests.kotlin.notebooks.utils.waitForKernelRestartNotification
 import com.intellij.jupyter.ui.test.util.codeinsight.checkHasNoErrors
+import com.intellij.jupyter.ui.test.util.codeinsight.checkLookAndFeel
 import com.intellij.jupyter.ui.test.util.codeinsight.codeAnalysisResults
 import com.intellij.jupyter.ui.test.util.codeinsight.isWarning
 import com.intellij.jupyter.ui.test.util.completion.checkCompletion
@@ -33,7 +36,6 @@ import com.intellij.jupyter.ui.test.util.kernel.runCellAndWaitExecuted
 import com.intellij.jupyter.ui.test.util.kernel.testRunCell
 import com.intellij.jupyter.ui.test.util.tables.checkTableScenario
 import com.intellij.jupyter.ui.test.util.utils.PostExecutionAwaitStrategy
-import com.intellij.jupyter.ui.test.util.utils.checkColorThemeChange
 import com.intellij.jupyter.ui.test.util.utils.checkCreateNewNotebook
 import com.intellij.jupyter.ui.test.util.utils.checkMarkdownCellRendering
 import com.intellij.jupyter.ui.test.util.utils.checkRunCellsAndCleanUpOutputs
@@ -61,7 +63,19 @@ class KotlinNotebooksSmokeTest : KotlinNotebooksBaseTest("kotlin/notebooks/hello
   }
 
   @Test
-  fun `change color theme`() = withDriver { checkColorThemeChange() }
+  fun `change color theme`() = withDriver {
+    ideFrame {
+      step("Change color theme to light") {
+        changeTheme(IdeTheme.LIGHT)
+        notebookEditor { checkLookAndFeel(IdeTheme.LIGHT) }
+      }
+
+      step("Change color theme to dark") {
+        changeTheme(IdeTheme.DARK)
+        notebookEditor { checkLookAndFeel(IdeTheme.DARK) }
+      }
+    }
+  }
 
   @Test
   fun `run cell and check the output`() = withDriver {
