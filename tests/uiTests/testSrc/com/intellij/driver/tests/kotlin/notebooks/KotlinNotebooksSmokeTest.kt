@@ -14,6 +14,7 @@ import com.intellij.driver.sdk.ui.components.notebooks.notebookEditor
 import com.intellij.driver.sdk.ui.components.notebooks.waitForHighlighting
 import com.intellij.driver.sdk.ui.components.notebooks.withNotebookEditor
 import com.intellij.driver.sdk.ui.pasteText
+import com.intellij.driver.sdk.ui.should
 import com.intellij.driver.sdk.ui.shouldBe
 import com.intellij.driver.sdk.ui.ui
 import com.intellij.driver.sdk.wait
@@ -34,7 +35,6 @@ import com.intellij.jupyter.ui.test.util.kernel.getExecutionTime
 import com.intellij.jupyter.ui.test.util.kernel.runAllCellsAndWaitExecuted
 import com.intellij.jupyter.ui.test.util.kernel.runCellAndWaitExecuted
 import com.intellij.jupyter.ui.test.util.kernel.testRunCell
-import com.intellij.jupyter.ui.test.util.tables.checkTableScenario
 import com.intellij.jupyter.ui.test.util.utils.PostExecutionAwaitStrategy
 import com.intellij.jupyter.ui.test.util.utils.checkMarkdownCellRendering
 import com.intellij.jupyter.ui.test.util.utils.checkRunCellsAndCleanUpOutputs
@@ -139,12 +139,24 @@ class KotlinNotebooksSmokeTest : KotlinNotebooksBaseTest("kotlin/notebooks/hello
       addKotlinCell("%useLatestDescriptors")
       addKotlinCell("%use dataframe")
       addKotlinCell("")
-      checkTableScenario(
-        codeForTable = """
-        dataFrameOf("name", "age", "origin")("a", "10", "1", "b", "20", "2", "c", "30", null)
-        """.trimIndent(),
-        type = "Kotlin"
-      )
+
+      step("Create a table") {
+        pasteToCell(LastCell, """
+          dataFrameOf("name", "age", "origin")("a", "10", "1", "b", "20", "2", "c", "30", null)
+          """.trimIndent()
+        )
+        runAllCellsAndWaitExecuted(1.minutes)
+        waitFor("Expect 1 table rendered") {
+          notebookTables.size == 1
+        }
+      }
+
+      step("Check the table") {
+        notebookTables.first().run {
+        // Check the first row
+          tableView.should { getValueAt(0, 0).equals("a") }
+        }
+      }
     }
   }
 
