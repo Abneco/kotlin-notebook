@@ -34,7 +34,6 @@ import com.intellij.jupyter.ui.test.util.completion.checkCompletionVariantsWithR
 import com.intellij.jupyter.ui.test.util.kernel.getExecutionTime
 import com.intellij.jupyter.ui.test.util.kernel.runAllCellsAndWaitExecuted
 import com.intellij.jupyter.ui.test.util.kernel.runCellAndWaitExecuted
-import com.intellij.jupyter.ui.test.util.kernel.testRunCell
 import com.intellij.jupyter.ui.test.util.utils.PostExecutionAwaitStrategy
 import com.intellij.jupyter.ui.test.util.utils.checkRunCellsAndCleanUpOutputs
 import com.intellij.jupyter.ui.test.util.utils.runAllCellsRepeatedly
@@ -77,7 +76,17 @@ class KotlinNotebooksSmokeTest : KotlinNotebooksBaseTest("kotlin/notebooks/hello
 
   @Test
   fun `run cell and check the output`() = withDriver {
-    withNotebookEditor { testRunCell() }
+    withNotebookEditor {
+      step("Run cell and wait for the output") {
+        pasteToCell(FirstCell, "2 + 2")
+        runAllCellsAndWaitExecuted()
+      }
+
+      step("Check output") {
+      notebookCellOutputs.size shouldBe 1
+        assertTrue(notebookCellOutputs.last().hasText("4"), "Expect 4 in the output")
+      }
+    }
   }
 
   //issue = "PY-75616"
