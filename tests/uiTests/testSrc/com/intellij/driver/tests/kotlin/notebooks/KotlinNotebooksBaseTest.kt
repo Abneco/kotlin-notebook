@@ -16,6 +16,7 @@ import com.intellij.driver.tests.kotlin.notebooks.utils.resolveResourceDirectory
 import com.intellij.ide.starter.project.NoProject
 import com.intellij.ide.starter.project.ProjectInfoSpec
 import com.intellij.ide.starter.project.ReusableLocalProjectInfo
+import com.intellij.ide.starter.runner.AdditionalModulesForDevBuildServer
 import com.intellij.openapi.diagnostic.LogLevel
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.TestInfo
@@ -41,6 +42,12 @@ abstract class KotlinNotebooksBaseTest(
   )
 
   init {
+    AdditionalModulesForDevBuildServer.addAdditionalModules(
+        "intellij.notebooks.plugin",
+        "intellij.jupyter.plugin",
+        "intellij.kotlin.jupyter.plugin",
+    )
+
     additionalVMOptionPatches += {
       addSystemProperty("org.jetbrains.plugins.kotlin.jupyter.uiDriverTests", "true")
 

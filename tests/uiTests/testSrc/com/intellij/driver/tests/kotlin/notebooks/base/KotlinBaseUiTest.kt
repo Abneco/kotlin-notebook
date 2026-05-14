@@ -59,7 +59,7 @@ abstract class KotlinBaseUiTest(
     ).also {
       logOutput("installing additional plugins:")
       additionalPlugins.forEach { pluginId ->
-        //it.pluginConfigurator.installPlugin(pluginId)
+        // it.pluginConfigurator.asExtended().installPluginFromTeamCity(pluginId)
         logOutput("Plugin '$pluginId' was installed")
       }
     }
