@@ -1,14 +1,19 @@
 <idea-plugin visibility="internal">
+    <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
     <dependencies>
       <module name="intellij.database"/>
-      <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
+      <module name="intellij.database.connectivity"/>
+      <module name="intellij.database.core.impl"/>
+      <module name="intellij.database.impl"/>
+      <module name="intellij.database.jdbcConsole"/>
       <module name="intellij.dataspell.jupyter.sql.common"/>
+      <module name="intellij.grid.core.impl"/>
       <module name="intellij.jupyter.core"/>
       <module name="intellij.jupyter.psi"/>
       <module name="intellij.kotlin.jupyter.core"/>
       <module name="intellij.notebooks.visualization"/>
-      <!-- endregion -->
     </dependencies>
+    <!-- endregion -->
 
     <extensions defaultExtensionNs="com.intellij.sql">
         <configuration implementation="com.intellij.kotlin.jupyter.sql.KotlinSqlCellConfigurationImpl"/>

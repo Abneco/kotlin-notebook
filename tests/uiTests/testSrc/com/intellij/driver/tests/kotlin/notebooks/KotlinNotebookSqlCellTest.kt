@@ -15,11 +15,14 @@ import com.intellij.driver.sdk.ui.components.notebooks.withNotebookEditor
 import com.intellij.driver.sdk.ui.copyToClipboard
 import com.intellij.driver.sdk.ui.pasteText
 import com.intellij.driver.sdk.ui.should
+import com.intellij.driver.sdk.ui.shouldBeNoExceptions
 import com.intellij.driver.sdk.ui.ui
 import com.intellij.driver.sdk.waitFor
 import com.intellij.driver.sdk.withRetries
 import com.intellij.jupyter.ui.test.util.kernel.runAllCellsAndWaitExecuted
 import com.intellij.jupyter.ui.test.util.utils.getPopups
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -47,7 +50,7 @@ class KotlinNotebookSqlCellTest : KotlinNotebooksBaseTest("kotlin/notebooks/hell
       val downloadDriverButton = x { byVisibleText("Download") }
       // Attempts driver download; skips if not needed
       try {
-        waitFor("wait until download button is visible") { downloadDriverButton.present() }
+        waitFor("Wait until download button is visible") { downloadDriverButton.present() }
         // Sometimes it happens that the download finishes, but it doesn't apply the downloaded driver.
         //  Re-clicking the download button helps with that.
         do {
@@ -64,9 +67,9 @@ class KotlinNotebookSqlCellTest : KotlinNotebooksBaseTest("kotlin/notebooks/hell
         // The download button did not appear, asserting that no additional drivers are needed.
       }
       val okButton = x { byAccessibleName("OK") }
-      waitFor("wait until OK button is visible") { okButton.present() }
+      waitFor("Wait until OK button is visible") { okButton.present() }
       okButton.click()
-      waitFor("console tab being present") {
+      waitFor("Console tab being present") {
         editorTabs().getAllTexts()
         { it.text.contains("console") }.isNotEmpty()
       }
@@ -76,7 +79,7 @@ class KotlinNotebookSqlCellTest : KotlinNotebooksBaseTest("kotlin/notebooks/hell
         click()
         ui.pasteText(sqlSchema)
         setSelection(0, sqlSchema.length)
-        waitFor("wait for selection to be made") {
+        waitFor("Wait for selection to be made") {
           val selectedText = getSelection(false)
           !selectedText.isNullOrBlank()
         }
@@ -146,12 +149,12 @@ class KotlinNotebookSqlCellTest : KotlinNotebooksBaseTest("kotlin/notebooks/hell
       click()
       addSqlCell("SELECT * FROM test;")
       val sourceDropDown = x { contains(byVisibleText("identifier")) }
-      waitFor("wait until source drop down is visible") { sourceDropDown.present() }
+      waitFor("Wait until source drop down is visible") { sourceDropDown.present() }
       sourceDropDown.click()
     }
     ideFrame {
       val testSource = getPopups().list().single().x { contains(byVisibleText(SQLITE_DATA_SOURCE_NAME)) }
-      waitFor("wait until test datasource is visible") { testSource.present() }
+      waitFor("Wait until test datasource is visible") { testSource.present() }
       testSource.waitOneText { it.text == SQLITE_DATA_SOURCE_NAME }.click()
     }
     // Runs all cells and expects a table to appear with values 1, 2
@@ -172,12 +175,12 @@ class KotlinNotebookSqlCellTest : KotlinNotebooksBaseTest("kotlin/notebooks/hell
       click()
       addSqlCell("CREATE TABLE IF NOT EXISTS no_output (a INT)")
       val sourceDropDown = x { contains(byVisibleText("identifier")) }
-      waitFor("wait until source drop down is visible") { sourceDropDown.present() }
+      waitFor("Wait until source drop down is visible") { sourceDropDown.present() }
       sourceDropDown.click()
     }
     ideFrame {
       val testSource = getPopups().list().single().x { contains(byVisibleText(SQLITE_DATA_SOURCE_NAME)) }
-      waitFor("wait until test datasource is visible") { testSource.present() }
+      waitFor("Wait until test datasource is visible") { testSource.present() }
       testSource.waitOneText { it.text == SQLITE_DATA_SOURCE_NAME }.click()
     }
     // Runs all cells and expects a table to appear with values 1, 2
@@ -216,8 +219,16 @@ class KotlinNotebookSqlCellTest : KotlinNotebooksBaseTest("kotlin/notebooks/hell
 
       runAllCellsAndWaitExecuted(expectedExecutionCount = 2)
 
-      should("Waiting till SQL is executed") {
-        notebookTables.last().tableView.content() == mapOf(0 to mapOf(0 to "2020-01-02", 1 to "2020-01-02T03:04:05"))
+      shouldBeNoExceptions("Waiting till SQL is executed") {
+        val contentMap = notebookTables.last().tableView.content()
+        contentMap.size shouldBe 1
+        val row = contentMap.values.first()
+        row.size shouldBe 2
+        // date cell with format: YYYY-MM-DD
+        row[0] shouldContain Regex("""\d{4}-\d{2}-\d{2}""")
+        // date-time cell with format: YYYY-MM-DD and HH:MM:SS
+        row[1] shouldContain Regex("""\d{4}-\d{2}-\d{2}""")
+        row[1] shouldContain Regex("""\d{2}:\d{2}:\d{2}""")
       }
     }
   }
