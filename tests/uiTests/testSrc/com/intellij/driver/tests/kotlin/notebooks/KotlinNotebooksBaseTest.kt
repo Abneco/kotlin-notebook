@@ -50,6 +50,7 @@ abstract class KotlinNotebooksBaseTest(
 
     additionalVMOptionPatches += {
       addSystemProperty("org.jetbrains.plugins.kotlin.jupyter.uiDriverTests", "true")
+      addSystemProperty("ide.ui.non.modal.settings.window", "false")
 
       configureLoggers(
         LogLevel.DEBUG,
