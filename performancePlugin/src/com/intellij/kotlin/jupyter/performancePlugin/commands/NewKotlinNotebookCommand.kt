@@ -4,7 +4,7 @@ package com.intellij.kotlin.jupyter.performancePlugin.commands
 import com.intellij.ide.fileTemplates.FileTemplateManager
 import com.intellij.kotlin.jupyter.core.jupyter.actions.CreateNotebookFactory
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.application.writeAction
+import com.intellij.openapi.application.edtWriteAction
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.playback.PlaybackContext
 import com.intellij.openapi.ui.playback.commands.AbstractCommand
@@ -35,7 +35,7 @@ class NewKotlinNotebookCommand(text: String, line: Int) : PlaybackCommandCorouti
             val template = FileTemplateManager.getInstance(project)
                 .getInternalTemplate("kotlin.jupyter.empty")
 
-            writeAction {
+            edtWriteAction {
                 CreateNotebookFactory.createFileFromTemplate(
                     fileName,
                     template,
@@ -50,7 +50,7 @@ class NewKotlinNotebookCommand(text: String, line: Int) : PlaybackCommandCorouti
         val projectDir = project.guessProjectDir() ?: return
         val file = readAction { projectDir.findChild(fileName) } ?: return
 
-        writeAction {
+        edtWriteAction {
             if (file.exists()) {
                 file.delete(this@NewKotlinNotebookCommand)
             }
