@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.kotlin.jupyter.core.jupyter.outputs.swing
 
 import com.fasterxml.jackson.databind.node.TextNode
@@ -8,7 +8,6 @@ import com.intellij.jupyter.core.jupyter.editor.outputs.NotebookDisplayOutputDat
 import com.intellij.jupyter.core.jupyter.nbformat.DisplayDataContainer
 import com.intellij.kotlin.jupyter.core.jupyter.kernel.server.embedded.InMemoryReplResultsHolderService
 import com.intellij.notebooks.visualization.NotebookIntervalPointer
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlinx.jupyter.api.InMemoryMimeTypes
 
@@ -35,13 +34,13 @@ class SwingOutputDataKeyExtractor : NotebookDisplayOutputDataKeyExtractor {
     }
 
     override fun extractKey(
-        editor: Editor,
-        file: BackedNotebookVirtualFile?,
+        project: Project,
+        file: BackedNotebookVirtualFile,
         data: DisplayDataContainer,
         executionCount: Int?,
         cellPointer: NotebookIntervalPointer,
-        isLastForCell: Boolean
+        isLastForCell: Boolean,
     ): SwingOutputDataKey? {
-        return extractKey(editor.project, file, data, executionCount)
+        return extractKey(project, file, data, executionCount)
     }
 }

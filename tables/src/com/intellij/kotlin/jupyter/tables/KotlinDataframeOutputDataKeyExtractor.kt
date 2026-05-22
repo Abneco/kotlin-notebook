@@ -2,11 +2,11 @@
 package com.intellij.kotlin.jupyter.tables
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.intellij.jupyter.core.core.impl.file.BackedNotebookVirtualFile
 import com.intellij.jupyter.core.jackson
 import com.intellij.jupyter.core.jupyter.editor.outputs.JupyterOutputDataKeyExtractor
 import com.intellij.jupyter.core.jupyter.editor.outputs.getOutputsForIndex
 import com.intellij.jupyter.core.jupyter.editor.outputs.webOutputs.JupyterBrowserOutputDataKey
-import com.intellij.jupyter.core.jupyter.helper.isJupyter
 import com.intellij.jupyter.core.jupyter.nbformat.MimeType
 import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterExecuteResultOutput
 import com.intellij.jupyter.core.jupyter.nbformat.outputs.JupyterOutputType
@@ -19,8 +19,10 @@ import com.intellij.notebooks.visualization.NotebookIntervalPointer
 import com.intellij.notebooks.visualization.NotebookIntervalPointerFactory
 import com.intellij.notebooks.visualization.outputs.NotebookOutputDataKey
 import com.intellij.notebooks.visualization.outputs.NotebookOutputDataKeyExtractor
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.impl.EditorImpl
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.scientific.tables.api.DSTableDataType
 import com.intellij.scientific.tables.api.DSTableText
 import com.intellij.util.asSafely
@@ -30,20 +32,24 @@ import com.intellij.util.asSafely
  */
 class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
     private val jupyterDelegate: JupyterOutputDataKeyExtractor = JupyterOutputDataKeyExtractor()
-
-    override fun extract(editor: Editor, interval: NotebookCellLines.Interval): List<NotebookOutputDataKey>? {
+    override fun extract(
+        project: Project,
+        file: VirtualFile,
+        interval: NotebookCellLines.Interval,
+    ): List<NotebookOutputDataKey>? {
+        val notebookFile = BackedNotebookVirtualFile.takeIfBacked(file) ?: return null
         val res = when {
             !KotlinNotebookApplicationOptions.get().showDataFrameAsSwing -> null
-            !editor.isJupyter -> null
             interval.type != CellType.CODE -> null
-            else -> extractImpl(editor as EditorImpl, interval)
+            else -> extractImpl(project, notebookFile, interval)
         }
 
         if (res.isNullOrEmpty()) return null
 
-        val jupyterKeys = jupyterDelegate.extract(editor, interval)
+        val jupyterKeys = jupyterDelegate.extract(project, notebookFile.file, interval)
 
         return (jupyterKeys?.filterNot { isBrowserTableOutputKey(it) } ?: emptyList()) + res
+
     }
 
     private fun isBrowserTableOutputKey(key: NotebookOutputDataKey): Boolean {
@@ -55,11 +61,15 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
     }
 
     private fun extractImpl(
-        editor: EditorImpl,
-        interval: NotebookCellLines.Interval
+        project: Project,
+        notebookVirtualFile: BackedNotebookVirtualFile,
+        interval: NotebookCellLines.Interval,
     ): List<NotebookOutputDataKey> {
-        val outputSequence = getOutputsForIndex(editor, interval.ordinal)?.outputs ?: return emptyList()
-        val cellPointer = NotebookIntervalPointerFactory.get(editor).create(interval)
+        val outputSequence = getOutputsForIndex(notebookVirtualFile, interval.ordinal)?.outputs ?: return emptyList()
+        val document = runReadAction {
+            FileDocumentManager.getInstance().getDocument(notebookVirtualFile.file)
+        } ?: return emptyList()
+        val cellPointer = NotebookIntervalPointerFactory.get(project, document).create(interval)
 
         val result = ArrayList<NotebookOutputDataKey>()
         for ((outputIndex, output) in outputSequence.withIndex()) {
@@ -72,7 +82,8 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
                 val executionCount = (output as? JupyterExecuteResultOutput)?.executionCount
 
                 val kotlinDfDataKey = getKotlinDataframeOutputDataKey(
-                    editor = editor,
+                    project = project,
+                    notebookVirtualFile = notebookVirtualFile,
                     cellPointer = cellPointer,
                     dataObject = dataObject,
                     executionCount = executionCount,
@@ -89,11 +100,12 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
     }
 
     private fun getKotlinDataframeOutputDataKey(
-        editor: EditorImpl,
+        notebookVirtualFile: BackedNotebookVirtualFile,
         cellPointer: NotebookIntervalPointer,
         dataObject: ObjectNode,
         executionCount: Int?,
-        isLastForCell: Boolean
+        isLastForCell: Boolean,
+        project: Project,
     ): NotebookOutputDataKey? {
         if (!KotlinDataframeParsing.isKotlinDataFrame(dataObject)) {
             return null
@@ -109,6 +121,6 @@ class KotlinDataframeOutputDataKeyExtractor : NotebookOutputDataKeyExtractor {
         val text = DSTableText(staticTableText = serializedDataframe, plainText = serializedDataframe)
         val type = DSTableDataType.EXTERNAL
 
-        return createTableOutputDataKey(text, type, editor, cellPointer, executionCount, isLastForCell)
+        return createTableOutputDataKey(project, text, type, notebookVirtualFile, cellPointer, executionCount, isLastForCell)
     }
 }
