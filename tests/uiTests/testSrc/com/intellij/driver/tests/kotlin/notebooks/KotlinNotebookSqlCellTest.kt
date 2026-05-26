@@ -11,7 +11,7 @@ import com.intellij.driver.sdk.ui.components.common.ideFrame
 import com.intellij.driver.sdk.ui.components.common.toolwindows.servicesToolWindow
 import com.intellij.driver.sdk.ui.components.elements.dialog
 import com.intellij.driver.sdk.ui.components.elements.isDialogOpened
-import com.intellij.driver.sdk.ui.components.elements.getPopups
+import com.intellij.driver.sdk.ui.components.elements.popups
 import com.intellij.driver.sdk.ui.components.notebooks.withNotebookEditor
 import com.intellij.driver.sdk.ui.copyToClipboard
 import com.intellij.driver.sdk.ui.pasteText
@@ -153,7 +153,7 @@ class KotlinNotebookSqlCellTest : KotlinNotebooksBaseTest("kotlin/notebooks/hell
       sourceDropDown.click()
     }
     ideFrame {
-      val testSource = getPopups().list().single().x { contains(byVisibleText(SQLITE_DATA_SOURCE_NAME)) }
+      val testSource = popups().list().single().x { contains(byVisibleText(SQLITE_DATA_SOURCE_NAME)) }
       waitFor("Wait until test datasource is visible") { testSource.present() }
       testSource.waitOneText { it.text == SQLITE_DATA_SOURCE_NAME }.click()
     }
@@ -179,7 +179,7 @@ class KotlinNotebookSqlCellTest : KotlinNotebooksBaseTest("kotlin/notebooks/hell
       sourceDropDown.click()
     }
     ideFrame {
-      val testSource = getPopups().list().single().x { contains(byVisibleText(SQLITE_DATA_SOURCE_NAME)) }
+      val testSource = popups().list().single().x { contains(byVisibleText(SQLITE_DATA_SOURCE_NAME)) }
       waitFor("Wait until test datasource is visible") { testSource.present() }
       testSource.waitOneText { it.text == SQLITE_DATA_SOURCE_NAME }.click()
     }
