@@ -117,9 +117,6 @@
         <registryKey key = "kotlin.notebook.use.templates.for.create" defaultValue="false"
                      description="When enabled, you can specify file templates in Kotlin Notebook creation actions"/>
 
-        <registryKey key = "kotlin.notebook.data.input.cells.enabled" defaultValue="false"
-                     description="When enabled, dragging data files into Jupyter editor creates input cells in Kotlin Notebook"/>
-
         <registryKey key="kotlin.notebook.replCompilerMode.enabled" defaultValue="false"
                      description="When enabled, it is possible to switch the kernel between using K1 or K2 when compiling repl snippets"/>
 
@@ -254,8 +251,6 @@
 
         <jupyterRuntimeListener implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinExecutionServiceListener"/>
         <jupyterRuntimeListener implementation="com.intellij.kotlin.jupyter.core.jupyter.execution.JupyterKotlinSessionClearHandler"/>
-        <jupyter.data.input.run.jupyterDataInputErrorMessageFactory
-                implementation="com.intellij.kotlin.jupyter.core.editor.dnd.JupyterDataInputKotlinErrorMessageFactory"/>
 
         <editor.notebookEditorCreatedCallback
                 implementation="com.intellij.kotlin.jupyter.core.editor.creating.KotlinNotebookEditorFactoryListener"/>
