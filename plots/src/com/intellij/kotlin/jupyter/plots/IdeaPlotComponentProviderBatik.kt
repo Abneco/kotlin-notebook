@@ -2,7 +2,8 @@
 package com.intellij.kotlin.jupyter.plots
 
 import com.intellij.ui.components.JBScrollPane
-import org.jetbrains.letsPlot.batik.plot.component.DefaultPlotComponentProviderBatik
+import org.jetbrains.letsPlot.awt.plot.swing.SwingPlotComponentProvider
+import org.jetbrains.letsPlot.core.plot.builder.interact.tools.SpecOverrideState
 import org.jetbrains.letsPlot.core.util.sizing.SizingPolicy
 import java.awt.Dimension
 import javax.swing.JComponent
@@ -13,7 +14,7 @@ class IdeaPlotComponentProviderBatik(
     executor: (() -> Unit) -> Unit,
     computationMessagesHandler: (List<String>) -> Unit,
     private val componentCustomizer: (JComponent) -> Unit = {},
-) : DefaultPlotComponentProviderBatik(
+) : SwingPlotComponentProvider(
     processedSpec = processedSpec,
     executor = executor,
     computationMessagesHandler = computationMessagesHandler
@@ -26,11 +27,7 @@ class IdeaPlotComponentProviderBatik(
         )
     }
 
-    override fun createComponent(
-        containerSize: Dimension?,
-        sizingPolicy: SizingPolicy,
-        specOverrideList: List<Map<String, Any>>,
-    ): JComponent {
-        return super.createComponent(containerSize, sizingPolicy, specOverrideList).also(componentCustomizer)
+    override fun createComponent(containerSize: Dimension?, sizingPolicy: SizingPolicy, specOverrideState: SpecOverrideState): JComponent {
+        return super.createComponent(containerSize, sizingPolicy, specOverrideState).also(componentCustomizer)
     }
 }

@@ -172,7 +172,7 @@ private fun getSpec(
         }
         configureToolbar(spec, state.showToolbar)
     }
-    val processedSpec = MonolithicCommon.processRawSpecs(rawSpec, false)
+    val processedSpec = MonolithicCommon.processRawSpecs(rawSpec, frontendOnly = false)
     return processedSpec.toMutableMap()
 }
 
@@ -185,11 +185,11 @@ private fun plotSize(spec: LetsPlotSpec, containerSize: Dimension?, sizingPolicy
     val containerSizeVec = containerSize?.run { DoubleVector(width, height) }
     val plotSize = when (PlotConfig.figSpecKind(spec)) {
         FigKind.SUBPLOTS_SPEC -> {
-            val config = CompositeFigureConfig(spec, null) {}
+            val config = CompositeFigureConfig(spec, containerTheme = null) {}
             PlotSizeHelper.compositeFigureSize(config, containerSizeVec, sizingPolicy)
         }
         else -> {
-            val config = PlotConfigFrontend.create(spec) {}
+            val config = PlotConfigFrontend.create(spec, containerTheme = null, isInDeck = false) {}
             PlotSizeHelper.singlePlotSize(spec, containerSizeVec, sizingPolicy, config.facets, config.containsLiveMap)
         }
     }
