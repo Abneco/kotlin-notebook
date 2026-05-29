@@ -1,15 +1,17 @@
 <idea-plugin>
 
     <dependencies>
-        <plugin id="org.jetbrains.kotlin"/>
-
-        <plugin id="com.intellij.modules.kotlin.k1"/>
-        <module name="intellij.kotlin.jupyter.core"/>
-        <module name="intellij.jupyter.psi"/>
-        <module name="intellij.jupyter.core"/>
-        <module name="kotlin.base.scripting.k1"/>
-        <module name="intellij.notebooks.jupyter.core"/>
-        <module name="kotlin.base.fe10.project-structure"/>
+      <plugin id="org.jetbrains.kotlin"/>
+      <plugin id="com.intellij.modules.kotlin.k1"/>
+      <module name="intellij.jupyter.psi"/>
+      <module name="intellij.jupyter.core"/>
+      <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
+      <module name="intellij.java.debugger.impl"/>
+      <module name="intellij.kotlin.jupyter.core"/>
+      <module name="intellij.notebooks.jupyter.core"/>
+      <module name="kotlin.base.fe10.project-structure"/>
+      <module name="kotlin.base.scripting.k1"/>
+      <!-- endregion -->
     </dependencies>
 
     <extensions defaultExtensionNs="com.intellij">

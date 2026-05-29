@@ -1,18 +1,20 @@
 <idea-plugin visibility="internal">
+    <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
     <dependencies>
       <module name="intellij.java.backend"/>
-      <!-- region Generated dependencies - run `Generate Product Layouts` to regenerate -->
+      <module name="intellij.jupyter.execution"/>
+      <module name="intellij.java.debugger.impl"/>
       <module name="intellij.java.debugger.impl.shared"/>
+      <module name="intellij.java.execution.impl"/>
       <module name="intellij.java.psi"/>
       <module name="intellij.jupyter.core"/>
-        <module name="intellij.jupyter.execution"/>
       <module name="intellij.jupyter.psi"/>
       <module name="intellij.kotlin.jupyter.core"/>
       <module name="intellij.notebooks.jupyter.core"/>
       <module name="intellij.notebooks.ui"/>
       <module name="intellij.notebooks.visualization"/>
-      <!-- endregion -->
     </dependencies>
+    <!-- endregion -->
 
     <extensionPoints>
         <extensionPoint qualifiedName="com.intellij.kotlin.jupyter.debug.jdiInvocationHandlerProvider"
