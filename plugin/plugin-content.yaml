@@ -26,9 +26,6 @@
 - name: lib/modules/intellij.kotlin.jupyter.export.pdf.jar
   contentModules:
   - name: intellij.kotlin.jupyter.export.pdf
-- name: lib/modules/intellij.kotlin.jupyter.k1.jar
-  contentModules:
-  - name: intellij.kotlin.jupyter.k1
 - name: lib/modules/intellij.kotlin.jupyter.k2.jar
   contentModules:
   - name: intellij.kotlin.jupyter.k2
