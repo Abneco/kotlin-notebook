@@ -27,7 +27,6 @@ import com.intellij.openapi.project.ex.ProjectManagerEx
 import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.startup.StartupManager
-import com.intellij.openapi.util.IntellijInternalApi
 import com.intellij.openapi.vfs.findFileOrDirectory
 import com.intellij.platform.ide.progress.ModalTaskOwner
 import com.intellij.platform.ide.progress.TaskCancellation
@@ -55,7 +54,6 @@ private fun Project.runWhenProjectIsInitializedOnBGT(
     }
 }
 
-@OptIn(IntellijInternalApi::class)
 fun createKotlinNotebookInProjectWhenProjectIsInitialized(
     project: Project,
     template: NotebookTemplate,

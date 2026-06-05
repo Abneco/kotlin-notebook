@@ -9,7 +9,6 @@ import com.intellij.kotlin.jupyter.core.resources.i18n.KotlinNotebookBundle
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.IntellijInternalApi
 import com.intellij.platform.ide.progress.ModalTaskOwner
 import com.intellij.platform.ide.progress.TaskCancellation
 import com.intellij.platform.ide.progress.runWithModalProgressBlocking
@@ -29,7 +28,6 @@ abstract class CreateKotlinNotebookFromTemplateAbstractAction(
     protected abstract fun createNotebook(project: Project?)
 }
 
-@OptIn(IntellijInternalApi::class)
 class CreateKotlinNotebookAndOpenProjectAction(settings: NewNotebookOptions) :
     CreateKotlinNotebookFromTemplateAbstractAction(settings) {
     override fun createNotebook(project: Project?) {
