@@ -23,7 +23,6 @@ include(
     ":export:pdf",
     ":buildSystems:gradle",
     ":liveTemplates",
-    // ":k1",
     ":k2",
     ":debug",
     ":debug:renders",

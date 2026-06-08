@@ -22,9 +22,6 @@ import com.intellij.testFramework.TestDataPath
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.NonNls
-import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
-import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
-import org.jetbrains.kotlin.idea.test.setUpWithKotlinPlugin
 import org.jetbrains.kotlin.test.TestMetadata
 import com.intellij.jupyter.testFramework.JupyterBaseTestCase
 import com.intellij.jupyter.testFramework.JupyterCommonRule
@@ -46,9 +43,7 @@ private const val PROJECT_ROOT: @NonNls String = ""
 @RunWith(KotlinNotebookTestRunner::class)
 abstract class KotlinNotebookBaseTestCase :
     JupyterBaseTestCase(),
-    ExpectedPluginModeProvider,
-    ListenableTest by ListenableTestImpl()
-{
+    ListenableTest by ListenableTestImpl() {
     protected open val notebookFile: BackedNotebookVirtualFile
         get() = when (val file = myFixture.kotlinNotebookFile) {
             is BackedNotebookVirtualFile -> file
@@ -120,7 +115,8 @@ abstract class KotlinNotebookBaseTestCase :
         val cellEstimation = 1 + cellsToExecute.size
         val fileOrNull = if (updateMode == ScriptingUpdateMode.NotebookFileFocused) {
             notebookFile
-        } else null
+        }
+        else null
         val updater = TestNotebookScriptsDependenciesUpdater(project, fileOrNull, cellEstimation, testCaseDisposable)
         runBlocking {
             updater.setUpDependenciesSynchronously()
@@ -138,12 +134,9 @@ abstract class KotlinNotebookBaseTestCase :
         withClearJupyterSettings = true
     )
 
-    override val pluginMode: KotlinPluginMode
-        get() = currentKotlinPluginMode
-
     override fun setUp() {
         wrapSetUp(this) {
-            setUpWithKotlinPlugin { super.setUp() }
+            super.setUp()
             Disposer.register(testRootDisposable, JupyterServers.getInstance())
         }
     }

@@ -46,7 +46,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToStream
 import org.jetbrains.jupyter.builder.NotebookBuilder
 import org.jetbrains.jupyter.builder.buildNotebook
-import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.plugins.notebooks.psi.jupyter.psi.JupyterPsiCell
 import java.nio.file.Path
 import kotlin.time.Duration.Companion.minutes
@@ -65,8 +64,6 @@ val CodeInsightTestFixture.kotlinNotebookFile: BackedNotebookVirtualFile?
 fun PsiFile.getCells(): List<JupyterPsiCell> = descendantsOfType<JupyterPsiCell>().toList()
 
 val defaultTestDuration = 3.minutes
-
-val currentKotlinPluginMode: KotlinPluginMode = KotlinPluginMode.K2
 
 fun <R> runWithJupyterSession(notebookFile: PsiFile, action: () -> R): R {
     val project = notebookFile.project

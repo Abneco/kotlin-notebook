@@ -49,10 +49,7 @@ import kotlinx.coroutines.debug.junit4.CoroutinesTimeout
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.annotations.NonNls
-import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.jetbrains.kotlin.idea.base.test.KotlinTestHelpers
-import org.jetbrains.kotlin.idea.test.ExpectedPluginModeProvider
-import org.jetbrains.kotlin.idea.test.setUpWithKotlinPlugin
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.test.TestMetadata
 import com.intellij.jupyter.testFramework.JupyterBaseTestCase
@@ -86,9 +83,7 @@ import kotlin.time.Duration.Companion.seconds
 @RunWith(KotlinNotebookTestRunner::class)
 abstract class KotlinNotebookTestCase :
     JupyterBaseTestCase(),
-    ExpectedPluginModeProvider,
-    ListenableTest by ListenableTestImpl()
-{
+    ListenableTest by ListenableTestImpl() {
     @JvmField
     @Rule
     var timeout: TestRule = DisableOnDebug(
@@ -108,8 +103,6 @@ abstract class KotlinNotebookTestCase :
 
     private var notebookRunner: NotebookTestBuilder? = null
     override lateinit var originalVirtualFile: VirtualFile
-
-    override val pluginMode: KotlinPluginMode = KotlinPluginMode.K2
 
     protected val backedNotebookFile: BackedNotebookVirtualFile
         get() = when (val file = myFixture.kotlinNotebookFile) {
@@ -136,9 +129,11 @@ abstract class KotlinNotebookTestCase :
                     { resetAndValidateLoggedErrors() },
                     { notebookRunner?.tearDown() },
                 ).forEachGuaranteed { it() }
-            } catch (e: Throwable) {
+            }
+            catch (e: Throwable) {
                 addSuppressedException(e)
-            } finally {
+            }
+            finally {
                 @Suppress("MoveLambdaOutsideParentheses")
                 listOf(
                     { super.tearDown() },
@@ -157,7 +152,7 @@ abstract class KotlinNotebookTestCase :
         val fatalWarningsFound =
             testLogs.filter {
                 it.level == LogLevel.WARNING &&
-                        it.message?.contains("has been compiled by a more recent version of the Java Runtime") == true
+                it.message?.contains("has been compiled by a more recent version of the Java Runtime") == true
             }
 
         if (fatalErrorsFound.isNotEmpty() || fatalWarningsFound.isNotEmpty()) {
@@ -197,7 +192,8 @@ abstract class KotlinNotebookTestCase :
         val testMetadata = this::class.java.getMethod(name).getAnnotation(TestMetadata::class.java)
         return if (testMetadata != null) {
             Path(testDataPath, testMetadata.value)
-        } else {
+        }
+        else {
             val testFileName = "${getTestName(true)}.$TEMPLATE_DATA_EXTENSION"
             val completePath = computeCompletePathFromParentToFile(testFileName)
             if (completePath == null) {
@@ -237,7 +233,8 @@ abstract class KotlinNotebookTestCase :
         val file = Path.of(testDataPath, fileName).absolute()
         return if (file.exists() && file.isRegularFile()) {
             file
-        } else {
+        }
+        else {
             findPathFromParentToFile(fileName)
         }
     }
@@ -249,7 +246,6 @@ abstract class KotlinNotebookTestCase :
                 .orElse(null)
         }
     }
-
 
 
     /**
@@ -300,7 +296,8 @@ abstract class KotlinNotebookTestCase :
         val cellEstimation = 1 + cellsToExecute // Why +1?
         val fileOrNull = if (updateMode == ScriptingUpdateMode.NotebookFileFocused) {
             backedNotebookFile
-        } else null
+        }
+        else null
         val updater = TestNotebookScriptsDependenciesUpdater(project, fileOrNull, cellEstimation, testCaseDisposable)
         runBlocking {
             updater.setUpDependenciesSynchronously()
@@ -328,7 +325,6 @@ abstract class KotlinNotebookTestCase :
         // Ideally, this should be in `setUp()`, but moving the code causes
         // a DocumentListener leak on the test teardown.
         // It is unclear why.
-        setUpWithKotlinPlugin { /* Do nothing */ }
         Disposer.register(testRootDisposable, JupyterServers.getInstance())
 
         withSwingMarkdownRenderMode {
@@ -348,7 +344,8 @@ abstract class KotlinNotebookTestCase :
                             test(notebookRunner!!)
                         }.await()
                     }
-                } finally {
+                }
+                finally {
                     testScope.cancel()
                 }
             }
@@ -379,9 +376,7 @@ abstract class KotlinNotebookTestCase :
             FileContextUtil.getFileContext(myFixture.file)?.containingFile ?: myFixture.file
         }
         // since JDK is considered as a module dependency in K2, it should be provided in the project
-        if (pluginMode == KotlinPluginMode.K2) {
-            setUpProjectSDK()
-        }
+        setUpProjectSDK()
         return notebookFile
     }
 

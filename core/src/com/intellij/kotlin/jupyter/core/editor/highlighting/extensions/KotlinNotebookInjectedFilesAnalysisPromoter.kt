@@ -3,7 +3,6 @@ package com.intellij.kotlin.jupyter.core.editor.highlighting.extensions
 
 import com.intellij.injected.editor.VirtualFileWindow
 import com.intellij.kotlin.jupyter.core.editor.highlighting.NotebookHighlightingService
-import com.intellij.kotlin.jupyter.core.ide.handlers.createPluginModeAwareInstance
 import com.intellij.kotlin.jupyter.core.util.isKotlinNotebook
 import com.intellij.kotlin.jupyter.core.util.toBackedNotebookFile
 import com.intellij.psi.FileViewProvider
@@ -21,7 +20,8 @@ internal class KotlinNotebookInjectedFilesAnalysisPromoter : KotlinIdeInjectedFi
         val backedNotebook = (psiFile.viewProvider.virtualFile as? VirtualFileWindow)?.delegate?.toBackedNotebookFile()
         return if (backedNotebook == null || psiFile !is KtFile) {
             false
-        } else {
+        }
+        else {
             !NotebookHighlightingService.getForFile(psiFile.project, backedNotebook).isFileTarget(psiFile)
         }
     }
@@ -32,10 +32,6 @@ internal class KotlinNotebookInjectedFilesAnalysisPromoter : KotlinIdeInjectedFi
     }
 
     override fun shouldRunOnlyEssentialHighlightingForInjectedFile(psiFile: PsiFile): Boolean {
-        return createPluginModeAwareInstance(
-            psiFile,
-            { false },
-            ::createK2Handler
-        )
+        return createK2Handler(psiFile)
     }
 }

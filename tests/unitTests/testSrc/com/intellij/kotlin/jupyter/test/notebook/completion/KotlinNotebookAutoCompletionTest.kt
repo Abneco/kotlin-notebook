@@ -3,12 +3,10 @@ package com.intellij.kotlin.jupyter.test.notebook.completion
 
 import com.intellij.kotlin.jupyter.test.KotlinNotebookTestCase
 import com.intellij.kotlin.jupyter.test.LookupFinishMode
-import com.intellij.kotlin.jupyter.test.currentKotlinPluginMode
 import com.intellij.kotlin.jupyter.test.runners.RunModeAwareTest
 import com.intellij.testFramework.TestDataPath
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginMode
 import org.junit.Test
 import kotlin.time.Duration.Companion.seconds
 
@@ -41,10 +39,7 @@ class KotlinNotebookAutoCompletionTest : KotlinNotebookTestCase() {
         typeAndFinishLookup("list", LookupFinishMode.TAB) {
             it.lookupString == "listOf"
         }.let {
-            val expectedText = when(currentKotlinPluginMode) {
-                KotlinPluginMode.K1 -> "listOf(x)"
-                KotlinPluginMode.K2 -> "listOf<>()"
-            }
+            val expectedText = "listOf<>()"
             currentCellContent shouldContain expectedText
         }
     }

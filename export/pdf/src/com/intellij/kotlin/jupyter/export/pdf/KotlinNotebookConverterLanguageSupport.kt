@@ -31,10 +31,8 @@ import com.intellij.psi.PsiRecursiveElementWalkingVisitor
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.kotlin.idea.base.highlighting.BeforeResolveHighlightingExtension
-import org.jetbrains.kotlin.idea.base.plugin.KotlinPluginModeProvider
+
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.psiUtil.forEachDescendantOfType
 import org.jetbrains.kotlinx.jupyter.magics.MagicsProcessor
 import org.jetbrains.kotlinx.jupyter.magics.NoopMagicsHandler
 import java.util.concurrent.CancellationException
@@ -136,13 +134,13 @@ fun collectKotlinNotebookSemanticHighlights(
             log.warn("Notebook file is not available or not a BackedNotebookVirtualFile. Creating temporary KtFile (stdlib functions may not resolve)")
             return@run null
         }
-        
+
         val notebookPsi = com.intellij.psi.PsiManager.getInstance(project).findFile(backedFile.file)
         if (notebookPsi == null) {
             log.warn("Could not find notebook PSI. Falling back to creating temporary KtFile (stdlib functions may not resolve)")
             return@run null
         }
-        
+
         val cells = notebookPsi.getNotebookCells()
         val kotlinCode = extractKotlinCodeFromCell(code)
 
@@ -150,17 +148,18 @@ fun collectKotlinNotebookSemanticHighlights(
             val cell = cells[cellIndex]
             val manager = InjectedLanguageManager.getInstance(project)
             val injectedForCell = cell.getInjectedKtFiles(manager)
-            
+
             val file = injectedForCell.firstOrNull { it.text.trim() == kotlinCode.trim() }
-            
+
             if (file == null && injectedForCell.isNotEmpty()) {
                 log.warn("Cell index $cellIndex: text mismatch detected. " +
-                        "Expected code starts with: '${kotlinCode.trim().take(50)}...', " +
-                        "but injected KtFile starts with: '${injectedForCell.first().text.trim().take(50)}...'. " +
-                        "This may indicate that PSI is out of sync with the notebook content.")
+                         "Expected code starts with: '${kotlinCode.trim().take(50)}...', " +
+                         "but injected KtFile starts with: '${injectedForCell.first().text.trim().take(50)}...'. " +
+                         "This may indicate that PSI is out of sync with the notebook content.")
             }
             file
-        } else {
+        }
+        else {
             if (cellIndex >= 0) {
                 log.warn("Cell index $cellIndex is out of bounds (total cells: ${cells.size}). Falling back to text matching.")
             }
@@ -176,26 +175,21 @@ fun collectKotlinNotebookSemanticHighlights(
 
         if (finalFile == null) {
             log.warn("Could not find injected KtFile for cell (cellIndex=$cellIndex). " +
-                    "Falling back to creating temporary KtFile (stdlib functions may not resolve)")
-        }
-        
-        finalFile
-    } ?: run {
-            log.debug("Creating temporary KtFile for highlighting (stdlib resolution may be limited)")
-            val kotlinCode = extractKotlinCodeFromCell(code)
-            PsiFileFactory.getInstance(project).createFileFromText(
-                "temp.kts",
-                org.jetbrains.kotlin.idea.KotlinFileType.INSTANCE,
-                kotlinCode
-            ) as KtFile
+                     "Falling back to creating temporary KtFile (stdlib functions may not resolve)")
         }
 
-    val infos = if (KotlinPluginModeProvider.isK2Mode()) {
-        collectK2SemanticHighlightingInfos(ktFile)
+        finalFile
+    } ?: run {
+        log.debug("Creating temporary KtFile for highlighting (stdlib resolution may be limited)")
+        val kotlinCode = extractKotlinCodeFromCell(code)
+        PsiFileFactory.getInstance(project).createFileFromText(
+            "temp.kts",
+            org.jetbrains.kotlin.idea.KotlinFileType.INSTANCE,
+            kotlinCode
+        ) as KtFile
     }
-    else {
-        ktFile.collectHighlightingInfosByBeforeResolveHighlighters()
-    }
+
+    val infos = collectK2SemanticHighlightingInfos(ktFile)
 
     val actualTextLength = code.length
     val highlightMap = infos.toHighlightInfoMap(actualTextLength)
@@ -221,7 +215,8 @@ private fun collectHighlightingViaVisitors(ktFile: KtFile): List<HighlightInfo> 
         .filter { visitor ->
             try {
                 visitor.suitableForFile(ktFile)
-            } catch (e: Throwable) {
+            }
+            catch (e: Throwable) {
                 if (e is CancellationException) throw e
                 log.warn("HighlightVisitor ${visitor::class.java.name} failed suitableForFile check for ${ktFile.name}", e)
                 false
@@ -242,7 +237,8 @@ private fun collectHighlightingViaVisitors(ktFile: KtFile): List<HighlightInfo> 
                         for (v in activeVisitors) {
                             try {
                                 v.visit(element)
-                            } catch (e: Throwable) {
+                            }
+                            catch (e: Throwable) {
                                 if (e is CancellationException) throw e
                                 log.warn("HighlightVisitor ${v::class.java.name} failed visit for element $element", e)
                             }
@@ -263,7 +259,8 @@ private fun collectHighlightingViaVisitors(ktFile: KtFile): List<HighlightInfo> 
                 runGrouped(index + 1)
                 activeVisitors.removeAt(activeVisitors.size - 1)
             }
-        } catch (e: Throwable) {
+        }
+        catch (e: Throwable) {
             if (e is CancellationException) throw e
             log.warn("HighlightVisitor ${visitor::class.java.name} failed analyze for ${ktFile.name}", e)
         }
@@ -290,22 +287,11 @@ private fun collectK2SemanticHighlightingInfos(
     return collectHighlightingViaVisitors(ktFile)
 }
 
-private fun KtFile.collectHighlightingInfosByBeforeResolveHighlighters(): List<HighlightInfo> {
-    val holder = HighlightInfoHolder(this)
-    val beforeResolveVisitors = BeforeResolveHighlightingExtension.EP_NAME.extensionList.map { it.createVisitor(holder) }
-    forEachDescendantOfType<PsiElement> { element ->
-        for (visitor in beforeResolveVisitors) {
-            element.accept(visitor)
-        }
-    }
-    return (0 until holder.size()).map { holder[it] }
-}
-
 private fun List<HighlightInfo>.toHighlightInfoMap(textLength: Int): Map<Int, HighlightInfo> {
     val bestByOffset = LinkedHashMap<Int, HighlightInfo>()
     for (info in this) {
         val offset = info.startOffset
-        
+
         if (offset !in 0..<textLength) continue
 
         val existing = bestByOffset[offset]
