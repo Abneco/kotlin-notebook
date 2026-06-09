@@ -1,5 +1,5 @@
 #%%
-// QUICK_FIX: org.jetbrains.kotlin.idea.k2.codeinsight.intentions.AddNamesToCallArgumentsIntention
+// QUICK_FIX: org.jetbrains.kotlin.idea.codeinsight.intentions.AddNamesToCallArgumentsIntention
 fun foo(s: String, b: Boolean) {}
 fun <T> id(x: T) = x
 
