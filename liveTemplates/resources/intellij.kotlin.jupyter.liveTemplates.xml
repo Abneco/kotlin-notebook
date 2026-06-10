@@ -1,7 +1,7 @@
 <idea-plugin>
     <dependencies>
         <module name="intellij.kotlin.jupyter.core"/>
-        <module name="kotlin.code-insight.live-templates.shared"/>
+        <module name="intellij.kotlin.codeInsight.liveTemplates"/>
         <plugin id="org.jetbrains.kotlin"/>
     </dependencies>
 
