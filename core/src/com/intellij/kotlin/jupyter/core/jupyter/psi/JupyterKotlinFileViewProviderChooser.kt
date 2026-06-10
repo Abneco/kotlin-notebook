@@ -15,7 +15,7 @@ class JupyterKotlinFileViewProviderChooser : JupyterFileViewProviderFactory.Choo
         manager: PsiManager,
         eventSystemEnabled: Boolean
     ): FileViewProvider {
-        return JupyterKotlinFileViewProvider(manager, file, true)
+        return JupyterKotlinFileViewProvider(manager, file, eventSystemEnabled)
     }
 
     override fun isApplicable(file: VirtualFile, isBackProvider: Boolean): Boolean {
