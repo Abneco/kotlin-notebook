@@ -1,5 +1,5 @@
 #%%
-// QUICK_FIX: org.jetbrains.kotlin.idea.codeInsight.intentions.ConvertMemberToExtensionIntention
+// QUICK_FIX: org.jetbrains.kotlin.idea.codeinsight.intentions.ConvertMemberToExtensionIntention
 
 class Owner {
     fun <caret>f(p: kotlin.Int): kotlin.String {
