@@ -27,7 +27,10 @@ dependencies {
 
     // Bundled third-party libs (shipped with the plugin)
     implementation(libs.lets.plot.export.shadowed)
-    implementation(libs.lets.plot.kotlin.json)
+    implementation(libs.lets.plot.kotlin.json) {
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-serialization-json")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+    }
 
     compileOnly(libs.kotlinx.serialization.core)
     compileOnly(libs.kotlinx.serialization.json)

@@ -20,11 +20,7 @@ kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationCore" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 
-kotlin-jupyter-api = { module = "org.jetbrains.kotlinx:kotlin-jupyter-api", version.ref = "kotlinJupyter" }
-kotlin-jupyter-lib = { module = "org.jetbrains.kotlinx:kotlin-jupyter-lib", version.ref = "kotlinJupyter" }
 kotlin-jupyter-ws-server = { module = "org.jetbrains.kotlinx:kotlin-jupyter-ws-server", version.ref = "kotlinJupyter" }
-kotlin-jupyter-shared-compiler = { module = "org.jetbrains.kotlinx:kotlin-jupyter-shared-compiler", version.ref = "kotlinJupyter" }
-kotlin-jupyter-common-dependencies = { module = "org.jetbrains.kotlinx:kotlin-jupyter-common-dependencies", version.ref = "kotlinJupyter" }
 
 jupyter-notebook-parser = { module = "org.jetbrains.kotlinx:jupyter-notebooks-parser", version.ref = "jupyterParser" }
 

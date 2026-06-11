@@ -39,13 +39,9 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlin-jupyter-protocol-api")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlin-jupyter-protocol")
     }
-    api(libs.kotlin.jupyter.shared.compiler)
-    api(libs.kotlin.jupyter.api)
-    api(libs.kotlin.jupyter.lib)
-    api(libs.kotlin.jupyter.common.dependencies)
 
     // Provided by the IntelliJ platform / kotlin plugin at runtime
-    // Provided transitively via kotlin-jupyter-shared-compiler at runtime; needed at compile time
+    // Provided transitively via kotlin-jupyter-ws-server at runtime; needed at compile time
     compileOnly(libs.clikt)
 
     compileOnly(libs.kotlinx.serialization.core)
