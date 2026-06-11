@@ -18,7 +18,7 @@ sourceSets {
 dependencies {
     intellijPlatform {
         bundledPlugin("org.jetbrains.kotlin")
-        bundledPlugin("intellij.jupyter")
+        plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
         bundledPlugin("com.jetbrains.performancePlugin")
 
         testFramework(TestFrameworkType.Platform)

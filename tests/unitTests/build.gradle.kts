@@ -25,8 +25,8 @@ dependencies {
     intellijPlatform {
         bundledPlugin("org.jetbrains.kotlin")
         bundledPlugin("com.intellij.java")
-        bundledPlugin("intellij.jupyter")
-        bundledPlugin("com.intellij.notebooks.core")
+        plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
+        plugin(libs.plugins.nonBundledIntellij.notebooksCore.map { it.toString() })
         bundledPlugin("com.intellij.database")
         bundledModule("intellij.java.backend")
         bundledPlugin("org.jetbrains.plugins.github")

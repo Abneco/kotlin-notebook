@@ -16,7 +16,8 @@ kotlin {
 dependencies {
     intellijPlatform {
         bundledPlugin("org.jetbrains.kotlin")
-        bundledPlugin("intellij.jupyter")
+        plugin(libs.plugins.nonBundledIntellij.notebooksCore.map { it.toString() })
+        plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
         bundledModule("intellij.java.backend")
     }
 

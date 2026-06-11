@@ -65,8 +65,8 @@ dependencies {
 
         // Plugin dependencies – these become binary deps in the standalone repository
         bundledPlugin("org.jetbrains.kotlin")
-        bundledPlugin("intellij.jupyter")
-        bundledPlugin("com.intellij.notebooks.core")
+        plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
+        plugin(libs.plugins.nonBundledIntellij.notebooksCore.map { it.toString() })
         bundledPlugin("com.intellij.database")
         bundledPlugin("com.intellij.debugger.collections.visualizer")
         bundledPlugin("com.jetbrains.performancePlugin")

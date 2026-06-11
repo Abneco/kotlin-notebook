@@ -16,9 +16,9 @@ kotlin {
 dependencies {
     intellijPlatform {
         // jupyter/core, jupyter/tables
-        bundledPlugin("intellij.jupyter")
+        plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
         // notebooks/dataframe, python/scientific-tables
-        bundledPlugin("com.intellij.notebooks.core")
+        plugin(libs.plugins.nonBundledIntellij.notebooksCore.map { it.toString() })
         // com.intellij.database.extractors.ImageInfo, ColumnDescriptionStatistics, etc.
         bundledPlugin("com.intellij.database")
     }

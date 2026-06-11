@@ -27,7 +27,8 @@ dependencies {
         // Kotlin plugin: scripting, analysis API, kotlin base APIs
         bundledPlugin("org.jetbrains.kotlin")
         // intellij.jupyter plugin: jupyter/core, jupyter/psi, jupyter/execution
-        bundledPlugin("intellij.jupyter")
+        plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
+        plugin(libs.plugins.nonBundledIntellij.notebooksCore.map { it.toString() })
         // Java APIs
         bundledModule("com.intellij.java")
     }

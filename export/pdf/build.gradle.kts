@@ -17,7 +17,7 @@ dependencies {
     intellijPlatform {
         bundledPlugin("org.jetbrains.kotlin")
         // intellij.jupyter plugin: jupyter/psi, jupyter/convert, jupyter/core
-        bundledPlugin("intellij.jupyter")
+        plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
         bundledModule("intellij.java.backend")
     }
 

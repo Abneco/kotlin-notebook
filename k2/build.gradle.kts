@@ -18,7 +18,8 @@ dependencies {
         // Provides K2 / FIR frontend APIs, scripting k2
         bundledPlugin("org.jetbrains.kotlin")
         // jupyter/psi, jupyter/core
-        bundledPlugin("intellij.jupyter")
+        plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
+        plugin(libs.plugins.nonBundledIntellij.notebooksCore.map { it.toString() })
         bundledModule("intellij.java.backend")
     }
 

@@ -18,7 +18,7 @@ dependencies {
         // Kotlin plugin: KotlinLanguage
         bundledPlugin("org.jetbrains.kotlin")
         // jupyter/core, jupyter/psi, dataspell/jupyter/sql/common
-        bundledPlugin("intellij.jupyter")
+        plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
         // dbe/database
         bundledPlugin("com.intellij.database")
         bundledModule("intellij.java.backend")

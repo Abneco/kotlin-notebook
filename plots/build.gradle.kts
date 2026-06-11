@@ -17,7 +17,8 @@ kotlin {
 dependencies {
     intellijPlatform {
         // jupyter/core, jupyter/psi, jupyter/execution
-        bundledPlugin("intellij.jupyter")
+        plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
+        plugin(libs.plugins.nonBundledIntellij.notebooksCore.map { it.toString() })
         // intellij.charts platform module
         bundledModule("intellij.charts")
     }

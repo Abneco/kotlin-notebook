@@ -16,7 +16,8 @@ kotlin {
 dependencies {
     intellijPlatform {
         // jupyter/core, jupyter/psi
-        bundledPlugin("intellij.jupyter")
+        plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
+        plugin(libs.plugins.nonBundledIntellij.notebooksCore.map { it.toString() })
     }
 
     compileOnly(libs.jackson.core)

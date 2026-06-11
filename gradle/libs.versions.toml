@@ -1,5 +1,6 @@
 [versions]
 intellijPlatformPlugin = "2.14.1-SNAPSHOT"
+nonBundledMonorepoPlugins = "262.7581.3"
 kotlin = "2.3.20"
 kotlinxSerializationCore = "1.11.0"
 kotlinxCoroutines = "1.10.2"
@@ -44,3 +45,7 @@ intellijPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "inte
 intellijPlatformModule = { id = "org.jetbrains.intellij.platform.module", version.ref = "intellijPlatformPlugin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+# Not real Gradle plugins — IntelliJ Platform marketplace plugin dependencies
+nonBundledIntellij-jupyter = { id = "intellij.jupyter", version.ref = "nonBundledMonorepoPlugins" }
+nonBundledIntellij-notebooksCore = { id = "com.intellij.notebooks.core", version.ref = "nonBundledMonorepoPlugins" }
