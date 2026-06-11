@@ -25,8 +25,10 @@ kotlin {
 // Apply the module plugin to every subproject so they can declare intellijPlatform dependencies.
 // Disable Java bytecode instrumentation globally — this is a Kotlin-only plugin; the
 // java-compiler-ant-tasks are not published for nightly builds.
+val intellijPlatformModulePluginId = libs.plugins.intellijPlatformModule.get().pluginId
 subprojects {
-    apply(plugin = "org.jetbrains.intellij.platform.module")
+    @Suppress("AvoidApplyPluginMethod")
+    apply(plugin = intellijPlatformModulePluginId)
     extensions.configure<IntelliJPlatformExtension> {
         instrumentCode = false
     }
@@ -48,11 +50,11 @@ allprojects {
     repositories {
         mavenCentral()
         maven("https://packages.jetbrains.team/maven/p/kds/kotlin-ds-maven")
+        maven("https://cache-redirector.jetbrains.com/packages.jetbrains.team/maven/p/ij/intellij-dependencies")
         intellijPlatform {
             defaultRepositories()
             // Nightly snapshots for branch 262
             nightly()
-            maven("https://cache-redirector.jetbrains.com/packages.jetbrains.team/maven/p/ij/intellij-dependencies")
         }
     }
 }
