@@ -304,20 +304,19 @@ class KotlinNotebooksSmokeTest : KotlinNotebooksBaseTest("kotlin/notebooks/hello
         expectedPlotSpec shouldBe actualPlotSpec
       }
 
-      // Temporarily disabled until lets-plot will not be updated to jsvg 2.
-      //step("Check the plot's toolbar") {
-      //  notebookPlots.last().run {
-      //    toggleToolbar()
-      //    toolbar.run {
-      //      panButton.component.isShowing() shouldBe true
-      //      rubberBandZoomButton.component.isShowing() shouldBe true
-      //      centerPointZoomButton.component.isShowing() shouldBe true
-      //      resetButton.component.isShowing() shouldBe true
-      //    }
-      //    toggleToolbar()
-      //    toolbar.waitNotFound()
-      //  }
-      //}
+        step("Check the plot's toolbar") {
+            notebookPlots.last().run {
+                toggleToolbar()
+                toolbar.run {
+                    panButton.component.isShowing() shouldBe true
+                    rubberBandZoomButton.component.isShowing() shouldBe true
+                    centerPointZoomButton.component.isShowing() shouldBe true
+                    resetButton.component.isShowing() shouldBe true
+                }
+                toggleToolbar()
+                toolbar.waitNotFound()
+            }
+        }
     }
   }
 

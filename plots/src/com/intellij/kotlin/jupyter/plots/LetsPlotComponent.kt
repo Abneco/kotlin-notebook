@@ -133,8 +133,7 @@ class LetsPlotComponent : JBLayeredPane() {
             repaintDelay = 200,
             applicationContext = IdeaSwingContextBatik,
             sizingPolicy = SizingPolicy.fitContainerSize(preserveAspectRatio = !showToolbar),
-            showToolbar = false, // Temporary disable toolbar until lets-plot do not fix compatibility with jsvg2
-                                 // We have NoSuchMethodError: 'com.github.weisj.jsvg.SVGDocument com.github.weisj.jsvg.parser.SVGLoader.load(java.io.InputStream)'
+            showToolbar = showToolbar,
         ) {}
 
         plotPanel.isOpaque = true
