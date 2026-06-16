@@ -1,5 +1,5 @@
 [versions]
-intellijPlatformPlugin = "2.14.1-SNAPSHOT"
+intellijPlatformPlugin = "2.16.1-SNAPSHOT"
 nonBundledMonorepoPlugins = "262.7581.3"
 kotlin = "2.3.20"
 kotlinxSerializationCore = "1.11.0"
