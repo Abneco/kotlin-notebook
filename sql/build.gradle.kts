@@ -28,4 +28,5 @@ dependencies {
 
     compileOnly(libs.jackson.core)
     compileOnly(libs.jackson.databind)
+    compileOnly(libs.jetbrains.annotations)
 }

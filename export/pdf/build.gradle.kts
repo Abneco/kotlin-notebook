@@ -19,6 +19,7 @@ dependencies {
         // intellij.jupyter plugin: jupyter/psi, jupyter/convert, jupyter/core
         plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
         bundledModule("intellij.java.backend")
+        bundledModule("intellij.java.psi")
     }
 
     implementation(projects.core)

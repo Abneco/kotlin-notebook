@@ -26,6 +26,7 @@ dependencies {
     intellijPlatform {
         // Kotlin plugin: scripting, analysis API, kotlin base APIs
         bundledPlugin("org.jetbrains.kotlin")
+        bundledPlugin("intellij.java.aetherDependencyResolver.plugin")
         // intellij.jupyter plugin: jupyter/core, jupyter/psi, jupyter/execution
         plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
         plugin(libs.plugins.nonBundledIntellij.notebooksCore.map { it.toString() })
@@ -50,4 +51,5 @@ dependencies {
     compileOnly(libs.jackson.core)
     compileOnly(libs.jackson.databind)
     compileOnly(libs.slf4j.api)
+    compileOnly(libs.jetbrains.annotations)
 }

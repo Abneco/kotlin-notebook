@@ -21,6 +21,7 @@ dependencies {
         plugin(libs.plugins.nonBundledIntellij.jupyter.map { it.toString() })
         plugin(libs.plugins.nonBundledIntellij.notebooksCore.map { it.toString() })
         bundledModule("intellij.java.backend")
+        bundledModule("intellij.java.psi")
     }
 
     implementation(projects.core)

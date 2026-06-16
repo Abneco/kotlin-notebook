@@ -19,6 +19,7 @@ dependencies {
         // Provides debugger-collections-visualizer modules
         bundledPlugin("com.intellij.debugger.collections.visualizer")
         bundledModule("intellij.java.backend")
+        bundledModule("intellij.java.psi")
     }
 
     implementation(projects.debug)

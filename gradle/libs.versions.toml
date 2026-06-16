@@ -14,6 +14,7 @@ junit4 = "4.13.2"
 jvmTarget = "25"
 jupyterParser = "0.3.0-100"
 clikt = "2.8.0"
+jetbrainsAnnotations = "26.0.2"
 
 [libraries]
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerializationCore" }
@@ -30,6 +31,7 @@ lets-plot-kotlin-json = { module = "org.jetbrains.lets-plot:lets-plot-kotlin-jso
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrainsAnnotations" }
 
 clikt = { module = "com.github.ajalt:clikt", version.ref = "clikt" }
 
