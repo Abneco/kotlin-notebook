@@ -57,6 +57,27 @@ allprojects {
             nightly()
         }
     }
+
+    // we pretend that the root project is named "intellij.kotlin.jupyter",
+    // so that module XMLs of modules referenced in plugin.xml can be found in corresponding JARs.
+    //
+    // in other words, when runtime sees <module name="intellij.kotlin.jupyter.core"/>,
+    // it expects to find intellij.kotlin.jupyter.core.jar
+    tasks.composedJar {
+        // logic copied from ComposedJarTask sources,
+        // with the exception that rootProjectName is replaced with "intellij.kotlin.jupyter"
+        archiveBaseName.convention(module.map { isIntellijModule ->
+            val moduleName = project.path
+                .removePrefix(":")
+                .replace(':', '.')
+                .ifBlank { project.name }
+
+            when (isIntellijModule) {
+                true -> "intellij.kotlin.jupyter.$moduleName"
+                false -> project.name
+            }
+        })
+    }
 }
 
 dependencies {
