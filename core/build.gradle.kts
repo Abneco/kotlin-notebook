@@ -6,6 +6,7 @@ plugins {
 sourceSets {
     main {
         kotlin.srcDirs("src", "generated")
+        java.srcDirs("generated")
         resources.srcDirs("resources", "resources-en")
     }
 }
