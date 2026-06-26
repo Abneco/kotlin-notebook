@@ -1,4 +1,3 @@
-[![JetBrains official project](https://jb.gg/badges/official.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 [![Marketplace version](https://img.shields.io/jetbrains/plugin/v/16340-kotlin-for-jupyter?color=green&label=Latest%20version)][Marketplace]
 [![Marketplace downloads](https://img.shields.io/jetbrains/plugin/d/16340?label=Downloads)][Marketplace]
 [![Apache 2.0 License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
