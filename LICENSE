@@ -1,4 +1,5 @@
-Apache License
+
+                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
 
@@ -178,7 +179,7 @@ Apache License
    APPENDIX: How to apply the Apache License to your work.
 
       To apply the Apache License to your work, attach the following
-      boilerplate notice, with the fields enclosed by brackets "{}"
+      boilerplate notice, with the fields enclosed by brackets "[]"
       replaced with your own identifying information. (Don't include
       the brackets!)  The text should be enclosed in the appropriate
       comment syntax for the file format. We also recommend that a
@@ -186,7 +187,7 @@ Apache License
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright 2000-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+   Copyright [2026 - ] [JetBrains s.r.o.]
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -199,4 +200,8 @@ Apache License
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+==============================================================================
+
+Feature Usage Statistics. You acknowledge and agree with the collection of Feature Usage Statistics (“FUS”) and system operational telemetry by Licensor. This collection is strictly limited to anonymized, non-personal telemetry, specifically comprising: (i) system and environment specifications; (ii) product interaction statistics; (iii) product performance metrics; (iv) information on active bundled or third-party plugins; and (v) generalized project scaling indicators. FUS collections do not include any personal data, proprietary source code, or custom-typed text inputs. If You choose to opt out of, block, or disable FUS transmissions, Licensor reserves the right to immediately terminate this License and Your access to the Work.
 
