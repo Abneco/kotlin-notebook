@@ -14,14 +14,22 @@ import org.jetbrains.kotlin.idea.core.script.k2.modules.modifyKotlinScriptLibrar
  * or creates a new entity with the given [sources] otherwise.
  */
 internal fun MutableEntityStorage.addOrUpdateLibraryEntity(
-    libraryId: KotlinScriptLibraryEntityId,
+    scope: String,
+    classes: Collection<VirtualFileUrl>,
     sources: Collection<VirtualFileUrl>,
     usedInScripts: Collection<VirtualFileUrl>,
     updateAction: KotlinScriptLibraryEntityBuilder.() -> Unit = {},
-) {
+): KotlinScriptLibraryEntityId {
+    val classRoots = classes.toList()
+    val libraryId = KotlinScriptLibraryEntityId(scope, classRoots)
     val existingLibrary = resolve(libraryId)
     if (existingLibrary == null) {
-        this addEntity KotlinScriptLibraryEntity(libraryId.classes, usedInScripts.toSet(), KotlinNotebookScriptEntitySource) {
+        this addEntity KotlinScriptLibraryEntity(
+            scope,
+            classRoots,
+            usedInScripts.toSet(),
+            KotlinNotebookScriptEntitySource
+        ) {
             this.sources += sources
         }
     } else {
@@ -30,4 +38,5 @@ internal fun MutableEntityStorage.addOrUpdateLibraryEntity(
             updateAction()
         }
     }
+    return libraryId
 }

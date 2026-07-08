@@ -182,9 +182,11 @@ class NotebookScriptConfigurationsManager(val project: Project) {
         fun copyDependencies(from: KotlinScriptEntity) {
             val deps = from.dependencies.mapNotNull { it.resolve(currentSnapshot) }
             for (lib in deps) {
-                val libId = KotlinScriptLibraryEntityId(lib.classes)
                 addOrUpdateLibraryEntity(
-                    libId, lib.sources, usedInScripts = lib.usedInScripts
+                    lib.scope,
+                    lib.classes,
+                    lib.sources,
+                    usedInScripts = lib.usedInScripts
                 )
             }
         }

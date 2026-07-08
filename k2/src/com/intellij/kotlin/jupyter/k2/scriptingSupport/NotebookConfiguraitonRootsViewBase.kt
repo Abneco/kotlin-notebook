@@ -21,12 +21,14 @@ import kotlin.io.path.isRegularFile
  */
 abstract class NotebookConfigurationRootsViewBase(
     protected val project: Project,
-    protected val configurationInfo: KotlinNotebookScriptModel
+    protected val configurationInfo: KotlinNotebookScriptModel,
 ) : NotebookConfigurationRootsView {
-    override val dependenciesRoots: List<Path> get() =
-        filterTargetDependencies(project, configurationInfo.refinedConfiguration.dependenciesClassPath.map { it.toPath() })
-    override val dependenciesSources: List<Path> get() =
-        filterTargetDependencies(project, configurationInfo.refinedConfiguration.dependenciesSources.map { it.toPath() })
+    override val dependenciesRoots: List<Path>
+        get() =
+            filterTargetDependencies(project, configurationInfo.refinedConfiguration.dependenciesClassPath.map { it.toPath() })
+    override val dependenciesSources: List<Path>
+        get() =
+            filterTargetDependencies(project, configurationInfo.refinedConfiguration.dependenciesSources.map { it.toPath() })
 
     protected val topLevelFileUrl: VirtualFileUrl
         get() = configurationInfo.virtualFile.toVirtualFileUrl(
@@ -42,7 +44,7 @@ abstract class NotebookConfigurationRootsViewBase(
  */
 class CompiledSnippets(
     project: Project,
-    configurationInfo: KotlinNotebookScriptModel
+    configurationInfo: KotlinNotebookScriptModel,
 ) : NotebookConfigurationRootsViewBase(project, configurationInfo) {
     override val typeName: String = "Compiled"
 
@@ -56,14 +58,15 @@ class CompiledSnippets(
 
     override fun getOrUpdateLibraryDependencies(
         project: Project,
-        entityStorage: MutableEntityStorage
+        entityStorage: MutableEntityStorage,
     ): Collection<KotlinScriptLibraryEntityId> {
         val (classes, sources) = getAllLibraryRoots(project)
         if (classes.isEmpty()) return emptyList()
 
-        val libraryId = KotlinScriptLibraryEntityId(classes)
-        entityStorage.addOrUpdateLibraryEntity(
-            libraryId, sources,
+        val libraryId = entityStorage.addOrUpdateLibraryEntity(
+            KOTLIN_NOTEBOOK_LIBRARY_SCOPE,
+            classes,
+            sources,
             usedInScripts = setOf(topLevelFileUrl)
         )
 
@@ -76,7 +79,7 @@ class CompiledSnippets(
  */
 class Jars(
     project: Project,
-    configurationInfo: KotlinNotebookScriptModel
+    configurationInfo: KotlinNotebookScriptModel,
 ) : NotebookConfigurationRootsViewBase(project, configurationInfo) {
     override val typeName: String = "Jars"
 
@@ -86,7 +89,7 @@ class Jars(
 
     override fun getOrUpdateLibraryDependencies(
         project: Project,
-        entityStorage: MutableEntityStorage
+        entityStorage: MutableEntityStorage,
     ): Collection<KotlinScriptLibraryEntityId> {
         val (classes, sources) = getAllLibraryRoots(project)
         if (classes.isEmpty()) return emptyList()
@@ -101,9 +104,10 @@ class Jars(
                     it.presentableUrl.contains(presentableName)
                 }
 
-                val libraryId = KotlinScriptLibraryEntityId(listOf(virtualFileUrl))
-                entityStorage.addOrUpdateLibraryEntity(
-                    libraryId, listOfNotNull(sourceRoot),
+                val libraryId = entityStorage.addOrUpdateLibraryEntity(
+                    KOTLIN_NOTEBOOK_LIBRARY_SCOPE,
+                    listOf(virtualFileUrl),
+                    listOfNotNull(sourceRoot),
                     usedInScripts = setOf(topLevelFileUrl)
                 )
 
@@ -112,3 +116,5 @@ class Jars(
         }
     }
 }
+
+private const val KOTLIN_NOTEBOOK_LIBRARY_SCOPE = "Kotlin Notebook"
