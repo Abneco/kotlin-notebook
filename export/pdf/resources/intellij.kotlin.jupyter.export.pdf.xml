@@ -6,6 +6,7 @@
       <module name="intellij.jupyter.convert"/>
       <module name="intellij.jupyter.core"/>
       <module name="intellij.jupyter.psi"/>
+      <module name="intellij.kotlin.base.plugin"/>
       <module name="intellij.kotlin.highlighting"/>
       <module name="intellij.kotlin.jupyter.core"/>
     </dependencies>
