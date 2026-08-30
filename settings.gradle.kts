@@ -28,6 +28,6 @@ include(
     ":debug:renders",
     ":notekit",
     ":performancePlugin",
-    // ":tests:unitTests",  // Requires JetBrains-internal test infrastructure (JupyterBaseTestCase, IdeaTestUtil, etc.) — not publicly available
+    ":tests:unitTests",
     // ":tests:perfTests",  // Requires JetBrains-internal ide-starter-extended — not publicly available
 )
