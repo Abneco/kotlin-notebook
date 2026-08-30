@@ -16,8 +16,7 @@
     <!-- endregion -->
 
     <extensions defaultExtensionNs="com.intellij.sql">
-        <commonConfiguration implementation="com.intellij.kotlin.jupyter.sql.KotlinSqlCellCommonConfigurationImpl"/>
-        <backendConfiguration implementation="com.intellij.kotlin.jupyter.sql.KotlinSqlCellBackendConfigurationImpl"/>
+        <configuration implementation="com.intellij.kotlin.jupyter.sql.KotlinSqlCellConfigurationImpl"/>
         <codeGeneration implementation="com.intellij.kotlin.jupyter.sql.KotlinSqlCellCodeGeneratorImpl"/>
     </extensions>
 
