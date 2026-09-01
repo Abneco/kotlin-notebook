@@ -7,6 +7,7 @@
       <module name="intellij.debugger.collections.visualizer.jvm"/>
       <module name="intellij.java.debugger.impl"/>
       <module name="intellij.kotlin.jupyter.debug"/>
+      <module name="intellij.kotlin.jvm.debugger.core"/>
     </dependencies>
     <!-- endregion -->
 

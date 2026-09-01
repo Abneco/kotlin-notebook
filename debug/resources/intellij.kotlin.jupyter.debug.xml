@@ -9,10 +9,13 @@
       <module name="intellij.java.psi"/>
       <module name="intellij.jupyter.core"/>
       <module name="intellij.jupyter.psi"/>
+      <module name="intellij.kotlin.base.analysis"/>
       <module name="intellij.kotlin.jupyter.core"/>
+      <module name="intellij.kotlin.jvm.debugger.core"/>
       <module name="intellij.notebooks.jupyter.core"/>
       <module name="intellij.notebooks.ui"/>
       <module name="intellij.notebooks.visualization"/>
+      <module name="kotlin.jvm-debugger.evaluation"/>
     </dependencies>
     <!-- endregion -->
 

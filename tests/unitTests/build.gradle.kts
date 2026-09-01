@@ -30,12 +30,14 @@ dependencies {
         bundledPlugin("com.intellij.database")
         bundledModule("intellij.java.backend")
         bundledPlugin("org.jetbrains.plugins.github")
+        bundledPlugin("org.intellij.plugins.markdown")
 
         testFramework(TestFrameworkType.Platform)
-        testFramework(TestFrameworkType.Plugin.Java, version = "LATEST-TRUNK-SNAPSHOT")
+        testFramework(TestFrameworkType.Plugin.Java)
         testFramework(TestFrameworkType.Bundled)
-        testFramework(TestFrameworkType.Plugin.Notebooks, version = "LATEST-TRUNK-SNAPSHOT")
-        testFramework(TestFrameworkType.Plugin.Jupyter, version = "LATEST-TRUNK-SNAPSHOT")
+        testFramework(TestFrameworkType.Plugin.Notebooks)
+        testFramework(TestFrameworkType.Plugin.Jupyter)
+        testFramework(TestFrameworkType.Plugin.Kotlin)
         testFramework(TestFrameworkType.JUnit5)
     }
 

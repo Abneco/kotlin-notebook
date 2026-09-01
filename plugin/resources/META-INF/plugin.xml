@@ -4,6 +4,10 @@
     <vendor>JetBrains</vendor>
     <description>
         <![CDATA[
+            <p><b>Please note:</b> Starting with v2026.2, JetBrains will sunset Kotlin Notebook as a product and will no longer maintain it.
+            Kotlin Notebook will be unbundled from IntelliJ IDEA and continue as an open-source, community-driven project hosted on
+            <a href="https://github.com/Kotlin/kotlin-notebook">GitHub</a>.</p>
+
             <p>Kotlin notebooks are interactive worksheets with rich outputs that allow you to explore and experiment with your
             Kotlin code without additional environment setup. The Kotlin Notebook plugin is a client for
             <a href="https://github.com/Kotlin/kotlin-jupyter">the Kotlin Jupyter kernel</a>
